@@ -3,7 +3,7 @@
 
 generic-service:
   ingress:
-    host: hmpps-activities-management-api-preprod.hmpps.service.justice.gov.uk
+    host: activities-api-preprod.prison.service.justice.gov.uk
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
