@@ -106,7 +106,8 @@ CREATE TABLE activity_schedule (
   suspend_until                 date,
   start_time                    timestamp    NOT NULL,
   end_time                      timestamp,
-  internal_location_id          varchar(40),
+  internal_location_id          integer,
+  internal_location_code        varchar(40),
   internal_location_description varchar(100),
   capacity                      integer      NOT NULL,
   days_of_week                  character(7) NOT NULL
@@ -118,7 +119,7 @@ CREATE TABLE activity_session (
   session_date         date      NOT NULL,
   start_time           timestamp NOT NULL,
   end_time             timestamp,
-  internal_location_id varchar(40),
+  internal_location_id integer,
   cancelled            boolean   NOT NULL,
   cancelled_at         timestamp,
   cancelled_by         varchar(100)
