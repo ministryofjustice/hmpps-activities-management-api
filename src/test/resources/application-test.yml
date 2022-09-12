@@ -6,6 +6,12 @@ spring:
   profiles:
     include: stdout
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
   datasource:
     url: 'jdbc:h2:mem:activities-db;MODE=PostgreSQL'
     username: activities
