@@ -1,17 +1,17 @@
 version: "3"
 services:
-  hmpps-activities-management-api:
-    build:
-      context: .
-    network_mode: "host"
-    container_name: hmpps-activities-management-api
+  db:
+    image: postgres:latest
+    networks:
+      - hmpps
+    container_name: activities-management-database
+    restart: always
     ports:
-      - "8081:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ping"]
+      - "5432:5432"
     environment:
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=dev
+      POSTGRES_DB: activities-management-db
+      POSTGRES_USER: activities-management
+      POSTGRES_PASSWORD: activities-management
 
 networks:
   hmpps:
