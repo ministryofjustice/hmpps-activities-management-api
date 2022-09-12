@@ -17,7 +17,7 @@ export DB_PASS=activities-management
 export DB_SSL_MODE=prefer
 
 # Run the application with stdout and dev profiles active
-SPRING_PROFILES_ACTIVE=stdout,default ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=stdout,dev ./gradlew bootRun
 
 # End
 
