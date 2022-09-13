@@ -4,7 +4,7 @@ services:
     image: postgres:latest
     networks:
       - hmpps
-    container_name: activities-management-database
+    container_name: activities-db
     restart: always
     ports:
       - "5432:5432"
