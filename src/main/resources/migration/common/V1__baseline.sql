@@ -58,12 +58,6 @@ CREATE TABLE daily_statistics (
   vacancies                   integer
 );
 
-CREATE TABLE activity_type (
-  activity_type_id serial       NOT NULL CONSTRAINT activity_type_pk PRIMARY KEY,
-  type_code        varchar(30)  NOT NULL UNIQUE,
-  description      varchar(100) NOT NULL
-);
-
 CREATE TABLE activity_category (
   activity_category_id serial       NOT NULL CONSTRAINT activity_category_pk PRIMARY KEY,
   category_code        varchar(30)  NOT NULL UNIQUE,
@@ -78,7 +72,6 @@ CREATE TABLE activity_tier (
 CREATE TABLE activity (
   activity_id          serial       NOT NULL CONSTRAINT activity_pk PRIMARY KEY,
   rollout_prison_id    integer      NOT NULL REFERENCES rollout_prison (rollout_prison_id),
-  activity_type_id     integer      NOT NULL REFERENCES activity_type (activity_type_id),
   activity_category_id integer      NOT NULL REFERENCES activity_category (activity_category_id),
   activity_tier        integer      NOT NULL REFERENCES activity_tier (activity_tier),
   summary              varchar(50)  NOT NULL,
@@ -95,12 +88,13 @@ CREATE INDEX idx_activity_end_date ON activity (end_date);
 
 CREATE TABLE activity_eligibility (
   activity_eligibility_id serial  NOT NULL CONSTRAINT activity_eligibility_pk PRIMARY KEY,
+  rollout_prison_id       integer NOT NULL REFERENCES rollout_prison (rollout_prison_id),
   eligibility_rule_id     integer NOT NULL REFERENCES eligibility_rule (eligibility_rule_id),
   activity_id             integer NOT NULL REFERENCES activity (activity_id)
 );
 
-CREATE TABLE activity_schedule (
-  activity_schedule_id          serial       NOT NULL CONSTRAINT activity_schedule_pk PRIMARY KEY,
+CREATE TABLE activity_session (
+  activity_session_id           serial       NOT NULL CONSTRAINT activity_session_pk PRIMARY KEY,
   activity_id                   integer      NOT NULL REFERENCES activity (activity_id),
   description                   varchar(50)  NOT NULL,
   suspend_until                 date,
@@ -113,8 +107,8 @@ CREATE TABLE activity_schedule (
   days_of_week                  character(7) NOT NULL
 );
 
-CREATE TABLE activity_session (
-  activity_session_id  serial    NOT NULL CONSTRAINT activity_session_pk PRIMARY KEY,
+CREATE TABLE activity_instance (
+  activity_instance_id serial    NOT NULL CONSTRAINT activity_instance_pk PRIMARY KEY,
   rollout_prison_id    integer   NOT NULL REFERENCES rollout_prison (rollout_prison_id),
   session_date         date      NOT NULL,
   start_time           timestamp NOT NULL,
@@ -127,7 +121,7 @@ CREATE TABLE activity_session (
 
 CREATE TABLE attendance (
   attendance_id        serial     NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
-  activity_session_id  integer    NOT NULL REFERENCES activity_session (activity_session_id),
+  activity_instance_id integer    NOT NULL REFERENCES activity_instance (activity_instance_id),
   rollout_prison_id    integer    NOT NULL REFERENCES rollout_prison (rollout_prison_id),
   prisoner_number      varchar(7) NOT NULL,
   attendance_reason_id integer REFERENCES attendance_reason (attendance_reason_id),
@@ -147,7 +141,7 @@ CREATE TABLE activity_waitlist (
   activity_waiting_list_id serial       NOT NULL CONSTRAINT activity_waiting_list_pk PRIMARY KEY,
   rollout_prison_id        integer      NOT NULL REFERENCES rollout_prison (rollout_prison_id),
   prisoner_number          varchar(7)   NOT NULL,
-  activity_schedule_id     integer REFERENCES activity_schedule (activity_schedule_id),
+  activity_session_id      integer REFERENCES activity_session (activity_session_id),
   priority                 integer      NOT NULL,
   created_at               timestamp    NOT NULL,
   created_by               varchar(100) NOT NULL
@@ -158,7 +152,7 @@ CREATE INDEX idx_activity_waitlist_prisoner_number ON activity_waitlist (prisone
 CREATE TABLE activity_prisoner (
   activity_prisoner_id serial       NOT NULL CONSTRAINT activity_prisoner_pk PRIMARY KEY,
   prisoner_number      varchar(7)   NOT NULL,
-  activity_schedule_id integer      NOT NULL REFERENCES activity_schedule (activity_schedule_id),
+  activity_session_id  integer      NOT NULL REFERENCES activity_session (activity_session_id),
   iep_level            varchar(3),
   pay_band             varchar(1),
   start_date           timestamp    NOT NULL,
