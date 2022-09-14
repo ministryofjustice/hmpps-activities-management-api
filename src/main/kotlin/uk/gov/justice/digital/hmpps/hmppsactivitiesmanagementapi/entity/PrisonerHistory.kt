@@ -5,8 +5,6 @@ import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
@@ -14,13 +12,11 @@ import javax.persistence.Table
 data class PrisonerHistory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonerHistoryId: Int = -1,
+  val prisonerHistoryId: Int? = null,
 
   val historyType: String,
 
-  @ManyToOne
-  @JoinColumn(name = "rollout_prison_id", nullable = false)
-  val rolloutPrison: RolloutPrison,
+  val prisonCode: String,
 
   val prisonerNumber: String,
 

@@ -11,11 +11,11 @@ import javax.persistence.Table
 data class RolloutPrison(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val rolloutPrisonId: Int = -1,
+  val rolloutPrisonId: Int? = null,
 
   val code: String,
 
   val description: String,
 
-  var isActive: Boolean = false
+  var active: Boolean = false
 )

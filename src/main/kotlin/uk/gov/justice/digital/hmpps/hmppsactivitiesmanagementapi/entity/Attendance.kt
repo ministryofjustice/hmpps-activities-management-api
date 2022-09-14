@@ -7,6 +7,7 @@ import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.OneToOne
 import javax.persistence.Table
 
 @Entity
@@ -14,19 +15,17 @@ import javax.persistence.Table
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceId: Int = -1,
+  val attendanceId: Int? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_instance_id", nullable = false)
   val activityInstance: ActivityInstance,
 
-  @ManyToOne
-  @JoinColumn(name = "rollout_prison_id", nullable = false)
-  val rolloutPrison: RolloutPrison,
+  val prisonCode: String,
 
   val prisonerNumber: String,
 
-  @ManyToOne
+  @OneToOne
   @JoinColumn(name = "attendance_reason_id", nullable = false)
   val attendanceReason: AttendanceReason,
 

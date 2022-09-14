@@ -15,7 +15,7 @@ import javax.persistence.Table
 data class ActivityPrisoner(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityPrisonerId: Int = -1,
+  val activityPrisonerId: Int? = null,
 
   val prisonerNumber: String,
 
@@ -31,7 +31,7 @@ data class ActivityPrisoner(
 
   var endDate: LocalDate? = null,
 
-  var isActive: Boolean = false,
+  var active: Boolean = false,
 
   var allocationAt: LocalDateTime? = null,
 

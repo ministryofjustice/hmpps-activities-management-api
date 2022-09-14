@@ -15,11 +15,13 @@ import javax.persistence.Table
 data class ActivityInstance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityInstanceId: Int = -1,
+  val activityInstanceId: Int? = null,
+
+  val prisonCode: String,
 
   @ManyToOne
-  @JoinColumn(name = "rollout_prison_id", nullable = false)
-  val rolloutPrison: RolloutPrison,
+  @JoinColumn(name = "activity_session_id", nullable = false)
+  val activitySession: ActivitySession,
 
   val sessionDate: LocalDate,
 
@@ -29,7 +31,7 @@ data class ActivityInstance(
 
   var internalLocationId: Int? = null,
 
-  var isCancelled: Boolean = false,
+  var cancelled: Boolean = false,
 
   var cancelledAt: LocalDateTime? = null,
 

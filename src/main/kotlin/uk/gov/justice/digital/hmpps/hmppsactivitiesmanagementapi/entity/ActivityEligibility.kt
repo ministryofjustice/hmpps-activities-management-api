@@ -6,6 +6,7 @@ import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.OneToOne
 import javax.persistence.Table
 
 @Entity
@@ -13,9 +14,9 @@ import javax.persistence.Table
 data class ActivityEligibility(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityEligibilityId: Int = -1,
+  val activityEligibilityId: Int? = null,
 
-  @ManyToOne
+  @OneToOne
   @JoinColumn(name = "eligibility_rule_id", nullable = false)
   val eligibilityRule: EligibilityRule,
 

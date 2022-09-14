@@ -14,11 +14,9 @@ import javax.persistence.Table
 data class ActivityWaitlist(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityWaitingListId: Int = -1,
+  val activityWaitingListId: Int? = null,
 
-  @ManyToOne
-  @JoinColumn(name = "rollout_prison_id", nullable = false)
-  val rolloutPrison: RolloutPrison,
+  val prisonCode: String,
 
   val prisonerNumber: String,
 
