@@ -30,6 +30,10 @@ data class ActivitySession(
   @Fetch(FetchMode.SUBSELECT)
   val instances: MutableList<ActivityInstance> = mutableListOf(),
 
+  @OneToMany(mappedBy = "activitySession", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  val prisoners: MutableList<ActivityPrisoner> = mutableListOf(),
+
   val description: String,
 
   var suspendUntil: LocalDate? = null,
