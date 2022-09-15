@@ -44,11 +44,11 @@ data class Activity(
   @JoinColumn(name = "activity_id")
   var activityPay: ActivityPay? = null,
 
-  var summary: String? = null,
+  val summary: String,
 
-  var description: String? = null,
+  val description: String,
 
-  var startDate: LocalDate? = null,
+  val startDate: LocalDate,
 
   var endDate: LocalDate? = null,
 

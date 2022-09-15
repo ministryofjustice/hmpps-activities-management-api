@@ -19,9 +19,6 @@ spring:
 
   flyway:
     locations: classpath:/migration/common
-    url: ${spring.datasource.url}
-    user: activities
-    password: dummy
 
   h2:
     console:
