@@ -11,7 +11,7 @@ import javax.persistence.Table
 data class EligibilityRule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  var eligibilityRuleId: Int? = null,
+  var eligibilityRuleId: Long? = null,
 
   val code: String,
 

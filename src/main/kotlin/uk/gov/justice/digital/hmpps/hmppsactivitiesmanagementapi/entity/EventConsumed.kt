@@ -12,7 +12,7 @@ import javax.persistence.Table
 data class EventConsumed(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val eventId: Int? = null,
+  val eventId: Long? = null,
 
   val eventType: String,
 

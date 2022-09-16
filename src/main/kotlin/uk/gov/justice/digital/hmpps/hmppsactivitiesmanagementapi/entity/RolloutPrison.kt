@@ -11,7 +11,7 @@ import javax.persistence.Table
 data class RolloutPrison(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val rolloutPrisonId: Int? = null,
+  val rolloutPrisonId: Long? = null,
 
   val code: String,
 
