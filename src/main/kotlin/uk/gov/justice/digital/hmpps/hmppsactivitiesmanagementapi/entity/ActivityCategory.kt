@@ -11,7 +11,7 @@ import javax.persistence.Table
 data class ActivityCategory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityCategoryId: Int? = null,
+  val activityCategoryId: Long? = null,
 
   val categoryCode: String,
 

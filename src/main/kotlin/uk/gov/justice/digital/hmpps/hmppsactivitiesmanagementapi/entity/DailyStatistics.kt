@@ -12,7 +12,7 @@ import javax.persistence.Table
 data class DailyStatistics(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val dailyStatisticsId: Int? = null,
+  val dailyStatisticsId: Long? = null,
 
   val statisticsDate: LocalDate,
 

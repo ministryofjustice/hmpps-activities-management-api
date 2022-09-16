@@ -16,7 +16,7 @@ import javax.persistence.Table
 data class ActivityPay(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityPayId: Int? = null,
+  val activityPayId: Long? = null,
 
   @OneToOne
   @JoinColumn(name = "activity_id", nullable = false)

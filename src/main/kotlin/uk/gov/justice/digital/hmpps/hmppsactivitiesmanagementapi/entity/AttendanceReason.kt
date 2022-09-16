@@ -11,7 +11,7 @@ import javax.persistence.Table
 data class AttendanceReason(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceReasonId: Int? = null,
+  val attendanceReasonId: Long? = null,
 
   val code: String,
 

@@ -15,7 +15,7 @@ import javax.persistence.Table
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceId: Int? = null,
+  val attendanceId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_instance_id", nullable = false)

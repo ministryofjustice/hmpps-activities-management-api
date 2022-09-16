@@ -13,7 +13,7 @@ import javax.persistence.Table
 data class ActivityPayBand(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityPayBandId: Int? = null,
+  val activityPayBandId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_pay_id", nullable = false)
