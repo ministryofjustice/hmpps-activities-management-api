@@ -20,7 +20,7 @@ import javax.persistence.Table
 data class ActivitySession(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activitySessionId: Int? = null,
+  val activitySessionId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

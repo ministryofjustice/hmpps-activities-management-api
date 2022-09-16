@@ -20,7 +20,7 @@ import javax.persistence.Table
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityId: Int? = null,
+  val activityId: Long? = null,
 
   val prisonCode: String,
 

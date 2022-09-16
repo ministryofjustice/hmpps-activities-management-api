@@ -9,7 +9,7 @@ import javax.persistence.Table
 @Table(name = "activity_tier")
 data class ActivityTier(
   @Id
-  val activityTier: Int,
+  val activityTier: Long,
 
   @Column(nullable = false)
   val description: String

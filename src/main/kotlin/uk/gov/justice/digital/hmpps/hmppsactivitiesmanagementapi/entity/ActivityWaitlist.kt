@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class ActivityWaitlist(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityWaitingListId: Int? = null,
+  val activityWaitingListId: Long? = null,
 
   val prisonCode: String,
 

@@ -12,7 +12,7 @@ import javax.persistence.Table
 data class PrisonerHistory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonerHistoryId: Int? = null,
+  val prisonerHistoryId: Long? = null,
 
   val historyType: String,
 
