@@ -22,15 +22,17 @@ data class Activity(
 
   val sessions: List<ActivitySession> = emptyList(),
 
+  val waitingList: List<ActivityWaiting> = emptyList(),
+
   val pay: ActivityPay? = null,
 
   val startDate: LocalDate,
 
   val endDate: LocalDate? = null,
 
-  val active: Boolean,
+  val active: Boolean = true,
 
-  val createdAt: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   val createdBy: String
 )

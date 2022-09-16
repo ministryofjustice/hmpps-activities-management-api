@@ -13,7 +13,7 @@ data class ActivityCategory(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val activityCategoryId: Long? = null,
 
-  val categoryCode: String,
+  val code: String,
 
   val description: String
 )

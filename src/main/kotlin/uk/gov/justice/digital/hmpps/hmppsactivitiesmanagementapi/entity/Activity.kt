@@ -29,7 +29,7 @@ data class Activity(
   val activityCategory: ActivityCategory,
 
   @OneToOne
-  @JoinColumn(name = "activity_tier", nullable = false)
+  @JoinColumn(name = "activity_tier_id", nullable = false)
   val activityTier: ActivityTier,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -39,6 +39,10 @@ data class Activity(
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   val sessions: MutableList<ActivitySession> = mutableListOf(),
+
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  val waitingList: MutableList<ActivityWaiting> = mutableListOf(),
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "activity_id")
@@ -52,9 +56,9 @@ data class Activity(
 
   var endDate: LocalDate? = null,
 
-  var active: Boolean = false,
+  var active: Boolean = true,
 
-  val createdAt: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   val createdBy: String
 )

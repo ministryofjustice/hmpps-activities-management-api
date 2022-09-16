@@ -14,11 +14,9 @@ data class ActivityInstance(
 
   val endTime: LocalDateTime,
 
-  val internalLocationId: Int? = null,
-
   val cancelled: Boolean,
 
-  val cancelledAt: LocalDateTime? = null,
+  val cancelledTime: LocalDateTime? = null,
 
   val cancelledBy: String? = null,
 )

@@ -21,8 +21,8 @@ class ActivityRepositoryTest(
 
   @Test
   fun `can create activity`() {
-    val category = entityManager.persist(ActivityCategory(categoryCode = "code", description = "description"))
-    val tier = entityManager.persist(ActivityTier(1, description = "Tier 1"))
+    val category = entityManager.persist(ActivityCategory(code = "code", description = "description"))
+    val tier = entityManager.persist(ActivityTier(code = "T1", description = "Tier 1"))
 
     val activity = Activity(
       prisonCode = "123",
@@ -31,7 +31,7 @@ class ActivityRepositoryTest(
       summary = "Maths",
       description = "Maths basic",
       startDate = timestamp.toLocalDate(),
-      createdAt = timestamp,
+      createdTime = timestamp,
       createdBy = "me"
     ).also {
       assertThat(it.activityId).isNull()
@@ -47,12 +47,13 @@ class ActivityRepositoryTest(
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
-      assertThat(createdAt).isEqualTo(timestamp)
+      assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("me")
       assertThat(eligibilityRules).isEmpty()
+      assertThat(waitingList).isEmpty()
       assertThat(sessions).isEmpty()
       assertThat(activityPay).isNull()
-      assertThat(active).isFalse
+      assertThat(active).isTrue
       assertThat(endDate).isNull()
     }
   }

@@ -17,8 +17,6 @@ data class ActivityInstance(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val activityInstanceId: Long? = null,
 
-  val prisonCode: String,
-
   @ManyToOne
   @JoinColumn(name = "activity_session_id", nullable = false)
   val activitySession: ActivitySession,
@@ -29,11 +27,9 @@ data class ActivityInstance(
 
   val endTime: LocalDateTime,
 
-  var internalLocationId: Int? = null,
-
   var cancelled: Boolean = false,
 
-  var cancelledAt: LocalDateTime? = null,
+  var cancelledTime: LocalDateTime? = null,
 
   var cancelledBy: String? = null,
 )

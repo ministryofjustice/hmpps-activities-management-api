@@ -70,7 +70,7 @@ CREATE TABLE daily_statistics (
 );
 
 CREATE INDEX idx_daily_statistics_date ON daily_statistics (statistics_date);
-CREATE INDEX idx_daily_statistics_prison_code ON dail_statistics (prison_code);
+CREATE INDEX idx_daily_statistics_prison_code ON daily_statistics (prison_code);
 
 CREATE TABLE activity_category (
   activity_category_id bigserial    NOT NULL CONSTRAINT activity_category_pk PRIMARY KEY,
@@ -140,7 +140,7 @@ CREATE TABLE activity_instance (
   session_date         date       NOT NULL,
   start_time           timestamp  NOT NULL,
   end_time             timestamp,
-  cancelled            boolean    NOT NULL,
+  cancelled            boolean    NOT NULL DEFAULT false,
   cancelled_time       timestamp,
   cancelled_by         varchar(100)
 );
@@ -169,8 +169,8 @@ CREATE INDEX idx_attendance_activity_instance_id ON attendance (activity_instanc
 CREATE INDEX idx_attendance_prisoner_number ON attendance (prisoner_number);
 CREATE INDEX idx_attendance_recorded_time ON attendance (recorded_time);
 
-CREATE TABLE activity_waitlist (
-  activity_waiting_list_id bigserial    NOT NULL CONSTRAINT activity_waiting_list_pk PRIMARY KEY,
+CREATE TABLE activity_waiting (
+  activity_waiting_id bigserial    NOT NULL CONSTRAINT activity_waiting_pk PRIMARY KEY,
   activity_id              integer      REFERENCES activity (activity_id),
   prisoner_number          varchar(7)   NOT NULL,
   priority                 integer      NOT NULL,
@@ -178,9 +178,9 @@ CREATE TABLE activity_waitlist (
   created_by               varchar(100) NOT NULL
 );
 
-CREATE INDEX idx_activity_waitlist_activity_id ON activity_waitlist (activity_id);
-CREATE INDEX idx_activity_waitlist_prisoner_number ON activity_waitlist (prisoner_number);
-CREATE INDEX idx_activity_waitlist_created_time ON activity_waitlist (created_time);
+CREATE INDEX idx_activity_waiting_activity_id ON activity_waiting (activity_id);
+CREATE INDEX idx_activity_waiting_prisoner_number ON activity_waiting (prisoner_number);
+CREATE INDEX idx_activity_waiting_created_time ON activity_waiting (created_time);
 
 CREATE TABLE activity_prisoner (
   activity_prisoner_id bigserial    NOT NULL CONSTRAINT activity_prisoner_pk PRIMARY KEY,
@@ -188,9 +188,9 @@ CREATE TABLE activity_prisoner (
   prisoner_number      varchar(7)   NOT NULL,
   iep_level            varchar(3),
   pay_band             varchar(1),
-  start_date           timestamp    NOT NULL,
-  end_date             timestamp,
-  active               boolean      NOT NULL,
+  start_date           date    NOT NULL,
+  end_date             date,
+  active               boolean      NOT NULL DEFAULT TRUE,
   allocated_time       timestamp    NOT NULL,
   allocated_by         varchar(100) NOT NULL,
   deallocated_time     timestamp,
