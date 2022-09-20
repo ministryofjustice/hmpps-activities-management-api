@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 
 @Repository
-interface ActivityRepository : JpaRepository<Activity, Int>
+interface ActivityRepository : JpaRepository<Activity, Long>
