@@ -87,8 +87,8 @@ CREATE TABLE activity_tier (
 CREATE TABLE activity (
   activity_id          bigserial    NOT NULL CONSTRAINT activity_pk PRIMARY KEY,
   prison_code          varchar(3)   NOT NULL,
-  activity_category_id integer      NOT NULL REFERENCES activity_category (activity_category_id),
-  activity_tier_id     integer      NOT NULL REFERENCES activity_tier (activity_tier_id),
+  activity_category_id bigint       NOT NULL REFERENCES activity_category (activity_category_id),
+  activity_tier_id     bigint       NOT NULL REFERENCES activity_tier (activity_tier_id),
   summary              varchar(50)  NOT NULL,
   description          varchar(300) NOT NULL,
   start_date           date         NOT NULL,
@@ -107,8 +107,8 @@ CREATE INDEX idx_activity_tier_id ON activity (activity_tier_id);
 
 CREATE TABLE activity_eligibility (
   activity_eligibility_id bigserial  NOT NULL CONSTRAINT activity_eligibility_pk PRIMARY KEY,
-  eligibility_rule_id     integer    NOT NULL REFERENCES eligibility_rule (eligibility_rule_id),
-  activity_id             integer    NOT NULL REFERENCES activity (activity_id)
+  eligibility_rule_id     bigint     NOT NULL REFERENCES eligibility_rule (eligibility_rule_id),
+  activity_id             bigint     NOT NULL REFERENCES activity (activity_id)
 );
 
 CREATE INDEX idx_activity_eligibility_rule_id ON activity_eligibility (eligibility_rule_id);
@@ -116,7 +116,7 @@ CREATE INDEX idx_activity_eligibility_activity_id ON activity_eligibility (activ
 
 CREATE TABLE activity_session (
   activity_session_id           bigserial    NOT NULL CONSTRAINT activity_session_pk PRIMARY KEY,
-  activity_id                   integer      NOT NULL REFERENCES activity (activity_id),
+  activity_id                   bigint       NOT NULL REFERENCES activity (activity_id),
   description                   varchar(50)  NOT NULL,
   suspend_until                 date,
   start_time                    timestamp    NOT NULL,
@@ -136,7 +136,7 @@ CREATE INDEX idx_activity_session_internal_location_code ON activity_session (in
 
 CREATE TABLE activity_instance (
   activity_instance_id bigserial  NOT NULL CONSTRAINT activity_instance_pk PRIMARY KEY,
-  activity_session_id  integer    NOT NULL REFERENCES activity_session (activity_session_id),
+  activity_session_id  bigint     NOT NULL REFERENCES activity_session (activity_session_id),
   session_date         date       NOT NULL,
   start_time           timestamp  NOT NULL,
   end_time             timestamp,
@@ -152,9 +152,9 @@ CREATE INDEX idx_activity_instance_end_time ON activity_instance (end_time);
 
 CREATE TABLE attendance (
   attendance_id        bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
-  activity_instance_id integer    NOT NULL REFERENCES activity_instance (activity_instance_id),
+  activity_instance_id bigint     NOT NULL REFERENCES activity_instance (activity_instance_id),
   prisoner_number      varchar(7) NOT NULL,
-  attendance_reason_id integer REFERENCES attendance_reason (attendance_reason_id),
+  attendance_reason_id bigint     REFERENCES attendance_reason (attendance_reason_id),
   comment              varchar(200),
   posted               boolean,
   recorded_time        timestamp,
@@ -170,8 +170,8 @@ CREATE INDEX idx_attendance_prisoner_number ON attendance (prisoner_number);
 CREATE INDEX idx_attendance_recorded_time ON attendance (recorded_time);
 
 CREATE TABLE activity_waiting (
-  activity_waiting_id bigserial    NOT NULL CONSTRAINT activity_waiting_pk PRIMARY KEY,
-  activity_id              integer      REFERENCES activity (activity_id),
+  activity_waiting_id bigserial         NOT NULL CONSTRAINT activity_waiting_pk PRIMARY KEY,
+  activity_id              bigint       REFERENCES activity (activity_id),
   prisoner_number          varchar(7)   NOT NULL,
   priority                 integer      NOT NULL,
   created_time             timestamp    NOT NULL,
@@ -184,7 +184,7 @@ CREATE INDEX idx_activity_waiting_created_time ON activity_waiting (created_time
 
 CREATE TABLE activity_prisoner (
   activity_prisoner_id bigserial    NOT NULL CONSTRAINT activity_prisoner_pk PRIMARY KEY,
-  activity_session_id  integer      NOT NULL REFERENCES activity_session (activity_session_id),
+  activity_session_id  bigint       NOT NULL REFERENCES activity_session (activity_session_id),
   prisoner_number      varchar(7)   NOT NULL,
   iep_level            varchar(3),
   pay_band             varchar(1),
@@ -205,7 +205,7 @@ CREATE INDEX idx_activity_prisoner_end_date ON activity_prisoner (end_date);
 
 CREATE TABLE activity_pay (
   activity_pay_id   bigserial  NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
-  activity_id       integer    NOT NULL REFERENCES activity (activity_id),
+  activity_id       bigint     NOT NULL REFERENCES activity (activity_id),
   iep_basic_rate    integer,
   iep_standard_rate integer,
   iep_enhanced_rate integer,
@@ -217,7 +217,7 @@ CREATE INDEX idx_activity_pay_activity_id ON activity_pay (activity_id);
 
 CREATE TABLE activity_pay_band (
   activity_pay_band_id bigserial  NOT NULL CONSTRAINT activity_pay_band_pk PRIMARY KEY,
-  activity_pay_id      integer    NOT NULL REFERENCES activity_pay (activity_pay_id),
+  activity_pay_id      bigint     NOT NULL REFERENCES activity_pay (activity_pay_id),
   pay_band             varchar(1) NOT NULL,
   rate                 integer,
   piece_rate           integer,
