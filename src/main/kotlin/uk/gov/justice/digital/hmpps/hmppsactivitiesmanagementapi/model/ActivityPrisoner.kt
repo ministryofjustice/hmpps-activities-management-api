@@ -18,15 +18,15 @@ data class ActivityPrisoner(
 
   val endDate: LocalDate? = null,
 
-  val active: Boolean = false,
+  val active: Boolean = true,
 
-  val allocationAt: LocalDateTime? = null,
+  val allocatedTime: LocalDateTime? = null,
 
   val allocatedBy: String? = null,
 
-  val deallocatedAt: LocalDateTime? = null,
+  val deallocatedTime: LocalDateTime? = null,
 
   val deallocatedBy: String? = null,
 
-  val deallocationReason: String? = null,
+  val deallocatedReason: String? = null,
 )

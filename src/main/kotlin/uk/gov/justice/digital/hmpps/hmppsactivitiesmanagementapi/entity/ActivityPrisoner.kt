@@ -17,11 +17,11 @@ data class ActivityPrisoner(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val activityPrisonerId: Long? = null,
 
-  val prisonerNumber: String,
-
   @ManyToOne
   @JoinColumn(name = "activity_session_id", nullable = false)
   val activitySession: ActivitySession,
+
+  val prisonerNumber: String,
 
   var iepLevel: String? = null,
 
@@ -31,15 +31,15 @@ data class ActivityPrisoner(
 
   var endDate: LocalDate? = null,
 
-  var active: Boolean = false,
+  var active: Boolean = true,
 
-  var allocationAt: LocalDateTime? = null,
+  var allocatedTime: LocalDateTime? = null,
 
   var allocatedBy: String? = null,
 
-  var deallocatedAt: LocalDateTime? = null,
+  var deallocatedTime: LocalDateTime? = null,
 
   var deallocatedBy: String? = null,
 
-  var deallocationReason: String? = null,
+  var deallocatedReason: String? = null,
 )

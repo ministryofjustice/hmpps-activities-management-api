@@ -21,8 +21,6 @@ data class Attendance(
   @JoinColumn(name = "activity_instance_id", nullable = false)
   val activityInstance: ActivityInstance,
 
-  val prisonCode: String,
-
   val prisonerNumber: String,
 
   @OneToOne
@@ -33,7 +31,7 @@ data class Attendance(
 
   val posted: Boolean,
 
-  val recordedAt: LocalDateTime,
+  val recordedTime: LocalDateTime,
 
   val recordedBy: String,
 

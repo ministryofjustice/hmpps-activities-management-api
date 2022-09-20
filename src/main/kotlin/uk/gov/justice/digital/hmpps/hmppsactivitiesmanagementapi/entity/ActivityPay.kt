@@ -25,8 +25,6 @@ data class ActivityPay(
   @OneToMany(mappedBy = "activityPay", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   val payBands: MutableList<ActivityPayBand> = mutableListOf(),
 
-  val prisonCode: String,
-
   var iepBasicRate: Int? = null,
 
   var iepStandardRate: Int? = null,

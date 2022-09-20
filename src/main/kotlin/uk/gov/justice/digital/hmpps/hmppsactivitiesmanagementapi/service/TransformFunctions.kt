@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPrisoner as EntityActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySession as EntityActivitySession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting as EntityActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -18,10 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPrisoner as ModelActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySession as ModelActivitySession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 
 /**
- * Transform functions providing a thin layer to transform entities into their API equivalents and vice-versa.
+ * Transform functions providing a thin layer to transform entities into their API model equivalents and vice-versa.
  */
 fun transform(activity: EntityActivity) =
   ModelActivity(
@@ -31,25 +33,31 @@ fun transform(activity: EntityActivity) =
     tier = activity.activityTier.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
     sessions = activity.sessions.toModelSessions(),
+    waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay?.toModelActivityPay(),
     summary = activity.summary,
     description = activity.description,
     startDate = activity.startDate,
     endDate = activity.endDate,
     active = activity.active,
-    createdAt = activity.createdAt,
+    createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
 
 private fun EntityActivityCategory.toModelActivityCategory() = let {
   ModelActivityCategory(
     it.activityCategoryId!!,
-    it.categoryCode,
+    it.code,
     it.description
   )
 }
 
-private fun EntityActivityTier.toModelActivityTier() = let { ModelActivityTier(it.activityTier, it.description) }
+private fun EntityActivityTier.toModelActivityTier() =
+  ModelActivityTier(
+    id = this.activityTierId!!,
+    code = this.code,
+    description = this.description,
+  )
 
 private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   ModelActivityEligibility(
@@ -85,15 +93,24 @@ private fun List<EntityActivitySession>.toModelSessions() = map {
   )
 }
 
+private fun List<EntityActivityWaiting>.toModelWaitingList() = map {
+  ModelActivityWaiting(
+    id = it.activityWaitingId!!,
+    prisonerNumber = it.prisonerNumber,
+    priority = it.priority,
+    createdTime = it.createdTime,
+    createdBy = it.createdBy,
+  )
+}
+
 private fun List<EntityActivityInstance>.toModelActivityInstances() = map {
   ModelActivityInstance(
     id = it.activityInstanceId!!,
     sessionDate = it.sessionDate,
     startTime = it.startTime,
     endTime = it.endTime,
-    internalLocationId = it.internalLocationId,
     cancelled = it.cancelled,
-    cancelledAt = it.cancelledAt,
+    cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy
   )
 }
@@ -107,7 +124,7 @@ private fun List<EntityActivityPrisoner>.toModelActivityPrisoners() = map {
     startDate = it.startDate,
     endDate = it.endDate,
     active = it.active,
-    allocationAt = it.allocationAt,
+    allocatedTime = it.allocatedTime,
     allocatedBy = it.allocatedBy
   )
 }
