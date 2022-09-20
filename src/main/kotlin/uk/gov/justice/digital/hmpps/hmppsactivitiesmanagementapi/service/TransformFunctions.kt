@@ -44,13 +44,12 @@ fun transform(activity: EntityActivity) =
     createdBy = activity.createdBy
   )
 
-private fun EntityActivityCategory.toModelActivityCategory() = let {
+private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
-    it.activityCategoryId!!,
-    it.code,
-    it.description
+    this.activityCategoryId!!,
+    this.code,
+    this.description
   )
-}
 
 private fun EntityActivityTier.toModelActivityTier() =
   ModelActivityTier(

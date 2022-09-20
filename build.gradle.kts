@@ -31,6 +31,7 @@ dependencies {
 
   // Test dependencies
   testImplementation("com.h2database:h2")
+  testImplementation("org.mockito:mockito-inline:4.8.0")
 }
 
 java {
