@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import java.util.Optional
 import javax.persistence.EntityNotFoundException
@@ -25,8 +26,7 @@ class ActivityServiceTest {
   fun `throws entity not found exception for unknown activity ID`() {
     whenever(repository.findById(-1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.getActivityById(-1) }
-      .isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .withFailMessage { "-1" }
   }
 }
