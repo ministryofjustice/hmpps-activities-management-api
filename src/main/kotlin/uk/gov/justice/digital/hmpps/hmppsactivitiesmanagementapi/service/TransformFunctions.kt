@@ -131,5 +131,10 @@ private fun List<EntityActivityPrisoner>.toModelActivityPrisoners() = map {
 private fun EntityActivityPay.toModelActivityPay() =
   ModelActivityPay(
     id = this.activityPayId!!,
-    bands = this.payBands.toModelPayBands()
+    bands = this.payBands.toModelPayBands(),
+    iepBasicRate = this.iepBasicRate,
+    iepStandardRate = this.iepStandardRate,
+    iepEnhancedRate = this.iepEnhancedRate,
+    pieceRate = this.pieceRate,
+    pieceRateItems = this.pieceRateItems
   )

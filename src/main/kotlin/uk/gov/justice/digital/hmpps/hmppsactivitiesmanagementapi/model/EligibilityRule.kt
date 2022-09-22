@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import io.swagger.v3.oas.annotations.media.Schema
+
 // TODO swagger docs
 data class EligibilityRule(
 
+  @Schema(description = "The internal ID for this eligibility rule", example = "123456")
   val id: Long,
 
   val code: String,

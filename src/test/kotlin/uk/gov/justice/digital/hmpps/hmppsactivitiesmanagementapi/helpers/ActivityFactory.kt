@@ -93,7 +93,12 @@ private fun activityWaiting(
 private fun activityPay(activity: Activity) =
   ActivityPay(
     activityPayId = 1,
-    activity = activity
+    activity = activity,
+    iepBasicRate = 10,
+    iepStandardRate = 20,
+    iepEnhancedRate = 30,
+    pieceRate = 40,
+    pieceRateItems = 50
   ).apply {
     payBands.add(activityPayBand(this))
   }

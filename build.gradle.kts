@@ -35,7 +35,9 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.5.0")
 
   // Test dependencies
+  testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("com.h2database:h2")
+  testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("org.mockito:mockito-inline:4.8.0")
 }
 
@@ -48,5 +50,24 @@ tasks {
     kotlinOptions {
       jvmTarget = "18"
     }
+  }
+}
+
+val integrationTest = task<Test>("integrationTest") {
+  description = "Integration tests"
+  group = "verification"
+  shouldRunAfter("test")
+}
+
+tasks.named<Test>("integrationTest") {
+  useJUnitPlatform()
+  filter {
+    includeTestsMatching("*.integration.*")
+  }
+}
+
+tasks.named<Test>("test") {
+  filter {
+    excludeTestsMatching("*.integration.*")
   }
 }
