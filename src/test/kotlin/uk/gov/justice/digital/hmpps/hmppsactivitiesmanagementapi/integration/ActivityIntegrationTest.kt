@@ -20,9 +20,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get maths activity with morning and afternoon sessions`() {
-    val activity = webTestClient.getActivityById(1)!!
-
-    with(activity) {
+    val mathsLevelOneActivity = with(webTestClient.getActivityById(1)!!) {
       assertThat(prisonCode).isEqualTo("PVI")
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
@@ -40,9 +38,10 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(createdBy).isEqualTo("SEED USER")
       assertThat(createdTime).isEqualTo(LocalDate.of(2022, 9, 21).atStartOfDay())
       assertThat(sessions).hasSize(2)
+      this
     }
 
-    val mathsMorningSession = with(activity.session("Maths AM")) {
+    val mathsMorningSession = with(mathsLevelOneActivity.session("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
@@ -67,7 +66,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 9, 0))
     }
 
-    val mathsAfternoonSession = with(activity.session("Maths PM")) {
+    val mathsAfternoonSession = with(mathsLevelOneActivity.session("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
@@ -98,9 +97,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get english activity with morning and afternoon sessions`() {
-    val activity = webTestClient.getActivityById(2)!!
-
-    with(activity) {
+    val englishLevelTwoActivity = with(webTestClient.getActivityById(2)!!) {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2"))
@@ -117,9 +114,10 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(createdBy).isEqualTo("SEED USER")
       assertThat(createdTime).isEqualTo(LocalDate.of(2022, 9, 21).atStartOfDay())
       assertThat(sessions).hasSize(2)
+      this
     }
 
-    val englishMorningSession = with(activity.session("English AM")) {
+    val englishMorningSession = with(englishLevelTwoActivity.session("English AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
@@ -144,7 +142,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
     }
 
-    val englishAfternoonSession = with(activity.session("English PM")) {
+    val englishAfternoonSession = with(englishLevelTwoActivity.session("English PM")) {
       assertThat(description).isEqualTo("English PM")
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
