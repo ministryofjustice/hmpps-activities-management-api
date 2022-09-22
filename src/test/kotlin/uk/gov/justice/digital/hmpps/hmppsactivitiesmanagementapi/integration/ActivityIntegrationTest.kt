@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ActivityIntegrationTest : IntegrationTestBase() {
 
@@ -19,9 +20,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get maths activity with morning and afternoon sessions`() {
-    val result = webTestClient.getActivityById(1)!!
+    val activity = webTestClient.getActivityById(1)!!
 
-    with(result) {
+    with(activity) {
       assertThat(prisonCode).isEqualTo("PVI")
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
@@ -34,22 +35,54 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(sessions).hasSize(2)
     }
 
-    with(result.sessions.select(1)) {
-      assertThat(description).isEqualTo("Maths AM")
+    val mathsMorningSession = with(activity.session("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
-      assertThat(prisoners.select(1).prisonerNumber).isEqualTo("A11111A")
-      assertThat(prisoners.select(2).prisonerNumber).isEqualTo("A22222A")
+      this
     }
 
-    with(result.sessions.select(2)) {
-      assertThat(description).isEqualTo("Maths PM")
+    with(mathsMorningSession.prisoner("A11111A")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 9, 0))
+    }
+
+    with(mathsMorningSession.prisoner("A22222A")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 9, 0))
+    }
+
+    val mathsAfternoonSession = with(activity.session("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
-      assertThat(prisoners.select(3).prisonerNumber).isEqualTo("A11111A")
-      assertThat(prisoners.select(4).prisonerNumber).isEqualTo("A22222A")
+      this
+    }
+
+    with(mathsAfternoonSession.prisoner("A11111A")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 10, 0))
+    }
+
+    with(mathsAfternoonSession.prisoner("A22222A")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 10, 0))
     }
   }
 
@@ -58,9 +91,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get english activity with morning and afternoon sessions`() {
-    val result = webTestClient.getActivityById(2)!!
+    val activity = webTestClient.getActivityById(2)!!
 
-    with(result) {
+    with(activity) {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2"))
@@ -72,22 +105,55 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(sessions).hasSize(2)
     }
 
-    with(result.sessions.select(3)) {
-      assertThat(description).isEqualTo("English AM")
+    val englishMorningSession = with(activity.session("English AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
-      assertThat(prisoners.select(5).prisonerNumber).isEqualTo("B11111B")
-      assertThat(prisoners.select(6).prisonerNumber).isEqualTo("B22222B")
+      this
     }
 
-    with(result.sessions.select(4)) {
+    with(englishMorningSession.prisoner("B11111B")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
+    }
+
+    with(englishMorningSession.prisoner("B22222B")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
+    }
+
+    val englishAfternoonSession = with(activity.session("English PM")) {
       assertThat(description).isEqualTo("English PM")
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(prisoners).hasSize(2)
-      assertThat(prisoners.select(7).prisonerNumber).isEqualTo("B11111B")
-      assertThat(prisoners.select(8).prisonerNumber).isEqualTo("B22222B")
+      this
+    }
+
+    with(englishAfternoonSession.prisoner("B11111B")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MR BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
+    }
+
+    with(englishAfternoonSession.prisoner("B22222B")) {
+      assertThat(iepLevel).isNull()
+      assertThat(payBand).isNull()
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(endDate).isNull()
+      assertThat(allocatedBy).isEqualTo("MRS BLOGS")
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
     }
   }
 
@@ -102,7 +168,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectBody(Activity::class.java)
       .returnResult().responseBody
 
-  private fun List<ActivitySession>.select(id: Long) = first { it.id == id }
+  private fun Activity.session(description: String) = sessions.session(description)
 
-  private fun List<ActivityPrisoner>.select(id: Long) = first { it.id == id }
+  private fun List<ActivitySession>.session(description: String) =
+    firstOrNull() { it.description.uppercase() == description.uppercase() }
+      ?: throw RuntimeException("Activity session $description not found.")
+
+  private fun ActivitySession.prisoner(prisonNumber: String) = prisoners.prisoner(prisonNumber)
+  private fun List<ActivityPrisoner>.prisoner(prisonNumber: String) =
+    firstOrNull() { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
+      ?: throw RuntimeException("Activity prisoner $prisonNumber not found.")
 }
