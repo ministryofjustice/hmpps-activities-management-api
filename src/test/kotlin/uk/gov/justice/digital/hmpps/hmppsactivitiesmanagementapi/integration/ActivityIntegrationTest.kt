@@ -26,7 +26,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
       assertThat(category).isEqualTo(ActivityCategory(1, "C1", "Category 1"))
-      assertThat(tier).isEqualTo(ActivityTier(1, "T1          ", "Tier 1"))
+      assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(active).isTrue
@@ -64,7 +64,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2"))
-      assertThat(tier).isEqualTo(ActivityTier(2, "T2          ", "Tier 2"))
+      assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(active).isTrue
