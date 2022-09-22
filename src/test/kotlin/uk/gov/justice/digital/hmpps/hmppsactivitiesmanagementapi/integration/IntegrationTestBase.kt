@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthH
 @Sql(
   "classpath:test_data/seed-reference-data.sql",
 )
+// TODO need a db clean up script
 abstract class IntegrationTestBase {
 
   @Autowired

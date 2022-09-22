@@ -69,7 +69,12 @@ class TransformFunctionsTest {
             ModelActivityPayBand(
               id = 1
             )
-          )
+          ),
+          iepBasicRate = 10,
+          iepStandardRate = 20,
+          iepEnhancedRate = 30,
+          pieceRate = 40,
+          pieceRateItems = 50
         )
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
