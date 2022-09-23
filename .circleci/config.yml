@@ -16,7 +16,7 @@ jobs:
   validate:
     executor:
       name: hmpps/java
-      tag: "18.0"
+      tag: "17.0"
     steps:
       - checkout
       - restore_cache:
