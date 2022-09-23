@@ -2,6 +2,7 @@ plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.5.1"
   kotlin("plugin.spring") version "1.7.10"
   kotlin("plugin.jpa") version "1.7.10"
+  jacoco
 }
 
 allOpen {
@@ -53,6 +54,10 @@ tasks {
   }
 }
 
+jacoco {
+  toolVersion = "0.8.8"
+}
+
 val integrationTest = task<Test>("integrationTest") {
   description = "Integration tests"
   group = "verification"
@@ -69,5 +74,13 @@ tasks.named<Test>("integrationTest") {
 tasks.named<Test>("test") {
   filter {
     excludeTestsMatching("*.integration.*")
+  }
+  finalizedBy("jacocoTestReport")
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+  reports {
+    xml.required.set(true)
+    html.required.set(true)
   }
 }
