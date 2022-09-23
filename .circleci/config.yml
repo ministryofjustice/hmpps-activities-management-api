@@ -16,7 +16,7 @@ jobs:
   validate:
     executor:
       name: hmpps/java
-      tag: "17.0"
+      tag: "18.0"
     steps:
       - checkout
       - restore_cache:
@@ -24,7 +24,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew --stacktrace check
+          command: ./gradlew --stacktrace -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check
       - codecov/upload:
           file: build/reports/jacoco/test/jacocoTestReport.xml
       - save_cache:
