@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-// TODO swagger docs
 data class ActivityPay(
 
   @Schema(description = "The internal ID for this activity pay", example = "123456")
@@ -19,7 +18,9 @@ data class ActivityPay(
   @Schema(description = "The incentive/earned privilege enhanced rate for this activity pay", example = "1.50")
   val iepEnhancedRate: Int? = null,
 
+// TODO swagger docs
   val pieceRate: Int? = null,
 
+// TODO swagger docs
   val pieceRateItems: Int? = null,
 )

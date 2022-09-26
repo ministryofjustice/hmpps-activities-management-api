@@ -45,6 +45,7 @@ data class Activity(
   @JsonFormat(pattern = "dd/MM/yyyy")
   val endDate: LocalDate? = null,
 
+  @Schema(description = "Flag to indicate if this activity is presently active", example = "true")
   val active: Boolean = true,
 
   @Schema(description = "The date and time when this activity was created", example = "01/09/2022 9:00")
