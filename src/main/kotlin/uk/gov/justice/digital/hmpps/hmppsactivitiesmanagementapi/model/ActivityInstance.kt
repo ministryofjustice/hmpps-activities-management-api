@@ -5,30 +5,31 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@Schema(description = "Describes one instance of a scheduled activity session")
 data class ActivityInstance(
 
-  @Schema(description = "The internal ID for this activity instance", example = "123456")
+  @Schema(description = "The internally-generated ID for this activity instance", example = "123456")
   val id: Long,
 
-  @Schema(description = "The date for this activity instance", example = "30/09/2022")
+  @Schema(description = "The specific date for this activity instance", example = "30/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
   val sessionDate: LocalDate,
 
-  @Schema(description = "The start date and time for this activity instance", example = "30/09/2022 9:00")
+  @Schema(description = "The start time for this activity instance", example = "30/09/2022 9:00")
   @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
   val startTime: LocalDateTime,
 
-  @Schema(description = "The end date and time for this activity instance", example = "30/09/2022 10:00")
+  @Schema(description = "The end time for this activity instance", example = "30/09/2022 10:00")
   @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
   val endTime: LocalDateTime,
 
-  @Schema(description = "Flag to indicate if this activity instance has been cancelled", example = "false")
+  @Schema(description = "Flag to indicate if this activity instance has been cancelled since being scheduled", example = "false")
   val cancelled: Boolean,
 
-  @Schema(description = "Date and time if this activity instance has been cancelled", example = "29/09/2022 11:20")
+  @Schema(description = "Date and time this activity instance was cancelled (or null if not cancelled)", example = "29/09/2022 11:20")
   @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
   val cancelledTime: LocalDateTime? = null,
 
-  @Schema(description = "The person whom cancelled this activity instance", example = "Adam Smith")
+  @Schema(description = "The person who cancelled this activity instance (or null if not cancelled)", example = "Adam Smith")
   val cancelledBy: String? = null,
 )
