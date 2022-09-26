@@ -5,11 +5,14 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Schema(description =
-  "Describes the weekly schedule for an activity. There can be several of these defined for one activity." +
-  "An activity session describes when, during the week, an activity will be run and where." +
-  "e.g. Tuesday PM and Thursday AM - suitable for Houseblock 2 to attend." +
-  "e.g. Monday AM and Thursday PM - suitable for Houseblock 3 to attend."
+@Schema(
+  description =
+  """
+  Describes the weekly schedule for an activity. There can be several of these defined for one activity.
+  An activity session describes when, during the week, an activity will be run and where.
+  e.g. Tuesday PM and Thursday AM - suitable for Houseblock 2 to attend.
+  e.g. Monday AM and Thursday PM - suitable for Houseblock 3 to attend.
+  """
 )
 data class ActivitySession(
 
