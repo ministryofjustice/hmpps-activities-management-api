@@ -49,8 +49,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.prisoner("A11111A")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("BAS")
+      assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -58,8 +58,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.prisoner("A22222A")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("STD")
+      assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -74,8 +74,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.prisoner("A11111A")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("STD")
+      assertThat(payBand).isEqualTo("C")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -83,8 +83,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.prisoner("A22222A")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("ENH")
+      assertThat(payBand).isEqualTo("D")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -125,8 +125,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.prisoner("B11111B")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("ENH")
+      assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -134,8 +134,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.prisoner("B22222B")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("BAS")
+      assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -151,8 +151,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.prisoner("B11111B")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("STD")
+      assertThat(payBand).isEqualTo("C")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -160,8 +160,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.prisoner("B22222B")) {
-      assertThat(iepLevel).isNull() // TODO example of this?
-      assertThat(payBand).isNull() // TODO example of this?
+      assertThat(iepLevel).isEqualTo("STD")
+      assertThat(payBand).isEqualTo("D")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
