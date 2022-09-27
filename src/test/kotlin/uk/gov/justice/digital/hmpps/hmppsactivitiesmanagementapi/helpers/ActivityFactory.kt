@@ -3,13 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,7 +34,7 @@ internal fun activityEntity(
     createdBy = "test"
   ).apply {
     eligibilityRules.add(activityEligibilityRule(this))
-    sessions.add(activitySession(this, timestamp))
+    schedules.add(activitySchedule(this, timestamp))
     waitingList.add(activityWaiting(this, timestamp))
     activityPay = activityPay(this)
   }
@@ -53,26 +54,40 @@ private fun activityEligibilityRule(activity: Activity): ActivityEligibility {
   )
 }
 
-private fun activitySession(
+private fun activitySchedule(
   activity: Activity,
   timestamp: LocalDateTime
 ) =
-  ActivitySession(
-    activitySessionId = 1,
+  ActivitySchedule(
+    activityScheduleId = 1,
     activity = activity,
-    description = "session description",
-    startTime = timestamp,
-    endTime = timestamp,
+    description = "schedule description",
+    startTime = timestamp.toLocalTime(),
+    endTime = timestamp.toLocalTime(),
     capacity = 1,
     daysOfWeek = "0000001"
   ).apply {
     this.instances.add(
-      ActivityInstance(
-        activityInstanceId = 1,
-        activitySession = this,
+      ScheduledInstance(
+        scheduledInstanceId = 1,
+        activitySchedule = this,
         sessionDate = timestamp.toLocalDate(),
-        startTime = timestamp,
-        endTime = timestamp
+        startTime = timestamp.toLocalTime(),
+        endTime = timestamp.toLocalTime()
+      )
+    )
+    this.allocations.add(
+      Allocation(
+        allocationId = 1,
+        activitySchedule = this,
+        prisonerNumber = "A1234AA",
+        iepLevel = "BAS",
+        payBand = "A",
+        startDate = timestamp.toLocalDate(),
+        endDate = null,
+        active = true,
+        allocatedTime = timestamp,
+        allocatedBy = "Mr Blogs",
       )
     )
   }
@@ -81,8 +96,8 @@ private fun activityWaiting(
   activity: Activity,
   timestamp: LocalDateTime
 ) =
-  ActivityWaiting(
-    activityWaitingId = 1,
+  PrisonerWaiting(
+    prisonerWaitingId = 1,
     activity = activity,
     prisonerNumber = "1234567890",
     priority = 1,

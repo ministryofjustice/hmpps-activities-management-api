@@ -38,11 +38,11 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val sessions: MutableList<ActivitySession> = mutableListOf(),
+  val schedules: MutableList<ActivitySchedule> = mutableListOf(),
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val waitingList: MutableList<ActivityWaiting> = mutableListOf(),
+  val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "activity_id")

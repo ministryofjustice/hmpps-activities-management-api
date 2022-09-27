@@ -6,18 +6,18 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Schema(description = "A prisoner who is allocated to an activity")
-data class ActivityPrisoner(
+data class Allocation(
 
-  @Schema(description = "The internally-generated ID for this activity prisoner", example = "123456")
+  @Schema(description = "The internally-generated ID for this allocation", example = "123456")
   val id: Long,
 
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   val prisonerNumber: String,
 
-  @Schema(description = "The incentive/earned privilege (level) for this offender", example = "BAS, STD, ENH")
+  @Schema(description = "The incentive/earned privilege (level) for this offender allocation", example = "BAS, STD, ENH")
   val iepLevel: String? = null,
 
-  @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to tis prisoner", example = "A")
+  @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner", example = "A")
   val payBand: String? = null,
 
   @Schema(description = "The date when the prisoner will start the activity", example = "10/09/2022")
@@ -28,7 +28,7 @@ data class ActivityPrisoner(
   @JsonFormat(pattern = "dd/MM/yyyy")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "Flag to indicate if this activity prisoner is presently active", example = "true")
+  @Schema(description = "Flag to indicate if this allocation is presently active", example = "true")
   val active: Boolean = true,
 
   @Schema(description = "The date and time the prisoner was allocated to the activity", example = "01/09/2022 9:00")

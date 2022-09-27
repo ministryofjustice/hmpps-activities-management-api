@@ -51,7 +51,7 @@ class ActivityRepositoryTest(
       assertThat(createdBy).isEqualTo("me")
       assertThat(eligibilityRules).isEmpty()
       assertThat(waitingList).isEmpty()
-      assertThat(sessions).isEmpty()
+      assertThat(schedules).isEmpty()
       assertThat(activityPay).isNull()
       assertThat(active).isTrue
       assertThat(endDate).isNull()

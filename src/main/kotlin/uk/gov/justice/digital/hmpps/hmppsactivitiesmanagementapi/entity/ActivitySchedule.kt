@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -16,31 +16,31 @@ import javax.persistence.OneToMany
 import javax.persistence.Table
 
 @Entity
-@Table(name = "activity_session")
-data class ActivitySession(
+@Table(name = "activity_schedule")
+data class ActivitySchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activitySessionId: Long? = null,
+  val activityScheduleId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  @OneToMany(mappedBy = "activitySession", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val instances: MutableList<ActivityInstance> = mutableListOf(),
+  val instances: MutableList<ScheduledInstance> = mutableListOf(),
 
-  @OneToMany(mappedBy = "activitySession", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val prisoners: MutableList<ActivityPrisoner> = mutableListOf(),
+  val allocations: MutableList<Allocation> = mutableListOf(),
 
   val description: String,
 
   var suspendUntil: LocalDate? = null,
 
-  val startTime: LocalDateTime,
+  val startTime: LocalTime,
 
-  val endTime: LocalDateTime,
+  val endTime: LocalTime,
 
   var internalLocationId: Int? = null,
 

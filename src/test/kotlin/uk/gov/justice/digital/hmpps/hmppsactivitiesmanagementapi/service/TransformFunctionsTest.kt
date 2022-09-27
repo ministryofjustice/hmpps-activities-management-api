@@ -3,16 +3,17 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityInstance as ModelActivityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySession as ModelActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelActivityInstance
 
 class TransformFunctionsTest {
 
@@ -33,22 +34,34 @@ class TransformFunctionsTest {
           ModelEligibilityRule(1, code = "code", description = "rule description")
         )
       )
-      assertThat(sessions).containsExactly(
-        ModelActivitySession(
+      assertThat(schedules).containsExactly(
+        ModelActivitySchedule(
           id = 1,
           instances = listOf(
             ModelActivityInstance(
               id = 1,
-              sessionDate = timestamp.toLocalDate(),
-              startTime = timestamp,
-              endTime = timestamp,
+              date = timestamp.toLocalDate(),
+              startTime = timestamp.toLocalTime(),
+              endTime = timestamp.toLocalTime(),
               cancelled = false
             )
           ),
-          prisoners = emptyList(), // TODO specify prisoners
-          description = "session description",
-          startTime = timestamp,
-          endTime = timestamp,
+          allocations = listOf(
+            Allocation(
+              id = 1,
+              prisonerNumber = "A1234AA",
+              iepLevel = "BAS",
+              payBand = "A",
+              startDate = timestamp.toLocalDate(),
+              endDate = null,
+              active = true,
+              allocatedTime = timestamp,
+              allocatedBy = "Mr Blogs",
+            )
+          ),
+          description = "schedule description",
+          startTime = timestamp.toLocalTime(),
+          endTime = timestamp.toLocalTime(),
           capacity = 1,
           daysOfWeek = "0000001"
         )
