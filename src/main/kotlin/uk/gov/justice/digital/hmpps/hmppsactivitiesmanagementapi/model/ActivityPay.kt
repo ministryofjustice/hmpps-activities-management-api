@@ -11,13 +11,13 @@ data class ActivityPay(
   @Schema(description = "A list of pay bands and rates which apply to this activity pay. Can be empty if pay bands do not apply.")
   val bands: List<ActivityPayBand> = emptyList(),
 
-  @Schema(description = "The incentive/earned privilege basic rate per schedule for this activity", example = "100")
+  @Schema(description = "The incentive/earned privilege basic rate per session for this activity", example = "100")
   val iepBasicRate: Int? = null,
 
-  @Schema(description = "The incentive/earned privilege standard rate per schedule for this activity", example = "125")
+  @Schema(description = "The incentive/earned privilege standard rate per session for this activity", example = "125")
   val iepStandardRate: Int? = null,
 
-  @Schema(description = "The incentive/earned privilege enhanced rate per schedule for this activity", example = "150")
+  @Schema(description = "The incentive/earned privilege enhanced rate per session for this activity", example = "150")
   val iepEnhancedRate: Int? = null,
 
   @Schema(description = "Where payment is related to produced amounts of a product, this indicates the payment rate per pieceRateItems produced", example = "150")
