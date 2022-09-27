@@ -62,8 +62,8 @@ private fun activitySchedule(
     activityScheduleId = 1,
     activity = activity,
     description = "schedule description",
-    startTime = timestamp,
-    endTime = timestamp,
+    startTime = timestamp.toLocalTime(),
+    endTime = timestamp.toLocalTime(),
     capacity = 1,
     daysOfWeek = "0000001"
   ).apply {
@@ -72,8 +72,8 @@ private fun activitySchedule(
         scheduledInstanceId = 1,
         activitySchedule = this,
         sessionDate = timestamp.toLocalDate(),
-        startTime = timestamp,
-        endTime = timestamp
+        startTime = timestamp.toLocalTime(),
+        endTime = timestamp.toLocalTime()
       )
     )
     this.allocations.add(

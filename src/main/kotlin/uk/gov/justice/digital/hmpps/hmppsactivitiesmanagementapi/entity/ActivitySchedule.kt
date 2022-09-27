@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -38,9 +38,9 @@ data class ActivitySchedule(
 
   var suspendUntil: LocalDate? = null,
 
-  val startTime: LocalDateTime,
+  val startTime: LocalTime,
 
-  val endTime: LocalDateTime,
+  val endTime: LocalTime,
 
   var internalLocationId: Int? = null,
 

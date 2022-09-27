@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -23,9 +24,9 @@ data class ScheduledInstance(
 
   val sessionDate: LocalDate,
 
-  val startTime: LocalDateTime,
+  val startTime: LocalTime,
 
-  val endTime: LocalDateTime,
+  val endTime: LocalTime,
 
   var cancelled: Boolean = false,
 
