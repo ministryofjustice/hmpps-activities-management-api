@@ -28,7 +28,7 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val instances: MutableList<ActivityInstance> = mutableListOf(),
+  val instances: MutableList<ScheduledInstance> = mutableListOf(),
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

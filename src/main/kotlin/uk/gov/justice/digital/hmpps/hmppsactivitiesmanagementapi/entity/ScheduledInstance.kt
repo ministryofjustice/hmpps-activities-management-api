@@ -11,11 +11,11 @@ import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
-@Table(name = "activity_instance")
-data class ActivityInstance(
+@Table(name = "scheduled_instance")
+data class ScheduledInstance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityInstanceId: Long? = null,
+  val scheduledInstanceId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)

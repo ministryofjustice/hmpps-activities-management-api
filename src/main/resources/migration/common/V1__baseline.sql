@@ -134,38 +134,38 @@ CREATE INDEX idx_activity_schedule_end_time ON activity_schedule (end_time);
 CREATE INDEX idx_activity_schedule_internal_location_id ON activity_schedule (internal_location_id);
 CREATE INDEX idx_activity_schedule_internal_location_code ON activity_schedule (internal_location_code);
 
-CREATE TABLE activity_instance (
-  activity_instance_id bigserial NOT NULL CONSTRAINT activity_instance_pk PRIMARY KEY,
-  activity_schedule_id bigint    NOT NULL REFERENCES activity_schedule (activity_schedule_id),
-  session_date         date      NOT NULL,
-  start_time           timestamp NOT NULL,
-  end_time             timestamp,
-  cancelled            boolean   NOT NULL DEFAULT false,
-  cancelled_time       timestamp,
-  cancelled_by         varchar(100)
+CREATE TABLE scheduled_instance (
+  scheduled_instance_id bigserial NOT NULL CONSTRAINT scheduled_instance_pk PRIMARY KEY,
+  activity_schedule_id  bigint    NOT NULL REFERENCES activity_schedule (activity_schedule_id),
+  session_date          date      NOT NULL,
+  start_time            timestamp NOT NULL,
+  end_time              timestamp,
+  cancelled             boolean   NOT NULL DEFAULT false,
+  cancelled_time        timestamp,
+  cancelled_by          varchar(100)
 );
 
-CREATE INDEX idx_activity_instance_schedule_id ON activity_instance (activity_schedule_id);
-CREATE INDEX idx_activity_instance_session_date ON activity_instance (session_date);
-CREATE INDEX idx_activity_instance_start_time ON activity_instance (start_time);
-CREATE INDEX idx_activity_instance_end_time ON activity_instance (end_time);
+CREATE INDEX idx_scheduled_instance_schedule_id ON scheduled_instance (activity_schedule_id);
+CREATE INDEX idx_scheduled_instance_session_date ON scheduled_instance (session_date);
+CREATE INDEX idx_scheduled_instance_start_time ON scheduled_instance (start_time);
+CREATE INDEX idx_scheduled_instance_end_time ON scheduled_instance (end_time);
 
 CREATE TABLE attendance (
-  attendance_id        bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
-  activity_instance_id bigint     NOT NULL REFERENCES activity_instance (activity_instance_id),
-  prisoner_number      varchar(7) NOT NULL,
-  attendance_reason_id bigint REFERENCES attendance_reason (attendance_reason_id),
-  comment              varchar(200),
-  posted               boolean,
-  recorded_time        timestamp,
-  recorded_by          varchar(100),
-  status               varchar(20), -- WAIT, CANC, COMP ?
-  pay_amount           integer,
-  bonus_amount         integer,
-  pieces               integer
+  attendance_id         bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
+  scheduled_instance_id bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
+  prisoner_number       varchar(7) NOT NULL,
+  attendance_reason_id  bigint REFERENCES attendance_reason (attendance_reason_id),
+  comment               varchar(200),
+  posted                boolean,
+  recorded_time         timestamp,
+  recorded_by           varchar(100),
+  status                varchar(20), -- WAIT, CANC, COMP ?
+  pay_amount            integer,
+  bonus_amount          integer,
+  pieces                integer
 );
 
-CREATE INDEX idx_attendance_activity_instance_id ON attendance (activity_instance_id);
+CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_instance_id);
 CREATE INDEX idx_attendance_prisoner_number ON attendance (prisoner_number);
 CREATE INDEX idx_attendance_recorded_time ON attendance (recorded_time);
 

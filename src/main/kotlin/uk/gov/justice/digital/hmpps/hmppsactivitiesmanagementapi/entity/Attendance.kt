@@ -18,8 +18,8 @@ data class Attendance(
   val attendanceId: Long? = null,
 
   @ManyToOne
-  @JoinColumn(name = "activity_instance_id", nullable = false)
-  val activityInstance: ActivityInstance,
+  @JoinColumn(name = "scheduled_instance_id", nullable = false)
+  val scheduledInstance: ScheduledInstance,
 
   val prisonerNumber: String,
 

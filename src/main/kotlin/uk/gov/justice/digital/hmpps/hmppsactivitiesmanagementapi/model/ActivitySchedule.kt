@@ -20,7 +20,7 @@ data class ActivitySchedule(
   val id: Long,
 
   @Schema(description = "The planned instances associated with this activity schedule")
-  val instances: List<ActivityInstance> = emptyList(),
+  val instances: List<ScheduledInstance> = emptyList(),
 
   @Schema(description = "The list of prisoners who are allocated to this schedule, at this time and location")
   val prisoners: List<ActivityPrisoner> = emptyList(),
