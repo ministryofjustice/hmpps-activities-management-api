@@ -5,20 +5,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand as EntityActivityPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPrisoner as EntityActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting as EntityActivityWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPrisoner as ModelActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 
@@ -79,7 +79,7 @@ private fun List<EntityActivitySchedule>.toModelSchedules() = map {
   ModelActivitySchedule(
     id = it.activityScheduleId!!,
     instances = it.instances.toModelScheduledInstances(),
-    prisoners = it.prisoners.toModelActivityPrisoners(),
+    prisoners = it.prisoners.toModelAllocations(),
     description = it.description,
     suspendUntil = it.suspendUntil,
     startTime = it.startTime.toLocalTime(),
@@ -114,9 +114,9 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
   )
 }
 
-private fun List<EntityActivityPrisoner>.toModelActivityPrisoners() = map {
-  ModelActivityPrisoner(
-    id = it.activityPrisonerId!!,
+private fun List<EntityAllocation>.toModelAllocations() = map {
+  ModelAllocation(
+    id = it.allocationId!!,
     prisonerNumber = it.prisonerNumber,
     iepLevel = it.iepLevel,
     payBand = it.payBand,

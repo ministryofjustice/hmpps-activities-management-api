@@ -182,8 +182,8 @@ CREATE INDEX idx_activity_waiting_activity_id ON activity_waiting (activity_id);
 CREATE INDEX idx_activity_waiting_prisoner_number ON activity_waiting (prisoner_number);
 CREATE INDEX idx_activity_waiting_created_time ON activity_waiting (created_time);
 
-CREATE TABLE activity_prisoner (
-  activity_prisoner_id bigserial    NOT NULL CONSTRAINT activity_prisoner_pk PRIMARY KEY,
+CREATE TABLE allocation (
+  allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,
   activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
   iep_level            varchar(3),
@@ -198,10 +198,10 @@ CREATE TABLE activity_prisoner (
   deallocated_reason   varchar(100)
 );
 
-CREATE INDEX idx_activity_prisoner_activity_schedule_id ON activity_prisoner (activity_schedule_id);
-CREATE INDEX idx_activity_prisoner_prisoner_number ON activity_prisoner (prisoner_number);
-CREATE INDEX idx_activity_prisoner_start_date ON activity_prisoner (start_date);
-CREATE INDEX idx_activity_prisoner_end_date ON activity_prisoner (end_date);
+CREATE INDEX idx_allocation_activity_schedule_id ON allocation (activity_schedule_id);
+CREATE INDEX idx_allocation_prisoner_number ON allocation (prisoner_number);
+CREATE INDEX idx_allocation_start_date ON allocation (start_date);
+CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 
 CREATE TABLE activity_pay (
   activity_pay_id   bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,

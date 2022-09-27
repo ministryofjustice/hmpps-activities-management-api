@@ -7,9 +7,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -187,7 +187,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ?: throw RuntimeException("Activity schedule $description not found.")
 
   private fun ActivitySchedule.prisoner(prisonNumber: String) = prisoners.prisoner(prisonNumber)
-  private fun List<ActivityPrisoner>.prisoner(prisonNumber: String) =
+  private fun List<Allocation>.prisoner(prisonNumber: String) =
     firstOrNull() { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
-      ?: throw RuntimeException("Activity prisoner $prisonNumber not found.")
+      ?: throw RuntimeException("Allocated $prisonNumber not found.")
 }
