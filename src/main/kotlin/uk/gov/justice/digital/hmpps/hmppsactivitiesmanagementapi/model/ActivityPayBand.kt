@@ -11,7 +11,7 @@ data class ActivityPayBand(
   @Schema(description = "The pay band code - usually A-F - to differentiate different pay rates", example = "A")
   val payBand: String? = null,
 
-  @Schema(description = "The rate to be paid for one occurrence of this activity", example = "220")
+  @Schema(description = "The rate to be paid for one schedule of this activity", example = "220")
   val rate: Int? = null,
 
   @Schema(description = "Where payment is related to produced amounts of a product, this indicates the payment rate per pieceRateItems produced", example = "150")

@@ -169,8 +169,8 @@ CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_insta
 CREATE INDEX idx_attendance_prisoner_number ON attendance (prisoner_number);
 CREATE INDEX idx_attendance_recorded_time ON attendance (recorded_time);
 
-CREATE TABLE activity_waiting (
-  activity_waiting_id bigserial    NOT NULL CONSTRAINT activity_waiting_pk PRIMARY KEY,
+CREATE TABLE prisoner_waiting (
+  prisoner_waiting_id bigserial    NOT NULL CONSTRAINT prisoner_waiting_pk PRIMARY KEY,
   activity_id         bigint REFERENCES activity (activity_id),
   prisoner_number     varchar(7)   NOT NULL,
   priority            integer      NOT NULL,
@@ -178,9 +178,9 @@ CREATE TABLE activity_waiting (
   created_by          varchar(100) NOT NULL
 );
 
-CREATE INDEX idx_activity_waiting_activity_id ON activity_waiting (activity_id);
-CREATE INDEX idx_activity_waiting_prisoner_number ON activity_waiting (prisoner_number);
-CREATE INDEX idx_activity_waiting_created_time ON activity_waiting (created_time);
+CREATE INDEX idx_prisoner_waiting_activity_id ON prisoner_waiting (activity_id);
+CREATE INDEX idx_prisoner_waiting_prisoner_number ON prisoner_waiting (prisoner_number);
+CREATE INDEX idx_prisoner_waiting_created_time ON prisoner_waiting (created_time);
 
 CREATE TABLE allocation (
   allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,

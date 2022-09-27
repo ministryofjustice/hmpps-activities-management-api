@@ -11,8 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelActivityInstance
 
 class TransformFunctionsTest {
@@ -46,7 +46,7 @@ class TransformFunctionsTest {
               cancelled = false
             )
           ),
-          prisoners = listOf(
+          allocations = listOf(
             Allocation(
               id = 1,
               prisonerNumber = "A1234AA",

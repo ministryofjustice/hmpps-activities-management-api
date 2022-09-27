@@ -44,7 +44,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val mathsMorning = with(mathsLevelOneActivity.schedule("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
-      assertThat(prisoners).hasSize(2)
+      assertThat(allocations).hasSize(2)
       this
     }
 
@@ -69,7 +69,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
-      assertThat(prisoners).hasSize(2)
+      assertThat(allocations).hasSize(2)
       this
     }
 
@@ -120,7 +120,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val englishMorning = with(englishLevelTwoActivity.schedule("English AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
-      assertThat(prisoners).hasSize(2)
+      assertThat(allocations).hasSize(2)
       this
     }
 
@@ -146,7 +146,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(description).isEqualTo("English PM")
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
-      assertThat(prisoners).hasSize(2)
+      assertThat(allocations).hasSize(2)
       this
     }
 
@@ -186,7 +186,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     firstOrNull() { it.description.uppercase() == description.uppercase() }
       ?: throw RuntimeException("Activity schedule $description not found.")
 
-  private fun ActivitySchedule.prisoner(prisonNumber: String) = prisoners.prisoner(prisonNumber)
+  private fun ActivitySchedule.prisoner(prisonNumber: String) = allocations.prisoner(prisonNumber)
   private fun List<Allocation>.prisoner(prisonNumber: String) =
     firstOrNull() { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
       ?: throw RuntimeException("Allocated $prisonNumber not found.")

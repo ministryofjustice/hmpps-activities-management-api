@@ -32,7 +32,7 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val prisoners: MutableList<Allocation> = mutableListOf(),
+  val allocations: MutableList<Allocation> = mutableListOf(),
 
   val description: String,
 

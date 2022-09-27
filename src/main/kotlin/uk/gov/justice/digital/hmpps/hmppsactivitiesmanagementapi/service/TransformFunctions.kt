@@ -7,8 +7,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand as EntityActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting as EntityActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting as EntityPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
@@ -17,9 +17,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 
 /**
@@ -79,7 +79,7 @@ private fun List<EntityActivitySchedule>.toModelSchedules() = map {
   ModelActivitySchedule(
     id = it.activityScheduleId!!,
     instances = it.instances.toModelScheduledInstances(),
-    prisoners = it.prisoners.toModelAllocations(),
+    allocations = it.allocations.toModelAllocations(),
     description = it.description,
     suspendUntil = it.suspendUntil,
     startTime = it.startTime.toLocalTime(),
@@ -92,9 +92,9 @@ private fun List<EntityActivitySchedule>.toModelSchedules() = map {
   )
 }
 
-private fun List<EntityActivityWaiting>.toModelWaitingList() = map {
-  ModelActivityWaiting(
-    id = it.activityWaitingId!!,
+private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
+  ModelPrisonerWaiting(
+    id = it.prisonerWaitingId!!,
     prisonerNumber = it.prisonerNumber,
     priority = it.priority,
     createdTime = it.createdTime,

@@ -10,11 +10,11 @@ import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
-@Table(name = "activity_waiting")
-data class ActivityWaiting(
+@Table(name = "prisoner_waiting")
+data class PrisonerWaiting(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityWaitingId: Long? = null,
+  val prisonerWaitingId: Long? = null,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

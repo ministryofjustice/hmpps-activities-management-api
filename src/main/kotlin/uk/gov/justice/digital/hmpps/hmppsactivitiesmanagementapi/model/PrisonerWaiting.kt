@@ -5,9 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "Describes a person who is on a waiting list for an activity")
-data class ActivityWaiting(
+data class PrisonerWaiting(
 
-  @Schema(description = "The internally-generated ID for this data", example = "123456")
+  @Schema(description = "The internally-generated ID for this prisoner waiting", example = "123456")
   val id: Long,
 
   @Schema(description = "The prisoner number (NomisId) of the person on the waiting list", example = "A1234AA")

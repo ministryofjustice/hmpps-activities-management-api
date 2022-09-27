@@ -7,9 +7,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.transform
 import java.time.LocalDate
@@ -76,7 +76,7 @@ private fun activitySchedule(
         endTime = timestamp
       )
     )
-    this.prisoners.add(
+    this.allocations.add(
       Allocation(
         allocationId = 1,
         activitySchedule = this,
@@ -96,8 +96,8 @@ private fun activityWaiting(
   activity: Activity,
   timestamp: LocalDateTime
 ) =
-  ActivityWaiting(
-    activityWaitingId = 1,
+  PrisonerWaiting(
+    prisonerWaitingId = 1,
     activity = activity,
     prisonerNumber = "1234567890",
     priority = 1,
