@@ -18,8 +18,8 @@ data class ActivityPrisoner(
   val activityPrisonerId: Long? = null,
 
   @ManyToOne
-  @JoinColumn(name = "activity_session_id", nullable = false)
-  val activitySession: ActivitySession,
+  @JoinColumn(name = "activity_schedule_id", nullable = false)
+  val activitySchedule: ActivitySchedule,
 
   val prisonerNumber: String,
 

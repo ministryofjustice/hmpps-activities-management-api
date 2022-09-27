@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityInstance as ModelActivityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySession as ModelActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
@@ -34,13 +34,13 @@ class TransformFunctionsTest {
           ModelEligibilityRule(1, code = "code", description = "rule description")
         )
       )
-      assertThat(sessions).containsExactly(
-        ModelActivitySession(
+      assertThat(schedules).containsExactly(
+        ModelActivitySchedule(
           id = 1,
           instances = listOf(
             ModelActivityInstance(
               id = 1,
-              sessionDate = timestamp.toLocalDate(),
+              date = timestamp.toLocalDate(),
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime(),
               cancelled = false
@@ -59,7 +59,7 @@ class TransformFunctionsTest {
               allocatedBy = "Mr Blogs",
             )
           ),
-          description = "session description",
+          description = "schedule description",
           startTime = timestamp.toLocalTime(),
           endTime = timestamp.toLocalTime(),
           capacity = 1,

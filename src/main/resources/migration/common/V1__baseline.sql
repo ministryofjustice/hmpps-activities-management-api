@@ -60,8 +60,8 @@ CREATE TABLE daily_statistics (
   long_term_sick              integer,
   short_term_sick             integer,
   activities_with_allocations integer,
-  sessions_cancelled          integer,
-  sessions_run_today          integer,
+  activities_cancelled        integer,
+  activities_run_today        integer,
   attendance_expected         integer,
   attendance_received         integer,
   people_in_work              integer,
@@ -114,8 +114,8 @@ CREATE TABLE activity_eligibility (
 CREATE INDEX idx_activity_eligibility_rule_id ON activity_eligibility (eligibility_rule_id);
 CREATE INDEX idx_activity_eligibility_activity_id ON activity_eligibility (activity_id);
 
-CREATE TABLE activity_session (
-  activity_session_id           bigserial    NOT NULL CONSTRAINT activity_session_pk PRIMARY KEY,
+CREATE TABLE activity_schedule (
+  activity_schedule_id          bigserial    NOT NULL CONSTRAINT activity_schedule_id PRIMARY KEY,
   activity_id                   bigint       NOT NULL REFERENCES activity (activity_id),
   description                   varchar(50)  NOT NULL,
   suspend_until                 date,
@@ -128,15 +128,15 @@ CREATE TABLE activity_session (
   days_of_week                  character(7) NOT NULL
 );
 
-CREATE INDEX idx_activity_session_activity_id ON activity_session (activity_id);
-CREATE INDEX idx_activity_session_start_time ON activity_session (start_time);
-CREATE INDEX idx_activity_session_end_time ON activity_session (end_time);
-CREATE INDEX idx_activity_session_internal_location_id ON activity_session (internal_location_id);
-CREATE INDEX idx_activity_session_internal_location_code ON activity_session (internal_location_code);
+CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);
+CREATE INDEX idx_activity_schedule_start_time ON activity_schedule (start_time);
+CREATE INDEX idx_activity_schedule_end_time ON activity_schedule (end_time);
+CREATE INDEX idx_activity_schedule_internal_location_id ON activity_schedule (internal_location_id);
+CREATE INDEX idx_activity_schedule_internal_location_code ON activity_schedule (internal_location_code);
 
 CREATE TABLE activity_instance (
   activity_instance_id bigserial NOT NULL CONSTRAINT activity_instance_pk PRIMARY KEY,
-  activity_session_id  bigint    NOT NULL REFERENCES activity_session (activity_session_id),
+  activity_schedule_id bigint    NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   session_date         date      NOT NULL,
   start_time           timestamp NOT NULL,
   end_time             timestamp,
@@ -145,7 +145,7 @@ CREATE TABLE activity_instance (
   cancelled_by         varchar(100)
 );
 
-CREATE INDEX idx_activity_instance_session_id ON activity_instance (activity_session_id);
+CREATE INDEX idx_activity_instance_schedule_id ON activity_instance (activity_schedule_id);
 CREATE INDEX idx_activity_instance_session_date ON activity_instance (session_date);
 CREATE INDEX idx_activity_instance_start_time ON activity_instance (start_time);
 CREATE INDEX idx_activity_instance_end_time ON activity_instance (end_time);
@@ -184,7 +184,7 @@ CREATE INDEX idx_activity_waiting_created_time ON activity_waiting (created_time
 
 CREATE TABLE activity_prisoner (
   activity_prisoner_id bigserial    NOT NULL CONSTRAINT activity_prisoner_pk PRIMARY KEY,
-  activity_session_id  bigint       NOT NULL REFERENCES activity_session (activity_session_id),
+  activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
   iep_level            varchar(3),
   pay_band             varchar(1),
@@ -198,7 +198,7 @@ CREATE TABLE activity_prisoner (
   deallocated_reason   varchar(100)
 );
 
-CREATE INDEX idx_activity_prisoner_activity_session_id ON activity_prisoner (activity_session_id);
+CREATE INDEX idx_activity_prisoner_activity_schedule_id ON activity_prisoner (activity_schedule_id);
 CREATE INDEX idx_activity_prisoner_prisoner_number ON activity_prisoner (prisoner_number);
 CREATE INDEX idx_activity_prisoner_start_date ON activity_prisoner (start_date);
 CREATE INDEX idx_activity_prisoner_end_date ON activity_prisoner (end_date);

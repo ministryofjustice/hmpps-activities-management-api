@@ -6,7 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-@Schema(description = "Describes one instance of a scheduled activity session")
+@Schema(description = "Describes one instance of an activity schedule")
 data class ActivityInstance(
 
   @Schema(description = "The internally-generated ID for this activity instance", example = "123456")
@@ -14,7 +14,7 @@ data class ActivityInstance(
 
   @Schema(description = "The specific date for this activity instance", example = "30/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
-  val sessionDate: LocalDate,
+  val date: LocalDate,
 
   @Schema(description = "The start time for this activity instance", example = "9:00")
   @JsonFormat(pattern = "HH:mm")

@@ -29,16 +29,16 @@ data class Activity(
   @Schema(description = "A list of eligibility rules which apply to this activity. These can be positive (include) and negative (exclude)", example = "[FEMALE_ONLY,AGED_18-25]")
   val eligibilityRules: List<ActivityEligibility> = emptyList(),
 
-  @Schema(description = "A list of session schedules for this activity. These contain the time slots / recurrence settings for instances of this activity.")
-  val sessions: List<ActivitySession> = emptyList(),
+  @Schema(description = "A list of schedules for this activity. These contain the time slots / recurrence settings for instances of this activity.")
+  val schedules: List<ActivitySchedule> = emptyList(),
 
-  @Schema(description = "A list of prisoners who are waiting for allocation to this activity. This list is held against the activity, though allocation is against particular sessions of the activity")
+  @Schema(description = "A list of prisoners who are waiting for allocation to this activity. This list is held against the activity, though allocation is against particular schedule of the activity")
   val waitingList: List<ActivityWaiting> = emptyList(),
 
-  @Schema(description = "The details of the pay rates and pay bands that apply to all scheduled sessions of this activity")
+  @Schema(description = "The details of the pay rates and pay bands that apply to all of the schedules of this activity")
   val pay: ActivityPay? = null,
 
-  @Schema(description = "The date on which this activity will start. From this date, any session schedules will be created as real, planned instances", example = "21/09/2022")
+  @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
   val startDate: LocalDate,
 

@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPrisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
@@ -34,7 +34,7 @@ internal fun activityEntity(
     createdBy = "test"
   ).apply {
     eligibilityRules.add(activityEligibilityRule(this))
-    sessions.add(activitySession(this, timestamp))
+    schedules.add(activitySchedule(this, timestamp))
     waitingList.add(activityWaiting(this, timestamp))
     activityPay = activityPay(this)
   }
@@ -54,14 +54,14 @@ private fun activityEligibilityRule(activity: Activity): ActivityEligibility {
   )
 }
 
-private fun activitySession(
+private fun activitySchedule(
   activity: Activity,
   timestamp: LocalDateTime
 ) =
-  ActivitySession(
-    activitySessionId = 1,
+  ActivitySchedule(
+    activityScheduleId = 1,
     activity = activity,
-    description = "session description",
+    description = "schedule description",
     startTime = timestamp,
     endTime = timestamp,
     capacity = 1,
@@ -70,7 +70,7 @@ private fun activitySession(
     this.instances.add(
       ActivityInstance(
         activityInstanceId = 1,
-        activitySession = this,
+        activitySchedule = this,
         sessionDate = timestamp.toLocalDate(),
         startTime = timestamp,
         endTime = timestamp
@@ -79,7 +79,7 @@ private fun activitySession(
     this.prisoners.add(
       ActivityPrisoner(
         activityPrisonerId = 1,
-        activitySession = this,
+        activitySchedule = this,
         prisonerNumber = "A1234AA",
         iepLevel = "BAS",
         payBand = "A",

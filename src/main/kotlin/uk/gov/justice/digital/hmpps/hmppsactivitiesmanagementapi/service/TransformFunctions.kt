@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand as EntityActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPrisoner as EntityActivityPrisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySession as EntityActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting as EntityActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPrisoner as ModelActivityPrisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySession as ModelActivitySession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
@@ -32,7 +32,7 @@ fun transform(activity: EntityActivity) =
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
-    sessions = activity.sessions.toModelSessions(),
+    schedules = activity.schedules.toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay?.toModelActivityPay(),
     summary = activity.summary,
@@ -75,9 +75,9 @@ private fun List<EntityActivityPayBand>.toModelPayBands() = map {
   )
 }
 
-private fun List<EntityActivitySession>.toModelSessions() = map {
-  ModelActivitySession(
-    id = it.activitySessionId!!,
+private fun List<EntityActivitySchedule>.toModelSchedules() = map {
+  ModelActivitySchedule(
+    id = it.activityScheduleId!!,
     instances = it.instances.toModelActivityInstances(),
     prisoners = it.prisoners.toModelActivityPrisoners(),
     description = it.description,
@@ -105,7 +105,7 @@ private fun List<EntityActivityWaiting>.toModelWaitingList() = map {
 private fun List<EntityActivityInstance>.toModelActivityInstances() = map {
   ModelActivityInstance(
     id = it.activityInstanceId!!,
-    sessionDate = it.sessionDate,
+    date = it.sessionDate,
     startTime = it.startTime.toLocalTime(),
     endTime = it.endTime.toLocalTime(),
     cancelled = it.cancelled,
