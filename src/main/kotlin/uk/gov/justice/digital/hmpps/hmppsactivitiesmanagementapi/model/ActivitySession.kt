@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Schema(
   description =
@@ -33,14 +33,12 @@ data class ActivitySession(
   val suspendUntil: LocalDate? = null,
 
   @Schema(description = "The time that any instances of this session (when scheduled) will start", example = "9:00")
-  // TODO: Make this just a time (not a specific date)
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-  val startTime: LocalDateTime,
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
 
   @Schema(description = "The time that any instances of this session (when scheduled) will finish", example = "11:30")
-  // TODO: Make this just a time (not a specific date)
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-  val endTime: LocalDateTime,
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime,
 
   @Schema(description = "The NOMIS internal location id for this session", example = "98877667")
   val internalLocationId: Int? = null,

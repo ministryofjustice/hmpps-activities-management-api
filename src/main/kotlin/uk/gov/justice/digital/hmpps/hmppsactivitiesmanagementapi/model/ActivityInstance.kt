@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Schema(description = "Describes one instance of a scheduled activity session")
 data class ActivityInstance(
@@ -15,13 +16,13 @@ data class ActivityInstance(
   @JsonFormat(pattern = "dd/MM/yyyy")
   val sessionDate: LocalDate,
 
-  @Schema(description = "The start time for this activity instance", example = "30/09/2022 9:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-  val startTime: LocalDateTime,
+  @Schema(description = "The start time for this activity instance", example = "9:00")
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
 
-  @Schema(description = "The end time for this activity instance", example = "30/09/2022 10:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-  val endTime: LocalDateTime,
+  @Schema(description = "The end time for this activity instance", example = "10:00")
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime,
 
   @Schema(description = "Flag to indicate if this activity instance has been cancelled since being scheduled", example = "false")
   val cancelled: Boolean,

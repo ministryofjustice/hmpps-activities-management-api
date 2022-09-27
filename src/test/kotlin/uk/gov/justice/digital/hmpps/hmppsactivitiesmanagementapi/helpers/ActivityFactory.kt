@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityWaiting
@@ -73,6 +74,20 @@ private fun activitySession(
         sessionDate = timestamp.toLocalDate(),
         startTime = timestamp,
         endTime = timestamp
+      )
+    )
+    this.prisoners.add(
+      ActivityPrisoner(
+        activityPrisonerId = 1,
+        activitySession = this,
+        prisonerNumber = "A1234AA",
+        iepLevel = "BAS",
+        payBand = "A",
+        startDate = timestamp.toLocalDate(),
+        endDate = null,
+        active = true,
+        allocatedTime = timestamp,
+        allocatedBy = "Mr Blogs",
       )
     )
   }

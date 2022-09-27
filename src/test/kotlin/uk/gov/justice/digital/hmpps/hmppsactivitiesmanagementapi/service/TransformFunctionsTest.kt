@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPrisoner
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -40,15 +41,27 @@ class TransformFunctionsTest {
             ModelActivityInstance(
               id = 1,
               sessionDate = timestamp.toLocalDate(),
-              startTime = timestamp,
-              endTime = timestamp,
+              startTime = timestamp.toLocalTime(),
+              endTime = timestamp.toLocalTime(),
               cancelled = false
             )
           ),
-          prisoners = emptyList(), // TODO specify prisoners
+          prisoners = listOf(
+            ActivityPrisoner(
+              id = 1,
+              prisonerNumber = "A1234AA",
+              iepLevel = "BAS",
+              payBand = "A",
+              startDate = timestamp.toLocalDate(),
+              endDate = null,
+              active = true,
+              allocatedTime = timestamp,
+              allocatedBy = "Mr Blogs",
+            )
+          ),
           description = "session description",
-          startTime = timestamp,
-          endTime = timestamp,
+          startTime = timestamp.toLocalTime(),
+          endTime = timestamp.toLocalTime(),
           capacity = 1,
           daysOfWeek = "0000001"
         )
