@@ -38,6 +38,18 @@ generic-service:
       DB_NAME: "database_name"
       DB_USER: "database_username"
       DB_PASS: "database_password"
+    activities-domain-events-sqs-topic-instance-output:
+      HMPPS_SQS_TOPICS_DOMAINEVENTS_ACCESS_KEY_ID: "access_key_id"
+      HMPPS_SQS_TOPICS_DOMAINEVENTS_SECRET_ACCESS_KEY: "secret_access_key"
+      HMPPS_SQS_TOPICS_DOMAINEVENTS_ARN: "topic_arn"
+    activities-domain-events-sqs-instance-output:
+      HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_ACCESS_KEY_ID: "access_key_id"
+      HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_SECRET_ACCESS_KEY: "secret_access_key"
+      HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_NAME: "sqs_queue_name"
+    activities-domain-events-sqs-dl-instance-output:
+      HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_ACCESS_KEY_ID: "access_key_id"
+      HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_SECRET_ACCESS_KEY: "secret_access_key"
+      HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_NAME: "sqs_queue_name"
 
   allowlist:
     office: "217.33.148.210/32"
