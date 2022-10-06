@@ -6,7 +6,7 @@ import org.springframework.jms.annotation.JmsListener
 import org.springframework.stereotype.Service
 
 // TODO this is temporary measure whilst we are in Alpha phase to reduce amount of code needed to run locally e.g. localstack.
-@ConditionalOnProperty(name = ["DB_SSL_MODE"], havingValue = "verify-full")
+@ConditionalOnProperty(name = ["JMS_LISTENER_MODE"], havingValue = "ON")
 @Service
 class MessageListener(
   private val mapper: ObjectMapper,
