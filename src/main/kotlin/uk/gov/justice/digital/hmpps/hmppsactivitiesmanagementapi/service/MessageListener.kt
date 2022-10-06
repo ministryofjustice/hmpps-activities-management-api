@@ -1,13 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.context.annotation.Profile
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jms.annotation.JmsListener
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 // TODO this is temporary measure whilst we are in Alpha phase to reduce amount of code needed to run locally e.g. localstack.
-@Profile(value = ["default"])
-@Component
+@ConditionalOnProperty(name = ["DB_SSL_MODE"], havingValue = "verify-full")
+@Service
 class MessageListener(
   private val mapper: ObjectMapper,
   private val inboundMessageService: InboundMessageService
