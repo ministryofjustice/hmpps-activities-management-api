@@ -17,3 +17,10 @@ insert into activity_tier(activity_tier_id, code, description) select 3, 'T3', '
 --
 insert into eligibility_rule (eligibility_rule_id, code, description) select 1, 'OVER_21', 'Must be over 21' where not exists (select 1 from eligibility_rule where eligibility_rule_id = 1);
 insert into eligibility_rule (eligibility_rule_id, code, description) select 2, 'FEMALE_18-50', 'Female aged 18 to 15 only' where not exists (select 1 from eligibility_rule where eligibility_rule_id = 2);
+
+
+--
+-- Rollout prisons
+--
+insert into rollout_prison (rollout_prison_id, code, description, active) select 1, 'PVI', 'HMP Pentonville', true where not exists (select 1 from rollout_prison where rollout_prison_id = 1);
+insert into rollout_prison (rollout_prison_id, code, description, active) select 2, 'MDI', 'HMP Moorland', false where not exists (select 1 from rollout_prison where rollout_prison_id = 2);

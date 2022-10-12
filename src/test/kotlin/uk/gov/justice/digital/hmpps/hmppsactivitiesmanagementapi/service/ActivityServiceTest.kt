@@ -24,9 +24,7 @@ class ActivityServiceTest {
 
   @Test
   fun `throws entity not found exception for unknown activity ID`() {
-    whenever(repository.findById(-1)).thenReturn(Optional.empty())
-
     assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .withFailMessage { "-1" }
+      .hasMessage("-1")
   }
 }

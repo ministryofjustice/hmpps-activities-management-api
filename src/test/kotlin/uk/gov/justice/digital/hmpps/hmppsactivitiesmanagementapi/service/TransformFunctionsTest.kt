@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -96,5 +98,10 @@ class TransformFunctionsTest {
       assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("test")
     }
+  }
+
+  @Test
+  fun `transformation of rollout prison entity to rollout prison model`() {
+    assertThat(transform(rolloutPrison())).isEqualTo(RolloutPrison(1, "PVI", "HMP Pentonville", true))
   }
 }

@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.transform
 import java.time.LocalDate
@@ -123,3 +124,5 @@ private fun activityPayBand(activityPay: ActivityPay) =
     activityPayBandId = 1,
     activityPay = activityPay
   )
+
+fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true)
