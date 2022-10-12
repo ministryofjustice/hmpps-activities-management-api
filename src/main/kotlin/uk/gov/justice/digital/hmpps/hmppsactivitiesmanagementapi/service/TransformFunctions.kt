@@ -77,6 +77,8 @@ private fun List<EntityActivityPayBand>.toModelPayBands() = map {
   )
 }
 
+fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
+
 private fun List<EntityActivitySchedule>.toModelSchedules() = map {
   ModelActivitySchedule(
     id = it.activityScheduleId!!,
