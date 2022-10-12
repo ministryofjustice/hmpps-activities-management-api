@@ -77,5 +77,5 @@ class RolloutPrisonControllerTest(
     verify(prisonService).getByPrisonCode("PVX")
   }
 
-  private fun MockMvc.getPrisonByCode(code: String) = get("/rolloutPrisons/{code}", code)
+  private fun MockMvc.getPrisonByCode(code: String) = get("/rollout-prisons/{code}", code)
 }

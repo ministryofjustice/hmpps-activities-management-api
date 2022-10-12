@@ -30,7 +30,7 @@ class RolloutPrisonIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.getPrisonByCode(code: String) =
     get()
-      .uri("/rolloutPrisons/$code")
+      .uri("/rollout-prisons/$code")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

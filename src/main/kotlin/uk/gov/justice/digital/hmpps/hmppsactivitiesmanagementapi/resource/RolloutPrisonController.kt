@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Rollout
 // TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
-@RequestMapping("/rolloutPrisons", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/rollout-prisons", produces = [MediaType.APPLICATION_JSON_VALUE])
 class RolloutPrisonController(private val prisonService: RolloutPrisonService) {
 
   @GetMapping(value = ["/{prisonCode}"])
