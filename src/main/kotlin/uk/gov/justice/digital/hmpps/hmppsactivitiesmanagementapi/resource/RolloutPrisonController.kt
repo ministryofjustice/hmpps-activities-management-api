@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
 
@@ -33,7 +32,7 @@ class RolloutPrisonController(private val prisonService: RolloutPrisonService) {
       ApiResponse(
         responseCode = "200",
         description = "Prison found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Activity::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = RolloutPrison::class))],
       ),
       ApiResponse(
         responseCode = "401",
