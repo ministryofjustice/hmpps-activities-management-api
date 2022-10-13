@@ -31,8 +31,8 @@ class ActivityScheduleController(private val scheduleService: ActivityScheduleSe
   @GetMapping(value = ["/{prisonCode}"])
   @ResponseBody
   @Operation(
-    summary = "Get a list of activity schedules",
-    description = "Returns one or more activity schedules at a given prison.",
+    summary = "Get a list of activity schedules on a given date",
+    description = "Returns zero or more activity schedules at a given prison on a particular date if there are any.",
   )
   @ApiResponses(
     value = [

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import java.time.LocalDate
@@ -61,4 +62,21 @@ data class Activity(
   val createdTime: LocalDateTime,
 
   val createdBy: String
-)
+) {
+  fun isActiveOn(date: LocalDate) = active && startDate <= date && (endDate == null || date.isBefore(endDate))
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as Activity
+
+    return activityId != null && activityId == other.activityId
+  }
+
+  override fun hashCode(): Int = activityId.hashCode()
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(activityId = $activityId )"
+  }
+}
