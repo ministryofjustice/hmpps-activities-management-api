@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -31,11 +32,6 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
   private fun List<ActivitySchedule>.selectSchedulesWithActiveActivitiesOn(date: LocalDate) =
     filter { it.activity.isActiveOn(date) }
 
-  // TODO need to filter on time slot morning/afternoon/evening
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
-    filter { it.isRunningOn(date) }
-}
-
-enum class TimeSlot {
-  AM, PM, ED
+    filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 }

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
