@@ -33,4 +33,6 @@ data class ScheduledInstance(
   var cancelledTime: LocalDateTime? = null,
 
   var cancelledBy: String? = null,
-)
+) {
+  fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
+}

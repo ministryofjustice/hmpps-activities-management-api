@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -32,7 +32,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(pay?.pieceRate).isEqualTo(0)
       assertThat(pay?.pieceRateItems).isEqualTo(0)
       assertThat(pay?.bands).isEmpty()
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(active).isTrue
       assertThat(createdBy).isEqualTo("SEED USER")
@@ -51,19 +51,19 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(mathsMorning.prisoner("A11111A")) {
       assertThat(iepLevel).isEqualTo("BAS")
       assertThat(payBand).isEqualTo("A")
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
-      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 9, 0))
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 9, 0))
     }
 
     with(mathsMorning.prisoner("A22222A")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("B")
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
-      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 9, 0))
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 9, 0))
     }
 
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
@@ -76,19 +76,19 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(mathsAfternoon.prisoner("A11111A")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("C")
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
-      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 10, 0))
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
     }
 
     with(mathsAfternoon.prisoner("A22222A")) {
       assertThat(iepLevel).isEqualTo("ENH")
       assertThat(payBand).isEqualTo("D")
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
-      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 10, 0))
+      assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
     }
   }
 
@@ -185,9 +185,4 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private fun List<ActivitySchedule>.schedule(description: String) =
     firstOrNull() { it.description.uppercase() == description.uppercase() }
       ?: throw RuntimeException("Activity schedule $description not found.")
-
-  private fun ActivitySchedule.prisoner(prisonNumber: String) = allocations.prisoner(prisonNumber)
-  private fun List<Allocation>.prisoner(prisonNumber: String) =
-    firstOrNull() { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
-      ?: throw RuntimeException("Allocated $prisonNumber not found.")
 }
