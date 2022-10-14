@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -35,4 +36,6 @@ data class ScheduledInstance(
   var cancelledBy: String? = null,
 ) {
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
+
+  fun timeSlot() = TimeSlot.slot(startTime)
 }

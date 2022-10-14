@@ -24,3 +24,6 @@ values (4, 2, 'A22222A', 'ENH', 'D', '2022-10-10', null, true, '2022-10-10 10:00
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
 values (1, 1, '2022-10-10', '10:00:00', '11:00:00', false, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (2, 1, '2022-10-10', '14:00:00', '15:00:00', false, null, null);
