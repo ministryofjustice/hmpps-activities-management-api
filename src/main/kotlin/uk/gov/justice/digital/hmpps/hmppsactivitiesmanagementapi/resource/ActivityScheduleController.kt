@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import java.time.LocalDate
 
@@ -72,11 +73,68 @@ class ActivityScheduleController(private val scheduleService: ActivityScheduleSe
     @RequestParam(
       value = "timeSlot",
       required = false
-    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?
+    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?,
+    @RequestParam(
+      value = "locationId",
+      required = false
+    ) @Parameter(description = "The location id of the activity") locationId: Long?,
   ): List<ActivitySchedule> =
+    // TODO location ID is currently ignored.  This WIP.
     scheduleService.getActivitySchedulesByPrisonCode(
       prisonCode = prisonCode,
       date = date ?: LocalDate.now(),
       timeSlot = timeSlot
     )
+
+  @GetMapping(value = ["/{prisonCode}/locations"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of activity schedule locations for a given prison",
+    description = "Returns zero or more locations at a given prison on a particular date if there are any.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity schedule locations found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = Location::class))
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The locations for this prison were not found.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      )
+    ]
+  )
+  // TODO this is just a stub which returns some fake locations
+  fun getScheduleLocationsByPrisonCode(
+    @PathVariable("prisonCode") prisonCode: String,
+    @RequestParam(
+      value = "date",
+      required = false
+    ) @DateTimeFormat(iso = ISO.DATE) @Parameter(description = "Date of activity, default today") date: LocalDate?,
+    @RequestParam(
+      value = "timeSlot",
+      required = false
+    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?
+  ): List<Location> = listOf(
+    Location(1, "EDU-ROOM-1", "Education - R1"),
+    Location(2, "EDU-ROOM-2", "Education - R2"),
+    Location(3, "EDU-ROOM-3", "Education - R3"),
+  )
 }
