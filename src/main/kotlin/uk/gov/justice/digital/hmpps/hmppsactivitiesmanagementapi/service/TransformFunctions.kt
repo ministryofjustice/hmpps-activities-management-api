@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
@@ -88,9 +89,7 @@ private fun List<EntityActivitySchedule>.toModelSchedules() = map {
     suspendUntil = it.suspendUntil,
     startTime = it.startTime,
     endTime = it.endTime,
-    internalLocationId = it.internalLocationId,
-    internalLocationCode = it.internalLocationCode,
-    internalLocationDescription = it.internalLocationDescription,
+    internalLocation = it.toInternalLocation(),
     capacity = it.capacity,
     daysOfWeek = it.daysOfWeek
   )
@@ -142,6 +141,14 @@ private fun EntityActivityPay.toModelActivityPay() =
     pieceRate = this.pieceRate,
     pieceRateItems = this.pieceRateItems
   )
+
+private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.let {
+  ModelInternalLocation(
+    id = internalLocationId!!,
+    code = internalLocationCode!!,
+    description = internalLocationDescription!!
+  )
+}
 
 fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   id = prison.rolloutPrisonId!!,

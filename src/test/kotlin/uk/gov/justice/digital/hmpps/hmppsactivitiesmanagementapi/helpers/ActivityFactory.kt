@@ -66,7 +66,10 @@ private fun activitySchedule(
     startTime = timestamp.toLocalTime(),
     endTime = timestamp.toLocalTime(),
     capacity = 1,
-    daysOfWeek = "0000001"
+    daysOfWeek = "0000001",
+    internalLocationId = 1,
+    internalLocationCode = "EDU-ROOM-1",
+    internalLocationDescription = "Education - R1"
   ).apply {
     this.instances.add(
       ScheduledInstance(

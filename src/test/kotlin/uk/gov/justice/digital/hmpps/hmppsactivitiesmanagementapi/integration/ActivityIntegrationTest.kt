@@ -44,10 +44,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(allocations).hasSize(2)
+      assertThat(internalLocation?.id).isEqualTo(1)
+      assertThat(internalLocation?.code).isEqualTo("L1")
+      assertThat(internalLocation?.description).isEqualTo("Location 1")
       this
     }
 
-    with(mathsMorning.prisoner("A11111A")) {
+    with(mathsMorning.allocatedPrisoner("A11111A")) {
       assertThat(iepLevel).isEqualTo("BAS")
       assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -56,7 +59,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 9, 0))
     }
 
-    with(mathsMorning.prisoner("A22222A")) {
+    with(mathsMorning.allocatedPrisoner("A22222A")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -69,10 +72,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(allocations).hasSize(2)
+      assertThat(internalLocation?.id).isEqualTo(2)
+      assertThat(internalLocation?.code).isEqualTo("L2")
+      assertThat(internalLocation?.description).isEqualTo("Location 2")
       this
     }
 
-    with(mathsAfternoon.prisoner("A11111A")) {
+    with(mathsAfternoon.allocatedPrisoner("A11111A")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("C")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -81,7 +87,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
     }
 
-    with(mathsAfternoon.prisoner("A22222A")) {
+    with(mathsAfternoon.allocatedPrisoner("A22222A")) {
       assertThat(iepLevel).isEqualTo("ENH")
       assertThat(payBand).isEqualTo("D")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -120,10 +126,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(allocations).hasSize(2)
+      assertThat(internalLocation?.id).isEqualTo(3)
+      assertThat(internalLocation?.code).isEqualTo("L3")
+      assertThat(internalLocation?.description).isEqualTo("Location 3")
       this
     }
 
-    with(englishMorning.prisoner("B11111B")) {
+    with(englishMorning.allocatedPrisoner("B11111B")) {
       assertThat(iepLevel).isEqualTo("ENH")
       assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
@@ -132,7 +141,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
     }
 
-    with(englishMorning.prisoner("B22222B")) {
+    with(englishMorning.allocatedPrisoner("B22222B")) {
       assertThat(iepLevel).isEqualTo("BAS")
       assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
@@ -146,10 +155,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo("1000000")
       assertThat(allocations).hasSize(2)
+      assertThat(internalLocation?.id).isEqualTo(4)
+      assertThat(internalLocation?.code).isEqualTo("L4")
+      assertThat(internalLocation?.description).isEqualTo("Location 4")
       this
     }
 
-    with(englishAfternoon.prisoner("B11111B")) {
+    with(englishAfternoon.allocatedPrisoner("B11111B")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("C")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
@@ -158,7 +170,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 21, 0, 0))
     }
 
-    with(englishAfternoon.prisoner("B22222B")) {
+    with(englishAfternoon.allocatedPrisoner("B22222B")) {
       assertThat(iepLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("D")
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
