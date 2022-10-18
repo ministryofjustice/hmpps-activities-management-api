@@ -40,14 +40,8 @@ data class ActivitySchedule(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
-  @Schema(description = "The NOMIS internal location id for this schedule", example = "98877667")
-  val internalLocationId: Int? = null,
-
-  @Schema(description = "The NOMIS internal location code for this schedule", example = "EDU-ROOM-1")
-  val internalLocationCode: String? = null,
-
-  @Schema(description = "The NOMIS internal location description for this schedule", example = "Education - R1")
-  val internalLocationDescription: String? = null,
+  @Schema(description = "The NOMIS internal location for this schedule", example = "98877667")
+  val internalLocation: InternalLocation? = null,
 
   @Schema(description = "The maximum number of prisoners allowed for a scheduled instance of this schedule", example = "10")
   val capacity: Int,

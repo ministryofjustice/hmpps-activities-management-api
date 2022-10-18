@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
@@ -48,6 +49,7 @@ class TransformFunctionsTest {
               cancelled = false
             )
           ),
+          internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
           allocations = listOf(
             Allocation(
               id = 1,
