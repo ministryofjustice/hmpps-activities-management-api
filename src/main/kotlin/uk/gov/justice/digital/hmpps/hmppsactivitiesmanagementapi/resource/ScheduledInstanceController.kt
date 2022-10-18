@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -12,27 +13,32 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
-@RequestMapping("/rollout-prisons", produces = [MediaType.APPLICATION_JSON_VALUE])
-class RolloutPrisonController(private val prisonService: RolloutPrisonService) {
+@RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
+class ScheduledInstanceController(private val attendancesService: AttendancesService) {
 
-  @GetMapping(value = ["/{prisonCode}"])
+  @GetMapping(value = ["/{instanceId}/attendances"])
   @ResponseBody
   @Operation(
-    summary = "Get a prison by its code",
-    description = "Returns a single prison and its details by its unique code.",
+    summary = "Get a list of attendances for a scheduled instance",
+    description = "Returns one or more attendance records for a particular scheduled activity for a given scheduled instance.",
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Prison found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = RolloutPrison::class))],
+        description = "Attendance records found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = Attendance::class))
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -46,11 +52,12 @@ class RolloutPrisonController(private val prisonService: RolloutPrisonService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The prison for this code was not found.",
+        description = "The attendances for this schedule were not found.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       )
     ]
   )
-  fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrison =
-    prisonService.getByPrisonCode(prisonCode)
+  fun getAttendancesByScheduledInstance(
+    @PathVariable("instanceId") instanceId: String
+  ): List<Attendance> = emptyList()
 }

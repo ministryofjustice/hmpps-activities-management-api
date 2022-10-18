@@ -21,17 +21,18 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.transform
 import javax.persistence.EntityNotFoundException
 
 @ExtendWith(SpringExtension::class)
-@WebMvcTest(controllers = [RolloutPrisonController::class])
+@WebMvcTest(controllers = [PrisonController::class])
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = [RolloutPrisonController::class])
+@ContextConfiguration(classes = [PrisonController::class])
 @ActiveProfiles("test")
 @WebAppConfiguration
-class RolloutPrisonControllerTest(
+class PrisonControllerTest(
   @Autowired private val mapper: ObjectMapper
 ) {
   private lateinit var mockMvc: MockMvc
@@ -39,10 +40,13 @@ class RolloutPrisonControllerTest(
   @MockBean
   private lateinit var prisonService: RolloutPrisonService
 
+  @MockBean
+  private lateinit var scheduleService: ActivityScheduleService
+
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(RolloutPrisonController(prisonService))
+      .standaloneSetup(PrisonController(prisonService, scheduleService))
       .setControllerAdvice(ControllerAdvice())
       .build()
   }
@@ -77,5 +81,5 @@ class RolloutPrisonControllerTest(
     verify(prisonService).getByPrisonCode("PVX")
   }
 
-  private fun MockMvc.getPrisonByCode(code: String) = get("/rollout-prisons/{code}", code)
+  private fun MockMvc.getPrisonByCode(code: String) = get("/prisons/{code}", code)
 }

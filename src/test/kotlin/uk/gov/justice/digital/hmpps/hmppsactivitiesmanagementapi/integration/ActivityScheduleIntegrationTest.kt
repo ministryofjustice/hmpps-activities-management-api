@@ -7,7 +7,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -20,25 +20,34 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `get all schedules for Pentonville prison on Monday 10th October 2022`() {
     val schedules =
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10))!!
-        .also { assertThat(it).hasSize(1) }
+        .also { assertThat(it).hasSize(2) }
 
-    val schedule = with(schedules.first()) {
+    val morningSchedule = with(schedules.first()) {
       assertThat(allocations).hasSize(2)
-      assertThat(instances).hasSize(2)
+      assertThat(instances).hasSize(1)
       this
     }
 
-    schedule.prisoner("A11111A")
-    schedule.prisoner("A22222A")
+    morningSchedule.allocatedPrisoner("A11111A")
+    morningSchedule.allocatedPrisoner("A22222A")
 
-    with(schedule.instances.first()) {
+    with(morningSchedule.instances.first()) {
       assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(cancelled).isFalse
       assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
     }
 
-    with(schedule.instances.second()) {
+    val afternoonSchedule = with(schedules.second()) {
+      assertThat(allocations).hasSize(2)
+      assertThat(instances).hasSize(1)
+      this
+    }
+
+    afternoonSchedule.allocatedPrisoner("A11111A")
+    afternoonSchedule.allocatedPrisoner("A22222A")
+
+    with(afternoonSchedule.instances.first()) {
       assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(cancelled).isFalse
       assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
@@ -58,11 +67,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val schedule = with(schedules.first()) {
       assertThat(allocations).hasSize(2)
       assertThat(instances).hasSize(1)
+      assertThat(internalLocation).isEqualTo(InternalLocation(1, "L1", "Location 1"))
       this
     }
 
-    schedule.prisoner("A11111A")
-    schedule.prisoner("A22222A")
+    schedule.allocatedPrisoner("A11111A")
+    schedule.allocatedPrisoner("A22222A")
 
     with(schedule.instances.first()) {
       assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -87,8 +97,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       this
     }
 
-    schedule.prisoner("A11111A")
-    schedule.prisoner("A22222A")
+    schedule.allocatedPrisoner("A11111A")
+    schedule.allocatedPrisoner("A22222A")
 
     with(schedule.instances.first()) {
       assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
@@ -109,5 +119,5 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ActivitySchedule::class.java)
       .returnResult().responseBody
 
-  private fun List<ScheduledInstance>.second() = this[1]
+  private fun List<ActivitySchedule>.second() = this[1]
 }
