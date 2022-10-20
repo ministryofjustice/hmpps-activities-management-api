@@ -33,4 +33,7 @@ data class ScheduledInstance(
 
   @Schema(description = "The person who cancelled this scheduled instance (or null if not cancelled)", example = "Adam Smith")
   val cancelledBy: String? = null,
+
+  @Schema(description = "The attendance records for this scheduled instance")
+  val attendances: List<Attendance> = emptyList()
 )

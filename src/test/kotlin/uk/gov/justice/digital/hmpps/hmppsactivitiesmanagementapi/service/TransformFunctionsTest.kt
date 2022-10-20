@@ -14,9 +14,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelActivityInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 
 class TransformFunctionsTest {
 
@@ -41,12 +42,19 @@ class TransformFunctionsTest {
         ModelActivitySchedule(
           id = 1,
           instances = listOf(
-            ModelActivityInstance(
+            ModelScheduledInstance(
               id = 1,
               date = timestamp.toLocalDate(),
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime(),
-              cancelled = false
+              cancelled = false,
+              attendances = listOf(
+                ModelAttendance(
+                  id = 1,
+                  prisonerNumber = "A11111A",
+                  posted = false
+                )
+              )
             )
           ),
           internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),

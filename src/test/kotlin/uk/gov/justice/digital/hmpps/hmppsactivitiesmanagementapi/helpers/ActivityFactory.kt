@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -78,7 +79,16 @@ private fun activitySchedule(
         sessionDate = timestamp.toLocalDate(),
         startTime = timestamp.toLocalTime(),
         endTime = timestamp.toLocalTime()
-      )
+      ).apply {
+        this.attendances.add(
+          Attendance(
+            attendanceId = 1,
+            scheduledInstance = this,
+            prisonerNumber = "A11111A",
+            posted = false
+          )
+        )
+      }
     )
     this.allocations.add(
       Allocation(

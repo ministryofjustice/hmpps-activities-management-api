@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
+import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
@@ -24,4 +25,9 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
             .email("feedback@digital.justice.gov.uk")
         )
     )
+
+  @Bean
+  fun enableLocalTimePrimitiveType() {
+    PrimitiveType.enablePartialTime()
+  }
 }

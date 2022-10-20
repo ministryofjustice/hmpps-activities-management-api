@@ -24,16 +24,16 @@ data class Attendance(
   val prisonerNumber: String,
 
   @OneToOne
-  @JoinColumn(name = "attendance_reason_id", nullable = false)
-  val attendanceReason: AttendanceReason,
+  @JoinColumn(name = "attendance_reason_id", nullable = true)
+  val attendanceReason: AttendanceReason? = null,
 
   var comment: String? = null,
 
   val posted: Boolean,
 
-  val recordedTime: LocalDateTime,
+  val recordedTime: LocalDateTime? = null,
 
-  val recordedBy: String,
+  val recordedBy: String? = null,
 
   var status: String? = null,
 
