@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting as EntityPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
@@ -19,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
@@ -113,7 +116,8 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     endTime = it.endTime,
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
-    cancelledBy = it.cancelledBy
+    cancelledBy = it.cancelledBy,
+    attendances = it.attendances.map { attendance -> transform(attendance) }
   )
 }
 
@@ -156,3 +160,24 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   description = prison.description,
   active = prison.active
 )
+
+fun transform(attendance: EntityAttendance): ModelAttendance =
+  ModelAttendance(
+    id = attendance.attendanceId!!,
+    prisonerNumber = attendance.prisonerNumber,
+    attendanceReason = attendance.attendanceReason?.let {
+      ModelAttendanceReason(
+        id = it.attendanceReasonId!!,
+        code = it.code,
+        description = it.description
+      )
+    },
+    comment = attendance.comment,
+    posted = attendance.posted,
+    recordedTime = attendance.recordedTime,
+    recordedBy = attendance.recordedBy,
+    status = attendance.status,
+    payAmount = attendance.payAmount,
+    bonusAmount = attendance.bonusAmount,
+    pieces = attendance.pieces
+  )

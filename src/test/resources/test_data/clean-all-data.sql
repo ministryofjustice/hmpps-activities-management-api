@@ -1,3 +1,4 @@
+delete from attendance;
 delete from scheduled_instance;
 delete from allocation;
 delete from activity_schedule;
