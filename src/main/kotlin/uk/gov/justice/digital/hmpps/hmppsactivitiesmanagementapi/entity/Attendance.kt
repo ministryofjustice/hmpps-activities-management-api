@@ -25,7 +25,7 @@ data class Attendance(
 
   @OneToOne
   @JoinColumn(name = "attendance_reason_id", nullable = true)
-  val attendanceReason: AttendanceReason? = null,
+  var attendanceReason: AttendanceReason? = null,
 
   var comment: String? = null,
 
