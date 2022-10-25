@@ -168,6 +168,7 @@ CREATE TABLE attendance (
 CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_instance_id);
 CREATE INDEX idx_attendance_prisoner_number ON attendance (prisoner_number);
 CREATE INDEX idx_attendance_recorded_time ON attendance (recorded_time);
+CREATE UNIQUE INDEX idx_attendance_scheduled_instance_id_prison_number ON attendance (scheduled_instance_id, prisoner_number);
 
 CREATE TABLE prisoner_waiting (
   prisoner_waiting_id bigserial    NOT NULL CONSTRAINT prisoner_waiting_pk PRIMARY KEY,
