@@ -1,0 +1,23 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: create-activity-sessions
+spec:
+  schedule: "0 3 * * *" # 3am every day
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 43200
+  successfulJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 3600
+          containers:
+          - name: hmpps-activities-management-api
+            image: ghcr.io/ministryofjustice/hmpps-devops-tools
+            args:
+              - /bin/sh
+              - -c
+              - curl http://hmpps-activities-management-api/health
