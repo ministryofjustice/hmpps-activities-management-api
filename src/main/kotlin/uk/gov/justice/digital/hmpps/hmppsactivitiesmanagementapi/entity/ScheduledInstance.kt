@@ -44,6 +44,13 @@ data class ScheduledInstance(
 
   var cancelledBy: String? = null,
 ) {
+  constructor(activitySchedule: ActivitySchedule, sessionDate: LocalDate) : this(
+    activitySchedule = activitySchedule,
+    sessionDate = sessionDate,
+    startTime = activitySchedule.startTime,
+    endTime = activitySchedule.endTime,
+  )
+
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
 
   fun timeSlot() = TimeSlot.slot(startTime)

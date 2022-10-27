@@ -75,7 +75,7 @@ class TransformFunctionsTest {
           startTime = timestamp.toLocalTime(),
           endTime = timestamp.toLocalTime(),
           capacity = 1,
-          daysOfWeek = "0000001"
+          daysOfWeek = listOf("Mon")
         )
       )
       assertThat(waitingList).containsExactly(

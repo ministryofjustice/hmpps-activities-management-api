@@ -1,11 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import java.time.format.TextStyle
+import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand as EntityActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
@@ -27,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
 
 /**
  * Transform functions providing a thin layer to transform entities into their API model equivalents and vice-versa.
@@ -89,12 +93,12 @@ private fun List<EntityActivitySchedule>.toModelSchedules() = map {
     instances = it.instances.toModelScheduledInstances(),
     allocations = it.allocations.toModelAllocations(),
     description = it.description,
-    suspendUntil = it.suspendUntil,
+    suspensions = it.suspensions.toModelSuspensions(),
     startTime = it.startTime,
     endTime = it.endTime,
     internalLocation = it.toInternalLocation(),
     capacity = it.capacity,
-    daysOfWeek = it.daysOfWeek
+    daysOfWeek = it.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) }
   )
 }
 
@@ -132,6 +136,13 @@ private fun List<EntityAllocation>.toModelAllocations() = map {
     active = it.active,
     allocatedTime = it.allocatedTime,
     allocatedBy = it.allocatedBy
+  )
+}
+
+private fun List<EntitySuspension>.toModelSuspensions() = map {
+  ModelSuspension(
+    suspendedFrom = it.suspendedFrom,
+    suspendedUntil = it.suspendedUntil
   )
 }
 

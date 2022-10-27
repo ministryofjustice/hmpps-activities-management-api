@@ -118,14 +118,19 @@ CREATE TABLE activity_schedule (
   activity_schedule_id          bigserial    NOT NULL CONSTRAINT activity_schedule_id PRIMARY KEY,
   activity_id                   bigint       NOT NULL REFERENCES activity (activity_id),
   description                   varchar(50)  NOT NULL,
-  suspend_until                 date,
   start_time                    time         NOT NULL,
   end_time                      time,
   internal_location_id          integer,
   internal_location_code        varchar(40),
   internal_location_description varchar(100),
   capacity                      integer      NOT NULL,
-  days_of_week                  character(7) NOT NULL
+  monday_flag                   bool         NOT NULL DEFAULT false,
+  tuesday_flag                  bool         NOT NULL DEFAULT false,
+  wednesday_flag                bool         NOT NULL DEFAULT false,
+  thursday_flag                 bool         NOT NULL DEFAULT false,
+  friday_flag                   bool         NOT NULL DEFAULT false,
+  saturday_flag                 bool         NOT NULL DEFAULT false,
+  sunday_flag                   bool         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);
@@ -133,6 +138,13 @@ CREATE INDEX idx_activity_schedule_start_time ON activity_schedule (start_time);
 CREATE INDEX idx_activity_schedule_end_time ON activity_schedule (end_time);
 CREATE INDEX idx_activity_schedule_internal_location_id ON activity_schedule (internal_location_id);
 CREATE INDEX idx_activity_schedule_internal_location_code ON activity_schedule (internal_location_code);
+
+CREATE TABLE activity_schedule_suspension (
+    activity_schedule_suspension_id bigserial NOT NULL CONSTRAINT activity_schedule_suspension_id PRIMARY KEY,
+    activity_schedule_id            bigint    NOT NULL REFERENCES activity_schedule (activity_schedule_id),
+    suspended_from                  date      NOT NULL,
+    suspended_until                 date
+);
 
 CREATE TABLE scheduled_instance (
   scheduled_instance_id bigserial NOT NULL CONSTRAINT scheduled_instance_pk PRIMARY KEY,
@@ -227,4 +239,3 @@ CREATE TABLE activity_pay_band (
 
 CREATE INDEX idx_activity_pay_band ON activity_pay_band (pay_band);
 CREATE INDEX idx_activity_pay_band_pay_id ON activity_pay_band (activity_pay_id);
-

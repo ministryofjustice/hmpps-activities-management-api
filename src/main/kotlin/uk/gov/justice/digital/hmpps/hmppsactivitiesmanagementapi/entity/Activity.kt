@@ -65,6 +65,20 @@ data class Activity(
 ) {
   fun isActiveOn(date: LocalDate) = active && startDate <= date && (endDate == null || date.isBefore(endDate))
 
+  fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
+    val byDayOfWeek = this.schedules.filter { day.dayOfWeek in it.getDaysOfWeek() }
+    return if (includeSuspended) {
+      byDayOfWeek
+    } else {
+      byDayOfWeek.filter {
+        it.suspensions.none { suspension ->
+          !day.isBefore(suspension.suspendedFrom) &&
+            (suspension.suspendedUntil === null || !day.isAfter(suspension.suspendedUntil))
+        }
+      }
+    }
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

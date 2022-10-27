@@ -6,3 +6,5 @@ insert into attendance_reason(attendance_reason_id, code, description) select 5,
 insert into attendance_reason(attendance_reason_id, code, description) select 6, 'SUS', 'Suspend' where not exists (select 1 from attendance_reason where attendance_reason_id = 6);
 insert into attendance_reason(attendance_reason_id, code, description) select 7, 'UNACAB', 'Unacceptable absence' where not exists (select 1 from attendance_reason where attendance_reason_id = 7);
 insert into attendance_reason(attendance_reason_id, code, description) select 8, 'REST', 'Rest day (no pay)' where not exists (select 1 from attendance_reason where attendance_reason_id = 8);
+
+alter sequence attendance_reason_attendance_reason_id_seq restart with 9;
