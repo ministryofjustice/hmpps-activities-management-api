@@ -15,9 +15,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite as ModelActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite as ModelActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -49,6 +52,8 @@ fun transform(activity: EntityActivity) =
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
+
+fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> = scheduledInstances.toModelActivityScheduleInstances()
 
 private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
@@ -120,6 +125,41 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     attendances = it.attendances.map { attendance -> transform(attendance) }
   )
 }
+
+private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = map {
+  ModelActivityScheduleInstance(
+    activitySchedule = it.activitySchedule.toModelActivityScheduleLite(),
+    id = it.scheduledInstanceId,
+    date = it.sessionDate,
+    startTime = it.startTime,
+    endTime = it.endTime,
+    cancelled = it.cancelled,
+    cancelledTime = it.cancelledTime,
+    cancelledBy = it.cancelledBy,
+  )
+}
+
+private fun EntityActivitySchedule.toModelActivityScheduleLite() =
+  ModelActivityScheduleLite(
+    id = this.activityScheduleId!!,
+    description = this.description,
+    suspendUntil = this.suspendUntil,
+    startTime = this.startTime,
+    endTime = this.endTime,
+    internalLocation = this.toInternalLocation(),
+    capacity = this.capacity,
+    daysOfWeek = this.daysOfWeek,
+    activity = this.activity.toModelActivityLite()
+  )
+
+private fun EntityActivity.toModelActivityLite() =
+  ModelActivityLite(
+    id = this.activityId!!,
+    prisonCode = this.prisonCode,
+    summary = this.summary,
+    description = this.description,
+    active = this.active
+  )
 
 private fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(
