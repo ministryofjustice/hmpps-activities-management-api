@@ -147,12 +147,11 @@ private fun EntityActivitySchedule.toModelActivityScheduleLite() =
   ModelActivityScheduleLite(
     id = this.activityScheduleId!!,
     description = this.description,
-    suspendUntil = this.suspendUntil,
     startTime = this.startTime,
     endTime = this.endTime,
     internalLocation = this.toInternalLocation(),
     capacity = this.capacity,
-    daysOfWeek = this.daysOfWeek,
+    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
     activity = this.activity.toModelActivityLite()
   )
 
