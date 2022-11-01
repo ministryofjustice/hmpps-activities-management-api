@@ -26,8 +26,12 @@ class ScheduledInstanceTest {
 
   @Test
   fun `instance session is not running on dates`() {
-    assertThat(instance.copy(cancelled = false, sessionDate = LocalDate.MIN).isRunningOn(LocalDate.MIN.plusDays(1))).isFalse
-    assertThat(instance.copy(cancelled = false, sessionDate = LocalDate.MAX).isRunningOn(LocalDate.MAX.minusDays(1))).isFalse
+    assertThat(
+      instance.copy(cancelled = false, sessionDate = LocalDate.MIN).isRunningOn(LocalDate.MIN.plusDays(1))
+    ).isFalse
+    assertThat(
+      instance.copy(cancelled = false, sessionDate = LocalDate.MAX).isRunningOn(LocalDate.MAX.minusDays(1))
+    ).isFalse
   }
 
   @Test
