@@ -16,7 +16,7 @@ jobs:
   validate:
     executor:
       name: hmpps/java
-      tag: "18.0"
+      tag: "19.0"
     steps:
       - checkout
       - restore_cache:
@@ -41,7 +41,7 @@ jobs:
   integration-test:
     executor:
       name: hmpps/java
-      tag: "18.0"
+      tag: "19.0"
     steps:
       - checkout
       - restore_cache:
@@ -155,5 +155,3 @@ workflows:
           context:
             - veracode-credentials
             - hmpps-common-vars
-
-

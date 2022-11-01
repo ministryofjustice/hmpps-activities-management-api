@@ -12,7 +12,7 @@ This service requires a postgresql database.
 
 Tools required:
 
-* JDK v18+
+* JDK v19+
 * Kotlin (Intellij)
 * docker
 * docker-compose
