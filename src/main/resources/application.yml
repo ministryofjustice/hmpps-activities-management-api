@@ -77,3 +77,7 @@ management:
     info:
       cache:
         time-to-live: 2000ms
+
+jobs:
+  create-activity-sessions:
+    days-in-advance: ${CREATE_ACTIVITY_SESSIONS_DAYS_IN_ADVANCE:60}

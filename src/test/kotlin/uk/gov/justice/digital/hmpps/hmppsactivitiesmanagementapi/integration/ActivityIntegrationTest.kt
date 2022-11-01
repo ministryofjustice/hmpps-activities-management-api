@@ -42,7 +42,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val mathsMorning = with(mathsLevelOneActivity.schedule("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo("1000000")
+      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(1)
       assertThat(internalLocation?.code).isEqualTo("L1")
@@ -70,7 +70,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo("1000000")
+      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(2)
       assertThat(internalLocation?.code).isEqualTo("L2")
@@ -124,7 +124,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val englishMorning = with(englishLevelTwoActivity.schedule("English AM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo("1000000")
+      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(3)
       assertThat(internalLocation?.code).isEqualTo("L3")
@@ -153,7 +153,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val englishAfternoon = with(englishLevelTwoActivity.schedule("English PM")) {
       assertThat(description).isEqualTo("English PM")
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo("1000000")
+      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(4)
       assertThat(internalLocation?.code).isEqualTo("L4")

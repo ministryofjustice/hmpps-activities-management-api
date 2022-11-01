@@ -12,6 +12,10 @@ spring:
       resourceserver:
         jwt:
           public-key-location: classpath:local-public-key.pub
+  datasource:
+    url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
+    username: 'activities-management'
+    password: 'activities-management'
 
   jpa:
     show-sql: true

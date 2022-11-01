@@ -57,3 +57,5 @@ values
   (42, 4, '2022-12-07', '14:00:00', '15:00:00', false, null , null),
   (43, 4, '2022-12-14', '14:00:00', '15:00:00', false, null , null),
   (44, 4, '2022-12-21', '14:00:00', '15:00:00', false, null , null);
+
+alter sequence scheduled_instance_scheduled_instance_id_seq restart with 45

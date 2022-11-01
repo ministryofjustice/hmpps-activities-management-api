@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import java.time.LocalDate
+import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
@@ -32,11 +32,13 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
+
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
   val allocations: MutableList<Allocation> = mutableListOf(),
 
   val description: String,
-
-  var suspendUntil: LocalDate? = null,
 
   val startTime: LocalTime,
 
@@ -50,9 +52,28 @@ data class ActivitySchedule(
 
   val capacity: Int,
 
-  val daysOfWeek: String
+  val mondayFlag: Boolean,
+
+  val tuesdayFlag: Boolean,
+
+  val wednesdayFlag: Boolean,
+
+  val thursdayFlag: Boolean,
+
+  val fridayFlag: Boolean,
+
+  val saturdayFlag: Boolean,
+
+  val sundayFlag: Boolean,
 ) {
-  init {
-    // TODO - ensure the days of the week is valid or introduce value type?
+
+  fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {
+    if (mondayFlag) add(DayOfWeek.MONDAY)
+    if (tuesdayFlag) add(DayOfWeek.TUESDAY)
+    if (wednesdayFlag) add(DayOfWeek.WEDNESDAY)
+    if (thursdayFlag) add(DayOfWeek.THURSDAY)
+    if (fridayFlag) add(DayOfWeek.FRIDAY)
+    if (saturdayFlag) add(DayOfWeek.SATURDAY)
+    if (sundayFlag) add(DayOfWeek.SUNDAY)
   }
 }

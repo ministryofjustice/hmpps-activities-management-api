@@ -56,9 +56,16 @@ private fun activityEligibilityRule(activity: Activity): ActivityEligibility {
   )
 }
 
-private fun activitySchedule(
+internal fun activitySchedule(
   activity: Activity,
-  timestamp: LocalDateTime
+  timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  monday: Boolean = true,
+  tuesday: Boolean = false,
+  wednesday: Boolean = false,
+  thursday: Boolean = false,
+  friday: Boolean = false,
+  saturday: Boolean = false,
+  sunday: Boolean = false,
 ) =
   ActivitySchedule(
     activityScheduleId = 1,
@@ -67,7 +74,13 @@ private fun activitySchedule(
     startTime = timestamp.toLocalTime(),
     endTime = timestamp.toLocalTime(),
     capacity = 1,
-    daysOfWeek = "0000001",
+    mondayFlag = monday,
+    tuesdayFlag = tuesday,
+    wednesdayFlag = wednesday,
+    thursdayFlag = thursday,
+    fridayFlag = friday,
+    saturdayFlag = saturday,
+    sundayFlag = sunday,
     internalLocationId = 1,
     internalLocationCode = "EDU-ROOM-1",
     internalLocationDescription = "Education - R1"

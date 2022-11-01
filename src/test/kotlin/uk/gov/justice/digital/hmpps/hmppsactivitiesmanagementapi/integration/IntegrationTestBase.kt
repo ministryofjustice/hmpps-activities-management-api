@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.http.HttpHeaders
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
@@ -28,6 +29,9 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var jwtAuthHelper: JwtAuthHelper
+
+  @Autowired
+  lateinit var jdbcTemplate: JdbcTemplate
 
   @Autowired
   lateinit var mapper: ObjectMapper
