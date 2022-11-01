@@ -22,29 +22,29 @@ values (3, 3, 103, 123, 153, 0, 0);
 insert into activity_pay(activity_pay_id, activity_id, iep_basic_rate, iep_standard_rate, iep_enhanced_rate, piece_rate, piece_rate_items)
 values (4, 4, 104, 124, 154, 0, 0);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (1, 1, 'Geography AM', null, '10:01:00', '11:00:00', 1, 'L1', 'Location MDI 1', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (1, 1, 'Geography AM', '10:01:00', '11:00:00', 1, 'L1', 'Location MDI 1', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (2, 1, 'Geography PM', null, '14:01:00', '15:00:00', 2, 'L2', 'Location MDI 2', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (2, 1, 'Geography PM', '14:01:00', '15:00:00', 2, 'L2', 'Location MDI 2', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (3, 2, 'English AM', null, '10:01:00', '11:00:00', 2, 'L2', 'Location MDI 2', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (3, 2, 'English AM', '10:01:00', '11:00:00', 2, 'L2', 'Location MDI 2', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (4, 2, 'English PM', null, '14:01:00', '15:00:00', 1, 'L1', 'Location MDI 1', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (4, 2, 'English PM', '14:01:00', '15:00:00', 1, 'L1', 'Location MDI 1', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (5, 3, 'Maths AM', null, '10:00:00', '11:00:00', 3, 'L1', 'Location PVI 1', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (5, 3, 'Maths AM', '10:00:00', '11:00:00', 3, 'L1', 'Location PVI 1', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (6, 3, 'Maths PM', null, '14:00:00', '15:00:00', 4, 'L2', 'Location PVI 2', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (6, 3, 'Maths PM', '14:00:00', '15:00:00', 4, 'L2', 'Location PVI 2', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (7, 4, 'English AM', null, '10:00:00', '11:00:00', 4, 'L2', 'Location PVI 2', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (7, 4, 'English AM', '10:00:00', '11:00:00', 4, 'L2', 'Location PVI 2', 10, true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, suspend_until, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, days_of_week)
-values (8, 4, 'English PM', null, '14:00:00', '15:00:00', 3, 'L1', 'Location PVI 1', 10, '1000000');
+insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
+values (8, 4, 'English PM', '14:00:00', '15:00:00', 3, 'L1', 'Location PVI 1', 10, true);
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, iep_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
 values (1, 1, 'A11111A', 'BAS', 'A', '2022-10-01', null, true, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null);
