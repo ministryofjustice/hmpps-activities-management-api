@@ -53,7 +53,7 @@ class ActivityScheduleInstanceControllerTest(
     val results = transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
     whenever(
-      scheduledInstanceService.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+      scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
       )
@@ -70,7 +70,7 @@ class ActivityScheduleInstanceControllerTest(
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
 
-    verify(scheduledInstanceService).getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(
       "MDI", "A11111A",
       LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     )
@@ -78,7 +78,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `400 response when end date missing`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("startDate", "2022-10-01")
     }
       .andDo { print() }
@@ -97,7 +98,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `400 response when start date missing`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("endDate", "2022-10-01")
     }
       .andDo { print() }
@@ -116,7 +118,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `400 response when start date incorrect format`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("startDate", "01/10/2022")
     }
       .andDo { print() }
@@ -135,7 +138,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `400 response when end date incorrect format`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("startDate", "2022-10-01")
       param("endDate", "01/10/2022")
     }
@@ -155,7 +159,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `400 response when date range exceeds 3 moths`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("startDate", "2022-11-01")
       param("endDate", "2023-02-02")
     }
@@ -175,7 +180,8 @@ class ActivityScheduleInstanceControllerTest(
 
   @Test
   fun `200 response when date range equals 3 moths`() {
-    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
+      param("prisonerNumber", "A11111A")
       param("startDate", "2022-11-01")
       param("endDate", "2023-02-01")
     }
@@ -196,5 +202,5 @@ class ActivityScheduleInstanceControllerTest(
     startDate: LocalDate,
     endDate: LocalDate
   ) =
-    get("/prisons/$prisonCode/prisoners/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate")
+    get("/prisons/$prisonCode/scheduled-instances?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
 }

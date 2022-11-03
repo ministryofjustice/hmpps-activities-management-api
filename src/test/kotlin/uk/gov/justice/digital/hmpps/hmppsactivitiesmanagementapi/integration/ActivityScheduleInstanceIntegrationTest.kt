@@ -17,26 +17,41 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-3.sql"
   )
   @Test
-  fun `getActivityScheduleInstances - returns all 10 rows that satisfy the criteria`() {
+  fun `getActivityScheduleInstances for prisoner - returns all 10 rows that satisfy the criteria`() {
 
     val scheduledInstances =
-      webTestClient.getActivityScheduleInstances(
+      webTestClient.getActivityScheduleInstancesForPrisoner(
         "MDI",
         "A11111A",
         LocalDate.of(2022, 10, 1),
         LocalDate.of(2022, 11, 5)
       )
-    `assert the schedule instances activities match seed-activity-id-3 sql data`(scheduledInstances)
-    `assert the scheduled instance dates and times match seed-activity-id-3 sql`(scheduledInstances)
+    `assert the schedule instances activities for prisoner A11111A match seed-activity-id-3 sql data`(scheduledInstances)
+    `assert the scheduled instance dates and times for prisoner A11111A match seed-activity-id-3 sql`(scheduledInstances)
   }
 
   @Sql(
     "classpath:test_data/seed-activity-id-3.sql"
   )
   @Test
-  fun `getActivityScheduleInstances - date range precludes 1 row from each end of the fixture`() {
+  fun `getActivityScheduleInstances - returns all 20 rows that satisfy the criteria`() {
+
     val scheduledInstances =
       webTestClient.getActivityScheduleInstances(
+        "MDI",
+        LocalDate.of(2022, 10, 1),
+        LocalDate.of(2022, 11, 5)
+      )
+    assertThat(scheduledInstances).hasSize(20)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-3.sql"
+  )
+  @Test
+  fun `getActivityScheduleInstances for prisoner - date range precludes 1 row from each end of the fixture`() {
+    val scheduledInstances =
+      webTestClient.getActivityScheduleInstancesForPrisoner(
         "MDI",
         "A11111A",
         LocalDate.of(2022, 10, 2),
@@ -49,9 +64,23 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-3.sql"
   )
   @Test
-  fun `getActivityScheduleInstances - wrong prison code will filter results`() {
+  fun `getActivityScheduleInstances - date range precludes 4 rows from each end of the fixture`() {
     val scheduledInstances =
       webTestClient.getActivityScheduleInstances(
+        "MDI",
+        LocalDate.of(2022, 10, 2),
+        LocalDate.of(2022, 11, 4)
+      )
+    assertThat(scheduledInstances).hasSize(16)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-3.sql"
+  )
+  @Test
+  fun `getActivityScheduleInstances - wrong prison code will filter results`() {
+    val scheduledInstances =
+      webTestClient.getActivityScheduleInstancesForPrisoner(
         "PVI",
         "A11111A",
         LocalDate.of(2022, 10, 2),
@@ -60,14 +89,29 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     assertThat(scheduledInstances).hasSize(0)
   }
 
-  private fun WebTestClient.getActivityScheduleInstances(
+  private fun WebTestClient.getActivityScheduleInstancesForPrisoner(
     prisonCode: String,
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate
   ) =
     get()
-      .uri("/prisons/$prisonCode/prisoners/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate")
+      .uri("/prisons/$prisonCode/scheduled-instances?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivityScheduleInstance::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getActivityScheduleInstances(
+    prisonCode: String,
+    startDate: LocalDate,
+    endDate: LocalDate
+  ) =
+    get()
+      .uri("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
@@ -77,7 +121,9 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 }
 
-private fun `assert the scheduled instance dates and times match seed-activity-id-3 sql`(scheduledInstances: List<ActivityScheduleInstance>?) {
+private fun `assert the scheduled instance dates and times for prisoner A11111A match seed-activity-id-3 sql`(
+  scheduledInstances: List<ActivityScheduleInstance>?
+) {
 
   assertThat(scheduledInstances)
     .extracting<Tuple> { tuple(it.date, it.startTime, it.endTime) }
@@ -96,7 +142,9 @@ private fun `assert the scheduled instance dates and times match seed-activity-i
     )
 }
 
-private fun `assert the schedule instances activities match seed-activity-id-3 sql data`(scheduledInstances: List<ActivityScheduleInstance>?) {
+private fun `assert the schedule instances activities for prisoner A11111A match seed-activity-id-3 sql data`(
+  scheduledInstances: List<ActivityScheduleInstance>?
+) {
   assertThat(scheduledInstances).hasSize(10)
   assertThat(scheduledInstances?.get(0)?.activitySchedule?.description).isEqualTo("Geography AM")
   assertThat(scheduledInstances?.get(1)?.activitySchedule?.description).isEqualTo("Geography AM")

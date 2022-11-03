@@ -23,14 +23,14 @@ import java.time.LocalDate
 import javax.validation.ValidationException
 
 @RestController
-@RequestMapping("/prisons/{prisonCode}/prisoners/{prisonerNumber}/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/prisons/{prisonCode}/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ActivityScheduleInstanceController(private val scheduledInstanceService: ScheduledInstanceService) {
 
   @GetMapping()
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled instances for a prison/prisoner and date range (max 3 months)",
-    description = "Returns zero or more scheduled instances for a prison/prisoner and date range (max 3 months).",
+    summary = "Get a list of scheduled instances for a prison, prisoner (optional) and date range (max 3 months)",
+    description = "Returns zero or more scheduled instances for a prison, prisoner (optional) and date range (max 3 months).",
   )
   @ApiResponses(
     value = [
@@ -56,9 +56,9 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
       )
     ]
   )
-  fun getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+  fun getActivityScheduleInstancesByDateRange(
     @PathVariable("prisonCode") prisonCode: String,
-    @PathVariable("prisonerNumber") prisonerNumber: String,
+    @RequestParam(value = "prisonerNumber") @Parameter(description = "Prisoner number (optional)") prisonerNumber: String?,
     @RequestParam(value = "startDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Start date of query") startDate: LocalDate,
     @RequestParam(value = "endDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "End date of query (max 3 months from start date)") endDate: LocalDate,
   ): List<ActivityScheduleInstance> {
@@ -66,6 +66,6 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
-    return scheduledInstanceService.getActivityScheduleInstancesByPrisonerNumberAndDateRange(prisonCode, prisonerNumber, dateRange)
+    return scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
   }
 }

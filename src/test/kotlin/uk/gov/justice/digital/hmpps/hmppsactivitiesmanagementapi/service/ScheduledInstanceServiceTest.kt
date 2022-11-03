@@ -22,7 +22,7 @@ class ScheduledInstanceServiceTest {
     ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
     assertThat(
-      service.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+      service.getActivityScheduleInstancesByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
       )

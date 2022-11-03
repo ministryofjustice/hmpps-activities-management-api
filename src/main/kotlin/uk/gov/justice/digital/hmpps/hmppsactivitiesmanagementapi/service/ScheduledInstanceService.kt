@@ -7,17 +7,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 @Service
 class ScheduledInstanceService(private val repository: ScheduledInstanceRepository) {
 
-  fun getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+  fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
-    prisonerNumber: String,
+    prisonerNumber: String?,
     dateRange: LocalDateRange
-  ) =
-    transformActivityScheduleInstances(
-      repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-        prisonCode,
-        prisonerNumber,
-        dateRange.start,
-        dateRange.endInclusive
-      )
+  ) = transformActivityScheduleInstances(
+    if (prisonerNumber == null) repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+      prisonCode,
+      dateRange.start,
+      dateRange.endInclusive
+    ) else repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+      prisonCode,
+      prisonerNumber,
+      dateRange.start,
+      dateRange.endInclusive
     )
+  )
 }
