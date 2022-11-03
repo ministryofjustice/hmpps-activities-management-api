@@ -76,6 +76,120 @@ class ActivityScheduleInstanceControllerTest(
     )
   }
 
+  @Test
+  fun `400 response when end date missing`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("startDate", "2022-10-01")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          is4xxClientError()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+  }
+
+  @Test
+  fun `400 response when start date missing`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("endDate", "2022-10-01")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          is4xxClientError()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+  }
+
+  @Test
+  fun `400 response when start date incorrect format`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("startDate", "01/10/2022")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          is4xxClientError()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+  }
+
+  @Test
+  fun `400 response when end date incorrect format`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("startDate", "2022-10-01")
+      param("endDate", "01/10/2022")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          is4xxClientError()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+  }
+
+  @Test
+  fun `400 response when date range exceeds 3 moths`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("startDate", "2022-11-01")
+      param("endDate", "2023-02-02")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          is4xxClientError()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value("Validation failure: Date range cannot exceed 3 months")
+          }
+        }
+      }
+  }
+
+  @Test
+  fun `200 response when date range equals 3 moths`() {
+    mockMvc.get("/prisons/MDI/prisoners/A11111A/scheduled-instances") {
+      param("startDate", "2022-11-01")
+      param("endDate", "2023-02-01")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          isOk()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+        }
+      }
+  }
+
   private fun MockMvc.getPrisonerScheduledInstances(
     prisonCode: String,
     prisonerNumber: String,

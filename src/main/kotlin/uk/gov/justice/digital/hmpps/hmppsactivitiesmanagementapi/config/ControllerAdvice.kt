@@ -1,19 +1,26 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
+import org.springframework.lang.Nullable
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.context.request.WebRequest
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import org.springframework.web.util.WebUtils
 import javax.persistence.EntityNotFoundException
 import javax.validation.ValidationException
 
 @RestControllerAdvice
-class ControllerAdvice {
+class ControllerAdvice : ResponseEntityExceptionHandler() {
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)
@@ -60,14 +67,53 @@ class ControllerAdvice {
   fun handleEntityNotFoundException(e: EntityNotFoundException): ResponseEntity<ErrorResponse> {
     log.info("Entity not found exception: {}", e.message)
     return ResponseEntity
-      .status(HttpStatus.NOT_FOUND)
+      .status(NOT_FOUND)
       .body(
         ErrorResponse(
-          status = HttpStatus.NOT_FOUND.value(),
+          status = NOT_FOUND.value(),
           userMessage = "Not found: ${e.message}",
           developerMessage = e.message
         )
       )
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+  fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+    log.info("Method argument type mismatch exception: {}", e.message)
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST.value(),
+          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; nested exception is")}",
+          developerMessage = e.message
+        )
+      )
+  }
+
+  override fun handleExceptionInternal(
+    ex: java.lang.Exception,
+    @Nullable body: Any?,
+    headers: HttpHeaders,
+    status: HttpStatus,
+    request: WebRequest
+  ): ResponseEntity<Any> {
+    if (INTERNAL_SERVER_ERROR == status) {
+      request.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST)
+    } else {
+      if (body == null) {
+        return ResponseEntity(
+          ErrorResponse(
+            status = status,
+            userMessage = ex.message,
+            developerMessage = ex.message
+          ),
+          headers,
+          status
+        )
+      }
+    }
+    return ResponseEntity(body, headers, status)
   }
 
   companion object {
