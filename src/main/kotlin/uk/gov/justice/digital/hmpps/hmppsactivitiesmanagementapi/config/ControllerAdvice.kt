@@ -3,7 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.*
+import org.springframework.http.HttpStatus.BAD_REQUEST
+import org.springframework.http.HttpStatus.FORBIDDEN
+import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.lang.Nullable
 import org.springframework.security.access.AccessDeniedException
@@ -17,7 +20,7 @@ import javax.persistence.EntityNotFoundException
 import javax.validation.ValidationException
 
 @RestControllerAdvice
-class ControllerAdvice: ResponseEntityExceptionHandler() {
+class ControllerAdvice : ResponseEntityExceptionHandler() {
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)
@@ -100,11 +103,14 @@ class ControllerAdvice: ResponseEntityExceptionHandler() {
     } else {
       if (body == null) {
         return ResponseEntity(
-        ErrorResponse(
-          status = status,
-          userMessage = ex.message,
-          developerMessage = ex.message
-        ), headers, status)
+          ErrorResponse(
+            status = status,
+            userMessage = ex.message,
+            developerMessage = ex.message
+          ),
+          headers,
+          status
+        )
       }
     }
     return ResponseEntity(body, headers, status)
