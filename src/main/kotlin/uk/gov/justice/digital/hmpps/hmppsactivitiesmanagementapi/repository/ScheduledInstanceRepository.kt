@@ -20,4 +20,17 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
     startDate: LocalDate,
     endDate: LocalDate
   ): List<ScheduledInstance>
+
+  @Query(
+    "SELECT si FROM ScheduledInstance si WHERE EXISTS(" +
+      "SELECT 1 FROM si.activitySchedule.allocations a " +
+      "WHERE a.activitySchedule.activity.prisonCode = :prisonCode) " +
+      "AND si.sessionDate >= :startDate " +
+      "AND si.sessionDate <= :endDate "
+  )
+  fun getActivityScheduleInstancesByPrisonCodeAndDateRange(
+    prisonCode: String,
+    startDate: LocalDate,
+    endDate: LocalDate
+  ): List<ScheduledInstance>
 }
