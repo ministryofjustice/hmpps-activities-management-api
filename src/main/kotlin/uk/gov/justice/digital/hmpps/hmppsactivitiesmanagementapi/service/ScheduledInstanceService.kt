@@ -12,13 +12,15 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
     prisonerNumber: String?,
     dateRange: LocalDateRange
   ) = transformActivityScheduleInstances(
-    if (prisonerNumber == null) repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+    prisonerNumber?.let {
+      repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
+        prisonCode,
+        prisonerNumber,
+        dateRange.start,
+        dateRange.endInclusive
+      )
+    } ?: repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
       prisonCode,
-      dateRange.start,
-      dateRange.endInclusive
-    ) else repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-      prisonCode,
-      prisonerNumber,
       dateRange.start,
       dateRange.endInclusive
     )
