@@ -43,5 +43,5 @@ class CreateActivitySessionsJob(
   }
 
   private fun List<ActivitySchedule>.filterActivitySchedulesWithNoPreExistingInstance(day: LocalDate) =
-    this.filter { it.instances.none { it.sessionDate == day } }
+    this.filter { it.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day } }
 }

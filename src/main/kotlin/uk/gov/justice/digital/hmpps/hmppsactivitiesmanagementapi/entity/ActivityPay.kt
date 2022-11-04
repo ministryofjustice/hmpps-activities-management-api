@@ -2,15 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.Hibernate
 import org.springframework.data.jpa.domain.AbstractPersistable_.id
-import javax.persistence.CascadeType
 import javax.persistence.Entity
-import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
-import javax.persistence.OneToMany
-import javax.persistence.OneToOne
+import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
@@ -20,18 +17,15 @@ data class ActivityPay(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val activityPayId: Long? = null,
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  @OneToMany(mappedBy = "activityPay", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  val payBands: MutableList<ActivityPayBand> = mutableListOf(),
+  var incentiveLevel: String? = null,
 
-  var iepBasicRate: Int? = null,
+  var payBand: String? = null,
 
-  var iepStandardRate: Int? = null,
-
-  var iepEnhancedRate: Int? = null,
+  var rate: Int? = null,
 
   var pieceRate: Int? = null,
 

@@ -45,9 +45,9 @@ data class Activity(
   @Fetch(FetchMode.SUBSELECT)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
-  @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumn(name = "activity_id")
-  var activityPay: ActivityPay? = null,
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  var activityPay: MutableList<ActivityPay> = mutableListOf(),
 
   val summary: String,
 

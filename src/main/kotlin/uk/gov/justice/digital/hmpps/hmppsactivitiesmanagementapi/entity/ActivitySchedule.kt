@@ -52,19 +52,19 @@ data class ActivitySchedule(
 
   val capacity: Int,
 
-  val mondayFlag: Boolean,
+  val mondayFlag: Boolean = false,
 
-  val tuesdayFlag: Boolean,
+  val tuesdayFlag: Boolean = false,
 
-  val wednesdayFlag: Boolean,
+  val wednesdayFlag: Boolean = false,
 
-  val thursdayFlag: Boolean,
+  val thursdayFlag: Boolean = false,
 
-  val fridayFlag: Boolean,
+  val fridayFlag: Boolean = false,
 
-  val saturdayFlag: Boolean,
+  val saturdayFlag: Boolean = false,
 
-  val sundayFlag: Boolean,
+  val sundayFlag: Boolean = false,
 ) {
 
   fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {

@@ -15,7 +15,7 @@ data class Allocation(
   val prisonerNumber: String,
 
   @Schema(description = "The incentive/earned privilege (level) for this offender allocation", example = "BAS, STD, ENH")
-  val iepLevel: String? = null,
+  val incentiveLevel: String? = null,
 
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner", example = "A")
   val payBand: String? = null,

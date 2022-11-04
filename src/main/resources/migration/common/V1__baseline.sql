@@ -146,6 +146,8 @@ CREATE TABLE activity_schedule_suspension (
     suspended_until                 date
 );
 
+CREATE INDEX idx_activity_schedule_suspension_schedule_id ON activity_schedule_suspension (activity_schedule_id);
+
 CREATE TABLE scheduled_instance (
   scheduled_instance_id bigserial NOT NULL CONSTRAINT scheduled_instance_pk PRIMARY KEY,
   activity_schedule_id  bigint    NOT NULL REFERENCES activity_schedule (activity_schedule_id),
@@ -171,7 +173,7 @@ CREATE TABLE attendance (
   posted                boolean,
   recorded_time         timestamp,
   recorded_by           varchar(100),
-  status                varchar(20), -- WAIT, CANC, COMP ?
+  status                varchar(20), -- SCH, CANC, COMP, PAID?
   pay_amount            integer,
   bonus_amount          integer,
   pieces                integer
@@ -199,8 +201,8 @@ CREATE TABLE allocation (
   allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,
   activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
-  iep_level            varchar(3),
-  pay_band             varchar(1),
+  incentive_level      varchar(10),
+  pay_band             varchar(10),
   start_date           date         NOT NULL,
   end_date             date,
   active               boolean      NOT NULL DEFAULT TRUE,
@@ -219,23 +221,12 @@ CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 CREATE TABLE activity_pay (
   activity_pay_id   bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
   activity_id       bigint    NOT NULL REFERENCES activity (activity_id),
-  iep_basic_rate    integer,
-  iep_standard_rate integer,
-  iep_enhanced_rate integer,
+  incentive_level   varchar(10),
+  pay_band          varchar(10),
+  rate              integer,
   piece_rate        integer,
   piece_rate_items  integer
 );
 
 CREATE INDEX idx_activity_pay_activity_id ON activity_pay (activity_id);
 
-CREATE TABLE activity_pay_band (
-  activity_pay_band_id bigserial  NOT NULL CONSTRAINT activity_pay_band_pk PRIMARY KEY,
-  activity_pay_id      bigint     NOT NULL REFERENCES activity_pay (activity_pay_id),
-  pay_band             varchar(1) NOT NULL,
-  rate                 integer,
-  piece_rate           integer,
-  piece_rate_items     integer
-);
-
-CREATE INDEX idx_activity_pay_band ON activity_pay_band (pay_band);
-CREATE INDEX idx_activity_pay_band_pay_id ON activity_pay_band (activity_pay_id);

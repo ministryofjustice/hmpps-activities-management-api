@@ -35,8 +35,8 @@ data class Activity(
   @Schema(description = "A list of prisoners who are waiting for allocation to this activity. This list is held against the activity, though allocation is against particular schedules of the activity")
   val waitingList: List<PrisonerWaiting> = emptyList(),
 
-  @Schema(description = "The details of the pay rates and pay bands that apply to all of the schedules of this activity")
-  val pay: ActivityPay? = null,
+  @Schema(description = "The list of pay rates by incentive level and pay band that can apply to this activity")
+  val pay: List<ActivityPay> = emptyList(),
 
   @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
