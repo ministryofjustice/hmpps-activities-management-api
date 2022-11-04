@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Eligibil
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.transform
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -40,7 +40,7 @@ internal fun activityEntity(
     activityPay.add(activityPay(this))
   }
 
-private fun activityCategory() =
+internal fun activityCategory() =
   ActivityCategory(activityCategoryId = 1, code = "code", description = "category description")
 
 private fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")

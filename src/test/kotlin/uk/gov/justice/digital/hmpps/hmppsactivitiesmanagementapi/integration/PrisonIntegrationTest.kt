@@ -7,30 +7,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDate
 
 class PrisonIntegrationTest : IntegrationTestBase() {
-
-  @Test
-  fun `get active rollout prison HMP Pentonville`() {
-    with(webTestClient.getPrisonByCode("PVI")!!) {
-      assertThat(id).isEqualTo(1)
-      assertThat(code).isEqualTo("PVI")
-      assertThat(description).isEqualTo("HMP Pentonville")
-      assertThat(active).isTrue
-    }
-  }
-
-  @Test
-  fun `get inactive rollout prison HMP Moorland`() {
-    with(webTestClient.getPrisonByCode("MDI")!!) {
-      assertThat(id).isEqualTo(2)
-      assertThat(code).isEqualTo("MDI")
-      assertThat(description).isEqualTo("HMP Moorland")
-      assertThat(active).isFalse
-    }
-  }
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql"
@@ -65,20 +44,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     assertThat(locations).containsExactly(InternalLocation(2, "L2", "Location 2"))
   }
 
-  private fun WebTestClient.getPrisonByCode(code: String) =
-    get()
-      .uri("/prisons/$code")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(RolloutPrison::class.java)
-      .returnResult().responseBody
-
   private fun WebTestClient.getLocationsPrisonByCode(code: String, date: LocalDate? = LocalDate.now(), timeSlot: TimeSlot? = null) =
     get()
-      .uri("/prisons/$code/locations?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
+      .uri("/prison/$code/locations?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

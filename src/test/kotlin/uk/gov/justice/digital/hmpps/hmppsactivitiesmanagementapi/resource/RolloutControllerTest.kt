@@ -20,63 +20,62 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import javax.persistence.EntityNotFoundException
 
 @ExtendWith(SpringExtension::class)
-@WebMvcTest(controllers = [ScheduledInstanceController::class])
+@WebMvcTest(controllers = [RolloutController::class])
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = [ScheduledInstanceController::class])
+@ContextConfiguration(classes = [RolloutController::class])
 @ActiveProfiles("test")
 @WebAppConfiguration
-class ScheduledInstanceControllerTest(
+class RolloutControllerTest(
   @Autowired private val mapper: ObjectMapper
 ) {
   private lateinit var mockMvc: MockMvc
 
   @MockBean
-  private lateinit var attendancesService: AttendancesService
+  private lateinit var prisonService: RolloutPrisonService
 
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(ScheduledInstanceController(attendancesService))
+      .standaloneSetup(RolloutController(prisonService))
       .setControllerAdvice(ControllerAdvice())
       .build()
   }
 
   @Test
-  fun `200 response when get attendances by schedule ID found`() {
-    val attendances = activityEntity().schedules.first().instances.first().attendances.map { transform(it) }
+  fun `200 response when get prison by code found`() {
+    val rolloutPrison = transform(rolloutPrison())
 
-    whenever(attendancesService.findAttendancesByScheduledInstance(1)).thenReturn(attendances)
+    whenever(prisonService.getByPrisonCode("PVI")).thenReturn(rolloutPrison)
 
-    val response = mockMvc.getAttendancesByScheduledInstance("1")
+    val response = mockMvc.getPrisonByCode("PVI")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendances))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(rolloutPrison))
 
-    verify(attendancesService).findAttendancesByScheduledInstance(1)
+    verify(prisonService).getByPrisonCode("PVI")
   }
 
   @Test
-  fun `404 response when get attendances by scheduled instance ID not found`() {
-    whenever(attendancesService.findAttendancesByScheduledInstance(2)).thenThrow(EntityNotFoundException("not found"))
+  fun `404 response when get prison by code not found`() {
+    whenever(prisonService.getByPrisonCode("PVX")).thenThrow(EntityNotFoundException("not found"))
 
-    val response = mockMvc.getAttendancesByScheduledInstance("2")
+    val response = mockMvc.getPrisonByCode("PVX")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(attendancesService).findAttendancesByScheduledInstance(2)
+    verify(prisonService).getByPrisonCode("PVX")
   }
 
-  private fun MockMvc.getAttendancesByScheduledInstance(instanceId: String) =
-    get("/scheduled-instances/$instanceId/attendances")
+  private fun MockMvc.getPrisonByCode(code: String) = get("/rollout/{code}", code)
 }

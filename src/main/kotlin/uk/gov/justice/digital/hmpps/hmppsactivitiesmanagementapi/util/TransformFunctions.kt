@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import java.time.format.TextStyle
 import java.util.Locale
@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite as ModelActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -32,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerW
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 /**
  * Transform functions providing a thin layer to transform entities into their API model equivalents and vice-versa.
@@ -61,7 +61,6 @@ fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledI
 private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
     this.activityCategoryId!!,
-    this.code,
     this.description
   )
 

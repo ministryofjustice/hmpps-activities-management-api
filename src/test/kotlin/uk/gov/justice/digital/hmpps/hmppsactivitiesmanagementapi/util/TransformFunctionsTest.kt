@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
@@ -17,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
 
@@ -29,7 +29,7 @@ class TransformFunctionsTest {
       assertThat(prisonCode).isEqualTo("123")
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
-      assertThat(category).isEqualTo(ModelActivityCategory(id = 1, code = "code", description = "category description"))
+      assertThat(category).isEqualTo(ModelActivityCategory(id = 1, description = "category description"))
       assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
