@@ -4,7 +4,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -38,7 +37,7 @@ internal fun activityEntity(
     eligibilityRules.add(activityEligibilityRule(this))
     schedules.add(activitySchedule(this, timestamp))
     waitingList.add(activityWaiting(this, timestamp))
-    activityPay = activityPay(this)
+    activityPay.add(activityPay(this))
   }
 
 private fun activityCategory() =
@@ -108,7 +107,7 @@ internal fun activitySchedule(
         allocationId = 1,
         activitySchedule = this,
         prisonerNumber = "A1234AA",
-        iepLevel = "BAS",
+        incentiveLevel = "BAS",
         payBand = "A",
         startDate = timestamp.toLocalDate(),
         endDate = null,
@@ -126,7 +125,7 @@ private fun activityWaiting(
   PrisonerWaiting(
     prisonerWaitingId = 1,
     activity = activity,
-    prisonerNumber = "1234567890",
+    prisonerNumber = "A1234AA",
     priority = 1,
     createdTime = timestamp,
     createdBy = "test"
@@ -136,19 +135,11 @@ private fun activityPay(activity: Activity) =
   ActivityPay(
     activityPayId = 1,
     activity = activity,
-    iepBasicRate = 10,
-    iepStandardRate = 20,
-    iepEnhancedRate = 30,
+    incentiveLevel = "BAS",
+    payBand = "A",
+    rate = 30,
     pieceRate = 40,
     pieceRateItems = 50
-  ).apply {
-    payBands.add(activityPayBand(this))
-  }
-
-private fun activityPayBand(activityPay: ActivityPay) =
-  ActivityPayBand(
-    activityPayBandId = 1,
-    activityPay = activityPay
   )
 
 fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true)

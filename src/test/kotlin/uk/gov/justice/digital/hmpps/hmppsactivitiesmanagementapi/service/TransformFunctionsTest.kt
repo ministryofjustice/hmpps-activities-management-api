@@ -11,7 +11,6 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -62,7 +61,7 @@ class TransformFunctionsTest {
             Allocation(
               id = 1,
               prisonerNumber = "A1234AA",
-              iepLevel = "BAS",
+              incentiveLevel = "BAS",
               payBand = "A",
               startDate = timestamp.toLocalDate(),
               endDate = null,
@@ -79,28 +78,10 @@ class TransformFunctionsTest {
         )
       )
       assertThat(waitingList).containsExactly(
-        ModelActivityWaiting(
-          id = 1,
-          prisonerNumber = "1234567890",
-          priority = 1,
-          createdTime = timestamp,
-          createdBy = "test"
-        )
+        ModelActivityWaiting(id = 1, prisonerNumber = "A1234AA", priority = 1, createdTime = timestamp, createdBy = "test")
       )
-      assertThat(pay).isEqualTo(
-        ModelActivityPay(
-          id = 1,
-          bands = listOf(
-            ModelActivityPayBand(
-              id = 1
-            )
-          ),
-          iepBasicRate = 10,
-          iepStandardRate = 20,
-          iepEnhancedRate = 30,
-          pieceRate = 40,
-          pieceRateItems = 50
-        )
+      assertThat(pay).containsExactly(
+        ModelActivityPay(id = 1, incentiveLevel = "BAS", payBand = "A", rate = 30, pieceRate = 40, pieceRateItems = 50)
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()

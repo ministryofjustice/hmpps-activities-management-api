@@ -23,7 +23,7 @@ data class Allocation(
 
   val prisonerNumber: String,
 
-  var iepLevel: String? = null,
+  var incentiveLevel: String? = null,
 
   var payBand: String? = null,
 

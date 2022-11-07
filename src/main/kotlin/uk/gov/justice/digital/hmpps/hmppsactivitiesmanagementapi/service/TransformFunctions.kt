@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayBand as EntityActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
@@ -20,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityC
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite as ModelActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayBand as ModelActivityPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite as ModelActivityScheduleLite
@@ -47,7 +45,7 @@ fun transform(activity: EntityActivity) =
     eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
     schedules = activity.schedules.toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
-    pay = activity.activityPay?.toModelActivityPay(),
+    pay = activity.activityPay.toModelActivityPayList(),
     summary = activity.summary,
     description = activity.description,
     startDate = activity.startDate,
@@ -57,7 +55,8 @@ fun transform(activity: EntityActivity) =
     createdBy = activity.createdBy
   )
 
-fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> = scheduledInstances.toModelActivityScheduleInstances()
+fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> =
+  scheduledInstances.toModelActivityScheduleInstances()
 
 private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
@@ -77,16 +76,6 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   ModelActivityEligibility(
     it.activityEligibilityId!!,
     it.eligibilityRule.let { er -> ModelEligibilityRule(er.eligibilityRuleId!!, er.code, er.description) }
-  )
-}
-
-private fun List<EntityActivityPayBand>.toModelPayBands() = map {
-  ModelActivityPayBand(
-    id = it.activityPayBandId!!,
-    payBand = it.payBand,
-    rate = it.rate,
-    pieceRate = it.pieceRate,
-    pieceRateItems = it.pieceRateItems
   )
 }
 
@@ -168,7 +157,7 @@ private fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(
     id = it.allocationId!!,
     prisonerNumber = it.prisonerNumber,
-    iepLevel = it.iepLevel,
+    incentiveLevel = it.incentiveLevel,
     payBand = it.payBand,
     startDate = it.startDate,
     endDate = it.endDate,
@@ -185,16 +174,16 @@ private fun List<EntitySuspension>.toModelSuspensions() = map {
   )
 }
 
-private fun EntityActivityPay.toModelActivityPay() =
+private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
-    id = this.activityPayId!!,
-    bands = this.payBands.toModelPayBands(),
-    iepBasicRate = this.iepBasicRate,
-    iepStandardRate = this.iepStandardRate,
-    iepEnhancedRate = this.iepEnhancedRate,
-    pieceRate = this.pieceRate,
-    pieceRateItems = this.pieceRateItems
+    id = it.activityPayId!!,
+    incentiveLevel = it.incentiveLevel,
+    payBand = it.payBand,
+    rate = it.rate,
+    pieceRate = it.pieceRate,
+    pieceRateItems = it.pieceRateItems
   )
+}
 
 private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.let {
   ModelInternalLocation(

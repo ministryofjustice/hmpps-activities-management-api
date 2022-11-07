@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import java.time.LocalDateTime
 
@@ -32,12 +33,16 @@ class ActivityRepositoryTest(
       description = "Maths basic",
       startDate = timestamp.toLocalDate(),
       createdTime = timestamp,
-      createdBy = "me"
+      createdBy = "me",
     ).also {
       assertThat(it.activityId).isNull()
     }
 
     val persisted = repository.save(activity)
+    val activityPayRow = entityManager.persist(
+      ActivityPay(activity = activity, incentiveLevel = "BAS", payBand = "A", rate = 100, pieceRate = 10, pieceRateItems = 1)
+    )
+    persisted.activityPay = mutableListOf(activityPayRow)
 
     with(persisted) {
       assertThat(activityId).isNotNull
@@ -52,7 +57,9 @@ class ActivityRepositoryTest(
       assertThat(eligibilityRules).isEmpty()
       assertThat(waitingList).isEmpty()
       assertThat(schedules).isEmpty()
-      assertThat(activityPay).isNull()
+      assertThat(activityPay[0].incentiveLevel).isEqualTo("BAS")
+      assertThat(activityPay[0].payBand).isEqualTo("A")
+      assertThat(activityPay[0].rate).isEqualTo(100)
       assertThat(active).isTrue
       assertThat(endDate).isNull()
     }
