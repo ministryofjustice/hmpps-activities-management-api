@@ -17,7 +17,7 @@ data class ActivityPay(
   @Schema(description = "The earning rate for one half day session for someone of this incentive level and pay band (in pence)", example = "150")
   val rate: Int? = null,
 
-  @Schema(description = "Where payment is related to produced amounts of a product, this indicates the payment rate per pieceRateItems produced", example = "150")
+  @Schema(description = "Where payment is related to produced amounts of a product, this indicates the payment rate (in pence) per pieceRateItems produced", example = "150")
   val pieceRate: Int? = null,
 
   @Schema(description = "Where payment is related to the number of items produced in a batch of a product, this is the batch size that attract 1 x pieceRate", example = "10")
