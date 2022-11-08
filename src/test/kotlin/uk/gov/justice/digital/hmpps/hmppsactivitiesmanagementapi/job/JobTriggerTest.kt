@@ -29,17 +29,20 @@ class JobTriggerTest {
   @MockBean
   private lateinit var createActivitySessionsJob: CreateActivitySessionsJob
 
+  @MockBean
+  private lateinit var createAttendanceRecordsJob: CreateAttendanceRecordsJob
+
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(JobTrigger(createActivitySessionsJob))
+      .standaloneSetup(JobTrigger(createActivitySessionsJob, createAttendanceRecordsJob))
       .setControllerAdvice(ControllerAdvice())
       .build()
   }
 
   @Test
-  fun `201 response when get activity by ID found`() {
-    val response = mockMvc.triggerCreateActivitySessionsJob()
+  fun `201 response when create activity sessions job triggered`() {
+    val response = mockMvc.triggerJob("create-activity-sessions")
       .andExpect { status { isCreated() } }
       .andReturn().response
 
@@ -48,5 +51,16 @@ class JobTriggerTest {
     verify(createActivitySessionsJob).execute()
   }
 
-  private fun MockMvc.triggerCreateActivitySessionsJob() = post("/job/create-activity-sessions")
+  @Test
+  fun `201 response when attendance record creation job triggered`() {
+    val response = mockMvc.triggerJob("create-attendance-records")
+      .andExpect { status { isCreated() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("Create attendance records triggered")
+
+    verify(createAttendanceRecordsJob).execute()
+  }
+
+  private fun MockMvc.triggerJob(jobName: String) = post("/job/$jobName")
 }
