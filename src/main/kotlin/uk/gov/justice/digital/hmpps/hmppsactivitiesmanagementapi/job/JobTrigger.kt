@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/job", produces = [MediaType.APPLICATION_JSON_VALUE])
-class JobTrigger(private val createActivitySessionsJob: CreateActivitySessionsJob) {
+class JobTrigger(
+  private val createActivitySessionsJob: CreateActivitySessionsJob,
+  private val createAttendanceRecordsJob: CreateAttendanceRecordsJob
+) {
 
   @PostMapping(value = ["/create-activity-sessions"])
   @ResponseBody
@@ -21,5 +24,13 @@ class JobTrigger(private val createActivitySessionsJob: CreateActivitySessionsJo
   fun triggerCreateActivitySessionsJob(): String {
     createActivitySessionsJob.execute()
     return "Activity sessions scheduled"
+  }
+
+  @PostMapping(value = ["/create-attendance-records"])
+  @ResponseBody
+  @ResponseStatus(HttpStatus.CREATED)
+  fun triggerCreateAttendanceRecordsJob(): String {
+    createAttendanceRecordsJob.execute()
+    return "Create attendance records triggered"
   }
 }
