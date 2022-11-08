@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -44,9 +47,35 @@ class AttendancesService(
     attendanceRepository.saveAll(updatedAttendances)
   }
 
+  // TODO not checking for suspensions, inactive allocations and not applying pay rates.
   fun createAttendanceRecordsFor(date: LocalDate) {
     log.info("Creating attendance records for date: $date")
 
-    // TODO to be implemented.
+    scheduledInstanceRepository.findAllBySessionDate(date).forEach { instance ->
+      instance.forEachAllocation { allocation -> createAttendanceRecordIfNoPreExistingRecord(instance, allocation) }
+    }
+  }
+
+  private fun ScheduledInstance.forEachAllocation(f: (allocation: Allocation) -> Unit) {
+    activitySchedule.allocations.forEach { f(it) }
+  }
+
+  private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
+    if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
+        instance,
+        allocation.prisonerNumber
+      )
+    ) {
+      log.info("Attendance record already exists for allocation ${allocation.allocationId} and scheduled instance ${instance.scheduledInstanceId}")
+      return
+    }
+
+    attendanceRepository.save(
+      Attendance(
+        scheduledInstance = instance,
+        prisonerNumber = allocation.prisonerNumber,
+        posted = false
+      )
+    )
   }
 }
