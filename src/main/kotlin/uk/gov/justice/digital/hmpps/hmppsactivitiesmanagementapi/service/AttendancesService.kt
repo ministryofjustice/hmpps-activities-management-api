@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
@@ -14,6 +16,10 @@ class AttendancesService(
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository
 ) {
+
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun findAttendancesByScheduledInstance(instanceId: Long): List<ModelAttendance> =
     scheduledInstanceRepository.findById(instanceId).orElseThrow {
@@ -36,5 +42,11 @@ class AttendancesService(
     }
 
     attendanceRepository.saveAll(updatedAttendances)
+  }
+
+  fun createAttendanceRecordsFor(date: LocalDate) {
+    log.info("Creating attendance records for date: $date")
+
+    // TODO to be implemented.
   }
 }
