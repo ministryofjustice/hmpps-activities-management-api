@@ -33,4 +33,6 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
     startDate: LocalDate,
     endDate: LocalDate
   ): List<ScheduledInstance>
+
+  fun findAllBySessionDate(date: LocalDate): List<ScheduledInstance>
 }
