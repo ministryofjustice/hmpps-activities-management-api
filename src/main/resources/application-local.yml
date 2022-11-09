@@ -38,4 +38,3 @@ prison:
   api:
     url: https://api-dev.prison.service.justice.gov.uk
     timeout: 10s
-
