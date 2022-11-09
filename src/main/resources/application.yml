@@ -23,6 +23,17 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${hmpps.auth.url}/.well-known/jwks.json
+      client:
+        registration:
+          prison-api:
+            provider: hmpps-auth
+            client-id: ${system.client.id}
+            client-secret: ${system.client.secret}
+            authorization-grant-type: client_credentials
+            scope: read,write
+        provider:
+          hmpps-auth:
+            token-uri: ${hmpps.auth.url}/oauth/token
 
   jpa:
     open-in-view: false
@@ -77,6 +88,10 @@ management:
     info:
       cache:
         time-to-live: 2000ms
+
+prison:
+  api:
+    timeout: 10s
 
 jobs:
   create-activity-sessions:

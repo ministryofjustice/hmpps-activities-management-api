@@ -5,13 +5,10 @@
 #
 
 # Most values are inherited from - application.yml - except the following:
-
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          public-key-location: classpath:local-public-key.pub
+  flyway:
+    locations: classpath:/migration/common,classpath:/migration/data
+
   datasource:
     url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
     username: 'activities-management'
@@ -20,10 +17,23 @@ spring:
   jpa:
     show-sql: true
 
-  flyway:
-    locations: classpath:/migration/common,classpath:/migration/data
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
+system:
+  client:
+    id: activities-management-admin-1
+    secret: secret
 
 # Container-provider local auth server
 hmpps:
   auth:
     url: http://localhost:8090/auth
+
+prison:
+  api:
+    url: http://localhost:8091
+    timeout: 10s
