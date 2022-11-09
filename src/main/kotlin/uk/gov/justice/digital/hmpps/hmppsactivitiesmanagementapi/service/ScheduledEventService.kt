@@ -20,6 +20,8 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
       return emptyList()
     }
     val appointments = prisonApiClient.getScheduledAppointments(prisonerDetail.bookingId, dateRange).block()
-    return transformToScheduledEvents(appointments, prisonerNumber)
+
+    if (appointments.isNullOrEmpty()) return emptyList() else
+      return transformToScheduledEvents(appointments, prisonerNumber)
   }
 }

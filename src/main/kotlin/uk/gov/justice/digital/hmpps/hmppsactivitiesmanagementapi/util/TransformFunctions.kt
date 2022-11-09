@@ -62,11 +62,9 @@ fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledI
   scheduledInstances.toModelActivityScheduleInstances()
 
 fun transformToScheduledEvents(
-  appointments: List<uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent>?,
-  prisonerNumber: String?
-): List<ModelScheduledEvent> =
-  if (appointments.isNullOrEmpty()) emptyList() else
-    appointments.toScheduledEvents(prisonerNumber)
+  appointments: List<PrisonApiScheduledEvent>,
+  prisonerNumber: String
+): List<ModelScheduledEvent> = appointments.toScheduledEvents(prisonerNumber)
 
 private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(

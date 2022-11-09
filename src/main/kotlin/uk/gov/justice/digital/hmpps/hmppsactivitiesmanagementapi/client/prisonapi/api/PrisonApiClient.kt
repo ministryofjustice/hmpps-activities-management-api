@@ -23,7 +23,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonerNumber)
       }
       .retrieve()
-      .bodyToMono<InmateDetail>(typeReference<InmateDetail>())
+      .bodyToMono(typeReference<InmateDetail>())
   }
 
   fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
@@ -36,6 +36,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(bookingId)
       }
       .retrieve()
-      .bodyToMono<List<PrisonApiScheduledEvent>>(typeReference<List<PrisonApiScheduledEvent>>())
+      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 }
