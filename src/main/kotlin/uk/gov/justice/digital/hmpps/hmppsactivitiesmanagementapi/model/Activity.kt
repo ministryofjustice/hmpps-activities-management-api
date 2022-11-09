@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -20,7 +21,7 @@ data class Activity(
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
   val description: String,
 
-  @Schema(description = "The category for this activity, one of the high-level categories", example = "Education, Work, Intervention, Health")
+  @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,
 
   @Schema(description = "The tier for this activity, as defined by the Future Prison Regime team", example = "Tier 1, Tier 2, Foundation")

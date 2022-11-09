@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
@@ -75,5 +76,9 @@ data class ActivitySchedule(
     if (fridayFlag) add(DayOfWeek.FRIDAY)
     if (saturdayFlag) add(DayOfWeek.SATURDAY)
     if (sundayFlag) add(DayOfWeek.SUNDAY)
+  }
+
+  fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
+    !date.isBefore(it.startDate) && (it.endDate === null || !date.isAfter(it.endDate))
   }
 }

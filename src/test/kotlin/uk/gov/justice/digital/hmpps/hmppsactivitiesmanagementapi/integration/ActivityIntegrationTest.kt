@@ -6,9 +6,9 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -23,7 +23,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("PVI")
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
-      assertThat(category).isEqualTo(ActivityCategory(1, "C1", "Category 1"))
+      assertThat(category).isEqualTo(ActivityCategory(1, "Category 1"))
       assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
       assertThat(pay).hasSize(1)
       pay.map {
@@ -107,7 +107,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val englishLevelTwoActivity = with(webTestClient.getActivityById(2)!!) {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
-      assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2"))
+      assertThat(category).isEqualTo(ActivityCategory(2, "Category 2"))
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       pay.map {
         assertThat(it.incentiveLevel).isEqualTo("BAS")

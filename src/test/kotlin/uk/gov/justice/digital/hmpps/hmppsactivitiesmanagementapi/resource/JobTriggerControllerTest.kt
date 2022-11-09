@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -16,14 +16,16 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateActivitySessionsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAttendanceRecordsJob
 
 @ExtendWith(SpringExtension::class)
-@WebMvcTest(controllers = [JobTrigger::class])
+@WebMvcTest(controllers = [JobTriggerController::class])
 @AutoConfigureMockMvc(addFilters = false)
-@ContextConfiguration(classes = [JobTrigger::class])
+@ContextConfiguration(classes = [JobTriggerController::class])
 @ActiveProfiles("test")
 @WebAppConfiguration
-class JobTriggerTest {
+class JobTriggerControllerTest {
   private lateinit var mockMvc: MockMvc
 
   @MockBean
@@ -35,7 +37,7 @@ class JobTriggerTest {
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(JobTrigger(createActivitySessionsJob, createAttendanceRecordsJob))
+      .standaloneSetup(JobTriggerController(createActivitySessionsJob, createAttendanceRecordsJob))
       .setControllerAdvice(ControllerAdvice())
       .build()
   }

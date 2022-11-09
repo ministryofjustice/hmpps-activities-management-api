@@ -18,32 +18,35 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
-@RequestMapping("/prisons", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
 class PrisonController(
-  private val prisonService: RolloutPrisonService,
-  private val scheduleService: ActivityScheduleService
+  private val capacityService: CapacityService,
+  private val scheduleService: ActivityScheduleService,
 ) {
 
-  @GetMapping(value = ["/{prisonCode}"])
-  @ResponseBody
   @Operation(
-    summary = "Get a prison by its code",
-    description = "Returns a single prison and its details by its unique code.",
+    summary = "Get the capacity and number of allocated slots in an activity category within a prison",
+    description = "Requires one of the following roles - ('SYSTEM_USER', 'ROLE_ACTIVITIES_ADMIN')"
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Prison found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = RolloutPrison::class))],
+        description = "Activity category capacity",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = CapacityAndAllocated::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Category ID not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -54,16 +57,15 @@ class PrisonController(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The prison for this code was not found.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       )
     ]
   )
-  fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrison =
-    prisonService.getByPrisonCode(prisonCode)
+  @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/capacity"])
+  @ResponseBody
+  fun getActivityCategoryCapacity(
+    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable("categoryId") categoryId: Long,
+  ): CapacityAndAllocated = capacityService.getActivityCategoryCapacityAndAllocated(prisonCode, categoryId)
 
   @GetMapping(value = ["/{prisonCode}/locations"])
   @ResponseBody
@@ -76,12 +78,7 @@ class PrisonController(
       ApiResponse(
         responseCode = "200",
         description = "Locations found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = InternalLocation::class))
-          )
-        ],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = InternalLocation::class)))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -96,14 +93,15 @@ class PrisonController(
     ]
   )
   fun getScheduledPrisonLocations(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(
-      value = "date",
-      required = false
-    ) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Date of activity, default today") date: LocalDate?,
-    @RequestParam(
-      value = "timeSlot",
-      required = false
-    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?
-  ): List<InternalLocation> = scheduleService.getScheduledInternalLocations(prisonCode, date ?: LocalDate.now(), timeSlot)
+    @PathVariable("prisonCode")
+    prisonCode: String,
+    @RequestParam(value = "date", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Date of activity, default today")
+    date: LocalDate?,
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "AM, PM or ED")
+    timeSlot: TimeSlot?
+  ): List<InternalLocation> =
+    scheduleService.getScheduledInternalLocations(prisonCode, date ?: LocalDate.now(), timeSlot)
 }
