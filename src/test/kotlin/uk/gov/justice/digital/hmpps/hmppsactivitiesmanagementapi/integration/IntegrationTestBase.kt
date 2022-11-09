@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -13,6 +15,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.createandvaryalicenceapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @ExtendWith(OAuthExtension::class)
@@ -35,6 +38,23 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var mapper: ObjectMapper
+
+  companion object {
+    @JvmField
+    internal val prisonApiMockServer = PrisonApiMockServer()
+
+    @BeforeAll
+    @JvmStatic
+    fun startMocks() {
+      prisonApiMockServer.start()
+    }
+
+    @AfterAll
+    @JvmStatic
+    fun stopMocks() {
+      prisonApiMockServer.stop()
+    }
+  }
 
   internal fun setAuthorisation(
     user: String = "test-client",

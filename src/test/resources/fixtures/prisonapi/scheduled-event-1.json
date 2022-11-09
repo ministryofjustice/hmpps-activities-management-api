@@ -1,0 +1,18 @@
+[
+  {
+    "bookingId": 1200993,
+    "eventClass": "INT_MOV",
+    "eventStatus": "SCH",
+    "eventType": "APP",
+    "eventTypeDesc": "Appointment",
+    "eventSubType": "GOVE",
+    "eventSubTypeDesc": "Governor",
+    "eventDate": "2022-11-08",
+    "startTime": "2022-11-08T17:00:00",
+    "endTime": "2022-11-08T18:00:00",
+    "eventLocation": "INDUCTION CLASSROOM",
+    "eventSource": "APP",
+    "eventSourceCode": "APP",
+    "eventSourceDesc": "Dont be late"
+  }
+]

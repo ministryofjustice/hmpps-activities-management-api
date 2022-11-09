@@ -5,13 +5,10 @@
 #
 
 # Most values are inherited from - application.yml - except the following:
-
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          public-key-location: classpath:local-public-key.pub
+  flyway:
+    locations: classpath:/migration/common,classpath:/migration/data
+
   datasource:
     url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
     username: 'activities-management'
@@ -20,10 +17,25 @@ spring:
   jpa:
     show-sql: true
 
-  flyway:
-    locations: classpath:/migration/common,classpath:/migration/data
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
+system:
+  client:
+    id: activities-management-admin
+    secret: 8FaC(YebS;98kwvVZY(>tLWm-0ja;=bTNw%13DNep+Y)0m%=FsF4Oybt$oB,
 
 # Container-provider local auth server
 hmpps:
   auth:
-    url: http://localhost:8090/auth
+    # url: http://localhost:8090/auth
+    url: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
+
+prison:
+  api:
+    url: https://api-dev.prison.service.justice.gov.uk
+    timeout: 10s
+

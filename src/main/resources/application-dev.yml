@@ -4,3 +4,23 @@
 spring:
   flyway:
     locations: classpath:/migration/common,classpath:/migration/data
+
+  datasource:
+    url: 'jdbc:postgresql://localhost:5432/activities-management-db?sslmode=prefer'
+    username: 'activities-management'
+    password: 'activities-management'
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
+hmpps:
+  auth:
+    url: http://localhost:8090/auth
+
+prison:
+  api:
+    url: http://localhost:8091
+    timeout: 10s

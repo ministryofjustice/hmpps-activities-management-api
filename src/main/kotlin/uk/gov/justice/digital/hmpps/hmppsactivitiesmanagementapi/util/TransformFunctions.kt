@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import java.time.LocalDateTime
 import java.time.format.TextStyle
 import java.util.Locale
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -29,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Eligibili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
@@ -57,6 +60,13 @@ fun transform(activity: EntityActivity) =
 
 fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> =
   scheduledInstances.toModelActivityScheduleInstances()
+
+fun transformToScheduledEvents(
+  appointments: List<uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent>?,
+  prisonerNumber: String?
+): List<ModelScheduledEvent> =
+  if (appointments.isNullOrEmpty()) emptyList() else
+    appointments.toScheduledEvents(prisonerNumber)
 
 private fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
@@ -128,6 +138,25 @@ private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = m
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
+  )
+}
+
+private fun List<PrisonApiScheduledEvent>.toScheduledEvents(prisonerNumber: String?) = map {
+  ModelScheduledEvent(
+    prisonCode = it.agencyId,
+    eventId = it.eventId,
+    bookingId = it.bookingId,
+    locationId = it.eventLocationId,
+    location = it.eventLocation,
+    eventClass = it.eventClass,
+    eventStatus = it.eventStatus,
+    eventType = it.eventType,
+    eventTypeDesc = it.eventTypeDesc,
+    details = it.eventSourceDesc,
+    prisonerNumber = prisonerNumber,
+    date = it.eventDate,
+    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
+    endTime = LocalDateTime.parse(it.endTime).toLocalTime(),
   )
 }
 
