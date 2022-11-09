@@ -25,7 +25,7 @@ spring:
 
 system:
   client:
-    id: activities-management-admin
+    id: activities-management-admin-1
     secret: secret
 
 # Container-provider local auth server
