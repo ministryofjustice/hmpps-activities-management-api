@@ -81,4 +81,9 @@ data class ActivitySchedule(
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
     !date.isBefore(it.startDate) && (it.endDate === null || !date.isAfter(it.endDate))
   }
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
+  }
 }
