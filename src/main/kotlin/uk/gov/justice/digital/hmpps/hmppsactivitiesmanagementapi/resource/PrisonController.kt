@@ -44,6 +44,11 @@ class PrisonController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = CapacityAndAllocated::class))],
       ),
       ApiResponse(
+        responseCode = "404",
+        description = "Category ID not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
