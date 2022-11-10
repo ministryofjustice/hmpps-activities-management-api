@@ -6,6 +6,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -24,9 +25,10 @@ class AttendancesServiceTest {
   private val allocation = activitySchedule.allocations.first()
   private val instance = activitySchedule.instances.first()
   private val today = LocalDate.now()
+  private val tomorrow = today.plusDays(1)
 
   @Test
-  fun `attendance record is created when no pre-existig attendance record`() {
+  fun `attendance record is created when no pre-existing attendance record`() {
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
     service.createAttendanceRecordsFor(today)
@@ -53,5 +55,21 @@ class AttendancesServiceTest {
     service.createAttendanceRecordsFor(today)
 
     verify(attendanceRepository, never()).save(any())
+  }
+
+  @Test
+  fun `attendance record is not created today if allocation is active from tomorrow`() {
+    allocation.starts(tomorrow)
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+
+    service.createAttendanceRecordsFor(today)
+
+    verify(attendanceRepository, never()).existsAttendanceByScheduledInstanceAndPrisonerNumber(any(), any())
+    verify(attendanceRepository, never()).save(any())
+  }
+
+  private fun Allocation.starts(date: LocalDate) {
+    startDate = date
   }
 }

@@ -48,19 +48,25 @@ class AttendancesService(
     attendanceRepository.saveAll(updatedAttendances)
   }
 
-  // TODO not checking for suspensions, inactive allocations and not applying pay rates.
+  /**
+   * Create attendances on the given date for instances scheduled and allocations active on that date
+   *
+   * We do not need to worry about suspensions to schedules. If a schedule is suspended then an instance will not be
+   * present on the date or dates the suspension is in place.
+   */
   fun createAttendanceRecordsFor(date: LocalDate) {
     log.info("Creating attendance records for date: $date")
 
     scheduledInstanceRepository.findAllBySessionDate(date).forEach { instance ->
-      instance.forEachAllocation { allocation -> createAttendanceRecordIfNoPreExistingRecord(instance, allocation) }
+      instance.forEachActiveAllocation(date) { allocation -> createAttendanceRecordIfNoPreExistingRecord(instance, allocation) }
     }
   }
 
-  private fun ScheduledInstance.forEachAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations.forEach { f(it) }
+  private fun ScheduledInstance.forEachActiveAllocation(date: LocalDate, f: (allocation: Allocation) -> Unit) {
+    activitySchedule.allocations.filter { it.isActive(date) }.forEach { f(it) }
   }
 
+  // TODO not applying pay rates.
   private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
     if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
         instance,
