@@ -111,7 +111,6 @@ internal fun activitySchedule(
         payBand = "A",
         startDate = timestamp.toLocalDate(),
         endDate = null,
-        active = true,
         allocatedTime = timestamp,
         allocatedBy = "Mr Blogs",
       )

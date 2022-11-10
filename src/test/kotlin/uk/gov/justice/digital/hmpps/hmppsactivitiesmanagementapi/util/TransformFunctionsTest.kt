@@ -65,7 +65,6 @@ class TransformFunctionsTest {
               payBand = "A",
               startDate = timestamp.toLocalDate(),
               endDate = null,
-              active = true,
               allocatedTime = timestamp,
               allocatedBy = "Mr Blogs",
             )
@@ -85,7 +84,6 @@ class TransformFunctionsTest {
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()
-      assertThat(active).isTrue
       assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("test")
     }

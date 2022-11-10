@@ -50,7 +50,7 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
     filter { locationId == null || it.internalLocationId == locationId.toInt() }
 
   private fun List<ActivitySchedule>.selectSchedulesWithActiveActivitiesOn(date: LocalDate) =
-    filter { it.activity.isActiveOn(date) }
+    filter { it.activity.isActive(date) }
 
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }

@@ -60,7 +60,6 @@ class ActivityRepositoryTest(
       assertThat(activityPay[0].incentiveLevel).isEqualTo("BAS")
       assertThat(activityPay[0].payBand).isEqualTo("A")
       assertThat(activityPay[0].rate).isEqualTo(100)
-      assertThat(active).isTrue
       assertThat(endDate).isNull()
     }
   }

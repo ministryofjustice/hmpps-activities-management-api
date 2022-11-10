@@ -46,7 +46,6 @@ object ScheduledInstanceFixture {
         "ACTIVITY DESCRIPTION $activityId",
         LocalDate.of(2022, 10, 1),
         null,
-        true,
         LocalDateTime.of(2022, 10, 1, 12, 0, 0),
         "CREATED BY"
       ),
