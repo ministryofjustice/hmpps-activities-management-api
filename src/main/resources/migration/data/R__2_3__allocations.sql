@@ -27,4 +27,4 @@ values (1, 1, 'G4793VF', 'BAS', 'A', '2022-10-10', null, '2022-10-10 09:30:00', 
        (26, 11, 'A5193DY', 'BAS', 'A', '2022-10-10', null, '2022-10-10 09:30:00', 'MR BLOGS', null, null, null),
        (27, 12, 'A5193DY', 'BAS', 'A', '2022-10-10', null, '2022-10-10 09:30:00', 'MR BLOGS', null, null, null);
 
-alter sequence allocation_allocation_id_seq restart with 10;
+alter sequence allocation_allocation_id_seq restart with 28;
