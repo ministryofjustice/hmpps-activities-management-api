@@ -57,6 +57,7 @@ data class Activity(
 
   var endDate: LocalDate? = null,
 
+  @Deprecated(message = "To be removed. Use start and end dates in its place")
   var active: Boolean = true,
 
   val createdTime: LocalDateTime,

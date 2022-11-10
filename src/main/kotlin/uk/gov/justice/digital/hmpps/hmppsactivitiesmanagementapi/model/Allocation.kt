@@ -22,7 +22,7 @@ data class Allocation(
 
   @Schema(description = "The date when the prisoner will start the activity", example = "10/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
-  val startDate: LocalDate? = null,
+  val startDate: LocalDate,
 
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "10/09/2023")
   @JsonFormat(pattern = "dd/MM/yyyy")

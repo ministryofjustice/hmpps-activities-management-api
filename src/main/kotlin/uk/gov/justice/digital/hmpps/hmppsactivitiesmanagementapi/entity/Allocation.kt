@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.Entity
@@ -27,10 +28,11 @@ data class Allocation(
 
   var payBand: String? = null,
 
-  var startDate: LocalDate? = null,
+  var startDate: LocalDate,
 
   var endDate: LocalDate? = null,
 
+  @Deprecated(message = "To be removed. Use start and end dates in its place")
   var active: Boolean = true,
 
   var allocatedTime: LocalDateTime? = null,
@@ -42,4 +44,6 @@ data class Allocation(
   var deallocatedBy: String? = null,
 
   var deallocatedReason: String? = null,
-)
+) {
+  fun isActive(date: LocalDate) = date.between(startDate, endDate)
+}

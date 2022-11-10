@@ -34,7 +34,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       }
 
       with(schedules.findByDescription("Maths PM")) {
-        assertThat(allocations).hasSize(2)
+        assertThat(allocations).hasSize(3)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
       }
