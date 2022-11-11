@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -54,7 +54,7 @@ class PrisonApiClientTest {
   fun `getPrisonerDetails - not found`() {
     val prisonerNumber = "AAAAA"
     prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
-    Assertions.assertThatThrownBy { prisonApiClient.getPrisonerDetails(prisonerNumber).block() }
+    assertThatThrownBy { prisonApiClient.getPrisonerDetails(prisonerNumber).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/offenderNo/AAAAA?fullInfo=true")
   }
@@ -75,7 +75,7 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
-    Assertions.assertThatThrownBy { prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() }
+    assertThatThrownBy { prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/appointments?startDate=2022-10-01&endDate=2022-11-05")
   }
@@ -98,7 +98,7 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
-    Assertions.assertThatThrownBy { prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block() }
+    assertThatThrownBy { prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/court-hearings?startDate=2022-10-01&endDate=2022-11-05")
   }
