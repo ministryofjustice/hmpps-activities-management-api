@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import java.time.LocalDate
 
@@ -43,20 +43,19 @@ class ScheduledEventControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ScheduledEventController(scheduledEventService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 
   @Test
   fun `200 response when get prisoner scheduled events found`() {
-    val results = listOf(ScheduledEventFixture.instance())
-
+    val result = PrisonerScheduledEventsFixture.instance()
     whenever(
       scheduledEventService.getScheduledEventsByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
       )
-    ).thenReturn(results)
+    ).thenReturn(result)
 
     val response = mockMvc.getScheduledEvents(
       "MDI", "A11111A",
@@ -67,12 +66,66 @@ class ScheduledEventControllerTest(
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
 
     verify(scheduledEventService).getScheduledEventsByDateRange(
       "MDI", "A11111A",
       LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     )
+  }
+
+  @Test
+  fun `Error response when service throws exception`() {
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    whenever(
+      scheduledEventService.getScheduledEventsByDateRange(
+        "MDI", "A11111A",
+        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+      )
+    ).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getScheduledEvents(
+      "MDI", "A11111A",
+      LocalDate.of(2022, 10, 1),
+      LocalDate.of(2022, 11, 5)
+    )
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { is5xxServerError() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+
+    verify(scheduledEventService).getScheduledEventsByDateRange(
+      "MDI", "A11111A",
+      LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    )
+  }
+
+  @Test
+  fun `200 response when date range equals 3 moths`() {
+
+    val result = PrisonerScheduledEventsFixture.instance()
+    whenever(
+      scheduledEventService.getScheduledEventsByDateRange(
+        "MDI", "A11111A",
+        LocalDateRange(LocalDate.of(2022, 11, 1), LocalDate.of(2023, 2, 1))
+      )
+    ).thenReturn(result)
+
+    mockMvc.get("/prisons/MDI/scheduled-events") {
+      param("prisonerNumber", "A11111A")
+      param("startDate", "2022-11-01")
+      param("endDate", "2023-02-01")
+    }
+      .andDo { print() }
+      .andExpect {
+        status {
+          isOk()
+        }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+        }
+      }
   }
 
   @Test
@@ -173,24 +226,6 @@ class ScheduledEventControllerTest(
           jsonPath("$.userMessage") {
             value("Validation failure: Date range cannot exceed 3 months")
           }
-        }
-      }
-  }
-
-  @Test
-  fun `200 response when date range equals 3 moths`() {
-    mockMvc.get("/prisons/MDI/scheduled-events") {
-      param("prisonerNumber", "A11111A")
-      param("startDate", "2022-11-01")
-      param("endDate", "2023-02-01")
-    }
-      .andDo { print() }
-      .andExpect {
-        status {
-          isOk()
-        }
-        content {
-          contentType(MediaType.APPLICATION_JSON)
         }
       }
   }

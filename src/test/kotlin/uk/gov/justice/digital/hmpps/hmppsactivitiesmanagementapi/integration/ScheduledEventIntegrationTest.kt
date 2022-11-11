@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import java.time.LocalDate
 
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
@@ -18,15 +20,123 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
     val scheduledEvents =
       webTestClient.getScheduledEventsByDateRange(
         "MDI",
-        "G4793VF",
+        prisonerNumber,
         dateRange.start,
         dateRange.endInclusive
       )
-    Assertions.assertThat(scheduledEvents).hasSize(1)
+    assertThat(scheduledEvents).isNotNull
+    assertThat(scheduledEvents?.appointments).hasSize(1)
+    assertThat(scheduledEvents?.courtHearings).hasSize(4)
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - 404 if prisoner details not found`() {
+
+    val prisonerNumber = "AAAAA"
+    val bookingId = 1200993L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
+    prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
+
+    val errorResponse = webTestClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/prisons/MDI/scheduled-events")
+          .queryParam("prisonerNumber", prisonerNumber)
+          .queryParam("startDate", dateRange.start)
+          .queryParam("endDate", dateRange.endInclusive)
+          .build(prisonerNumber)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isEqualTo(404)
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    assertThat(errorResponse).isNotNull
+    assertThat(errorResponse?.errorCode).isNull()
+    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Resource with id [AAAAA] not found.")
+    assertThat(errorResponse?.moreInfo).isNull()
+    assertThat(errorResponse?.status).isEqualTo(404)
+    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Resource with id [AAAAA] not found.")
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - 404 if booking id doesnt exist for scheduled appointments`() {
+
+    val prisonerNumber = "AAAAA"
+    val bookingId = 1200993L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+    prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
+
+    val errorResponse = webTestClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/prisons/MDI/scheduled-events")
+          .queryParam("prisonerNumber", prisonerNumber)
+          .queryParam("startDate", dateRange.start)
+          .queryParam("endDate", dateRange.endInclusive)
+          .build(prisonerNumber)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isEqualTo(404)
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    assertThat(errorResponse).isNotNull
+    assertThat(errorResponse?.errorCode).isNull()
+    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+    assertThat(errorResponse?.moreInfo).isNull()
+    assertThat(errorResponse?.status).isEqualTo(404)
+    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - 404 if booking id doesnt exist for court hearings`() {
+
+    val prisonerNumber = "AAAAA"
+    val bookingId = 1200993L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+    prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
+
+    val errorResponse = webTestClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/prisons/MDI/scheduled-events")
+          .queryParam("prisonerNumber", prisonerNumber)
+          .queryParam("startDate", dateRange.start)
+          .queryParam("endDate", dateRange.endInclusive)
+          .build(prisonerNumber)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isEqualTo(404)
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    assertThat(errorResponse).isNotNull
+    assertThat(errorResponse?.errorCode).isNull()
+    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+    assertThat(errorResponse?.moreInfo).isNull()
+    assertThat(errorResponse?.status).isEqualTo(404)
+    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
   }
 
   private fun WebTestClient.getScheduledEventsByDateRange(
@@ -42,6 +152,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ScheduledEvent::class.java)
+      .expectBody(PrisonerScheduledEvents::class.java)
       .returnResult().responseBody
 }

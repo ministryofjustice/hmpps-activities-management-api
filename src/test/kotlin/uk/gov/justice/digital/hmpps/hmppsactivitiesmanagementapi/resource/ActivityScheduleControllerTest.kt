@@ -43,7 +43,7 @@ class ActivityScheduleControllerTest(@Autowired private val mapper: ObjectMapper
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ActivityScheduleController(activityScheduleService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

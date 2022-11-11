@@ -43,7 +43,7 @@ class ScheduledInstanceControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ScheduledInstanceController(attendancesService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

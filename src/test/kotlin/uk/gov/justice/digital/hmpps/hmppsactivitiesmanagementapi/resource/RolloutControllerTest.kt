@@ -43,7 +43,7 @@ class RolloutControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(RolloutController(prisonService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

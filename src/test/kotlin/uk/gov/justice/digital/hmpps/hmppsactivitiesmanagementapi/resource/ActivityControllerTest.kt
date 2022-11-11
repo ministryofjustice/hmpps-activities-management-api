@@ -43,7 +43,7 @@ class ActivityControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ActivityController(activityService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

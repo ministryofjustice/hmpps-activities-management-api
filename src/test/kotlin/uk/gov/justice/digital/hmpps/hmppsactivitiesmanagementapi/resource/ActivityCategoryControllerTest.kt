@@ -43,7 +43,7 @@ class ActivityCategoryControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ActivityCategoryController(activityCategoryRepository))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

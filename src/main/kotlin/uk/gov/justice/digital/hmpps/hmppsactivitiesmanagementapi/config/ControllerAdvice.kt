@@ -1,6 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -14,13 +17,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 import org.springframework.web.util.WebUtils
 import javax.persistence.EntityNotFoundException
 import javax.validation.ValidationException
 
 @RestControllerAdvice
-class ControllerAdvice : ResponseEntityExceptionHandler() {
+class ControllerAdvice(@Autowired private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)
@@ -87,6 +91,28 @@ class ControllerAdvice : ResponseEntityExceptionHandler() {
           status = BAD_REQUEST.value(),
           userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; nested exception is")}",
           developerMessage = e.message
+        )
+      )
+  }
+
+  @ExceptionHandler(WebClientResponseException::class)
+  fun handleWebClientResponseException(ex: WebClientResponseException): ResponseEntity<ErrorResponse> {
+    log.info("Web client response exception: {}", ex.message)
+    var errorResponse: ErrorResponse? = null
+    try {
+      errorResponse = mapper.readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+    } catch (jpe: JsonProcessingException) {
+      log.error("Failed to parse web client response as ErrorResponse: {}", ex.message)
+    } catch (jme: JsonProcessingException) {
+      log.error("Failed to parse web client response as ErrorResponse: {}", ex.message)
+    }
+    return ResponseEntity
+      .status(HttpStatus.valueOf(ex.rawStatusCode))
+      .body(
+        errorResponse ?: ErrorResponse(
+          status = ex.rawStatusCode,
+          userMessage = ex.message,
+          developerMessage = ex.message
         )
       )
   }

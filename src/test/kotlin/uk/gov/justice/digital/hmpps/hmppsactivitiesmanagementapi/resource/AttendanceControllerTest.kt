@@ -39,7 +39,7 @@ class AttendanceControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(AttendanceController(attendancesService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

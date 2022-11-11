@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.verify
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -25,7 +27,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAtten
 @ContextConfiguration(classes = [JobTriggerController::class])
 @ActiveProfiles("test")
 @WebAppConfiguration
-class JobTriggerControllerTest {
+class JobTriggerControllerTest(
+  @Autowired private val mapper: ObjectMapper
+) {
   private lateinit var mockMvc: MockMvc
 
   @MockBean
@@ -38,7 +42,7 @@ class JobTriggerControllerTest {
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(JobTriggerController(createActivitySessionsJob, createAttendanceRecordsJob))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 
