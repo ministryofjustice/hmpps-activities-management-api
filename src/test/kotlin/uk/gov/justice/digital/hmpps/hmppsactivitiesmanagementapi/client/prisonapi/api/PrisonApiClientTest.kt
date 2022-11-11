@@ -89,7 +89,7 @@ class PrisonApiClientTest {
     val courtHearings = prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block()
     assertThat(courtHearings).isNotNull
     assertThat(courtHearings?.hearings).hasSize(4)
-    assertThat(courtHearings?.hearings!![0].id).isEqualTo(460421101L)
+    assertThat(courtHearings?.hearings!![0].id).isEqualTo(1L)
   }
 
   @Test

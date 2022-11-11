@@ -23,10 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
-import java.io.File
-import java.nio.file.Files
 import java.time.LocalDate
-import java.util.stream.Collectors
 
 @ExtendWith(SpringExtension::class)
 @WebMvcTest(controllers = [ScheduledEventController::class])
@@ -79,7 +76,7 @@ class ScheduledEventControllerTest(
 
   @Test
   fun `Error response when service throws exception`() {
-    val result = readFile("/__files/error-500.json")
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
     whenever(
       scheduledEventService.getScheduledEventsByDateRange(
         "MDI", "A11111A",
@@ -96,7 +93,7 @@ class ScheduledEventControllerTest(
       .andExpect { status { is5xxServerError() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(result)
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
 
     verify(scheduledEventService).getScheduledEventsByDateRange(
       "MDI", "A11111A",
@@ -240,12 +237,4 @@ class ScheduledEventControllerTest(
     endDate: LocalDate
   ) =
     get("/prisons/$prisonCode/scheduled-events?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
-
-  private fun readFile(uri: String): String? {
-    val file = File(this::class.java.getResource(uri)!!.file)
-    val lines = Files.lines(file.toPath())
-    val data = lines.collect(Collectors.joining("\n"))
-    lines.close()
-    return data
-  }
 }

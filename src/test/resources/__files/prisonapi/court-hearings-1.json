@@ -1,7 +1,7 @@
 {
   "hearings": [
     {
-      "id": 460421101,
+      "id": 1,
       "dateTime": "2022-01-20T17:00:00",
       "location": {
         "agencyId": "ABDSUM",
@@ -13,7 +13,7 @@
       }
     },
     {
-      "id": 460421102,
+      "id": 2,
       "dateTime": "2022-01-20T17:00:00",
       "location": {
         "agencyId": "MDI",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "id": 474677532,
+      "id": 3,
       "dateTime": "2022-06-25T10:00:00",
       "location": {
         "agencyId": "ABDRCT",
@@ -36,7 +36,7 @@
       }
     },
     {
-      "id": 485585429,
+      "id": 4,
       "dateTime": "2022-10-21T16:00:00",
       "location": {
         "agencyId": "DONCCT",
