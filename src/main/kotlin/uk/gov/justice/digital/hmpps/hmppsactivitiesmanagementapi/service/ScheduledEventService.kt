@@ -25,8 +25,6 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
       prisonApiClient.getScheduledCourtHearings(prisonerDetail.bookingId, dateRange)
     )
       .map { t ->
-        println("First  : " + t.t1)
-        println("Seconds  : " + t.t2)
         transformToPrisonerScheduledEvents(
           prisonCode,
           prisonerNumber,
