@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import java.time.LocalDate
 
 class ActivityTest {
@@ -32,5 +33,30 @@ class ActivityTest {
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1))).isFalse
     }
+  }
+
+  @Test
+  fun `converted to model lite`() {
+    val expectedModel = ActivityLite(
+      id = 1,
+      prisonCode = "123",
+      summary = "Maths",
+      description = "Maths basic"
+    )
+    assertThat(activityEntity().toModelLite()).isEqualTo(expectedModel)
+  }
+
+  @Test
+  fun `List converted to model lite`() {
+    val expectedModel = listOf(
+      ActivityLite(
+        id = 1,
+        prisonCode = "123",
+        summary = "Maths",
+        description = "Maths basic"
+      )
+    )
+
+    assertThat(listOf(activityEntity()).toModelLite()).isEqualTo(expectedModel)
   }
 }

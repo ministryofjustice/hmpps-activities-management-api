@@ -22,7 +22,6 @@ class ActivityCategoryController(private val activityCategoryRepository: Activit
 
   @Operation(
     summary = "Get the list of top-level activity categories",
-    description = "Requires one of the following roles - ('SYSTEM_USER', 'ROLE_ACTIVITIES_ADMIN')"
   )
   @ApiResponses(
     value = [

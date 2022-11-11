@@ -22,7 +22,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import javax.persistence.EntityNotFoundException
 
 @ExtendWith(SpringExtension::class)
@@ -39,10 +41,13 @@ class ActivityControllerTest(
   @MockBean
   private lateinit var activityService: ActivityService
 
+  @MockBean
+  private lateinit var capacityService: CapacityService
+
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(ActivityController(activityService))
+      .standaloneSetup(ActivityController(activityService, capacityService))
       .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
@@ -77,5 +82,36 @@ class ActivityControllerTest(
     verify(activityService).getActivityById(2)
   }
 
+  @Test
+  fun `200 response when get activity capacity`() {
+    val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
+
+    whenever(capacityService.getActivityCapacityAndAllocated(1)).thenReturn(expectedModel)
+
+    val response = mockMvc.getActivityCapacity("1")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(capacityService).getActivityCapacityAndAllocated(1)
+  }
+
+  @Test
+  fun `404 response when get activity capacity and activity id not found`() {
+    whenever(capacityService.getActivityCapacityAndAllocated(2)).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getActivityCapacity("2")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+
+    verify(capacityService).getActivityCapacityAndAllocated(2)
+  }
+
   private fun MockMvc.getActivityById(id: String) = get("/activities/{activityId}", id)
+  private fun MockMvc.getActivityCapacity(id: String) = get("/activities/{activityId}/capacity", id)
 }

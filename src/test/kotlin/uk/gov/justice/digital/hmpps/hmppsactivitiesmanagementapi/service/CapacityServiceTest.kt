@@ -19,7 +19,7 @@ class CapacityServiceTest {
   private val service = CapacityService(activityRepository, activityCategoryRepository)
 
   @Test
-  fun `returns an activity for known activity ID`() {
+  fun `getActivityCategoryCapacityAndAllocated returns an activity for known category ID`() {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", activityCategory()))
       .thenReturn(listOf(activityEntity()))
@@ -32,10 +32,29 @@ class CapacityServiceTest {
   }
 
   @Test
-  fun `throws entity not found exception for unknown category`() {
+  fun ` getActivityCategoryCapacityAndAllocated throws entity not found exception for unknown category`() {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
     assertThatThrownBy { service.getActivityCategoryCapacityAndAllocated("unknown", 100) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity category 100 not found")
+  }
+
+  @Test
+  fun `getActivityCapacityAndAllocated returns an activity for known category ID`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+
+    val returned = service.getActivityCapacityAndAllocated(1)
+
+    assertThat(returned).isInstanceOf(CapacityAndAllocated::class.java)
+    assertThat(returned.capacity).isEqualTo(1)
+    assertThat(returned.allocated).isEqualTo(1)
+  }
+
+  @Test
+  fun `getActivityCapacityAndAllocated throws entity not found exception for unknown category`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.empty())
+    assertThatThrownBy { service.getActivityCapacityAndAllocated(100) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity 100 not found")
   }
 }

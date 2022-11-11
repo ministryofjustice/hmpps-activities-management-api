@@ -4,6 +4,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.CascadeType
@@ -78,6 +79,13 @@ data class Activity(
     }
   }
 
+  fun toModelLite() = ActivityLite(
+    id = this.activityId!!,
+    prisonCode = this.prisonCode,
+    summary = this.summary,
+    description = this.description
+  )
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -93,3 +101,5 @@ data class Activity(
     return this::class.simpleName + "(activityId = $activityId )"
   }
 }
+
+fun List<Activity>.toModelLite() = map { it.toModelLite() }
