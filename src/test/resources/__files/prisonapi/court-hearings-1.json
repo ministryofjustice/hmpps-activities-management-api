@@ -1,0 +1,51 @@
+{
+  "hearings": [
+    {
+      "id": 460421101,
+      "dateTime": "2022-01-20T17:00:00",
+      "location": {
+        "agencyId": "ABDSUM",
+        "description": "Aberdeen Sheriff's Court (abdshf)",
+        "longDescription": "Aberdeen Sheriff's Court (ABDSHF)",
+        "agencyType": "CRT",
+        "active": true,
+        "courtType": "OTHER"
+      }
+    },
+    {
+      "id": 460421102,
+      "dateTime": "2022-01-20T17:00:00",
+      "location": {
+        "agencyId": "MDI",
+        "description": "Moorland (HMP & YOI)",
+        "longDescription": "HMP & YOI Moorland Prison near Doncaster",
+        "agencyType": "INST",
+        "active": true
+      }
+    },
+    {
+      "id": 474677532,
+      "dateTime": "2022-06-25T10:00:00",
+      "location": {
+        "agencyId": "ABDRCT",
+        "description": "Aberdare County Court",
+        "longDescription": "Test desc",
+        "agencyType": "CRT",
+        "active": true,
+        "courtType": "CO"
+      }
+    },
+    {
+      "id": 485585429,
+      "dateTime": "2022-10-21T16:00:00",
+      "location": {
+        "agencyId": "DONCCT",
+        "description": "Doncaster County Court",
+        "longDescription": "Doncaster County Court",
+        "agencyType": "CRT",
+        "active": true,
+        "courtType": "CO"
+      }
+    }
+  ]
+}

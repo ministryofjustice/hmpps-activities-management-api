@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import java.time.LocalDate
@@ -45,6 +46,11 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         ],
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -53,15 +59,20 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       )
     ]
   )
   fun getScheduledEventsByDateRange(
     @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(value = "prisonerNumber", required = true) @Parameter(description = "Prisoner number (optional)") prisonerNumber: String,
+    @RequestParam(value = "prisonerNumber", required = true) @Parameter(description = "Prisoner number") prisonerNumber: String,
     @RequestParam(value = "startDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Start date of query") startDate: LocalDate,
     @RequestParam(value = "endDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "End date of query (max 3 months from start date)") endDate: LocalDate,
-  ): List<ScheduledEvent> {
+  ): PrisonerScheduledEvents? {
     val dateRange = LocalDateRange(startDate, endDate)
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")

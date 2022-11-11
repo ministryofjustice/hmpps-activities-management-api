@@ -44,7 +44,7 @@ class ActivityScheduleInstanceControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(ActivityScheduleInstanceController(scheduledInstanceService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

@@ -46,7 +46,7 @@ class PrisonControllerTest(
   fun before() {
     mockMvc = MockMvcBuilders
       .standaloneSetup(PrisonController(capacityService, scheduleService))
-      .setControllerAdvice(ControllerAdvice())
+      .setControllerAdvice(ControllerAdvice(mapper))
       .build()
   }
 

@@ -1,10 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 
 @Service
 class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
@@ -13,15 +14,28 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
     prisonCode: String,
     prisonerNumber: String,
     dateRange: LocalDateRange
-  ): List<ScheduledEvent> {
+  ): PrisonerScheduledEvents? {
 
     val prisonerDetail = prisonApiClient.getPrisonerDetails(prisonerNumber).block()
     if (prisonerDetail === null || prisonerDetail.agencyId != prisonCode || prisonerDetail.bookingId === null) {
-      return emptyList()
+      return null
     }
-    val appointments = prisonApiClient.getScheduledAppointments(prisonerDetail.bookingId, dateRange).block()
+    val prisonApiCalls = Mono.zip(
+      prisonApiClient.getScheduledAppointments(prisonerDetail.bookingId, dateRange),
+      prisonApiClient.getScheduledCourtHearings(prisonerDetail.bookingId, dateRange)
+    )
+      .map { t ->
+        println("First  : " + t.t1)
+        println("Seconds  : " + t.t2)
+        transformToPrisonerScheduledEvents(
+          prisonCode,
+          prisonerNumber,
+          dateRange,
+          t.t1,
+          t.t2,
+        )
+      }
 
-    if (appointments.isNullOrEmpty()) return emptyList() else
-      return transformToScheduledEvents(appointments, prisonerNumber)
+    return prisonApiCalls.block()
   }
 }

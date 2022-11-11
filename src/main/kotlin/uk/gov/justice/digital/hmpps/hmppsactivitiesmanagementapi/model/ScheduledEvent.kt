@@ -41,8 +41,8 @@ data class ScheduledEvent(
   @Schema(description = "The prisoner number", example = "GF10101")
   val prisonerNumber: String?,
 
-  @Schema(description = "The specific date for this scheduled instance", example = "30/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The specific date for this scheduled instance", example = "2022-09-30")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val date: LocalDate?,
 
   @Schema(description = "The start time for this scheduled instance", example = "9:00")
@@ -51,5 +51,5 @@ data class ScheduledEvent(
 
   @Schema(description = "The end time for this scheduled instance", example = "10:00")
   @JsonFormat(pattern = "HH:mm")
-  val endTime: LocalTime,
+  val endTime: LocalTime?,
 )
