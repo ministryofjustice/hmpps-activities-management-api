@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.CascadeType
@@ -57,14 +58,11 @@ data class Activity(
 
   var endDate: LocalDate? = null,
 
-  @Deprecated(message = "To be removed. Use start and end dates in its place")
-  var active: Boolean = true,
-
   val createdTime: LocalDateTime,
 
   val createdBy: String
 ) {
-  fun isActiveOn(date: LocalDate) = active && startDate <= date && (endDate == null || date.isBefore(endDate))
+  fun isActive(date: LocalDate) = date.between(startDate, endDate)
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules.filter { day.dayOfWeek in it.getDaysOfWeek() }

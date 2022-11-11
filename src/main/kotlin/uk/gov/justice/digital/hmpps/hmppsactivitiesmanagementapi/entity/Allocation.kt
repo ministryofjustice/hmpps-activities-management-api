@@ -32,9 +32,6 @@ data class Allocation(
 
   var endDate: LocalDate? = null,
 
-  @Deprecated(message = "To be removed. Use start and end dates in its place")
-  var active: Boolean = true,
-
   var allocatedTime: LocalDateTime? = null,
 
   var allocatedBy: String? = null,

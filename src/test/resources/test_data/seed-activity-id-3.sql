@@ -1,14 +1,14 @@
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, active, created_time, created_by)
-values (1, 'MDI', 2, 2, 'Geography', 'Geography Level 1', '2022-10-01', null, true, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, created_time, created_by)
+values (1, 'MDI', 2, 2, 'Geography', 'Geography Level 1', '2022-10-01', null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, active, created_time, created_by)
-values (2, 'MDI', 2, 2, 'English', 'English Level 2', '2022-11-01', null, true, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, created_time, created_by)
+values (2, 'MDI', 2, 2, 'English', 'English Level 2', '2022-11-01', null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, active, created_time, created_by)
-values (3, 'PVI', 1, 1, 'Maths', 'Maths Level 1', '2022-10-10', null, true, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, created_time, created_by)
+values (3, 'PVI', 1, 1, 'Maths', 'Maths Level 1', '2022-10-10', null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, active, created_time, created_by)
-values (4, 'PVI', 2, 2, 'English', 'English Level 2', '2022-10-21', null, true, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, summary, description, start_date, end_date, created_time, created_by)
+values (4, 'PVI', 2, 2, 'English', 'English Level 2', '2022-10-21', null, '2022-9-21 00:00:00', 'SEED USER');
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
 values (1, 1, 'BAS', 'A', 101, 0, 0);
@@ -46,53 +46,53 @@ values (7, 4, 'English AM', '10:00:00', '11:00:00', 4, 'L2', 'Location PVI 2', 1
 insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
 values (8, 4, 'English PM', '14:00:00', '15:00:00', 3, 'L1', 'Location PVI 1', 10, true);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (1, 1, 'A11111A', 'BAS', 'A', '2022-10-01', null, true, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (1, 1, 'A11111A', 'BAS', 'A', '2022-10-01', null, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (2, 1, 'A22222A', 'STD', 'B', '2022-10-02', null, true, '2022-10-02 10:00:00', 'MRS BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (2, 1, 'A22222A', 'STD', 'B', '2022-10-02', null, '2022-10-02 10:00:00', 'MRS BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (3, 2, 'A33333A', 'STD', 'C', '2022-10-01', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (3, 2, 'A33333A', 'STD', 'C', '2022-10-01', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (4, 2, 'A44444A', 'STD', 'C', '2022-10-02', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (4, 2, 'A44444A', 'STD', 'C', '2022-10-02', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (5, 3, 'A33333A', 'STD', 'C', '2022-11-01', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (5, 3, 'A33333A', 'STD', 'C', '2022-11-01', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (6, 3, 'A44444A', 'STD', 'C', '2022-11-02', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (6, 3, 'A44444A', 'STD', 'C', '2022-11-02', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (7, 4, 'A11111A', 'STD', 'C', '2022-11-01', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (7, 4, 'A11111A', 'STD', 'C', '2022-11-01', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (8, 4, 'A22222A', 'STD', 'C', '2022-11-02', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (8, 4, 'A22222A', 'STD', 'C', '2022-11-02', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (9, 5, 'B11111A', 'BAS', 'A', '2022-10-10', null, true, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (9, 5, 'B11111A', 'BAS', 'A', '2022-10-10', null, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (10, 5, 'B22222A', 'STD', 'B', '2022-10-11', null, true, '2022-10-02 10:00:00', 'MRS BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (10, 5, 'B22222A', 'STD', 'B', '2022-10-11', null, '2022-10-02 10:00:00', 'MRS BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (11, 6, 'B33333A', 'STD', 'C', '2022-10-10', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (11, 6, 'B33333A', 'STD', 'C', '2022-10-10', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (12, 6, 'B44444A', 'STD', 'C', '2022-10-11', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (12, 6, 'B44444A', 'STD', 'C', '2022-10-11', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (13, 7, 'B33333A', 'STD', 'C', '2022-10-21', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (13, 7, 'B33333A', 'STD', 'C', '2022-10-21', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (14, 7, 'B44444A', 'STD', 'C', '2022-10-22', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (14, 7, 'B44444A', 'STD', 'C', '2022-10-22', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (15, 8, 'B11111A', 'STD', 'C', '2022-11-21', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (15, 8, 'B11111A', 'STD', 'C', '2022-11-21', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, active, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (16, 8, 'B22222A', 'STD', 'C', '2022-11-22', null, true, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, incentive_level, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (16, 8, 'B22222A', 'STD', 'C', '2022-11-22', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
 values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null);

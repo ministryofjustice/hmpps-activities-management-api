@@ -35,7 +35,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       }
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
-      assertThat(active).isTrue
       assertThat(createdBy).isEqualTo("SEED USER")
       assertThat(createdTime).isEqualTo(LocalDate.of(2022, 9, 21).atStartOfDay())
       assertThat(schedules).hasSize(2)
@@ -118,7 +117,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       }
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
-      assertThat(active).isTrue
       assertThat(createdBy).isEqualTo("SEED USER")
       assertThat(createdTime).isEqualTo(LocalDate.of(2022, 9, 21).atStartOfDay())
       assertThat(schedules).hasSize(2)

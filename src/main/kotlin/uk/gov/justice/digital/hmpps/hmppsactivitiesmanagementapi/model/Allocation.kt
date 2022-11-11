@@ -28,9 +28,6 @@ data class Allocation(
   @JsonFormat(pattern = "dd/MM/yyyy")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "Flag to indicate if this allocation is presently active", example = "true")
-  val active: Boolean = true,
-
   @Schema(description = "The date and time the prisoner was allocated to the activity", example = "01/09/2022 9:00")
   @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
   val allocatedTime: LocalDateTime? = null,

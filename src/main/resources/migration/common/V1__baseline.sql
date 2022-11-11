@@ -93,7 +93,6 @@ CREATE TABLE activity (
   description          varchar(300) NOT NULL,
   start_date           date         NOT NULL,
   end_date             date,
-  active               boolean      NOT NULL DEFAULT true,
   created_time         timestamp    NOT NULL,
   created_by           varchar(100) NOT NULL
 );
@@ -205,7 +204,6 @@ CREATE TABLE allocation (
   pay_band             varchar(10),
   start_date           date         NOT NULL,
   end_date             date,
-  active               boolean      NOT NULL DEFAULT TRUE,
   allocated_time       timestamp    NOT NULL,
   allocated_by         varchar(100) NOT NULL,
   deallocated_time     timestamp,

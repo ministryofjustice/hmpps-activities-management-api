@@ -16,7 +16,4 @@ data class ActivityLite(
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
   val description: String,
-
-  @Schema(description = "Flag to indicate if this activity is presently active", example = "true")
-  val active: Boolean = true,
 )

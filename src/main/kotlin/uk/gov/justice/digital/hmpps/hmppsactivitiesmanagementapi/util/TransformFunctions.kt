@@ -53,7 +53,6 @@ fun transform(activity: EntityActivity) =
     description = activity.description,
     startDate = activity.startDate,
     endDate = activity.endDate,
-    active = activity.active,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
@@ -176,7 +175,6 @@ private fun EntityActivity.toModelActivityLite() =
     prisonCode = this.prisonCode,
     summary = this.summary,
     description = this.description,
-    active = this.active
   )
 
 private fun List<EntityAllocation>.toModelAllocations() = map {
@@ -187,7 +185,6 @@ private fun List<EntityAllocation>.toModelAllocations() = map {
     payBand = it.payBand,
     startDate = it.startDate,
     endDate = it.endDate,
-    active = it.active,
     allocatedTime = it.allocatedTime,
     allocatedBy = it.allocatedBy
   )
