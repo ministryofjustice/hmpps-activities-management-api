@@ -51,7 +51,8 @@ class TransformFunctionsTest {
                 ModelAttendance(
                   id = 1,
                   prisonerNumber = "A11111A",
-                  posted = false
+                  posted = false,
+                  status = "SCH"
                 )
               )
             )

@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import java.time.LocalDateTime
 import javax.persistence.Entity
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -35,7 +37,8 @@ data class Attendance(
 
   val recordedBy: String? = null,
 
-  var status: String? = null,
+  @Enumerated(EnumType.STRING)
+  var status: AttendanceStatus = AttendanceStatus.SCH,
 
   var payAmount: Int? = null,
 
@@ -43,3 +46,9 @@ data class Attendance(
 
   var pieces: Int? = null
 )
+
+enum class AttendanceStatus(val status: String) {
+  CANC("cancelled"),
+  COMP("completed"),
+  SCH("scheduled"),
+}
