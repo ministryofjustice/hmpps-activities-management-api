@@ -38,9 +38,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-//      .onErrorResume(WebClientResponseException::class.java) { ex ->
-//        if (ex.rawStatusCode == 404) Mono.error(EntityNotFoundException(ex.message)) else Mono.error(ex)
-//      }
   }
 
   fun getScheduledCourtHearings(bookingId: Long, dateRange: LocalDateRange): Mono<CourtHearings> {
@@ -54,8 +51,5 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<CourtHearings>())
-//      .onErrorResume(WebClientResponseException::class.java) { ex ->
-//        if (ex.rawStatusCode == 404) Mono.error(EntityNotFoundException(ex.message)) else Mono.error(ex)
-//      }
   }
 }
