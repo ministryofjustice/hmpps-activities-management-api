@@ -22,9 +22,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import java.time.LocalTime
 import javax.persistence.EntityNotFoundException
 
 @ExtendWith(SpringExtension::class)
@@ -58,7 +61,7 @@ class ActivityControllerTest(
 
     whenever(activityService.getActivityById(1)).thenReturn(activity)
 
-    val response = mockMvc.getActivityById("1")
+    val response = mockMvc.getActivityById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -72,7 +75,7 @@ class ActivityControllerTest(
   fun `404 response when get activity by ID not found`() {
     whenever(activityService.getActivityById(2)).thenThrow(EntityNotFoundException("not found"))
 
-    val response = mockMvc.getActivityById("2")
+    val response = mockMvc.getActivityById(2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
@@ -88,7 +91,7 @@ class ActivityControllerTest(
 
     whenever(capacityService.getActivityCapacityAndAllocated(1)).thenReturn(expectedModel)
 
-    val response = mockMvc.getActivityCapacity("1")
+    val response = mockMvc.getActivityCapacity(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -102,7 +105,7 @@ class ActivityControllerTest(
   fun `404 response when get activity capacity and activity id not found`() {
     whenever(capacityService.getActivityCapacityAndAllocated(2)).thenThrow(EntityNotFoundException("not found"))
 
-    val response = mockMvc.getActivityCapacity("2")
+    val response = mockMvc.getActivityCapacity(2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
@@ -112,6 +115,47 @@ class ActivityControllerTest(
     verify(capacityService).getActivityCapacityAndAllocated(2)
   }
 
-  private fun MockMvc.getActivityById(id: String) = get("/activities/{activityId}", id)
-  private fun MockMvc.getActivityCapacity(id: String) = get("/activities/{activityId}/capacity", id)
+  @Test
+  fun `200 response when get activity schedules`() {
+    val expectedModel = listOf(
+      ActivityScheduleLite(
+        id = 1,
+        description = "schedule description",
+        startTime = LocalTime.of(10, 20),
+        endTime = LocalTime.of(10, 20),
+        internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
+        daysOfWeek = listOf("Mon")
+      )
+    )
+
+    whenever(activityService.getSchedulesForActivity(1)).thenReturn(expectedModel)
+
+    val response = mockMvc.getActivitySchedules(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(activityService).getSchedulesForActivity(1)
+  }
+
+  @Test
+  fun `404 response when get activity schedules and activity id not found`() {
+    whenever(activityService.getSchedulesForActivity(2)).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getActivitySchedules(2)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+
+    verify(activityService).getSchedulesForActivity(2)
+  }
+
+  private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
+  private fun MockMvc.getActivityCapacity(id: Long) = get("/activities/{activityId}/capacity", id)
+  private fun MockMvc.getActivitySchedules(id: Long) =
+    get("/activities/{activityId}/schedules", id)
 }

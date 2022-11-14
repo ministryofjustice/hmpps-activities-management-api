@@ -2,9 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -27,15 +31,30 @@ data class ActivitySchedule(
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
   @Fetch(FetchMode.SUBSELECT)
   val instances: MutableList<ScheduledInstance> = mutableListOf(),
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
   @Fetch(FetchMode.SUBSELECT)
   val allocations: MutableList<Allocation> = mutableListOf(),
 
@@ -68,6 +87,20 @@ data class ActivitySchedule(
   val sundayFlag: Boolean = false,
 ) {
 
+  fun toModelLite() = ActivityScheduleLite(
+    id = this.activityScheduleId!!,
+    description = this.description,
+    startTime = this.startTime,
+    endTime = this.endTime,
+    internalLocation = InternalLocation(
+      id = internalLocationId!!,
+      code = internalLocationCode!!,
+      description = internalLocationDescription!!
+    ),
+    daysOfWeek = this.getDaysOfWeek()
+      .map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
+  )
+
   fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {
     if (mondayFlag) add(DayOfWeek.MONDAY)
     if (tuesdayFlag) add(DayOfWeek.TUESDAY)
@@ -87,3 +120,5 @@ data class ActivitySchedule(
     return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
   }
 }
+
+fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }

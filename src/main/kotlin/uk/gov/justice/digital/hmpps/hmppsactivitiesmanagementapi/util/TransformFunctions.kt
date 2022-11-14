@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite as ModelActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
@@ -200,17 +199,7 @@ private fun EntityActivitySchedule.toModelActivityScheduleLite() =
     startTime = this.startTime,
     endTime = this.endTime,
     internalLocation = this.toInternalLocation(),
-    capacity = this.capacity,
     daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
-    activity = this.activity.toModelActivityLite()
-  )
-
-private fun EntityActivity.toModelActivityLite() =
-  ModelActivityLite(
-    id = this.activityId!!,
-    prisonCode = this.prisonCode,
-    summary = this.summary,
-    description = this.description,
   )
 
 private fun List<EntityAllocation>.toModelAllocations() = map {

@@ -10,8 +10,10 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import java.util.Optional
 import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
@@ -19,8 +21,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity 
 class ActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
+  private val activityScheduleRepository: ActivityScheduleRepository = mock()
 
-  private val service = ActivityService(activityRepository, activityCategoryRepository)
+  private val service = ActivityService(
+    activityRepository,
+    activityCategoryRepository,
+    activityScheduleRepository
+  )
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
@@ -60,5 +67,27 @@ class ActivityServiceTest {
     assertThatThrownBy { service.getActivitiesByCategoryInPrison("MDI", 1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity category 1 not found")
+  }
+
+  @Test
+  fun `getSchedulesForActivity returns list of schedules`() {
+    val activity = activityEntity()
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityScheduleRepository.getAllByActivity(activity))
+      .thenReturn(listOf(activitySchedule(activityEntity())))
+
+    assertThat(service.getSchedulesForActivity(1)).isEqualTo(listOf(activitySchedule(activityEntity())).toModelLite())
+
+    verify(activityScheduleRepository, times(1)).getAllByActivity(activity)
+  }
+
+  @Test
+  fun `getSchedulesForActivity throws entity not found exception for unknown activity ID`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.empty())
+
+    assertThatThrownBy { service.getSchedulesForActivity(1) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity 1 not found")
   }
 }

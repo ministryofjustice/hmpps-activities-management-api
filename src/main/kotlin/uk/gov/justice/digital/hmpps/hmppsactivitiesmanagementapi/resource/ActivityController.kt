@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
@@ -37,22 +38,42 @@ class ActivityController(
       ApiResponse(
         responseCode = "200",
         description = "Activity found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Activity::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class)
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "404",
         description = "The activity for this ID was not found.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
       )
     ]
   )
@@ -73,15 +94,8 @@ class ActivityController(
             schema = Schema(implementation = CapacityAndAllocated::class)
           )
         ],
-      ), ApiResponse(
-        responseCode = "404",
-        description = "Activity ID not found",
-        content = [
-          Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
-        ],
-      ), ApiResponse(
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [
@@ -89,9 +103,19 @@ class ActivityController(
             mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
           )
         ],
-      ), ApiResponse(
+      ),
+      ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Activity ID not found",
         content = [
           Content(
             mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
@@ -104,4 +128,53 @@ class ActivityController(
   @ResponseBody
   fun getActivityCapacity(@PathVariable("activityId") activityId: Long): CapacityAndAllocated =
     capacityService.getActivityCapacityAndAllocated(activityId)
+
+  @Operation(
+    summary = "Get the capacity and number of allocated slots in an activity",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity schedules",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ActivityScheduleLite::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Activity ID not found",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  @GetMapping(value = ["/{activityId}/schedules"])
+  @ResponseBody
+  fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> =
+    activityService.getSchedulesForActivity(activityId)
 }
