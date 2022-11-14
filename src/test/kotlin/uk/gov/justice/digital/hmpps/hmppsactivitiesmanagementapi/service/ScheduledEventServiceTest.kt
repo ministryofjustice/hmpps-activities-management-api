@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -101,7 +101,7 @@ class ScheduledEventServiceTest {
       )
     ).thenReturn(courtHearingsMono)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       service.getScheduledEventsByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
@@ -143,7 +143,7 @@ class ScheduledEventServiceTest {
       )
     ).thenReturn(courtHearingsMono)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       service.getScheduledEventsByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
@@ -185,7 +185,7 @@ class ScheduledEventServiceTest {
       )
     ).thenReturn(courtHearingsMono)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       service.getScheduledEventsByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
@@ -228,7 +228,7 @@ class ScheduledEventServiceTest {
       )
     ).thenReturn(courtHearingsMono)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       service.getScheduledEventsByDateRange(
         "MDI", "A11111A",
         LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))

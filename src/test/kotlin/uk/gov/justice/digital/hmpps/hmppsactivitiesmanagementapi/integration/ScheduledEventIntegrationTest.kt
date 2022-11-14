@@ -30,11 +30,12 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         dateRange.start,
         dateRange.endInclusive
       )
-    println(mapper.writeValueAsString(scheduledEvents))
-    assertThat(scheduledEvents).isNotNull
-    assertThat(scheduledEvents?.appointments).hasSize(1)
-    assertThat(scheduledEvents?.visits).hasSize(1)
-    assertThat(scheduledEvents?.courtHearings).hasSize(4)
+
+    with(scheduledEvents!!) {
+      assertThat(appointments).hasSize(1)
+      assertThat(visits).hasSize(1)
+      assertThat(courtHearings).hasSize(4)
+    }
   }
 
   @Test
@@ -60,17 +61,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isEqualTo(404)
+      .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
 
-    assertThat(errorResponse).isNotNull
-    assertThat(errorResponse?.errorCode).isNull()
-    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Resource with id [AAAAA] not found.")
-    assertThat(errorResponse?.moreInfo).isNull()
-    assertThat(errorResponse?.status).isEqualTo(404)
-    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Resource with id [AAAAA] not found.")
+    with(errorResponse!!) {
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("(developer message)Resource with id [AAAAA] not found.")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("(user message)Resource with id [AAAAA] not found.")
+    }
   }
 
   @Test
@@ -96,17 +98,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isEqualTo(404)
+      .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
 
-    assertThat(errorResponse).isNotNull
-    assertThat(errorResponse?.errorCode).isNull()
-    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
-    assertThat(errorResponse?.moreInfo).isNull()
-    assertThat(errorResponse?.status).isEqualTo(404)
-    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    with(errorResponse!!) {
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    }
   }
 
   @Test
@@ -132,17 +135,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isEqualTo(404)
+      .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
 
-    assertThat(errorResponse).isNotNull
-    assertThat(errorResponse?.errorCode).isNull()
-    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
-    assertThat(errorResponse?.moreInfo).isNull()
-    assertThat(errorResponse?.status).isEqualTo(404)
-    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    with(errorResponse!!) {
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    }
   }
 
   @Test
@@ -168,17 +172,18 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isEqualTo(404)
+      .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
 
-    assertThat(errorResponse).isNotNull
-    assertThat(errorResponse?.errorCode).isNull()
-    assertThat(errorResponse?.developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
-    assertThat(errorResponse?.moreInfo).isNull()
-    assertThat(errorResponse?.status).isEqualTo(404)
-    assertThat(errorResponse?.userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    with(errorResponse!!) {
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    }
   }
 
   private fun WebTestClient.getScheduledEventsByDateRange(
