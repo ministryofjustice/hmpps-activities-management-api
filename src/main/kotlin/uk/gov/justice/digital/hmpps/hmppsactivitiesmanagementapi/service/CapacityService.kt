@@ -29,6 +29,18 @@ class CapacityService(
     return CapacityAndAllocated(capacity = capacity, allocated = allocated)
   }
 
+  fun getActivityCapacityAndAllocated(
+    activityId: Long
+  ): CapacityAndAllocated {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+
+    val capacity = sumOfScheduleCapacities(activity)
+    val allocated = sumOfScheduleAllocations(activity)
+
+    return CapacityAndAllocated(capacity = capacity, allocated = allocated)
+  }
+
   private fun sumOfScheduleCapacities(activity: Activity): Int {
     return activity.schedules.sumOf { schedule -> schedule.capacity }
   }

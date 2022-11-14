@@ -20,7 +20,7 @@ generic-service:
       # Secure the endpoints related to k8s jobs from outside the Kubernetes ingress
       nginx.ingress.kubernetes.io/configuration-snippet: |
         server_tokens off;
-        location /job/* {
+        location /job/ {
           deny all;
           return 401;
         }

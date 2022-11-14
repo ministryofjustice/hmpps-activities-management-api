@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.time.LocalDate
 
@@ -29,12 +31,46 @@ import java.time.LocalDate
 @RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
 class PrisonController(
   private val capacityService: CapacityService,
+  private val activityService: ActivityService,
   private val scheduleService: ActivityScheduleService,
 ) {
 
   @Operation(
+    summary = "Get list of activities within a category at a specified prison",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity category capacity",
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = ActivityLite::class)))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Category ID not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      )
+    ]
+  )
+  @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/activities"])
+  @ResponseBody
+  fun getActivitiesInCategory(
+    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable("categoryId") categoryId: Long,
+  ): List<ActivityLite> = activityService.getActivitiesByCategoryInPrison(prisonCode, categoryId)
+
+  @Operation(
     summary = "Get the capacity and number of allocated slots in an activity category within a prison",
-    description = "Requires one of the following roles - ('SYSTEM_USER', 'ROLE_ACTIVITIES_ADMIN')"
   )
   @ApiResponses(
     value = [
