@@ -52,4 +52,17 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<CourtHearings>())
   }
+
+  fun getScheduledVisits(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/bookings/{bookingId}/visits")
+          .queryParam("startDate", dateRange.start)
+          .queryParam("endDate", dateRange.endInclusive)
+          .build(bookingId)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+  }
 }

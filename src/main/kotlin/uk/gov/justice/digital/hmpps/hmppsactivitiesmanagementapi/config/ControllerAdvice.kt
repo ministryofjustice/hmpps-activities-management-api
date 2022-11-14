@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -24,7 +23,7 @@ import javax.persistence.EntityNotFoundException
 import javax.validation.ValidationException
 
 @RestControllerAdvice
-class ControllerAdvice(@Autowired private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
+class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)

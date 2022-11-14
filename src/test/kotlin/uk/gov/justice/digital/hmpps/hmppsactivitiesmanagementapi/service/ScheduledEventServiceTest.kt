@@ -22,7 +22,9 @@ class ScheduledEventServiceTest {
 
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     val schedAppointmentsMono: Mono<List<PrisonApiScheduledEvent>> =
-      Mono.just(listOf(PrisonApiScheduledEventFixture.instance()))
+      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono: Mono<List<PrisonApiScheduledEvent>> =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
     val courtHearingsMono: Mono<PrisonApiCourtHearings> = Mono.just(PrisonApiCourtHearingsFixture.instance())
     val prisonerDetailsMono: Mono<PrisonApiInmateDetail> = Mono.just(InmateDetailFixture.instance())
 
@@ -35,6 +37,12 @@ class ScheduledEventServiceTest {
         900001, dateRange
       )
     ).thenReturn(schedAppointmentsMono)
+
+    whenever(
+      prisonApiClient.getScheduledVisits(
+        900001, dateRange
+      )
+    ).thenReturn(schedVisitsMono)
 
     whenever(
       prisonApiClient.getScheduledCourtHearings(
@@ -52,6 +60,9 @@ class ScheduledEventServiceTest {
     assertThat(result?.appointments).isNotNull
     assertThat(result?.appointments).hasSize(1)
     assertThat(result?.appointments!![0].prisonerNumber).isEqualTo("A11111A")
+    assertThat(result.visits).isNotNull
+    assertThat(result.visits).hasSize(1)
+    assertThat(result.visits!![0].prisonerNumber).isEqualTo("A11111A")
     assertThat(result.courtHearings).isNotNull
     assertThat(result.courtHearings).hasSize(1)
     assertThat(result.courtHearings!![0].prisonerNumber).isEqualTo("A11111A")
@@ -62,7 +73,9 @@ class ScheduledEventServiceTest {
 
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     val schedAppointmentsMono: Mono<List<PrisonApiScheduledEvent>> =
-      Mono.just(listOf(PrisonApiScheduledEventFixture.instance()))
+      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono: Mono<List<PrisonApiScheduledEvent>> =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
     val courtHearingsMono: Mono<PrisonApiCourtHearings> = Mono.just(PrisonApiCourtHearingsFixture.instance())
     val prisonerDetailsMono: Mono<PrisonApiInmateDetail> = Mono.error(Exception("Error"))
 
@@ -75,6 +88,12 @@ class ScheduledEventServiceTest {
         900001, dateRange
       )
     ).thenReturn(schedAppointmentsMono)
+
+    whenever(
+      prisonApiClient.getScheduledVisits(
+        900001, dateRange
+      )
+    ).thenReturn(schedVisitsMono)
 
     whenever(
       prisonApiClient.getScheduledCourtHearings(
@@ -97,6 +116,8 @@ class ScheduledEventServiceTest {
 
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     val schedAppointmentsMono: Mono<List<PrisonApiScheduledEvent>> = Mono.error(Exception("Error"))
+    val schedVisitsMono: Mono<List<PrisonApiScheduledEvent>> =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
     val courtHearingsMono: Mono<PrisonApiCourtHearings> = Mono.just(PrisonApiCourtHearingsFixture.instance())
     val prisonerDetailsMono: Mono<PrisonApiInmateDetail> = Mono.just(InmateDetailFixture.instance())
 
@@ -109,6 +130,54 @@ class ScheduledEventServiceTest {
         900001, dateRange
       )
     ).thenReturn(schedAppointmentsMono)
+
+    whenever(
+      prisonApiClient.getScheduledVisits(
+        900001, dateRange
+      )
+    ).thenReturn(schedVisitsMono)
+
+    whenever(
+      prisonApiClient.getScheduledCourtHearings(
+        900001, dateRange
+      )
+    ).thenReturn(courtHearingsMono)
+
+    Assertions.assertThatThrownBy {
+      service.getScheduledEventsByDateRange(
+        "MDI", "A11111A",
+        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+      )
+    }
+      .isInstanceOf(Exception::class.java)
+      .hasMessage("java.lang.Exception: Error")
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - prison api visit details error`() {
+
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    val schedAppointmentsMono: Mono<List<PrisonApiScheduledEvent>> =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono: Mono<List<PrisonApiScheduledEvent>> = Mono.error(Exception("Error"))
+    val courtHearingsMono: Mono<PrisonApiCourtHearings> = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono: Mono<PrisonApiInmateDetail> = Mono.just(InmateDetailFixture.instance())
+
+    whenever(
+      prisonApiClient.getPrisonerDetails("A11111A")
+    ).thenReturn(prisonerDetailsMono)
+
+    whenever(
+      prisonApiClient.getScheduledAppointments(
+        900001, dateRange
+      )
+    ).thenReturn(schedAppointmentsMono)
+
+    whenever(
+      prisonApiClient.getScheduledVisits(
+        900001, dateRange
+      )
+    ).thenReturn(schedVisitsMono)
 
     whenever(
       prisonApiClient.getScheduledCourtHearings(
@@ -131,7 +200,9 @@ class ScheduledEventServiceTest {
 
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     val schedAppointmentsMono: Mono<List<PrisonApiScheduledEvent>> =
-      Mono.just(listOf(PrisonApiScheduledEventFixture.instance()))
+      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono: Mono<List<PrisonApiScheduledEvent>> =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
     val courtHearingsMono: Mono<PrisonApiCourtHearings> = Mono.error(Exception("Error"))
     val prisonerDetailsMono: Mono<PrisonApiInmateDetail> = Mono.just(InmateDetailFixture.instance())
 
@@ -144,6 +215,12 @@ class ScheduledEventServiceTest {
         900001, dateRange
       )
     ).thenReturn(schedAppointmentsMono)
+
+    whenever(
+      prisonApiClient.getScheduledVisits(
+        900001, dateRange
+      )
+    ).thenReturn(schedVisitsMono)
 
     whenever(
       prisonApiClient.getScheduledCourtHearings(

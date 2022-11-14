@@ -1,0 +1,18 @@
+[
+  {
+    "bookingId": 10002,
+    "eventClass": "INT_MOV",
+    "eventStatus": "SCH",
+    "eventType": "VISIT",
+    "eventTypeDesc": "Visit",
+    "eventSubType": "VISIT",
+    "eventSubTypeDesc": "Visits",
+    "eventDate": "2022-12-12",
+    "startTime": "2022-12-12T09:15:00",
+    "endTime": "2022-12-12T11:15:00",
+    "eventLocation": "SOCIAL VISITS",
+    "eventSource": "VIS",
+    "eventSourceCode": "SCON",
+    "eventSourceDesc": "Social Contact"
+  }
+]
