@@ -63,11 +63,13 @@ fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledI
   scheduledInstances.toModelActivityScheduleInstances()
 
 fun transformToPrisonerScheduledEvents(
+  bookingId: Long,
   prisonCode: String,
   prisonerNumber: String,
   dateRange: LocalDateRange,
   appointments: List<PrisonApiScheduledEvent>?,
   courtHearings: PrisonApiCourtHearings?,
+  visits: List<PrisonApiScheduledEvent>?,
 ): ModelPrisonerScheduledEvents =
   ModelPrisonerScheduledEvents(
     prisonCode,
@@ -75,7 +77,8 @@ fun transformToPrisonerScheduledEvents(
     dateRange.start,
     dateRange.endInclusive,
     appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
-    courtHearings?.prisonApiCourtHearingsToScheduledEvents(prisonCode, prisonerNumber),
+    courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber),
+    visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
   )
 
 private fun EntityActivityCategory.toModelActivityCategory() =
@@ -171,13 +174,14 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
 }
 
 private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
+  bookingId: Long,
   prisonCode: String?,
   prisonerNumber: String?
 ) = this.hearings?.map {
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventId = it.id,
-    bookingId = null,
+    bookingId = bookingId,
     locationId = null,
     location = it.location?.description,
     eventClass = null,

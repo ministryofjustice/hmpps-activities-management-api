@@ -26,7 +26,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBodyFile("prisonapi/scheduled-event-appointment-404.json")
+            .withBodyFile("prisonapi/scheduled-event-404.json")
             .withStatus(404)
         )
     )
@@ -51,6 +51,30 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .withBodyFile("prisonapi/court-hearings-404.json")
+            .withStatus(404)
+        )
+    )
+  }
+
+  fun stubGetScheduledVisits(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?startDate=$startDate&endDate=$endDate"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/scheduled-event-visit-1.json")
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetScheduledVisitsNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?startDate=$startDate&endDate=$endDate"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/scheduled-event-404.json")
             .withStatus(404)
         )
     )
