@@ -10,14 +10,16 @@ object PrisonerScheduledEventsFixture {
     prisonerNumber: String = "GF10001",
     startDate: LocalDate = LocalDate.of(2022, 10, 1),
     endDate: LocalDate = LocalDate.of(2022, 11, 29),
-    appointments: List<ScheduledEvent> = listOf(ScheduledEventFixture.instance()),
-    courtHearings: List<ScheduledEvent> = listOf(ScheduledEventFixture.instance()),
+    appointments: List<ScheduledEvent> = listOf(ScheduledEventFixture.appointmentInstance()),
+    visits: List<ScheduledEvent> = listOf(ScheduledEventFixture.visitInstance()),
+    courtHearings: List<ScheduledEvent> = listOf(ScheduledEventFixture.courtHearingInstance()),
   ): PrisonerScheduledEvents = PrisonerScheduledEvents(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     startDate = startDate,
     endDate = endDate,
     appointments = appointments,
+    visits = visits,
     courtHearings = courtHearings
   )
 }

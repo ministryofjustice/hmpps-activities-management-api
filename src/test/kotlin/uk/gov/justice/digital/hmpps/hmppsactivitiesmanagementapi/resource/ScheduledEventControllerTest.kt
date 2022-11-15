@@ -31,10 +31,11 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [ScheduledEventController::class])
 @ActiveProfiles("test")
 @WebAppConfiguration
-class ScheduledEventControllerTest(
-  @Autowired private val mapper: ObjectMapper
-) {
+class ScheduledEventControllerTest() {
   private lateinit var mockMvc: MockMvc
+
+  @Autowired
+  lateinit var mapper: ObjectMapper
 
   @MockBean
   private lateinit var scheduledEventService: ScheduledEventService

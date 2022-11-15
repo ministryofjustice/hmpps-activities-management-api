@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 object ScheduledEventFixture {
-  fun instance(
+  fun appointmentInstance(
     prisonCode: String = "MDI",
     eventId: Long = 10001,
     bookingId: Long = 900001,
@@ -20,6 +20,70 @@ object ScheduledEventFixture {
     date: LocalDate = LocalDate.of(2022, 10, 1),
     startTime: LocalTime = LocalTime.of(12, 0, 0),
     endTime: LocalTime = LocalTime.of(13, 0, 0),
+  ) = ScheduledEvent(
+    prisonCode = prisonCode,
+    eventId = eventId,
+    bookingId = bookingId,
+    location = location,
+    locationId = locationId,
+    eventClass = eventClass,
+    eventStatus = eventStatus,
+    eventType = eventType,
+    eventTypeDesc = eventTypeDesc,
+    details = details,
+    prisonerNumber = prisonerNumber,
+    date = date,
+    startTime = startTime,
+    endTime = endTime,
+  )
+
+  fun visitInstance(
+    prisonCode: String = "MDI",
+    eventId: Long = 10002,
+    bookingId: Long = 900001,
+    location: String = "SOCIAL VISITS",
+    locationId: Long = 101,
+    eventClass: String = "INT_MOV",
+    eventStatus: String = "SCH",
+    eventType: String = "VISIT",
+    eventTypeDesc: String = "Visit",
+    details: String = "Dont be late",
+    prisonerNumber: String = "GF10001",
+    date: LocalDate = LocalDate.of(2022, 12, 12),
+    startTime: LocalTime = LocalTime.of(17, 0, 0),
+    endTime: LocalTime = LocalTime.of(18, 0, 0),
+  ) = ScheduledEvent(
+    prisonCode = prisonCode,
+    eventId = eventId,
+    bookingId = bookingId,
+    location = location,
+    locationId = locationId,
+    eventClass = eventClass,
+    eventStatus = eventStatus,
+    eventType = eventType,
+    eventTypeDesc = eventTypeDesc,
+    details = details,
+    prisonerNumber = prisonerNumber,
+    date = date,
+    startTime = startTime,
+    endTime = endTime,
+  )
+
+  fun courtHearingInstance(
+    prisonCode: String = "MDI",
+    eventId: Long = 10003,
+    bookingId: Long = 900001,
+    location: String = "Aberdeen Sheriff's Court (abdshf)",
+    locationId: Long? = null,
+    eventClass: String? = null,
+    eventStatus: String? = null,
+    eventType: String = "CRT",
+    eventTypeDesc: String = "Court Hearing",
+    details: String = "Dont be late",
+    prisonerNumber: String = "GF10001",
+    date: LocalDate = LocalDate.of(2022, 10, 1),
+    startTime: LocalTime = LocalTime.of(12, 0, 0),
+    endTime: LocalTime? = null,
   ) = ScheduledEvent(
     prisonCode = prisonCode,
     eventId = eventId,
