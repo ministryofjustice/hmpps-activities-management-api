@@ -17,7 +17,7 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
   ): PrisonerScheduledEvents? {
 
     val prisonerDetail = prisonApiClient.getPrisonerDetails(prisonerNumber).block()
-    if (prisonerDetail === null || prisonerDetail.agencyId != prisonCode || prisonerDetail.bookingId === null) {
+    if (prisonerDetail == null || prisonerDetail.agencyId != prisonCode || prisonerDetail.bookingId == null) {
       return null
     }
     val prisonApiCalls = Mono.zip(

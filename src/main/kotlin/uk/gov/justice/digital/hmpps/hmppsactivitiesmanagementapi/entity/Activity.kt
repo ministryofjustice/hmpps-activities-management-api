@@ -73,7 +73,7 @@ data class Activity(
       byDayOfWeek.filter {
         it.suspensions.none { suspension ->
           !day.isBefore(suspension.suspendedFrom) &&
-            (suspension.suspendedUntil === null || !day.isAfter(suspension.suspendedUntil))
+            (suspension.suspendedUntil == null || !day.isAfter(suspension.suspendedUntil))
         }
       }
     }

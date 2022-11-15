@@ -112,7 +112,7 @@ data class ActivitySchedule(
   }
 
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
-    !date.isBefore(it.startDate) && (it.endDate === null || !date.isAfter(it.endDate))
+    !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
   @Override
