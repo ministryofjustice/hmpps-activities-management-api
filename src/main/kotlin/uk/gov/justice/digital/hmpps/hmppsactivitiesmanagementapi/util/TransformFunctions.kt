@@ -68,6 +68,7 @@ fun transformToPrisonerScheduledEvents(
   prisonerNumber: String,
   dateRange: LocalDateRange,
   appointments: List<PrisonApiScheduledEvent>?,
+  activities: List<PrisonApiScheduledEvent>?,
   courtHearings: PrisonApiCourtHearings?,
   visits: List<PrisonApiScheduledEvent>?,
 ): ModelPrisonerScheduledEvents =
@@ -77,6 +78,7 @@ fun transformToPrisonerScheduledEvents(
     dateRange.start,
     dateRange.endInclusive,
     appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
+    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
     courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber),
     visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
   )

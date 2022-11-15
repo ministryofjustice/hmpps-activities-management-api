@@ -22,6 +22,7 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
     }
     val prisonApiCalls = Mono.zip(
       prisonApiClient.getScheduledAppointments(prisonerDetail.bookingId, dateRange),
+      prisonApiClient.getScheduledActivities(prisonerDetail.bookingId, dateRange),
       prisonApiClient.getScheduledCourtHearings(prisonerDetail.bookingId, dateRange),
       prisonApiClient.getScheduledVisits(prisonerDetail.bookingId, dateRange)
     )
@@ -33,7 +34,8 @@ class ScheduledEventService(private val prisonApiClient: PrisonApiClient) {
           dateRange,
           t.t1,
           t.t2,
-          t.t3
+          t.t3,
+          t.t4
         )
       }
 
