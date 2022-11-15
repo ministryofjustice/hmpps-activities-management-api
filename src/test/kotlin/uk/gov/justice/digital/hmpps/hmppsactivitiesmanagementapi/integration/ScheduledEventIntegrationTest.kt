@@ -20,6 +20,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
@@ -33,6 +34,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     with(scheduledEvents!!) {
       assertThat(appointments).hasSize(1)
+      assertThat(activities).hasSize(2)
       assertThat(visits).hasSize(1)
       assertThat(courtHearings).hasSize(4)
     }
@@ -46,6 +48,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
@@ -83,6 +86,45 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
+
+    val errorResponse = webTestClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/prisons/MDI/scheduled-events")
+          .queryParam("prisonerNumber", prisonerNumber)
+          .queryParam("startDate", dateRange.start)
+          .queryParam("endDate", dateRange.endInclusive)
+          .build(prisonerNumber)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isNotFound
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(errorResponse!!) {
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+    }
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - 404 if booking id doesnt exist for scheduled activities`() {
+
+    val prisonerNumber = "AAAAA"
+    val bookingId = 1200993L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+    prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
@@ -120,6 +162,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisitsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
@@ -157,6 +200,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
 

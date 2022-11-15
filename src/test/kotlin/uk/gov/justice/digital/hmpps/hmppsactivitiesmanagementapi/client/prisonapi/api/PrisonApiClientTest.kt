@@ -81,6 +81,27 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledActivities - success`() {
+    val bookingId = 10001L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+    prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
+    val scheduledActivities = prisonApiClient.getScheduledActivities(bookingId, dateRange).block()
+    assertThat(scheduledActivities).hasSize(2)
+    assertThat(scheduledActivities!![0].bookingId).isEqualTo(10001L)
+  }
+
+  @Test
+  fun `getScheduledActivities - not found`() {
+    val bookingId = 0L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
+    prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, dateRange.start, dateRange.endInclusive)
+    assertThatThrownBy { prisonApiClient.getScheduledActivities(bookingId, dateRange).block() }
+      .isInstanceOf(WebClientResponseException::class.java)
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?startDate=2022-10-01&endDate=2022-11-05")
+  }
+
+  @Test
   fun `getCourtHearings - success`() {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))

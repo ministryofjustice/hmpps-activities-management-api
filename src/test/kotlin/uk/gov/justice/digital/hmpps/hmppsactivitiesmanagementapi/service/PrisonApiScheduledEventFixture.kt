@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import java.math.BigDecimal
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
@@ -32,6 +33,46 @@ object PrisonApiScheduledEventFixture {
     eventSource = eventSource,
     eventSourceCode = eventSourceCode,
     eventSourceDesc = eventSourceDesc,
+    startTime = startTime,
+    endTime = endTime,
+  )
+
+  fun activityInstance(
+    bookingId: Long = 900001,
+    eventClass: String = "INT_MOV",
+    eventId: Long = 901,
+    eventStatus: String = "EXP",
+    eventType: String = "PRISON_ACT",
+    eventTypeDesc: String = "Prison Activities",
+    eventSubType: String = "PA",
+    eventSubTypeDesc: String = "Prison Activities",
+    eventDate: LocalDate = LocalDate.of(2022, 12, 16),
+    eventLocation: String = "WORKSHOP 10 - BRICKS",
+    eventSource: String = "PA",
+    eventSourceCode: String = "BRICK-PM",
+    eventSourceDesc: String = "Bricks PM",
+    paid: Boolean = false,
+    payRate: BigDecimal = BigDecimal.valueOf(1.05),
+    locationCode: String = "WS10",
+    startTime: String = "2022-12-16T13:15:00",
+    endTime: String = "2022-12-16T16:15:00",
+  ): PrisonApiScheduledEvent = PrisonApiScheduledEvent(
+    bookingId = bookingId,
+    eventClass = eventClass,
+    eventId = eventId,
+    eventStatus = eventStatus,
+    eventType = eventType,
+    eventTypeDesc = eventTypeDesc,
+    eventSubType = eventSubType,
+    eventSubTypeDesc = eventSubTypeDesc,
+    eventDate = eventDate,
+    eventLocation = eventLocation,
+    eventSource = eventSource,
+    eventSourceCode = eventSourceCode,
+    eventSourceDesc = eventSourceDesc,
+    paid = paid,
+    payRate = payRate,
+    locationCode = locationCode,
     startTime = startTime,
     endTime = endTime,
   )

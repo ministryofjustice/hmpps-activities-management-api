@@ -37,6 +37,38 @@ object ScheduledEventFixture {
     endTime = endTime,
   )
 
+  fun activityInstance(
+    prisonCode: String = "MDI",
+    eventId: Long = 10001,
+    bookingId: Long = 900001,
+    location: String = "WORKSHOP 10 - BRICKS",
+    locationId: Long = 102,
+    eventClass: String = "INT_MOV",
+    eventStatus: String = "SCH",
+    eventType: String = "PRISON_ACT",
+    eventTypeDesc: String = "Prison Activities",
+    details: String = "Bricks PM",
+    prisonerNumber: String = "GF10001",
+    date: LocalDate = LocalDate.of(2022, 12, 16),
+    startTime: LocalTime = LocalTime.of(13, 15, 0),
+    endTime: LocalTime = LocalTime.of(16, 15, 0),
+  ) = ScheduledEvent(
+    prisonCode = prisonCode,
+    eventId = eventId,
+    bookingId = bookingId,
+    location = location,
+    locationId = locationId,
+    eventClass = eventClass,
+    eventStatus = eventStatus,
+    eventType = eventType,
+    eventTypeDesc = eventTypeDesc,
+    details = details,
+    prisonerNumber = prisonerNumber,
+    date = date,
+    startTime = startTime,
+    endTime = endTime,
+  )
+
   fun visitInstance(
     prisonCode: String = "MDI",
     eventId: Long = 10002,
