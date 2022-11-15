@@ -42,13 +42,8 @@ class PrisonController(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Activity category capacity",
+        description = "Activities within the category",
         content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = ActivityLite::class)))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Category ID not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -58,6 +53,11 @@ class PrisonController(
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Category ID not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       )
     ]
@@ -80,11 +80,6 @@ class PrisonController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = CapacityAndAllocated::class))],
       ),
       ApiResponse(
-        responseCode = "404",
-        description = "Category ID not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -92,6 +87,11 @@ class PrisonController(
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Category ID not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       )
     ]

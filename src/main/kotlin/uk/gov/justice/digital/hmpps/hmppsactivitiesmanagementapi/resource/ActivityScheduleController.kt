@@ -19,14 +19,68 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
 @RequestMapping("/schedules", produces = [MediaType.APPLICATION_JSON_VALUE])
-class ActivityScheduleController(private val scheduleService: ActivityScheduleService) {
+class ActivityScheduleController(
+  private val scheduleService: ActivityScheduleService,
+  private val capacityService: CapacityService,
+) {
+
+  @Operation(
+    summary = "Get the capacity and number of allocated slots in an activity schedule",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity schedule capacity",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CapacityAndAllocated::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Schedule ID not found",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  @GetMapping(value = ["/{activityScheduleId}/capacity"])
+  @ResponseBody
+  fun getActivityScheduleCapacity(@PathVariable("activityScheduleId") activityScheduleId: Long): CapacityAndAllocated =
+    capacityService.getActivityScheduleCapacityAndAllocated(activityScheduleId)
 
   @GetMapping(value = ["/{prisonCode}"])
   @ResponseBody
@@ -49,12 +103,22 @@ class ActivityScheduleController(private val scheduleService: ActivityScheduleSe
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
       )
     ]
   )

@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,8 +24,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ControllerAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.time.LocalDate
+import javax.persistence.EntityNotFoundException
 
 @ExtendWith(SpringExtension::class)
 @WebMvcTest(controllers = [ActivityScheduleController::class])
@@ -39,19 +43,59 @@ class ActivityScheduleControllerTest(@Autowired private val mapper: ObjectMapper
   @MockBean
   private lateinit var activityScheduleService: ActivityScheduleService
 
+  @MockBean
+  private lateinit var capacityService: CapacityService
+
   @BeforeEach
   fun before() {
     mockMvc = MockMvcBuilders
-      .standaloneSetup(ActivityScheduleController(activityScheduleService))
+      .standaloneSetup(ActivityScheduleController(activityScheduleService, capacityService))
       .setControllerAdvice(ControllerAdvice(mapper))
       .build()
+  }
+
+  @Test
+  fun `200 response when get schedule capacity`() {
+    val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
+
+    whenever(capacityService.getActivityScheduleCapacityAndAllocated(1)).thenReturn(expectedModel)
+
+    val response = mockMvc.getActivityScheduleCapacity(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(capacityService).getActivityScheduleCapacityAndAllocated(1)
+  }
+
+  @Test
+  fun `404 response when get schedule capacity and activity id not found`() {
+    whenever(capacityService.getActivityScheduleCapacityAndAllocated(2)).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getActivityScheduleCapacity(2)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+
+    verify(capacityService).getActivityScheduleCapacityAndAllocated(2)
   }
 
   @Test
   fun `200 response when get schedule by prison code and search criteria found`() {
     val schedules = activityModel(activityEntity()).schedules
 
-    whenever(activityScheduleService.getActivitySchedulesByPrisonCode("PVI", LocalDate.MIN, TimeSlot.AM, 1)).thenReturn(
+    whenever(
+      activityScheduleService.getActivitySchedulesByPrisonCode(
+        "PVI",
+        LocalDate.MIN,
+        TimeSlot.AM,
+        1
+      )
+    ).thenReturn(
       schedules
     )
 
@@ -62,12 +106,24 @@ class ActivityScheduleControllerTest(@Autowired private val mapper: ObjectMapper
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(schedules))
 
-    verify(activityScheduleService).getActivitySchedulesByPrisonCode("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+    verify(activityScheduleService).getActivitySchedulesByPrisonCode(
+      "PVI",
+      LocalDate.MIN,
+      TimeSlot.AM,
+      1
+    )
   }
 
   @Test
   fun `200 response when get schedule by prison code and search criteria not found`() {
-    whenever(activityScheduleService.getActivitySchedulesByPrisonCode("PVI", LocalDate.MIN, TimeSlot.AM, 1)).thenReturn(
+    whenever(
+      activityScheduleService.getActivitySchedulesByPrisonCode(
+        "PVI",
+        LocalDate.MIN,
+        TimeSlot.AM,
+        1
+      )
+    ).thenReturn(
       emptyList()
     )
 
@@ -78,9 +134,22 @@ class ActivityScheduleControllerTest(@Autowired private val mapper: ObjectMapper
 
     assertThat(response.contentAsString).isEqualTo("[]")
 
-    verify(activityScheduleService).getActivitySchedulesByPrisonCode("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+    verify(activityScheduleService).getActivitySchedulesByPrisonCode(
+      "PVI",
+      LocalDate.MIN,
+      TimeSlot.AM,
+      1
+    )
   }
 
-  private fun MockMvc.getSchedulesBy(prisonCode: String, date: LocalDate, timeSlot: TimeSlot, locationId: Long) =
+  private fun MockMvc.getActivityScheduleCapacity(activityScheduleId: Long) =
+    get("/schedules/{activityScheduleId}/capacity", activityScheduleId)
+
+  private fun MockMvc.getSchedulesBy(
+    prisonCode: String,
+    date: LocalDate,
+    timeSlot: TimeSlot,
+    locationId: Long
+  ) =
     get("/schedules/$prisonCode?date=$date&timeSlot=$timeSlot&locationId=$locationId")
 }

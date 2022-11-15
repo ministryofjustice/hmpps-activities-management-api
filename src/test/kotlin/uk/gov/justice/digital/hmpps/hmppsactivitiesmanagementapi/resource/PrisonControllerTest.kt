@@ -65,7 +65,7 @@ class PrisonControllerTest(
       expectedModel
     )
 
-    val response = mockMvc.getCategoryCapacity("MDI", "1")
+    val response = mockMvc.getCategoryCapacity("MDI", 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
@@ -80,7 +80,7 @@ class PrisonControllerTest(
       EntityNotFoundException("not found")
     )
 
-    val response = mockMvc.getCategoryCapacity("MDI", "2")
+    val response = mockMvc.getCategoryCapacity("MDI", 2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
@@ -104,7 +104,7 @@ class PrisonControllerTest(
       expectedModel
     )
 
-    val response = mockMvc.getActivitiesInCategory("MDI", "1")
+    val response = mockMvc.getActivitiesInCategory("MDI", 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
@@ -119,7 +119,7 @@ class PrisonControllerTest(
       EntityNotFoundException("not found")
     )
 
-    val response = mockMvc.getActivitiesInCategory("MDI", "2")
+    val response = mockMvc.getActivitiesInCategory("MDI", 2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
@@ -128,9 +128,9 @@ class PrisonControllerTest(
     verify(activityService, times(1)).getActivitiesByCategoryInPrison("MDI", 2)
   }
 
-  private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: String) =
+  private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: Long) =
     get("/prison/{prisonCode}/activity-categories/{categoryId}/activities", prisonCode, categoryId)
 
-  private fun MockMvc.getCategoryCapacity(prisonCode: String, categoryId: String) =
+  private fun MockMvc.getCategoryCapacity(prisonCode: String, categoryId: Long) =
     get("/prison/{prisonCode}/activity-categories/{categoryId}/capacity", prisonCode, categoryId)
 }

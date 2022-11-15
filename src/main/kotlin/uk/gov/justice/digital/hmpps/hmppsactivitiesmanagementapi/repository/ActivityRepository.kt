@@ -13,5 +13,5 @@ interface ActivityRepository : JpaRepository<Activity, Long> {
   @Query(value = "from Activity a where a.startDate <= :date and (a.endDate is null or a.endDate >= :date)")
   fun getAllForDate(@Param("date") date: LocalDate): List<Activity>
 
-  fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, categoryId: ActivityCategory): List<Activity>
+  fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
 }
