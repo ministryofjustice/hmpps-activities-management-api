@@ -3,11 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -80,8 +76,8 @@ class ScheduledEventServiceTest {
       "MDI", "A11111A", dateRange
     )
 
-    verify(scheduledInstanceService, times(1)).getActivityScheduleInstancesByDateRange(any(), any(), any())
-    verify(prisonApiClient, times(0)).getScheduledActivities(any(), any())
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient, never()).getScheduledActivities(any(), any())
 
     with(result!!) {
       assertThat(prisonerNumber).isEqualTo("A11111A")
@@ -157,8 +153,8 @@ class ScheduledEventServiceTest {
       LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     )
 
-    verify(scheduledInstanceService, times(0)).getActivityScheduleInstancesByDateRange(any(), any(), any())
-    verify(prisonApiClient, times(1)).getScheduledActivities(any(), any())
+    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient).getScheduledActivities(any(), any())
 
     with(result!!) {
       assertThat(prisonerNumber).isEqualTo("A11111A")

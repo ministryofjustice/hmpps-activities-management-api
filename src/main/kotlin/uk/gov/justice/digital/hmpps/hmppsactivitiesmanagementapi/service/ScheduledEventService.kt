@@ -20,46 +20,40 @@ class ScheduledEventService(
     prisonCode: String,
     prisonerNumber: String,
     dateRange: LocalDateRange
-  ): PrisonerScheduledEvents? {
-
-    val prisonerDetail = prisonApiClient.getPrisonerDetails(prisonerNumber).block()
-    if (prisonerDetail == null || prisonerDetail.agencyId != prisonCode || prisonerDetail.bookingId == null) {
-      return null
-    }
-
-    val isPrisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode).let {
-      it != null && it.active
-    }
-
-    val prisonApiCalls = Mono.zip(
-      prisonApiClient.getScheduledAppointments(prisonerDetail.bookingId, dateRange),
-      prisonApiClient.getScheduledCourtHearings(prisonerDetail.bookingId, dateRange),
-      prisonApiClient.getScheduledVisits(prisonerDetail.bookingId, dateRange),
-      if (!isPrisonRolledOut) prisonApiClient.getScheduledActivities(
-        prisonerDetail.bookingId,
-        dateRange
-      ) else Mono.just(emptyList())
-    )
-      .map { t ->
-        transformToPrisonerScheduledEvents(
-          prisonerDetail.bookingId,
-          prisonCode,
-          prisonerNumber,
-          dateRange,
-          t.t1,
-          t.t2,
-          t.t3,
-          t.t4
-        )
+  ): PrisonerScheduledEvents? =
+    prisonApiClient.getPrisonerDetails(prisonerNumber).block()
+      ?.takeUnless { it.agencyId != prisonCode || it.bookingId == null }
+      ?.let { prisonerDetail ->
+        val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode).let { it != null && it.active }
+        getScheduledEventCalls(prisonerDetail.bookingId!!, prisonRolledOut, dateRange)
+          .map { t ->
+            transformToPrisonerScheduledEvents(
+              prisonerDetail.bookingId,
+              prisonCode,
+              prisonerNumber,
+              dateRange,
+              t.t1,
+              t.t2,
+              t.t3,
+              t.t4
+            )
+          }.block()
+          ?.apply {
+            if (prisonRolledOut) {
+              activities = transformActivityScheduledInstancesToScheduledEvents(
+                prisonerDetail.bookingId,
+                prisonerNumber,
+                scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
+              )
+            }
+          }
       }
-    val events = prisonApiCalls.block()
-    if (isPrisonRolledOut) {
-      events!!.activities = transformActivityScheduledInstancesToScheduledEvents(
-        prisonerDetail.bookingId,
-        prisonerNumber,
-        scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
-      )
-    }
-    return events
-  }
+
+  private fun getScheduledEventCalls(bookingId: Long, prisonRolledOut: Boolean, dateRange: LocalDateRange) =
+    Mono.zip(
+      prisonApiClient.getScheduledAppointments(bookingId, dateRange),
+      prisonApiClient.getScheduledCourtHearings(bookingId, dateRange),
+      prisonApiClient.getScheduledVisits(bookingId, dateRange),
+      if (!prisonRolledOut) prisonApiClient.getScheduledActivities(bookingId, dateRange) else Mono.just(emptyList())
+    )
 }
