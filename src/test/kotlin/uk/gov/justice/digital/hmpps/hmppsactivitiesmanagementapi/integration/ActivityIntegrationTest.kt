@@ -33,12 +33,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         endTime = LocalTime.of(11, 0),
         internalLocation = InternalLocation(1, "L1", "Location 1"),
         daysOfWeek = listOf("Mon"),
-        capacity = 20,
+        capacity = 10,
         activity = ActivityLite(
-          id = 12L,
-          prisonCode = "MDI",
+          id = 1L,
+          prisonCode = "PVI",
           summary = "Maths",
-          description = "Beginner maths"
+          description = "Maths Level 1"
         )
       ),
       ActivityScheduleLite(
@@ -48,12 +48,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         endTime = LocalTime.of(15, 0),
         internalLocation = InternalLocation(2, "L2", "Location 2"),
         daysOfWeek = listOf("Mon"),
-        capacity = 20,
+        capacity = 10,
         activity = ActivityLite(
-          id = 12L,
-          prisonCode = "MDI",
+          id = 1L,
+          prisonCode = "PVI",
           summary = "Maths",
-          description = "Beginner maths"
+          description = "Maths Level 1"
         )
       ),
     )
