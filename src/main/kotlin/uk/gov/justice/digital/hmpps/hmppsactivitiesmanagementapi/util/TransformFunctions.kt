@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite as ModelActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -62,15 +61,21 @@ fun transform(activity: EntityActivity) =
 fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> =
   scheduledInstances.toModelActivityScheduleInstances()
 
+fun transformActivityScheduledInstancesToScheduledEvents(
+  bookingId: Long,
+  prisonerNumber: String,
+  activityScheduledInstances: List<ModelActivityScheduleInstance>
+): List<ModelScheduledEvent> = activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber)
+
 fun transformToPrisonerScheduledEvents(
   bookingId: Long,
   prisonCode: String,
   prisonerNumber: String,
   dateRange: LocalDateRange,
   appointments: List<PrisonApiScheduledEvent>?,
-  activities: List<PrisonApiScheduledEvent>?,
   courtHearings: PrisonApiCourtHearings?,
   visits: List<PrisonApiScheduledEvent>?,
+  activities: List<PrisonApiScheduledEvent>?,
 ): ModelPrisonerScheduledEvents =
   ModelPrisonerScheduledEvents(
     prisonCode,
@@ -78,9 +83,9 @@ fun transformToPrisonerScheduledEvents(
     dateRange.start,
     dateRange.endInclusive,
     appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
-    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
     courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber),
     visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
+    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
   )
 
 private fun EntityActivityCategory.toModelActivityCategory() =
@@ -145,7 +150,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
 
 private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = map {
   ModelActivityScheduleInstance(
-    activitySchedule = it.activitySchedule.toModelActivityScheduleLite(),
+    activitySchedule = it.activitySchedule.toModelLite(),
     id = it.scheduledInstanceId,
     date = it.sessionDate,
     startTime = it.startTime,
@@ -155,6 +160,26 @@ private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = m
     cancelledBy = it.cancelledBy,
   )
 }
+
+private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(bookingId: Long?, prisonerNumber: String?) =
+  map {
+    ModelScheduledEvent(
+      prisonCode = it.activitySchedule.activity.prisonCode,
+      eventId = it.id,
+      bookingId = bookingId,
+      locationId = it.activitySchedule.internalLocation?.id?.toLong(),
+      location = it.activitySchedule.internalLocation?.description,
+      eventClass = "INT_MOV",
+      eventStatus = null,
+      eventType = "PRISON_ACT",
+      eventTypeDesc = "Prison Activities",
+      details = it.activitySchedule.activity.summary + ": " + it.activitySchedule.description,
+      prisonerNumber = prisonerNumber,
+      date = it.date,
+      startTime = it.startTime,
+      endTime = it.endTime,
+    )
+  }
 
 private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(prisonerNumber: String?) = map {
   ModelScheduledEvent(
@@ -197,16 +222,6 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
     endTime = null,
   )
 }
-
-private fun EntityActivitySchedule.toModelActivityScheduleLite() =
-  ModelActivityScheduleLite(
-    id = this.activityScheduleId!!,
-    description = this.description,
-    startTime = this.startTime,
-    endTime = this.endTime,
-    internalLocation = this.toInternalLocation(),
-    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
-  )
 
 private fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(

@@ -22,14 +22,14 @@ data class PrisonerScheduledEvents(
   val endDate: LocalDate?,
 
   @Schema(description = "A list of scheduled appointments for this prisoner in this date range")
-  val appointments: List<ScheduledEvent>? = null,
-
-  @Schema(description = "A list of scheduled activities for this prisoner in this date range")
-  val activities: List<ScheduledEvent>? = null,
+  var appointments: List<ScheduledEvent>? = null,
 
   @Schema(description = "A list of (active) scheduled court hearings for this prisoner in this date range")
-  val courtHearings: List<ScheduledEvent>? = null,
+  var courtHearings: List<ScheduledEvent>? = null,
 
   @Schema(description = "A list of scheduled visits for this prisoner in this date range")
-  val visits: List<ScheduledEvent>? = null,
+  var visits: List<ScheduledEvent>? = null,
+
+  @Schema(description = "A list of scheduled activities for this prisoner in this date range")
+  var activities: List<ScheduledEvent>? = null,
 )
