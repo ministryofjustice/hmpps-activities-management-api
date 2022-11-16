@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
@@ -50,10 +51,21 @@ class ActivityScheduleTest {
       startTime = LocalTime.of(10, 20),
       endTime = LocalTime.of(10, 20),
       internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-      daysOfWeek = listOf("Mon")
+      daysOfWeek = listOf("Mon"),
+      capacity = 1,
+      activity = ActivityLite(
+        id = 1L,
+        prisonCode = "123",
+        summary = "Maths",
+        description = "Maths basic"
+      )
     )
-
-    assertThat(activitySchedule(activityEntity(), LocalDate.now().atTime(10, 20)).toModelLite()).isEqualTo(expectedModel)
+    assertThat(
+      activitySchedule(
+        activityEntity(),
+        LocalDate.now().atTime(10, 20)
+      ).toModelLite()
+    ).isEqualTo(expectedModel)
   }
 
   @Test
@@ -65,10 +77,19 @@ class ActivityScheduleTest {
         startTime = LocalTime.of(10, 20),
         endTime = LocalTime.of(10, 20),
         internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-        daysOfWeek = listOf("Mon")
+        daysOfWeek = listOf("Mon"),
+        capacity = 1,
+        activity = ActivityLite(
+          id = 1L,
+          prisonCode = "123",
+          summary = "Maths",
+          description = "Maths basic"
+        )
       )
     )
 
-    assertThat(listOf(activitySchedule(activityEntity(), LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(expectedModel)
+    assertThat(listOf(activitySchedule(activityEntity(), LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(
+      expectedModel
+    )
   }
 }

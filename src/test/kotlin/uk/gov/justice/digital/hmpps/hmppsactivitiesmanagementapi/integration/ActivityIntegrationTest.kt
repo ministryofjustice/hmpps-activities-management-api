@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
@@ -31,7 +32,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         startTime = LocalTime.of(10, 0),
         endTime = LocalTime.of(11, 0),
         internalLocation = InternalLocation(1, "L1", "Location 1"),
-        daysOfWeek = listOf("Mon")
+        daysOfWeek = listOf("Mon"),
+        capacity = 10,
+        activity = ActivityLite(
+          id = 1L,
+          prisonCode = "PVI",
+          summary = "Maths",
+          description = "Maths Level 1"
+        )
       ),
       ActivityScheduleLite(
         id = 2,
@@ -39,7 +47,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         startTime = LocalTime.of(14, 0),
         endTime = LocalTime.of(15, 0),
         internalLocation = InternalLocation(2, "L2", "Location 2"),
-        daysOfWeek = listOf("Mon")
+        daysOfWeek = listOf("Mon"),
+        capacity = 10,
+        activity = ActivityLite(
+          id = 1L,
+          prisonCode = "PVI",
+          summary = "Maths",
+          description = "Maths Level 1"
+        )
       ),
     )
   }

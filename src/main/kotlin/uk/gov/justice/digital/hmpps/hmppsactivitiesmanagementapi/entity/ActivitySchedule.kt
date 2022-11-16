@@ -97,8 +97,10 @@ data class ActivitySchedule(
       code = internalLocationCode!!,
       description = internalLocationDescription!!
     ),
+    capacity = this.capacity,
     daysOfWeek = this.getDaysOfWeek()
       .map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
+    activity = this.activity.toModelLite()
   )
 
   fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {

@@ -13,14 +13,14 @@ import java.time.LocalDate
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun `getScheduledEventsByDateRange - returns all 10 rows that satisfy the criteria`() {
+  fun `getScheduledEventsByDateRange (not rolled out) - returns all 10 rows that satisfy the criteria`() {
 
     val prisonerNumber = "G4793VF"
     val bookingId = 1200993L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
-    prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
+    prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 

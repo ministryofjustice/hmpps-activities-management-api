@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
@@ -101,7 +102,14 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         startTime = LocalTime.of(10, 20),
         endTime = LocalTime.of(10, 20),
         internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-        daysOfWeek = listOf("Mon")
+        daysOfWeek = listOf("Mon"),
+        capacity = 20,
+        activity = ActivityLite(
+          id = 12L,
+          prisonCode = "MDI",
+          summary = "Maths",
+          description = "Beginner maths"
+        )
       )
     )
 
