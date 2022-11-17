@@ -39,11 +39,12 @@ class ActivityTest {
   fun `converted to model lite`() {
     val expectedModel = ActivityLite(
       id = 1,
+      attendanceRequired = false,
       prisonCode = "123",
       summary = "Maths",
       description = "Maths basic"
     )
-    assertThat(activityEntity().toModelLite()).isEqualTo(expectedModel)
+    assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
   }
 
   @Test
@@ -51,6 +52,7 @@ class ActivityTest {
     val expectedModel = listOf(
       ActivityLite(
         id = 1,
+        attendanceRequired = true,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic"

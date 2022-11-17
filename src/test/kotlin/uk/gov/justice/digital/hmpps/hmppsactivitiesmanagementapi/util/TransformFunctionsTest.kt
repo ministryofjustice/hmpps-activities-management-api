@@ -24,9 +24,10 @@ class TransformFunctionsTest {
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.now()
 
-    with(transform(activityEntity(timestamp = timestamp))) {
+    with(transform(activityEntity(timestamp = timestamp).copy(attendanceRequired = false))) {
       assertThat(id).isEqualTo(1)
       assertThat(prisonCode).isEqualTo("123")
+      assertThat(attendanceRequired).isFalse
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
       assertThat(category).isEqualTo(ModelActivityCategory(id = 1, description = "category description"))

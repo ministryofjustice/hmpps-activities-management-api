@@ -107,6 +107,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         activity = ActivityLite(
           id = 12L,
           prisonCode = "MDI",
+          attendanceRequired = true,
           summary = "Maths",
           description = "Beginner maths"
         )

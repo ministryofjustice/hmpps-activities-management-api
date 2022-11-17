@@ -65,6 +65,33 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(attendanceRepository.count()).isEqualTo(4)
   }
 
+  @Sql("classpath:test_data/seed-activity-id-5.sql")
+  @Test
+  fun `No attendance records are created for gym induction AM`() {
+    assertThat(attendanceRepository.count()).isZero
+
+    with(activityRepository.findById(5).orElseThrow()) {
+      assertThat(description).isEqualTo("Gym induction")
+      assertThat(schedules).hasSize(1)
+
+      with(schedules.findByDescription("Gym induction AM")) {
+        assertThat(allocations).hasSize(2)
+        assertThat(instances).hasSize(1)
+        assertThat(instances.first().attendances).isEmpty()
+      }
+    }
+
+    webTestClient.createAttendanceRecords()
+
+    with(activityRepository.findById(5).orElseThrow()) {
+      with(schedules.findByDescription("Gym induction AM")) {
+        assertThat(instances.first().attendances).isEmpty()
+      }
+    }
+
+    assertThat(attendanceRepository.count()).isZero
+  }
+
   private fun List<ActivitySchedule>.findByDescription(description: String) =
     first { it.description.uppercase() == description.uppercase() }
 

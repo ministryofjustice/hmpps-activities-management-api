@@ -71,6 +71,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       ActivityLite(
         id = 1,
         prisonCode = "MDI",
+        attendanceRequired = true,
         summary = "activity summary",
         description = "activity description"
       )

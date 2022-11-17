@@ -89,6 +89,7 @@ CREATE TABLE activity (
   prison_code          varchar(3)   NOT NULL,
   activity_category_id bigint       NOT NULL REFERENCES activity_category (activity_category_id),
   activity_tier_id     bigint       NOT NULL REFERENCES activity_tier (activity_tier_id),
+  attendance_required  bool         NOT NULL,
   summary              varchar(50)  NOT NULL,
   description          varchar(300) NOT NULL,
   start_date           date         NOT NULL,

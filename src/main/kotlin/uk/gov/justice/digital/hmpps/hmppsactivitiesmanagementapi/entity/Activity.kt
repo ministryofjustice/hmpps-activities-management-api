@@ -51,6 +51,8 @@ data class Activity(
   @Fetch(FetchMode.SUBSELECT)
   var activityPay: MutableList<ActivityPay> = mutableListOf(),
 
+  var attendanceRequired: Boolean = true,
+
   val summary: String,
 
   val description: String,
@@ -80,10 +82,11 @@ data class Activity(
   }
 
   fun toModelLite() = ActivityLite(
-    id = this.activityId!!,
-    prisonCode = this.prisonCode,
-    summary = this.summary,
-    description = this.description
+    id = activityId!!,
+    prisonCode = prisonCode,
+    attendanceRequired = attendanceRequired,
+    summary = summary,
+    description = description
   )
 
   override fun equals(other: Any?): Boolean {

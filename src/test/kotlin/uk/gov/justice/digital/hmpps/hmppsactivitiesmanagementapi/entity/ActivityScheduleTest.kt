@@ -55,6 +55,7 @@ class ActivityScheduleTest {
       capacity = 1,
       activity = ActivityLite(
         id = 1L,
+        attendanceRequired = true,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic"
@@ -81,6 +82,7 @@ class ActivityScheduleTest {
         capacity = 1,
         activity = ActivityLite(
           id = 1L,
+          attendanceRequired = true,
           prisonCode = "123",
           summary = "Maths",
           description = "Maths basic"

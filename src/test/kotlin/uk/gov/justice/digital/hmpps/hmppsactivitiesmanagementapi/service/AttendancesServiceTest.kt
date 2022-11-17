@@ -29,7 +29,9 @@ class AttendancesServiceTest {
   private val tomorrow = today.plusDays(1)
 
   @Test
-  fun `attendance record is created when no pre-existing attendance record`() {
+  fun `attendance record is created when no pre-existing attendance record and attendance is required`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
     service.createAttendanceRecordsFor(today)
@@ -42,6 +44,17 @@ class AttendancesServiceTest {
         status = AttendanceStatus.SCH
       )
     )
+  }
+
+  @Test
+  fun `attendance record is not created when no pre-existing attendance record and attendance is not required`() {
+    instance.activitySchedule.activity.attendanceRequired = false
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+
+    service.createAttendanceRecordsFor(today)
+
+    verify(attendanceRepository, never()).save(any())
   }
 
   @Test
