@@ -15,7 +15,7 @@ object PrisonApiCourtHearingFixture {
       active = true,
       courtType = Agency.CourtType.OTHER
     )
-  ): PrisonApiCourtHearing = PrisonApiCourtHearing(
+  ) = PrisonApiCourtHearing(
     id = id,
     dateTime = dateTime,
     location = location

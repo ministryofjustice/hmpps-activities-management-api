@@ -36,6 +36,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         capacity = 10,
         activity = ActivityLite(
           id = 1L,
+          attendanceRequired = true,
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1"
@@ -52,6 +53,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         activity = ActivityLite(
           id = 1L,
           prisonCode = "PVI",
+          attendanceRequired = true,
           summary = "Maths",
           description = "Maths Level 1"
         )
@@ -66,6 +68,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   fun `get scheduled maths activities with morning and afternoon`() {
     val mathsLevelOneActivity = with(webTestClient.getActivityById(1)!!) {
       assertThat(prisonCode).isEqualTo("PVI")
+      assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
       assertThat(category).isEqualTo(ActivityCategory(1, "Category 1"))
@@ -149,6 +152,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get scheduled english activities for morning and afternoon`() {
     val englishLevelTwoActivity = with(webTestClient.getActivityById(2)!!) {
+      assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(ActivityCategory(2, "Category 2"))

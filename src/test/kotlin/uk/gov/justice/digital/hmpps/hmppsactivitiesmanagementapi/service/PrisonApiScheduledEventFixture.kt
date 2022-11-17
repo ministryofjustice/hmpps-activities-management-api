@@ -56,7 +56,7 @@ object PrisonApiScheduledEventFixture {
     locationCode: String = "WS10",
     startTime: String = "2022-12-16T13:15:00",
     endTime: String = "2022-12-16T16:15:00",
-  ): PrisonApiScheduledEvent = PrisonApiScheduledEvent(
+  ) = PrisonApiScheduledEvent(
     bookingId = bookingId,
     eventClass = eventClass,
     eventId = eventId,

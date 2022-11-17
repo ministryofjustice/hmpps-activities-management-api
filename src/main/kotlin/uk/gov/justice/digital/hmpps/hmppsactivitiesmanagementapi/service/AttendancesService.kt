@@ -57,10 +57,19 @@ class AttendancesService(
   fun createAttendanceRecordsFor(date: LocalDate) {
     log.info("Creating attendance records for date: $date")
 
-    scheduledInstanceRepository.findAllBySessionDate(date).forEach { instance ->
-      instance.forEachActiveAllocation(date) { allocation -> createAttendanceRecordIfNoPreExistingRecord(instance, allocation) }
-    }
+    scheduledInstanceRepository.findAllBySessionDate(date)
+      .andAttendanceRequired()
+      .forEach { instance ->
+        instance.forEachActiveAllocation(date) { allocation ->
+          createAttendanceRecordIfNoPreExistingRecord(
+            instance,
+            allocation
+          )
+        }
+      }
   }
+
+  private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
   private fun ScheduledInstance.forEachActiveAllocation(date: LocalDate, f: (allocation: Allocation) -> Unit) {
     activitySchedule.allocations.filter { it.isActive(date) }.forEach { f(it) }

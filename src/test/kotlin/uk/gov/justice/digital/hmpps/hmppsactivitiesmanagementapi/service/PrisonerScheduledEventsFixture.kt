@@ -14,7 +14,7 @@ object PrisonerScheduledEventsFixture {
     activities: List<ScheduledEvent> = listOf(ScheduledEventFixture.activityInstance()),
     visits: List<ScheduledEvent> = listOf(ScheduledEventFixture.visitInstance()),
     courtHearings: List<ScheduledEvent> = listOf(ScheduledEventFixture.courtHearingInstance()),
-  ): PrisonerScheduledEvents = PrisonerScheduledEvents(
+  ) = PrisonerScheduledEvents(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     startDate = startDate,

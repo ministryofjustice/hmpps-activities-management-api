@@ -50,6 +50,7 @@ fun transform(activity: EntityActivity) =
     schedules = activity.schedules.toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay.toModelActivityPayList(),
+    attendanceRequired = activity.attendanceRequired,
     summary = activity.summary,
     description = activity.description,
     startDate = activity.startDate,

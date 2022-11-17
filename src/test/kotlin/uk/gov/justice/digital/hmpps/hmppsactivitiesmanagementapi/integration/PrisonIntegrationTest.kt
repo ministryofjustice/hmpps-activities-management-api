@@ -20,7 +20,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     val activities = webTestClient.getActivitiesForCategory("PVI", 1)
 
     assertThat(activities).containsExactlyInAnyOrder(
-      ActivityLite(id = 1, prisonCode = "PVI", summary = "Maths", description = "Maths Level 1")
+      ActivityLite(id = 1, prisonCode = "PVI", attendanceRequired = true, summary = "Maths", description = "Maths Level 1")
     )
   }
 

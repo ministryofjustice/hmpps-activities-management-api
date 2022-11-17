@@ -15,6 +15,9 @@ data class Activity(
   @Schema(description = "The prison code where this activity takes place", example = "PVI")
   val prisonCode: String,
 
+  @Schema(description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance", example = "false")
+  val attendanceRequired: Boolean,
+
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
   val summary: String,
 
