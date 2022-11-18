@@ -10,7 +10,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledAppointments(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/appointments?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/appointments?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -22,7 +22,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledAppointmentsNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/appointments?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/appointments?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -34,7 +34,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledActivities(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -46,7 +46,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledActivitiesNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -58,7 +58,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetCourtHearings(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/court-hearings?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/court-hearings?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -70,7 +70,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetCourtHearingsNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/court-hearings?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/court-hearings?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -82,7 +82,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledVisits(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -94,7 +94,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetScheduledVisitsNotFound(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?startDate=$startDate&endDate=$endDate"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/visits?fromDate=$startDate&toDate=$endDate"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

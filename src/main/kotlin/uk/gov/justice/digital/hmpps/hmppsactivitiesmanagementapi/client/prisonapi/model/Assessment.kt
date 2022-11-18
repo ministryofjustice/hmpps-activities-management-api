@@ -29,7 +29,7 @@ data class Assessment(
   @JsonProperty("bookingId") val bookingId: Long,
 
   @Schema(example = "GV09876N", description = "Offender number (e.g. NOMS Number).")
-  @JsonProperty("offenderNo") val offenderNo: String,
+  @JsonProperty("offenderNo") val offenderNo: String?,
 
   @Schema(example = "C", description = "Classification code")
   @JsonProperty("classificationCode") val classificationCode: String,
