@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduleInstances
 import java.time.LocalDate
+import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail as PrisonApiInmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -142,6 +143,31 @@ class ScheduledEventServiceTest {
     }
       .isInstanceOf(Exception::class.java)
       .hasMessage("java.lang.Exception: Error")
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange - prison code and prisoner number dont match`() {
+
+    val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
+    val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
+    val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono = Mono.just(InmateDetailFixture.instance(agencyId = "PVI"))
+
+    whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
+    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledActivities(900001, dateRange)).thenReturn(schedActivitiesMono)
+    whenever(prisonApiClient.getScheduledVisits(900001, dateRange)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtHearings(900001, dateRange)).thenReturn(courtHearingsMono)
+
+    assertThatThrownBy {
+      service.getScheduledEventsByDateRange(
+        "MDI", "A11111A",
+        dateRange
+      )
+    }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Prisoner 'A11111A' not found in prison 'MDI'")
   }
 
   @Test

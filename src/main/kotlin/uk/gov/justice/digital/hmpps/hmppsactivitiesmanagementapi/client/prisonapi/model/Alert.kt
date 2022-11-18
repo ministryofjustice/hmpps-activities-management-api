@@ -32,7 +32,7 @@ data class Alert(
   @JsonProperty("bookingId") val bookingId: Long,
 
   @Schema(example = "G3878UK", description = "Offender Unique Reference")
-  @JsonProperty("offenderNo") val offenderNo: String,
+  @JsonProperty("offenderNo") val offenderNo: String?,
 
   @Schema(example = "X", description = "Alert Type")
   @JsonProperty("alertType") val alertType: String,

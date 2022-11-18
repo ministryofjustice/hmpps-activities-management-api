@@ -77,7 +77,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     assertThatThrownBy { prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/appointments?startDate=2022-10-01&endDate=2022-11-05")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/appointments?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
@@ -98,7 +98,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     assertThatThrownBy { prisonApiClient.getScheduledActivities(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?startDate=2022-10-01&endDate=2022-11-05")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
@@ -121,7 +121,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     assertThatThrownBy { prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/court-hearings?startDate=2022-10-01&endDate=2022-11-05")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/court-hearings?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
@@ -142,6 +142,6 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetScheduledVisitsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
     assertThatThrownBy { prisonApiClient.getScheduledVisits(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/visits?startDate=2022-10-01&endDate=2022-11-05")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/visits?fromDate=2022-10-01&toDate=2022-11-05")
   }
 }

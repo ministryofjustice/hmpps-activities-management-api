@@ -32,8 +32,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/{bookingId}/activities")
-          .queryParam("startDate", dateRange.start)
-          .queryParam("endDate", dateRange.endInclusive)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
           .build(bookingId)
       }
       .retrieve()
@@ -44,8 +44,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/{bookingId}/appointments")
-          .queryParam("startDate", dateRange.start)
-          .queryParam("endDate", dateRange.endInclusive)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
           .build(bookingId)
       }
       .retrieve()
@@ -57,8 +57,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/{bookingId}/court-hearings")
-          .queryParam("startDate", dateRange.start)
-          .queryParam("endDate", dateRange.endInclusive)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
           .build(bookingId)
       }
       .retrieve()
@@ -70,8 +70,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/{bookingId}/visits")
-          .queryParam("startDate", dateRange.start)
-          .queryParam("endDate", dateRange.endInclusive)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
           .build(bookingId)
       }
       .retrieve()
