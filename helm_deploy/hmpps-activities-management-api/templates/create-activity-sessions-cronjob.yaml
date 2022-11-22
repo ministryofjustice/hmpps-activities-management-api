@@ -10,6 +10,7 @@ spec:
   successfulJobsHistoryLimit: 5
   jobTemplate:
     spec:
+      backoffLimit: 2
       template:
         spec:
           restartPolicy: Never
@@ -20,4 +21,4 @@ spec:
             args:
               - /bin/sh
               - -c
-              - curl -X POST http://hmpps-activities-management-api/job/create-activity-sessions
+              - curl --fail -X POST http://hmpps-activities-management-api/job/create-activity-sessions
