@@ -2,13 +2,19 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 
 @Service
-class PrisonRegimeService {
+class PrisonRegimeService(private val eventPriorityRepository: EventPriorityRepository) {
 
-  // TODO this is stubbed for now until we have the DB, Entity and repository in place
   fun getEventPrioritiesForPrison(code: String) =
-    EventType.values().associateWith { setOf(Priority(it.defaultPriority)) }
+    eventPriorityRepository.findByPrisonCode(code)
+      .groupBy { it.eventType }
+      .mapValues { it.value.map { ep -> Priority(ep.priority) } }
+      .ifEmpty { defaultPriorities() }
+
+  private fun defaultPriorities() =
+    EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
 }
 
 // TODO this will need to contain more information e.g. subtype/subcategories.

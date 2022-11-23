@@ -229,3 +229,11 @@ CREATE TABLE activity_pay (
 
 CREATE INDEX idx_activity_pay_activity_id ON activity_pay (activity_id);
 
+CREATE TABLE event_priority (
+  event_priority_id bigserial   NOT NULL CONSTRAINT event_priority_pk PRIMARY KEY,
+  prison_code       varchar(3)  NOT NULL,
+  event_type        varchar(30) NOT NULL,
+  priority          integer     NOT NULL
+);
+
+CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
