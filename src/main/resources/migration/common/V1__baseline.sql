@@ -233,7 +233,9 @@ CREATE TABLE event_priority (
   event_priority_id bigserial   NOT NULL CONSTRAINT event_priority_pk PRIMARY KEY,
   prison_code       varchar(3)  NOT NULL,
   event_type        varchar(30) NOT NULL,
+  event_category    varchar(40),
   priority          integer     NOT NULL
 );
 
 CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
+CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON event_priority (prison_code, event_type, event_category);
