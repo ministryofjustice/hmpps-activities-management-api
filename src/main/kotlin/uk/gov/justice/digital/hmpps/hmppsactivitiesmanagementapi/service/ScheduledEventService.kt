@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduledInstancesToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
@@ -13,7 +14,8 @@ import javax.persistence.EntityNotFoundException
 class ScheduledEventService(
   private val prisonApiClient: PrisonApiClient,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val scheduledInstanceService: ScheduledInstanceService
+  private val scheduledInstanceService: ScheduledInstanceService,
+  private val prisonRegimeService: PrisonRegimeService
 ) {
 
   fun getScheduledEventsByDateRange(
@@ -24,6 +26,7 @@ class ScheduledEventService(
     ?.also { if (it.agencyId != prisonCode || it.bookingId == null) throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'") }
     ?.let { prisonerDetail ->
       val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode).let { it != null && it.active }
+      val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
       getScheduledEventCalls(prisonerDetail.bookingId!!, prisonRolledOut, dateRange)
         .map { t ->
           transformToPrisonerScheduledEvents(
@@ -31,6 +34,7 @@ class ScheduledEventService(
             prisonCode,
             prisonerNumber,
             dateRange,
+            eventPriorities,
             t.t1,
             t.t2,
             t.t3,
@@ -42,6 +46,7 @@ class ScheduledEventService(
             activities = transformActivityScheduledInstancesToScheduledEvents(
               prisonerDetail.bookingId,
               prisonerNumber,
+              eventPriorities[EventType.ACTIVITY],
               scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
             )
           }

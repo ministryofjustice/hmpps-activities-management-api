@@ -52,4 +52,7 @@ data class ScheduledEvent(
   @Schema(description = "The end time for this scheduled instance", example = "10:00")
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
+
+  @Schema(description = "The event priority")
+  val priority: Int?,
 )

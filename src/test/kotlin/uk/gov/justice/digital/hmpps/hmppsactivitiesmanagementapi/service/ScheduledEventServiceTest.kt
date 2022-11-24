@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduleInstances
@@ -25,7 +26,8 @@ class ScheduledEventServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val scheduledInstanceService: ScheduledInstanceService = mock()
-  private val service = ScheduledEventService(prisonApiClient, rolloutPrisonRepository, scheduledInstanceService)
+  private val prisonRegimeService: PrisonRegimeService = mock()
+  private val service = ScheduledEventService(prisonApiClient, rolloutPrisonRepository, scheduledInstanceService, prisonRegimeService)
 
   @Test
   fun `getScheduledEventsByDateRange (rolled out) - success`() {
@@ -47,6 +49,12 @@ class ScheduledEventServiceTest {
     )
 
     whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
+    )
+
+    whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI",
         "A11111A", dateRange
@@ -62,21 +70,26 @@ class ScheduledEventServiceTest {
 
     verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
     verify(prisonApiClient, never()).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
     with(result) {
       assertThat(prisonerNumber).isEqualTo("A11111A")
       assertThat(appointments).isNotNull
       assertThat(appointments).hasSize(1)
       assertThat(appointments!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(appointments!![0].priority).isEqualTo(4)
       assertThat(activities).isNotNull
       assertThat(activities).hasSize(1)
       assertThat(activities!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(activities!![0].priority).isEqualTo(5)
       assertThat(visits).isNotNull
       assertThat(visits).hasSize(1)
       assertThat(visits!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(visits!![0].priority).isEqualTo(2)
       assertThat(courtHearings).isNotNull
       assertThat(courtHearings).hasSize(1)
       assertThat(courtHearings!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(courtHearings!![0].priority).isEqualTo(1)
     }
   }
 
@@ -100,6 +113,12 @@ class ScheduledEventServiceTest {
       )
     )
 
+    whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
+    )
+
     whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
     whenever(prisonApiClient.getScheduledActivities(900001, dateRange)).thenReturn(schedActivitiesMono)
@@ -110,21 +129,26 @@ class ScheduledEventServiceTest {
 
     verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any())
     verify(prisonApiClient).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
     with(result) {
       assertThat(prisonerNumber).isEqualTo("A11111A")
       assertThat(appointments).isNotNull
       assertThat(appointments).hasSize(1)
       assertThat(appointments!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(appointments!![0].priority).isEqualTo(4)
       assertThat(activities).isNotNull
       assertThat(activities).hasSize(1)
       assertThat(activities!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(activities!![0].priority).isEqualTo(5)
       assertThat(visits).isNotNull
       assertThat(visits).hasSize(1)
       assertThat(visits!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(visits!![0].priority).isEqualTo(2)
       assertThat(courtHearings).isNotNull
       assertThat(courtHearings).hasSize(1)
       assertThat(courtHearings!![0].prisonerNumber).isEqualTo("A11111A")
+      assertThat(courtHearings!![0].priority).isEqualTo(1)
     }
   }
 

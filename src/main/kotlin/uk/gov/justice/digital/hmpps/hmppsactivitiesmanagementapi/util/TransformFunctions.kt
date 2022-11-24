@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDateTime
 import java.time.format.TextStyle
 import java.util.Locale
@@ -65,14 +67,16 @@ fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledI
 fun transformActivityScheduledInstancesToScheduledEvents(
   bookingId: Long,
   prisonerNumber: String,
-  activityScheduledInstances: List<ModelActivityScheduleInstance>
-): List<ModelScheduledEvent> = activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber)
+  priorities: List<Priority>?,
+  activityScheduledInstances: List<ModelActivityScheduleInstance>,
+): List<ModelScheduledEvent> = activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber, priorities)
 
 fun transformToPrisonerScheduledEvents(
   bookingId: Long,
   prisonCode: String,
   prisonerNumber: String,
   dateRange: LocalDateRange,
+  eventPriorities: Map<EventType, List<Priority>>,
   appointments: List<PrisonApiScheduledEvent>?,
   courtHearings: PrisonApiCourtHearings?,
   visits: List<PrisonApiScheduledEvent>?,
@@ -83,10 +87,10 @@ fun transformToPrisonerScheduledEvents(
     prisonerNumber,
     dateRange.start,
     dateRange.endInclusive,
-    appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
-    courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber),
-    visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
-    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber),
+    appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, eventPriorities[EventType.APPOINTMENT]),
+    courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber, eventPriorities[EventType.COURT_HEARING]),
+    visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, eventPriorities[EventType.VISIT]),
+    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, eventPriorities[EventType.ACTIVITY]),
   )
 
 private fun EntityActivityCategory.toModelActivityCategory() =
@@ -162,7 +166,11 @@ private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = m
   )
 }
 
-private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(bookingId: Long?, prisonerNumber: String?) =
+private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(
+  bookingId: Long?,
+  prisonerNumber: String?,
+  priorities: List<Priority>?
+) =
   map {
     ModelScheduledEvent(
       prisonCode = it.activitySchedule.activity.prisonCode,
@@ -179,10 +187,14 @@ private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(bookingId
       date = it.date,
       startTime = it.startTime,
       endTime = it.endTime,
+      priority = priorities?.elementAtOrNull(0)?.priority,
     )
   }
 
-private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(prisonerNumber: String?) = map {
+private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
+  prisonerNumber: String?,
+  priorities: List<Priority>?
+) = map {
   ModelScheduledEvent(
     prisonCode = it.agencyId,
     eventId = it.eventId,
@@ -198,13 +210,15 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
     date = it.eventDate,
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = LocalDateTime.parse(it.endTime).toLocalTime(),
+    priority = priorities?.elementAtOrNull(0)?.priority,
   )
 }
 
 private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   bookingId: Long,
   prisonCode: String?,
-  prisonerNumber: String?
+  prisonerNumber: String?,
+  priorities: List<Priority>?
 ) = this.hearings?.map {
   ModelScheduledEvent(
     prisonCode = prisonCode,
@@ -221,6 +235,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
     date = LocalDateTime.parse(it.dateTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
     endTime = null,
+    priority = priorities?.elementAtOrNull(0)?.priority
   )
 }
 

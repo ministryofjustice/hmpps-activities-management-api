@@ -20,6 +20,7 @@ object ScheduledEventFixture {
     date: LocalDate = LocalDate.of(2022, 10, 1),
     startTime: LocalTime = LocalTime.of(12, 0, 0),
     endTime: LocalTime = LocalTime.of(13, 0, 0),
+    priority: Int = 4,
   ) = ScheduledEvent(
     prisonCode = prisonCode,
     eventId = eventId,
@@ -35,6 +36,7 @@ object ScheduledEventFixture {
     date = date,
     startTime = startTime,
     endTime = endTime,
+    priority = priority,
   )
 
   fun activityInstance(
@@ -52,6 +54,7 @@ object ScheduledEventFixture {
     date: LocalDate = LocalDate.of(2022, 12, 16),
     startTime: LocalTime = LocalTime.of(13, 15, 0),
     endTime: LocalTime = LocalTime.of(16, 15, 0),
+    priority: Int = 5,
   ) = ScheduledEvent(
     prisonCode = prisonCode,
     eventId = eventId,
@@ -67,6 +70,7 @@ object ScheduledEventFixture {
     date = date,
     startTime = startTime,
     endTime = endTime,
+    priority = priority,
   )
 
   fun visitInstance(
@@ -84,6 +88,7 @@ object ScheduledEventFixture {
     date: LocalDate = LocalDate.of(2022, 12, 12),
     startTime: LocalTime = LocalTime.of(17, 0, 0),
     endTime: LocalTime = LocalTime.of(18, 0, 0),
+    priority: Int = 2,
   ) = ScheduledEvent(
     prisonCode = prisonCode,
     eventId = eventId,
@@ -99,6 +104,7 @@ object ScheduledEventFixture {
     date = date,
     startTime = startTime,
     endTime = endTime,
+    priority = priority,
   )
 
   fun courtHearingInstance(
@@ -116,6 +122,7 @@ object ScheduledEventFixture {
     date: LocalDate = LocalDate.of(2022, 10, 1),
     startTime: LocalTime = LocalTime.of(12, 0, 0),
     endTime: LocalTime? = null,
+    priority: Int = 1,
   ) = ScheduledEvent(
     prisonCode = prisonCode,
     eventId = eventId,
@@ -131,5 +138,6 @@ object ScheduledEventFixture {
     date = date,
     startTime = startTime,
     endTime = endTime,
+    priority = priority,
   )
 }
