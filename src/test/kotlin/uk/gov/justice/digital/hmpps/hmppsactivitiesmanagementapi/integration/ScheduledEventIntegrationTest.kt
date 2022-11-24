@@ -34,9 +34,13 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     with(scheduledEvents!!) {
       assertThat(appointments).hasSize(1)
+      assertThat(appointments!![0].priority).isEqualTo(4)
       assertThat(activities).hasSize(2)
+      assertThat(activities!![0].priority).isEqualTo(5)
       assertThat(visits).hasSize(1)
+      assertThat(visits!![0].priority).isEqualTo(2)
       assertThat(courtHearings).hasSize(4)
+      assertThat(courtHearings!![0].priority).isEqualTo(1)
     }
   }
 
