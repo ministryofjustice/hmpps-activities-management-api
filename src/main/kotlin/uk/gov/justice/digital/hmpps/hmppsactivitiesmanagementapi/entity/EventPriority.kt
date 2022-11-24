@@ -8,7 +8,6 @@ import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.Table
 
-// TODO this will need to contain more information e.g. subtype/subcategories.
 @Entity
 @Table(name = "event_priority")
 data class EventPriority(
@@ -20,6 +19,9 @@ data class EventPriority(
 
   @Enumerated(EnumType.STRING)
   val eventType: EventType,
+
+  @Enumerated(EnumType.STRING)
+  val eventCategory: EventCategory? = null,
 
   val priority: Int
 )
