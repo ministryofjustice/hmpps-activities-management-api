@@ -15,6 +15,7 @@ object ScheduledInstanceFixture {
     activityScheduleId: Long = 1000 + id,
     activityId: Long = 2000 + id,
     activityCategoryId: Long = 4000 + id,
+    activityCategoryCode: String = "ACTIVITY CATEGORY CODE $activityCategoryId",
     activityTierId: Long = 6000 + id,
     date: LocalDate = LocalDate.of(2022, 10, 1),
     startTime: LocalTime = LocalTime.of(12, 0, 0),
@@ -30,7 +31,7 @@ object ScheduledInstanceFixture {
         prisonCode = prisonCode,
         activityCategory = ActivityCategory(
           activityCategoryId,
-          "ACTIVITY CATEGORY CODE $activityCategoryId",
+          activityCategoryCode,
           "ACTIVITY CATEGORY DESCRIPTION  $activityCategoryId",
         ),
         activityTier = ActivityTier(
