@@ -192,7 +192,7 @@ private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(
       startTime = it.startTime,
       endTime = it.endTime,
       priority = priorities?.let { pList -> getPriority(it.activitySchedule.activity.category.code, pList) }
-        ?: run { defaultPriority }
+        ?: defaultPriority
     )
   }
 
@@ -200,13 +200,13 @@ private fun getPriority(category: String?, priorities: List<Priority>): Int? =
   priorities.fold(listOf<Priority>()) { acc, next ->
     if (next.eventCategory == null && acc.isEmpty()) listOf(next)
     else when (next.eventCategory) {
-      EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
-      EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
-      EventCategory.INDUCTION -> if (category.equals("IND") || category.equals("INDUC")) listOf(next) else acc
-      EventCategory.INDUSTRIES -> if (category.equals("LACO")) listOf(next) else acc
-      EventCategory.INTERVENTIONS -> if (category.equals("INTERV")) listOf(next) else acc
-      EventCategory.LEISURE_SOCIAL -> if (category.equals("LEI")) listOf(next) else acc
-      EventCategory.SERVICES -> if (category?.startsWith("SERV") == true) listOf(next) else acc
+      EventCategory.EDUCATION -> if (category == "EDU") listOf(next) else acc
+      EventCategory.GYM_SPORTS_FITNESS -> if (category == "GYM") listOf(next) else acc
+      EventCategory.INDUCTION -> if (category == "IND" || category == "INDUC") listOf(next) else acc
+      EventCategory.INDUSTRIES -> if (category == "LACO") listOf(next) else acc
+      EventCategory.INTERVENTIONS -> if (category == "INTERV") listOf(next) else acc
+      EventCategory.LEISURE_SOCIAL -> if (category == "LEI") listOf(next) else acc
+      EventCategory.SERVICES -> if (category == "SERV") listOf(next) else acc
       else -> {
         acc
       }
@@ -234,7 +234,7 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = LocalDateTime.parse(it.endTime).toLocalTime(),
     priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
-      ?: run { defaultPriority }
+      ?: defaultPriority
   )
 }
 
@@ -261,7 +261,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
     startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
     endTime = null,
     priority = priorities?.let { pList -> getPriority(null, pList) }
-      ?: run { defaultPriority }
+      ?: defaultPriority
   )
 }
 

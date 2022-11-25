@@ -125,12 +125,12 @@ class ScheduledEventServiceTest {
           Priority(5, EventCategory.INDUSTRIES),
           Priority(6, EventCategory.INTERVENTIONS),
           Priority(7, EventCategory.LEISURE_SOCIAL),
-          Priority(8, null), // Will default to this because event category doesn't match
+          Priority(8), // Will default to this because event category doesn't match
         ),
-        EventType.APPOINTMENT to listOf(Priority(21, null)),
-        EventType.VISIT to listOf(Priority(22, null)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(23, null)),
-        EventType.COURT_HEARING to listOf(Priority(24, null)),
+        EventType.APPOINTMENT to listOf(Priority(21)),
+        EventType.VISIT to listOf(Priority(22)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(23)),
+        EventType.COURT_HEARING to listOf(Priority(24)),
       )
     )
 
@@ -375,7 +375,7 @@ class ScheduledEventServiceTest {
     ).thenReturn(
       mapOf(
         EventType.ACTIVITY to listOf(
-          Priority(99, null),
+          Priority(99),
         ),
         EventType.APPOINTMENT to listOf(
           Priority(1, EventCategory.EDUCATION),
