@@ -41,7 +41,7 @@ internal fun activityEntity(
   }
 
 internal fun activityCategory() =
-  ActivityCategory(activityCategoryId = 1, code = "code", description = "category description")
+  ActivityCategory(activityCategoryId = 1, code = "category code", description = "category description")
 
 private fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
 

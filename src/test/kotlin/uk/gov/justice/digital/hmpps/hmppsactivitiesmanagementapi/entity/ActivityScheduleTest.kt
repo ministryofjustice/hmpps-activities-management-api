@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class ActivityScheduleTest {
   @Test
@@ -58,7 +59,12 @@ class ActivityScheduleTest {
         attendanceRequired = true,
         prisonCode = "123",
         summary = "Maths",
-        description = "Maths basic"
+        description = "Maths basic",
+        category = ModelActivityCategory(
+          id = 1L,
+          code = "category code",
+          description = "category description"
+        )
       )
     )
     assertThat(
@@ -85,7 +91,12 @@ class ActivityScheduleTest {
           attendanceRequired = true,
           prisonCode = "123",
           summary = "Maths",
-          description = "Maths basic"
+          description = "Maths basic",
+          category = ModelActivityCategory(
+            id = 1L,
+            code = "category code",
+            description = "category description"
+          )
         )
       )
     )

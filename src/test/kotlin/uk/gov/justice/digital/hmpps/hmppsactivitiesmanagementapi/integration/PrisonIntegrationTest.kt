@@ -8,6 +8,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 
 class PrisonIntegrationTest : IntegrationTestBase() {
@@ -20,7 +21,18 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     val activities = webTestClient.getActivitiesForCategory("PVI", 1)
 
     assertThat(activities).containsExactlyInAnyOrder(
-      ActivityLite(id = 1, prisonCode = "PVI", attendanceRequired = true, summary = "Maths", description = "Maths Level 1")
+      ActivityLite(
+        id = 1,
+        prisonCode = "PVI",
+        attendanceRequired = true,
+        summary = "Maths",
+        description = "Maths Level 1",
+        category = ActivityCategory(
+          id = 1L,
+          code = "C1",
+          description = "Category 1"
+        )
+      )
     )
   }
 

@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 
 class ActivityTest {
@@ -42,7 +43,12 @@ class ActivityTest {
       attendanceRequired = false,
       prisonCode = "123",
       summary = "Maths",
-      description = "Maths basic"
+      description = "Maths basic",
+      category = ActivityCategory(
+        id = 1L,
+        code = "category code",
+        description = "category description"
+      )
     )
     assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
   }
@@ -55,7 +61,12 @@ class ActivityTest {
         attendanceRequired = true,
         prisonCode = "123",
         summary = "Maths",
-        description = "Maths basic"
+        description = "Maths basic",
+        category = ActivityCategory(
+          id = 1L,
+          code = "category code",
+          description = "category description"
+        )
       )
     )
 

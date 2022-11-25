@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -94,6 +95,202 @@ class ScheduledEventServiceTest {
   }
 
   @Test
+  fun `getScheduledEventsByDateRange (rolled out) - success with explicit default activity priority`() {
+
+    val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
+    val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono = Mono.just(InmateDetailFixture.instance())
+
+    whenever(
+      rolloutPrisonRepository.findByCode("MDI")
+    ).thenReturn(
+      RolloutPrison(
+        rolloutPrisonId = 10,
+        code = "MDI",
+        description = "Moorland",
+        active = true
+      )
+    )
+
+    whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      mapOf(
+        EventType.ACTIVITY to listOf(
+          Priority(1, EventCategory.EDUCATION),
+          Priority(2, EventCategory.SERVICES),
+          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+          Priority(4, EventCategory.INDUCTION),
+          Priority(5, EventCategory.INDUSTRIES),
+          Priority(6, EventCategory.INTERVENTIONS),
+          Priority(7, EventCategory.LEISURE_SOCIAL),
+          Priority(8), // Will default to this because event category doesn't match
+        ),
+        EventType.APPOINTMENT to listOf(Priority(21)),
+        EventType.VISIT to listOf(Priority(22)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(23)),
+        EventType.COURT_HEARING to listOf(Priority(24)),
+      )
+    )
+
+    whenever(
+      scheduledInstanceService.getActivityScheduleInstancesByDateRange(
+        "MDI",
+        "A11111A", dateRange
+      )
+    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
+
+    whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
+    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledVisits(900001, dateRange)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtHearings(900001, dateRange)).thenReturn(courtHearingsMono)
+
+    val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
+
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient, never()).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
+
+    with(result) {
+      assertThat(appointments!![0].priority).isEqualTo(21)
+      assertThat(activities!![0].priority).isEqualTo(8)
+      assertThat(visits!![0].priority).isEqualTo(22)
+      assertThat(courtHearings!![0].priority).isEqualTo(24)
+    }
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange (rolled out) - success with default activity priority`() {
+
+    val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
+    val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono = Mono.just(InmateDetailFixture.instance())
+
+    whenever(
+      rolloutPrisonRepository.findByCode("MDI")
+    ).thenReturn(
+      RolloutPrison(
+        rolloutPrisonId = 10,
+        code = "MDI",
+        description = "Moorland",
+        active = true
+      )
+    )
+
+    whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      mapOf(
+        EventType.ACTIVITY to listOf(
+          Priority(1, EventCategory.EDUCATION),
+          Priority(2, EventCategory.SERVICES),
+          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+          Priority(4, EventCategory.INDUCTION),
+          Priority(5, EventCategory.INDUSTRIES),
+          Priority(6, EventCategory.INTERVENTIONS),
+          Priority(7, EventCategory.LEISURE_SOCIAL),
+        ),
+        EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
+        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
+      )
+    )
+
+    whenever(
+      scheduledInstanceService.getActivityScheduleInstancesByDateRange(
+        "MDI",
+        "A11111A", dateRange
+      )
+    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
+
+    whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
+    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledVisits(900001, dateRange)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtHearings(900001, dateRange)).thenReturn(courtHearingsMono)
+
+    val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
+
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient, never()).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
+
+    with(result) {
+      assertThat(appointments!![0].priority).isEqualTo(4) // EventType.APPOINTMENT default
+      assertThat(activities!![0].priority).isEqualTo(5) // EventType.ACTIVITY default
+      assertThat(visits!![0].priority).isEqualTo(2) // EventType.VISIT default
+      assertThat(courtHearings!![0].priority).isEqualTo(1) // EventType.COURT_HEARING default
+    }
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange (rolled out) - success with category priority`() {
+
+    val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+    val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
+    val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono = Mono.just(InmateDetailFixture.instance())
+
+    whenever(
+      rolloutPrisonRepository.findByCode("MDI")
+    ).thenReturn(
+      RolloutPrison(
+        rolloutPrisonId = 10,
+        code = "MDI",
+        description = "Moorland",
+        active = true
+      )
+    )
+
+    whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      mapOf(
+        EventType.ACTIVITY to listOf(
+          Priority(1, EventCategory.EDUCATION),
+          Priority(2, EventCategory.SERVICES),
+          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+          Priority(4, EventCategory.INDUCTION),
+          Priority(5, EventCategory.INDUSTRIES),
+          Priority(6, EventCategory.INTERVENTIONS),
+          Priority(7, EventCategory.LEISURE_SOCIAL),
+        ),
+        EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
+        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
+      )
+    )
+
+    whenever(
+      scheduledInstanceService.getActivityScheduleInstancesByDateRange(
+        "MDI",
+        "A11111A", dateRange
+      )
+    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22, activityCategoryCode = "LEI"))))
+
+    whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
+    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledVisits(900001, dateRange)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtHearings(900001, dateRange)).thenReturn(courtHearingsMono)
+
+    val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
+
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient, never()).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
+
+    with(result) {
+      assertThat(appointments!![0].priority).isEqualTo(4) // EventType.APPOINTMENT default
+      assertThat(activities!![0].priority).isEqualTo(7) // EventType.LEISURE_SOCIAL
+      assertThat(visits!![0].priority).isEqualTo(2) // EventType.VISIT default
+      assertThat(courtHearings!![0].priority).isEqualTo(1) // EventType.COURT_HEARING default
+    }
+  }
+
+  @Test
   fun `getScheduledEventsByDateRange (not rolled out) - success`() {
 
     val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
@@ -149,6 +346,69 @@ class ScheduledEventServiceTest {
       assertThat(courtHearings).hasSize(1)
       assertThat(courtHearings!![0].prisonerNumber).isEqualTo("A11111A")
       assertThat(courtHearings!![0].priority).isEqualTo(1)
+    }
+  }
+
+  @Test
+  fun `getScheduledEventsByDateRange (not rolled out) - success with category priority`() {
+
+    val schedAppointmentsMono =
+      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = "LACO")))
+    val schedActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
+    val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
+    val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())
+    val prisonerDetailsMono = Mono.just(InmateDetailFixture.instance())
+
+    whenever(
+      rolloutPrisonRepository.findByCode("MDI")
+    ).thenReturn(
+      RolloutPrison(
+        rolloutPrisonId = 10,
+        code = "MDI",
+        description = "Moorland",
+        active = false
+      )
+    )
+
+    whenever(
+      prisonRegimeService.getEventPrioritiesForPrison("MDI")
+    ).thenReturn(
+      mapOf(
+        EventType.ACTIVITY to listOf(
+          Priority(99),
+        ),
+        EventType.APPOINTMENT to listOf(
+          Priority(1, EventCategory.EDUCATION),
+          Priority(2, EventCategory.SERVICES),
+          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+          Priority(4, EventCategory.INDUCTION),
+          Priority(5, EventCategory.INDUSTRIES),
+          Priority(6, EventCategory.INTERVENTIONS),
+          Priority(7, EventCategory.LEISURE_SOCIAL),
+        ),
+        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
+      )
+    )
+
+    whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
+    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledActivities(900001, dateRange)).thenReturn(schedActivitiesMono)
+    whenever(prisonApiClient.getScheduledVisits(900001, dateRange)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtHearings(900001, dateRange)).thenReturn(courtHearingsMono)
+
+    val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
+
+    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(prisonApiClient).getScheduledActivities(any(), any())
+    verify(prisonRegimeService).getEventPrioritiesForPrison(any())
+
+    with(result) {
+      assertThat(appointments!![0].priority).isEqualTo(5) // EventType.APPOINTMENT EventCategory.INDUSTRIES "LACO"
+      assertThat(activities!![0].priority).isEqualTo(99) // explicit default
+      assertThat(visits!![0].priority).isEqualTo(2) // default
+      assertThat(courtHearings!![0].priority).isEqualTo(1) // default
     }
   }
 
