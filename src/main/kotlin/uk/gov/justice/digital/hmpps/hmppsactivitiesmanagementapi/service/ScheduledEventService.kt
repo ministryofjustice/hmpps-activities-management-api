@@ -46,6 +46,7 @@ class ScheduledEventService(
             activities = transformActivityScheduledInstancesToScheduledEvents(
               prisonerDetail.bookingId,
               prisonerNumber,
+              EventType.ACTIVITY.defaultPriority,
               eventPriorities[EventType.ACTIVITY],
               scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
             )

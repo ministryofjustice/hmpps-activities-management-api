@@ -10,6 +10,9 @@ data class ActivityCategory(
   )
   val id: Long,
 
+  @Schema(description = "The activity category code", example = "LEI")
+  val code: String,
+
   @Schema(description = "The name of the activity category", example = "Leisure and social")
   val description: String
 )

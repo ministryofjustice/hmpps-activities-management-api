@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
@@ -109,7 +110,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           prisonCode = "MDI",
           attendanceRequired = true,
           summary = "Maths",
-          description = "Beginner maths"
+          description = "Beginner maths",
+          category = ActivityCategory(
+            id = 1L,
+            code = "EDU",
+            description = "Education"
+          )
         )
       )
     )

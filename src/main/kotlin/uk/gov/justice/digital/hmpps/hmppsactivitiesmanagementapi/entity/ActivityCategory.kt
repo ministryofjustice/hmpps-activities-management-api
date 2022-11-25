@@ -20,7 +20,8 @@ data class ActivityCategory(
 ) {
   fun toModel() = ModelActivityCategory(
     id = activityCategoryId!!,
-    description = description
+    code = code,
+    description = description,
   )
 }
 

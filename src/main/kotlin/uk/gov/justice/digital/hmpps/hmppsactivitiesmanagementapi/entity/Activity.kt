@@ -86,7 +86,8 @@ data class Activity(
     prisonCode = prisonCode,
     attendanceRequired = attendanceRequired,
     summary = summary,
-    description = description
+    description = description,
+    category = activityCategory.toModel()
   )
 
   override fun equals(other: Any?): Boolean {

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 
 @Schema(description = "Describes a top-level activity")
 data class ActivityLite(
@@ -19,4 +20,7 @@ data class ActivityLite(
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
   val description: String,
+
+  @Schema(description = "The category for this activity, one of the high-level categories")
+  val category: ActivityCategory,
 )

@@ -28,6 +28,7 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
     val expectedModel = listOf(
       ActivityCategory(
         id = 1,
+        code = "category code",
         description = "category description"
       )
     )

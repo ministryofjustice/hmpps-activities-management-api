@@ -12,9 +12,9 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
   fun `get list of activity categories`() {
     with(webTestClient.getActivityCategories()!!) {
       assertThat(size).isEqualTo(3)
-      assertThat(get(0)).isEqualTo(ActivityCategory(id = 1, description = "Category 1"))
-      assertThat(get(1)).isEqualTo(ActivityCategory(id = 2, description = "Category 2"))
-      assertThat(get(2)).isEqualTo(ActivityCategory(id = 3, description = "Category 3"))
+      assertThat(get(0)).isEqualTo(ActivityCategory(id = 1, code = "C1", description = "Category 1"))
+      assertThat(get(1)).isEqualTo(ActivityCategory(id = 2, code = "C2", description = "Category 2"))
+      assertThat(get(2)).isEqualTo(ActivityCategory(id = 3, code = "C3", description = "Category 3"))
     }
   }
 

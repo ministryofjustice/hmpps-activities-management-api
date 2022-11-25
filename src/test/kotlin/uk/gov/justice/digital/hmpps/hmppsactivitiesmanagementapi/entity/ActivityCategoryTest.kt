@@ -8,13 +8,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 class ActivityCategoryTest {
   @Test
   fun `converted to model`() {
-    val expectedModel = ModelActivityCategory(1, "category description")
+    val expectedModel = ModelActivityCategory(1, "category code", "category description")
     assertThat(activityCategory().toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `List converted to model`() {
-    val expectedModel = listOf(ModelActivityCategory(1, "category description"))
+    val expectedModel = listOf(ModelActivityCategory(1, "category code", "category description"))
     assertThat(listOf(activityCategory()).toModel()).isEqualTo(expectedModel)
   }
 }

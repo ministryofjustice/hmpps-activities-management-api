@@ -12,6 +12,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -73,7 +74,12 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         prisonCode = "MDI",
         attendanceRequired = true,
         summary = "activity summary",
-        description = "activity description"
+        description = "activity description",
+        category = ActivityCategory(
+          id = 1L,
+          code = "LEI",
+          description = "Leisure and social"
+        )
       )
     )
 
