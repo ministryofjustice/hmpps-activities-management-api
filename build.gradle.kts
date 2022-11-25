@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.6.0-beta"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.6.0"
   kotlin("plugin.spring") version "1.7.21"
   kotlin("plugin.jpa") version "1.7.21"
   jacoco
@@ -27,9 +27,9 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:1.1.13")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-ui:1.6.12")
-  implementation("org.springdoc:springdoc-openapi-data-rest:1.6.12")
-  implementation("org.springdoc:springdoc-openapi-kotlin:1.6.12")
+  implementation("org.springdoc:springdoc-openapi-ui:1.6.13")
+  implementation("org.springdoc:springdoc-openapi-data-rest:1.6.13")
+  implementation("org.springdoc:springdoc-openapi-kotlin:1.6.13")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -39,7 +39,7 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
-  testImplementation("org.mockito:mockito-inline:4.8.1")
+  testImplementation("org.mockito:mockito-inline:4.9.0")
 }
 
 java {
