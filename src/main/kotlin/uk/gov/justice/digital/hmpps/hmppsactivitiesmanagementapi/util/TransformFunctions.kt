@@ -200,8 +200,8 @@ private fun getPriority(category: String?, priorities: List<Priority>): Int? =
   priorities.fold(listOf<Priority>()) { acc, next ->
     if (next.eventCategory == null && acc.isEmpty()) listOf(next)
     else when (next.eventCategory) {
-      EventCategory.EDUCATION -> if (category == "EDU") listOf(next) else acc
-      EventCategory.GYM_SPORTS_FITNESS -> if (category == "GYM") listOf(next) else acc
+      EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
+      EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
       EventCategory.INDUCTION -> if (category == "IND" || category == "INDUC") listOf(next) else acc
       EventCategory.INDUSTRIES -> if (category == "LACO") listOf(next) else acc
       EventCategory.INTERVENTIONS -> if (category == "INTERV") listOf(next) else acc
