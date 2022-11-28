@@ -85,6 +85,8 @@ data class ActivitySchedule(
   val saturdayFlag: Boolean = false,
 
   val sundayFlag: Boolean = false,
+
+  val runsOnBankHoliday: Boolean = false,
 ) {
 
   fun toModelLite() = ActivityScheduleLite(

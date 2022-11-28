@@ -28,6 +28,7 @@ import org.springframework.web.reactive.function.client.WebClient
 class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUrl: String,
+  @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   private val webClientBuilder: WebClient.Builder
 ) {
 
@@ -98,6 +99,11 @@ class WebClientConfiguration(
       AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, oAuth2AuthorizedClientService)
     authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider)
     return authorizedClientManager
+  }
+
+  @Bean
+  fun bankHolidayApiWebClient(): WebClient {
+    return webClientBuilder.baseUrl(bankHolidayApiUrl).build()
   }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context

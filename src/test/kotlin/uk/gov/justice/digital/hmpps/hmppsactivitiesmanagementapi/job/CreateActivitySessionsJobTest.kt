@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,7 +25,8 @@ import java.time.LocalTime
 @ExtendWith(MockitoExtension::class)
 class CreateActivitySessionsJobTest {
   private val repository: ActivityRepository = mock()
-  private val job = CreateActivitySessionsJob(repository, 60L)
+  private val bankHolidayService: BankHolidayService = mock()
+  private val job = CreateActivitySessionsJob(repository, bankHolidayService, 60L)
 
   @Captor
   private lateinit var activitySaveCaptor: ArgumentCaptor<Activity>
@@ -51,6 +53,7 @@ class CreateActivitySessionsJobTest {
     }
 
     whenever(repository.getAllForDate(expectedDate)).thenReturn(listOf(activity))
+    whenever(bankHolidayService.isEnglishBankHoliday(expectedDate)).thenReturn(false)
 
     job.execute()
 
@@ -85,6 +88,7 @@ class CreateActivitySessionsJobTest {
     }
 
     whenever(repository.getAllForDate(expectedDate)).thenReturn(listOf(activity))
+    whenever(bankHolidayService.isEnglishBankHoliday(expectedDate)).thenReturn(false)
 
     job.execute()
 
@@ -120,6 +124,7 @@ class CreateActivitySessionsJobTest {
     }
 
     whenever(repository.getAllForDate(expectedDate)).thenReturn(listOf(activity))
+    whenever(bankHolidayService.isEnglishBankHoliday(expectedDate)).thenReturn(false)
 
     job.execute()
 
@@ -128,5 +133,73 @@ class CreateActivitySessionsJobTest {
     val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
 
     assertThat(sessionCreatedOnExpectedDay).isNull()
+  }
+
+  @Test
+  fun `does not schedule session instance if day is bank holiday and schedule does not run on bank holidays`() {
+    val expectedDate = LocalDate.now().plusDays(60)
+
+    val activity = activityEntity().apply {
+      this.schedules.clear()
+      this.schedules.add(
+        activitySchedule(
+          this,
+          LocalDate.now().atStartOfDay(),
+          monday = expectedDate.dayOfWeek.equals(DayOfWeek.MONDAY),
+          tuesday = expectedDate.dayOfWeek.equals(DayOfWeek.TUESDAY),
+          wednesday = expectedDate.dayOfWeek.equals(DayOfWeek.WEDNESDAY),
+          thursday = expectedDate.dayOfWeek.equals(DayOfWeek.THURSDAY),
+          friday = expectedDate.dayOfWeek.equals(DayOfWeek.FRIDAY),
+          saturday = expectedDate.dayOfWeek.equals(DayOfWeek.SATURDAY),
+          sunday = expectedDate.dayOfWeek.equals(DayOfWeek.SUNDAY),
+          runsOnBankHolidays = false
+        )
+      )
+    }
+
+    whenever(repository.getAllForDate(expectedDate)).thenReturn(listOf(activity))
+    whenever(bankHolidayService.isEnglishBankHoliday(expectedDate)).thenReturn(true)
+
+    job.execute()
+
+    verify(repository, times(1)).save(activitySaveCaptor.capture())
+
+    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+
+    assertThat(sessionCreatedOnExpectedDay).isNull()
+  }
+
+  @Test
+  fun `schedules session instance if day is bank holiday and schedule runs on bank holidays`() {
+    val expectedDate = LocalDate.now().plusDays(60)
+
+    val activity = activityEntity().apply {
+      this.schedules.clear()
+      this.schedules.add(
+        activitySchedule(
+          this,
+          LocalDate.now().atStartOfDay(),
+          monday = expectedDate.dayOfWeek.equals(DayOfWeek.MONDAY),
+          tuesday = expectedDate.dayOfWeek.equals(DayOfWeek.TUESDAY),
+          wednesday = expectedDate.dayOfWeek.equals(DayOfWeek.WEDNESDAY),
+          thursday = expectedDate.dayOfWeek.equals(DayOfWeek.THURSDAY),
+          friday = expectedDate.dayOfWeek.equals(DayOfWeek.FRIDAY),
+          saturday = expectedDate.dayOfWeek.equals(DayOfWeek.SATURDAY),
+          sunday = expectedDate.dayOfWeek.equals(DayOfWeek.SUNDAY),
+          runsOnBankHolidays = true
+        )
+      )
+    }
+
+    whenever(repository.getAllForDate(expectedDate)).thenReturn(listOf(activity))
+    whenever(bankHolidayService.isEnglishBankHoliday(expectedDate)).thenReturn(true)
+
+    job.execute()
+
+    verify(repository, times(1)).save(activitySaveCaptor.capture())
+
+    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+
+    assertThat(sessionCreatedOnExpectedDay).isNotNull
   }
 }

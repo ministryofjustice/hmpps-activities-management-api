@@ -15,12 +15,13 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.createandvaryalicenceapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
-@ExtendWith(OAuthExtension::class)
+@ExtendWith(OAuthExtension::class, BankHolidayApiExtension::class)
 @AutoConfigureWebTestClient(timeout = "36000")
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")

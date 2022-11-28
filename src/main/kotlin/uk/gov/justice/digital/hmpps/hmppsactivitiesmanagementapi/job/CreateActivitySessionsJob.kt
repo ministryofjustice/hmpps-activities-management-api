@@ -7,11 +7,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import java.time.LocalDate
 
 @Component
 class CreateActivitySessionsJob(
   private val activityRepository: ActivityRepository,
+  private val bankHolidayService: BankHolidayService,
   @Value("\${jobs.create-activity-sessions.days-in-advance}") private val daysInAdvance: Long? = null
 ) {
 
@@ -24,10 +26,14 @@ class CreateActivitySessionsJob(
     val day = LocalDate.now().plusDays(daysInAdvance!!)
 
     log.info("Scheduling all activities on $day")
+    if (bankHolidayService.isEnglishBankHoliday(day)) {
+      log.info("$day is a bank holiday")
+    }
 
     activityRepository.getAllForDate(day).parallelStream().forEach { activity ->
       activity
         .getSchedulesOnDay(day, includeSuspended = false)
+        .filterActivitySchedulesForBankHoliday(day)
         .filterActivitySchedulesWithNoPreExistingInstance(day)
         .forEach { schedule ->
           log.info("Scheduling instance of ${activity.summary} at ${activity.prisonCode} on $day")
@@ -41,6 +47,9 @@ class CreateActivitySessionsJob(
       activityRepository.save(activity)
     }
   }
+
+  private fun List<ActivitySchedule>.filterActivitySchedulesForBankHoliday(day: LocalDate) =
+    this.filter { it.runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day) }
 
   private fun List<ActivitySchedule>.filterActivitySchedulesWithNoPreExistingInstance(day: LocalDate) =
     this.filter { it.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day } }
