@@ -130,7 +130,8 @@ CREATE TABLE activity_schedule (
   thursday_flag                 bool         NOT NULL DEFAULT false,
   friday_flag                   bool         NOT NULL DEFAULT false,
   saturday_flag                 bool         NOT NULL DEFAULT false,
-  sunday_flag                   bool         NOT NULL DEFAULT false
+  sunday_flag                   bool         NOT NULL DEFAULT false,
+  runs_on_bank_holiday          bool         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);
