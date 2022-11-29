@@ -26,9 +26,6 @@ class CreateActivitySessionsJob(
     val day = LocalDate.now().plusDays(daysInAdvance!!)
 
     log.info("Scheduling all activities on $day")
-    if (bankHolidayService.isEnglishBankHoliday(day)) {
-      log.info("$day is a bank holiday")
-    }
 
     activityRepository.getAllForDate(day).parallelStream().forEach { activity ->
       activity

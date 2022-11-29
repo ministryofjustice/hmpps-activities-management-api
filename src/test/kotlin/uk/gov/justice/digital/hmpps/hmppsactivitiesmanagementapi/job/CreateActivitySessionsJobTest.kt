@@ -8,7 +8,6 @@ import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.firstValue
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -57,11 +56,11 @@ class CreateActivitySessionsJobTest {
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.any { it.sessionDate == expectedDate }
 
-    assertThat(sessionCreatedOnExpectedDay).isNotNull
+    assertThat(sessionCreatedOnExpectedDay).isTrue
   }
 
   @Test
@@ -92,12 +91,12 @@ class CreateActivitySessionsJobTest {
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.any { it.sessionDate == expectedDate }
 
     assertThat(activitySaveCaptor.firstValue.schedules.first().instances.size).isEqualTo(1)
-    assertThat(sessionCreatedOnExpectedDay).isNotNull
+    assertThat(sessionCreatedOnExpectedDay).isTrue
   }
 
   @Test
@@ -128,11 +127,11 @@ class CreateActivitySessionsJobTest {
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.any { it.sessionDate == expectedDate }
 
-    assertThat(sessionCreatedOnExpectedDay).isNull()
+    assertThat(sessionCreatedOnExpectedDay).isFalse
   }
 
   @Test
@@ -162,11 +161,11 @@ class CreateActivitySessionsJobTest {
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+    val sessionCreatedOnBankHoliday = activitySaveCaptor.firstValue.schedules.first().instances.any { it.sessionDate == expectedDate }
 
-    assertThat(sessionCreatedOnExpectedDay).isNull()
+    assertThat(sessionCreatedOnBankHoliday).isFalse
   }
 
   @Test
@@ -196,10 +195,10 @@ class CreateActivitySessionsJobTest {
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    val sessionCreatedOnExpectedDay = activitySaveCaptor.firstValue.schedules.first().instances.find { it.sessionDate == expectedDate }
+    val sessionCreatedOnBankHoliday = activitySaveCaptor.firstValue.schedules.first().instances.any { it.sessionDate == expectedDate }
 
-    assertThat(sessionCreatedOnExpectedDay).isNotNull
+    assertThat(sessionCreatedOnBankHoliday).isTrue
   }
 }
