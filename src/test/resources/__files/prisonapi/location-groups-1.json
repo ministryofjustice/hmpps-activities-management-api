@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Group Name",
+    "key": "Group key",
+    "children": [
+      {
+        "name": "Child Group Name",
+        "key": "Child Group key",
+        "children": []
+      }
+    ]
+  }
+]

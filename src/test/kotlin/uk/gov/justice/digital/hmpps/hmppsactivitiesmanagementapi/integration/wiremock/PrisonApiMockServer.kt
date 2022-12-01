@@ -127,4 +127,88 @@ class PrisonApiMockServer : WireMockServer(8999) {
         )
     )
   }
+
+  fun stubGetLocationsForType(agencyId: String, locationType: String, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetLocationsForTypeNotFound(agencyId: String, locationType: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/location-404.json")
+            .withStatus(404)
+        )
+    )
+  }
+
+  fun stubGetLocationsForTypeServerError(agencyId: String, locationType: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("error-500.json")
+            .withStatus(500)
+        )
+    )
+  }
+
+  fun stubGetLocationsForTypeUnrestricted(agencyId: String, locationType: String, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations?eventType=$locationType"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetLocationsForTypeUnrestrictedNotFound(agencyId: String, locationType: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations?eventType=$locationType"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/location-404.json")
+            .withStatus(404)
+        )
+    )
+  }
+
+  fun stubGetLocationGroups(agencyId: String, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/groups"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetLocationGroupsNotFound(agencyId: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/groups"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/location-group-404.json")
+            .withStatus(404)
+        )
+    )
+  }
 }

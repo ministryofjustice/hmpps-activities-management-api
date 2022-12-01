@@ -1,0 +1,5 @@
+{
+  "status": 404,
+  "userMessage": "(user message)Locations not found for agency not_an_agency with location type CELL.",
+  "developerMessage": "(developer message)Locations not found for agency not_an_agency with location type CELL."
+}

@@ -31,6 +31,9 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-data-rest:1.6.13")
   implementation("org.springdoc:springdoc-openapi-kotlin:1.6.13")
 
+  // Other dependencies
+  implementation("org.apache.commons:commons-text:1.10.0")
+
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
   runtimeOnly("org.postgresql:postgresql:42.5.1")
