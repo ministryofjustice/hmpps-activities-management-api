@@ -144,4 +144,62 @@ class PrisonApiClientTest {
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/visits?fromDate=2022-10-01&toDate=2022-11-05")
   }
+
+  @Test
+  fun `getLocationsForType - success`() {
+    val agencyId = "LEI"
+    val locationType = "CELL"
+    prisonApiMockServer.stubGetLocationsForType(agencyId, locationType, "prisonapi/locations-LEI-HB7.json")
+    val locations = prisonApiClient.getLocationsForType(agencyId, locationType).block()
+    assertThat(locations).hasSize(4)
+    assertThat(locations!![3].locationId).isEqualTo(108583L)
+  }
+
+  @Test
+  fun `getLocationsForType - not found`() {
+    val agencyId = "LEI"
+    val locationType = "CELL"
+    prisonApiMockServer.stubGetLocationsForTypeNotFound(agencyId, locationType)
+    assertThatThrownBy { prisonApiClient.getLocationsForType(agencyId, locationType).block() }
+      .isInstanceOf(WebClientResponseException::class.java)
+      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations/type/CELL")
+  }
+
+  @Test
+  fun `getLocationsForTypeUnrestricted - success`() {
+    val agencyId = "LEI"
+    val locationType = "CELL"
+    prisonApiMockServer.stubGetLocationsForTypeUnrestricted(agencyId, locationType, "prisonapi/locations-LEI-HB7.json")
+    val locations = prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block()
+    assertThat(locations).hasSize(4)
+    assertThat(locations!![3].locationId).isEqualTo(108583L)
+  }
+
+  @Test
+  fun `getLocationsForTypeUnrestricted - not found`() {
+    val agencyId = "LEI"
+    val locationType = "CELL"
+    prisonApiMockServer.stubGetLocationsForTypeUnrestrictedNotFound(agencyId, locationType)
+    assertThatThrownBy { prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block() }
+      .isInstanceOf(WebClientResponseException::class.java)
+      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations?eventType=CELL")
+  }
+
+  @Test
+  fun `getLocationGroups - success`() {
+    val agencyId = "MDI"
+    prisonApiMockServer.stubGetLocationGroups(agencyId, "prisonapi/location-groups-1.json")
+    val locationGroups = prisonApiClient.getLocationGroups(agencyId).block()
+    assertThat(locationGroups).hasSize(1)
+    assertThat(locationGroups!![0].children[0].name).isEqualTo("Child Group Name")
+  }
+
+  @Test
+  fun `getLocationGroups - not found`() {
+    val agencyId = "LEI"
+    prisonApiMockServer.stubGetLocationGroupsNotFound(agencyId)
+    assertThatThrownBy { prisonApiClient.getLocationGroups(agencyId).block() }
+      .isInstanceOf(WebClientResponseException::class.java)
+      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations/groups")
+  }
 }

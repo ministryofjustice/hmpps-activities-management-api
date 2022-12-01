@@ -1,0 +1,24 @@
+[
+  {
+    "locationId": 507011,
+    "locationType": "CELL",
+    "description": "Hb7-1-002",
+    "agencyId": "RNI",
+    "currentOccupancy": 0,
+    "locationPrefix": "RNI-HB7-1-002",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": ""
+  },
+  {
+    "locationId": 507031,
+    "locationType": "CELL",
+    "description": "Hb7-1-021",
+    "agencyId": "RNI",
+    "currentOccupancy": 0,
+    "locationPrefix": "RNI-HB7-1-021",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": ""
+  }
+]

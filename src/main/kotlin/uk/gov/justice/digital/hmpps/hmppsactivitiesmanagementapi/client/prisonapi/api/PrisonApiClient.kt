@@ -7,6 +7,8 @@ import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
@@ -76,5 +78,40 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+  }
+
+  fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/agencies/{agencyId}/locations/type/{type}")
+          .build(agencyId, locationType)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<Location>>())
+  }
+
+  // Does not check that the invoker has the selected agency in their caseload.
+  fun getLocationsForTypeUnrestricted(agencyId: String, locationType: String): Mono<List<Location>> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/agencies/{agencyId}/locations")
+          .queryParam("eventType", locationType)
+          .build(agencyId)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<Location>>())
+  }
+
+  fun getLocationGroups(agencyId: String): Mono<List<LocationGroup>> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/agencies/{agencyId}/locations/groups")
+          .build(agencyId)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<LocationGroup>>())
   }
 }

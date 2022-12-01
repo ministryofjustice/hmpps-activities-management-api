@@ -1,0 +1,24 @@
+[
+  {
+    "locationId": 507011,
+    "locationType": "CELL",
+    "description": "House_block_7-1-002",
+    "agencyId": "LEI",
+    "currentOccupancy": 0,
+    "locationPrefix": "LEI-House-block-7-1-002",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": ""
+  },
+  {
+    "locationId": 507031,
+    "locationType": "CELL",
+    "description": "House_block_7-1-021",
+    "agencyId": "LEI",
+    "currentOccupancy": 0,
+    "locationPrefix": "LEI-House-block-7-1-021",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": ""
+  }
+]
