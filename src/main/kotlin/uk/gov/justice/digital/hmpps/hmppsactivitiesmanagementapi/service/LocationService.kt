@@ -20,7 +20,7 @@ class LocationService(
   fun getLocationPrefixFromGroup(agencyId: String, group: String): LocationPrefixDto {
     val agencyGroupKey = "${agencyId}_$group"
     val pattern = groupsProperties.getProperty(agencyGroupKey)
-      ?: throw EntityNotFoundException("No mappings found for $agencyGroupKey")
+      ?: throw EntityNotFoundException("No location prefix found for prison $agencyId and group name '$group'")
 
     val locationPrefix = pattern
       .replace(".", "")
