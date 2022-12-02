@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.web.util.UriBuilder
@@ -49,11 +49,11 @@ class LocationPrefixIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
     with(errorResponse!!) {
-      Assertions.assertThat(errorCode).isNull()
-      Assertions.assertThat(developerMessage).isEqualTo("No location prefix found for prison MDI and group name 'IDONTEXIST'")
-      Assertions.assertThat(moreInfo).isNull()
-      Assertions.assertThat(status).isEqualTo(404)
-      Assertions.assertThat(userMessage).isEqualTo("Not found: No location prefix found for prison MDI and group name 'IDONTEXIST'")
+      assertThat(errorCode).isNull()
+      assertThat(developerMessage).isEqualTo("No location prefix found for prison MDI and group name 'IDONTEXIST'")
+      assertThat(moreInfo).isNull()
+      assertThat(status).isEqualTo(404)
+      assertThat(userMessage).isEqualTo("Not found: No location prefix found for prison MDI and group name 'IDONTEXIST'")
     }
   }
 }
