@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
@@ -119,7 +120,7 @@ class ActivityScheduleController(
             schema = Schema(implementation = ErrorResponse::class)
           )
         ],
-      )
+      ),
     ]
   )
   fun getSchedulesByPrisonCode(
@@ -143,4 +144,61 @@ class ActivityScheduleController(
       timeSlot = timeSlot,
       locationId = locationId
     )
+
+  @GetMapping(value = ["/{scheduleId}/allocations"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of activity schedule allocations",
+    description = "Returns zero or more activity schedule allocations.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The allocations for an activity schedule",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = Allocation::class))
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Schedule ID not found",
+        content = [
+          Content(
+            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  fun getAllocationsBy(
+    @PathVariable scheduleId: Long,
+    @RequestParam(
+      value = "activeOnly",
+      required = false
+    ) @Parameter(description = "If true will only return active allocations. Defaults to true.") activeOnly: Boolean?,
+  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
 }

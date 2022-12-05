@@ -118,7 +118,7 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-private fun List<EntityActivitySchedule>.toModelSchedules() = map {
+fun List<EntityActivitySchedule>.toModelSchedules() = map {
   ModelActivitySchedule(
     id = it.activityScheduleId!!,
     instances = it.instances.toModelScheduledInstances(),
@@ -265,7 +265,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   )
 }
 
-private fun List<EntityAllocation>.toModelAllocations() = map {
+fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(
     id = it.allocationId!!,
     prisonerNumber = it.prisonerNumber,

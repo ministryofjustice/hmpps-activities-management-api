@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
 
@@ -129,4 +130,33 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     locationId: Long
   ) =
     get("/schedules/$prisonCode?date=$date&timeSlot=$timeSlot&locationId=$locationId")
+
+  @Test
+  fun `200 response when get allocations by schedule identifier`() {
+    val expectedAllocations = activityEntity().schedules.first().allocations.toModelAllocations()
+
+    whenever(activityScheduleService.getAllocationsBy(1)).thenReturn(expectedAllocations)
+
+    val response = mockMvc.getAllocationsByScheduleId(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedAllocations))
+  }
+
+  @Test
+  fun `404 response when get allocations by schedule identifier not found`() {
+    whenever(activityScheduleService.getAllocationsBy(-99)).thenThrow(EntityNotFoundException("Not found"))
+
+    val response = mockMvc.getAllocationsByScheduleId(-99)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+  }
+
+  private fun MockMvc.getAllocationsByScheduleId(scheduleId: Long) =
+    get("/schedules/$scheduleId/allocations")
 }
