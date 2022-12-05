@@ -1,5 +1,5 @@
 {
   "status": 404,
-  "userMessage": "(user message)Locations not found for agency not_an_agency with location type CELL.",
-  "developerMessage": "(developer message)Locations not found for agency not_an_agency with location type CELL."
+  "userMessage": "(user message)Location groups not found for prison XXX",
+  "developerMessage": "(developer message)Location groups not found for prison XXX"
 }

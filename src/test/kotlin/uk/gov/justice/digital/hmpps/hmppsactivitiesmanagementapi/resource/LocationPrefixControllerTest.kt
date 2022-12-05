@@ -26,22 +26,15 @@ class LocationPrefixControllerTest : ControllerTestBase<LocationPrefixController
   fun `200 response when location prefix found`() {
     val result = LocationPrefixDto("MDI-2-")
     whenever(
-      locationService.getLocationPrefixFromGroup(
-        "MDI", "Houseblock 7"
-      )
+      locationService.getLocationPrefixFromGroup("MDI", "Houseblock 7")
     ).thenReturn(result)
 
     val response = mockMvc.get("/prisons/MDI/location-prefix") {
       param("groupName", "Houseblock 7")
     }
-      .andDo { print() }
       .andExpect {
-        status {
-          isOk()
-        }
-        content {
-          contentType(MediaType.APPLICATION_JSON)
-        }
+        status { isOk() }
+        content { contentType(MediaType.APPLICATION_JSON) }
       }
       .andReturn().response
 
@@ -54,9 +47,7 @@ class LocationPrefixControllerTest : ControllerTestBase<LocationPrefixController
   @Test
   fun `404 response when location prefix not found`() {
     whenever(
-      locationService.getLocationPrefixFromGroup(
-        "MDI", "Houseblock 7"
-      )
+      locationService.getLocationPrefixFromGroup("MDI", "Houseblock 7")
     ).thenThrow(EntityNotFoundException("Not found"))
 
     val response = mockMvc.get("/prisons/MDI/location-prefix") {
@@ -76,9 +67,7 @@ class LocationPrefixControllerTest : ControllerTestBase<LocationPrefixController
   fun `Error response when service throws exception`() {
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
     whenever(
-      locationService.getLocationPrefixFromGroup(
-        "MDI", "Houseblock 7"
-      )
+      locationService.getLocationPrefixFromGroup("MDI", "Houseblock 7")
     ).thenThrow(RuntimeException("Error"))
 
     val response = mockMvc.get("/prisons/MDI/location-prefix") {
@@ -89,7 +78,6 @@ class LocationPrefixControllerTest : ControllerTestBase<LocationPrefixController
       .andReturn().response
 
     assertThat(response.contentAsString + "\n").isEqualTo(result)
-
     verify(locationService).getLocationPrefixFromGroup(
       "MDI", "Houseblock 7",
     )
@@ -100,9 +88,7 @@ class LocationPrefixControllerTest : ControllerTestBase<LocationPrefixController
     mockMvc.get("/prisons/MDI/location-prefix")
       .andDo { print() }
       .andExpect {
-        status {
-          is4xxClientError()
-        }
+        status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
