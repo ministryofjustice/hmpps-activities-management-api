@@ -62,7 +62,5 @@ class LocationGroupController(private val locationGroupServiceSelector: Location
   )
   fun getLocationGroups(
     @PathVariable("prisonCode") prisonCode: String
-  ): List<LocationGroup>? {
-    return locationGroupServiceSelector.getLocationGroups(prisonCode)
-  }
+  ): List<LocationGroup>? = locationGroupServiceSelector.getLocationGroups(prisonCode)
 }

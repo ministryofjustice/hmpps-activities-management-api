@@ -63,7 +63,5 @@ class LocationPrefixController(private val locationService: LocationService) {
   fun getLocationPrefix(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "groupName", required = true) groupName: String,
-  ): LocationPrefixDto? {
-    return locationService.getLocationPrefixFromGroup(prisonCode, groupName)
-  }
+  ): LocationPrefixDto? = locationService.getLocationPrefixFromGroup(prisonCode, groupName)
 }
