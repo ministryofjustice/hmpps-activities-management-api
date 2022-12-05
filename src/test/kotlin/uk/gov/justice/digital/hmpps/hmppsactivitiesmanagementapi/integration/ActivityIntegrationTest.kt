@@ -102,7 +102,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val mathsMorning = with(mathsLevelOneActivity.schedule("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
-      assertThat(allocations).hasSize(2)
+      assertThat(allocations).hasSize(3)
       assertThat(internalLocation?.id).isEqualTo(1)
       assertThat(internalLocation?.code).isEqualTo("L1")
       assertThat(internalLocation?.description).isEqualTo("Location 1")

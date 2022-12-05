@@ -7,6 +7,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
 import java.time.LocalTime
@@ -23,7 +24,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         .also { assertThat(it).hasSize(2) }
 
     val morningSchedule = with(schedules.first()) {
-      assertThat(allocations).hasSize(2)
+      assertThat(allocations).hasSize(3)
       assertThat(instances).hasSize(1)
       this
     }
@@ -65,7 +66,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         .also { assertThat(it).hasSize(1) }
 
     val schedule = with(schedules.first()) {
-      assertThat(allocations).hasSize(2)
+      assertThat(allocations).hasSize(3)
       assertThat(instances).hasSize(1)
       assertThat(internalLocation).isEqualTo(InternalLocation(1, "L1", "Location 1"))
       this
@@ -108,7 +109,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.getSchedulesByPrison(prisonCode: String, date: LocalDate? = null, timeSlot: TimeSlot? = null) =
+  private fun WebTestClient.getSchedulesByPrison(
+    prisonCode: String,
+    date: LocalDate? = null,
+    timeSlot: TimeSlot? = null
+  ) =
     get()
       .uri("/schedules/$prisonCode?date=${date ?: LocalDate.now()}${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
@@ -117,6 +122,35 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ActivitySchedule::class.java)
+      .returnResult().responseBody
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  @Test
+  fun `get only active allocations for Maths`() {
+    webTestClient.getAllocationsBy(1)!!
+      .also { assertThat(it).hasSize(2) }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  @Test
+  fun `get all active allocations for Maths`() {
+    webTestClient.getAllocationsBy(1, false)!!
+      .also { assertThat(it).hasSize(3) }
+  }
+
+  private fun WebTestClient.getAllocationsBy(scheduleId: Long, activeOnly: Boolean? = null) =
+    get()
+      .uri("/schedules/$scheduleId/allocations${activeOnly?.let { "?activeOnly=$it" } ?: ""}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(Allocation::class.java)
       .returnResult().responseBody
 
   private fun List<ActivitySchedule>.second() = this[1]

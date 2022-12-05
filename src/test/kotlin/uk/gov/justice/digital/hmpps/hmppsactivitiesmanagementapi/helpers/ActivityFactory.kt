@@ -43,6 +43,8 @@ internal fun activityEntity(
 internal fun activityCategory() =
   ActivityCategory(activityCategoryId = 1, code = "category code", description = "category description")
 
+internal fun schedule() = activityEntity().schedules.first()
+
 private fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
 
 private fun activityEligibilityRule(activity: Activity): ActivityEligibility {
