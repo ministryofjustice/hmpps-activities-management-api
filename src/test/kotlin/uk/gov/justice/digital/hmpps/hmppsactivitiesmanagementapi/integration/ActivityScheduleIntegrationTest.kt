@@ -111,11 +111,17 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.getSchedulesByPrison(
     prisonCode: String,
-    date: LocalDate? = null,
+    date: LocalDate? = LocalDate.now(),
     timeSlot: TimeSlot? = null
   ) =
     get()
-      .uri("/schedules/$prisonCode?date=${date ?: LocalDate.now()}${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
+      .uri { builder ->
+        builder
+          .path("/schedules/$prisonCode")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
@@ -144,7 +150,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.getAllocationsBy(scheduleId: Long, activeOnly: Boolean? = null) =
     get()
-      .uri("/schedules/$scheduleId/allocations${activeOnly?.let { "?activeOnly=$it" } ?: ""}")
+      .uri { builder ->
+        builder
+          .path("/schedules/$scheduleId/allocations")
+          .maybeQueryParam("activeOnly", activeOnly)
+          .build(scheduleId)
+      }
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
