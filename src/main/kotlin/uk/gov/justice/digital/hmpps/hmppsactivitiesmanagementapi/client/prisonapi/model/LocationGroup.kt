@@ -15,13 +15,17 @@ import javax.validation.Valid
  */
 data class LocationGroup(
 
-  @Schema(example = "null", required = true, description = "The name of the group")
+  @Schema(example = "Block A", required = true, description = "The name of the group")
   @JsonProperty("name", required = true) val name: String,
 
-  @Schema(example = "null", required = true, description = "A key for the group")
+  @Schema(example = "A", required = true, description = "A key for the group")
   @JsonProperty("key", required = true) val key: String,
 
   @Valid
-  @Schema(example = "null", required = true, description = "The child groups of this group")
+  @Schema(
+    example = "[{\"name\": \"Landing A/1\", \"key\":\"1\"}, {\"name\": \"Landing A/2\", \"key\": \"2\"}]",
+    required = true,
+    description = "The child groups of this group"
+  )
   @JsonProperty("children", required = true) val children: List<LocationGroup>
 )
