@@ -156,7 +156,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
   }
 
   @Test
-  fun `200 response when date range equals 3 moths`() {
+  fun `200 response when date range equals 3 months`() {
     mockMvc.get("/prisons/MDI/scheduled-instances") {
       param("prisonerNumber", "A11111A")
       param("startDate", "2022-11-01")

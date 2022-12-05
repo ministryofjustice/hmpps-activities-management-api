@@ -1,11 +1,10 @@
-package uk.gov.justice.digital.hmpps.whereabouts.services
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationGroupFromPropertiesService
 import java.util.Properties
 import java.util.function.Predicate
 import java.util.regex.PatternSyntaxException

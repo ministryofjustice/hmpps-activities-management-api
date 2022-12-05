@@ -26,7 +26,7 @@ import javax.validation.ValidationException
 @RequestMapping("/prisons/{prisonCode}/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ActivityScheduleInstanceController(private val scheduledInstanceService: ScheduledInstanceService) {
 
-  @GetMapping()
+  @GetMapping
   @ResponseBody
   @Operation(
     summary = "Get a list of scheduled instances for a prison, prisoner (optional) and date range (max 3 months)",

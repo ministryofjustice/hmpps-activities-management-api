@@ -1,12 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -14,32 +13,29 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
-import java.time.LocalDate
-import javax.validation.ValidationException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 
 @RestController
-@RequestMapping("/prisons/{prisonCode}/scheduled-events", produces = [MediaType.APPLICATION_JSON_VALUE])
-class ScheduledEventController(private val scheduledEventService: ScheduledEventService) {
+@RequestMapping("/prisons/{prisonCode}/locations", produces = [MediaType.APPLICATION_JSON_VALUE])
+class LocationController(private val locationService: LocationService) {
 
   @GetMapping
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled events for a prison, prisoner (optional) and date range (max 3 months)",
-    description = "Returns zero or more scheduled events for a prison, prisoner (optional) and date range (max 3 months).",
+    summary = "List of cell locations for a prison group",
+    description = "List of cell locations for a prison group",
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Successful call - zero or more scheduled events found",
+        description = "Successful call - zero or more cell locations found",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = PrisonerScheduledEvents::class)
+            array = ArraySchema(schema = Schema(implementation = Location::class))
           )
         ],
       ),
@@ -65,16 +61,10 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       )
     ]
   )
-  fun getScheduledEventsByDateRange(
+  fun getLocationGroups(
     @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(value = "prisonerNumber", required = true) @Parameter(description = "Prisoner number") prisonerNumber: String,
-    @RequestParam(value = "startDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Start date of query") startDate: LocalDate,
-    @RequestParam(value = "endDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "End date of query (max 3 months from start date)") endDate: LocalDate,
-  ): PrisonerScheduledEvents? {
-    val dateRange = LocalDateRange(startDate, endDate)
-    if (endDate.isAfter(startDate.plusMonths(3))) {
-      throw ValidationException("Date range cannot exceed 3 months")
-    }
-    return scheduledEventService.getScheduledEventsByDateRange(prisonCode, prisonerNumber, dateRange)
+    @RequestParam(value = "groupName", required = true) groupName: String,
+  ): List<Location>? {
+    return locationService.getCellLocationsForGroup(prisonCode, groupName)
   }
 }
