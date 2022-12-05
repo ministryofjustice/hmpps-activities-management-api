@@ -64,7 +64,5 @@ class LocationController(private val locationService: LocationService) {
   fun getLocationGroups(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "groupName", required = true) groupName: String,
-  ): List<Location>? {
-    return locationService.getCellLocationsForGroup(prisonCode, groupName)
-  }
+  ): List<Location>? = locationService.getCellLocationsForGroup(prisonCode, groupName)
 }
