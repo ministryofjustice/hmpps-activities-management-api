@@ -16,4 +16,10 @@ data class AttendanceReason(
   val code: String,
 
   val description: String
-)
+) {
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(attendanceReasonId = $attendanceReasonId )"
+  }
+}
