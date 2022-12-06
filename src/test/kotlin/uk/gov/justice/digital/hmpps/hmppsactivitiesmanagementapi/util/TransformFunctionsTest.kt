@@ -53,7 +53,7 @@ class TransformFunctionsTest {
                   id = 1,
                   prisonerNumber = "A11111A",
                   posted = false,
-                  status = "SCH"
+                  status = "SCHEDULED"
                 )
               )
             )

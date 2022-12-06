@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -44,6 +45,17 @@ internal fun activityCategory() =
   ActivityCategory(activityCategoryId = 1, code = "category code", description = "category description")
 
 internal fun schedule() = activityEntity().schedules.first()
+
+internal fun attendanceReasons() = mapOf(
+  "ABS" to AttendanceReason(1, "ABS", "Absent"),
+  "ACCAB" to AttendanceReason(2, "ACCAB", "Acceptable absence"),
+  "ATT" to AttendanceReason(3, "ATT", "Attended"),
+  "CANC" to AttendanceReason(4, "CANC", "Cancelled"),
+  "NREQ" to AttendanceReason(5, "NREQ", "Not required"),
+  "SUS" to AttendanceReason(6, "SUS", "Suspend"),
+  "UNACAB" to AttendanceReason(7, "UNACAB", "Unacceptable absence"),
+  "REST" to AttendanceReason(8, "REST", "Rest day (no pay)"),
+)
 
 private fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
 

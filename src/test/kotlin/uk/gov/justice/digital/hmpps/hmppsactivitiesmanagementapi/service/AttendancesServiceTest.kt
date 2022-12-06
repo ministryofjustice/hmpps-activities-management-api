@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -10,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
@@ -25,6 +28,7 @@ class AttendancesServiceTest {
   private val activitySchedule = activity.schedules.first()
   private val allocation = activitySchedule.allocations.first()
   private val instance = activitySchedule.instances.first()
+  private val attendance = instance.attendances.first()
   private val today = LocalDate.now()
   private val tomorrow = today.plusDays(1)
 
@@ -41,7 +45,7 @@ class AttendancesServiceTest {
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations.first().prisonerNumber,
         posted = false,
-        status = AttendanceStatus.SCH
+        status = AttendanceStatus.SCHEDULED
       )
     )
   }
@@ -82,6 +86,21 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository, never()).existsAttendanceByScheduledInstanceAndPrisonerNumber(any(), any())
     verify(attendanceRepository, never()).save(any())
+  }
+
+  @Test
+  fun `mark attendance record`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.SCHEDULED)
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId!!))).thenReturn(listOf(attendance))
+
+    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId!!, "ATT")))
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATT"])
   }
 
   private fun Allocation.starts(date: LocalDate) {
