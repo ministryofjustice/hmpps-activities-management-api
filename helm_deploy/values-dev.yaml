@@ -6,6 +6,8 @@ generic-service:
 
   ingress:
     host: activities-api-dev.prison.service.justice.gov.uk
+    annotations:
+      nginx.ingress.kubernetes.io/configuration-snippet: null
 
   env:
     HMPPS_AUTH_URL: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
