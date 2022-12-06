@@ -95,4 +95,4 @@ prison:
 
 jobs:
   create-activity-sessions:
-    days-in-advance: ${CREATE_ACTIVITY_SESSIONS_DAYS_IN_ADVANCE:60}
+    days-in-advance: ${CREATE_ACTIVITY_SESSIONS_DAYS_IN_ADVANCE}
