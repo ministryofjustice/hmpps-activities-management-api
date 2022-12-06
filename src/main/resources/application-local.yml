@@ -38,3 +38,6 @@ prison:
     url: https://api-dev.prison.service.justice.gov.uk
     timeout: 10s
 
+jobs:
+  create-activity-sessions:
+    days-in-advance: ${CREATE_ACTIVITY_SESSIONS_DAYS_IN_ADVANCE:0}

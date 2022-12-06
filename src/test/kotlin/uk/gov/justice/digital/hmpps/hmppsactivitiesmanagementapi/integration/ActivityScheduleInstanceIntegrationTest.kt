@@ -49,6 +49,22 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-3.sql"
   )
   @Test
+  fun `getActivityScheduleInstances - returns all rows in time slot`() {
+
+    val scheduledInstances =
+      webTestClient.getActivityScheduleInstancesInTimeSlot(
+        "MDI",
+        LocalDate.of(2022, 10, 1),
+        LocalDate.of(2022, 11, 5),
+        "am"
+      )
+    assertThat(scheduledInstances).hasSize(10)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-3.sql"
+  )
+  @Test
   fun `getActivityScheduleInstances for prisoner - date range precludes 1 row from each end of the fixture`() {
     val scheduledInstances =
       webTestClient.getActivityScheduleInstancesForPrisoner(
@@ -89,6 +105,22 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     assertThat(scheduledInstances).hasSize(0)
   }
 
+  private fun WebTestClient.getActivityScheduleInstancesInTimeSlot(
+    prisonCode: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    slot: String
+  ) =
+    get()
+      .uri("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivityScheduleInstance::class.java)
+      .returnResult().responseBody
+
   private fun WebTestClient.getActivityScheduleInstancesForPrisoner(
     prisonCode: String,
     prisonerNumber: String,
@@ -108,7 +140,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getActivityScheduleInstances(
     prisonCode: String,
     startDate: LocalDate,
-    endDate: LocalDate
+    endDate: LocalDate,
   ) =
     get()
       .uri("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate")

@@ -11,6 +11,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduleInstances
@@ -32,14 +33,16 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI", "A11111A",
-        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)),
+        TimeSlot.AM
       )
     ).thenReturn(results)
 
     val response = mockMvc.getPrisonerScheduledInstances(
       "MDI", "A11111A",
       LocalDate.of(2022, 10, 1),
-      LocalDate.of(2022, 11, 5)
+      LocalDate.of(2022, 11, 5),
+      TimeSlot.AM
     )
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
@@ -49,7 +52,8 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
 
     verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(
       "MDI", "A11111A",
-      LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+      LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)),
+      TimeSlot.AM
     )
   }
 
@@ -177,7 +181,8 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
     prisonCode: String,
     prisonerNumber: String,
     startDate: LocalDate,
-    endDate: LocalDate
+    endDate: LocalDate,
+    slot: TimeSlot
   ) =
-    get("/prisons/$prisonCode/scheduled-instances?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+    get("/prisons/$prisonCode/scheduled-instances?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate&slot=$slot")
 }

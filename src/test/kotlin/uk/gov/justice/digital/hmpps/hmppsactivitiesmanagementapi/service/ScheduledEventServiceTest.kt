@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -58,7 +59,7 @@ class ScheduledEventServiceTest {
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI",
-        "A11111A", dateRange
+        "A11111A", dateRange, null
       )
     ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
 
@@ -69,7 +70,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient, never()).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
@@ -137,7 +138,7 @@ class ScheduledEventServiceTest {
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI",
-        "A11111A", dateRange
+        "A11111A", dateRange, null
       )
     ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
 
@@ -148,7 +149,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient, never()).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
@@ -202,7 +203,7 @@ class ScheduledEventServiceTest {
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI",
-        "A11111A", dateRange
+        "A11111A", dateRange, null
       )
     ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
 
@@ -213,7 +214,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient, never()).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
@@ -267,7 +268,7 @@ class ScheduledEventServiceTest {
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
         "MDI",
-        "A11111A", dateRange
+        "A11111A", dateRange, null
       )
     ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22, activityCategoryCode = "LEI"))))
 
@@ -278,7 +279,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient, never()).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
@@ -324,7 +325,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
@@ -400,7 +401,7 @@ class ScheduledEventServiceTest {
 
     val result = service.getScheduledEventsByDateRange("MDI", "A11111A", dateRange)!!
 
-    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any())
+    verify(scheduledInstanceService, never()).getActivityScheduleInstancesByDateRange(any(), any(), any(), eq(null))
     verify(prisonApiClient).getScheduledActivities(any(), any())
     verify(prisonRegimeService).getEventPrioritiesForPrison(any())
 
