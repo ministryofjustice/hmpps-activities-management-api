@@ -30,7 +30,7 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
   @GetMapping
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled instances for a prison, prisoner (optional) and date range (max 3 months)",
+    summary = "Get a list of scheduled instances for a prison, prisoner (optional), date range (max 3 months) and time slot (AM, PM or ED - optional)",
     description = "Returns zero or more scheduled instances for a prison, prisoner (optional) and date range (max 3 months).",
   )
   @ApiResponses(
