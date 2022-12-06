@@ -48,7 +48,7 @@ class ScheduledEventService(
               prisonerNumber,
               EventType.ACTIVITY.defaultPriority,
               eventPriorities[EventType.ACTIVITY],
-              scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange)
+              scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange, null)
             )
           }
         }
