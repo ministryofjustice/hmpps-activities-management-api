@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -32,7 +33,8 @@ class AttendancesService(
       )
     }.attendances.map { transform(it) }
 
-  // TODO this is a very thin slice when updating. It is purely updating the attendance reason as a first cut.
+  // TODO this is a very thin slice when updating.
+  // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
   // TODO also there is no validation checking.
   fun mark(attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }
@@ -42,6 +44,7 @@ class AttendancesService(
       it.apply {
         attendanceReason =
           attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason.uppercase().trim()]
+        status = AttendanceStatus.COMPLETED
       }
     }
 
