@@ -7,8 +7,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import org.springframework.format.annotation.DateTimeFormat
-import org.springframework.format.annotation.DateTimeFormat.ISO
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,14 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
-import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -83,68 +79,6 @@ class ActivityScheduleController(
   fun getActivityScheduleCapacity(@PathVariable("activityScheduleId") activityScheduleId: Long): CapacityAndAllocated =
     capacityService.getActivityScheduleCapacityAndAllocated(activityScheduleId)
 
-  @GetMapping(value = ["/{prisonCode}"])
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of activity schedules at a given prison",
-    description = "Returns zero or more activity schedules at a given prison.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity schedules found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivitySchedule::class))
-          )
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ],
-      ),
-    ]
-  )
-  fun getSchedulesByPrisonCode(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(
-      value = "date",
-      required = false
-    ) @DateTimeFormat(iso = ISO.DATE) @Parameter(description = "Date of activity, default today") date: LocalDate?,
-    @RequestParam(
-      value = "timeSlot",
-      required = false
-    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?,
-    @RequestParam(
-      value = "locationId",
-      required = false
-    ) @Parameter(description = "The internal NOMIS location id of the activity") locationId: Long?,
-  ): List<ActivitySchedule> =
-    scheduleService.getActivitySchedulesByPrisonCode(
-      prisonCode = prisonCode,
-      date = date ?: LocalDate.now(),
-      timeSlot = timeSlot,
-      locationId = locationId
-    )
-
   @GetMapping(value = ["/{scheduleId}/allocations"])
   @ResponseBody
   @Operation(
@@ -195,10 +129,63 @@ class ActivityScheduleController(
     ]
   )
   fun getAllocationsBy(
-    @PathVariable scheduleId: Long,
+    @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
       value = "activeOnly",
       required = false
     ) @Parameter(description = "If true will only return active allocations. Defaults to true.") activeOnly: Boolean?,
   ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
+
+  @GetMapping(value = ["/{scheduleId}"])
+  @ResponseBody
+  @Operation(
+    summary = "Get an activity schedule by its id",
+    description = "Returns a single activity schedule by its unique identifier.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ActivitySchedule::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
+    scheduleService.getScheduleById(scheduleId)
 }

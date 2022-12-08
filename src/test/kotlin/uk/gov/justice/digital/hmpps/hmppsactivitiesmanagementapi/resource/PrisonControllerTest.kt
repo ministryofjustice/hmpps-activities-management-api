@@ -11,12 +11,16 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
 
 @WebMvcTest(controllers = [PrisonController::class])
@@ -116,4 +120,70 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   private fun MockMvc.getCategoryCapacity(prisonCode: String, categoryId: Long) =
     get("/prison/{prisonCode}/activity-categories/{categoryId}/capacity", prisonCode, categoryId)
+
+  @Test
+  fun `200 response when get schedule by prison code and search criteria found`() {
+    val schedules = activityModel(activityEntity()).schedules
+
+    whenever(
+      scheduleService.getActivitySchedulesByPrisonCode(
+        "PVI",
+        LocalDate.MIN,
+        TimeSlot.AM,
+        1
+      )
+    ).thenReturn(
+      schedules
+    )
+
+    val response = mockMvc.getSchedulesBy("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(schedules))
+
+    verify(scheduleService).getActivitySchedulesByPrisonCode(
+      "PVI",
+      LocalDate.MIN,
+      TimeSlot.AM,
+      1
+    )
+  }
+
+  @Test
+  fun `200 response when get schedule by prison code and search criteria not found`() {
+    whenever(
+      scheduleService.getActivitySchedulesByPrisonCode(
+        "PVI",
+        LocalDate.MIN,
+        TimeSlot.AM,
+        1
+      )
+    ).thenReturn(
+      emptyList()
+    )
+
+    val response = mockMvc.getSchedulesBy("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("[]")
+
+    verify(scheduleService).getActivitySchedulesByPrisonCode(
+      "PVI",
+      LocalDate.MIN,
+      TimeSlot.AM,
+      1
+    )
+  }
+
+  private fun MockMvc.getSchedulesBy(
+    prisonCode: String,
+    date: LocalDate,
+    timeSlot: TimeSlot,
+    locationId: Long
+  ) =
+    get("/prison/$prisonCode/schedules?date=$date&timeSlot=$timeSlot&locationId=$locationId")
 }
