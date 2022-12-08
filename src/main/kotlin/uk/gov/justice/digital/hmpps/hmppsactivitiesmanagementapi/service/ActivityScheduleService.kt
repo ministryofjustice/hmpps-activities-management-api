@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
@@ -67,4 +68,9 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
       .filter { !activeOnly || it.isActive(today) }
       .toModelAllocations()
   }
+
+  fun getScheduleById(scheduleId: Long) =
+    repository.findById(scheduleId).orElseThrow {
+      EntityNotFoundException("$scheduleId")
+    }.toModelSchedule()
 }

@@ -71,7 +71,8 @@ fun transformActivityScheduledInstancesToScheduledEvents(
   defaultPriority: Int?,
   priorities: List<Priority>?,
   activityScheduledInstances: List<ModelActivityScheduleInstance>,
-): List<ModelScheduledEvent> = activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber, defaultPriority, priorities)
+): List<ModelScheduledEvent> =
+  activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber, defaultPriority, priorities)
 
 fun transformToPrisonerScheduledEvents(
   bookingId: Long,
@@ -89,10 +90,28 @@ fun transformToPrisonerScheduledEvents(
     prisonerNumber,
     dateRange.start,
     dateRange.endInclusive,
-    appointments?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.APPOINTMENT.defaultPriority, eventPriorities[EventType.APPOINTMENT]),
-    courtHearings?.prisonApiCourtHearingsToScheduledEvents(bookingId, prisonCode, prisonerNumber, EventType.COURT_HEARING.defaultPriority, eventPriorities[EventType.COURT_HEARING]),
-    visits?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.VISIT.defaultPriority, eventPriorities[EventType.VISIT]),
-    activities?.prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.ACTIVITY.defaultPriority, eventPriorities[EventType.ACTIVITY]),
+    appointments?.prisonApiScheduledEventToScheduledEvents(
+      prisonerNumber,
+      EventType.APPOINTMENT.defaultPriority,
+      eventPriorities[EventType.APPOINTMENT]
+    ),
+    courtHearings?.prisonApiCourtHearingsToScheduledEvents(
+      bookingId,
+      prisonCode,
+      prisonerNumber,
+      EventType.COURT_HEARING.defaultPriority,
+      eventPriorities[EventType.COURT_HEARING]
+    ),
+    visits?.prisonApiScheduledEventToScheduledEvents(
+      prisonerNumber,
+      EventType.VISIT.defaultPriority,
+      eventPriorities[EventType.VISIT]
+    ),
+    activities?.prisonApiScheduledEventToScheduledEvents(
+      prisonerNumber,
+      EventType.ACTIVITY.defaultPriority,
+      eventPriorities[EventType.ACTIVITY]
+    ),
   )
 
 private fun EntityActivityCategory.toModelActivityCategory() =
@@ -118,20 +137,21 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-fun List<EntityActivitySchedule>.toModelSchedules() = map {
+fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
+
+fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
-    id = it.activityScheduleId!!,
-    instances = it.instances.toModelScheduledInstances(),
-    allocations = it.allocations.toModelAllocations(),
-    description = it.description,
-    suspensions = it.suspensions.toModelSuspensions(),
-    startTime = it.startTime,
-    endTime = it.endTime,
-    internalLocation = it.toInternalLocation(),
-    capacity = it.capacity,
-    daysOfWeek = it.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) }
+    id = this.activityScheduleId!!,
+    instances = this.instances.toModelScheduledInstances(),
+    allocations = this.allocations.toModelAllocations(),
+    description = this.description,
+    suspensions = this.suspensions.toModelSuspensions(),
+    startTime = this.startTime,
+    endTime = this.endTime,
+    internalLocation = this.toInternalLocation(),
+    capacity = this.capacity,
+    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) }
   )
-}
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
   ModelPrisonerWaiting(

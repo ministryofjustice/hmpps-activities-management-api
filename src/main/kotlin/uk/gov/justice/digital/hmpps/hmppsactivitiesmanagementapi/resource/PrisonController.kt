@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -140,4 +141,66 @@ class PrisonController(
     timeSlot: TimeSlot?
   ): List<InternalLocation> =
     scheduleService.getScheduledInternalLocations(prisonCode, date ?: LocalDate.now(), timeSlot)
+
+  @GetMapping(value = ["/{prisonCode}/schedules"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of activity schedules at a given prison",
+    description = "Returns zero or more activity schedules at a given prison.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity schedules found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivitySchedule::class))
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+    ]
+  )
+  fun getSchedulesByPrisonCode(
+    @PathVariable("prisonCode") prisonCode: String,
+    @RequestParam(
+      value = "date",
+      required = false
+    ) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Date of activity, default today") date: LocalDate?,
+    @RequestParam(
+      value = "timeSlot",
+      required = false
+    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?,
+    @RequestParam(
+      value = "locationId",
+      required = false
+    ) @Parameter(description = "The internal NOMIS location id of the activity") locationId: Long?,
+  ): List<ActivitySchedule> =
+    scheduleService.getActivitySchedulesByPrisonCode(
+      prisonCode = prisonCode,
+      date = date ?: LocalDate.now(),
+      timeSlot = timeSlot,
+      locationId = locationId
+    )
 }
