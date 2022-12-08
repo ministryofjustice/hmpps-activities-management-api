@@ -10,7 +10,7 @@ import java.time.LocalTime
 data class ActivityScheduleInstance(
 
   @Schema(description = "The internally-generated ID for this scheduled instance", example = "123456")
-  val id: Long?,
+  val id: Long,
 
   @Schema(description = "The specific date for this scheduled instance", example = "30/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")

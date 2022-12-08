@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -16,6 +17,7 @@ import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 import javax.persistence.OneToMany
 import javax.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelScheduledInstance
 
 @Entity
 @Table(name = "scheduled_instance")
@@ -51,9 +53,23 @@ data class ScheduledInstance(
     endTime = activitySchedule.endTime,
   )
 
+  fun toModel() = ModelScheduledInstance(
+    activitySchedule = this.activitySchedule.toModelLite(),
+    id = this.scheduledInstanceId!!,
+    date = this.sessionDate,
+    startTime = this.startTime,
+    endTime = this.endTime,
+    cancelled = this.cancelled,
+    cancelledTime = this.cancelledTime,
+    cancelledBy = this.cancelledBy,
+    attendances = this.attendances.map { attendance -> transform(attendance) },
+  )
+
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
 
   fun timeSlot() = TimeSlot.slot(startTime)
 
   fun attendanceRequired() = activitySchedule.activity.attendanceRequired
 }
+
+fun List<ScheduledInstance>.toModel() = map { it.toModel() }

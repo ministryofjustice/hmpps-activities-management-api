@@ -14,6 +14,18 @@ import java.time.LocalTime
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
   @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  @Test
+  fun `get scheduled instance by ID`() {
+    val scheduledInstance = webTestClient.getInstance(1)!!
+
+    assertThat(scheduledInstance.id).isEqualTo(1L)
+    assertThat(scheduledInstance.startTime.toString()).isEqualTo("10:00")
+    assertThat(scheduledInstance.endTime.toString()).isEqualTo("11:00")
+  }
+
+  @Sql(
     "classpath:test_data/seed-activity-id-3.sql"
   )
   @Test
@@ -104,6 +116,17 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       )
     assertThat(scheduledInstances).hasSize(0)
   }
+
+  private fun WebTestClient.getInstance(instanceId: Long) =
+    get()
+      .uri("/scheduled-instances/$instanceId")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ActivityScheduleInstance::class.java)
+      .returnResult().responseBody
 
   private fun WebTestClient.getActivityScheduleInstancesInTimeSlot(
     prisonCode: String,

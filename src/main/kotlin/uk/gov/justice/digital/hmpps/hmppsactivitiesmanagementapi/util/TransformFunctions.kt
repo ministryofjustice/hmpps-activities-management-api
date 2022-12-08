@@ -62,9 +62,6 @@ fun transform(activity: EntityActivity) =
     createdBy = activity.createdBy
   )
 
-fun transformActivityScheduleInstances(scheduledInstances: List<EntityScheduledInstance>): List<ModelActivityScheduleInstance> =
-  scheduledInstances.toModelActivityScheduleInstances()
-
 fun transformActivityScheduledInstancesToScheduledEvents(
   bookingId: Long,
   prisonerNumber: String,
@@ -173,20 +170,6 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
     attendances = it.attendances.map { attendance -> transform(attendance) }
-  )
-}
-
-private fun List<EntityScheduledInstance>.toModelActivityScheduleInstances() = map {
-  ModelActivityScheduleInstance(
-    activitySchedule = it.activitySchedule.toModelLite(),
-    id = it.scheduledInstanceId,
-    date = it.sessionDate,
-    startTime = it.startTime,
-    endTime = it.endTime,
-    cancelled = it.cancelled,
-    cancelledTime = it.cancelledTime,
-    cancelledBy = it.cancelledBy,
-    attendances = it.attendances.map { attendance -> transform(attendance) },
   )
 }
 

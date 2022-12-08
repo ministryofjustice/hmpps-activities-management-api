@@ -13,14 +13,58 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
 @RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
-class ScheduledInstanceController(private val attendancesService: AttendancesService) {
+class ScheduledInstanceController(
+  private val scheduledInstanceService: ScheduledInstanceService,
+  private val attendancesService: AttendancesService,
+) {
+
+  @GetMapping(value = ["/{instanceId}"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a scheduled instance by ID",
+    description = "Returns a scheduled instance.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Scheduled instance found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ActivityScheduleInstance::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The scheduled instance was not found.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      )
+    ]
+  )
+  fun getScheduledInstanceById(
+    @PathVariable("instanceId") instanceId: Long
+  ): ActivityScheduleInstance = scheduledInstanceService.getActivityScheduleInstanceById(instanceId)
 
   @GetMapping(value = ["/{instanceId}/attendances"])
   @ResponseBody
