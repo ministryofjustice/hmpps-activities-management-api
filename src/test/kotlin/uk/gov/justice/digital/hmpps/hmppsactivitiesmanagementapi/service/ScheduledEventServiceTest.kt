@@ -15,8 +15,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduleInstances
 import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
@@ -61,7 +61,7 @@ class ScheduledEventServiceTest {
         "MDI",
         "A11111A", dateRange, null
       )
-    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
+    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel())
 
     whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
@@ -140,7 +140,7 @@ class ScheduledEventServiceTest {
         "MDI",
         "A11111A", dateRange, null
       )
-    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
+    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel())
 
     whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
@@ -205,7 +205,7 @@ class ScheduledEventServiceTest {
         "MDI",
         "A11111A", dateRange, null
       )
-    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22))))
+    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel())
 
     whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)
@@ -270,7 +270,7 @@ class ScheduledEventServiceTest {
         "MDI",
         "A11111A", dateRange, null
       )
-    ).thenReturn(transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22, activityCategoryCode = "LEI"))))
+    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22, activityCategoryCode = "LEI")).toModel())
 
     whenever(prisonApiClient.getPrisonerDetails("A11111A")).thenReturn(prisonerDetailsMono)
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange)).thenReturn(schedAppointmentsMono)

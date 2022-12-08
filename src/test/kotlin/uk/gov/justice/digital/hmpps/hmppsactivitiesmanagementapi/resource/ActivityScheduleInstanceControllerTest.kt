@@ -12,9 +12,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformActivityScheduleInstances
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [ActivityScheduleInstanceController::class])
@@ -28,7 +28,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
 
   @Test
   fun `200 response when get prisoner scheduled instances found`() {
-    val results = transformActivityScheduleInstances(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+    val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel()
 
     whenever(
       scheduledInstanceService.getActivityScheduleInstancesByDateRange(
