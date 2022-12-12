@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDateTime
 import java.time.format.TextStyle
@@ -278,9 +279,14 @@ fun List<EntityAllocation>.toModelAllocations() = map {
     startDate = it.startDate,
     endDate = it.endDate,
     allocatedTime = it.allocatedTime,
-    allocatedBy = it.allocatedBy
+    allocatedBy = it.allocatedBy,
+    activitySummary = it.activitySummary(),
+    scheduleDescription = it.scheduleDescription()
   )
 }
+
+fun List<EntityAllocation>.toModelPrisonerAllocations() =
+  toModelAllocations().groupBy { it.prisonerNumber }.map { PrisonerAllocations(it.key, it.value) }
 
 private fun List<EntitySuspension>.toModelSuspensions() = map {
   ModelSuspension(
