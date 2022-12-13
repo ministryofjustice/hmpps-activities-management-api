@@ -43,4 +43,8 @@ data class Allocation(
   var deallocatedReason: String? = null,
 ) {
   fun isActive(date: LocalDate) = date.between(startDate, endDate)
+
+  fun activitySummary() = activitySchedule.activity.summary
+
+  fun scheduleDescription() = activitySchedule.description
 }

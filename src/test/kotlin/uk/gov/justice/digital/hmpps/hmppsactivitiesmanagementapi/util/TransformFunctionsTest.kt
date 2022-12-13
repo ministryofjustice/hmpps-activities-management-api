@@ -69,6 +69,8 @@ class TransformFunctionsTest {
               endDate = null,
               allocatedTime = timestamp,
               allocatedBy = "Mr Blogs",
+              activitySummary = "Maths",
+              scheduleDescription = "schedule description"
             )
           ),
           description = "schedule description",

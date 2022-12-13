@@ -14,6 +14,10 @@ data class Allocation(
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   val prisonerNumber: String,
 
+  val activitySummary: String,
+
+  val scheduleDescription: String,
+
   @Schema(description = "The incentive/earned privilege (level) for this offender allocation", example = "BAS, STD, ENH")
   val incentiveLevel: String? = null,
 
