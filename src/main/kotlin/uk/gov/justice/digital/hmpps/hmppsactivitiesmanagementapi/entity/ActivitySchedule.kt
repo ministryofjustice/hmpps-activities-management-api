@@ -120,14 +120,20 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: String): ActivitySchedule {
+  fun allocatePrisoner(
+    prisonerNumber: String,
+    incentiveLevel: String,
+    payBand: String
+  ): ActivitySchedule {
     // TODO throw runtime exception if already allocated?
     // TODO trim and uppercase
     // TODO throw error if prisoner number is empty?
     allocations.add(
       Allocation(
         activitySchedule = this,
-        prisonerNumber = prisonerNumber,
+        prisonerNumber = prisonerNumber.trim().uppercase(),
+        incentiveLevel = incentiveLevel,
+        payBand = payBand,
         // TODO not sure if this is supported in the UI
         startDate = LocalDate.now(),
         // TODO need to resolve allocated by, defaulting as first iteration.

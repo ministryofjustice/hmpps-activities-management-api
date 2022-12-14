@@ -83,14 +83,38 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Sql(
     "classpath:test_data/seed-activity-id-7.sql"
   )
-  fun `204 response when successfully allocate prisoner to an activity schedule`() {
+  fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
     repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
 
-    webTestClient.allocatePrisoner(PrisonerAllocationRequest(1, "123456"))
+    webTestClient.allocatePrisoner(
+      PrisonerAllocationRequest(
+        scheduleId = 1,
+        prisonerNumber = "123456",
+        payBand = "A",
+        incentiveLevel = "BAS"
+      )
+    ).expectStatus().isNoContent
 
     with(repository.findById(1).orElseThrow()) {
       assertThat(allocations.first().prisonerNumber).isEqualTo("123456")
     }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `400 (bad request) response when prisoner allocation request fails validation`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      PrisonerAllocationRequest(
+        scheduleId = 1,
+        prisonerNumber = "",
+        payBand = "A",
+        incentiveLevel = "BAS"
+      )
+    ).expectStatus().isBadRequest
   }
 
   private fun WebTestClient.allocatePrisoner(request: PrisonerAllocationRequest) =
@@ -100,5 +124,4 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isNoContent
 }

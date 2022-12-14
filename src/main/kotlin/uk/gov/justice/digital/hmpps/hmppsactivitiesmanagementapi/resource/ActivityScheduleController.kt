@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import javax.validation.Valid
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -230,6 +231,6 @@ class ActivityScheduleController(
     @RequestBody @Parameter(
       description = "The prisoner allocation request details",
       required = true
-    ) prisonerAllocationRequest: PrisonerAllocationRequest
+    ) @Valid prisonerAllocationRequest: PrisonerAllocationRequest
   ): ResponseEntity<Any> = scheduleService.allocatePrisoner(prisonerAllocationRequest).let { ResponseEntity.noContent().build() }
 }

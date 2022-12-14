@@ -130,7 +130,13 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `204 response when allocate offender to a schedule`() {
-    val request = PrisonerAllocationRequest(1, "123456")
+    val request = PrisonerAllocationRequest(
+      scheduleId = 1,
+      prisonerNumber = "654321",
+      payBand = "B",
+      incentiveLevel = "STD"
+
+    )
 
     mockMvc.post(request)
       .andExpect { status { isNoContent() } }

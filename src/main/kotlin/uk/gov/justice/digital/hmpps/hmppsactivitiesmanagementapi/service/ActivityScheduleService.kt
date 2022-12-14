@@ -83,7 +83,11 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
     // TODO sanitise data e.g. trim/uppercase prison number, check not empty string
     // TODO call prison api client to check prisoner is active and agency/prison code is same as activity
 
-    schedule.allocatePrisoner(prisonerAllocationRequest.prisonerNumber)
+    schedule.allocatePrisoner(
+      prisonerNumber = prisonerAllocationRequest.prisonerNumber,
+      incentiveLevel = prisonerAllocationRequest.incentiveLevel,
+      payBand = prisonerAllocationRequest.payBand
+    )
 
     repository.save(schedule)
   }
