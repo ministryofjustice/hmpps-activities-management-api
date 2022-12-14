@@ -47,7 +47,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isOk
+      .expectStatus().isNoContent
 
     val markedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(2) }
     assertThat(markedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo("ATT")

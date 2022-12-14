@@ -8,8 +8,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
@@ -188,4 +192,44 @@ class ActivityScheduleController(
   )
   fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
     scheduleService.getScheduleById(scheduleId)
+
+  @PostMapping(value = ["/{scheduleId}/allocations"])
+  @Operation(
+    summary = "Allocate offender to schedule",
+    description = "Allocates the supplied offender allocation request to the activity schedule.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "The allocation was created and added to the schedule.",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity schedule for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  fun allocate(
+    @RequestBody @Parameter(
+      description = "The prisoner allocation request details",
+      required = true
+    ) prisonerAllocationRequest: PrisonerAllocationRequest
+  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(prisonerAllocationRequest).let { ResponseEntity.noContent().build() }
 }

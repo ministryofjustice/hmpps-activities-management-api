@@ -2,13 +2,19 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
+
+  @Autowired
+  private lateinit var repository: ActivityScheduleRepository
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql"
@@ -72,4 +78,27 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ActivitySchedule::class.java)
       .returnResult().responseBody
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `204 response when successfully allocate prisoner to an activity schedule`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(PrisonerAllocationRequest(1, "123456"))
+
+    with(repository.findById(1).orElseThrow()) {
+      assertThat(allocations.first().prisonerNumber).isEqualTo("123456")
+    }
+  }
+
+  private fun WebTestClient.allocatePrisoner(request: PrisonerAllocationRequest) =
+    post()
+      .uri("/schedules/${request.scheduleId}/allocations")
+      .bodyValue(request)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isNoContent
 }

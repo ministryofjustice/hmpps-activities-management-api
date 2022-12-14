@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
@@ -117,6 +118,25 @@ data class ActivitySchedule(
 
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
+  }
+
+  fun allocatePrisoner(prisonerNumber: String): ActivitySchedule {
+    // TODO throw runtime exception if already allocated?
+    // TODO trim and uppercase
+    // TODO throw error if prisoner number is empty?
+    allocations.add(
+      Allocation(
+        activitySchedule = this,
+        prisonerNumber = prisonerNumber,
+        // TODO not sure if this is supported in the UI
+        startDate = LocalDate.now(),
+        // TODO need to resolve allocated by, defaulting as first iteration.
+        allocatedBy = "SYSTEM",
+        allocatedTime = LocalDateTime.now()
+      )
+    )
+
+    return this
   }
 
   @Override

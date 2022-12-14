@@ -10,7 +10,9 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
@@ -125,4 +127,20 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   private fun MockMvc.getScheduleById(scheduleId: Long) =
     get("/schedules/$scheduleId")
+
+  @Test
+  fun `204 response when allocate offender to a schedule`() {
+    val request = PrisonerAllocationRequest(1, "123456")
+
+    mockMvc.post(request)
+      .andExpect { status { isNoContent() } }
+
+    verify(activityScheduleService).allocatePrisoner(request)
+  }
+
+  private fun MockMvc.post(request: PrisonerAllocationRequest) =
+    post("/schedules/${request.scheduleId}/allocations") {
+      content = mapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+    }
 }
