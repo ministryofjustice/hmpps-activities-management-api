@@ -166,7 +166,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationsForType(agencyId: String, locationType: String, jsonResponseFile: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/type/$locationType"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -178,7 +178,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationsForTypeNotFound(agencyId: String, locationType: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/type/$locationType"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -190,7 +190,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationsForTypeServerError(agencyId: String, locationType: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/type/$locationType"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/type/$locationType"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -202,7 +202,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationsForTypeUnrestricted(agencyId: String, locationType: String, jsonResponseFile: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations?eventType=$locationType"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations?eventType=$locationType"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -214,7 +214,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationsForTypeUnrestrictedNotFound(agencyId: String, locationType: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations?eventType=$locationType"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations?eventType=$locationType"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -226,7 +226,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationGroups(agencyId: String, jsonResponseFile: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/groups"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/groups"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -238,7 +238,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocationGroupsNotFound(agencyId: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/agencies/$agencyId/locations/groups"))
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/groups"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

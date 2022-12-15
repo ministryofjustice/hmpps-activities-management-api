@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -8,8 +9,8 @@ import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import java.time.LocalDate
-import java.time.LocalTime
 
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
@@ -31,78 +32,26 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         date,
       )
 
+    val appointmentsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/appointments-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
+    val courtHearingsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/court-hearings-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
+    val visitsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/visits-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
     with(scheduledEvents!!) {
       assertThat(prisonerNumbers).contains("G4793VF")
-      assertThat(appointments).isNotNull
-      assertThat(appointments).hasSize(2)
-      with(appointments!![0]) {
-        assertThat(prisonCode).isEqualTo("MDI")
-        assertThat(eventId).isNull()
-        assertThat(bookingId).isNull()
-        assertThat(location).isEqualTo("MDT")
-        assertThat(locationId).isNull()
-        assertThat(eventClass).isNull()
-        assertThat(eventStatus).isNull()
-        assertThat(eventType).isEqualTo("APPOINTMENT")
-        assertThat(eventTypeDesc).isNull()
-        assertThat(event).isEqualTo("MEDE")
-        assertThat(eventDesc).isEqualTo("Medical - Dentist")
-        assertThat(details).isEqualTo("Tooth hurty")
-        assertThat(prisonerNumber).isEqualTo("A5193DY")
-        assertThat(this.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(startTime).isEqualTo(LocalTime.of(14, 30, 0))
-        assertThat(endTime).isEqualTo(LocalTime.of(15, 0, 0))
-        assertThat(priority).isEqualTo(4)
-      }
-
-      assertThat(activities).isNull()
-      assertThat(visits).isNotNull
-      assertThat(visits).hasSize(2)
-      with(visits!![0]) {
-        assertThat(prisonerNumber).isEqualTo("A5193DY")
-        assertThat(priority).isEqualTo(2)
-        assertThat(prisonCode).isEqualTo("MDI")
-        assertThat(eventId).isNull()
-        assertThat(bookingId).isNull()
-        assertThat(location).isEqualTo("VISIT ROOM")
-        assertThat(locationId).isNull()
-        assertThat(eventClass).isNull()
-        assertThat(eventStatus).isNull()
-        assertThat(eventType).isEqualTo("VISIT")
-        assertThat(eventTypeDesc).isNull()
-        assertThat(event).isEqualTo("VISIT")
-        assertThat(eventDesc).isEqualTo("Visit")
-        assertThat(details).isEqualTo("Family visit")
-        assertThat(prisonerNumber).isEqualTo("A5193DY")
-        assertThat(this.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(startTime).isEqualTo(LocalTime.of(14, 30, 0))
-        assertThat(endTime).isNull()
-        assertThat(priority).isEqualTo(2)
-      }
-
-      assertThat(courtHearings).isNotNull
-      assertThat(courtHearings).hasSize(2)
-      with(courtHearings!![0]) {
-        assertThat(prisonerNumber).isEqualTo("G4793VF")
-        assertThat(priority).isEqualTo(1)
-        assertThat(prisonCode).isEqualTo("MDI")
-        assertThat(eventId).isEqualTo(474677532L)
-        assertThat(bookingId).isNull()
-        assertThat(location).isNull()
-        assertThat(locationId).isNull()
-        assertThat(eventClass).isNull()
-        assertThat(eventStatus).isEqualTo("EXP")
-        assertThat(eventType).isEqualTo("COURT_HEARING")
-        assertThat(eventTypeDesc).isNull()
-        assertThat(event).isEqualTo("CRT")
-        assertThat(eventDesc).isEqualTo("Court Appearance")
-        assertThat(details).isNull()
-        assertThat(prisonerNumber).isEqualTo("G4793VF")
-        assertThat(date).isEqualTo(LocalDate.of(2022, 10, 1))
-        assertThat(startTime).isEqualTo(LocalTime.of(10, 0, 0))
-        assertThat(endTime).isNull()
-        assertThat(priority).isEqualTo(1)
-      }
+      assertThat(appointments).isEqualTo(appointmentsResults)
+      assertThat(courtHearings).isEqualTo(courtHearingsResults)
+      assertThat(visits).isEqualTo(visitsResults)
     }
   }
 

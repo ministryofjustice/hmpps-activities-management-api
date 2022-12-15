@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -58,7 +59,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
-  fun getScheduledAppointmentsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: String?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledAppointmentsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -85,7 +86,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<CourtHearings>())
   }
 
-  fun getScheduledCourtEventsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: String?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledCourtEventsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -112,7 +113,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
-  fun getScheduledVisitsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: String?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledVisitsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -130,7 +131,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/agencies/{agencyId}/locations/type/{type}")
+          .path("/api/agencies/{agencyId}/locations/type/{type}")
           .build(agencyId, locationType)
       }
       .retrieve()
@@ -142,7 +143,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/agencies/{agencyId}/locations")
+          .path("/api/agencies/{agencyId}/locations")
           .queryParam("eventType", locationType)
           .build(agencyId)
       }
@@ -154,7 +155,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/agencies/{agencyId}/locations/groups")
+          .path("/api/agencies/{agencyId}/locations/groups")
           .build(agencyId)
       }
       .retrieve()

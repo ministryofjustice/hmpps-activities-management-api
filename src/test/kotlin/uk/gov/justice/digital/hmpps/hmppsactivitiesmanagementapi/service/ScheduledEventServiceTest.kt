@@ -44,9 +44,9 @@ class ScheduledEventServiceTest {
     val schedVisitsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.visitInstance()))
     val courtEventsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.courtInstance()))
 
-    whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot.name)).thenReturn(schedAppointmentsMono)
-    whenever(prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot.name)).thenReturn(schedVisitsMono)
-    whenever(prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot.name)).thenReturn(courtEventsMono)
+    whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(schedAppointmentsMono)
+    whenever(prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(schedVisitsMono)
+    whenever(prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(courtEventsMono)
 
     val result = service.getScheduledEventsForOffenderList(prisonCode, prisonerNumbers, date, timeSlot)!!
 

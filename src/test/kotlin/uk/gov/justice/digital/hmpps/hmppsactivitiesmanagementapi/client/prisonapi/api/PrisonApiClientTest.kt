@@ -195,7 +195,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetLocationsForTypeNotFound(agencyId, locationType)
     assertThatThrownBy { prisonApiClient.getLocationsForType(agencyId, locationType).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations/type/CELL")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations/type/CELL")
   }
 
   @Test
@@ -215,7 +215,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetLocationsForTypeUnrestrictedNotFound(agencyId, locationType)
     assertThatThrownBy { prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations?eventType=CELL")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations?eventType=CELL")
   }
 
   @Test
@@ -233,6 +233,6 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetLocationGroupsNotFound(agencyId)
     assertThatThrownBy { prisonApiClient.getLocationGroups(agencyId).block() }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/agencies/LEI/locations/groups")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations/groups")
   }
 }
