@@ -10,7 +10,7 @@ data class PrisonerScheduledEvents(
   @Schema(description = "The prison code for these scheduled events", example = "MDI")
   val prisonCode: String?,
 
-  @Schema(description = "The set prisoner numbers for theses scheduled events ", example = "['GF10101', 'GR123YI']")
+  @Schema(description = "The set of prisoner numbers for theses scheduled events ", example = "['GF10101', 'GR123YI']")
   val prisonerNumbers: Set<String>?,
 
   @Schema(description = "The start date for this collection of scheduled events", example = "2022-11-01")

@@ -344,19 +344,19 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       .expectBody(PrisonerScheduledEvents::class.java)
       .returnResult().responseBody
 
-private fun WebTestClient.getScheduledEventsForOffenderList(
-  prisonCode: String,
-  prisonerNumbers: Set<String>,
-  date: LocalDate
-) =
-  post()
-    .uri("/prisons/$prisonCode/scheduled-events?date=$date")
-    .bodyValue(prisonerNumbers)
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf()))
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(PrisonerScheduledEvents::class.java)
-    .returnResult().responseBody
+  private fun WebTestClient.getScheduledEventsForOffenderList(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate
+  ) =
+    post()
+      .uri("/prisons/$prisonCode/scheduled-events?date=$date")
+      .bodyValue(prisonerNumbers)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
 }
