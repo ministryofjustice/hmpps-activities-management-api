@@ -123,7 +123,6 @@ internal fun activitySchedule(
         allocationId = 1,
         activitySchedule = this,
         prisonerNumber = "A1234AA",
-        incentiveLevel = "BAS",
         payBand = "A",
         startDate = timestamp.toLocalDate(),
         endDate = null,
