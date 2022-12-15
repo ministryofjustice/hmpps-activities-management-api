@@ -75,9 +75,9 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
       EntityNotFoundException("$scheduleId")
     }.toModelSchedule()
 
-  fun allocatePrisoner(prisonerAllocationRequest: PrisonerAllocationRequest) {
-    val schedule = repository.findById(prisonerAllocationRequest.scheduleId).orElseThrow {
-      EntityNotFoundException("${prisonerAllocationRequest.scheduleId}")
+  fun allocatePrisoner(scheduleId: Long, prisonerAllocationRequest: PrisonerAllocationRequest) {
+    val schedule = repository.findById(scheduleId).orElseThrow {
+      EntityNotFoundException("$scheduleId")
     }
 
     // TODO sanitise data e.g. trim/uppercase prison number, check not empty string

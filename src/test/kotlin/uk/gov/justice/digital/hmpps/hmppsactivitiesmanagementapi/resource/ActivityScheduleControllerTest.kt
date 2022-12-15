@@ -131,21 +131,20 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @Test
   fun `204 response when allocate offender to a schedule`() {
     val request = PrisonerAllocationRequest(
-      scheduleId = 1,
       prisonerNumber = "654321",
       payBand = "B",
       incentiveLevel = "STD"
 
     )
 
-    mockMvc.post(request)
+    mockMvc.post(1, request)
       .andExpect { status { isNoContent() } }
 
-    verify(activityScheduleService).allocatePrisoner(request)
+    verify(activityScheduleService).allocatePrisoner(1, request)
   }
 
-  private fun MockMvc.post(request: PrisonerAllocationRequest) =
-    post("/schedules/${request.scheduleId}/allocations") {
+  private fun MockMvc.post(scheduleId: Long, request: PrisonerAllocationRequest) =
+    post("/schedules/$scheduleId/allocations") {
       content = mapper.writeValueAsString(request)
       contentType = MediaType.APPLICATION_JSON
     }

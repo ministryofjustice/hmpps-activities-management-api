@@ -87,8 +87,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
 
     webTestClient.allocatePrisoner(
+      1,
       PrisonerAllocationRequest(
-        scheduleId = 1,
         prisonerNumber = "123456",
         payBand = "A",
         incentiveLevel = "BAS"
@@ -108,8 +108,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
 
     webTestClient.allocatePrisoner(
+      1,
       PrisonerAllocationRequest(
-        scheduleId = 1,
         prisonerNumber = "",
         payBand = "A",
         incentiveLevel = "BAS"
@@ -117,9 +117,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isBadRequest
   }
 
-  private fun WebTestClient.allocatePrisoner(request: PrisonerAllocationRequest) =
+  private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
     post()
-      .uri("/schedules/${request.scheduleId}/allocations")
+      .uri("/schedules/$scheduleId/allocations")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))

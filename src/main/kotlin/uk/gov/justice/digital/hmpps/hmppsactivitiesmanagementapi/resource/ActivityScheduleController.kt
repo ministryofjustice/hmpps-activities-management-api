@@ -206,6 +206,11 @@ class ActivityScheduleController(
         description = "The allocation was created and added to the schedule.",
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -228,9 +233,10 @@ class ActivityScheduleController(
     ]
   )
   fun allocate(
+    @PathVariable("scheduleId") scheduleId: Long,
     @RequestBody @Parameter(
       description = "The prisoner allocation request details",
       required = true
     ) @Valid prisonerAllocationRequest: PrisonerAllocationRequest
-  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(prisonerAllocationRequest).let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest).let { ResponseEntity.noContent().build() }
 }

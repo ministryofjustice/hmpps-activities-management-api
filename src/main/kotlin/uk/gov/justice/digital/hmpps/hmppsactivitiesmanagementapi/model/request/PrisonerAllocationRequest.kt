@@ -2,12 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.constraints.NotBlank
-import javax.validation.constraints.NotNull
 
 data class PrisonerAllocationRequest(
-  @Schema(description = "The internally-generated ID for this activity schedule", example = "123456")
-  @field:NotNull
-  val scheduleId: Long,
 
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   @field:NotBlank
