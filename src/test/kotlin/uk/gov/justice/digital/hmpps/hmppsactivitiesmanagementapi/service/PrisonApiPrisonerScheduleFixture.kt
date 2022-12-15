@@ -1,0 +1,98 @@
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+
+object PrisonApiPrisonerScheduleFixture {
+
+  fun courtInstance(
+    offenderNo: String = "G4793VF",
+    locationId: Long? = null,
+    eventId: Long = 4444333,
+    firstName: String = "TIM",
+    lastName: String = "HARRISON",
+    cellLocation: String? = null,
+    event: String = "CRT",
+    eventType: String = "COURT",
+    eventDescription: String = "Court Appearance",
+    eventLocation: String? = null,
+    eventStatus: String = "EXP",
+    comment: String? = null,
+    startTime: String = "2022-06-25T10:00:00",
+  ) = PrisonerSchedule(
+    offenderNo = offenderNo,
+    locationId = locationId,
+    eventId = eventId,
+    firstName = firstName,
+    lastName = lastName,
+    cellLocation = cellLocation,
+    event = event,
+    eventType = eventType,
+    eventDescription = eventDescription,
+    eventLocation = eventLocation,
+    eventStatus = eventStatus,
+    comment = comment,
+    startTime = startTime,
+  )
+
+  fun appointmentInstance(
+    offenderNo: String = "G4793VF",
+    locationId: Long? = null,
+    eventId: Long? = null,
+    firstName: String = "TIM",
+    lastName: String = "HARRISON",
+    cellLocation: String? = null,
+    event: String = "GOVE",
+    eventType: String? = null,
+    eventDescription: String = "Governor",
+    eventLocation: String? = "INTERVIEW ROOM",
+    eventStatus: String? = null,
+    comment: String? = "Dont be late",
+    startTime: String = "2022-12-14T17:00:00",
+    endTime: String = "2022-12-14T18:00:00",
+  ) = PrisonerSchedule(
+    offenderNo = offenderNo,
+    locationId = locationId,
+    eventId = eventId,
+    firstName = firstName,
+    lastName = lastName,
+    cellLocation = cellLocation,
+    event = event,
+    eventType = eventType,
+    eventDescription = eventDescription,
+    eventLocation = eventLocation,
+    eventStatus = eventStatus,
+    comment = comment,
+    startTime = startTime,
+    endTime = endTime,
+  )
+
+  fun visitInstance(
+    offenderNo: String = "G4793VF",
+    locationId: Long? = 26958,
+    eventId: Long? = null,
+    firstName: String = "TIM",
+    lastName: String = "HARRISON",
+    cellLocation: String? = null,
+    event: String = "VISIT",
+    eventType: String? = null,
+    eventDescription: String = "Visit",
+    eventLocation: String? = "INTERVIEW ROOM",
+    eventStatus: String? = null,
+    comment: String? = null,
+    startTime: String = "2022-12-14T14:30:00",
+  ) = PrisonerSchedule(
+    offenderNo = offenderNo,
+    locationId = locationId,
+    eventId = eventId,
+    firstName = firstName,
+    lastName = lastName,
+    cellLocation = cellLocation,
+    event = event,
+    eventType = eventType,
+    eventDescription = eventDescription,
+    eventLocation = eventLocation,
+    eventStatus = eventStatus,
+    comment = comment,
+    startTime = startTime,
+  )
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "prisonCode": "MDI",
+    "eventId": 474677532,
+    "bookingId": null,
+    "location": null,
+    "locationId": null,
+    "eventClass": null,
+    "eventStatus": "EXP",
+    "eventType": "COURT_HEARING",
+    "eventTypeDesc": null,
+    "event": "CRT",
+    "eventDesc": "Court Appearance",
+    "details": null,
+    "prisonerNumber": "G4793VF",
+    "date": "2022-06-25",
+    "startTime": "10:00",
+    "endTime": null,
+    "priority": 1
+  },
+  {
+    "prisonCode": "MDI",
+    "eventId": 474677531,
+    "bookingId": null,
+    "location": null,
+    "locationId": null,
+    "eventClass": null,
+    "eventStatus": "EXP",
+    "eventType": "COURT_HEARING",
+    "eventTypeDesc": null,
+    "event": "CRT",
+    "eventDesc": "Court Appearance",
+    "details": "Tim's court case",
+    "prisonerNumber": "G8082GW",
+    "date": "2022-06-25",
+    "startTime": "10:00",
+    "endTime": null,
+    "priority": 1
+  }
+]

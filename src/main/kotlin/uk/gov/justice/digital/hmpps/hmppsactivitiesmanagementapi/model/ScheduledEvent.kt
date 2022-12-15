@@ -35,6 +35,12 @@ data class ScheduledEvent(
   @Schema(description = "Scheduled event type description", example = "Appointment")
   val eventTypeDesc: String?,
 
+  @Schema(description = "Scheduled event", example = "GOVE")
+  val event: String?,
+
+  @Schema(description = "Scheduled event description", example = "Governor")
+  val eventDesc: String?,
+
   @Schema(description = "Details of this scheduled event", example = "Dont be late")
   val details: String?,
 
