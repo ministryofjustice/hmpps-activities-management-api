@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
@@ -19,16 +21,20 @@ class ActivityScheduleTest {
         allocationId = 1,
         activitySchedule = this,
         prisonerNumber = "A1234AA",
-        startDate = LocalDate.parse("2022-12-01"),
+        startDate = LocalDate.of(2022, 12, 1),
         endDate = null,
+        allocatedBy = "FAKE USER",
+        allocatedTime = LocalDate.of(2022, 12, 1).atStartOfDay()
       )
 
       val novemberAllocation = Allocation(
         allocationId = 2,
         activitySchedule = this,
         prisonerNumber = "A1234AA",
-        startDate = LocalDate.parse("2022-11-10"),
-        endDate = LocalDate.parse("2022-11-30"),
+        startDate = LocalDate.of(2022, 11, 10),
+        endDate = LocalDate.of(2022, 11, 30),
+        allocatedBy = "FAKE USER",
+        allocatedTime = LocalDate.of(2022, 11, 10).atStartOfDay()
       )
 
       allocations.clear()
@@ -104,5 +110,72 @@ class ActivityScheduleTest {
     assertThat(listOf(activitySchedule(activityEntity(), LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(
       expectedModel
     )
+  }
+
+  @Test
+  fun `can allocate prisoner to a schedule with no allocations`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { allocations.clear() }
+      .also { assertThat(it.allocations).isEmpty() }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "123456",
+      payBand = "A",
+    )
+
+    assertThat(schedule.allocations).hasSize(1)
+
+    with(schedule.allocations.first()) {
+      assertThat(activitySchedule).isEqualTo(schedule)
+      assertThat(prisonerNumber).isEqualTo("123456")
+      assertThat(payBand).isEqualTo("A")
+      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(allocatedBy).isEqualTo("SYSTEM")
+      assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+    }
+  }
+
+  @Test
+  fun `can allocate prisoner to a schedule with existing allocation`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .also { assertThat(it.allocations).hasSize(1) }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "654321",
+      payBand = "B",
+    )
+
+    assertThat(schedule.allocations).hasSize(2)
+
+    with(schedule.allocations.first { it.prisonerNumber == "654321" }) {
+      assertThat(activitySchedule).isEqualTo(schedule)
+      assertThat(prisonerNumber).isEqualTo("654321")
+      assertThat(payBand).isEqualTo("B")
+      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(allocatedBy).isEqualTo("SYSTEM")
+      assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+    }
+  }
+
+  @Test
+  fun `cannot allocate prisoner if already allocated to schedule`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { allocations.clear() }
+      .also { assertThat(it.allocations).isEmpty() }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "654321",
+      payBand = "B",
+    )
+
+    assertThatThrownBy {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321",
+        payBand = "B",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
   }
 }

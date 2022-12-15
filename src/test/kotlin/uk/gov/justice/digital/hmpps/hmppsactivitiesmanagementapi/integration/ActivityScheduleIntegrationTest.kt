@@ -2,13 +2,19 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
+
+  @Autowired
+  private lateinit var repository: ActivityScheduleRepository
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql"
@@ -72,4 +78,72 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ActivitySchedule::class.java)
       .returnResult().responseBody
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "123456",
+        payBand = "A",
+      )
+    ).expectStatus().isNoContent
+
+    with(repository.findById(1).orElseThrow()) {
+      assertThat(allocations.first().prisonerNumber).isEqualTo("123456")
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `400 (bad request) response when prisoner allocation request fails validation`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "",
+        payBand = "A",
+      )
+    ).expectStatus().isBadRequest
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "123456",
+        payBand = "A",
+      )
+    ).expectStatus().isNoContent
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "123456",
+        payBand = "A",
+      )
+    ).expectStatus().isBadRequest
+  }
+
+  private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
+    post()
+      .uri("/schedules/$scheduleId/allocations")
+      .bodyValue(request)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
 }

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -28,7 +29,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @ApiResponses(
     value = [
       ApiResponse(
-        responseCode = "200",
+        responseCode = "204",
         description = "The attendance records were updated.",
       ),
       ApiResponse(
@@ -43,7 +44,6 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ]
   )
-  fun markAttendances(@RequestBody attendances: List<AttendanceUpdateRequest>) {
-    attendancesService.mark(attendances)
-  }
+  fun markAttendances(@RequestBody attendances: List<AttendanceUpdateRequest>): ResponseEntity<Any> =
+    attendancesService.mark(attendances).let { ResponseEntity.noContent().build() }
 }

@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -73,4 +74,20 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
     repository.findById(scheduleId).orElseThrow {
       EntityNotFoundException("$scheduleId")
     }.toModelSchedule()
+
+  fun allocatePrisoner(scheduleId: Long, prisonerAllocationRequest: PrisonerAllocationRequest) {
+    val schedule = repository.findById(scheduleId).orElseThrow {
+      EntityNotFoundException("$scheduleId")
+    }
+
+    // TODO sanitise data e.g. trim/uppercase prison number, check not empty string
+    // TODO call prison api client to check prisoner is active and agency/prison code is same as activity
+
+    schedule.allocatePrisoner(
+      prisonerNumber = prisonerAllocationRequest.prisonerNumber,
+      payBand = prisonerAllocationRequest.payBand
+    )
+
+    repository.save(schedule)
+  }
 }

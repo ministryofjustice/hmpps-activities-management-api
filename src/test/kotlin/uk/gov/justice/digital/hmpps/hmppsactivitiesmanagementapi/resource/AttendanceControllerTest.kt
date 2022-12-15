@@ -20,7 +20,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
   override fun controller() = AttendanceController(attendancesService)
 
   @Test
-  fun `200 response when mark attendance records`() {
+  fun `204 response when mark attendance records`() {
     mockMvc.put("/attendances") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -31,7 +31,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
         )
       )
     }
-      .andExpect { status { isOk() } }
+      .andExpect { status { isNoContent() } }
 
     verify(attendancesService).mark(
       listOf(

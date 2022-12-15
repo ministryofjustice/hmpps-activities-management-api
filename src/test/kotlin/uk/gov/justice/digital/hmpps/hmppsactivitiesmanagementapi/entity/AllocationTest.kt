@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class AllocationTest {
 
@@ -15,7 +16,9 @@ class AllocationTest {
   private val allocationWithNoEndDate = Allocation(
     activitySchedule = schedule,
     prisonerNumber = "1234567890",
-    startDate = today
+    startDate = today,
+    allocatedBy = "FAKE USER",
+    allocatedTime = LocalDateTime.now()
   )
 
   private val allocationWithEndDate = allocationWithNoEndDate.copy(endDate = tomorrow)

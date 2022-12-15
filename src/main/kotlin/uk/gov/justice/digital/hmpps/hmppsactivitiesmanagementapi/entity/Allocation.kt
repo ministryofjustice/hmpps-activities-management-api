@@ -32,9 +32,9 @@ data class Allocation(
 
   var endDate: LocalDate? = null,
 
-  var allocatedTime: LocalDateTime? = null,
+  var allocatedTime: LocalDateTime,
 
-  var allocatedBy: String? = null,
+  var allocatedBy: String,
 
   var deallocatedTime: LocalDateTime? = null,
 
