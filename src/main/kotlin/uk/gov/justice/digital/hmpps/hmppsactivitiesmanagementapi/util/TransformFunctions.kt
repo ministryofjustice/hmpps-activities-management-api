@@ -189,7 +189,8 @@ fun EntityActivitySchedule.toModelSchedule() =
     endTime = this.endTime,
     internalLocation = this.toInternalLocation(),
     capacity = this.capacity,
-    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) }
+    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
+    activity = this.activity.toModelLite()
   )
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {

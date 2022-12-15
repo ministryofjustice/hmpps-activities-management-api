@@ -46,5 +46,8 @@ data class ActivitySchedule(
   val capacity: Int,
 
   @Schema(description = "The days of the week on which the schedule takes place", example = "[Mon,Tue,Wed]")
-  val daysOfWeek: List<String>
+  val daysOfWeek: List<String>,
+
+  @Schema(description = "The activity")
+  val activity: ActivityLite,
 )

@@ -77,7 +77,8 @@ class TransformFunctionsTest {
           startTime = timestamp.toLocalTime(),
           endTime = timestamp.toLocalTime(),
           capacity = 1,
-          daysOfWeek = listOf("Mon")
+          daysOfWeek = listOf("Mon"),
+          activity = activityEntity().toModelLite()
         )
       )
       assertThat(waitingList).containsExactly(
