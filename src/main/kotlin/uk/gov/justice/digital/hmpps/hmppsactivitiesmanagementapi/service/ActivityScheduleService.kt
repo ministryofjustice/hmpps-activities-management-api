@@ -91,10 +91,10 @@ class ActivityScheduleService(
     val prisonerNumber = request.prisonerNumber.toPrisonerNumber()
     val payBand = request.payBand.toPayBand()
 
-    prisonApiClient.getPrisonerDetails(request.prisonerNumber).block()
-      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-      .failIfNotActive()
-      .failIfAtDifferentPrisonTo(schedule.activity)
+//    prisonApiClient.getPrisonerDetails(request.prisonerNumber).block()
+//      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
+//      .failIfNotActive()
+//      .failIfAtDifferentPrisonTo(schedule.activity)
 
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
