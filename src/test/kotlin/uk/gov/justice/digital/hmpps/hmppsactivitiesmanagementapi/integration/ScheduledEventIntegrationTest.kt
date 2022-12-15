@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -8,9 +9,51 @@ import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import java.time.LocalDate
 
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
+
+  @Test
+  fun `getScheduledEventsForOffenderList - returns all 10 rows that satisfy the criteria`() {
+
+    val prisonCode = "MDI"
+    val prisonerNumbers = setOf("G4793VF", "A5193DY")
+    val date = LocalDate.of(2022, 10, 1)
+
+    prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
+    prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+    prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+
+    val scheduledEvents =
+      webTestClient.getScheduledEventsForOffenderList(
+        "MDI",
+        prisonerNumbers,
+        date,
+      )
+
+    val appointmentsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/appointments-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
+    val courtHearingsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/court-hearings-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
+    val visitsResults: List<ScheduledEvent> = mapper.readValue(
+      this::class.java.getResource("/__files/scheduled-events/visits-1.json"),
+      object : TypeReference<List<ScheduledEvent>>() {}
+    )
+
+    with(scheduledEvents!!) {
+      assertThat(prisonerNumbers).contains("G4793VF")
+      assertThat(appointments).isEqualTo(appointmentsResults)
+      assertThat(courtHearings).isEqualTo(courtHearingsResults)
+      assertThat(visits).isEqualTo(visitsResults)
+    }
+  }
 
   @Test
   fun `getScheduledEventsByDateRange (not rolled out) - returns all 10 rows that satisfy the criteria`() {
@@ -242,6 +285,22 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
   ) =
     get()
       .uri("/prisons/$prisonCode/scheduled-events?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getScheduledEventsForOffenderList(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate
+  ) =
+    post()
+      .uri("/prisons/$prisonCode/scheduled-events?date=$date")
+      .bodyValue(prisonerNumbers)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
