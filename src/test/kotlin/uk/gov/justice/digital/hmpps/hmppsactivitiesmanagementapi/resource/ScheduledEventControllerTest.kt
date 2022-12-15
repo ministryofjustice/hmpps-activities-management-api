@@ -31,16 +31,27 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     val prisonerNumbers = setOf("G4793VF")
     val result = PrisonerScheduledEventsFixture.instance()
     whenever(
-      scheduledEventService.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM)
+      scheduledEventService.getScheduledEventsForOffenderList(
+        "MDI",
+        prisonerNumbers,
+        LocalDate.of(2022, 10, 1),
+        TimeSlot.AM
+      )
     ).thenReturn(result)
 
-    val response = mockMvc.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM.name)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
+    val response =
+      mockMvc.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM.name)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
-    verify(scheduledEventService).getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM)
+    verify(scheduledEventService).getScheduledEventsForOffenderList(
+      "MDI",
+      prisonerNumbers,
+      LocalDate.of(2022, 10, 1),
+      TimeSlot.AM
+    )
   }
 
   @Test
@@ -48,16 +59,27 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     val prisonerNumbers = setOf("G4793VF")
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
     whenever(
-      scheduledEventService.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM)
+      scheduledEventService.getScheduledEventsForOffenderList(
+        "MDI",
+        prisonerNumbers,
+        LocalDate.of(2022, 10, 1),
+        TimeSlot.AM
+      )
     ).thenThrow(RuntimeException("Error"))
 
-    val response =mockMvc.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM.name)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { is5xxServerError() } }
-      .andReturn().response
+    val response =
+      mockMvc.getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM.name)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { is5xxServerError() } }
+        .andReturn().response
 
     assertThat(response.contentAsString + "\n").isEqualTo(result)
-    verify(scheduledEventService).getScheduledEventsForOffenderList("MDI", prisonerNumbers, LocalDate.of(2022, 10, 1), TimeSlot.AM)
+    verify(scheduledEventService).getScheduledEventsForOffenderList(
+      "MDI",
+      prisonerNumbers,
+      LocalDate.of(2022, 10, 1),
+      TimeSlot.AM
+    )
   }
 
   @Test
@@ -70,11 +92,11 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     ).thenReturn(result)
 
     mockMvc.post("/prisons/MDI/scheduled-events") {
-        accept = MediaType.APPLICATION_JSON
-        contentType = MediaType.APPLICATION_JSON
-        content = mapper.writeValueAsBytes(
-          prisonerNumbers
-        )
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        prisonerNumbers
+      )
     }
       .andDo { print() }
       .andExpect {
