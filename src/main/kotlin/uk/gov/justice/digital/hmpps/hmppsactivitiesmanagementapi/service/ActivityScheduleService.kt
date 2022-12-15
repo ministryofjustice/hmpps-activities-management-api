@@ -85,7 +85,6 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
 
     schedule.allocatePrisoner(
       prisonerNumber = prisonerAllocationRequest.prisonerNumber,
-      incentiveLevel = prisonerAllocationRequest.incentiveLevel,
       payBand = prisonerAllocationRequest.payBand
     )
 

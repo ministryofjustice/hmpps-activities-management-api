@@ -122,17 +122,16 @@ data class ActivitySchedule(
 
   fun allocatePrisoner(
     prisonerNumber: String,
-    incentiveLevel: String,
     payBand: String
   ): ActivitySchedule {
-    // TODO throw runtime exception if already allocated?
+    allocations.failIfAlreadyAllocated(prisonerNumber)
+
     // TODO trim and uppercase
     // TODO throw error if prisoner number is empty?
     allocations.add(
       Allocation(
         activitySchedule = this,
         prisonerNumber = prisonerNumber.trim().uppercase(),
-        incentiveLevel = incentiveLevel,
         payBand = payBand,
         // TODO not sure if this is supported in the UI
         startDate = LocalDate.now(),
@@ -144,6 +143,10 @@ data class ActivitySchedule(
 
     return this
   }
+
+  private fun List<Allocation>.failIfAlreadyAllocated(prisonerNumber: String) =
+    this.firstOrNull { it.prisonerNumber == prisonerNumber }
+      ?.let { throw IllegalArgumentException("Prisoner $prisonerNumber already allocated.") }
 
   @Override
   override fun toString(): String {

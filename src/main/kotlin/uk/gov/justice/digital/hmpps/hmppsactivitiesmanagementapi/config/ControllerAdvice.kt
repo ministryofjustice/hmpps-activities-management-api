@@ -88,7 +88,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = BAD_REQUEST.value(),
-          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; nested exception is")}",
+          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; nested exception is")
+          }",
           developerMessage = e.message
         )
       )
@@ -112,6 +113,20 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
           status = ex.rawStatusCode,
           userMessage = ex.message,
           developerMessage = ex.message
+        )
+      )
+  }
+
+  @ExceptionHandler(IllegalArgumentException::class)
+  fun handleIllegalArgumentException(e: Exception): ResponseEntity<ErrorResponse> {
+    log.info("Exception: {}", e.message)
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = "Exception: ${e.message}",
+          developerMessage = e.message
         )
       )
   }

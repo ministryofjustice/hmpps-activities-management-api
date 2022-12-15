@@ -133,8 +133,6 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     val request = PrisonerAllocationRequest(
       prisonerNumber = "654321",
       payBand = "B",
-      incentiveLevel = "STD"
-
     )
 
     mockMvc.post(1, request)

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -121,7 +122,6 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "123456",
       payBand = "A",
-      incentiveLevel = "BAS"
     )
 
     assertThat(schedule.allocations).hasSize(1)
@@ -129,7 +129,6 @@ class ActivityScheduleTest {
     with(schedule.allocations.first()) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("123456")
-      assertThat(incentiveLevel).isEqualTo("BAS")
       assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("SYSTEM")
@@ -146,7 +145,6 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "654321",
       payBand = "B",
-      incentiveLevel = "STD"
     )
 
     assertThat(schedule.allocations).hasSize(2)
@@ -154,11 +152,30 @@ class ActivityScheduleTest {
     with(schedule.allocations.first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("654321")
-      assertThat(incentiveLevel).isEqualTo("STD")
       assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("SYSTEM")
       assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
     }
+  }
+
+  @Test
+  fun `cannot allocate prisoner if already allocated to schedule`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { allocations.clear() }
+      .also { assertThat(it.allocations).isEmpty() }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "654321",
+      payBand = "B",
+    )
+
+    assertThatThrownBy {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321",
+        payBand = "B",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
   }
 }

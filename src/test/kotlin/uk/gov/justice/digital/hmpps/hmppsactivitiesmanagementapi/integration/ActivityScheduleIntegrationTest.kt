@@ -91,7 +91,6 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "123456",
         payBand = "A",
-        incentiveLevel = "BAS"
       )
     ).expectStatus().isNoContent
 
@@ -112,7 +111,30 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "",
         payBand = "A",
-        incentiveLevel = "BAS"
+      )
+    ).expectStatus().isBadRequest
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "123456",
+        payBand = "A",
+      )
+    ).expectStatus().isNoContent
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "123456",
+        payBand = "A",
       )
     ).expectStatus().isBadRequest
   }
