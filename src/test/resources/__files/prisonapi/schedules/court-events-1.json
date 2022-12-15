@@ -1,0 +1,25 @@
+[
+  {
+    "offenderNo": "G4793VF",
+    "eventId": 474677532,
+    "firstName": "TIM",
+    "lastName": "HARRISON",
+    "event": "CRT",
+    "eventType": "COURT",
+    "eventDescription": "Court Appearance",
+    "eventStatus": "EXP",
+    "startTime": "2022-06-25T10:00:00"
+  },
+  {
+    "offenderNo": "G8082GW",
+    "eventId": 474677531,
+    "firstName": "FRANCOIS",
+    "lastName": "BARTHELUS",
+    "event": "CRT",
+    "eventType": "COURT",
+    "eventDescription": "Court Appearance",
+    "eventStatus": "EXP",
+    "comment": "Tim's court case",
+    "startTime": "2022-06-25T10:00:00"
+  }
+]
