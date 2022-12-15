@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -15,7 +16,8 @@ import javax.persistence.EntityNotFoundException
 class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
-  private val service = ActivityScheduleService(repository)
+  private val prisonApiClient: PrisonApiClient = mock()
+  private val service = ActivityScheduleService(repository, prisonApiClient)
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
