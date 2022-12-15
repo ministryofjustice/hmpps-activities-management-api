@@ -84,18 +84,20 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql"
   )
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
+
     repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
       PrisonerAllocationRequest(
-        prisonerNumber = "123456",
+        prisonerNumber = "G4793VF",
         payBand = "A",
       )
     ).expectStatus().isNoContent
 
     with(repository.findById(1).orElseThrow()) {
-      assertThat(allocations.first().prisonerNumber).isEqualTo("123456")
+      assertThat(allocations.first().prisonerNumber).isEqualTo("G4793VF")
     }
   }
 
@@ -103,29 +105,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Sql(
     "classpath:test_data/seed-activity-id-7.sql"
   )
-  fun `400 (bad request) response when prisoner allocation request fails validation`() {
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
-
-    webTestClient.allocatePrisoner(
-      1,
-      PrisonerAllocationRequest(
-        prisonerNumber = "",
-        payBand = "A",
-      )
-    ).expectStatus().isBadRequest
-  }
-
-  @Test
-  @Sql(
-    "classpath:test_data/seed-activity-id-7.sql"
-  )
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
+
     repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
       PrisonerAllocationRequest(
-        prisonerNumber = "123456",
+        prisonerNumber = "G4793VF",
         payBand = "A",
       )
     ).expectStatus().isNoContent
@@ -133,7 +121,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     webTestClient.allocatePrisoner(
       1,
       PrisonerAllocationRequest(
-        prisonerNumber = "123456",
+        prisonerNumber = "G4793VF",
         payBand = "A",
       )
     ).expectStatus().isBadRequest

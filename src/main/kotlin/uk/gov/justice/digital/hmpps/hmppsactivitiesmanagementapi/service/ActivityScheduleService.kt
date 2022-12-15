@@ -1,7 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -17,7 +22,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 
 @Service
-class ActivityScheduleService(private val repository: ActivityScheduleRepository) {
+class ActivityScheduleService(
+  private val repository: ActivityScheduleRepository,
+  private val prisonApiClient: PrisonApiClient
+) {
 
   fun getScheduledInternalLocations(
     prisonCode: String,
@@ -75,19 +83,31 @@ class ActivityScheduleService(private val repository: ActivityScheduleRepository
       EntityNotFoundException("$scheduleId")
     }.toModelSchedule()
 
-  fun allocatePrisoner(scheduleId: Long, prisonerAllocationRequest: PrisonerAllocationRequest) {
+  fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) {
     val schedule = repository.findById(scheduleId).orElseThrow {
       EntityNotFoundException("$scheduleId")
     }
 
-    // TODO sanitise data e.g. trim/uppercase prison number, check not empty string
-    // TODO call prison api client to check prisoner is active and agency/prison code is same as activity
+    val prisonerNumber = request.prisonerNumber.toPrisonerNumber()
+    val payBand = request.payBand.toPayBand()
+
+    prisonApiClient.getPrisonerDetails(request.prisonerNumber).block()
+      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
+      .failIfNotActive()
+      .failIfAtDifferentPrisonTo(schedule.activity)
 
     schedule.allocatePrisoner(
-      prisonerNumber = prisonerAllocationRequest.prisonerNumber,
-      payBand = prisonerAllocationRequest.payBand
+      prisonerNumber = prisonerNumber,
+      payBand = payBand
     )
 
     repository.save(schedule)
   }
+
+  private fun InmateDetail.failIfNotActive() =
+    takeIf { it.activeFlag } ?: throw IllegalStateException("Prisoner ${this.offenderNo} is not active.")
+
+  private fun InmateDetail.failIfAtDifferentPrisonTo(activity: Activity) =
+    takeIf { it.agencyId == activity.prisonCode }
+      ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
 }

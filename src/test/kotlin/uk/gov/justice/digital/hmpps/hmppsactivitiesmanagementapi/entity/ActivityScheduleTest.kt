@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -120,8 +122,8 @@ class ActivityScheduleTest {
       .also { assertThat(it.allocations).isEmpty() }
 
     schedule.allocatePrisoner(
-      prisonerNumber = "123456",
-      payBand = "A",
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = "A".toPayBand(),
     )
 
     assertThat(schedule.allocations).hasSize(1)
@@ -143,8 +145,8 @@ class ActivityScheduleTest {
       .also { assertThat(it.allocations).hasSize(1) }
 
     schedule.allocatePrisoner(
-      prisonerNumber = "654321",
-      payBand = "B",
+      prisonerNumber = "654321".toPrisonerNumber(),
+      payBand = "B".toPayBand(),
     )
 
     assertThat(schedule.allocations).hasSize(2)
@@ -167,14 +169,14 @@ class ActivityScheduleTest {
       .also { assertThat(it.allocations).isEmpty() }
 
     schedule.allocatePrisoner(
-      prisonerNumber = "654321",
-      payBand = "B",
+      prisonerNumber = "654321".toPrisonerNumber(),
+      payBand = "B".toPayBand(),
     )
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
-        prisonerNumber = "654321",
-        payBand = "B",
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = "B".toPayBand(),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
