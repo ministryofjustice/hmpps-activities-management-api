@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
@@ -26,6 +28,10 @@ class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient
 ) {
+
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun getScheduledInternalLocations(
     prisonCode: String,
@@ -84,6 +90,8 @@ class ActivityScheduleService(
     }.toModelSchedule()
 
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) {
+    log.info("Allocating prisoner ${request.prisonerNumber}.")
+
     val schedule = repository.findById(scheduleId).orElseThrow {
       EntityNotFoundException("$scheduleId")
     }
@@ -91,10 +99,10 @@ class ActivityScheduleService(
     val prisonerNumber = request.prisonerNumber.toPrisonerNumber()
     val payBand = request.payBand.toPayBand()
 
-//    prisonApiClient.getPrisonerDetails(request.prisonerNumber).block()
-//      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-//      .failIfNotActive()
-//      .failIfAtDifferentPrisonTo(schedule.activity)
+    prisonApiClient.getPrisonerDetails(prisonerNumber.toString(), false).block()
+      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
+      .failIfNotActive()
+      .failIfAtDifferentPrisonTo(schedule.activity)
 
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
@@ -102,6 +110,8 @@ class ActivityScheduleService(
     )
 
     repository.save(schedule)
+
+    log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
   }
 
   private fun InmateDetail.failIfNotActive() =

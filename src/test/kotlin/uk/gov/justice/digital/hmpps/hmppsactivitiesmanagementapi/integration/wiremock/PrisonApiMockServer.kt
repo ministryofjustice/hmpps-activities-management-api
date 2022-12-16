@@ -140,9 +140,9 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(prisonerNumber: String) {
+  fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=true"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
