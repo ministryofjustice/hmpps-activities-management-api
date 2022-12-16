@@ -122,8 +122,8 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand): ActivitySchedule {
-    allocations.failIfAlreadyAllocated(prisonerNumber)
+  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand) {
+    failIfAlreadyAllocated(prisonerNumber)
 
     allocations.add(
       Allocation(
@@ -137,12 +137,10 @@ data class ActivitySchedule(
         allocatedTime = LocalDateTime.now()
       )
     )
-
-    return this
   }
 
-  private fun List<Allocation>.failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
-    this.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
+  private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
+    allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
   @Override
