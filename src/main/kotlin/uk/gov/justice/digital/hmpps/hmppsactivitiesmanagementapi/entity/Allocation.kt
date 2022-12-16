@@ -24,8 +24,6 @@ data class Allocation(
 
   val prisonerNumber: String,
 
-  var incentiveLevel: String? = null,
-
   var payBand: String? = null,
 
   var startDate: LocalDate,

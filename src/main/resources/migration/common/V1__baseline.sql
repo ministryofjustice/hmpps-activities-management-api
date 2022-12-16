@@ -202,7 +202,6 @@ CREATE TABLE allocation (
   allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,
   activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
-  incentive_level      varchar(10),
   pay_band             varchar(10),
   start_date           date         NOT NULL,
   end_date             date,
