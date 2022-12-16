@@ -45,9 +45,9 @@ class PrisonApiClientTest {
     val prisonerNumber = "G4793VF"
 
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber).block()
-    assertThat(prisonerDetails).isNotNull
-    assertThat(prisonerDetails!!.bookingId).isEqualTo(1200993)
+    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber).block()!!
+
+    assertThat(prisonerDetails.bookingId).isEqualTo(1200993)
   }
 
   @Test
@@ -64,9 +64,9 @@ class PrisonApiClientTest {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
-    val scheduledAppointments = prisonApiClient.getScheduledAppointments(bookingId, dateRange).block()
+    val scheduledAppointments = prisonApiClient.getScheduledAppointments(bookingId, dateRange).block()!!
     assertThat(scheduledAppointments).hasSize(1)
-    assertThat(scheduledAppointments!![0].bookingId).isEqualTo(10001L)
+    assertThat(scheduledAppointments.first().bookingId).isEqualTo(10001L)
   }
 
   @Test
@@ -86,9 +86,9 @@ class PrisonApiClientTest {
     val prisonerNumbers = setOf("G4793VF")
     val date = LocalDate.of(2022, 12, 14)
     prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
-    val scheduledAppointments = prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()
+    val scheduledAppointments = prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(scheduledAppointments).hasSize(2)
-    assertThat(scheduledAppointments!![0].offenderNo).isEqualTo("A5193DY")
+    assertThat(scheduledAppointments.first().offenderNo).isEqualTo("A5193DY")
   }
 
   @Test
@@ -96,9 +96,9 @@ class PrisonApiClientTest {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
-    val scheduledActivities = prisonApiClient.getScheduledActivities(bookingId, dateRange).block()
+    val scheduledActivities = prisonApiClient.getScheduledActivities(bookingId, dateRange).block()!!
     assertThat(scheduledActivities).hasSize(2)
-    assertThat(scheduledActivities!![0].bookingId).isEqualTo(10001L)
+    assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
   }
 
   @Test
@@ -118,10 +118,10 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
-    val courtHearings = prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block()
-    assertThat(courtHearings).isNotNull
-    assertThat(courtHearings?.hearings).hasSize(4)
-    assertThat(courtHearings?.hearings!![0].id).isEqualTo(1L)
+    val courtHearings = prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block()!!
+
+    assertThat(courtHearings.hearings).hasSize(4)
+    assertThat(courtHearings.hearings?.first()?.id).isEqualTo(1L)
   }
 
   @Test
@@ -141,9 +141,9 @@ class PrisonApiClientTest {
     val prisonerNumbers = setOf("G4793VF")
     val date = LocalDate.of(2022, 12, 14)
     prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-    val courtEvents = prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()
+    val courtEvents = prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(courtEvents).hasSize(2)
-    assertThat(courtEvents!![0].offenderNo).isEqualTo("G4793VF")
+    assertThat(courtEvents.first().offenderNo).isEqualTo("G4793VF")
   }
 
   @Test
@@ -151,9 +151,9 @@ class PrisonApiClientTest {
     val bookingId = 10002L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
-    val scheduledVisits = prisonApiClient.getScheduledVisits(bookingId, dateRange).block()
+    val scheduledVisits = prisonApiClient.getScheduledVisits(bookingId, dateRange).block()!!
     assertThat(scheduledVisits).hasSize(1)
-    assertThat(scheduledVisits!![0].bookingId).isEqualTo(10002L)
+    assertThat(scheduledVisits.first().bookingId).isEqualTo(10002L)
   }
 
   @Test
@@ -173,9 +173,9 @@ class PrisonApiClientTest {
     val prisonerNumbers = setOf("A5193DY")
     val date = LocalDate.of(2022, 12, 14)
     prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
-    val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()
+    val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(visits).hasSize(2)
-    assertThat(visits!![0].offenderNo).isEqualTo("A5193DY")
+    assertThat(visits.first().offenderNo).isEqualTo("A5193DY")
   }
 
   @Test
@@ -183,9 +183,9 @@ class PrisonApiClientTest {
     val agencyId = "LEI"
     val locationType = "CELL"
     prisonApiMockServer.stubGetLocationsForType(agencyId, locationType, "prisonapi/locations-LEI-HB7.json")
-    val locations = prisonApiClient.getLocationsForType(agencyId, locationType).block()
+    val locations = prisonApiClient.getLocationsForType(agencyId, locationType).block()!!
     assertThat(locations).hasSize(4)
-    assertThat(locations!![3].locationId).isEqualTo(108583L)
+    assertThat(locations[3].locationId).isEqualTo(108583L)
   }
 
   @Test
@@ -203,9 +203,9 @@ class PrisonApiClientTest {
     val agencyId = "LEI"
     val locationType = "CELL"
     prisonApiMockServer.stubGetLocationsForTypeUnrestricted(agencyId, locationType, "prisonapi/locations-LEI-HB7.json")
-    val locations = prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block()
+    val locations = prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block()!!
     assertThat(locations).hasSize(4)
-    assertThat(locations!![3].locationId).isEqualTo(108583L)
+    assertThat(locations[3].locationId).isEqualTo(108583L)
   }
 
   @Test
@@ -222,9 +222,9 @@ class PrisonApiClientTest {
   fun `getLocationGroups - success`() {
     val agencyId = "MDI"
     prisonApiMockServer.stubGetLocationGroups(agencyId, "prisonapi/location-groups-1.json")
-    val locationGroups = prisonApiClient.getLocationGroups(agencyId).block()
+    val locationGroups = prisonApiClient.getLocationGroups(agencyId).block()!!
     assertThat(locationGroups).hasSize(1)
-    assertThat(locationGroups!![0].children[0].name).isEqualTo("Child Group Name")
+    assertThat(locationGroups.first().children.first().name).isEqualTo("Child Group Name")
   }
 
   @Test
