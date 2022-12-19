@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -139,6 +141,23 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andExpect { status { isNoContent() } }
 
     verify(activityScheduleService).allocatePrisoner(1, request)
+  }
+
+  @Test
+  fun `400 response when allocate offender to a schedule missing mandatory fields`() {
+    val request = PrisonerAllocationRequest(
+      prisonerNumber = "",
+      payBand = "",
+    )
+
+    val response = mockMvc.post(1, request)
+      .andExpect { status { isBadRequest() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Prisoner number cannot be blank")
+    assertThat(response.contentAsString).contains("Pay band cannot be blank")
+
+    verify(activityScheduleService, never()).allocatePrisoner(any(), any())
   }
 
   private fun MockMvc.post(scheduleId: Long, request: PrisonerAllocationRequest) =
