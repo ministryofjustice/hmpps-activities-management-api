@@ -47,7 +47,7 @@ data class Alert(
   @JsonProperty("alertCodeDescription") val alertCodeDescription: String,
 
   @Schema(example = "Profession lock pick.", description = "Alert comments")
-  @JsonProperty("comment") val comment: String,
+  @JsonProperty("comment") val comment: String?,
 
   @Valid
   @Schema(

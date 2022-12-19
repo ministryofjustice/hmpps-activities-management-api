@@ -35,7 +35,7 @@ data class Assessment(
   @JsonProperty("classificationCode") val classificationCode: String,
 
   @Schema(example = "Cat C", description = "Classification description")
-  @JsonProperty("classification") val classification: String,
+  @JsonProperty("classification") val classification: String?,
 
   @Schema(example = "CATEGORY", description = "Identifies the type of assessment")
   @JsonProperty("assessmentCode") val assessmentCode: String,
