@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.lang.Nullable
 import org.springframework.security.access.AccessDeniedException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
@@ -127,6 +128,27 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
           status = BAD_REQUEST,
           userMessage = "Exception: ${e.message}",
           developerMessage = e.message
+        )
+      )
+  }
+
+  override fun handleMethodArgumentNotValid(
+    ex: MethodArgumentNotValidException,
+    headers: HttpHeaders,
+    status: HttpStatus,
+    request: WebRequest
+  ): ResponseEntity<Any> {
+    val errors = ex.bindingResult.allErrors.map { it.defaultMessage }
+
+    log.info("Constraint errors: {}", errors)
+
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = "One or more constraint violations occurred",
+          developerMessage = errors.joinToString(", ")
         )
       )
   }
