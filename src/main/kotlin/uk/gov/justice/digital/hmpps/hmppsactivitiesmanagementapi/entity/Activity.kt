@@ -37,7 +37,7 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  var eligibilityRules: MutableList<ActivityEligibility> = mutableListOf(),
+  val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf(),
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

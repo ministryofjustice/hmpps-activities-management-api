@@ -43,7 +43,7 @@ class ActivityServiceTest {
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   @Captor
-  private lateinit var activityEntityCaptor: ArgumentCaptor<ActivityEntity?>
+  private lateinit var activityEntityCaptor: ArgumentCaptor<ActivityEntity>
 
   private val service = ActivityService(
     activityRepository,
@@ -80,16 +80,16 @@ class ActivityServiceTest {
 
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
-    whenever(activityRepository.save(activityEntityCaptor.capture()!!)).thenReturn(savedActivityEntity)
+    whenever(activityRepository.save(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
 
     service.createActivity(createActivityRequest, createdBy)
 
-    val activityArg: ActivityEntity? = activityEntityCaptor.value
+    val activityArg: ActivityEntity = activityEntityCaptor.value
 
     verify(activityCategoryRepository).findById(1)
     verify(activityTierRepository).findById(1)
     verify(eligibilityRuleRepository).findById(any())
-    verify(activityRepository).save(activityArg!!)
+    verify(activityRepository).save(activityArg)
 
     with(activityArg) {
       assertThat(eligibilityRules.size).isEqualTo(1)
