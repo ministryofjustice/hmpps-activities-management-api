@@ -30,7 +30,7 @@ class TransformFunctionsTest {
       assertThat(attendanceRequired).isFalse
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
-      assertThat(category).isEqualTo(ModelActivityCategory(id = 1, code = "category code", description = "category description"))
+      assertThat(category).isEqualTo(ModelActivityCategory(id = 1, code = "category code", name = "category name", description = "category description"))
       assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(

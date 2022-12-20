@@ -29,6 +29,7 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
       ActivityCategory(
         id = 1,
         code = "category code",
+        name = "category name",
         description = "category description"
       )
     )

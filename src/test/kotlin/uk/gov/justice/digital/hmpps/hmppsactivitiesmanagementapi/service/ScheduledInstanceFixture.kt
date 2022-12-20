@@ -32,6 +32,7 @@ object ScheduledInstanceFixture {
         activityCategory = ActivityCategory(
           activityCategoryId,
           activityCategoryCode,
+          "ACTIVITY CATEGORY NAME  $activityCategoryId",
           "ACTIVITY CATEGORY DESCRIPTION  $activityCategoryId",
         ),
         activityTier = ActivityTier(

@@ -75,7 +75,8 @@ CREATE INDEX idx_daily_statistics_prison_code ON daily_statistics (prison_code);
 CREATE TABLE activity_category (
   activity_category_id bigserial    NOT NULL CONSTRAINT activity_category_pk PRIMARY KEY,
   code                 varchar(30)  NOT NULL UNIQUE,
-  description          varchar(100) NOT NULL
+  name                 varchar(100) NOT NULL,
+  description          varchar(300)
 );
 
 CREATE TABLE activity_tier (

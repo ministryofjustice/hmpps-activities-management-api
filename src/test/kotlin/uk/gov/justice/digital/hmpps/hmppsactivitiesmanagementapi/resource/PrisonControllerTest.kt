@@ -81,8 +81,9 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         description = "activity description",
         category = ActivityCategory(
           id = 1L,
-          code = "LEI",
-          description = "Leisure and social"
+          code = "LEISURE_SOCIAL",
+          name = "Leisure and social",
+          description = "Such as association, library time and social clubs, like music or art"
         )
       )
     )

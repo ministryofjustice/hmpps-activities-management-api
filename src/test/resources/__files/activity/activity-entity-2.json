@@ -3,8 +3,9 @@
   "prisonCode": "PVI",
   "activityCategory": {
     "activityCategoryId": 1,
-    "code": "EDU",
-    "description": "Education"
+    "code": "EDUCATION",
+    "name": "Education",
+    "description": "Such as classes in English, maths, construction and computer skills"
   },
   "activityTier": {
     "activityTierId": 1,

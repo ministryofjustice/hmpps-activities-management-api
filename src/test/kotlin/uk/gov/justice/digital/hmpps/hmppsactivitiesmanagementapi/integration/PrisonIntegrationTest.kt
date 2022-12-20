@@ -32,7 +32,8 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         category = ActivityCategory(
           id = 1L,
           code = "C1",
-          description = "Category 1"
+          name = "Category 1",
+          description = "Description of Category 1"
         )
       )
     )
@@ -134,10 +135,10 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     afternoonSchedule.allocatedPrisoner("A22222A")
 
     with(afternoonSchedule.instances.first()) {
-      assertThat(date).isEqualTo(java.time.LocalDate.of(2022, 10, 10))
+      assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(cancelled).isFalse
-      assertThat(startTime).isEqualTo(java.time.LocalTime.of(14, 0))
-      assertThat(endTime).isEqualTo(java.time.LocalTime.of(15, 0))
+      assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(15, 0))
     }
   }
 

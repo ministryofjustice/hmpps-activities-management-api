@@ -71,6 +71,7 @@ class ActivityScheduleTest {
         category = ModelActivityCategory(
           id = 1L,
           code = "category code",
+          name = "category name",
           description = "category description"
         )
       )
@@ -103,6 +104,7 @@ class ActivityScheduleTest {
           category = ModelActivityCategory(
             id = 1L,
             code = "category code",
+            name = "category name",
             description = "category description"
           )
         )

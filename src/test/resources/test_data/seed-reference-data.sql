@@ -1,9 +1,9 @@
 --
 -- Categories
 --
-insert into activity_category(activity_category_id, code, description) select 1, 'C1', 'Category 1' where not exists (select 1 from activity_category where activity_category_id = 1);
-insert into activity_category(activity_category_id, code, description) select 2, 'C2', 'Category 2' where not exists (select 1 from activity_category where activity_category_id = 2);
-insert into activity_category(activity_category_id, code, description) select 3, 'C3', 'Category 3' where not exists (select 1 from activity_category where activity_category_id = 3);
+insert into activity_category(activity_category_id, code, name, description) select 1, 'C1', 'Category 1', 'Description of Category 1' where not exists (select 1 from activity_category where activity_category_id = 1);
+insert into activity_category(activity_category_id, code, name, description) select 2, 'C2', 'Category 2', 'Description of Category 2' where not exists (select 1 from activity_category where activity_category_id = 2);
+insert into activity_category(activity_category_id, code, name, description) select 3, 'C3', 'Category 3', 'Description of Category 3' where not exists (select 1 from activity_category where activity_category_id = 3);
 
 --
 -- Tiers

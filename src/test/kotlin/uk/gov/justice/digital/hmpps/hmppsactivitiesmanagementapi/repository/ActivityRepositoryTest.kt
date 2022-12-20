@@ -22,7 +22,7 @@ class ActivityRepositoryTest(
 
   @Test
   fun `can create activity`() {
-    val category = entityManager.persist(ActivityCategory(code = "code", description = "description"))
+    val category = entityManager.persist(ActivityCategory(code = "code", name = "name", description = "description"))
     val tier = entityManager.persist(ActivityTier(code = "T1", description = "Tier 1"))
 
     val activity = Activity(
