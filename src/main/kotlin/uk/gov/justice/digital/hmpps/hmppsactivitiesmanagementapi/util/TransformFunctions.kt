@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDate
@@ -64,6 +66,40 @@ fun transform(activity: EntityActivity) =
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
+
+fun transform(
+  activityCreateRequest: ActivityCreateRequest,
+  activityCategory: EntityActivityCategory,
+  activityTier: EntityActivityTier,
+  createdBy: String
+) =
+  EntityActivity(
+    activityId = null,
+    prisonCode = activityCreateRequest.prisonCode!!,
+    activityCategory = activityCategory,
+    activityTier = activityTier,
+    attendanceRequired = activityCreateRequest.attendanceRequired,
+    summary = activityCreateRequest.summary!!,
+    description = activityCreateRequest.description!!,
+    startDate = activityCreateRequest.startDate ?: LocalDate.now(),
+    endDate = activityCreateRequest.endDate,
+    createdTime = LocalDateTime.now(),
+    createdBy = createdBy
+  )
+
+fun transform(
+  activityPayCreateRequests: List<ActivityPayCreateRequest>,
+  activityEntity: EntityActivity,
+) = activityPayCreateRequests.map { apcr ->
+  EntityActivityPay(
+    activity = activityEntity,
+    incentiveLevel = apcr.incentiveLevel,
+    payBand = apcr.payBand,
+    rate = apcr.rate,
+    pieceRate = apcr.pieceRate,
+    pieceRateItems = apcr.pieceRateItems
+  )
+}
 
 fun transformActivityScheduledInstancesToScheduledEvents(
   bookingId: Long,
@@ -153,7 +189,7 @@ fun transformToPrisonerScheduledEvents(
     null
   )
 
-private fun EntityActivityCategory.toModelActivityCategory() =
+fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
     this.activityCategoryId!!,
     this.code,

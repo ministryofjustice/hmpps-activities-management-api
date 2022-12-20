@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -11,12 +12,32 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class ActivityIntegrationTest : IntegrationTestBase() {
+
+  @Test
+  fun `createActivity - success`() {
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val activity = webTestClient.createActivity(createActivityRequest)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(tier.id).isEqualTo(1)
+      assertThat(eligibilityRules.size).isEqualTo(1)
+      assertThat(pay.size).isEqualTo(2)
+    }
+  }
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql"
@@ -246,6 +267,20 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getActivityById(id: Long) =
     get()
       .uri("/activities/$id")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Activity::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.createActivity(
+    activityCreateRequest: ActivityCreateRequest
+  ) =
+    post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

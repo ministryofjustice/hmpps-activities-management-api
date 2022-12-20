@@ -1,0 +1,20 @@
+{
+  "activityId": 17,
+  "prisonCode": "PVI",
+  "activityCategory": {
+    "activityCategoryId": 1,
+    "code": "EDU",
+    "description": "Education"
+  },
+  "activityTier": {
+    "activityTierId": 1,
+    "code": "Tier1",
+    "description": "Work, education and maintenance"
+  },
+  "attendanceRequired": false,
+  "summary": "IT level 1",
+  "description": "A basic IT course suitable for introduction to the subject",
+  "startDate": "2022-06-25",
+  "createdTime": "2022-06-26T14:38:00",
+  "createdBy": "activities-management-admin-1"
+}

@@ -1,0 +1,20 @@
+{
+  "attendanceRequired": false,
+  "eligibilityRuleIds": [1],
+  "pay": [
+    {
+      "incentiveLevel": "Basic",
+      "payBand": "A",
+      "rate": 0,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "incentiveLevel": "Standard",
+      "payBand": "B",
+      "rate": 160,
+      "pieceRate": -1,
+      "pieceRateItems": -3
+    }
+  ]
+}
