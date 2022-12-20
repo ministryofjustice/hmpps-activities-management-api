@@ -38,11 +38,11 @@ data class ActivityCreateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 
-  @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
+  @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val startDate: LocalDate? = null,
 
-  @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "21/12/2022")
+  @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 )

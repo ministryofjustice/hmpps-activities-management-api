@@ -107,7 +107,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
-  fun `createActivity - invalid, empty jason`() {
+  fun `createActivity - invalid, empty json`() {
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -141,6 +141,44 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-invalid-1.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("USER")
+
+    mockMvc.post("/activities") {
+      principal = mockPrincipal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        createActivityRequest
+      )
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Prison code must be supplied"))
+            value(containsString("Tier ID must be supplied"))
+            value(containsString("Activity description must be supplied"))
+            value(containsString("Category ID must be supplied"))
+            value(containsString("Activity summary must be supplied"))
+          }
+        }
+      }
+
+    verifyNoInteractions(activityService)
+  }
+
+  @Test
+  fun `createActivity - invalid, rate 0 or negative`() {
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-invalid-2.json"),
       object : TypeReference<ActivityCreateRequest>() {}
     )
 
