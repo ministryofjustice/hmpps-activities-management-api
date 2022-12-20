@@ -47,6 +47,7 @@ class ActivityTest {
       category = ActivityCategory(
         id = 1L,
         code = "category code",
+        name = "category name",
         description = "category description"
       )
     )
@@ -65,6 +66,7 @@ class ActivityTest {
         category = ActivityCategory(
           id = 1L,
           code = "category code",
+          name = "category name",
           description = "category description"
         )
       )

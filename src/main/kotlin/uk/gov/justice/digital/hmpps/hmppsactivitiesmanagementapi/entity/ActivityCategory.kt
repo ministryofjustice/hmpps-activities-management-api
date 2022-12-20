@@ -16,11 +16,14 @@ data class ActivityCategory(
 
   val code: String,
 
-  val description: String
+  val name: String,
+
+  val description: String?
 ) {
   fun toModel() = ModelActivityCategory(
     id = activityCategoryId!!,
     code = code,
+    name = name,
     description = description,
   )
 }

@@ -193,6 +193,7 @@ fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
     this.activityCategoryId!!,
     this.code,
+    this.name,
     this.description
   )
 

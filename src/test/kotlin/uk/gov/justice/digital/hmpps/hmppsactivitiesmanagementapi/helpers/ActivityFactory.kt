@@ -42,7 +42,7 @@ internal fun activityEntity(
   }
 
 internal fun activityCategory() =
-  ActivityCategory(activityCategoryId = 1, code = "category code", description = "category description")
+  ActivityCategory(activityCategoryId = 1, code = "category code", name = "category name", description = "category description")
 
 internal fun schedule() = activityEntity().schedules.first()
 

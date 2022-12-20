@@ -289,8 +289,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           description = "Beginner maths",
           category = ActivityCategory(
             id = 1L,
-            code = "EDU",
-            description = "Education"
+            code = "EDUCATION",
+            name = "Education",
+            description = "Such as classes in English, maths, construction and computer skills"
           )
         )
       )
