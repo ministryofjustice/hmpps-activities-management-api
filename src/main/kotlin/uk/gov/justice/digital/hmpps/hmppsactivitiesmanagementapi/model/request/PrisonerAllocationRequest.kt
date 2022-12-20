@@ -7,12 +7,12 @@ data class PrisonerAllocationRequest(
 
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   @field:NotBlank(message = "Prisoner number cannot be blank")
-  val prisonerNumber: String,
+  val prisonerNumber: String?,
 
   @Schema(
     description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner",
     example = "A"
   )
   @field:NotBlank(message = "Pay band cannot be blank")
-  val payBand: String
+  val payBand: String?
 )
