@@ -144,18 +144,26 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   }
 
   @Test
-  fun `400 response when allocate offender to a schedule missing mandatory fields`() {
-    val request = PrisonerAllocationRequest(
-      prisonerNumber = null,
-      payBand = "",
-    )
+  fun `400 response when allocate offender to a schedule request constraints are violated`() {
+    with(
+      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = null, payBand = ""))
+        .andExpect { status { isBadRequest() } }
+        .andReturn().response
+    ) {
 
-    val response = mockMvc.post(1, request)
-      .andExpect { status { isBadRequest() } }
-      .andReturn().response
+      assertThat(contentAsString).contains("Prisoner number must be supplied")
+      assertThat(contentAsString).contains("Pay band must be supplied")
+    }
 
-    assertThat(response.contentAsString).contains("Prisoner number cannot be blank")
-    assertThat(response.contentAsString).contains("Pay band cannot be blank")
+    with(
+      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBand = "TOOMANYCHARACTERS"))
+        .andExpect { status { isBadRequest() } }
+        .andReturn().response
+    ) {
+
+      assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
+      assertThat(contentAsString).contains("Pay band cannot be more than 10 characters")
+    }
 
     verify(activityScheduleService, never()).allocatePrisoner(any(), any())
   }
