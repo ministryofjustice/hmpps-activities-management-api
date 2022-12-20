@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import javax.validation.Valid
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 
@@ -35,6 +36,7 @@ data class ActivityCreateRequest(
   @Schema(description = "A list of eligibility rules ids which apply to this activity.", example = "[1, 2, 3]")
   val eligibilityRuleIds: List<Long> = emptyList(),
 
+  @field:Valid
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 

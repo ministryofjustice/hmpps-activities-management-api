@@ -200,11 +200,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
-            value(containsString("Prison code must be supplied"))
-            value(containsString("Tier ID must be supplied"))
-            value(containsString("Activity description must be supplied"))
-            value(containsString("Category ID must be supplied"))
-            value(containsString("Activity summary must be supplied"))
+            value(containsString("The piece rate must be a positive integer"))
+            value(containsString("The piece rate items must be a positive integer"))
+            value(containsString("The earning rate must be a positive integer"))
           }
         }
       }
