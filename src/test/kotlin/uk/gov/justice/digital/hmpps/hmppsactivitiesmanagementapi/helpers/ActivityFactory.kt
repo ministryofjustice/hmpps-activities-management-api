@@ -57,9 +57,9 @@ internal fun attendanceReasons() = mapOf(
   "REST" to AttendanceReason(8, "REST", "Rest day (no pay)"),
 )
 
-private fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
+internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
 
-private fun activityEligibilityRule(activity: Activity): ActivityEligibility {
+internal fun activityEligibilityRule(activity: Activity): ActivityEligibility {
   val eligibilityRule = EligibilityRule(eligibilityRuleId = 1, code = "code", "rule description")
 
   return ActivityEligibility(

@@ -96,8 +96,8 @@ class ActivityScheduleService(
       EntityNotFoundException("$scheduleId")
     }
 
-    val prisonerNumber = request.prisonerNumber.toPrisonerNumber()
-    val payBand = request.payBand.toPayBand()
+    val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
+    val payBand = request.payBand!!.toPayBand()
 
     prisonApiClient.getPrisonerDetails(prisonerNumber.toString(), false).block()
       .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
