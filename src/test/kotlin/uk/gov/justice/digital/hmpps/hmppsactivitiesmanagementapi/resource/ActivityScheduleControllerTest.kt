@@ -146,7 +146,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @Test
   fun `400 response when allocate offender to a schedule missing mandatory fields`() {
     val request = PrisonerAllocationRequest(
-      prisonerNumber = "",
+      prisonerNumber = null,
       payBand = "",
     )
 
