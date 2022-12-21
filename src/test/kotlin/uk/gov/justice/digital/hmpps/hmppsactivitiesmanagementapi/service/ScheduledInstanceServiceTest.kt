@@ -28,7 +28,7 @@ class ScheduledInstanceServiceTest {
     whenever(repository.findById(1)).thenReturn(Optional.empty())
     assertThatThrownBy { service.getActivityScheduleInstanceById(-1) }
       .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("ScheduledInstance -1 not found")
+      .hasMessage("Scheduled Instance -1 not found")
   }
 
   @Test
