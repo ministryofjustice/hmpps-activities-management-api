@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
@@ -42,7 +43,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(activity!!) {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
-      assertThat(tier.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
     }
@@ -54,6 +55,37 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(identifier).isEqualTo(1L)
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
       assertThat(description).isEqualTo("new activity with identifier 1 has been created in the activities management service")
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  fun `createActivity - failed duplicate prison code - summary`() {
+
+    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val error = webTestClient.post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().is4xxClientError
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(400)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Exception: Duplicate activity summary detected for this prison (PVI): 'Maths'")
+      assertThat(developerMessage).isEqualTo("Duplicate activity summary detected for this prison (PVI): 'Maths'")
+      assertThat(moreInfo).isNull()
     }
   }
 

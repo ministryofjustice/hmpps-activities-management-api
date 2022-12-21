@@ -53,7 +53,7 @@ fun transform(activity: EntityActivity) =
     id = activity.activityId!!,
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
-    tier = activity.activityTier.toModelActivityTier(),
+    tier = activity.activityTier?.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
     schedules = activity.schedules.toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
@@ -72,7 +72,7 @@ fun transform(activity: EntityActivity) =
 fun transform(
   activityCreateRequest: ActivityCreateRequest,
   activityCategory: EntityActivityCategory,
-  activityTier: EntityActivityTier,
+  activityTier: EntityActivityTier?,
   createdBy: String
 ) =
   EntityActivity(
@@ -82,7 +82,7 @@ fun transform(
     activityTier = activityTier,
     attendanceRequired = activityCreateRequest.attendanceRequired,
     summary = activityCreateRequest.summary!!,
-    description = activityCreateRequest.description!!,
+    description = activityCreateRequest.description,
     startDate = activityCreateRequest.startDate ?: LocalDate.now(),
     endDate = activityCreateRequest.endDate,
     riskLevel = activityCreateRequest.riskLevel,

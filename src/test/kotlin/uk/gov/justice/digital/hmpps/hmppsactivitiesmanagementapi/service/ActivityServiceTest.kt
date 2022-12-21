@@ -138,7 +138,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity category 1 not found")
+      .hasMessage("Activity tier 1 not found")
   }
 
   @Test
