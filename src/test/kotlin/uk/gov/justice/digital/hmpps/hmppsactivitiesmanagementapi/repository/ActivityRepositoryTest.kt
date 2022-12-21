@@ -31,6 +31,8 @@ class ActivityRepositoryTest(
       activityTier = tier,
       summary = "Maths",
       description = "Maths basic",
+      riskLevel = "HIGH",
+      incentiveLevel = "BAS",
       startDate = timestamp.toLocalDate(),
       createdTime = timestamp,
       createdBy = "me",
@@ -51,6 +53,8 @@ class ActivityRepositoryTest(
       assertThat(category).isEqualTo(category)
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
+      assertThat(riskLevel).isEqualTo("HIGH")
+      assertThat(incentiveLevel).isEqualTo("BAS")
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("me")

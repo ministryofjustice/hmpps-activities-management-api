@@ -63,6 +63,8 @@ fun transform(activity: EntityActivity) =
     description = activity.description,
     startDate = activity.startDate,
     endDate = activity.endDate,
+    riskLevel = activity.riskLevel,
+    incentiveLevel = activity.incentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )

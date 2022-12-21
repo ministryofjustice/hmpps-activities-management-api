@@ -61,6 +61,10 @@ data class Activity(
 
   var endDate: LocalDate? = null,
 
+  var riskLevel: String? = null,
+
+  var incentiveLevel: String? = null,
+
   val createdTime: LocalDateTime,
 
   val createdBy: String
@@ -87,7 +91,9 @@ data class Activity(
     attendanceRequired = attendanceRequired,
     summary = summary,
     description = description,
-    category = activityCategory.toModel()
+    category = activityCategory.toModel(),
+    riskLevel = riskLevel,
+    incentiveLevel = incentiveLevel,
   )
 
   override fun equals(other: Any?): Boolean {

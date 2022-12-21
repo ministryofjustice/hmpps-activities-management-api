@@ -68,6 +68,8 @@ class ActivityScheduleTest {
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
+        riskLevel = "HIGH",
+        incentiveLevel = "BAS",
         category = ModelActivityCategory(
           id = 1L,
           code = "category code",
@@ -101,6 +103,8 @@ class ActivityScheduleTest {
           prisonCode = "123",
           summary = "Maths",
           description = "Maths basic",
+          riskLevel = "HIGH",
+          incentiveLevel = "BAS",
           category = ModelActivityCategory(
             id = 1L,
             code = "category code",

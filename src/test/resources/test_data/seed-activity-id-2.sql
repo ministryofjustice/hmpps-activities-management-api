@@ -1,5 +1,5 @@
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, created_time, created_by)
-values (2, 'PVI', 2, 2, true, 'English', 'English Level 2', '2022-10-21', null, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, incentive_level, created_time, created_by)
+values (2, 'PVI', 2, 2, true, 'English', 'English Level 2', '2022-10-21', null, null, null, '2022-9-21 00:00:00', 'SEED USER');
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
 values (2, 2, 'Basic', 'A', 75, 0, 0);

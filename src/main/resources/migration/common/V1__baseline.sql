@@ -95,6 +95,8 @@ CREATE TABLE activity (
   description          varchar(300) NOT NULL,
   start_date           date         NOT NULL,
   end_date             date,
+  risk_level           varchar(10),
+  incentive_level      varchar(10),
   created_time         timestamp    NOT NULL,
   created_by           varchar(100) NOT NULL
 );

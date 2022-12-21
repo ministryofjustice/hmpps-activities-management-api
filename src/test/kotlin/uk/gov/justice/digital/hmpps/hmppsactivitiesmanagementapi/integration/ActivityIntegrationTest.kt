@@ -61,6 +61,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
+          riskLevel = "HIGH",
+          incentiveLevel = "BAS",
           category = ActivityCategory(
             id = 1L,
             code = "C1",
@@ -83,6 +85,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           attendanceRequired = true,
           summary = "Maths",
           description = "Maths Level 1",
+          riskLevel = "HIGH",
+          incentiveLevel = "BAS",
           category = ActivityCategory(
             id = 1L,
             code = "C1",

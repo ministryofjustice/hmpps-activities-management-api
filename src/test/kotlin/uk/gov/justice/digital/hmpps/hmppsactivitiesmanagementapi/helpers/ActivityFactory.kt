@@ -31,6 +31,8 @@ internal fun activityEntity(
     activityTier = tier,
     summary = "Maths",
     description = "Maths basic",
+    riskLevel = "HIGH",
+    incentiveLevel = "BAS",
     startDate = timestamp.toLocalDate(),
     createdTime = timestamp,
     createdBy = "test"
