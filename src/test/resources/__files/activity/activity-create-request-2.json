@@ -1,0 +1,22 @@
+{
+  "prisonCode": "PVI",
+  "attendanceRequired": false,
+  "summary": "Maths",
+  "categoryId": 1,
+  "pay": [
+    {
+      "incentiveLevel": "Basic",
+      "payBand": "A",
+      "rate": 125,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "incentiveLevel": "Standard",
+      "payBand": "B",
+      "rate": 160,
+      "pieceRate": 180,
+      "pieceRateItems": 15
+    }
+  ]
+}

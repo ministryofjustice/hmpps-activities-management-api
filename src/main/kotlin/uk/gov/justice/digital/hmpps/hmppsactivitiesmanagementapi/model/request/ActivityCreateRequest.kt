@@ -21,7 +21,6 @@ data class ActivityCreateRequest(
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
   val summary: String?,
 
-  @field:NotEmpty(message = "Activity description must be supplied")
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
   val description: String?,
 
@@ -29,7 +28,6 @@ data class ActivityCreateRequest(
   @Schema(description = "The category id for this activity, one of the high-level categories")
   val categoryId: Long?,
 
-  @field:NotNull(message = "Tier ID must be supplied")
   @Schema(description = "The tier id for this activity, as defined by the Future Prison Regime team", example = "1")
   val tierId: Long?,
 

@@ -19,7 +19,7 @@ data class ActivityLite(
   val summary: String,
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
-  val description: String,
+  val description: String?,
 
   @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,

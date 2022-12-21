@@ -22,13 +22,13 @@ data class Activity(
   val summary: String,
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
-  val description: String,
+  val description: String?,
 
   @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,
 
   @Schema(description = "The tier for this activity, as defined by the Future Prison Regime team", example = "Tier 1, Tier 2, Foundation")
-  val tier: ActivityTier,
+  val tier: ActivityTier?,
 
   @Schema(description = "A list of eligibility rules which apply to this activity. These can be positive (include) and negative (exclude)", example = "[FEMALE_ONLY,AGED_18-25]")
   val eligibilityRules: List<ActivityEligibility> = emptyList(),

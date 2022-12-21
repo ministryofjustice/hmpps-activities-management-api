@@ -125,8 +125,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
             value(containsString("Prison code must be supplied"))
-            value(containsString("Tier ID must be supplied"))
-            value(containsString("Activity description must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
           }
@@ -163,8 +161,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
             value(containsString("Prison code must be supplied"))
-            value(containsString("Tier ID must be supplied"))
-            value(containsString("Activity description must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
           }
