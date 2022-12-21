@@ -8,8 +8,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.LocalDate
-import javax.persistence.EntityNotFoundException
 
 @Service
 class CapacityService(
@@ -21,12 +21,8 @@ class CapacityService(
     prisonCode: String,
     categoryId: Long
   ): CapacityAndAllocated {
-    val activityCategory = activityCategoryRepository.findById(categoryId)
-      .orElseThrow { EntityNotFoundException("Activity category $categoryId not found") }
-
-    val activities =
-      activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, activityCategory)
-
+    val activityCategory = activityCategoryRepository.findOrThrowNotFound(categoryId)
+    val activities = activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, activityCategory)
     val capacity = activities.sumOf { a -> sumOfScheduleCapacities(a) }
     val allocated = activities.sumOf { a -> sumOfScheduleAllocations(a) }
 
@@ -36,9 +32,7 @@ class CapacityService(
   fun getActivityCapacityAndAllocated(
     activityId: Long
   ): CapacityAndAllocated {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-
+    val activity = activityRepository.findOrThrowNotFound(activityId)
     val capacity = sumOfScheduleCapacities(activity)
     val allocated = sumOfScheduleAllocations(activity)
 
@@ -48,9 +42,7 @@ class CapacityService(
   fun getActivityScheduleCapacityAndAllocated(
     scheduleId: Long
   ): CapacityAndAllocated {
-    val schedule = activityScheduleRepository.findById(scheduleId)
-      .orElseThrow { EntityNotFoundException("Schedule $scheduleId not found") }
-
+    val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     val capacity = schedule.capacity
     val allocated = schedule.getAllocationsForToday().size
 
