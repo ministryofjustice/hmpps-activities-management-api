@@ -79,6 +79,8 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         attendanceRequired = true,
         summary = "activity summary",
         description = "activity description",
+        riskLevel = "High",
+        minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
           code = "LEISURE_SOCIAL",

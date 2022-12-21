@@ -31,6 +31,8 @@ class ActivityRepositoryTest(
       activityTier = tier,
       summary = "Maths",
       description = "Maths basic",
+      riskLevel = "High",
+      minimumIncentiveLevel = "Basic",
       startDate = timestamp.toLocalDate(),
       createdTime = timestamp,
       createdBy = "me",
@@ -40,7 +42,7 @@ class ActivityRepositoryTest(
 
     val persisted = repository.save(activity)
     val activityPayRow = entityManager.persist(
-      ActivityPay(activity = activity, incentiveLevel = "BAS", payBand = "A", rate = 100, pieceRate = 10, pieceRateItems = 1)
+      ActivityPay(activity = activity, incentiveLevel = "Basic", payBand = "A", rate = 100, pieceRate = 10, pieceRateItems = 1)
     )
     persisted.activityPay = mutableListOf(activityPayRow)
 
@@ -51,13 +53,15 @@ class ActivityRepositoryTest(
       assertThat(category).isEqualTo(category)
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
+      assertThat(riskLevel).isEqualTo("High")
+      assertThat(minimumIncentiveLevel).isEqualTo("Basic")
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("me")
       assertThat(eligibilityRules).isEmpty()
       assertThat(waitingList).isEmpty()
       assertThat(schedules).isEmpty()
-      assertThat(activityPay[0].incentiveLevel).isEqualTo("BAS")
+      assertThat(activityPay[0].incentiveLevel).isEqualTo("Basic")
       assertThat(activityPay[0].payBand).isEqualTo("A")
       assertThat(activityPay[0].rate).isEqualTo(100)
       assertThat(endDate).isNull()

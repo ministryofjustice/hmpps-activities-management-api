@@ -287,6 +287,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           attendanceRequired = true,
           summary = "Maths",
           description = "Beginner maths",
+          riskLevel = "High",
+          minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
             code = "EDUCATION",

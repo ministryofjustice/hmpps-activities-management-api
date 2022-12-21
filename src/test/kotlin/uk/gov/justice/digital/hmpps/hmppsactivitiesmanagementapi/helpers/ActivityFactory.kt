@@ -31,6 +31,8 @@ internal fun activityEntity(
     activityTier = tier,
     summary = "Maths",
     description = "Maths basic",
+    riskLevel = "High",
+    minimumIncentiveLevel = "Basic",
     startDate = timestamp.toLocalDate(),
     createdTime = timestamp,
     createdBy = "test"
@@ -149,7 +151,7 @@ private fun activityPay(activity: Activity) =
   ActivityPay(
     activityPayId = 1,
     activity = activity,
-    incentiveLevel = "BAS",
+    incentiveLevel = "Basic",
     payBand = "A",
     rate = 30,
     pieceRate = 40,

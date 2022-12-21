@@ -6,7 +6,7 @@ import javax.validation.constraints.Positive
 @Schema(description = "Describes the pay rates and bands to be created for an activity")
 data class ActivityPayCreateRequest(
 
-  @Schema(description = "The incentive/earned privilege level (nullable)", example = "BAS")
+  @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
   val incentiveLevel: String? = null,
 
   @Schema(description = "The pay band (nullable)", example = "A")

@@ -63,6 +63,8 @@ fun transform(activity: EntityActivity) =
     description = activity.description,
     startDate = activity.startDate,
     endDate = activity.endDate,
+    riskLevel = activity.riskLevel,
+    minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
@@ -83,6 +85,8 @@ fun transform(
     description = activityCreateRequest.description!!,
     startDate = activityCreateRequest.startDate ?: LocalDate.now(),
     endDate = activityCreateRequest.endDate,
+    riskLevel = activityCreateRequest.riskLevel,
+    minimumIncentiveLevel = activityCreateRequest.minimumIncentiveLevel,
     createdTime = LocalDateTime.now(),
     createdBy = createdBy
   )
