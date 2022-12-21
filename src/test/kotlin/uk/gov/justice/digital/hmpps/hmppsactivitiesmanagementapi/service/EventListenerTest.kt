@@ -8,23 +8,23 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
-class MessageListenerTest {
+class EventListenerTest {
 
   private val objectMapper: ObjectMapper = ObjectMapper().registerKotlinModule().apply {
     this.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
 
-  private val inboundMessageService: InboundMessageService = mock()
+  private val inboundMessageService: InboundEventsService = mock()
 
-  private val messageListener = MessageListener(objectMapper, inboundMessageService)
+  private val eventListener = EventListener(objectMapper, inboundMessageService)
 
   @Test
-  fun `inbound event is passed onto the inbound message service`() {
-    messageListener.incoming("/messages/prisonerReleasedReasonTransferred.json".readResourceAsText())
+  fun `inbound event is passed onto the inbound service`() {
+    eventListener.incoming("/messages/prisonerReleasedReasonTransferred.json".readResourceAsText())
 
-    verify(inboundMessageService).handleEvent(any())
+    verify(inboundMessageService).receive(any())
   }
 
   private fun String.readResourceAsText() =
-    MessageListenerTest::class.java.getResource(this)?.readText() ?: throw AssertionError("cannot find file $this")
+    EventListenerTest::class.java.getResource(this)?.readText() ?: throw AssertionError("cannot find file $this")
 }

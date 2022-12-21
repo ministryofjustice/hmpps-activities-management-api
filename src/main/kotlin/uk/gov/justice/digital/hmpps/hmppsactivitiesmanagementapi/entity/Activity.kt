@@ -9,6 +9,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
+import javax.persistence.EntityListeners
 import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -20,6 +21,7 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "activity")
+@EntityListeners(ActivityEntityListener::class)
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

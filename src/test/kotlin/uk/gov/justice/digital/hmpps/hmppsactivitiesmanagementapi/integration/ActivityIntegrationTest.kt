@@ -3,6 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -14,14 +17,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityT
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class ActivityIntegrationTest : IntegrationTestBase() {
 
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
   @Test
-  fun `createActivity - success`() {
+  fun `createActivity - is successful and activitiy create event is published`() {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
@@ -36,6 +45,15 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(tier.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity.created")
+      assertThat(identifier).isEqualTo(1L)
+      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(description).isEqualTo("new activity with identifier 1 has been created in the activities management service")
     }
   }
 
