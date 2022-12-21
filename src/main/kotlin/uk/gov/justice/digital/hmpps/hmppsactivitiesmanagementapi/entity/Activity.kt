@@ -34,8 +34,8 @@ data class Activity(
   val activityCategory: ActivityCategory,
 
   @OneToOne
-  @JoinColumn(name = "activity_tier_id", nullable = false)
-  val activityTier: ActivityTier,
+  @JoinColumn(name = "activity_tier_id")
+  val activityTier: ActivityTier?,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -57,7 +57,7 @@ data class Activity(
 
   val summary: String,
 
-  val description: String,
+  val description: String?,
 
   val startDate: LocalDate,
 
