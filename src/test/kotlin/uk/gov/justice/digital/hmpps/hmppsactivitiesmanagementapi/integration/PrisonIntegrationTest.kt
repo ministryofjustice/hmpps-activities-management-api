@@ -29,8 +29,8 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         attendanceRequired = true,
         summary = "Maths",
         description = "Maths Level 1",
-        riskLevel = "HIGH",
-        incentiveLevel = "BAS",
+        riskLevel = "High",
+        minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
           code = "C1",

@@ -63,7 +63,7 @@ data class Activity(
 
   var riskLevel: String? = null,
 
-  var incentiveLevel: String? = null,
+  var minimumIncentiveLevel: String? = null,
 
   val createdTime: LocalDateTime,
 
@@ -93,7 +93,7 @@ data class Activity(
     description = description,
     category = activityCategory.toModel(),
     riskLevel = riskLevel,
-    incentiveLevel = incentiveLevel,
+    minimumIncentiveLevel = minimumIncentiveLevel,
   )
 
   override fun equals(other: Any?): Boolean {

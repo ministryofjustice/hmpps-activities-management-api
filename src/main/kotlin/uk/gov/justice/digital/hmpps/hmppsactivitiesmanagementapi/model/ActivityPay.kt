@@ -8,7 +8,7 @@ data class ActivityPay(
   @Schema(description = "The internally-generated ID for this activity pay", example = "123456")
   val id: Long,
 
-  @Schema(description = "The incentive/earned privilege level (nullable)", example = "BAS")
+  @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
   val incentiveLevel: String? = null,
 
   @Schema(description = "The pay band (nullable)", example = "A")

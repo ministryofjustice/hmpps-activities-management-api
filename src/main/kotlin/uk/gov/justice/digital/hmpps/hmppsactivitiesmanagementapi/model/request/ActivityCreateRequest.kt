@@ -40,6 +40,12 @@ data class ActivityCreateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 
+  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
+  val riskLevel: String?,
+
+  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
+  val minimumIncentiveLevel: String?,
+
   @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val startDate: LocalDate? = null,

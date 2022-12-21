@@ -1,4 +1,4 @@
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, incentive_level, created_time, created_by)
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
 values (5, 'PVI', 1, 1, false, 'Gym', 'Gym induction', current_date, null, null, null, current_timestamp, 'SEED USER');
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)

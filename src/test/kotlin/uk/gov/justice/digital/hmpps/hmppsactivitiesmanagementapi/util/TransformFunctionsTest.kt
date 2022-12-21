@@ -84,7 +84,7 @@ class TransformFunctionsTest {
         ModelActivityWaiting(id = 1, prisonerNumber = "A1234AA", priority = 1, createdTime = timestamp, createdBy = "test")
       )
       assertThat(pay).containsExactly(
-        ModelActivityPay(id = 1, incentiveLevel = "BAS", payBand = "A", rate = 30, pieceRate = 40, pieceRateItems = 50)
+        ModelActivityPay(id = 1, incentiveLevel = "Basic", payBand = "A", rate = 30, pieceRate = 40, pieceRateItems = 50)
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()
