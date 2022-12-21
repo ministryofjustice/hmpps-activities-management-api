@@ -11,15 +11,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
-import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 
@@ -74,28 +73,19 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> {
-    val today = LocalDate.now()
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true) =
+    LocalDate.now().let { today ->
+      repository.findOrThrowNotFound(scheduleId).allocations
+        .filter { !activeOnly || it.isActive(today) }
+        .toModelAllocations()
+    }
 
-    return repository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("$scheduleId")
-    }.allocations
-      .filter { !activeOnly || it.isActive(today) }
-      .toModelAllocations()
-  }
-
-  fun getScheduleById(scheduleId: Long) =
-    repository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("$scheduleId")
-    }.toModelSchedule()
+  fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
 
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
-    val schedule = repository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("$scheduleId")
-    }
-
+    val schedule = repository.findOrThrowNotFound(scheduleId)
     val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
     val payBand = request.payBand!!.toPayBand()
 

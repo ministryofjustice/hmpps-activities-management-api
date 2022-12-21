@@ -6,13 +6,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
-import javax.persistence.EntityNotFoundException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 
 @Service
 class ScheduledInstanceService(private val repository: ScheduledInstanceRepository) {
 
-  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance = repository.findById(id)
-    .orElseThrow { EntityNotFoundException("Activity scheduled instance $id not found") }.toModel()
+  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance = repository.findOrThrowNotFound(id).toModel()
 
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,

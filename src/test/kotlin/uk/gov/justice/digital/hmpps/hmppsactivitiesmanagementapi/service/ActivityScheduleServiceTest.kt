@@ -83,6 +83,6 @@ class ActivityScheduleServiceTest {
   @Test
   fun `throws entity not found exception for unknown activity schedule`() {
     assertThatThrownBy { service.getAllocationsBy(-99) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("-99")
+      .hasMessage("ActivitySchedule -99 not found")
   }
 }
