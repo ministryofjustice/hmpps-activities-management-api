@@ -77,7 +77,7 @@ class ActivityService(
     try {
       return transform(activityRepository.save(activityEntity))
     } catch (ex: DataIntegrityViolationException) {
-      throw throw IllegalArgumentException("Duplicate activity summary detected for this prison (${activityEntity.prisonCode}): '${activityEntity.summary}'")
+      throw throw IllegalArgumentException("Duplicate activity name detected for this prison (${activityEntity.prisonCode}): '${activityEntity.summary}'")
     }
   }
 }
