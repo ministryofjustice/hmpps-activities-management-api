@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.amazonaws.services.sns.model.MessageAttributeValue
-import com.amazonaws.services.sns.model.PublishRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -25,13 +23,15 @@ class EventsPublisher(
   }
 
   internal fun send(event: OutboundHMPPSDomainEvent) {
-    domainEventsTopic.snsClient.publish(
-      PublishRequest(domainEventsTopic.arn, mapper.writeValueAsString(event))
-        .withMessageAttributes(
-          mapOf(
-            "eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.eventType)
-          )
-        )
-    ).also { log.info("Published $event") }
+    // TODO commented out for now so as not to raise alerts, as nothing consume it.
+    log.info("Ignoring publishing event $event")
+//    domainEventsTopic.snsClient.publish(
+//      PublishRequest(domainEventsTopic.arn, mapper.writeValueAsString(event))
+//        .withMessageAttributes(
+//          mapOf(
+//            "eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.eventType)
+//          )
+//        )
+//    ).also { log.info("Published $event") }
   }
 }
