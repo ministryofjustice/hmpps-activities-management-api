@@ -16,6 +16,7 @@ Tools required:
 * Kotlin (Intellij)
 * docker
 * docker-compose
+* AWS cli
 
 ## Install gradle
 
@@ -48,10 +49,24 @@ Ports
 | activities-management-db  | 5432 |
 | hmpps-auth                | 8090 |
 | prison-api                | 8091 |
+| prison-api                | 8091 |
+| localstack                | 4566 |
 
 To create a Token (local):
 ```
 curl --location --request POST "http://localhost:8081/auth/oauth/token?grant_type=client_credentials" --header "Authorization: Basic $(echo -n {Client}:{ClientSecret} | base64)"
+```
+
+To list the localstack queue attributes:
+
+```
+$ aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --attribute-names All --queue-url http://localhost:4566/000000000000/domainevents-queue
+```
+
+To read a message off the queue (if there are any):
+
+```
+$ aws --endpoint-url=http://localhost:4566 sqs receive-message --queue-url http://localhost:4566/000000000000/domainevents-queue
 ```
 
 ## Swagger v3
