@@ -83,8 +83,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(error!!) {
       assertThat(status).isEqualTo(400)
       assertThat(errorCode).isNull()
-      assertThat(userMessage).isEqualTo("Exception: Duplicate activity summary detected for this prison (PVI): 'Maths'")
-      assertThat(developerMessage).isEqualTo("Duplicate activity summary detected for this prison (PVI): 'Maths'")
+      assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
+      assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(moreInfo).isNull()
     }
   }
