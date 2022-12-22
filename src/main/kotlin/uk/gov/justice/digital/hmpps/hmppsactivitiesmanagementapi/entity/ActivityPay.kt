@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.Hibernate
-import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -39,7 +38,7 @@ data class ActivityPay(
     return activityPayId != null && activityPayId == other.activityPayId
   }
 
-  override fun hashCode(): Int = id.hashCode()
+  override fun hashCode(): Int = activityPayId.hashCode()
 
   @Override
   override fun toString(): String {
