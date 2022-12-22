@@ -99,7 +99,7 @@ class ActivityScheduleService(
       payBand = payBand
     )
 
-    repository.save(schedule)
+    repository.saveAndFlush(schedule)
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
   }

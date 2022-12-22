@@ -75,7 +75,7 @@ class ActivityService(
     val activityPayList = transform(activityCreateRequest.pay, activityEntity)
     activityPayList.forEach { aee -> activityEntity.activityPay.add(aee) }
     try {
-      return transform(activityRepository.save(activityEntity))
+      return transform(activityRepository.saveAndFlush(activityEntity))
     } catch (ex: DataIntegrityViolationException) {
       throw IllegalArgumentException("Duplicate activity name detected for this prison (${activityEntity.prisonCode}): '${activityEntity.summary}'")
     }
