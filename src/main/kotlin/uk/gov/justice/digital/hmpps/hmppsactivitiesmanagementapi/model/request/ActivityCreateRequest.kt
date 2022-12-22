@@ -6,11 +6,13 @@ import java.time.LocalDate
 import javax.validation.Valid
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
+import javax.validation.constraints.Size
 
 @Schema(description = "Describes a top-level activity to be created")
 data class ActivityCreateRequest(
 
   @field:NotEmpty(message = "Prison code must be supplied")
+  @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
   @Schema(description = "The prison code where this activity takes place", example = "PVI")
   val prisonCode: String?,
 
@@ -18,9 +20,11 @@ data class ActivityCreateRequest(
   val attendanceRequired: Boolean,
 
   @field:NotEmpty(message = "Activity summary must be supplied")
+  @field:Size(max = 50, message = "Summary should not exceed {max} characters")
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
   val summary: String?,
 
+  @field:Size(max = 300, message = "Description should not exceed {max} characters")
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
   val description: String?,
 
@@ -38,9 +42,11 @@ data class ActivityCreateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 
+  @field:Size(max = 10, message = "Risk level should not exceed {max} characters")
   @Schema(description = "The most recent risk assessment level for this activity", example = "High")
   val riskLevel: String?,
 
+  @field:Size(max = 10, message = "Minimum incentive level should not exceed {max} characters")
   @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
   val minimumIncentiveLevel: String?,
 

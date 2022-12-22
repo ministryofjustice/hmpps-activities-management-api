@@ -207,6 +207,46 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
+  fun `createActivity - invalid, character lengths exceeded`() {
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-invalid-3.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("USER")
+
+    mockMvc.post("/activities") {
+      principal = mockPrincipal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        createActivityRequest
+      )
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Incentive level should not exceed 10 characters"))
+            value(containsString("Summary should not exceed 50 characters"))
+            value(containsString("Pay band should not exceed 10 characters"))
+            value(containsString("Prison code should not exceed 3 characters"))
+            value(containsString("Minimum incentive level should not exceed 10 characters"))
+            value(containsString("Risk level should not exceed 10 characters"))
+            value(containsString("Description should not exceed 300 characters"))
+          }
+        }
+      }
+
+    verifyNoInteractions(activityService)
+  }
+
+  @Test
   fun `200 response when get activity by ID found`() {
     val activity = activityModel(activityEntity())
 
