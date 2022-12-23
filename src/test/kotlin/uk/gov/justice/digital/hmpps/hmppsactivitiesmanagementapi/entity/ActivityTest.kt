@@ -41,6 +41,9 @@ class ActivityTest {
     val expectedModel = ActivityLite(
       id = 1,
       attendanceRequired = false,
+      inCell = false,
+      pieceWork = false,
+      outsideWork = false,
       prisonCode = "123",
       summary = "Maths",
       description = "Maths basic",
@@ -62,6 +65,9 @@ class ActivityTest {
       ActivityLite(
         id = 1,
         attendanceRequired = true,
+        inCell = false,
+        pieceWork = false,
+        outsideWork = false,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",

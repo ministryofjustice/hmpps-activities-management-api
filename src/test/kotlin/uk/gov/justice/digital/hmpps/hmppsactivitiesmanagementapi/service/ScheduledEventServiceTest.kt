@@ -142,7 +142,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = true
+        active = true,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 
@@ -206,7 +207,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = true
+        active = true,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 
@@ -272,7 +274,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = true
+        active = true,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 
@@ -337,7 +340,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = true
+        active = true,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 
@@ -403,7 +407,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = false
+        active = false,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 
@@ -463,7 +468,8 @@ class ScheduledEventServiceTest {
         rolloutPrisonId = 10,
         code = "MDI",
         description = "Moorland",
-        active = false
+        active = false,
+        rolloutDate = LocalDate.of(2022, 12, 22)
       )
     )
 

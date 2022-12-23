@@ -15,7 +15,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
   @Test
   fun `Schedule instances of activity sessions`() {
     jdbcTemplate.update(
-      "update activity_schedule set " +
+      "update activity_schedule_slot set " +
         "monday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY)}, " +
         "tuesday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY)}, " +
         "wednesday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY)}, " +
@@ -38,7 +38,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
   @Test
   fun `Does not schedule instances on a bank holiday`() {
     jdbcTemplate.update(
-      "update activity_schedule set " +
+      "update activity_schedule_slot set " +
         "monday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY)}, " +
         "tuesday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY)}, " +
         "wednesday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY)}, " +

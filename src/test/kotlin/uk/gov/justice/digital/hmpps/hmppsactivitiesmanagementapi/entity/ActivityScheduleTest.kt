@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -57,14 +58,14 @@ class ActivityScheduleTest {
     val expectedModel = ActivityScheduleLite(
       id = 1,
       description = "schedule description",
-      startTime = LocalTime.of(10, 20),
-      endTime = LocalTime.of(10, 20),
       internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-      daysOfWeek = listOf("Mon"),
       capacity = 1,
       activity = ActivityLite(
         id = 1L,
         attendanceRequired = true,
+        inCell = false,
+        pieceWork = false,
+        outsideWork = false,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
@@ -75,6 +76,14 @@ class ActivityScheduleTest {
           code = "category code",
           name = "category name",
           description = "category description"
+        )
+      ),
+      slots = listOf(
+        ActivityScheduleSlot(
+          id = 1L,
+          startTime = LocalTime.of(10, 20),
+          endTime = LocalTime.of(10, 20),
+          daysOfWeek = listOf("Mon"),
         )
       )
     )
@@ -92,14 +101,14 @@ class ActivityScheduleTest {
       ActivityScheduleLite(
         id = 1,
         description = "schedule description",
-        startTime = LocalTime.of(10, 20),
-        endTime = LocalTime.of(10, 20),
         internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-        daysOfWeek = listOf("Mon"),
         capacity = 1,
         activity = ActivityLite(
           id = 1L,
           attendanceRequired = true,
+          inCell = false,
+          pieceWork = false,
+          outsideWork = false,
           prisonCode = "123",
           summary = "Maths",
           description = "Maths basic",
@@ -110,6 +119,14 @@ class ActivityScheduleTest {
             code = "category code",
             name = "category name",
             description = "category description"
+          )
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            startTime = LocalTime.of(10, 20),
+            endTime = LocalTime.of(10, 20),
+            daysOfWeek = listOf("Mon"),
           )
         )
       )

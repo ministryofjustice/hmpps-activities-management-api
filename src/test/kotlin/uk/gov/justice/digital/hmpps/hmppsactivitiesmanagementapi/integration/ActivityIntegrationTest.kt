@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -31,7 +32,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
-  fun `createActivity - is successful and activitiy create event is published`() {
+  fun `createActivity - is successful and activity create event is published`() {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
@@ -100,14 +101,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ActivityScheduleLite(
         id = 1,
         description = "Maths AM",
-        startTime = LocalTime.of(10, 0),
-        endTime = LocalTime.of(11, 0),
         internalLocation = InternalLocation(1, "L1", "Location 1"),
-        daysOfWeek = listOf("Mon"),
         capacity = 10,
         activity = ActivityLite(
           id = 1L,
           attendanceRequired = true,
+          inCell = false,
+          pieceWork = false,
+          outsideWork = false,
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
@@ -118,21 +119,29 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             code = "C1",
             name = "Category 1",
             description = "Description of Category 1"
+          )
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Mon"),
           )
         )
       ),
       ActivityScheduleLite(
         id = 2,
         description = "Maths PM",
-        startTime = LocalTime.of(14, 0),
-        endTime = LocalTime.of(15, 0),
         internalLocation = InternalLocation(2, "L2", "Location 2"),
-        daysOfWeek = listOf("Mon"),
         capacity = 10,
         activity = ActivityLite(
           id = 1L,
           prisonCode = "PVI",
           attendanceRequired = true,
+          inCell = false,
+          pieceWork = false,
+          outsideWork = false,
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "High",
@@ -143,7 +152,64 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             name = "Category 1",
             description = "Description of Category 1"
           )
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 2L,
+            startTime = LocalTime.of(14, 0),
+            endTime = LocalTime.of(15, 0),
+            daysOfWeek = listOf("Mon"),
+          )
         )
+      ),
+    )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-8.sql"
+  )
+  @Test
+  fun `get schedules of an activity with multiple slots`() {
+    val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+    assertThat(schedules).containsExactly(
+      ActivityScheduleLite(
+        id = 1,
+        description = "Maths AM",
+        internalLocation = InternalLocation(1, "L1", "Location 1"),
+        capacity = 10,
+        activity = ActivityLite(
+          id = 1L,
+          attendanceRequired = true,
+          inCell = true,
+          pieceWork = true,
+          outsideWork = true,
+          prisonCode = "PVI",
+          summary = "Maths",
+          description = "Maths Level 1",
+          riskLevel = "High",
+          minimumIncentiveLevel = "Basic",
+          category = ActivityCategory(
+            id = 1L,
+            code = "C1",
+            name = "Category 1",
+            description = "Description of Category 1",
+          ),
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Mon", "Wed"),
+          ),
+          ActivityScheduleSlot(
+            id = 2L,
+            startTime = LocalTime.of(13, 0),
+            endTime = LocalTime.of(14, 0),
+            daysOfWeek = listOf("Mon", "Thu"),
+          ),
+        ),
       ),
     )
   }
@@ -178,7 +244,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val mathsMorning = with(mathsLevelOneActivity.schedule("Maths AM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(3)
       assertThat(internalLocation?.id).isEqualTo(1)
       assertThat(internalLocation?.code).isEqualTo("L1")
@@ -204,7 +270,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(2)
       assertThat(internalLocation?.code).isEqualTo("L2")
@@ -257,7 +323,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val englishMorning = with(englishLevelTwoActivity.schedule("English AM")) {
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(3)
       assertThat(internalLocation?.code).isEqualTo("L3")
@@ -284,7 +350,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val englishAfternoon = with(englishLevelTwoActivity.schedule("English PM")) {
       assertThat(description).isEqualTo("English PM")
       assertThat(capacity).isEqualTo(10)
-      assertThat(daysOfWeek).isEqualTo(listOf("Mon"))
+      assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
       assertThat(allocations).hasSize(2)
       assertThat(internalLocation?.id).isEqualTo(4)
       assertThat(internalLocation?.code).isEqualTo("L4")

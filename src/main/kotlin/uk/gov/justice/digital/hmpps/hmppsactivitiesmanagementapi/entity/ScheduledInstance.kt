@@ -46,13 +46,6 @@ data class ScheduledInstance(
 
   var cancelledBy: String? = null,
 ) {
-  constructor(activitySchedule: ActivitySchedule, sessionDate: LocalDate) : this(
-    activitySchedule = activitySchedule,
-    sessionDate = sessionDate,
-    startTime = activitySchedule.startTime,
-    endTime = activitySchedule.endTime,
-  )
-
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId!!,

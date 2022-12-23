@@ -22,8 +22,8 @@ insert into eligibility_rule (eligibility_rule_id, code, description) select 2, 
 --
 -- Rollout prisons
 --
-insert into rollout_prison (rollout_prison_id, code, description, active) select 1, 'PVI', 'HMP Pentonville', true where not exists (select 1 from rollout_prison where rollout_prison_id = 1);
-insert into rollout_prison (rollout_prison_id, code, description, active) select 2, 'MDI', 'HMP Moorland', false where not exists (select 1 from rollout_prison where rollout_prison_id = 2);
+insert into rollout_prison (rollout_prison_id, code, description, active, rollout_date) select 1, 'PVI', 'HMP Pentonville', true, '2022-12-22' where not exists (select 1 from rollout_prison where rollout_prison_id = 1);
+insert into rollout_prison (rollout_prison_id, code, description, active, rollout_date) select 2, 'MDI', 'HMP Moorland', false, '2022-12-22' where not exists (select 1 from rollout_prison where rollout_prison_id = 2);
 
 --
 -- Attendance reason codes
