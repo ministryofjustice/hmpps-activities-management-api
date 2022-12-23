@@ -33,8 +33,9 @@ generic-service:
     APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=$(APPINSIGHTS_INSTRUMENTATIONKEY)"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     DB_SSL_MODE: "verify-full"
-    JMS_LISTENER_MODE: "ON"
     CREATE_ACTIVITY_SESSIONS_DAYS_IN_ADVANCE: 60
+    JMS_LISTENER_MODE: "ON"
+    FEATURE_EVENTS_SNS_ENABLED: false
 
   # Pre-existing kubernetes secrets to load as environment variables in the deployment.
   # namespace_secrets:
