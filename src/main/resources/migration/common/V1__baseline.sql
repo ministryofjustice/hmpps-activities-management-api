@@ -89,14 +89,17 @@ CREATE TABLE activity (
   activity_id          bigserial    NOT NULL CONSTRAINT activity_pk PRIMARY KEY,
   prison_code          varchar(3)   NOT NULL,
   activity_category_id bigint       NOT NULL REFERENCES activity_category (activity_category_id),
-  activity_tier_id     bigint       NOT NULL REFERENCES activity_tier (activity_tier_id),
+  activity_tier_id     bigint       REFERENCES activity_tier (activity_tier_id),
   attendance_required  bool         NOT NULL,
   summary              varchar(50)  NOT NULL,
-  description          varchar(300) NOT NULL,
+  description          varchar(300),
   start_date           date         NOT NULL,
   end_date             date,
+  risk_level           varchar(10),
+  minimum_incentive_level      varchar(10),
   created_time         timestamp    NOT NULL,
-  created_by           varchar(100) NOT NULL
+  created_by           varchar(100) NOT NULL,
+  UNIQUE (prison_code, summary)
 );
 
 CREATE INDEX idx_activity_prison_code ON activity (prison_code);

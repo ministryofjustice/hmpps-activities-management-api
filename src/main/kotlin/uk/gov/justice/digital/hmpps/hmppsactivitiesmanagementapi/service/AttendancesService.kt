@@ -10,10 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
-import javax.persistence.EntityNotFoundException
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
 class AttendancesService(
@@ -26,12 +25,8 @@ class AttendancesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun findAttendancesByScheduledInstance(instanceId: Long): List<ModelAttendance> =
-    scheduledInstanceRepository.findById(instanceId).orElseThrow {
-      EntityNotFoundException(
-        "$instanceId"
-      )
-    }.attendances.map { transform(it) }
+  fun findAttendancesByScheduledInstance(instanceId: Long) =
+    scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it) }
 
   // TODO this is a very thin slice when updating.
   // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.

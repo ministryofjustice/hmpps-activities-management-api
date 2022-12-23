@@ -8,16 +8,16 @@ import org.springframework.stereotype.Service
 // TODO this is temporary measure whilst we are in Alpha phase to reduce amount of code needed to run locally e.g. localstack.
 @ConditionalOnProperty(name = ["JMS_LISTENER_MODE"], havingValue = "ON")
 @Service
-class MessageListener(
+class EventListener(
   private val mapper: ObjectMapper,
-  private val inboundMessageService: InboundMessageService
+  private val inboundEventsService: InboundEventsService
 ) {
 
   @JmsListener(destination = "activities", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun incoming(jsonMessage: String?) {
     val (message) = mapper.readValue(jsonMessage, HMPPSMessage::class.java)
 
-    inboundMessageService.handleEvent(mapper.readValue(message, HMPPSDomainEvent::class.java))
+    inboundEventsService.receive(mapper.readValue(message, InboundHMPPSDomainEvent::class.java))
   }
 }
 

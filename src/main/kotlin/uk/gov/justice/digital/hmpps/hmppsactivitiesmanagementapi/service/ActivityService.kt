@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -55,8 +57,10 @@ class ActivityService(
     val categoryEntity = activityCategoryRepository.findById(activityCreateRequest.categoryId!!)
       .orElseThrow { IllegalArgumentException("Activity category ${activityCreateRequest.categoryId} not found") }
 
-    val tierEntity = activityTierRepository.findById(activityCreateRequest.tierId!!)
-      .orElseThrow { IllegalArgumentException("Activity category ${activityCreateRequest.tierId} not found") }
+    val tierEntity: ActivityTier? = activityCreateRequest.tierId?.let {
+      activityTierRepository.findById(it)
+        .orElseThrow { IllegalArgumentException("Activity tier ${activityCreateRequest.tierId} not found") }
+    }
 
     val activityEntity = transform(activityCreateRequest, categoryEntity, tierEntity, createdBy)
     val activityEligibilityEntityList = activityCreateRequest.eligibilityRuleIds.map {
@@ -70,6 +74,10 @@ class ActivityService(
     activityEligibilityEntityList.forEach { aee -> activityEntity.eligibilityRules.add(aee) }
     val activityPayList = transform(activityCreateRequest.pay, activityEntity)
     activityPayList.forEach { aee -> activityEntity.activityPay.add(aee) }
-    return transform(activityRepository.save(activityEntity))
+    try {
+      return transform(activityRepository.saveAndFlush(activityEntity))
+    } catch (ex: DataIntegrityViolationException) {
+      throw IllegalArgumentException("Duplicate activity name detected for this prison (${activityEntity.prisonCode}): '${activityEntity.summary}'")
+    }
   }
 }

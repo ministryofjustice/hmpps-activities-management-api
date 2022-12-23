@@ -80,7 +80,7 @@ class ActivityServiceTest {
 
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
-    whenever(activityRepository.save(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
 
     service.createActivity(createActivityRequest, createdBy)
 
@@ -89,7 +89,7 @@ class ActivityServiceTest {
     verify(activityCategoryRepository).findById(1)
     verify(activityTierRepository).findById(1)
     verify(eligibilityRuleRepository).findById(any())
-    verify(activityRepository).save(activityArg)
+    verify(activityRepository).saveAndFlush(activityArg)
 
     with(activityArg) {
       assertThat(eligibilityRules.size).isEqualTo(1)
@@ -138,7 +138,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity category 1 not found")
+      .hasMessage("Activity tier 1 not found")
   }
 
   @Test

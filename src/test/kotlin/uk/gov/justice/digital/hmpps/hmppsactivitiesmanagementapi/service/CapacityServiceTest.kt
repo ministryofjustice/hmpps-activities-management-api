@@ -44,7 +44,7 @@ class CapacityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
     assertThatThrownBy { service.getActivityCategoryCapacityAndAllocated("unknown", 100) }
       .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Activity category 100 not found")
+      .hasMessage("Activity Category 100 not found")
   }
 
   @Test
@@ -83,6 +83,6 @@ class CapacityServiceTest {
     whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.empty())
     assertThatThrownBy { service.getActivityScheduleCapacityAndAllocated(100) }
       .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Schedule 100 not found")
+      .hasMessage("Activity Schedule 100 not found")
   }
 }

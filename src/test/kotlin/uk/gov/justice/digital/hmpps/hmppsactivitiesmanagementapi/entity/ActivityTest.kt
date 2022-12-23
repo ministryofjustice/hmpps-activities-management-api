@@ -44,6 +44,8 @@ class ActivityTest {
       prisonCode = "123",
       summary = "Maths",
       description = "Maths basic",
+      riskLevel = "High",
+      minimumIncentiveLevel = "Basic",
       category = ActivityCategory(
         id = 1L,
         code = "category code",
@@ -63,6 +65,8 @@ class ActivityTest {
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
+        riskLevel = "High",
+        minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
           code = "category code",

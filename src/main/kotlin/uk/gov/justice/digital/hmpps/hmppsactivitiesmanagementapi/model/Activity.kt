@@ -22,13 +22,13 @@ data class Activity(
   val summary: String,
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
-  val description: String,
+  val description: String?,
 
   @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,
 
   @Schema(description = "The tier for this activity, as defined by the Future Prison Regime team", example = "Tier 1, Tier 2, Foundation")
-  val tier: ActivityTier,
+  val tier: ActivityTier?,
 
   @Schema(description = "A list of eligibility rules which apply to this activity. These can be positive (include) and negative (exclude)", example = "[FEMALE_ONLY,AGED_18-25]")
   val eligibilityRules: List<ActivityEligibility> = emptyList(),
@@ -49,6 +49,12 @@ data class Activity(
   @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "21/12/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")
   val endDate: LocalDate? = null,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
+  val riskLevel: String?,
+
+  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
+  val minimumIncentiveLevel: String?,
 
   @Schema(description = "The date and time when this activity was created", example = "01/09/2022 9:00")
   @JsonFormat(pattern = "dd/MM/yyyy HH:mm")

@@ -3,9 +3,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
@@ -14,14 +18,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityT
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class ActivityIntegrationTest : IntegrationTestBase() {
 
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
   @Test
-  fun `createActivity - success`() {
+  fun `createActivity - is successful and activitiy create event is published`() {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
@@ -33,9 +43,49 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(activity!!) {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
-      assertThat(tier.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity.created")
+      assertThat(identifier).isEqualTo(1L)
+      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(description).isEqualTo("new activity with identifier 1 has been created in the activities management service")
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  fun `createActivity - failed duplicate prison code - summary`() {
+
+    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val error = webTestClient.post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().is4xxClientError
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(400)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
+      assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
+      assertThat(moreInfo).isNull()
     }
   }
 
@@ -61,6 +111,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
+          riskLevel = "High",
+          minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
             code = "C1",
@@ -83,6 +135,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           attendanceRequired = true,
           summary = "Maths",
           description = "Maths Level 1",
+          riskLevel = "High",
+          minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
             code = "C1",

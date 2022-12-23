@@ -9,6 +9,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
+import javax.persistence.EntityListeners
 import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -20,6 +21,7 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "activity")
+@EntityListeners(ActivityEntityListener::class)
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,8 +34,8 @@ data class Activity(
   val activityCategory: ActivityCategory,
 
   @OneToOne
-  @JoinColumn(name = "activity_tier_id", nullable = false)
-  val activityTier: ActivityTier,
+  @JoinColumn(name = "activity_tier_id")
+  val activityTier: ActivityTier?,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -55,11 +57,15 @@ data class Activity(
 
   val summary: String,
 
-  val description: String,
+  val description: String?,
 
   val startDate: LocalDate,
 
   var endDate: LocalDate? = null,
+
+  var riskLevel: String? = null,
+
+  var minimumIncentiveLevel: String? = null,
 
   val createdTime: LocalDateTime,
 
@@ -87,7 +93,9 @@ data class Activity(
     attendanceRequired = attendanceRequired,
     summary = summary,
     description = description,
-    category = activityCategory.toModel()
+    category = activityCategory.toModel(),
+    riskLevel = riskLevel,
+    minimumIncentiveLevel = minimumIncentiveLevel,
   )
 
   override fun equals(other: Any?): Boolean {

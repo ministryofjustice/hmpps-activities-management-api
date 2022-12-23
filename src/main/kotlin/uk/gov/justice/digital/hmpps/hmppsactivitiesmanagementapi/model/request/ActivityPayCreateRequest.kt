@@ -2,13 +2,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.constraints.Positive
+import javax.validation.constraints.Size
 
 @Schema(description = "Describes the pay rates and bands to be created for an activity")
 data class ActivityPayCreateRequest(
 
-  @Schema(description = "The incentive/earned privilege level (nullable)", example = "BAS")
+  @field:Size(max = 10, message = "Incentive level should not exceed {max} characters")
+  @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
   val incentiveLevel: String? = null,
 
+  @field:Size(max = 10, message = "Pay band should not exceed {max} characters")
   @Schema(description = "The pay band (nullable)", example = "A")
   val payBand: String? = null,
 

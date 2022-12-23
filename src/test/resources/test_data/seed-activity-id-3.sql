@@ -1,26 +1,26 @@
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, created_time, created_by)
-values (1, 'MDI', 2, 2, true, 'Geography', 'Geography Level 1', '2022-10-01', null, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
+values (1, 'MDI', 2, 2, true, 'Geography', 'Geography Level 1', '2022-10-01', null, null, null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, created_time, created_by)
-values (2, 'MDI', 2, 2, true, 'English', 'English Level 2', '2022-11-01', null, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
+values (2, 'MDI', 2, 2, true, 'English', 'English Level 2', '2022-11-01', null, null, null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, created_time, created_by)
-values (3, 'PVI', 1, 1, true, 'Maths', 'Maths Level 1', '2022-10-10', null, '2022-9-21 00:00:00', 'SEED USER');
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
+values (3, 'PVI', 1, 1, true, 'Maths', 'Maths Level 1', '2022-10-10', null, null, null, '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, created_time, created_by)
-values (4, 'PVI', 2, 2, true, 'English', 'English Level 2', '2022-10-21', null, '2022-9-21 00:00:00', 'SEED USER');
-
-insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
-values (1, 1, 'BAS', 'A', 101, 0, 0);
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
+values (4, 'PVI', 2, 2, true, 'English', 'English Level 2', '2022-10-21', null, null, null, '2022-9-21 00:00:00', 'SEED USER');
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
-values (2, 2, 'STD', 'B', 102, 0, 0);
+values (1, 1, 'Basic', 'A', 101, 0, 0);
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
-values (3, 3, 'ENH', 'C', 103, 0, 0);
+values (2, 2, 'Standard', 'B', 102, 0, 0);
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
-values (4, 4, 'GOLD', 'D', 104, 0, 0);
+values (3, 3, 'Enhanced', 'C', 103, 0, 0);
+
+insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
+values (4, 4, 'Gold', 'D', 104, 0, 0);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, start_time, end_time, internal_location_id, internal_location_code, internal_location_description, capacity, monday_flag)
 values (1, 1, 'Geography AM', '10:01:00', '11:00:00', 1, 'L1', 'Location MDI 1', 10, true);

@@ -19,8 +19,14 @@ data class ActivityLite(
   val summary: String,
 
   @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
-  val description: String,
+  val description: String?,
 
   @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,
+
+  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
+  val riskLevel: String?,
+
+  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
+  val minimumIncentiveLevel: String?,
 )
