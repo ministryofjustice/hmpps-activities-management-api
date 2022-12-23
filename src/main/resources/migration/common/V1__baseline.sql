@@ -2,7 +2,8 @@ CREATE TABLE rollout_prison (
   rollout_prison_id bigserial   NOT NULL CONSTRAINT rollout_prison_pk PRIMARY KEY,
   code              varchar(5)  NOT NULL UNIQUE,
   description       varchar(60) NOT NULL,
-  active            boolean     NOT NULL DEFAULT false
+  active            boolean     NOT NULL DEFAULT false,
+  rollout_date      date        NOT NULL
 );
 
 CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
@@ -90,7 +91,10 @@ CREATE TABLE activity (
   prison_code          varchar(3)   NOT NULL,
   activity_category_id bigint       NOT NULL REFERENCES activity_category (activity_category_id),
   activity_tier_id     bigint       REFERENCES activity_tier (activity_tier_id),
-  attendance_required  bool         NOT NULL,
+  attendance_required  bool         NOT NULL DEFAULT true,
+  in_cell              bool         NOT NULL DEFAULT false,
+  piece_work           bool         NOT NULL DEFAULT false,
+  outside_work         bool         NOT NULL DEFAULT false,
   summary              varchar(50)  NOT NULL,
   description          varchar(300),
   start_date           date         NOT NULL,
@@ -122,27 +126,34 @@ CREATE TABLE activity_schedule (
   activity_schedule_id          bigserial    NOT NULL CONSTRAINT activity_schedule_id PRIMARY KEY,
   activity_id                   bigint       NOT NULL REFERENCES activity (activity_id),
   description                   varchar(50)  NOT NULL,
-  start_time                    time         NOT NULL,
-  end_time                      time,
   internal_location_id          integer,
   internal_location_code        varchar(40),
   internal_location_description varchar(100),
-  capacity                      integer      NOT NULL,
-  monday_flag                   bool         NOT NULL DEFAULT false,
-  tuesday_flag                  bool         NOT NULL DEFAULT false,
-  wednesday_flag                bool         NOT NULL DEFAULT false,
-  thursday_flag                 bool         NOT NULL DEFAULT false,
-  friday_flag                   bool         NOT NULL DEFAULT false,
-  saturday_flag                 bool         NOT NULL DEFAULT false,
-  sunday_flag                   bool         NOT NULL DEFAULT false,
-  runs_on_bank_holiday          bool         NOT NULL DEFAULT false
+  capacity                      integer      NOT NULL
 );
 
 CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);
-CREATE INDEX idx_activity_schedule_start_time ON activity_schedule (start_time);
-CREATE INDEX idx_activity_schedule_end_time ON activity_schedule (end_time);
 CREATE INDEX idx_activity_schedule_internal_location_id ON activity_schedule (internal_location_id);
 CREATE INDEX idx_activity_schedule_internal_location_code ON activity_schedule (internal_location_code);
+
+CREATE TABLE activity_schedule_slot (
+                                   activity_schedule_slot_id     bigserial    NOT NULL CONSTRAINT activity_schedule_slot_id PRIMARY KEY,
+                                   activity_schedule_id          bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
+                                   start_time                    time         NOT NULL,
+                                   end_time                      time,
+                                   monday_flag                   bool         NOT NULL DEFAULT false,
+                                   tuesday_flag                  bool         NOT NULL DEFAULT false,
+                                   wednesday_flag                bool         NOT NULL DEFAULT false,
+                                   thursday_flag                 bool         NOT NULL DEFAULT false,
+                                   friday_flag                   bool         NOT NULL DEFAULT false,
+                                   saturday_flag                 bool         NOT NULL DEFAULT false,
+                                   sunday_flag                   bool         NOT NULL DEFAULT false,
+                                   runs_on_bank_holiday          bool         NOT NULL DEFAULT false
+);
+
+CREATE INDEX idx_act_sched_slot_activity_schedule_id ON activity_schedule_slot (activity_schedule_id);
+CREATE INDEX idx_act_sched_slot_start_time ON activity_schedule_slot (start_time);
+CREATE INDEX idx_act_sched_slot_end_time ON activity_schedule_slot (end_time);
 
 CREATE TABLE activity_schedule_suspension (
     activity_schedule_suspension_id bigserial NOT NULL CONSTRAINT activity_schedule_suspension_id PRIMARY KEY,

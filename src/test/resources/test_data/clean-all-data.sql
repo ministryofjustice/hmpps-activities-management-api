@@ -12,6 +12,7 @@ truncate table allocation restart identity;
 truncate table activity_pay restart identity;
 truncate table prisoner_waiting restart identity;
 truncate table activity_schedule restart identity;
+truncate table activity_schedule_slot restart identity;
 truncate table activity_eligibility restart identity;
 truncate table eligibility_rule restart identity;
 truncate table activity restart identity;

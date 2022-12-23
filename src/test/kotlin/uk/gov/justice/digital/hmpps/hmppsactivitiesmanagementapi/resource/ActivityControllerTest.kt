@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -312,15 +313,15 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       ActivityScheduleLite(
         id = 1,
         description = "schedule description",
-        startTime = LocalTime.of(10, 20),
-        endTime = LocalTime.of(10, 20),
         internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
-        daysOfWeek = listOf("Mon"),
         capacity = 20,
         activity = ActivityLite(
           id = 12L,
           prisonCode = "MDI",
           attendanceRequired = true,
+          inCell = false,
+          pieceWork = false,
+          outsideWork = false,
           summary = "Maths",
           description = "Beginner maths",
           riskLevel = "High",
@@ -330,6 +331,14 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             code = "EDUCATION",
             name = "Education",
             description = "Such as classes in English, maths, construction and computer skills"
+          )
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            startTime = LocalTime.of(10, 20),
+            endTime = LocalTime.of(10, 20),
+            daysOfWeek = listOf("Mon"),
           )
         )
       )

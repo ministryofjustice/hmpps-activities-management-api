@@ -1,11 +1,17 @@
 insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, summary, description, start_date, end_date, risk_level, minimum_incentive_level, created_time, created_by)
-values (5, 'PVI', 1, 1, false, false, false, false, 'Gym', 'Gym induction', current_date, null, null, null, current_timestamp, 'SEED USER');
+values (1, 'PVI', 1, 1, true, true, true, true, 'Maths', 'Maths Level 1', '2022-10-10', null, 'High', 'Basic', '2022-9-21 00:00:00', 'SEED USER');
+
+insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
+values (1, 1, 'Basic', 'A', 125, 150, 1);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (1, 5, 'Gym induction AM', 1, 'L1', 'Location 1', 10);
+values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10);
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:00:00', '11:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, wednesday_flag)
+values (1, 1, '10:00:00', '11:00:00', true, true);
+
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, thursday_flag)
+values (2, 1, '13:00:00', '14:00:00', true, true);
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
 values (1, 1, 'A11111A', 'A', '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null);
@@ -14,4 +20,7 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay
 values (2, 1, 'A22222A', 'B', '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (1, current_date, '10:00:00', '11:00:00', false, null, null);
+values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, posted, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (1, 1, 'A11111A', null, null, false, null, null, 'SCHEDULED', null, null, null);

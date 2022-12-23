@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -87,20 +88,10 @@ internal fun activitySchedule(
     activityScheduleId = 1,
     activity = activity,
     description = "schedule description",
-    startTime = timestamp.toLocalTime(),
-    endTime = timestamp.toLocalTime(),
     capacity = 1,
-    mondayFlag = monday,
-    tuesdayFlag = tuesday,
-    wednesdayFlag = wednesday,
-    thursdayFlag = thursday,
-    fridayFlag = friday,
-    saturdayFlag = saturday,
-    sundayFlag = sunday,
     internalLocationId = 1,
     internalLocationCode = "EDU-ROOM-1",
     internalLocationDescription = "Education - R1",
-    runsOnBankHoliday = runsOnBankHolidays
   ).apply {
     this.instances.add(
       ScheduledInstance(
@@ -132,6 +123,22 @@ internal fun activitySchedule(
         allocatedBy = "Mr Blogs",
       )
     )
+    this.slots.add(
+      ActivityScheduleSlot(
+        activityScheduleSlotId = 1,
+        activitySchedule = this,
+        startTime = timestamp.toLocalTime(),
+        endTime = timestamp.toLocalTime(),
+        mondayFlag = monday,
+        tuesdayFlag = tuesday,
+        wednesdayFlag = wednesday,
+        thursdayFlag = thursday,
+        fridayFlag = friday,
+        saturdayFlag = saturday,
+        sundayFlag = sunday,
+        runsOnBankHoliday = runsOnBankHolidays
+      )
+    )
   }
 
 private fun activityWaiting(
@@ -158,4 +165,4 @@ private fun activityPay(activity: Activity) =
     pieceRateItems = 50
   )
 
-fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true)
+fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))

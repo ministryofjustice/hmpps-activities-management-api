@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import java.time.LocalDate
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -17,5 +18,7 @@ data class RolloutPrison(
 
   val description: String,
 
-  var active: Boolean = false
+  var active: Boolean = false,
+
+  val rolloutDate: LocalDate,
 )
