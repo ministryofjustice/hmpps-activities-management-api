@@ -7,6 +7,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import javax.persistence.EntityNotFoundException
+import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityForPrisonerProjection
+
 
 @Service
 class ScheduledInstanceService(private val repository: ScheduledInstanceRepository) {
@@ -40,4 +43,14 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
       activities
     }
   }
+
+  fun getScheduledInstancesByPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    slot: TimeSlot?,
+  ): List<ActivityForPrisonerProjection> =
+    repository.getActivitiesForPrisonerList(prisonCode, prisonerNumbers, date).filter {
+      TimeSlot.slot(it.startTime) == slot
+    }
 }

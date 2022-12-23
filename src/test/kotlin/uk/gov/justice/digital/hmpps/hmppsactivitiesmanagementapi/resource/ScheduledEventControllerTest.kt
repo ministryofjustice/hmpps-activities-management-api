@@ -84,9 +84,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
   @Test
   fun `getScheduledEventsForOffenderList - 200 response when no date or timeslot`() {
-
     val prisonerNumbers = setOf("G4793VF")
     val result = PrisonerScheduledEventsFixture.instance()
+
     whenever(
       scheduledEventService.getScheduledEventsForOffenderList("MDI", prisonerNumbers, null, null)
     ).thenReturn(result)
@@ -94,11 +94,11 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     mockMvc.post("/prisons/MDI/scheduled-events") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        prisonerNumbers
-      )
+      content = mapper.writeValueAsBytes(prisonerNumbers)
     }
-      .andDo { print() }
+      .andDo {
+        print()
+      }
       .andExpect {
         status {
           isOk()

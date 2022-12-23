@@ -127,6 +127,25 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
+  fun getScheduledActivitiesForPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?
+  ): Mono<List<PrisonerSchedule>> {
+    return prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/activities")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+  }
+
   fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->

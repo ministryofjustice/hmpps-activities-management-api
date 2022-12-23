@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityForPrisonerProjection
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -40,6 +41,8 @@ class ScheduledEventServiceTest {
     val prisonerNumbers = setOf("G4793VF")
     val date = LocalDate.of(2022, 12, 14)
     val timeSlot = TimeSlot.AM
+    val emptyActivities: List<ActivityForPrisonerProjection> = listOf()
+
     val schedAppointmentsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance()))
     val schedVisitsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.visitInstance()))
     val courtEventsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.courtInstance()))
@@ -47,6 +50,8 @@ class ScheduledEventServiceTest {
     whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(schedAppointmentsMono)
     whenever(prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(schedVisitsMono)
     whenever(prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(courtEventsMono)
+    whenever(scheduledInstanceService.getScheduledInstancesByPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)).thenReturn(emptyActivities)
+    whenever(rolloutPrisonRepository.findByCode(prisonCode)).thenReturn(RolloutPrison(1L, prisonCode, "desc", true))
 
     val result = service.getScheduledEventsForOffenderList(prisonCode, prisonerNumbers, date, timeSlot)!!
 
@@ -76,7 +81,10 @@ class ScheduledEventServiceTest {
         assertThat(priority).isEqualTo(4)
       }
 
-      assertThat(activities).isNull()
+      // TODO: Fill out the mocked details
+      assertThat(activities).isNotNull
+      assertThat(activities).hasSize(0)
+
       assertThat(visits).isNotNull
       assertThat(visits).hasSize(1)
       with(visits!![0]) {
@@ -449,8 +457,7 @@ class ScheduledEventServiceTest {
   @Test
   fun `getScheduledEventsByDateRange (not rolled out) - success with category priority`() {
 
-    val schedAppointmentsMono =
-      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = "LACO")))
+    val schedAppointmentsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = "LACO")))
     val schedActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
     val schedVisitsMono = Mono.just(listOf(PrisonApiScheduledEventFixture.visitInstance()))
     val courtHearingsMono = Mono.just(PrisonApiCourtHearingsFixture.instance())

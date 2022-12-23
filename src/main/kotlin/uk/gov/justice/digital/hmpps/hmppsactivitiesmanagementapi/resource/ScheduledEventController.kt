@@ -84,8 +84,8 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
   @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled events for a prison, offender list",
-    description = "Returns zero or more scheduled events for a prison, offender list.",
+    summary = "Get a list of scheduled events for a prison and list of prisoner numbers in a date and time slot",
+    description = "Returns zero or more scheduled events for a prison and list of prisoner numbers in a date and time slot.",
   )
   @ApiResponses(
     value = [
@@ -122,11 +122,18 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
     ]
   )
   fun getScheduledEventsForOffenderList(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(value = "date", required = false) @Parameter(description = "Date of the events") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @PathVariable("prisonCode")
+    prisonCode: String,
+
+    @RequestParam(value = "date", required = false)
+    @Parameter(description = "Date of the events")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     date: LocalDate?,
-    @RequestParam(value = "timeSlot", required = false) @Parameter(description = "Time slot of the events")
+
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the events")
     timeSlot: TimeSlot?,
+
     @RequestBody(required = true) @Parameter(description = "Set of prisoner numbers, for example ['G11234YI', 'B52SYI']", required = true)
     prisonerNumbers: Set<String>
   ): PrisonerScheduledEvents? {

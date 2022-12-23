@@ -81,6 +81,41 @@ object ScheduledEventFixture {
     priority = priority,
   )
 
+  /*
+  fun activityProjectionInstance(
+    scheduledInstanceId: Int = 1,
+    sessionDate: LocalDate = LocalDate.of(2022, 12, 16),
+    startTime: LocalTime = LocalTime.of(13, 15, 0),
+    endTime: LocalTime = LocalTime.of(16, 15, 0),
+    prisonerNumber: String = "GF10001",
+    bookingId: Int = 1,
+    internalLocationId: Int = 102,
+    internalLocationCode: String = "ROOM1",
+    internalLocationDescription: String = "EDU ROOM 1",
+    scheduleDescription: String = "HB 1 Mon-Weds",
+    activityId: Int = 1,
+    activityCategory: String = "Education",
+    activitySummary: String = "Maths Level 1",
+    activityDescription: String = "A basic maths course",
+  ) = ActivityForPrisoner(
+    // TODO - make this a data class, instantiable
+     scheduledInstanceId = scheduledInstanceId,
+     sessionDate = sessionDate,
+     startTime = startTime,
+     endTime = endTime,
+     prisonerNumber = prisonerNumber,
+     bookingId = bookingId,
+     internalLocationId = internalLocationId,
+     internalLocationCode = internalLocationCode,
+     internalLocationDescription = internalLocationDescription,
+     scheduleDescription = scheduleDescription,
+     activityId = activityId,
+     activityCategory = activityCategory,
+     activitySummary = activitySummary,
+     activityDescription = activityDescription,
+  )
+   */
+
   fun visitInstance(
     prisonCode: String = "MDI",
     eventId: Long = 10002,
