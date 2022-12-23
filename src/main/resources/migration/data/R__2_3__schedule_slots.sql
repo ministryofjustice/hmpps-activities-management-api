@@ -12,6 +12,6 @@ values (1, 1, '10:00:00', '11:00:00', true, false, false, false, false, false, f
        (10, 10, '15:00:00', '17:00:00', false, false, false, false, false, true, false, false),
        (11, 11, '09:00:00', '11:00:00', false, false, false, false, false, false, true, false),
        (12, 12, '15:00:00', '17:00:00', false, true, false, true, false, false, true, false),
-       (13, 13, '19:00:00', '20:00:00', false, true, true, true, false, true, true, false);
+       (13, 12, '19:00:00', '20:00:00', false, true, true, true, false, true, true, false);
 
 alter sequence activity_schedule_slot_activity_schedule_slot_id_seq restart with 14;
