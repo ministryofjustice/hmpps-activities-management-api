@@ -257,7 +257,7 @@ CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON 
 
 -- View used to retrieve scheduled activities for a prisoner, or list of prisoners, between dates
 -- This filters out the cancelled & suspended sessions, and checks that the activities and allocations are
--- within their start and end dates. Dated/expired records are not be returned when using this view.
+-- within their start and end dates. Dated/expired records are not returned when using this view.
 -- The repository PrisonScheduledActivityRepository and entity PrisonerScheduledActivity sit over this view.
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities as
 SELECT si.scheduled_instance_id,

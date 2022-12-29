@@ -11,7 +11,7 @@ import java.time.LocalDate
  * This provides a convenient, single entity source for prisoner schedules (multiple joins)
  */
 
-interface PrisonerScheduledActivityRepository: JpaRepository<PrisonerScheduledActivity, UniquePropertyId> {
+interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledActivity, UniquePropertyId> {
 
   @Query(
     """
@@ -22,7 +22,8 @@ interface PrisonerScheduledActivityRepository: JpaRepository<PrisonerScheduledAc
     AND sa.prisonerNumber = :prisonerNumber
     AND sa.suspended = false
     AND sa.cancelled = false
-    """)
+    """
+  )
   fun getScheduledActivitiesForPrisonerAndDateRange(
     prisonCode: String,
     prisonerNumber: String,
@@ -38,7 +39,8 @@ interface PrisonerScheduledActivityRepository: JpaRepository<PrisonerScheduledAc
     AND sa.prisonerNumber in :prisonerNumbers
     AND sa.suspended = false
     AND sa.cancelled = false
-    """)
+    """
+  )
   fun getScheduledActivitiesForPrisonerListAndDate(
     prisonCode: String,
     prisonerNumbers: Set<String>,

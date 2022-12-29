@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import org.hibernate.annotations.Immutable
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
@@ -7,8 +8,6 @@ import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.IdClass
 import javax.persistence.Table
-import org.hibernate.annotations.Immutable
-import org.hibernate.annotations.Subselect
 
 /*
  * Read-only entity for the database view V_PRISONER_SCHEDULED_ACTIVITIES
@@ -18,15 +17,14 @@ import org.hibernate.annotations.Subselect
  * - allocations
  * - activity schedules
  * - activities
- * And an outer join with
+ * And a LEFT join with
  * - activity suspensions
  *
- * Where clauses are added in the repository methods to restrict the rows returned from the
- * view by prison, dates, prisoners, and slot times and to check that the allocation dates
- * are within the dates specified, if provided.
+ * Query clauses are added in the repository methods to restrict the rows returned from the
+ * view by prison, dates, prisoners, and slot times.
  */
 
-// Composite @Id - makes the rows have a unique identifier
+// Composite @Id
 class UniquePropertyId(
   val scheduledInstanceId: Long? = null,
   val allocationId: Long? = null,

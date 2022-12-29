@@ -57,14 +57,14 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     val timeSlot = "am"
 
     val scheduledInstances = webTestClient.get()
-        .uri("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$timeSlot")
-        .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
-        .exchange()
-        .expectStatus().isOk
-        .expectHeader().contentType(MediaType.APPLICATION_JSON)
-        .expectBodyList(ActivityScheduleInstance::class.java)
-        .returnResult().responseBody
+      .uri("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$timeSlot")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivityScheduleInstance::class.java)
+      .returnResult().responseBody
 
     assertThat(scheduledInstances).hasSize(10)
   }
