@@ -55,6 +55,12 @@ data class Activity(
 
   var attendanceRequired: Boolean = true,
 
+  var inCell: Boolean = false,
+
+  var pieceWork: Boolean = false,
+
+  var outsideWork: Boolean = false,
+
   val summary: String,
 
   val description: String?,
@@ -74,7 +80,9 @@ data class Activity(
   fun isActive(date: LocalDate) = date.between(startDate, endDate)
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
-    val byDayOfWeek = this.schedules.filter { day.dayOfWeek in it.getDaysOfWeek() }
+    val byDayOfWeek = this.schedules.filter { schedule ->
+      schedule.slots.any { day.dayOfWeek in it.getDaysOfWeek() }
+    }
     return if (includeSuspended) {
       byDayOfWeek
     } else {
@@ -91,6 +99,9 @@ data class Activity(
     id = activityId!!,
     prisonCode = prisonCode,
     attendanceRequired = attendanceRequired,
+    inCell = inCell,
+    pieceWork = pieceWork,
+    outsideWork = outsideWork,
     summary = summary,
     description = description,
     category = activityCategory.toModel(),

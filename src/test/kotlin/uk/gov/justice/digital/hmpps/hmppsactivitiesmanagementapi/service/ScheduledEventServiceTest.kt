@@ -48,9 +48,16 @@ class ScheduledEventServiceTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(prisonCode: String, active: Boolean) {
+  private fun setupRolledOutPrisonMock(prisonCode: String, active: Boolean, rolloutDate: LocalDate) {
     whenever(rolloutPrisonRepository.findByCode(prisonCode))
-      .thenReturn(RolloutPrison(rolloutPrisonId = 10, code = prisonCode, description = "Description", active = active))
+      .thenReturn(RolloutPrison(
+        rolloutPrisonId = 10,
+        code = prisonCode,
+        description = "Description",
+        active = active,
+        rolloutDate = rolloutDate,
+      )
+    )
   }
 
   private fun setupMultiplePrisonerApiMocks(
@@ -171,7 +178,7 @@ class ScheduledEventServiceTest {
 
     // Set up the Prison API mocks for multiple prisoners - each return Mono.just(List<PrisonerSchedule>)
     setupMultiplePrisonerApiMocks(prisonCode, prisonerNumbers, date, timeSlot)
-    setupRolledOutPrisonMock(prisonCode, active = true)
+    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22))
 
     // Returns List<PrisonerScheduledEvent> from the DB views
     whenever(prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(prisonCode, prisonerNumbers, date))
@@ -267,7 +274,7 @@ class ScheduledEventServiceTest {
     val timeSlot: TimeSlot = TimeSlot.AM
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = true)
+    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22))
 
     // Uses the default event priorities for all types of event
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
@@ -378,7 +385,7 @@ class ScheduledEventServiceTest {
     val timeSlot: TimeSlot = TimeSlot.AM
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = true)
+    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22))
 
     // Mocked activities from the database view
     whenever(prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate))
@@ -432,7 +439,7 @@ class ScheduledEventServiceTest {
     val timeSlot: TimeSlot = TimeSlot.AM
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = true)
+    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22))
 
     // Mocked activities from the database view
     whenever(prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate))
@@ -485,7 +492,7 @@ class ScheduledEventServiceTest {
     val timeSlot: TimeSlot = TimeSlot.AM
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = true)
+    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22))
 
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
       mapOf(
@@ -537,7 +544,7 @@ class ScheduledEventServiceTest {
     val timeSlot: TimeSlot = TimeSlot.AM
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     // Mock response for activities from Prison API for this prisoner
     val scheduledActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
@@ -594,7 +601,7 @@ class ScheduledEventServiceTest {
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, withAppointmentSubType = "LACO")
 
     // Set this prison to be NOT rolled out onto new activities
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     // Mock response for activities from Prison API for this prisoner
     val scheduledActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
@@ -644,7 +651,7 @@ class ScheduledEventServiceTest {
   }
 
   @Test
-  fun `get scheduled events - single prisoner - prisoner details error`() {
+  fun `get scheduled events - single prisoner - not rolled out - prisoner details error`() {
     val prisonCode = "MDI"
     val prisonerNumber = "A1111AA"
     val startDate = LocalDate.of(2022, 12, 14)
@@ -654,7 +661,7 @@ class ScheduledEventServiceTest {
     // Setup prison API mocks for court, appointments, visits - with an error on prisoner details
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, withPrisonerDetailsException = true)
 
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     assertThatThrownBy {
       service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -678,7 +685,7 @@ class ScheduledEventServiceTest {
     // Setup prison API mocks for court, appointments, visits - with the prisoner at a different prison
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, prisonOverride = "PVI")
 
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     assertThatThrownBy {
       service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -702,7 +709,7 @@ class ScheduledEventServiceTest {
     // Setup prison API mocks for court, appointments, visits - with and appointments error
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, appointmentsException = true)
 
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     assertThatThrownBy {
       service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -724,7 +731,7 @@ class ScheduledEventServiceTest {
     val dateRange = LocalDateRange(startDate, endDate)
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     // Simulate activities error from prison API
     whenever(prisonApiClient.getScheduledActivities(900001, dateRange))
@@ -750,7 +757,7 @@ class ScheduledEventServiceTest {
     val dateRange = LocalDateRange(startDate, endDate)
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, visitsException = true)
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     assertThatThrownBy {
       service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -772,7 +779,7 @@ class ScheduledEventServiceTest {
     val dateRange = LocalDateRange(startDate, endDate)
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, courtHearingsException = true)
-    setupRolledOutPrisonMock(prisonCode, active = false)
+    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22))
 
     assertThatThrownBy {
       service.getScheduledEventsByPrisonAndPrisonerAndDateRange(

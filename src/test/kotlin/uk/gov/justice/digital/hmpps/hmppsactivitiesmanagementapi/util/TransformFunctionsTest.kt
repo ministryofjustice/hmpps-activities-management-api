@@ -4,9 +4,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -73,11 +75,16 @@ class TransformFunctionsTest {
             )
           ),
           description = "schedule description",
-          startTime = timestamp.toLocalTime(),
-          endTime = timestamp.toLocalTime(),
           capacity = 1,
-          daysOfWeek = listOf("Mon"),
-          activity = activityEntity().toModelLite()
+          activity = activityEntity().toModelLite(),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 1L,
+              startTime = timestamp.toLocalTime(),
+              endTime = timestamp.toLocalTime(),
+              daysOfWeek = listOf("Mon"),
+            )
+          )
         )
       )
       assertThat(waitingList).containsExactly(
@@ -95,6 +102,6 @@ class TransformFunctionsTest {
 
   @Test
   fun `transformation of rollout prison entity to rollout prison model`() {
-    assertThat(transform(rolloutPrison())).isEqualTo(RolloutPrison(1, "PVI", "HMP Pentonville", true))
+    assertThat(transform(rolloutPrison())).isEqualTo(RolloutPrison(1, "PVI", "HMP Pentonville", true, rolloutDate = LocalDate.of(2022, 12, 22)))
   }
 }

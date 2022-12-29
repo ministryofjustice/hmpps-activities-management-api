@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot as ModelActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -60,6 +62,9 @@ fun transform(activity: EntityActivity) =
     waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay.toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
+    inCell = activity.inCell,
+    pieceWork = activity.pieceWork,
+    outsideWork = activity.outsideWork,
     summary = activity.summary,
     description = activity.description,
     startDate = activity.startDate,
@@ -82,6 +87,7 @@ fun transform(
     activityCategory = activityCategory,
     activityTier = activityTier,
     attendanceRequired = activityCreateRequest.attendanceRequired,
+
     summary = activityCreateRequest.summary!!,
     description = activityCreateRequest.description,
     startDate = activityCreateRequest.startDate ?: LocalDate.now(),
@@ -308,12 +314,10 @@ fun EntityActivitySchedule.toModelSchedule() =
     allocations = this.allocations.toModelAllocations(),
     description = this.description,
     suspensions = this.suspensions.toModelSuspensions(),
-    startTime = this.startTime,
-    endTime = this.endTime,
     internalLocation = this.toInternalLocation(),
     capacity = this.capacity,
-    daysOfWeek = this.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
-    activity = this.activity.toModelLite()
+    activity = this.activity.toModelLite(),
+    slots = this.slots.toModelActivityScheduleSlots()
   )
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
@@ -323,6 +327,15 @@ private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
     priority = it.priority,
     createdTime = it.createdTime,
     createdBy = it.createdBy,
+  )
+}
+
+private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map {
+  ModelActivityScheduleSlot(
+    id = it.activityScheduleSlotId!!,
+    startTime = it.startTime,
+    endTime = it.endTime,
+    daysOfWeek = it.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
   )
 }
 
@@ -518,7 +531,8 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   id = prison.rolloutPrisonId!!,
   code = prison.code,
   description = prison.description,
-  active = prison.active
+  active = prison.active,
+  rolloutDate = prison.rolloutDate
 )
 
 fun transform(attendance: EntityAttendance): ModelAttendance =

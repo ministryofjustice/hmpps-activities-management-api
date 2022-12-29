@@ -15,6 +15,15 @@ data class ActivityLite(
   @Schema(description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance", example = "false")
   val attendanceRequired: Boolean,
 
+  @Schema(description = "Flag to indicate if the location of the activity is in cell", example = "false")
+  var inCell: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is piece work", example = "false")
+  var pieceWork: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
+  var outsideWork: Boolean,
+
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
   val summary: String,
 

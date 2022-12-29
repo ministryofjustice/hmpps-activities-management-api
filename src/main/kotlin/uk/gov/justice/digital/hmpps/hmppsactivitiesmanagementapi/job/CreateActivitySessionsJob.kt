@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
@@ -30,22 +31,27 @@ class CreateActivitySessionsJob(
     activityRepository.getAllForDate(day).parallelStream().forEach { activity ->
       activity
         .getSchedulesOnDay(day, includeSuspended = false)
-        .filterActivitySchedulesForBankHoliday(day)
         .filterActivitySchedulesWithNoPreExistingInstance(day)
         .forEach { schedule ->
-          log.info("Scheduling instance of ${activity.summary} at ${activity.prisonCode} on $day")
-          schedule.instances.add(
-            ScheduledInstance(
-              activitySchedule = schedule,
-              sessionDate = day,
-            )
-          )
+          schedule.slots.filter { day.dayOfWeek in it.getDaysOfWeek() }
+            .filterActivityScheduleSlotsForBankHoliday(day)
+            .forEach { slot ->
+              log.info("Scheduling instance of ${activity.summary} at ${activity.prisonCode} on $day at ${slot.startTime}")
+              schedule.instances.add(
+                ScheduledInstance(
+                  activitySchedule = schedule,
+                  sessionDate = day,
+                  startTime = slot.startTime,
+                  endTime = slot.endTime,
+                )
+              )
+            }
         }
       activityRepository.save(activity)
     }
   }
 
-  private fun List<ActivitySchedule>.filterActivitySchedulesForBankHoliday(day: LocalDate) =
+  private fun List<ActivityScheduleSlot>.filterActivityScheduleSlotsForBankHoliday(day: LocalDate) =
     this.filter { it.runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day) }
 
   private fun List<ActivitySchedule>.filterActivitySchedulesWithNoPreExistingInstance(day: LocalDate) =
