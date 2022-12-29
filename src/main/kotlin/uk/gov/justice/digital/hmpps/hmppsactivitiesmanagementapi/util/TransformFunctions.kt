@@ -3,11 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityForPrisonerProjection
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.TextStyle
@@ -115,15 +115,15 @@ fun transformActivityScheduledInstancesToScheduledEvents(
 ): List<ModelScheduledEvent> =
   activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber, defaultPriority, priorities)
 
-fun transformActivityForPrisonerProjectionToScheduledEvents(
+fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
   defaultPriority: Int?,
   priorities: List<Priority>?,
-  activitiesForPrisoners: List<ActivityForPrisonerProjection>,
+  activitiesForPrisoners: List<PrisonerScheduledActivity>,
 ): List<ModelScheduledEvent> =
   activitiesForPrisoners.toModelScheduledEvents(prisonCode, defaultPriority, priorities)
 
-fun List<ActivityForPrisonerProjection>.toModelScheduledEvents(
+fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
   prisonCode: String,
   defaultPriority: Int?,
   priorities: List<Priority>?,
@@ -132,11 +132,11 @@ fun List<ActivityForPrisonerProjection>.toModelScheduledEvents(
     ModelScheduledEvent(
       prisonCode = prisonCode,
       eventId = it.scheduledInstanceId,
-      bookingId = it.bookingId?.toLong() ?: 0L,
+      bookingId = it.bookingId?.toLong() ?: 0L, // Change allocation to include bookingId
       locationId = it.internalLocationId?.toLong(),
       location = it.internalLocationDescription,
       eventClass = "INT_MOV",
-      eventStatus = null,   // Can determine from attendance later
+      eventStatus = null,  // Can determine from attendance later
       eventType = "PRISON_ACT",
       eventTypeDesc = it.activityCategory,
       event = it.activitySummary,
@@ -144,7 +144,7 @@ fun List<ActivityForPrisonerProjection>.toModelScheduledEvents(
       details = it.activitySummary + ": " + it.scheduleDescription,
       prisonerNumber = it.prisonerNumber,
       date = it.sessionDate,
-      startTime = it.startTime,
+      startTime = it.startTime!!,
       endTime = it.endTime,
       priority = priorities?.let { pList -> getPriority(it.activityCategory, pList) } ?: defaultPriority
     )
@@ -233,6 +233,46 @@ fun transformToPrisonerScheduledEvents(
       EventType.ACTIVITY.defaultPriority,
       eventPriorities[EventType.ACTIVITY],
     )
+  )
+
+fun transformToPrisonerScheduledEvents(
+  prisonCode: String,
+  dateRange: LocalDateRange,
+  eventPriorities: Map<EventType, List<Priority>>,
+  appointments: List<PrisonApiPrisonerSchedule>?,
+  courtEvents: List<PrisonApiPrisonerSchedule>?,
+  visits: List<PrisonApiPrisonerSchedule>?,
+  activities: List<PrisonApiPrisonerSchedule>?,
+): ModelPrisonerScheduledEvents =
+  ModelPrisonerScheduledEvents(
+    prisonCode,
+    emptySet(),
+    dateRange.start,
+    dateRange.endInclusive,
+    appointments?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.APPOINTMENT.name,
+      EventType.APPOINTMENT.defaultPriority,
+      eventPriorities[EventType.APPOINTMENT],
+    ),
+    courtEvents?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.COURT_HEARING.name,
+      EventType.COURT_HEARING.defaultPriority,
+      eventPriorities[EventType.COURT_HEARING],
+    ),
+    visits?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.VISIT.name,
+      EventType.VISIT.defaultPriority,
+      eventPriorities[EventType.VISIT],
+    ),
+    activities?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.ACTIVITY.name,
+      EventType.ACTIVITY.defaultPriority,
+      eventPriorities[EventType.ACTIVITY]
+    ),
   )
 
 fun EntityActivityCategory.toModelActivityCategory() =

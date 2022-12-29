@@ -5,8 +5,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 
 object PrisonApiCourtHearingFixture {
   fun instance(
-    id: Long = 1001010,
-    dateTime: String = "2022-11-10T19:00",
+    id: Long = 1,
+    dateTime: String = "2022-12-14T10:00",
     location: Agency = Agency(
       agencyId = "ABDSUM",
       description = "Aberdeen Sheriff's Court (abdshf)",

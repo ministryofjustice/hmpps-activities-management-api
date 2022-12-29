@@ -30,8 +30,8 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
   @GetMapping
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled instances for a prison, prisoner (optional), date range (max 3 months) and time slot (AM, PM or ED - optional)",
-    description = "Returns zero or more scheduled instances for a prison, prisoner (optional) and date range (max 3 months).",
+    summary = "Get a list of scheduled instances for a prison, date range (max 3 months) and time slot (AM, PM or ED - optional)",
+    description = "Returns zero or more scheduled instances for a prison and date range (max 3 months).",
   )
   @ApiResponses(
     value = [
@@ -58,16 +58,28 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
     ]
   )
   fun getActivityScheduleInstancesByDateRange(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(value = "prisonerNumber") @Parameter(description = "Prisoner number (optional)") prisonerNumber: String?,
-    @RequestParam(value = "startDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Start date of query") startDate: LocalDate,
-    @RequestParam(value = "endDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "End date of query (max 3 months from start date)") endDate: LocalDate,
-    @RequestParam(value = "slot") @Parameter(description = "The time slot - AM, PM or ED (optional)") slot: TimeSlot?,
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+
+    @RequestParam(value = "startDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
+    startDate: LocalDate,
+
+    @RequestParam(value = "endDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "End date of query (reuired). The end date must be within 3 months of the start date.")
+    endDate: LocalDate,
+
+    @RequestParam(value = "slot")
+    @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
+    slot: TimeSlot?,
   ): List<ActivityScheduleInstance> {
     val dateRange = LocalDateRange(startDate, endDate)
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
-    return scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, prisonerNumber, dateRange, slot)
+    return scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, slot)
   }
 }

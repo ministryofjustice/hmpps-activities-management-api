@@ -243,3 +243,36 @@ CREATE TABLE event_priority (
 
 CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
 CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON event_priority (prison_code, event_type, event_category);
+
+CREATE OR REPLACE VIEW v_prisoner_scheduled_activities as
+SELECT si.scheduled_instance_id,
+       alloc.allocation_id,
+       act.prison_code,
+       si.session_date,
+       si.start_time,
+       si.end_time,
+       alloc.prisoner_number,
+       0 as booking_id,
+       schedule.internal_location_id,
+       schedule.internal_location_code,
+       schedule.internal_location_description,
+       schedule.description as schedule_description,
+       act.activity_id,
+       category.code as activity_category,
+       act.summary as activity_summary,
+       si.cancelled,
+       CASE suspensions.activity_schedule_suspension_id
+         WHEN null THEN false ELSE true
+       END suspended
+FROM scheduled_instance si
+   JOIN activity_schedule schedule ON schedule.activity_schedule_id = si.activity_schedule_id
+   JOIN allocation alloc
+       ON alloc.activity_schedule_id = si.activity_schedule_id
+          AND si.session_date BETWEEN alloc.start_date AND alloc.end_date
+   JOIN activity act
+       ON act.activity_id = schedule.activity_id
+           AND si.session_date BETWEEN act.start_date AND act.end_date
+   JOIN activity_category category on category.activity_category_id = act.activity_category_id
+   LEFT JOIN activity_schedule_suspension suspensions
+       ON suspensions.activity_schedule_id = schedule.activity_schedule_id
+           AND si.session_date BETWEEN suspensions.suspended_from AND suspensions.suspended_until;

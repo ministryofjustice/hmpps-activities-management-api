@@ -25,14 +25,23 @@ import java.time.LocalDate
 import javax.validation.ValidationException
 
 @RestController
-@RequestMapping("/prisons/{prisonCode}/scheduled-events", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/scheduled-events")
 class ScheduledEventController(private val scheduledEventService: ScheduledEventService) {
 
-  @GetMapping
+  @GetMapping(
+    value = ["/prison/{prisonCode}"],
+    produces = [MediaType.APPLICATION_JSON_VALUE]
+  )
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled events for a prison, prisoner and date range (max 3 months)",
-    description = "Returns zero or more scheduled events for a prison, prisoner and date range (max 3 months).",
+    summary = "Get a list of scheduled events for a prison, prisoner, date range (max 3 months) and optional time slot.",
+    description = """
+      Returns scheduled events for the prison, prisoner, date range (max 3 months) and optional time slot.
+      Court hearings, appointments and visits always come from NOMIS (via prison API).
+      Activities come from either NOMIS or the new Activities database, depending on whether the prison is
+      marked as rolled-out in the activities database.
+      (Intended usage: Prisoner calendar)
+    """,
   )
   @ApiResponses(
     value = [
@@ -68,24 +77,51 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       )
     ]
   )
-  fun getScheduledEventsByDateRange(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(value = "prisonerNumber", required = true) @Parameter(description = "Prisoner number") prisonerNumber: String,
-    @RequestParam(value = "startDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Start date of query") startDate: LocalDate,
-    @RequestParam(value = "endDate", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "End date of query (max 3 months from start date)") endDate: LocalDate,
+  fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-digit prison code.")
+    prisonCode: String,
+
+    @RequestParam(value = "prisonerNumber", required = true)
+    @Parameter(description = "Prisoner number (required). Format A9999AA.")
+    prisonerNumber: String,
+
+    @RequestParam(value = "startDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
+    startDate: LocalDate,
+
+    @RequestParam(value = "endDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "End date of query (required). Format YYYY-MM-DD. The end date must be withing 3 months of the start date)")
+    endDate: LocalDate,
+
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot for the events (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
   ): PrisonerScheduledEvents? {
     val dateRange = LocalDateRange(startDate, endDate)
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
-    return scheduledEventService.getScheduledEventsByDateRange(prisonCode, prisonerNumber, dateRange)
+    return scheduledEventService.getScheduledEventsByPrisonAndPrisonerAndDateRange(prisonCode, prisonerNumber, dateRange, timeSlot)
   }
 
-  @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+  @PostMapping(
+    value = ["/prison/{prisonCode}"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE]
+  )
   @ResponseBody
   @Operation(
-    summary = "Get a list of scheduled events for a prison and list of prisoner numbers in a date and time slot",
-    description = "Returns zero or more scheduled events for a prison and list of prisoner numbers in a date and time slot.",
+    summary = "Get a list of scheduled events for a prison and list of prisoner numbers for a date and time slot",
+    description = """
+      Returns scheduled events for the prison, prisoner numbers, single date and an optional time slot.
+      Court hearings, appointments and visits always come from NOMIS (via prison API).
+      Activities come from either NOMIS or the new activities database, depending on whether the prison is
+      marked as rolled-out in the activities database.
+      (Intended usage: Unlock list)
+    """,
   )
   @ApiResponses(
     value = [
@@ -121,22 +157,24 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       )
     ]
   )
-  fun getScheduledEventsForOffenderList(
+  fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
     @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
 
-    @RequestParam(value = "date", required = false)
-    @Parameter(description = "Date of the events")
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    date: LocalDate?,
+    date: LocalDate,
 
     @RequestParam(value = "timeSlot", required = false)
-    @Parameter(description = "Time slot of the events")
+    @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
 
-    @RequestBody(required = true) @Parameter(description = "Set of prisoner numbers, for example ['G11234YI', 'B52SYI']", required = true)
+    @RequestBody(required = true)
+    @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>
   ): PrisonerScheduledEvents? {
-    return scheduledEventService.getScheduledEventsForOffenderList(prisonCode, prisonerNumbers, date, timeSlot)
+    return scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, date, timeSlot)
   }
 }

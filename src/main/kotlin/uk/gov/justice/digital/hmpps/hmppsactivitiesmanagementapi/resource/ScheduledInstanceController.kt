@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 
 // TODO add pre-auth annotations to enforce roles when we have them
+// TODO - Combine this with ActivityScheduleInstanceController - all /scheduled-instances endpoints.
 
 @RestController
 @RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
