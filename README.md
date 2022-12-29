@@ -57,6 +57,14 @@ To create a Token (local):
 curl --location --request POST "http://localhost:8081/auth/oauth/token?grant_type=client_credentials" --header "Authorization: Basic $(echo -n {Client}:{ClientSecret} | base64)"
 ```
 
+To simulate AWS SQS/SNS mode you need to have the localstack container running:
+
+```
+$ docker-compose -f docker-compose.yml -f  docker-compose-localstack.yml up
+
+$ ./run-localstack.sh
+```
+
 To list the localstack queue attributes:
 
 ```

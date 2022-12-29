@@ -42,7 +42,8 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
-  testImplementation("org.mockito:mockito-inline:4.9.0")
+  testImplementation("org.mockito:mockito-inline:4.10.0")
+  testImplementation("org.testcontainers:localstack:1.17.6")
 }
 
 java {

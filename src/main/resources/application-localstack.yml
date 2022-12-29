@@ -1,0 +1,15 @@
+#
+# The "-localstack" profile is for running the API service locally against pre-existing
+# docker containers that are listening on a known port numbers for a localstack container (4566).
+#
+
+# Most values are inherited from - application.yml - except the following:
+hmpps.sqs:
+  provider: localstack
+  queues:
+    domaineventsqueue:
+      queueName: domainevents-queue
+      subscribeTopicId: domainevents
+  topics:
+    domainevents:
+      arn: arn:aws:sns:eu-west-2:000000000000:domainevents-topic
