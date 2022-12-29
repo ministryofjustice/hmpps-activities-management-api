@@ -137,18 +137,18 @@ CREATE INDEX idx_activity_schedule_internal_location_id ON activity_schedule (in
 CREATE INDEX idx_activity_schedule_internal_location_code ON activity_schedule (internal_location_code);
 
 CREATE TABLE activity_schedule_slot (
-                                   activity_schedule_slot_id     bigserial    NOT NULL CONSTRAINT activity_schedule_slot_id PRIMARY KEY,
-                                   activity_schedule_id          bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
-                                   start_time                    time         NOT NULL,
-                                   end_time                      time,
-                                   monday_flag                   bool         NOT NULL DEFAULT false,
-                                   tuesday_flag                  bool         NOT NULL DEFAULT false,
-                                   wednesday_flag                bool         NOT NULL DEFAULT false,
-                                   thursday_flag                 bool         NOT NULL DEFAULT false,
-                                   friday_flag                   bool         NOT NULL DEFAULT false,
-                                   saturday_flag                 bool         NOT NULL DEFAULT false,
-                                   sunday_flag                   bool         NOT NULL DEFAULT false,
-                                   runs_on_bank_holiday          bool         NOT NULL DEFAULT false
+  activity_schedule_slot_id     bigserial    NOT NULL CONSTRAINT activity_schedule_slot_id PRIMARY KEY,
+  activity_schedule_id          bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
+  start_time                    time         NOT NULL,
+  end_time                      time,
+  monday_flag                   bool         NOT NULL DEFAULT false,
+  tuesday_flag                  bool         NOT NULL DEFAULT false,
+  wednesday_flag                bool         NOT NULL DEFAULT false,
+  thursday_flag                 bool         NOT NULL DEFAULT false,
+  friday_flag                   bool         NOT NULL DEFAULT false,
+  saturday_flag                 bool         NOT NULL DEFAULT false,
+  sunday_flag                   bool         NOT NULL DEFAULT false,
+  runs_on_bank_holiday          bool         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_act_sched_slot_activity_schedule_id ON activity_schedule_slot (activity_schedule_id);
@@ -255,6 +255,10 @@ CREATE TABLE event_priority (
 CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
 CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON event_priority (prison_code, event_type, event_category);
 
+-- View used to retrieve scheduled activities for a prisoner, or list of prisoners, between dates
+-- This filters out the cancelled & suspended sessions, and checks that the activities and allocations are
+-- within their start and end dates. Dated/expired records are not be returned when using this view.
+-- The repository PrisonScheduledActivityRepository and entity PrisonerScheduledActivity sit over this view.
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities as
 SELECT si.scheduled_instance_id,
        alloc.allocation_id,
@@ -272,18 +276,24 @@ SELECT si.scheduled_instance_id,
        category.code as activity_category,
        act.summary as activity_summary,
        si.cancelled,
-       CASE suspensions.activity_schedule_suspension_id
-         WHEN null THEN false ELSE true
+       CASE
+         WHEN suspensions.activity_schedule_suspension_id IS null THEN
+           false
+         ELSE
+           true
        END suspended
 FROM scheduled_instance si
-   JOIN activity_schedule schedule ON schedule.activity_schedule_id = si.activity_schedule_id
-   JOIN allocation alloc
-       ON alloc.activity_schedule_id = si.activity_schedule_id
-          AND si.session_date BETWEEN alloc.start_date AND alloc.end_date
-   JOIN activity act
-       ON act.activity_id = schedule.activity_id
-           AND si.session_date BETWEEN act.start_date AND act.end_date
-   JOIN activity_category category on category.activity_category_id = act.activity_category_id
-   LEFT JOIN activity_schedule_suspension suspensions
-       ON suspensions.activity_schedule_id = schedule.activity_schedule_id
-           AND si.session_date BETWEEN suspensions.suspended_from AND suspensions.suspended_until;
+         JOIN activity_schedule schedule ON schedule.activity_schedule_id = si.activity_schedule_id
+         JOIN allocation alloc
+              ON alloc.activity_schedule_id = si.activity_schedule_id
+                  AND si.session_date >= alloc.start_date
+                  AND (alloc.end_date is null or alloc.end_date <= si.session_date)
+         JOIN activity act
+              ON act.activity_id = schedule.activity_id
+                  AND si.session_date >= act.start_date
+                  AND (act.end_date is null OR act.end_date <= si.session_date)
+         JOIN activity_category category on category.activity_category_id = act.activity_category_id
+         LEFT JOIN activity_schedule_suspension suspensions
+                   ON suspensions.activity_schedule_id = schedule.activity_schedule_id
+                       AND si.session_date >= suspensions.suspended_from
+                       AND (suspensions.suspended_until is null OR suspensions.suspended_until <= si.session_date);

@@ -30,12 +30,36 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/make-MDI-rollout-active.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `Prison rolled-out - 200 success with activities from the DB`() {
+    fun `GET - prison rolled-out - 200 success with activities from the DB`() {
+      val prisonCode = "MDI"
+      val prisonerNumber = "A11111A"
+      val bookingId = 1200993L
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 1)
+
+      // Setup prison API stubs
+      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
+      prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
+      prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
+
+      val scheduledEvents = webTestClient.getByPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
+
+      with(scheduledEvents!!) {
+        assertThat(courtHearings).hasSize(4)
+        assertThat(courtHearings!![0].priority).isEqualTo(1)
+        assertThat(visits).hasSize(1)
+        assertThat(visits!![0].priority).isEqualTo(2)
+        assertThat(appointments).hasSize(1)
+        assertThat(appointments!![0].priority).isEqualTo(4)
+        assertThat(activities).hasSize(6)
+        assertThat(activities!![0].priority).isEqualTo(5)
+      }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `Prison not rolled-out - 200 success with activities from prison API`() {
+    fun `GET - prison not rolled-out - 200 success with activities from prison API`() {
       val prisonCode = "MDI"
       val prisonerNumber = "G4793VF"
       val bookingId = 1200993L
@@ -101,9 +125,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/make-MDI-rollout-active.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `Prison rolled-out - 200 success with activities from the DB`() {
+    fun `POST - prison rolled-out - 200 success with activities from the DB`() {
       val prisonCode = "MDI"
-      val prisonerNumbers = setOf("G4793VF", "A5193DY")
+      val prisonerNumbers = setOf("A11111A", "A22222A")
       val date = LocalDate.of(2022, 10, 1)
 
       // Ignores query parameters - matches on url path only
@@ -118,19 +142,27 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val courtHearingsResults = readCourtHearingStubbedResults()
       val visitsResults = readVisitsStubbedResults()
 
-      // Compare the results from the endpoint with the stubs provided
+      // Compare the results from the endpoint with the stubs provided & database activities
       with(scheduledEvents!!) {
-        assertThat(prisonerNumbers).contains("G4793VF")
+        assertThat(prisonerNumbers).contains("A11111A")
         assertThat(appointments).isEqualTo(appointmentsResults)
         assertThat(courtHearings).isEqualTo(courtHearingsResults)
         assertThat(visits).isEqualTo(visitsResults)
-        // assertThat(activities).hasSize(0)
+        assertThat(activities).hasSize(1)
+        with(activities!![0]) {
+          assertThat(prisonerNumber).isEqualTo("A11111A")
+          assertThat(eventType).isEqualTo("PRISON_ACT")
+          assertThat(event).isEqualTo("Geography")
+          assertThat(eventDesc).isEqualTo("Geography AM")
+          assertThat(details).isEqualTo("Geography: Geography AM")
+          assertThat(priority).isEqualTo(5)
+        }
       }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `Prison not rolled-out - 200 success with activities from prison API`() {
+    fun `POST - prison not rolled-out - 200 success with activities from prison API`() {
       val prisonCode = "MDI"
       val prisonerNumbers = setOf("G4793VF", "A5193DY")
       val date = LocalDate.of(2022, 10, 1)
