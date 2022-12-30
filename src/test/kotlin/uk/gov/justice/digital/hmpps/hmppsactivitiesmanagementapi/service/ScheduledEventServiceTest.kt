@@ -14,9 +14,9 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -34,7 +34,8 @@ class ScheduledEventServiceTest {
     prisonApiClient,
     rolloutPrisonRepository,
     prisonerScheduledActivityRepository,
-    prisonRegimeService)
+    prisonRegimeService,
+  )
 
   @BeforeEach
   fun reset() {
@@ -50,14 +51,15 @@ class ScheduledEventServiceTest {
 
   private fun setupRolledOutPrisonMock(prisonCode: String, active: Boolean, rolloutDate: LocalDate) {
     whenever(rolloutPrisonRepository.findByCode(prisonCode))
-      .thenReturn(RolloutPrison(
-        rolloutPrisonId = 10,
-        code = prisonCode,
-        description = "Description",
-        active = active,
-        rolloutDate = rolloutDate,
+      .thenReturn(
+        RolloutPrison(
+          rolloutPrisonId = 10,
+          code = prisonCode,
+          description = "Description",
+          active = active,
+          rolloutDate = rolloutDate,
+        )
       )
-    )
   }
 
   private fun setupMultiplePrisonerApiMocks(
@@ -94,7 +96,7 @@ class ScheduledEventServiceTest {
   ) {
     val scheduledAppointmentsMono = if (appointmentsException) {
       Mono.error(Exception("Error"))
-    } else if (!withAppointmentSubType.isNullOrEmpty()){
+    } else if (!withAppointmentSubType.isNullOrEmpty()) {
       Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = withAppointmentSubType)))
     } else {
       Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
@@ -154,7 +156,7 @@ class ScheduledEventServiceTest {
     allocationId = allocationId,
     prisonCode = prisonCode,
     sessionDate = sessionDate,
-    startTime = startTime ,
+    startTime = startTime,
     endTime = endTime,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
@@ -336,8 +338,8 @@ class ScheduledEventServiceTest {
         assertThat(it.eventDesc).isEqualTo("Visits")
         assertThat(it.details).isEqualTo("Social Contact")
         assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(17, 0,0))
-        assertThat(it.endTime).isEqualTo(LocalTime.of(18, 0,0))
+        assertThat(it.startTime).isEqualTo(LocalTime.of(17, 0, 0))
+        assertThat(it.endTime).isEqualTo(LocalTime.of(18, 0, 0))
         assertThat(it.priority).isEqualTo(2)
       }
 
@@ -562,7 +564,7 @@ class ScheduledEventServiceTest {
 
     // Should not be called - NOT a rolled out prison
     verify(prisonerScheduledActivityRepository, never())
-      .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber,startDate,endDate)
+      .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
 
     // Should be called - this is NOT a rolled out prison
     verify(prisonApiClient).getScheduledActivities(any(), any())
@@ -637,7 +639,7 @@ class ScheduledEventServiceTest {
 
     // Should not be called - prison is NOT rolled out
     verify(prisonerScheduledActivityRepository, never())
-      .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber,startDate,endDate)
+      .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
 
     // Should be called - NOT a rolled out prison
     verify(prisonApiClient).getScheduledActivities(any(), any())

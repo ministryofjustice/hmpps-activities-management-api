@@ -142,7 +142,7 @@ fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
       locationId = it.internalLocationId?.toLong(),
       location = it.internalLocationDescription,
       eventClass = "INT_MOV",
-      eventStatus = null,  // Can determine from attendance later
+      eventStatus = null, // Can determine from attendance later
       eventType = "PRISON_ACT",
       eventTypeDesc = it.activityCategory,
       event = it.activitySummary,
