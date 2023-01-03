@@ -113,6 +113,20 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledActivitiesForPrisonerNumbers - success`() {
+    val prisonCode = "MDI"
+    val prisonerNumbers = setOf("G4793VF", "A5193DY")
+    val date = LocalDate.of(2022, 12, 14)
+
+    prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
+
+    val activities = prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+
+    assertThat(activities).hasSize(2)
+    assertThat(activities.first().offenderNo).isIn("G4793VF", "A5193DY")
+  }
+
+  @Test
   fun `getCourtHearings by booking id - success`() {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))

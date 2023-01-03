@@ -68,6 +68,18 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
+  fun stubGetScheduledActivitiesForPrisonerNumbers(prisonCode: String, date: LocalDate) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/schedules/$prisonCode/activities?date=$date"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/schedules/activities-1.json")
+            .withStatus(200)
+        )
+    )
+  }
+
   fun stubGetCourtHearings(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/court-hearings?fromDate=$startDate&toDate=$endDate"))

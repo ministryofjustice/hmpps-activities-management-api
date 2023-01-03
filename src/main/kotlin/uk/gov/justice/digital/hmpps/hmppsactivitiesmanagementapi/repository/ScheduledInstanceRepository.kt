@@ -6,33 +6,26 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import java.time.LocalDate
 
 interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
-  @Query(
-    "SELECT si FROM ScheduledInstance si WHERE EXISTS(" +
-      "SELECT 1 FROM si.activitySchedule.allocations a " +
-      "WHERE a.activitySchedule.activity.prisonCode = :prisonCode " +
-      "AND a.prisonerNumber = :prisonerNumber) " +
-      "AND si.sessionDate >= :startDate " +
-      "AND si.sessionDate <= :endDate "
-  )
-  fun getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-    prisonCode: String,
-    prisonerNumber: String,
-    startDate: LocalDate,
-    endDate: LocalDate
-  ): List<ScheduledInstance>
+  fun findAllBySessionDate(date: LocalDate): List<ScheduledInstance>
+
+  // TODO - should it check for suspensions? Or done in the client? (I added the allocation date checks)
 
   @Query(
-    "SELECT si FROM ScheduledInstance si WHERE EXISTS(" +
-      "SELECT 1 FROM si.activitySchedule.allocations a " +
-      "WHERE a.activitySchedule.activity.prisonCode = :prisonCode) " +
-      "AND si.sessionDate >= :startDate " +
-      "AND si.sessionDate <= :endDate "
+    """
+    SELECT si FROM ScheduledInstance si 
+    WHERE EXISTS (
+      SELECT 1 FROM si.activitySchedule.allocations a 
+      WHERE a.activitySchedule.activity.prisonCode = :prisonCode 
+      AND si.sessionDate >= :startDate
+      AND si.sessionDate <= :endDate
+      AND (si.cancelled is null or si.cancelled = false)
+      AND a.startDate <= si.sessionDate AND (a.endDate is null or a.endDate >= si.sessionDate)
+    )
+    """
   )
   fun getActivityScheduleInstancesByPrisonCodeAndDateRange(
     prisonCode: String,
     startDate: LocalDate,
     endDate: LocalDate
   ): List<ScheduledInstance>
-
-  fun findAllBySessionDate(date: LocalDate): List<ScheduledInstance>
 }

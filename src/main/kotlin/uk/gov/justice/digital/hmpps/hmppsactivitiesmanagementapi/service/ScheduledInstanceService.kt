@@ -10,28 +10,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 
 @Service
 class ScheduledInstanceService(private val repository: ScheduledInstanceRepository) {
-
-  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance = repository.findOrThrowNotFound(id).toModel()
+  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance =
+    repository.findOrThrowNotFound(id).toModel()
 
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
-    prisonerNumber: String?,
     dateRange: LocalDateRange,
     slot: TimeSlot?,
   ): List<ActivityScheduleInstance> {
-    val activities =
-      prisonerNumber?.let {
-        repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-          prisonCode,
-          prisonerNumber,
-          dateRange.start,
-          dateRange.endInclusive
-        ).toModel()
-      } ?: repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
-        prisonCode,
-        dateRange.start,
-        dateRange.endInclusive
-      ).toModel()
+    val activities = repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+      prisonCode,
+      dateRange.start,
+      dateRange.endInclusive
+    ).toModel()
 
     return if (slot != null) {
       activities.filter { TimeSlot.slot(it.startTime) == slot }

@@ -127,6 +127,46 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
+  fun getScheduledActivitiesForPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?
+  ): Mono<List<PrisonerSchedule>> {
+    return prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/activities")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+  }
+
+  /*
+  Will possibly re-introduce this method if we ever need to get ALL activities in a prison from NOMIS.
+  At present, we only get these for either a prisoner, or a list of prisoners.
+
+  fun getScheduledActivitiesForDateRange(
+    prisonCode: String,
+    dateRange: LocalDateRange,
+  ): Mono<List<PrisonerSchedule>> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/activities-by-date-range")
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .build(prisonCode)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+  }
+   */
+
   fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->

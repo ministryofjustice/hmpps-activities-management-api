@@ -33,45 +33,36 @@ class ScheduledInstanceServiceTest {
 
   @Test
   fun `getActivityScheduleInstancesByDateRange - success`() {
-    whenever(
-      repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-        "MDI", "A11111A",
-        LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)
-      )
-    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+    val prisonCode = "MDI"
+    val startDate = LocalDate.of(2022, 10, 1)
+    val endDate = LocalDate.of(2022, 11, 5)
+    val dateRange = LocalDateRange(startDate, endDate)
 
-    assertThat(
-      service.getActivityScheduleInstancesByDateRange(
-        "MDI", "A11111A",
-        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)),
-        null
-      )
-    ).hasSize(1)
+    whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
+      .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+
+    val result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null)
+
+    assertThat(result).hasSize(1)
   }
 
   @Test
   fun `getActivityScheduleInstancesByDateRange - filtered by time slot`() {
-    whenever(
-      repository.getActivityScheduleInstancesByPrisonerNumberAndDateRange(
-        "MDI", "A11111A",
-        LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)
-      )
-    ).thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+    val prisonCode = "MDI"
+    val startDate = LocalDate.of(2022, 10, 1)
+    val endDate = LocalDate.of(2022, 11, 5)
+    val dateRange = LocalDateRange(startDate, endDate)
 
-    assertThat(
-      service.getActivityScheduleInstancesByDateRange(
-        "MDI", "A11111A",
-        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)),
-        TimeSlot.PM
-      )
-    ).hasSize(1)
+    whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
+      .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
-    assertThat(
-      service.getActivityScheduleInstancesByDateRange(
-        "MDI", "A11111A",
-        LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5)),
-        TimeSlot.AM
-      )
-    ).hasSize(0)
+    var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM)
+    assertThat(result).hasSize(1)
+
+    result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.AM)
+    assertThat(result).isEmpty()
+
+    result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.ED)
+    assertThat(result).isEmpty()
   }
 }
