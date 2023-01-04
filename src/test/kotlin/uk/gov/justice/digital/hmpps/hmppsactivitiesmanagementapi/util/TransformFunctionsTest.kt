@@ -65,6 +65,7 @@ class TransformFunctionsTest {
             Allocation(
               id = 1,
               prisonerNumber = "A1234AA",
+              bookingId = 10001,
               payBand = "A",
               startDate = timestamp.toLocalDate(),
               endDate = null,

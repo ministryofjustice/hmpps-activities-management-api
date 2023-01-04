@@ -94,13 +94,14 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand) {
+  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand, bookingId: Long?) {
     failIfAlreadyAllocated(prisonerNumber)
 
     allocations.add(
       Allocation(
         activitySchedule = this,
         prisonerNumber = prisonerNumber.toString(),
+        bookingId = bookingId,
         payBand = payBand.toString(),
         // TODO not sure if this is supported in the UI
         startDate = LocalDate.now(),

@@ -26,6 +26,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 1,
           prisonerNumber = "A11111A",
+          bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
           payBand = "A",
@@ -37,6 +38,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 4,
           prisonerNumber = "A11111A",
+          bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
           payBand = "C",
@@ -53,6 +55,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 2,
           prisonerNumber = "A22222A",
+          bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
           payBand = "B",
@@ -64,6 +67,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 5,
           prisonerNumber = "A22222A",
+          bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
           payBand = "D",
@@ -92,6 +96,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 1,
           prisonerNumber = "A11111A",
+          bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
           payBand = "A",
@@ -103,6 +108,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 4,
           prisonerNumber = "A11111A",
+          bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
           payBand = "C",
@@ -119,6 +125,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 2,
           prisonerNumber = "A22222A",
+          bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
           payBand = "B",
@@ -130,6 +137,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 5,
           prisonerNumber = "A22222A",
+          bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
           payBand = "D",
@@ -146,6 +154,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
         Allocation(
           id = 3,
           prisonerNumber = "A33333A",
+          bookingId = 10003,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
           payBand = "B",

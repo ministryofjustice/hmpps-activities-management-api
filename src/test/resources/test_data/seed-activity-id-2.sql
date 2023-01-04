@@ -16,14 +16,14 @@ values (4, 2, 'English PM', 4, 'L4', 'Location 4', 10);
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (2, 4, '14:00:00', '15:00:00', true);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (5, 3, 'B11111B', 'A', '2022-10-21', null, '2022-10-21 00:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (5, 3, 'B11111B', 10001, 'A', '2022-10-21', null, '2022-10-21 00:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (6, 3, 'B22222B', 'B', '2022-10-21', null, '2022-10-21 00:00:00', 'MRS BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (6, 3, 'B22222B', 10002, 'B', '2022-10-21', null, '2022-10-21 00:00:00', 'MRS BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (7, 4, 'B11111B', 'C', '2022-10-21', null, '2022-10-21 00:00:00', 'MR BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (7, 4, 'B11111B', 10001, 'C', '2022-10-21', null, '2022-10-21 00:00:00', 'MR BLOGS', null, null, null);
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
-values (8, 4, 'B22222B', 'D', '2022-10-21', null, '2022-10-21 00:00:00', 'MRS BLOGS', null, null, null);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, pay_band, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason)
+values (8, 4, 'B22222B', 10002, 'D', '2022-10-21', null, '2022-10-21 00:00:00', 'MRS BLOGS', null, null, null);

@@ -3,7 +3,7 @@ CREATE TABLE rollout_prison (
   code              varchar(5)  NOT NULL UNIQUE,
   description       varchar(60) NOT NULL,
   active            boolean     NOT NULL DEFAULT false,
-  rollout_date      date        NOT NULL
+  rollout_date      date
 );
 
 CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
@@ -217,6 +217,7 @@ CREATE TABLE allocation (
   allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,
   activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
+  booking_id           bigint,
   pay_band             varchar(10),
   start_date           date         NOT NULL,
   end_date             date,
@@ -229,6 +230,7 @@ CREATE TABLE allocation (
 
 CREATE INDEX idx_allocation_activity_schedule_id ON allocation (activity_schedule_id);
 CREATE INDEX idx_allocation_prisoner_number ON allocation (prisoner_number);
+CREATE INDEX idx_allocation_booking_id ON allocation (booking_id);
 CREATE INDEX idx_allocation_start_date ON allocation (start_date);
 CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 
@@ -267,7 +269,7 @@ SELECT si.scheduled_instance_id,
        si.start_time,
        si.end_time,
        alloc.prisoner_number,
-       0 as booking_id,
+       alloc.booking_id,
        schedule.internal_location_id,
        schedule.internal_location_code,
        schedule.internal_location_description,

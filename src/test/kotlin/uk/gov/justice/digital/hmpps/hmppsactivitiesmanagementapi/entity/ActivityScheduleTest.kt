@@ -147,6 +147,7 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "123456".toPrisonerNumber(),
       payBand = "A".toPayBand(),
+      bookingId = 10001
     )
 
     assertThat(schedule.allocations).hasSize(1)
@@ -170,6 +171,7 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = "B".toPayBand(),
+      bookingId = 10001
     )
 
     assertThat(schedule.allocations).hasSize(2)
@@ -177,6 +179,7 @@ class ActivityScheduleTest {
     with(schedule.allocations.first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("654321")
+      assertThat(bookingId).isEqualTo(10001)
       assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("SYSTEM")
@@ -194,12 +197,14 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = "B".toPayBand(),
+      bookingId = 10001
     )
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = "B".toPayBand(),
+        bookingId = 10001
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
   }

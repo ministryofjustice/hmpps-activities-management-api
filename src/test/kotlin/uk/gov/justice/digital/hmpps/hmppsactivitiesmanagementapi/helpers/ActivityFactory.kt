@@ -116,6 +116,7 @@ internal fun activitySchedule(
         allocationId = 1,
         activitySchedule = this,
         prisonerNumber = "A1234AA",
+        bookingId = 10001,
         payBand = "A",
         startDate = timestamp.toLocalDate(),
         endDate = null,

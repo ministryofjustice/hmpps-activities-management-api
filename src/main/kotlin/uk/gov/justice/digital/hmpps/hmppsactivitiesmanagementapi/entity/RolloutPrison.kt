@@ -20,5 +20,5 @@ data class RolloutPrison(
 
   var active: Boolean = false,
 
-  val rolloutDate: LocalDate,
+  val rolloutDate: LocalDate?,
 )
