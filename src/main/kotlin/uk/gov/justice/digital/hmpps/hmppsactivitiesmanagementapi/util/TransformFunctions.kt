@@ -488,6 +488,7 @@ fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(
     id = it.allocationId!!,
     prisonerNumber = it.prisonerNumber,
+    bookingId = it.bookingId,
     payBand = it.payBand,
     startDate = it.startDate,
     endDate = it.endDate,

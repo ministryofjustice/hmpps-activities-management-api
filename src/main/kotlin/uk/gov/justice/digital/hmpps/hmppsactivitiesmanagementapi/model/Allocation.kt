@@ -14,6 +14,9 @@ data class Allocation(
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   val prisonerNumber: String,
 
+  @Schema(description = "The offender booking id", example = "10001")
+  val bookingId: Long?,
+
   val activitySummary: String,
 
   val scheduleDescription: String,

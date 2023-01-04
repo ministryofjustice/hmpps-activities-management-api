@@ -24,6 +24,8 @@ data class Allocation(
 
   val prisonerNumber: String,
 
+  val bookingId: Long? = null,
+
   var payBand: String? = null,
 
   var startDate: LocalDate,
