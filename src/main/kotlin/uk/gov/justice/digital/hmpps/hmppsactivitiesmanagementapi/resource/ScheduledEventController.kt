@@ -93,7 +93,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
 
     @RequestParam(value = "endDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "End date of query (required). Format YYYY-MM-DD. The end date must be withing 3 months of the start date)")
+    @Parameter(description = "End date of query (required). Format YYYY-MM-DD. The end date must be within 3 months of the start date)")
     endDate: LocalDate,
 
     @RequestParam(value = "timeSlot", required = false)
