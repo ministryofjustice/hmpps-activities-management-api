@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
@@ -52,6 +53,7 @@ class ActivityService(
     return activityScheduleRepository.getAllByActivity(activity).toModelLite()
   }
 
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(activityCreateRequest: ActivityCreateRequest, createdBy: String): ModelActivity {
 
     val categoryEntity = activityCategoryRepository.findById(activityCreateRequest.categoryId!!)
