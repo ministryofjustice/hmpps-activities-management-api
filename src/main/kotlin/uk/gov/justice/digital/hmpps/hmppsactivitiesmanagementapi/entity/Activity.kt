@@ -10,6 +10,8 @@ import java.time.LocalDateTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EntityListeners
+import javax.persistence.EnumType
+import javax.persistence.Enumerated
 import javax.persistence.FetchType
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -18,6 +20,7 @@ import javax.persistence.JoinColumn
 import javax.persistence.OneToMany
 import javax.persistence.OneToOne
 import javax.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession as ModelPayPerSession
 
 @Entity
 @Table(name = "activity")
@@ -61,6 +64,9 @@ data class Activity(
 
   var outsideWork: Boolean = false,
 
+  @Enumerated(EnumType.STRING)
+  var payPerSession: PayPerSession = PayPerSession.H,
+
   val summary: String,
 
   val description: String?,
@@ -102,6 +108,7 @@ data class Activity(
     inCell = inCell,
     pieceWork = pieceWork,
     outsideWork = outsideWork,
+    payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
     summary = summary,
     description = description,
     category = activityCategory.toModel(),
@@ -126,3 +133,5 @@ data class Activity(
 }
 
 fun List<Activity>.toModelLite() = map { it.toModelLite() }
+
+enum class PayPerSession { H, F }

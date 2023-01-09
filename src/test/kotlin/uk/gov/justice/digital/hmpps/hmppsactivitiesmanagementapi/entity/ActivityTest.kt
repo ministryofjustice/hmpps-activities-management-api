@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 
@@ -44,6 +45,7 @@ class ActivityTest {
       inCell = false,
       pieceWork = false,
       outsideWork = false,
+      payPerSession = PayPerSession.H,
       prisonCode = "123",
       summary = "Maths",
       description = "Maths basic",
@@ -68,6 +70,7 @@ class ActivityTest {
         inCell = false,
         pieceWork = false,
         outsideWork = false,
+        payPerSession = PayPerSession.H,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",

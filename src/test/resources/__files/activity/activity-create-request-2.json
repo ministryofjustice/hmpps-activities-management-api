@@ -3,6 +3,7 @@
   "attendanceRequired": false,
   "summary": "Maths",
   "categoryId": 1,
+  "payPerSession": "H",
   "pay": [
     {
       "incentiveLevel": "Basic",

@@ -24,6 +24,9 @@ data class ActivityLite(
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
 
+  @Schema(description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ", example = "false")
+  var payPerSession: PayPerSession = PayPerSession.H,
+
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
   val summary: String,
 
