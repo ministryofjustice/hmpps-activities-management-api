@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalTime
@@ -30,6 +31,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         inCell = false,
         pieceWork = false,
         outsideWork = false,
+        payPerSession = PayPerSession.H,
         summary = "Maths",
         description = "Maths Level 1",
         riskLevel = "High",

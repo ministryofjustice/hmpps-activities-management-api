@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -66,6 +67,7 @@ class ActivityScheduleTest {
         inCell = false,
         pieceWork = false,
         outsideWork = false,
+        payPerSession = PayPerSession.H,
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
@@ -109,6 +111,7 @@ class ActivityScheduleTest {
           inCell = false,
           pieceWork = false,
           outsideWork = false,
+          payPerSession = PayPerSession.H,
           prisonCode = "123",
           summary = "Maths",
           description = "Maths basic",
