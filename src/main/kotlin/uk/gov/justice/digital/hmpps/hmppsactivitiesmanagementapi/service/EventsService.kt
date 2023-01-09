@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import java.time.LocalDateTime
 
 @Service
@@ -26,17 +26,17 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
 
   fun send(outboundEvent: OutboundEvent, identifier: Long) {
     when (outboundEvent) {
-      ACTIVITY_CREATED -> publisher.send(ACTIVITY_CREATED.event(identifier))
+      ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(identifier))
     }
   }
 }
 
 enum class OutboundEvent(val event: (identifier: Long) -> OutboundHMPPSDomainEvent) {
-  ACTIVITY_CREATED(event = { identifier: Long ->
+  ACTIVITY_SCHEDULE_CREATED(event = { identifier: Long ->
     OutboundHMPPSDomainEvent(
-      eventType = "activities.activity.created",
+      eventType = "activities.activity-schedule.created",
       identifier = identifier,
-      description = "new activity with identifier $identifier has been created in the activities management service"
+      description = "new activity schedule with identifier $identifier has been created in the activities management service"
     )
   })
 }

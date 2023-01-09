@@ -15,29 +15,29 @@ class OutboundEventsServiceTest {
 
   @Test
   fun `activity created with id 1 is sent to the events publisher`() {
-    outboundEventsService.send(OutboundEvent.ACTIVITY_CREATED, 1L)
+    outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1L)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity.created")
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
       assertThat(identifier).isEqualTo(1L)
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("new activity with identifier 1 has been created in the activities management service")
+      assertThat(description).isEqualTo("new activity schedule with identifier 1 has been created in the activities management service")
     }
   }
 
   @Test
   fun `activity created with id 99 is sent to the events publisher`() {
-    outboundEventsService.send(OutboundEvent.ACTIVITY_CREATED, 99L)
+    outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 99L)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity.created")
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
       assertThat(identifier).isEqualTo(99L)
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("new activity with identifier 99 has been created in the activities management service")
+      assertThat(description).isEqualTo("new activity schedule with identifier 99 has been created in the activities management service")
     }
   }
 }

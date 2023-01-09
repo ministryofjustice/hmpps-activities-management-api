@@ -9,6 +9,8 @@ import java.time.LocalDate
 
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
+  // TODO need to add test to ensure event is raised when create schedule endpoint is available.
+
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `get scheduled instance by ID`() {

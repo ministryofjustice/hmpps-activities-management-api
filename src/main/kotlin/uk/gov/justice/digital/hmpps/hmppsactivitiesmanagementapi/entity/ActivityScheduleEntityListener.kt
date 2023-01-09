@@ -9,21 +9,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Outboun
 import javax.persistence.PostPersist
 
 @Component
-class ActivityEntityListener {
+class ActivityScheduleEntityListener {
 
   @Autowired
   private lateinit var outboundEventsService: OutboundEventsService
 
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @PostPersist
-  fun onCreate(activity: Activity) {
+  fun onCreate(schedule: ActivitySchedule) {
     runCatching {
-      outboundEventsService.send(OutboundEvent.ACTIVITY_CREATED, activity.activityId!!)
+      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, schedule.activityScheduleId!!)
     }.onFailure {
-      log.error("Failed to send activity creation event for activity ${activity.activityId}", it)
+      log.error(
+        "Failed to send activity schedule creation event for activity schedule ${schedule.activityScheduleId}",
+        it
+      )
     }
   }
 }
