@@ -69,7 +69,7 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
 
     @RequestParam(value = "endDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "End date of query (reuired). The end date must be within 3 months of the start date.")
+    @Parameter(description = "End date of query (required). The end date must be within 3 months of the start date.")
     endDate: LocalDate,
 
     @RequestParam(value = "slot")
