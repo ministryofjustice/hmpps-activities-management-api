@@ -74,7 +74,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
       .expectStatus().is4xxClientError
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -86,6 +86,37 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(errorCode).isNull()
       assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  fun `createActivity - failed authorisation`() {
+
+    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val error = webTestClient.post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .exchange()
+      .expectStatus().isForbidden
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(403)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Access denied: Access is denied")
+      assertThat(developerMessage).isEqualTo("Access is denied")
       assertThat(moreInfo).isNull()
     }
   }
@@ -404,7 +435,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

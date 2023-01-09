@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -31,6 +32,7 @@ class AttendancesService(
   // TODO this is a very thin slice when updating.
   // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
   // TODO also there is no validation checking.
+  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun mark(attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }

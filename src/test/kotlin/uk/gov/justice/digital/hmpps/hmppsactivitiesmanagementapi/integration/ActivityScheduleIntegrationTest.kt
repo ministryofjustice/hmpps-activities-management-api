@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
@@ -127,11 +128,45 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isBadRequest
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+
+    val error = webTestClient.post()
+      .uri("/schedules/1/allocations")
+      .bodyValue(
+        PrisonerAllocationRequest(
+          prisonerNumber = "G4793VF",
+          payBand = "A",
+        ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .exchange()
+      .expectStatus().isForbidden
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(403)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Access denied: Access is denied")
+      assertThat(developerMessage).isEqualTo("Access is denied")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
     post()
       .uri("/schedules/$scheduleId/allocations")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
 }
