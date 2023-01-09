@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,7 +25,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @ResponseBody
   @Operation(
     summary = "Updates attendance records.",
-    description = "Updates the given attendance records with the supplied update request details.",
+    description = "Updates the given attendance records with the supplied update request details. Requires the 'ACTIVITY_ADMIN' role.",
   )
   @ApiResponses(
     value = [
@@ -44,6 +45,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ]
   )
+  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun markAttendances(@RequestBody attendances: List<AttendanceUpdateRequest>): ResponseEntity<Any> =
     attendancesService.mark(attendances).let { ResponseEntity.noContent().build() }
 }

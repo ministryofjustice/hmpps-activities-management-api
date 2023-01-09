@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -197,7 +198,7 @@ class ActivityScheduleController(
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
     summary = "Allocate offender to schedule",
-    description = "Allocates the supplied offender allocation request to the activity schedule.",
+    description = "Allocates the supplied offender allocation request to the activity schedule. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
   )
   @ApiResponses(
     value = [
@@ -232,6 +233,7 @@ class ActivityScheduleController(
       )
     ]
   )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocate(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestBody @Parameter(
