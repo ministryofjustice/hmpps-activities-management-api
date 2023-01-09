@@ -140,7 +140,7 @@ fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
     ModelScheduledEvent(
       prisonCode = prisonCode,
       eventId = it.scheduledInstanceId,
-      bookingId = it.bookingId?.toLong() ?: 0L, // Change allocation to include bookingId
+      bookingId = it.bookingId.toLong(), // Change allocation to include bookingId
       locationId = it.internalLocationId?.toLong(),
       location = it.internalLocationDescription,
       eventClass = "INT_MOV",
