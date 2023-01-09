@@ -18,11 +18,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
@@ -322,6 +318,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           inCell = false,
           pieceWork = false,
           outsideWork = false,
+          payPerSession = PayPerSession.H,
           summary = "Maths",
           description = "Beginner maths",
           riskLevel = "High",

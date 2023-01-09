@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -80,6 +81,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         inCell = false,
         pieceWork = false,
         outsideWork = false,
+        payPerSession = PayPerSession.H,
         summary = "activity summary",
         description = "activity description",
         riskLevel = "High",

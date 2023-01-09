@@ -95,6 +95,7 @@ CREATE TABLE activity (
   in_cell              bool         NOT NULL DEFAULT false,
   piece_work           bool         NOT NULL DEFAULT false,
   outside_work         bool         NOT NULL DEFAULT false,
+  pay_per_session      char(1)      NOT NULL DEFAULT 'H',
   summary              varchar(50)  NOT NULL,
   description          varchar(300),
   start_date           date         NOT NULL,

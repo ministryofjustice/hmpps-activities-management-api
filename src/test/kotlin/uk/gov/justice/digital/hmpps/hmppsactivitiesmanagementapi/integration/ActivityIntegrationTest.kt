@@ -10,13 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
@@ -140,6 +134,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           inCell = false,
           pieceWork = false,
           outsideWork = false,
+          payPerSession = PayPerSession.H,
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
@@ -173,6 +168,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           inCell = false,
           pieceWork = false,
           outsideWork = false,
+          payPerSession = PayPerSession.H,
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "High",
@@ -215,6 +211,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           inCell = true,
           pieceWork = true,
           outsideWork = true,
+          payPerSession = PayPerSession.H,
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",

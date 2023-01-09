@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import java.time.LocalDate
 import javax.validation.Valid
 import javax.validation.constraints.NotEmpty
@@ -27,6 +28,9 @@ data class ActivityCreateRequest(
 
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
+
+  @Schema(description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ", example = "false")
+  var payPerSession: PayPerSession?,
 
   @field:NotEmpty(message = "Activity summary must be supplied")
   @field:Size(max = 50, message = "Summary should not exceed {max} characters")

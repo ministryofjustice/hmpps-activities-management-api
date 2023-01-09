@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
@@ -65,6 +66,7 @@ fun transform(activity: EntityActivity) =
     inCell = activity.inCell,
     pieceWork = activity.pieceWork,
     outsideWork = activity.outsideWork,
+    payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
     summary = activity.summary,
     description = activity.description,
     startDate = activity.startDate,
