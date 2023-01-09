@@ -109,7 +109,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       .andDo { print() }
       .andExpect {
         status {
-          is4xxClientError()
+          isBadRequest()
         }
         content {
           contentType(MediaType.APPLICATION_JSON)

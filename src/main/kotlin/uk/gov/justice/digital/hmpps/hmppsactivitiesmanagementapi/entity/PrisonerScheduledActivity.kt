@@ -24,35 +24,50 @@ import javax.persistence.Table
  * view by prison, dates, prisoners, and slot times.
  */
 
-// Composite @Id
-class UniquePropertyId(
-  val scheduledInstanceId: Long? = null,
-  val allocationId: Long? = null,
-) : Serializable
+data class UniquePropertyId(val scheduledInstanceId: Long, val allocationId: Long) : Serializable {
+  constructor() : this(-1, -1)
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as UniquePropertyId
+
+    if (scheduledInstanceId != other.scheduledInstanceId) return false
+    if (allocationId != other.allocationId) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = scheduledInstanceId.hashCode()
+    result = 31 * result + allocationId.hashCode()
+    return result
+  }
+}
 
 @Entity
 @Immutable
 @Table(name = "v_prisoner_scheduled_activities")
 @IdClass(UniquePropertyId::class)
 data class PrisonerScheduledActivity(
+  @Id
+  val scheduledInstanceId: Long,
 
   @Id
-  val scheduledInstanceId: Long? = null,
+  val allocationId: Long,
 
-  @Id
-  val allocationId: Long? = null,
+  val prisonCode: String,
 
-  val prisonCode: String? = null,
-
-  val sessionDate: LocalDate? = null,
+  val sessionDate: LocalDate,
 
   val startTime: LocalTime? = null,
 
   val endTime: LocalTime? = null,
 
-  val prisonerNumber: String? = null,
+  val prisonerNumber: String,
 
-  val bookingId: Int? = null,
+  val bookingId: Int,
 
   val internalLocationId: Int? = null,
 
@@ -62,13 +77,13 @@ data class PrisonerScheduledActivity(
 
   val scheduleDescription: String? = null,
 
-  val activityId: Int? = null,
+  val activityId: Int,
 
-  val activityCategory: String? = null,
+  val activityCategory: String,
 
   val activitySummary: String? = null,
 
-  val cancelled: Boolean? = null,
+  val cancelled: Boolean = false,
 
-  val suspended: Boolean? = null,
+  val suspended: Boolean = false,
 )

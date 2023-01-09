@@ -23,7 +23,7 @@ class ScheduledEventService(
   private val prisonRegimeService: PrisonRegimeService
 ) {
   /**
-   *  Get scheduled events for a prison, a single prisoner., between two dates, with an optional time slot.
+   *  Get scheduled events for a prison, a single prisoner, between two dates and with an optional time slot.
    *  Court hearings, appointments and visits are from Prison API
    *  Activities are from the Activities database if rolled out is true, else from Prison API.
    */
@@ -40,9 +40,7 @@ class ScheduledEventService(
       }
     }
     ?.let { prisonerDetail ->
-      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode).let {
-        it != null && it.active
-      }
+      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)?.active ?: false
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
       getSinglePrisonerEventCalls(prisonerDetail.bookingId!!, prisonRolledOut, dateRange)
         .map { t ->
@@ -112,9 +110,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot? = null,
   ): PrisonerScheduledEvents? {
     val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode).let {
-      it != null && it.active
-    }
+    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)?.active ?: false
     return getMultiplePrisonerEventCalls(prisonCode, prisonerNumbers, prisonRolledOut, date, timeSlot)
       .map { t ->
         transformToPrisonerScheduledEvents(
