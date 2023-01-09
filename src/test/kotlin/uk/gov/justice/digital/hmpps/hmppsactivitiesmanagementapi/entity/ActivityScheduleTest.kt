@@ -150,7 +150,8 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "123456".toPrisonerNumber(),
       payBand = "A".toPayBand(),
-      bookingId = 10001
+      bookingId = 10001,
+      allocatedBy = "FRED"
     )
 
     assertThat(schedule.allocations).hasSize(1)
@@ -160,7 +161,7 @@ class ActivityScheduleTest {
       assertThat(prisonerNumber).isEqualTo("123456")
       assertThat(payBand).isEqualTo("A")
       assertThat(startDate).isEqualTo(LocalDate.now())
-      assertThat(allocatedBy).isEqualTo("SYSTEM")
+      assertThat(allocatedBy).isEqualTo("FRED")
       assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
     }
   }
@@ -174,7 +175,8 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = "B".toPayBand(),
-      bookingId = 10001
+      bookingId = 10001,
+      allocatedBy = "FREDDIE"
     )
 
     assertThat(schedule.allocations).hasSize(2)
@@ -185,7 +187,7 @@ class ActivityScheduleTest {
       assertThat(bookingId).isEqualTo(10001)
       assertThat(payBand).isEqualTo("B")
       assertThat(startDate).isEqualTo(LocalDate.now())
-      assertThat(allocatedBy).isEqualTo("SYSTEM")
+      assertThat(allocatedBy).isEqualTo("FREDDIE")
       assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
     }
   }
@@ -200,14 +202,32 @@ class ActivityScheduleTest {
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = "B".toPayBand(),
-      bookingId = 10001
+      bookingId = 10001,
+      allocatedBy = "FREDDIE"
     )
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = "B".toPayBand(),
-        bookingId = 10001
+        bookingId = 10001,
+        allocatedBy = "NOT FREDDIE"
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `allocated by cannot be blank when allocating a prisoner`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { allocations.clear() }
+
+    assertThatThrownBy {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = "B".toPayBand(),
+        bookingId = 10001,
+        allocatedBy = " "
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
   }

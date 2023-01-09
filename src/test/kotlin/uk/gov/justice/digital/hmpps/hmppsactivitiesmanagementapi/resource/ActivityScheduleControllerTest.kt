@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -20,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
+import java.security.Principal
 import javax.persistence.EntityNotFoundException
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
@@ -137,10 +139,13 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       payBand = "B",
     )
 
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("THE USER NAME")
+
     mockMvc.post(1, request)
       .andExpect { status { isNoContent() } }
 
-    verify(activityScheduleService).allocatePrisoner(1, request)
+    verify(activityScheduleService).allocatePrisoner(1, request, "USERNAME")
   }
 
   @Test
@@ -165,11 +170,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       assertThat(contentAsString).contains("Pay band cannot be more than 10 characters")
     }
 
-    verify(activityScheduleService, never()).allocatePrisoner(any(), any())
+    verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())
   }
 
   private fun MockMvc.post(scheduleId: Long, request: PrisonerAllocationRequest) =
     post("/schedules/$scheduleId/allocations") {
+      principal = Principal { "USERNAME" }
       content = mapper.writeValueAsString(request)
       contentType = MediaType.APPLICATION_JSON
     }
