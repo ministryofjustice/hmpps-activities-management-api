@@ -39,6 +39,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(tier!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+      assertThat(createdBy).isEqualTo("test-client")
     }
   }
 

@@ -84,7 +84,7 @@ class ActivityScheduleService(
   fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) {
+  fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
     val schedule = repository.findOrThrowNotFound(scheduleId)
@@ -99,7 +99,8 @@ class ActivityScheduleService(
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
       bookingId = prisonerDetails.bookingId,
-      payBand = payBand
+      payBand = payBand,
+      allocatedBy = allocatedBy
     )
 
     repository.saveAndFlush(schedule)
