@@ -99,6 +99,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     with(repository.findById(1).orElseThrow()) {
       assertThat(allocations.first().prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocations.first().allocatedBy).isEqualTo("test-client")
     }
   }
 

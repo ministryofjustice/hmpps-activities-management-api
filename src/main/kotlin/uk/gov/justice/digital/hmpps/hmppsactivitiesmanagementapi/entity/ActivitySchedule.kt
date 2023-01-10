@@ -96,8 +96,9 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand, bookingId: Long?) {
+  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand, bookingId: Long?, allocatedBy: String) {
     failIfAlreadyAllocated(prisonerNumber)
+    failIfAllocatedByIsBlank(allocatedBy)
 
     allocations.add(
       Allocation(
@@ -107,11 +108,14 @@ data class ActivitySchedule(
         payBand = payBand.toString(),
         // TODO not sure if this is supported in the UI
         startDate = LocalDate.now(),
-        // TODO need to resolve allocated by, defaulting as first iteration.
-        allocatedBy = "SYSTEM",
+        allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now()
       )
     )
+  }
+
+  private fun failIfAllocatedByIsBlank(allocatedBy: String) {
+    if (allocatedBy.isBlank()) throw IllegalArgumentException("Allocated by cannot be blank.")
   }
 
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =

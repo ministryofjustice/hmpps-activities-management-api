@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import java.security.Principal
 import javax.validation.Valid
 
 // TODO add pre-auth annotations to enforce roles when we have them
@@ -235,10 +236,12 @@ class ActivityScheduleController(
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocate(
+    principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestBody @Parameter(
       description = "The prisoner allocation request details",
       required = true
     ) @Valid prisonerAllocationRequest: PrisonerAllocationRequest
-  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest).let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
+    .let { ResponseEntity.noContent().build() }
 }
