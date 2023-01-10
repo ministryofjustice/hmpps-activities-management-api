@@ -202,6 +202,20 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `getActivitiesInPrison returns list of activities`() {
+    whenever(activityRepository.getAllByPrisonCode("MDI"))
+      .thenReturn(listOf(activityEntity()))
+
+    assertThat(
+      service.getActivitiesInPrison(
+        "MDI",
+      )
+    ).isEqualTo(listOf(activityEntity()).toModelLite())
+
+    verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
+  }
+
+  @Test
   fun `getSchedulesForActivity returns list of schedules`() {
     val activity = activityEntity()
 
