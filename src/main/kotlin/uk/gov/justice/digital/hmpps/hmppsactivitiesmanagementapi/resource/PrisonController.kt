@@ -37,6 +37,34 @@ class PrisonController(
 ) {
 
   @Operation(
+    summary = "Get list of activities at a specified prison",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activities",
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = ActivityLite::class)))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      )
+    ]
+  )
+  @GetMapping(value = ["/{prisonCode}/activities"])
+  @ResponseBody
+  fun getActivities(
+    @PathVariable("prisonCode") prisonCode: String,
+  ): List<ActivityLite> = activityService.getActivitiesInPrison(prisonCode)
+
+  @Operation(
     summary = "Get list of activities within a category at a specified prison",
   )
   @ApiResponses(

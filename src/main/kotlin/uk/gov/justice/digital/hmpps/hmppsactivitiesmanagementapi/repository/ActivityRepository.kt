@@ -14,4 +14,5 @@ interface ActivityRepository : JpaRepository<Activity, Long> {
   fun getAllForDate(@Param("date") date: LocalDate): List<Activity>
 
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
+  fun getAllByPrisonCode(prisonCode: String): List<Activity>
 }

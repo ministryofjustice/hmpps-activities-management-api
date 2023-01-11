@@ -130,6 +130,46 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     get("/prison/{prisonCode}/activity-categories/{categoryId}/capacity", prisonCode, categoryId)
 
   @Test
+  fun `200 response when get activities`() {
+    val expectedModel = listOf(
+      ActivityLite(
+        id = 1,
+        prisonCode = "MDI",
+        attendanceRequired = true,
+        inCell = false,
+        pieceWork = false,
+        outsideWork = false,
+        payPerSession = PayPerSession.H,
+        summary = "activity summary",
+        description = "activity description",
+        riskLevel = "High",
+        minimumIncentiveLevel = "Basic",
+        category = ActivityCategory(
+          id = 1L,
+          code = "LEISURE_SOCIAL",
+          name = "Leisure and social",
+          description = "Such as association, library time and social clubs, like music or art"
+        )
+      )
+    )
+
+    whenever(activityService.getActivitiesInPrison("MDI")).thenReturn(
+      expectedModel
+    )
+
+    val response = mockMvc.getActivities("MDI")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }.andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(activityService, times(1)).getActivitiesInPrison("MDI")
+  }
+
+  private fun MockMvc.getActivities(prisonCode: String) =
+    get("/prison/{prisonCode}/activities", prisonCode)
+
+  @Test
   fun `200 response when get schedule by prison code and search criteria found`() {
     val schedules = activityModel(activityEntity()).schedules
 

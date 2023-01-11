@@ -10,6 +10,7 @@
     "name": "Education",
     "description": "Such as classes in English, maths, construction and computer skills"
   },
+  "payPerSession": "H",
   "tier": {
     "id": 1,
     "code": "Tier1",
