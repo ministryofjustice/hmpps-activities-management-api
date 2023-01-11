@@ -26,4 +26,5 @@ interface ActivityRepository : JpaRepository<Activity, Long> {
   ): List<Activity>
 
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
+  fun getAllByPrisonCode(prisonCode: String): List<Activity>
 }

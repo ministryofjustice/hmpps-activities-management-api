@@ -50,6 +50,36 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql"
   )
   @Test
+  fun `get all activities for a prison`() {
+    val activities = webTestClient.getActivities("PVI")
+
+    assertThat(activities).containsExactlyInAnyOrder(
+      ActivityLite(
+        id = 1,
+        prisonCode = "PVI",
+        attendanceRequired = true,
+        inCell = false,
+        pieceWork = false,
+        outsideWork = false,
+        payPerSession = PayPerSession.H,
+        summary = "Maths",
+        description = "Maths Level 1",
+        riskLevel = "High",
+        minimumIncentiveLevel = "Basic",
+        category = ActivityCategory(
+          id = 1L,
+          code = "C1",
+          name = "Category 1",
+          description = "Description of Category 1"
+        )
+      )
+    )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql"
+  )
+  @Test
   fun `get all scheduled prison locations for HMP Pentonville on Oct 10th 2022`() {
     val locations = webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10))
 
@@ -84,6 +114,17 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getActivitiesForCategory(prisonCode: String, categoryId: Long) =
     get()
       .uri("/prison/$prisonCode/activity-categories/$categoryId/activities")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivityLite::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getActivities(prisonCode: String) =
+    get()
+      .uri("/prison/$prisonCode/activities")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

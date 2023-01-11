@@ -18,7 +18,7 @@ data class ActivityCreateRequest(
   val prisonCode: String?,
 
   @Schema(description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance", example = "false")
-  val attendanceRequired: Boolean,
+  val attendanceRequired: Boolean = true,
 
   @Schema(description = "Flag to indicate if the location of the activity is in cell", example = "false")
   var inCell: Boolean,

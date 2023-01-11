@@ -46,6 +46,12 @@ class ActivityService(
       .toModelLite()
   }
 
+  fun getActivitiesInPrison(
+    prisonCode: String
+  ): List<ActivityLite> {
+    return activityRepository.getAllByPrisonCode(prisonCode).toModelLite()
+  }
+
   fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
     val activity = activityRepository.findById(activityId)
       .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
