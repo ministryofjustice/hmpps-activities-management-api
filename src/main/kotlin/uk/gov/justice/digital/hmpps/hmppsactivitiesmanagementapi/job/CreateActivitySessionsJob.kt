@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import java.time.LocalDate
 
-
 @Component
 class CreateActivitySessionsJob(
   private val activityRepository: ActivityRepository,
