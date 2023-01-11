@@ -92,7 +92,7 @@ class ActivityScheduleTest {
     assertThat(
       activitySchedule(
         activityEntity(),
-        LocalDate.now().atTime(10, 20)
+        timestamp = LocalDate.now().atTime(10, 20)
       ).toModelLite()
     ).isEqualTo(expectedModel)
   }
@@ -135,7 +135,7 @@ class ActivityScheduleTest {
       )
     )
 
-    assertThat(listOf(activitySchedule(activityEntity(), LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(
+    assertThat(listOf(activitySchedule(activityEntity(), timestamp = LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(
       expectedModel
     )
   }

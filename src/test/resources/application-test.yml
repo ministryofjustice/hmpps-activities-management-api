@@ -33,7 +33,7 @@ management.endpoint:
 
 jobs:
   create-activity-sessions:
-    days-in-advance: 0
+    days-in-advance: 2
 
 hmpps:
   auth:

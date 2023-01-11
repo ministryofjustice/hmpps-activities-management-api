@@ -24,22 +24,29 @@ internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
   tier: ActivityTier = activityTier(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  activityId: Long = 1L,
+  prisonCode: String = "123",
+  summary: String = "Maths",
+  description: String = "Maths basic",
+  startDate: LocalDate = timestamp.toLocalDate(),
+  endDate: LocalDate? = null,
 ) =
   Activity(
-    activityId = 1,
-    prisonCode = "123",
+    activityId = activityId,
+    prisonCode = prisonCode,
     activityCategory = category,
     activityTier = tier,
-    summary = "Maths",
-    description = "Maths basic",
+    summary = summary,
+    description = description,
     riskLevel = "High",
     minimumIncentiveLevel = "Basic",
-    startDate = timestamp.toLocalDate(),
+    startDate = startDate,
+    endDate = endDate,
     createdTime = timestamp,
     createdBy = "test"
   ).apply {
     eligibilityRules.add(activityEligibilityRule(this))
-    schedules.add(activitySchedule(this, timestamp))
+    schedules.add(activitySchedule(this, activityScheduleId = 1, timestamp))
     waitingList.add(activityWaiting(this, timestamp))
     activityPay.add(activityPay(this))
   }
@@ -74,6 +81,7 @@ internal fun activityEligibilityRule(activity: Activity): ActivityEligibility {
 
 internal fun activitySchedule(
   activity: Activity,
+  activityScheduleId: Long = 1,
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   monday: Boolean = true,
   tuesday: Boolean = false,
@@ -85,7 +93,7 @@ internal fun activitySchedule(
   runsOnBankHolidays: Boolean = false,
 ) =
   ActivitySchedule(
-    activityScheduleId = 1,
+    activityScheduleId = activityScheduleId,
     activity = activity,
     description = "schedule description",
     capacity = 1,
