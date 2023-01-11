@@ -13,7 +13,8 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
-  fun `Schedule instances of activity sessions`() {
+  fun `Schedule instances of activities sessions`() {
+    // Today is stubbed as a bank holiday via the BankHolidayExtension class, via the IntegrationTestBase class.
     jdbcTemplate.update(
       "update activity_schedule_slot set " +
         "monday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY)}, " +
@@ -36,7 +37,8 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
-  fun `Does not schedule instances on a bank holiday`() {
+  fun `Do not schedule instances of activity sessions on a bank holiday`() {
+    // Today is stubbed as a bank holiday via the BankHolidayExtension class, via the IntegrationTestBase class.
     jdbcTemplate.update(
       "update activity_schedule_slot set " +
         "monday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY)}, " +

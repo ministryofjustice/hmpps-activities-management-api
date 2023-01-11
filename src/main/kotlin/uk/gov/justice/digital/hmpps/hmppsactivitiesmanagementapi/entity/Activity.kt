@@ -81,7 +81,7 @@ data class Activity(
 
   val createdBy: String
 ) {
-  fun isActive(date: LocalDate) = date.between(startDate, endDate)
+  fun isActive(date: LocalDate): Boolean = if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules.filter { schedule ->
