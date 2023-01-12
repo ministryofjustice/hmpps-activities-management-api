@@ -422,7 +422,7 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
     prisonerNumber = prisonerNumber,
     date = it.eventDate,
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = LocalDateTime.parse(it.endTime).toLocalTime(),
+    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
       ?: defaultPriority
   )
