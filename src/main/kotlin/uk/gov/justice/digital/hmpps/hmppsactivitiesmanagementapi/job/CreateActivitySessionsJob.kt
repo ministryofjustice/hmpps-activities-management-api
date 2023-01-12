@@ -30,54 +30,59 @@ class CreateActivitySessionsJob(
   * the activities that are active at that prison between today SCHEDULE_AHEAD_DAYS days
   * into the future. This value is set as an environment variable in the helm configuration.
   *
-  * For each day between the two dates it looks the list of activities in a prison, their schedules and
+  * For each day between the two dates it looks at the list of activities in a prison, their schedules and
   * slots, and determine which ones need a scheduled instance creating for them. It will avoid duplicating
   * instances for the same day - so safe to re-run for the same period (or overlapping periods). Will need
   * some thought here to pick up changes made to scheduled instances that already exist? These will need to
   * be amended in-situ by the user action of changing a schedule or slot (i.e. not the responsibility of this job).
   *
   * It will also avoid bank holidays, except for those activities that are marked as running on bank holidays.
-  * It will avoid creating scheduled instances where an activity has planned suspensions.
-  *
+  * It will avoid creating scheduled instances where an activity has planned suspensions or cancellations:
+  * BUT - if suspended activities are paid, we will need to create them and mark them as suspended
+  *     - if cancelled activities are paid, we will still need to create them and mark them as cancelled.
+  *     - the job which creates attendances will also need some logic to deal with these.
+  * AND THESE WILL NEED TO BE CATERED FOR WHEN REQUIREMENTS ARE CLEARER
   */
 
   @Async("asyncExecutor")
   fun execute() {
     val today = LocalDate.now()
-    val endDay = LocalDate.now().plusDays(daysInAdvance!!)
+    val endDay = today.plusDays(daysInAdvance!!)
 
     log.info("Scheduling activities job running - from $today until $endDay")
 
-    rolloutPrisonRepository.findAll().forEach { prison ->
-      if (prison.active) {
-        log.info("Scheduling activities for prison ${prison.description}")
+    rolloutPrisonRepository.findAll().filter { it.active }.forEach { prison ->
 
-        val activityList = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
-        val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+      log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
-        listOfDatesToSchedule.forEach { day ->
-          val filteredForDay = activityList.filterIsActiveOnDay(day)
+      val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
+      val listOfDatesToSchedule = today.datesUntil(endDay).toList()
 
-          filteredForDay.forEach { activity ->
-            var activityChanged = false
+      listOfDatesToSchedule.forEach { day ->
+        val filteredForDay = activities.filterIsActiveOnDay(day)
 
-            val schedules = activity.getSchedulesOnDay(day, includeSuspended = false)
-            val withNoPreExistingInstances = schedules.filterActivitySchedulesWithNoPreExistingInstance(day)
+        filteredForDay.forEach { activity ->
+          var activityChanged = false
+          val schedules = activity.getSchedulesOnDay(day, includeSuspended = false)
+          val withNoPreExistingInstances = schedules.filterActivitySchedulesWithNoPreExistingInstance(day)
 
-            withNoPreExistingInstances.forEach { schedule ->
-              val filteredSlots = schedule.slots.filter { day.dayOfWeek in it.getDaysOfWeek() }
-              val withNoBankHols = filteredSlots.filterActivityScheduleSlotsForBankHoliday(day)
-
-              withNoBankHols.forEach { slot ->
-                schedule.instances.add(ScheduledInstance(activitySchedule = schedule, sessionDate = day, startTime = slot.startTime, endTime = slot.endTime))
-                activityChanged = true
-                log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
-              }
+          withNoPreExistingInstances.forEach { schedule ->
+            val filteredSlots = schedule.slots.filter { day.dayOfWeek in it.getDaysOfWeek() }
+            filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
+              schedule.instances.add(
+                ScheduledInstance(
+                  activitySchedule = schedule,
+                  sessionDate = day,
+                  startTime = slot.startTime,
+                  endTime = slot.endTime
+                )
+              )
+              activityChanged = true
+              log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
             }
-
-            if (activityChanged) {
-              activityRepository.save(activity)
-            }
+          }
+          if (activityChanged) {
+            activityRepository.save(activity)
           }
         }
       }
