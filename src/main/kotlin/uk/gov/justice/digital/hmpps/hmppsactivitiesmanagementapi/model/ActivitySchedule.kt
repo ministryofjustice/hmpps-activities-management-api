@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDate
 
 @Schema(
   description =
@@ -23,7 +24,7 @@ data class ActivitySchedule(
   @Schema(description = "The list of allocated prisoners who are allocated to this schedule, at this time and location")
   val allocations: List<Allocation> = emptyList(),
 
-  @Schema(description = "The description of this activity schedule", example = "Monday AM Houseblock 3")
+  @Schema(description = "The description of this activity schedule", example = "Entry level Maths 1")
   val description: String,
 
   @Schema(description = "Indicates the dates between which the schedule has been suspended")
@@ -41,4 +42,12 @@ data class ActivitySchedule(
 
   @Schema(description = "The slots associated with this activity schedule")
   val slots: List<ActivityScheduleSlot> = emptyList(),
+
+  @Schema(description = "The date on which this schedule will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
+  @JsonFormat(pattern = "dd/MM/yyyy")
+  val startDate: LocalDate,
+
+  @Schema(description = "The date on which this schedule will end. From this date, any schedules will be created as real, planned instances", example = "21/10/2022")
+  @JsonFormat(pattern = "dd/MM/yyyy")
+  val endDate: LocalDate? = null,
 )

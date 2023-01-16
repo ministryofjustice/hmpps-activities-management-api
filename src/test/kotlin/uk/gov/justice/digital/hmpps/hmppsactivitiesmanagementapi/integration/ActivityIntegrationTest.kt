@@ -144,7 +144,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon"),
           )
-        )
+        ),
+        startDate = LocalDate.of(2022, 10, 10)
       ),
       ActivityScheduleLite(
         id = 2,
@@ -177,7 +178,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             endTime = LocalTime.of(15, 0),
             daysOfWeek = listOf("Mon"),
           )
-        )
+        ),
+        startDate = LocalDate.of(2022, 10, 10)
       ),
     )
   }
@@ -228,6 +230,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             daysOfWeek = listOf("Mon", "Thu"),
           ),
         ),
+        startDate = LocalDate.of(2022, 10, 10)
       ),
     )
   }
