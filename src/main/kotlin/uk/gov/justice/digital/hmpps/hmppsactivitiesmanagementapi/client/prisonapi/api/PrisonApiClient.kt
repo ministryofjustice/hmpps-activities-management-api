@@ -59,7 +59,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
-  fun getScheduledAppointmentsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledAppointmentsForPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?
+  ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -86,7 +91,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<CourtHearings>())
   }
 
-  fun getScheduledCourtEventsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledCourtEventsForPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?
+  ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -113,7 +123,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
-  fun getScheduledVisitsForPrisonerNumbers(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate?, timeSlot: TimeSlot?): Mono<List<PrisonerSchedule>> {
+  fun getScheduledVisitsForPrisonerNumbers(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?
+  ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -201,6 +216,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<List<LocationGroup>>())
   }
+
+  fun getLocation(locationId: Long): Mono<Location> =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/locations/{locationId}")
+          .build(locationId)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<Location>())
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))

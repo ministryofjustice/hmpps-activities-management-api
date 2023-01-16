@@ -80,7 +80,7 @@ data class ActivitySchedule(
 
   val startDate: LocalDate
 ) {
-  val endDate: LocalDate? = null
+  var endDate: LocalDate? = null
 
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId!!,

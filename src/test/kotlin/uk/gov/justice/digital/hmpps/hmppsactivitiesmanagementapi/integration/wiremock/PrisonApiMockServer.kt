@@ -259,4 +259,16 @@ class PrisonApiMockServer : WireMockServer(8999) {
         )
     )
   }
+
+  fun stubGetLocation(locationId: Long, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
 }

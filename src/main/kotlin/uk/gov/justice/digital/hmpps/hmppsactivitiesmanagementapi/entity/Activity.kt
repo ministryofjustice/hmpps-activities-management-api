@@ -81,7 +81,8 @@ data class Activity(
 
   val createdBy: String
 ) {
-  fun isActive(date: LocalDate): Boolean = if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
+  fun isActive(date: LocalDate): Boolean =
+    if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules.filter { schedule ->
@@ -127,6 +128,32 @@ data class Activity(
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(activityId = $activityId )"
+  }
+
+  fun addSchedule(
+    description: String,
+    internalLocationId: Int,
+    internalLocationCode: String,
+    internalLocationDescription: String,
+    capacity: Int,
+    startDate: LocalDate,
+    endDate: LocalDate? = null
+  ) {
+    // TODO need to validate e.g. dates, duplicate schedule, schedule description
+    // TODO need to factor in slots
+    schedules.add(
+      ActivitySchedule(
+        activity = this,
+        description = description,
+        internalLocationId = internalLocationId,
+        internalLocationCode = internalLocationCode,
+        internalLocationDescription = internalLocationDescription,
+        capacity = capacity,
+        startDate = startDate
+      ).apply {
+        this.endDate = endDate
+      }
+    )
   }
 }
 

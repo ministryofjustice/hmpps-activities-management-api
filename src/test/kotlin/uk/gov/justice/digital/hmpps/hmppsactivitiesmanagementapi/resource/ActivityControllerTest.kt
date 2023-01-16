@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleCreationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
@@ -44,7 +45,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @MockBean
   private lateinit var capacityService: CapacityService
 
-  override fun controller() = ActivityController(activityService, capacityService)
+  @MockBean
+  private lateinit var scheduleCreationService: ActivityScheduleCreationService
+
+  override fun controller() = ActivityController(activityService, capacityService, scheduleCreationService)
 
   @Test
   fun `createActivity - success`() {

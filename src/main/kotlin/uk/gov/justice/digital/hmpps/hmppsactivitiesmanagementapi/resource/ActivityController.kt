@@ -20,7 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleCreationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
@@ -34,6 +36,7 @@ import javax.validation.Valid
 class ActivityController(
   private val activityService: ActivityService,
   private val capacityService: CapacityService,
+  private val scheduleCreationService: ActivityScheduleCreationService
 ) {
 
   @GetMapping(value = ["/{activityId}"])
@@ -223,4 +226,52 @@ class ActivityController(
   @ResponseBody
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> =
     activityService.getSchedulesForActivity(activityId)
+
+  @PostMapping(value = ["/{activityId}/schedules"])
+  @Operation(
+    summary = "Adds a new schedule to an existing activity",
+    description = "Adds a new schedule to an existing activity. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "201",
+        description = "The schedule was created and added to the activity.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Activity ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun addSchedule(
+    @PathVariable activityId: Long,
+    principal: Principal,
+    @Valid @RequestBody @Parameter(
+      description = "The create request with the new activity schedule details",
+      required = true
+    ) request: ActivityScheduleCreateRequest
+  ) = scheduleCreationService.createSchedule(activityId, request, principal.name)
 }
