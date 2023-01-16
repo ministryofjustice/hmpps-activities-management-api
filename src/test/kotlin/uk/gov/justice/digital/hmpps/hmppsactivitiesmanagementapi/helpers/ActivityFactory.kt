@@ -91,6 +91,7 @@ internal fun activitySchedule(
   saturday: Boolean = false,
   sunday: Boolean = false,
   runsOnBankHolidays: Boolean = false,
+  startDate: LocalDate? = null
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -100,6 +101,7 @@ internal fun activitySchedule(
     internalLocationId = 1,
     internalLocationCode = "EDU-ROOM-1",
     internalLocationDescription = "Education - R1",
+    startDate = startDate ?: activity.startDate
   ).apply {
     this.instances.add(
       ScheduledInstance(

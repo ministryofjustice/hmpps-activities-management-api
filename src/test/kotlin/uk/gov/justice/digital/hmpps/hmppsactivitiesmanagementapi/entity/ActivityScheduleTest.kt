@@ -87,12 +87,14 @@ class ActivityScheduleTest {
           endTime = LocalTime.of(10, 20),
           daysOfWeek = listOf("Mon"),
         )
-      )
+      ),
+      startDate = LocalDate.now().plusDays(1)
     )
     assertThat(
       activitySchedule(
         activityEntity(),
-        timestamp = LocalDate.now().atTime(10, 20)
+        timestamp = LocalDate.now().atTime(10, 20),
+        startDate = LocalDate.now().plusDays(1)
       ).toModelLite()
     ).isEqualTo(expectedModel)
   }
@@ -131,11 +133,12 @@ class ActivityScheduleTest {
             endTime = LocalTime.of(10, 20),
             daysOfWeek = listOf("Mon"),
           )
-        )
+        ),
+        startDate = LocalDate.now().plusDays(1)
       )
     )
 
-    assertThat(listOf(activitySchedule(activityEntity(), timestamp = LocalDate.now().atTime(10, 20))).toModelLite()).isEqualTo(
+    assertThat(listOf(activitySchedule(activityEntity(), timestamp = LocalDate.now().atTime(10, 20), startDate = LocalDate.now().plusDays(1))).toModelLite()).isEqualTo(
       expectedModel
     )
   }

@@ -130,7 +130,9 @@ CREATE TABLE activity_schedule (
   internal_location_id          integer,
   internal_location_code        varchar(40),
   internal_location_description varchar(100),
-  capacity                      integer      NOT NULL
+  capacity                      integer      NOT NULL,
+  start_date                    date         NOT NULL,
+  end_date                      date
 );
 
 CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);

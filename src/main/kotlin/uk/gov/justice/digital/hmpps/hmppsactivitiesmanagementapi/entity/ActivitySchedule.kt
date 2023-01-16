@@ -77,7 +77,10 @@ data class ActivitySchedule(
   var internalLocationDescription: String? = null,
 
   val capacity: Int,
+
+  val startDate: LocalDate
 ) {
+  val endDate: LocalDate? = null
 
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId!!,
@@ -90,6 +93,8 @@ data class ActivitySchedule(
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
     slots = this.slots.map { it.toModel() },
+    startDate = this.startDate,
+    endDate = this.endDate
   )
 
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {

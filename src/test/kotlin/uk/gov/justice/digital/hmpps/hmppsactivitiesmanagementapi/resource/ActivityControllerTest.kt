@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalTime
 import javax.persistence.EntityNotFoundException
 
@@ -342,7 +343,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             endTime = LocalTime.of(10, 20),
             daysOfWeek = listOf("Mon"),
           )
-        )
+        ),
+        startDate = LocalDate.now()
       )
     )
 

@@ -22,50 +22,50 @@ values (3, 3, 'Enhanced', 'C', 103, 0, 0);
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, pay_band, rate, piece_rate, piece_rate_items)
 values (4, 4, 'Gold', 'D', 104, 0, 0);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (1, 1, 'Geography AM', 1, 'L1', 'Location MDI 1', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (1, 1, 'Geography AM', 1, 'L1', 'Location MDI 1', 10, '2022-10-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (1, 1, '10:01:00', '11:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (2, 1, 'Geography PM', 2, 'L2', 'Location MDI 2', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (2, 1, 'Geography PM', 2, 'L2', 'Location MDI 2', 10, '2022-10-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (2, 2, '14:01:00', '15:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (3, 2, 'English AM', 2, 'L2', 'Location MDI 2', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (3, 2, 'English AM', 2, 'L2', 'Location MDI 2', 10, '2022-11-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (3, 3, '10:01:00', '11:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (4, 2, 'English PM', 1, 'L1', 'Location MDI 1', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (4, 2, 'English PM', 1, 'L1', 'Location MDI 1', 10, '2022-11-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (4, 4, '14:01:00', '15:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (5, 3, 'Maths AM', 3, 'L1', 'Location PVI 1', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (5, 3, 'Maths AM', 3, 'L1', 'Location PVI 1', 10, '2022-10-10');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (5, 5, '10:00:00', '11:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (6, 3, 'Maths PM', 4, 'L2', 'Location PVI 2', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (6, 3, 'Maths PM', 4, 'L2', 'Location PVI 2', 10, '2022-10-10');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (6, 6, '14:00:00', '15:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (7, 4, 'English AM', 4, 'L2', 'Location PVI 2', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (7, 4, 'English AM', 4, 'L2', 'Location PVI 2', 10, '2022-10-21');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (7, 7, '10:00:00', '11:00:00', true);
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity)
-values (8, 4, 'English PM', 3, 'L1', 'Location PVI 1', 10);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
+values (8, 4, 'English PM', 3, 'L1', 'Location PVI 1', 10, '2022-10-21');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (8, 8, '14:00:00', '15:00:00', true);
