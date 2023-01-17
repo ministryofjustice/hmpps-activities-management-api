@@ -323,4 +323,29 @@ class ActivityScheduleTest {
       schedule.addSlot(LocalTime.NOON, LocalTime.NOON, setOf(DayOfWeek.MONDAY))
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
+
+  @Test
+  fun `end date must be after the start date`() {
+    val schedule = activityEntity().schedules.first().apply { endDate = null }
+
+    assertThat(schedule.endDate).isNull()
+
+    schedule.endDate = schedule.startDate.plusDays(1)
+
+    assertThatThrownBy { schedule.endDate = schedule.startDate }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { schedule.endDate = schedule.startDate.minusDays(1) }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `fails if no day specified for a slot`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { slots.clear() }
+
+    assertThat(schedule.slots).isEmpty()
+
+    assertThatThrownBy {
+      schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), emptySet())
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
 }

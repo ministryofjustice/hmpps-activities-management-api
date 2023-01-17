@@ -82,13 +82,20 @@ data class ActivitySchedule(
   val startDate: LocalDate
 ) {
   var endDate: LocalDate? = null
+    set(value) {
+      field = if (value != null && value.isAfter(startDate).not()) {
+        throw IllegalArgumentException("End date must be after the start date")
+      } else {
+        value
+      }
+    }
 
   fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
     if (endTime.isAfter(startTime).not()) {
       throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
     }
 
-    // TODO should we be checking for duplicates before adding?
+    if (daysOfWeek.isEmpty()) throw IllegalArgumentException("One ore more days must be specified for a given slot.")
 
     slots.add(
       ActivityScheduleSlot(

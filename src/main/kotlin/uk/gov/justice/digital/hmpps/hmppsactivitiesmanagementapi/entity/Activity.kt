@@ -139,7 +139,26 @@ data class Activity(
     startDate: LocalDate,
     endDate: LocalDate? = null
   ): ActivitySchedule {
-    // TODO need to validate e.g. dates, duplicate schedule, schedule description
+    if (startDate.isBefore(this.startDate)) {
+      throw IllegalArgumentException("The schedule start date '$startDate' cannot be before the activity start date ${this.startDate}")
+    }
+
+    if (this.endDate != null && startDate.isBefore(this.endDate).not()) {
+      throw IllegalArgumentException("The schedule start date '$startDate' must be before the activity end date ${this.endDate}")
+    }
+
+    if (endDate != null && this.endDate != null && endDate.isAfter(this.endDate)) {
+      throw IllegalArgumentException("The schedule end date '$endDate' cannot be after the activity end date ${this.endDate}")
+    }
+
+    if (capacity < 1) {
+      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
+    }
+
+    if (schedules.any { it.description.trim().uppercase() == description.trim().uppercase() }) {
+      throw IllegalArgumentException("A schedule with the description '$description' already exists.")
+    }
+
     schedules.add(
       ActivitySchedule(
         activity = this,
