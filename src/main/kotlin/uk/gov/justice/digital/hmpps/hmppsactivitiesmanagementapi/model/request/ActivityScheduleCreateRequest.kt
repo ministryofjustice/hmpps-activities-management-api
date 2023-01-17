@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
@@ -77,7 +76,7 @@ data class Slot(
     description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
     example = "AM"
   )
-  val timeSlot: TimeSlot?,
+  val timeSlot: String?,
 
   val monday: Boolean = false,
 

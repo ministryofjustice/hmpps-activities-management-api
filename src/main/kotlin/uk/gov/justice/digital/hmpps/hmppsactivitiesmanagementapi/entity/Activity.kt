@@ -138,9 +138,8 @@ data class Activity(
     capacity: Int,
     startDate: LocalDate,
     endDate: LocalDate? = null
-  ) {
+  ): ActivitySchedule {
     // TODO need to validate e.g. dates, duplicate schedule, schedule description
-    // TODO need to factor in slots
     schedules.add(
       ActivitySchedule(
         activity = this,
@@ -154,6 +153,8 @@ data class Activity(
         this.endDate = endDate
       }
     )
+
+    return schedules.last()
   }
 }
 

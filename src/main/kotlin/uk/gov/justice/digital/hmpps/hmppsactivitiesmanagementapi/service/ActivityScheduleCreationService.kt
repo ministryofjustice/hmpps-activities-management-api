@@ -4,11 +4,16 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import java.time.LocalTime
 
 @Service
 class ActivityScheduleCreationService(
@@ -16,32 +21,60 @@ class ActivityScheduleCreationService(
   private val prisonApiClient: PrisonApiClient
 ) {
 
+  // TODO resolve hardcoded times for slots. This comes from prison regime!
+  private val timeSlots =
+    mapOf(
+      TimeSlot.AM to Pair(LocalTime.of(9, 0), LocalTime.of(10, 0)),
+      TimeSlot.PM to Pair(LocalTime.of(13, 0), LocalTime.of(14, 0)),
+      TimeSlot.ED to Pair(LocalTime.of(18, 0), LocalTime.of(20, 0))
+    )
+
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createSchedule(
     activityId: Long,
     request: ActivityScheduleCreateRequest,
     allocatedBy: String
   ): ActivityScheduleLite {
-    val activity = activityRepository.findOrThrowNotFound(activityId).let { activity ->
-      val location = prisonApiClient.getLocation(activity, request)
+    // TODO need to add validation in here.  Currently assuming happy days!
+
+    activityRepository.findOrThrowNotFound(activityId).let { activity ->
+      val scheduleLocation = getLocationForSchedule(activity, request)
 
       activity.addSchedule(
         description = request.description!!,
-        internalLocationId = location.locationId.toInt(),
-        internalLocationCode = location.internalLocationCode ?: "",
-        internalLocationDescription = location.description,
+        internalLocationId = scheduleLocation.locationId.toInt(),
+        internalLocationCode = scheduleLocation.internalLocationCode ?: "",
+        internalLocationDescription = scheduleLocation.description,
         capacity = request.capacity!!,
         startDate = request.startDate!!,
         endDate = request.endDate
-      )
+      ).let { schedule ->
+        schedule.addSlots(request.slots!!)
 
-      activityRepository.saveAndFlush(activity)
+        val persisted = activityRepository.saveAndFlush(activity)
+
+        return persisted.schedules.last().toModelLite()
+      }
     }
-
-    return activity.schedules.last().toModelLite()
   }
 
-  private fun PrisonApiClient.getLocation(activity: Activity, request: ActivityScheduleCreateRequest): Location {
+  private fun ActivitySchedule.addSlots(slots: List<Slot>) {
+    slots.forEach { slot ->
+      val startAndEndTime = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+
+      when {
+        slot.monday -> addSlot(startAndEndTime, DayOfWeek.MONDAY)
+        slot.tuesday -> addSlot(startAndEndTime, DayOfWeek.TUESDAY)
+        slot.wednesday -> addSlot(startAndEndTime, DayOfWeek.WEDNESDAY)
+        slot.thursday -> addSlot(startAndEndTime, DayOfWeek.THURSDAY)
+        slot.friday -> addSlot(startAndEndTime, DayOfWeek.FRIDAY)
+        slot.saturday -> addSlot(startAndEndTime, DayOfWeek.SATURDAY)
+        slot.sunday -> addSlot(startAndEndTime, DayOfWeek.SUNDAY)
+      }
+    }
+  }
+
+  private fun getLocationForSchedule(activity: Activity, request: ActivityScheduleCreateRequest): Location {
     val location = prisonApiClient.getLocation(request.locationId!!).block()!!
     failIfPrisonsDiffer(activity, location)
     return location

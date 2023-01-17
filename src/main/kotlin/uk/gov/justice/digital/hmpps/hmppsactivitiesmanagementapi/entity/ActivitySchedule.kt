@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EntityListeners
@@ -82,6 +83,28 @@ data class ActivitySchedule(
 ) {
   var endDate: LocalDate? = null
 
+  fun addSlot(
+    startAndEndTime: Pair<LocalTime, LocalTime>,
+    dayOfWeek: DayOfWeek
+  ) {
+    // TODO add validation to check start and end times e.g end must be after start?
+    // TODO add validation to prevent duplicates and overlapping?
+    slots.add(
+      ActivityScheduleSlot(
+        activitySchedule = this,
+        startTime = startAndEndTime.first,
+        endTime = startAndEndTime.second,
+        mondayFlag = dayOfWeek == DayOfWeek.MONDAY,
+        tuesdayFlag = dayOfWeek == DayOfWeek.TUESDAY,
+        wednesdayFlag = dayOfWeek == DayOfWeek.WEDNESDAY,
+        thursdayFlag = dayOfWeek == DayOfWeek.THURSDAY,
+        fridayFlag = dayOfWeek == DayOfWeek.FRIDAY,
+        saturdayFlag = dayOfWeek == DayOfWeek.SATURDAY,
+        sundayFlag = dayOfWeek == DayOfWeek.SUNDAY
+      )
+    )
+  }
+
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId!!,
     description = this.description,
@@ -134,3 +157,13 @@ data class ActivitySchedule(
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
+
+enum class DayOfWeek {
+  MONDAY,
+  TUESDAY,
+  WEDNESDAY,
+  THURSDAY,
+  FRIDAY,
+  SATURDAY,
+  SUNDAY
+}
