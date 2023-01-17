@@ -59,18 +59,24 @@ class ActivityScheduleCreationService(
   }
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
+    // TODO throw exception is slots is empty.
+
     slots.forEach { slot ->
       val startAndEndTime = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
-      when {
-        slot.monday -> addSlot(startAndEndTime, DayOfWeek.MONDAY)
-        slot.tuesday -> addSlot(startAndEndTime, DayOfWeek.TUESDAY)
-        slot.wednesday -> addSlot(startAndEndTime, DayOfWeek.WEDNESDAY)
-        slot.thursday -> addSlot(startAndEndTime, DayOfWeek.THURSDAY)
-        slot.friday -> addSlot(startAndEndTime, DayOfWeek.FRIDAY)
-        slot.saturday -> addSlot(startAndEndTime, DayOfWeek.SATURDAY)
-        slot.sunday -> addSlot(startAndEndTime, DayOfWeek.SUNDAY)
-      }
+      val daysOfWeek = setOfNotNull(
+        DayOfWeek.MONDAY.takeIf { slot.monday },
+        DayOfWeek.TUESDAY.takeIf { slot.tuesday },
+        DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
+        DayOfWeek.THURSDAY.takeIf { slot.thursday },
+        DayOfWeek.FRIDAY.takeIf { slot.friday },
+        DayOfWeek.SATURDAY.takeIf { slot.saturday },
+        DayOfWeek.SUNDAY.takeIf { slot.sunday }
+      )
+
+      // TODO throw exception is days of week is empty.
+
+      this.addSlot(startAndEndTime.first, startAndEndTime.second, daysOfWeek)
     }
   }
 

@@ -83,24 +83,25 @@ data class ActivitySchedule(
 ) {
   var endDate: LocalDate? = null
 
-  fun addSlot(
-    startAndEndTime: Pair<LocalTime, LocalTime>,
-    dayOfWeek: DayOfWeek
-  ) {
-    // TODO add validation to check start and end times e.g end must be after start?
-    // TODO add validation to prevent duplicates and overlapping?
+  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
+    if (endTime.isAfter(startTime).not()) {
+      throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
+    }
+
+    // TODO should we be checking for duplicates before adding?
+
     slots.add(
       ActivityScheduleSlot(
         activitySchedule = this,
-        startTime = startAndEndTime.first,
-        endTime = startAndEndTime.second,
-        mondayFlag = dayOfWeek == DayOfWeek.MONDAY,
-        tuesdayFlag = dayOfWeek == DayOfWeek.TUESDAY,
-        wednesdayFlag = dayOfWeek == DayOfWeek.WEDNESDAY,
-        thursdayFlag = dayOfWeek == DayOfWeek.THURSDAY,
-        fridayFlag = dayOfWeek == DayOfWeek.FRIDAY,
-        saturdayFlag = dayOfWeek == DayOfWeek.SATURDAY,
-        sundayFlag = dayOfWeek == DayOfWeek.SUNDAY
+        startTime = startTime,
+        endTime = endTime,
+        mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
+        tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
+        wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
+        thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
+        fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
+        saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
+        sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
       )
     )
   }

@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class ActivityScheduleTest {
@@ -138,7 +139,15 @@ class ActivityScheduleTest {
       )
     )
 
-    assertThat(listOf(activitySchedule(activityEntity(), timestamp = LocalDate.now().atTime(10, 20), startDate = LocalDate.now().plusDays(1))).toModelLite()).isEqualTo(
+    assertThat(
+      listOf(
+        activitySchedule(
+          activityEntity(),
+          timestamp = LocalDate.now().atTime(10, 20),
+          startDate = LocalDate.now().plusDays(1)
+        )
+      ).toModelLite()
+    ).isEqualTo(
       expectedModel
     )
   }
@@ -232,6 +241,86 @@ class ActivityScheduleTest {
         bookingId = 10001,
         allocatedBy = " "
       )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `can add one day slot only to schedule`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { slots.clear() }
+
+    assertThat(schedule.slots).isEmpty()
+
+    schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY))
+
+    assertThat(schedule.slots).containsExactly(
+      EntityActivityScheduleSlot(
+        activitySchedule = schedule,
+        startTime = LocalTime.MIDNIGHT,
+        endTime = LocalTime.MIDNIGHT.plusHours(1),
+        mondayFlag = true
+      )
+    )
+  }
+
+  @Test
+  fun `can add two day slot to schedule`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { slots.clear() }
+
+    assertThat(schedule.slots).isEmpty()
+
+    schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+
+    assertThat(schedule.slots).containsExactly(
+      EntityActivityScheduleSlot(
+        activitySchedule = schedule,
+        startTime = LocalTime.MIDNIGHT,
+        endTime = LocalTime.MIDNIGHT.plusHours(1),
+        mondayFlag = true,
+        wednesdayFlag = true
+      )
+    )
+  }
+
+  @Test
+  fun `can add entire week slot to schedule`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { slots.clear() }
+
+    assertThat(schedule.slots).isEmpty()
+
+    schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
+
+    assertThat(schedule.slots).containsExactly(
+      EntityActivityScheduleSlot(
+        activitySchedule = schedule,
+        startTime = LocalTime.MIDNIGHT,
+        endTime = LocalTime.MIDNIGHT.plusHours(1),
+        mondayFlag = true,
+        tuesdayFlag = true,
+        wednesdayFlag = true,
+        thursdayFlag = true,
+        fridayFlag = true,
+        saturdayFlag = true,
+        sundayFlag = true
+      )
+    )
+  }
+
+  @Test
+  fun `fails to add slot when end time not after start time`() {
+    val schedule = activityEntity().schedules
+      .first()
+      .apply { slots.clear() }
+
+    assertThat(schedule.slots).isEmpty()
+
+    assertThatThrownBy {
+      schedule.addSlot(LocalTime.NOON, LocalTime.NOON, setOf(DayOfWeek.MONDAY))
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
 }

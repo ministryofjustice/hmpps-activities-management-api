@@ -87,4 +87,30 @@ class ActivityTest {
 
     assertThat(listOf(activityEntity()).toModelLite()).isEqualTo(expectedModel)
   }
+  @Test
+  fun `can add schedule to activity`() {
+    val activity = activityEntity().apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    activity.addSchedule(
+      description = "Woodwork",
+      internalLocationId = 1,
+      internalLocationCode = "WW",
+      internalLocationDescription = "The wood work room descritpion",
+      capacity = 10,
+      startDate = activity.startDate
+    )
+
+    assertThat(activity.schedules).containsExactly(
+      ActivitySchedule(
+        activity = activity,
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room descritpion",
+        capacity = 10,
+        startDate = activity.startDate
+      )
+    )
+  }
 }
