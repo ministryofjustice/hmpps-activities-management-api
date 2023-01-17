@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -333,7 +334,9 @@ class ActivityScheduleTest {
     schedule.endDate = schedule.startDate.plusDays(1)
 
     assertThatThrownBy { schedule.endDate = schedule.startDate }.isInstanceOf(IllegalArgumentException::class.java)
-    assertThatThrownBy { schedule.endDate = schedule.startDate.minusDays(1) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy {
+      schedule.endDate = schedule.startDate.minusDays(1)
+    }.isInstanceOf(IllegalArgumentException::class.java)
   }
 
   @Test

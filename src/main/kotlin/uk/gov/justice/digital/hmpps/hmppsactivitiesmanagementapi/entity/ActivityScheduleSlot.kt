@@ -46,22 +46,22 @@ data class ActivityScheduleSlot(
 ) {
 
   fun toModel() = ModelActivityScheduleSlot(
-    id = this.activityScheduleSlotId!!,
+    id = this.activityScheduleSlotId ?: -1,
     startTime = this.startTime,
     endTime = this.endTime,
     daysOfWeek = this.getDaysOfWeek()
       .map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
   )
 
-  fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {
-    if (mondayFlag) add(DayOfWeek.MONDAY)
-    if (tuesdayFlag) add(DayOfWeek.TUESDAY)
-    if (wednesdayFlag) add(DayOfWeek.WEDNESDAY)
-    if (thursdayFlag) add(DayOfWeek.THURSDAY)
-    if (fridayFlag) add(DayOfWeek.FRIDAY)
-    if (saturdayFlag) add(DayOfWeek.SATURDAY)
-    if (sundayFlag) add(DayOfWeek.SUNDAY)
-  }
+  fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
+    DayOfWeek.MONDAY.takeIf { mondayFlag },
+    DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
+    DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },
+    DayOfWeek.THURSDAY.takeIf { thursdayFlag },
+    DayOfWeek.FRIDAY.takeIf { fridayFlag },
+    DayOfWeek.SATURDAY.takeIf { saturdayFlag },
+    DayOfWeek.SUNDAY.takeIf { sundayFlag }
+  )
 
   @Override
   override fun toString(): String {

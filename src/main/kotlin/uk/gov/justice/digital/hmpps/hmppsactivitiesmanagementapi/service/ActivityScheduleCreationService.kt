@@ -7,12 +7,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import java.time.DayOfWeek
 import java.time.LocalTime
 
 @Service
@@ -32,11 +32,8 @@ class ActivityScheduleCreationService(
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createSchedule(
     activityId: Long,
-    request: ActivityScheduleCreateRequest,
-    allocatedBy: String
+    request: ActivityScheduleCreateRequest
   ): ActivityScheduleLite {
-    // TODO need to add validation in here.  Currently assuming happy days!
-
     activityRepository.findOrThrowNotFound(activityId).let { activity ->
       val scheduleLocation = getLocationForSchedule(activity, request)
 
@@ -59,8 +56,6 @@ class ActivityScheduleCreationService(
   }
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
-    // TODO throw exception is slots is empty.
-
     slots.forEach { slot ->
       val startAndEndTime = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
@@ -73,8 +68,6 @@ class ActivityScheduleCreationService(
         DayOfWeek.SATURDAY.takeIf { slot.saturday },
         DayOfWeek.SUNDAY.takeIf { slot.sunday }
       )
-
-      // TODO throw exception is days of week is empty.
 
       this.addSlot(startAndEndTime.first, startAndEndTime.second, daysOfWeek)
     }

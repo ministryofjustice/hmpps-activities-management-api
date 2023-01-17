@@ -268,10 +268,9 @@ class ActivityController(
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun addSchedule(
     @PathVariable activityId: Long,
-    principal: Principal,
     @Valid @RequestBody @Parameter(
       description = "The create request with the new activity schedule details",
       required = true
     ) request: ActivityScheduleCreateRequest
-  ) = scheduleCreationService.createSchedule(activityId, request, principal.name)
+  ) = scheduleCreationService.createSchedule(activityId, request)
 }

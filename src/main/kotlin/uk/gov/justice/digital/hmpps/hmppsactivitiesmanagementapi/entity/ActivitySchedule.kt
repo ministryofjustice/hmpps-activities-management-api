@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -114,7 +115,7 @@ data class ActivitySchedule(
   }
 
   fun toModelLite() = ActivityScheduleLite(
-    id = this.activityScheduleId!!,
+    id = this.activityScheduleId ?: -1,
     description = this.description,
     internalLocation = InternalLocation(
       id = internalLocationId!!,
@@ -165,13 +166,3 @@ data class ActivitySchedule(
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
-
-enum class DayOfWeek {
-  MONDAY,
-  TUESDAY,
-  WEDNESDAY,
-  THURSDAY,
-  FRIDAY,
-  SATURDAY,
-  SUNDAY
-}

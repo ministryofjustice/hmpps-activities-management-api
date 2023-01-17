@@ -97,7 +97,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocation(1, "prisonapi/location-id-1.json")
 
     val schedule = webTestClient.createActivitySchedule(activity.id, activityScheduleCreateRequest)!!
-    assertThat(schedule.slots).hasSize(1)
+
+    with(schedule) {
+      assertThat(capacity).isEqualTo(10)
+      assertThat(startDate).isEqualTo(activity.startDate)
+      assertThat(description).isEqualTo("Integration test schedule")
+      assertThat(slots).hasSize(1)
+      assertThat(internalLocation).isEqualTo(InternalLocation(id = 1, code = "internal location code", description = "House_block_7-1-002"))
+    }
 
     with(schedule.slots.first()) {
       assertThat(id).isNotNull
