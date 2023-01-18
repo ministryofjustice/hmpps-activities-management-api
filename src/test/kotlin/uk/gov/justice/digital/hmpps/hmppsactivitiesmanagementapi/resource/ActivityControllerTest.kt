@@ -25,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleCreationService
@@ -378,8 +380,33 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     verify(activityService).getSchedulesForActivity(2)
   }
 
+  @Test
+  fun `201 response when add a schedule to an activity`() {
+    val today = LocalDate.now()
+
+    val request = ActivityScheduleCreateRequest(
+      description = "Integration test schedule",
+      startDate = today,
+      locationId = 1,
+      capacity = 10,
+      slots = listOf(Slot("AM", monday = true))
+    )
+
+    mockMvc.createActivitySchedule(1, request)
+      .andExpect { status { isCreated() } }
+
+    verify(scheduleCreationService).createSchedule(1, request)
+  }
+
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
   private fun MockMvc.getActivityCapacity(id: Long) = get("/activities/{activityId}/capacity", id)
   private fun MockMvc.getActivitySchedules(id: Long) =
     get("/activities/{activityId}/schedules", id)
+
+  private fun MockMvc.createActivitySchedule(activityId: Long, request: ActivityScheduleCreateRequest) =
+    mockMvc.post("/activities/$activityId/schedules") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsString(request)
+    }
 }
