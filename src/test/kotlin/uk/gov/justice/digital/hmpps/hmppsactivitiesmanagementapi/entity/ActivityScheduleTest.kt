@@ -351,4 +351,23 @@ class ActivityScheduleTest {
       schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), emptySet())
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
+
+  @Test
+  fun `fails to initialise if capacity not greater than zero`() {
+    ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = LocalDate.now()
+    )
+
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 0,
+        startDate = LocalDate.now()
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
 }

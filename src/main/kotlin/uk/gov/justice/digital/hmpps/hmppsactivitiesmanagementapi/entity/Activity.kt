@@ -143,10 +143,6 @@ data class Activity(
     failIfScheduleDatesClashWithActivityDates(startDate, endDate)
     failIfScheduleWithDescriptionAlreadyPresentOnActivity(description)
 
-    if (capacity < 1) {
-      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
-    }
-
     schedules.add(
       ActivitySchedule.valueOf(
         activity = this,

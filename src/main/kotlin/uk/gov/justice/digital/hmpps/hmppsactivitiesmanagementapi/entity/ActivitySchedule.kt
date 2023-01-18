@@ -82,6 +82,12 @@ data class ActivitySchedule(
 
   val startDate: LocalDate
 ) {
+  init {
+    if (capacity < 1) {
+      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
+    }
+  }
+
   var endDate: LocalDate? = null
     set(value) {
       field = if (value != null && value.isAfter(startDate).not()) {
