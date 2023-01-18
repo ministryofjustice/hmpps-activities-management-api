@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -86,5 +87,127 @@ class ActivityTest {
     )
 
     assertThat(listOf(activityEntity()).toModelLite()).isEqualTo(expectedModel)
+  }
+
+  @Test
+  fun `can add schedule to activity`() {
+    val activity = activityEntity().apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    activity.addSchedule(
+      description = "Woodwork",
+      internalLocationId = 1,
+      internalLocationCode = "WW",
+      internalLocationDescription = "The wood work room description",
+      capacity = 10,
+      startDate = activity.startDate
+    )
+
+    assertThat(activity.schedules).containsExactly(
+      ActivitySchedule(
+        activity = activity,
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room description",
+        capacity = 10,
+        startDate = activity.startDate
+      )
+    )
+  }
+
+  @Test
+  fun `cannot add schedule when start date is before that of the activity`() {
+    val activity = activityEntity().apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    assertThatThrownBy {
+      activity.addSchedule(
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room description",
+        capacity = 10,
+        startDate = activity.startDate.minusDays(1)
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `cannot add schedule when start date is not before end date of the activity`() {
+    val activity = activityEntity().copy(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1)).apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    assertThatThrownBy {
+      activity.addSchedule(
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room description",
+        capacity = 10,
+        startDate = activity.endDate!!
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `cannot add schedule when end date is after the end date of the activity`() {
+    val activity = activityEntity().copy(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1)).apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    assertThatThrownBy {
+      activity.addSchedule(
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room description",
+        capacity = 10,
+        startDate = activity.startDate,
+        endDate = activity.endDate!!.plusDays(1)
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `cannot add schedule when capacity less than 1`() {
+    val activity = activityEntity().apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    assertThatThrownBy {
+      activity.addSchedule(
+        description = "Woodwork",
+        internalLocationId = 1,
+        internalLocationCode = "WW",
+        internalLocationDescription = "The wood work room description",
+        capacity = 0,
+        startDate = activity.startDate,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `cannot add schedule with the same description`() {
+    val activity = activityEntity().apply { schedules.clear() }
+    assertThat(activity.schedules).isEmpty()
+
+    activity.addSchedule(
+      description = "Woodwork",
+      internalLocationId = 1,
+      internalLocationCode = "WW",
+      internalLocationDescription = "The wood work room description",
+      capacity = 10,
+      startDate = activity.startDate
+    )
+
+    assertThatThrownBy {
+      activity.addSchedule(
+        description = " WooDwork ",
+        internalLocationId = 2,
+        internalLocationCode = "WW2",
+        internalLocationDescription = "The wood work room description 2",
+        capacity = 10,
+        startDate = activity.startDate
+      )
+    }
   }
 }

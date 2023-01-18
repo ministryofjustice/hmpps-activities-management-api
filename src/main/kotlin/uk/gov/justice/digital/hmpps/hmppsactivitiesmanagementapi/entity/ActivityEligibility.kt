@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class ActivityEligibility(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityEligibilityId: Long? = null,
+  val activityEligibilityId: Long = -1,
 
   @OneToOne
   @JoinColumn(name = "eligibility_rule_id", nullable = false)

@@ -12,7 +12,7 @@ import javax.persistence.Table
 data class RolloutPrison(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val rolloutPrisonId: Long? = null,
+  val rolloutPrisonId: Long = -1,
 
   val code: String,
 

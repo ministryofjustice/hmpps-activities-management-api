@@ -54,7 +54,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
  */
 fun transform(activity: EntityActivity) =
   ModelActivity(
-    id = activity.activityId!!,
+    id = activity.activityId,
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
@@ -84,7 +84,6 @@ fun transform(
   createdBy: String
 ) =
   EntityActivity(
-    activityId = null,
     prisonCode = activityCreateRequest.prisonCode!!,
     activityCategory = activityCategory,
     activityTier = activityTier,
@@ -285,7 +284,7 @@ fun transformToPrisonerScheduledEvents(
 
 fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(
-    this.activityCategoryId!!,
+    this.activityCategoryId,
     this.code,
     this.name,
     this.description
@@ -293,15 +292,15 @@ fun EntityActivityCategory.toModelActivityCategory() =
 
 private fun EntityActivityTier.toModelActivityTier() =
   ModelActivityTier(
-    id = this.activityTierId!!,
+    id = this.activityTierId,
     code = this.code,
     description = this.description,
   )
 
 private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   ModelActivityEligibility(
-    it.activityEligibilityId!!,
-    it.eligibilityRule.let { er -> ModelEligibilityRule(er.eligibilityRuleId!!, er.code, er.description) }
+    it.activityEligibilityId,
+    it.eligibilityRule.let { er -> ModelEligibilityRule(er.eligibilityRuleId, er.code, er.description) }
   )
 }
 
@@ -311,7 +310,7 @@ fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule()
 
 fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
-    id = this.activityScheduleId!!,
+    id = this.activityScheduleId,
     instances = this.instances.toModelScheduledInstances(),
     allocations = this.allocations.toModelAllocations(),
     description = this.description,
@@ -326,7 +325,7 @@ fun EntityActivitySchedule.toModelSchedule() =
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
   ModelPrisonerWaiting(
-    id = it.prisonerWaitingId!!,
+    id = it.prisonerWaitingId,
     prisonerNumber = it.prisonerNumber,
     priority = it.priority,
     createdTime = it.createdTime,
@@ -336,7 +335,7 @@ private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
 
 private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map {
   ModelActivityScheduleSlot(
-    id = it.activityScheduleSlotId!!,
+    id = it.activityScheduleSlotId,
     startTime = it.startTime,
     endTime = it.endTime,
     daysOfWeek = it.getDaysOfWeek().map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
@@ -345,7 +344,7 @@ private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = ma
 
 private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
   ModelScheduledInstance(
-    id = it.scheduledInstanceId!!,
+    id = it.scheduledInstanceId,
     date = it.sessionDate,
     startTime = it.startTime,
     endTime = it.endTime,
@@ -490,7 +489,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
 
 fun List<EntityAllocation>.toModelAllocations() = map {
   ModelAllocation(
-    id = it.allocationId!!,
+    id = it.allocationId,
     prisonerNumber = it.prisonerNumber,
     bookingId = it.bookingId,
     payBand = it.payBand,
@@ -515,7 +514,7 @@ private fun List<EntitySuspension>.toModelSuspensions() = map {
 
 private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
-    id = it.activityPayId!!,
+    id = it.activityPayId,
     incentiveLevel = it.incentiveLevel,
     payBand = it.payBand,
     rate = it.rate,
@@ -533,7 +532,7 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
 }
 
 fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
-  id = prison.rolloutPrisonId!!,
+  id = prison.rolloutPrisonId,
   code = prison.code,
   description = prison.description,
   active = prison.active,
@@ -542,11 +541,11 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
 
 fun transform(attendance: EntityAttendance): ModelAttendance =
   ModelAttendance(
-    id = attendance.attendanceId!!,
+    id = attendance.attendanceId,
     prisonerNumber = attendance.prisonerNumber,
     attendanceReason = attendance.attendanceReason?.let {
       ModelAttendanceReason(
-        id = it.attendanceReasonId!!,
+        id = it.attendanceReasonId,
         code = it.code,
         description = it.description
       )

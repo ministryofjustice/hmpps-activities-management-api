@@ -21,7 +21,7 @@ class ActivityScheduleEntityListener {
   @PostPersist
   fun onCreate(schedule: ActivitySchedule) {
     runCatching {
-      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, schedule.activityScheduleId!!)
+      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, schedule.activityScheduleId)
     }.onFailure {
       log.error(
         "Failed to send activity schedule creation event for activity schedule ${schedule.activityScheduleId}",

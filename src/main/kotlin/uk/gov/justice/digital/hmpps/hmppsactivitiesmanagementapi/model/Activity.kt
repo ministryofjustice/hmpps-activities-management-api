@@ -27,7 +27,7 @@ data class Activity(
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
 
-  @Schema(description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ", example = "false")
+  @Schema(description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ", example = "H")
   var payPerSession: PayPerSession = PayPerSession.H,
 
   @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")

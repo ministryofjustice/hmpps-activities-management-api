@@ -6,8 +6,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EntityListeners
@@ -26,7 +28,7 @@ import javax.persistence.Table
 data class ActivitySchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleId: Long? = null,
+  val activityScheduleId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
@@ -80,10 +82,50 @@ data class ActivitySchedule(
 
   val startDate: LocalDate
 ) {
-  val endDate: LocalDate? = null
+  init {
+    if (capacity < 1) {
+      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
+    }
+  }
+
+  var endDate: LocalDate? = null
+    set(value) {
+      field = if (value != null && value.isAfter(startDate).not()) {
+        throw IllegalArgumentException("End date must be after the start date")
+      } else {
+        value
+      }
+    }
+
+  companion object {
+    fun valueOf(
+      activity: Activity,
+      description: String,
+      internalLocationId: Int?,
+      internalLocationCode: String?,
+      internalLocationDescription: String?,
+      capacity: Int,
+      startDate: LocalDate,
+      endDate: LocalDate?
+    ) = ActivitySchedule(
+      activity = activity,
+      description = description,
+      internalLocationId = internalLocationId,
+      internalLocationCode = internalLocationCode,
+      internalLocationDescription = internalLocationDescription,
+      capacity = capacity,
+      startDate = startDate
+    ).apply {
+      this.endDate = endDate
+    }
+  }
+
+  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
+    slots.add(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
+  }
 
   fun toModelLite() = ActivityScheduleLite(
-    id = this.activityScheduleId!!,
+    id = this.activityScheduleId,
     description = this.description,
     internalLocation = InternalLocation(
       id = internalLocationId!!,

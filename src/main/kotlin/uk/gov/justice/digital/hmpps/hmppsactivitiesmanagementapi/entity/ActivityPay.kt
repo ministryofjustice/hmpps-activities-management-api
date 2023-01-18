@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class ActivityPay(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityPayId: Long? = null,
+  val activityPayId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
@@ -35,7 +35,7 @@ data class ActivityPay(
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as ActivityPay
 
-    return activityPayId != null && activityPayId == other.activityPayId
+    return activityPayId == other.activityPayId
   }
 
   override fun hashCode(): Int = activityPayId.hashCode()

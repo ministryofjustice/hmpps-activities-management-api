@@ -82,7 +82,7 @@ class TransformFunctionsTest {
             ActivityScheduleSlot(
               id = 1L,
               startTime = timestamp.toLocalTime(),
-              endTime = timestamp.toLocalTime(),
+              endTime = timestamp.toLocalTime().plusHours(1),
               daysOfWeek = listOf("Mon"),
             )
           ),

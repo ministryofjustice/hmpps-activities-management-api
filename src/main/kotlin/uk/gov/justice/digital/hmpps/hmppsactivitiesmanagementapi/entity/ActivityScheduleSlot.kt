@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 data class ActivityScheduleSlot(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleSlotId: Long? = null,
+  val activityScheduleSlotId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
@@ -44,24 +44,60 @@ data class ActivityScheduleSlot(
 
   val runsOnBankHoliday: Boolean = false,
 ) {
+  init {
+    failIfNoDaysSelectedForSlot()
+    failIfDatesAreInvalidForSlot()
+  }
+
+  private fun failIfNoDaysSelectedForSlot() {
+    if (mondayFlag.not() && tuesdayFlag.not() && wednesdayFlag.not() && thursdayFlag.not() && fridayFlag.not() && saturdayFlag.not() && sundayFlag.not()) {
+      throw IllegalArgumentException("One or more days must be specified for a given slot.")
+    }
+  }
+
+  private fun failIfDatesAreInvalidForSlot() {
+    if (!endTime.isAfter(startTime)) {
+      throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
+    }
+  }
+
+  companion object {
+    fun valueOf(
+      activitySchedule: ActivitySchedule,
+      startTime: LocalTime,
+      endTime: LocalTime,
+      daysOfWeek: Set<DayOfWeek>
+    ) = ActivityScheduleSlot(
+      activitySchedule = activitySchedule,
+      startTime = startTime,
+      endTime = endTime,
+      mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
+      tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
+      wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
+      thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
+      fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
+      saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
+      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
+    )
+  }
 
   fun toModel() = ModelActivityScheduleSlot(
-    id = this.activityScheduleSlotId!!,
+    id = this.activityScheduleSlotId,
     startTime = this.startTime,
     endTime = this.endTime,
     daysOfWeek = this.getDaysOfWeek()
       .map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
   )
 
-  fun getDaysOfWeek(): List<DayOfWeek> = mutableListOf<DayOfWeek>().apply {
-    if (mondayFlag) add(DayOfWeek.MONDAY)
-    if (tuesdayFlag) add(DayOfWeek.TUESDAY)
-    if (wednesdayFlag) add(DayOfWeek.WEDNESDAY)
-    if (thursdayFlag) add(DayOfWeek.THURSDAY)
-    if (fridayFlag) add(DayOfWeek.FRIDAY)
-    if (saturdayFlag) add(DayOfWeek.SATURDAY)
-    if (sundayFlag) add(DayOfWeek.SUNDAY)
-  }
+  fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
+    DayOfWeek.MONDAY.takeIf { mondayFlag },
+    DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
+    DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },
+    DayOfWeek.THURSDAY.takeIf { thursdayFlag },
+    DayOfWeek.FRIDAY.takeIf { fridayFlag },
+    DayOfWeek.SATURDAY.takeIf { saturdayFlag },
+    DayOfWeek.SUNDAY.takeIf { sundayFlag }
+  )
 
   @Override
   override fun toString(): String {
