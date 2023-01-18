@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -73,44 +74,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(moreInfo).isNull()
-    }
-  }
-
-  @Test
-  fun `schedule an activity`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
-    )
-
-    val activity = webTestClient.createActivity(activityCreateRequest)!!
-    assertThat(activity.schedules).isEmpty()
-
-    val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
-      description = "Integration test schedule",
-      startDate = activity.startDate,
-      locationId = 1,
-      capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
-    )
-
-    prisonApiMockServer.stubGetLocation(1, "prisonapi/location-id-1.json")
-
-    val schedule = webTestClient.createActivitySchedule(activity.id, activityScheduleCreateRequest)!!
-
-    with(schedule) {
-      assertThat(capacity).isEqualTo(10)
-      assertThat(startDate).isEqualTo(activity.startDate)
-      assertThat(description).isEqualTo("Integration test schedule")
-      assertThat(slots).hasSize(1)
-      assertThat(internalLocation).isEqualTo(InternalLocation(id = 1, code = "internal location code", description = "House_block_7-1-002"))
-    }
-
-    with(schedule.slots.first()) {
-      assertThat(id).isNotNull
-      assertThat(daysOfWeek).containsExactly("Mon")
-      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(10, 0))
     }
   }
 
@@ -477,6 +440,59 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private fun List<ActivitySchedule>.schedule(description: String) =
     firstOrNull { it.description.uppercase() == description.uppercase() }
       ?: throw RuntimeException("Activity schedule $description not found.")
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-9.sql"
+  )
+  @Test
+  fun `schedule an activity`() {
+    val today = LocalDate.now()
+    val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
+      description = "Integration test schedule",
+      startDate = today,
+      locationId = 1,
+      capacity = 10,
+      slots = listOf(Slot("AM", monday = true))
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      locationId = 1,
+      location = Location(
+        locationId = 1,
+        locationType = "CELL",
+        description = "House_block_7-1-002",
+        agencyId = "MDI",
+        currentOccupancy = 1,
+        locationPrefix = "LEI-House-block-7-1-002",
+        operationalCapacity = 2,
+        userDescription = "user description",
+        internalLocationCode = "internal location code"
+      )
+    )
+
+    val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
+
+    with(schedule) {
+      assertThat(capacity).isEqualTo(10)
+      assertThat(startDate).isEqualTo(today)
+      assertThat(description).isEqualTo("Integration test schedule")
+      assertThat(slots).hasSize(1)
+      assertThat(internalLocation).isEqualTo(
+        InternalLocation(
+          id = 1,
+          code = "internal location code",
+          description = "House_block_7-1-002"
+        )
+      )
+    }
+
+    with(schedule.slots.first()) {
+      assertThat(id).isNotNull
+      assertThat(daysOfWeek).containsExactly("Mon")
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(10, 0))
+    }
+  }
 
   private fun WebTestClient.createActivitySchedule(
     activityId: Long,

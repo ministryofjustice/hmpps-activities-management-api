@@ -4,9 +4,13 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
 class PrisonApiMockServer : WireMockServer(8999) {
+
+  private val mapper = ObjectMapper()
 
   fun stubGetScheduledAppointments(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
@@ -267,6 +271,18 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetLocation(locationId: Long, location: Location) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(location))
             .withStatus(200)
         )
     )
