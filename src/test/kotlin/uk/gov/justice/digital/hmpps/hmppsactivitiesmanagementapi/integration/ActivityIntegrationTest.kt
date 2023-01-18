@@ -430,7 +430,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
-      .expectStatus().isOk
+      .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Activity::class.java)
       .returnResult().responseBody

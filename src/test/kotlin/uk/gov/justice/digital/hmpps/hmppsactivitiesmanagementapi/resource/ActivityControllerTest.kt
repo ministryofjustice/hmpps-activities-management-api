@@ -81,7 +81,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       }
         .andDo { print() }
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { isOk() } }
+        .andExpect { status { isCreated() } }
         .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(createActivityResponse))

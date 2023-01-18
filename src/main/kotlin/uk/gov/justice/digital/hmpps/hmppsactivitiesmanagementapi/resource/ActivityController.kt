@@ -94,6 +94,7 @@ class ActivityController(
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
 
+  @ResponseStatus(HttpStatus.CREATED)
   @PostMapping
   @Operation(
     summary = "Create an activity",
