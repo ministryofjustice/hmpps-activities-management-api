@@ -86,7 +86,7 @@ class ActivityScheduleTest {
         ActivityScheduleSlot(
           id = 1L,
           startTime = LocalTime.of(10, 20),
-          endTime = LocalTime.of(10, 20),
+          endTime = LocalTime.of(11, 20),
           daysOfWeek = listOf("Mon"),
         )
       ),
@@ -132,7 +132,7 @@ class ActivityScheduleTest {
           ActivityScheduleSlot(
             id = 1L,
             startTime = LocalTime.of(10, 20),
-            endTime = LocalTime.of(10, 20),
+            endTime = LocalTime.of(11, 20),
             daysOfWeek = listOf("Mon"),
           )
         ),

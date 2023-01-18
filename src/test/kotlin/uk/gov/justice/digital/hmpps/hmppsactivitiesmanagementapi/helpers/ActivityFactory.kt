@@ -139,7 +139,7 @@ internal fun activitySchedule(
         activityScheduleSlotId = 1,
         activitySchedule = this,
         startTime = timestamp.toLocalTime(),
-        endTime = timestamp.toLocalTime(),
+        endTime = timestamp.toLocalTime().plusHours(1),
         mondayFlag = monday,
         tuesdayFlag = tuesday,
         wednesdayFlag = wednesday,

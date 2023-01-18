@@ -44,6 +44,42 @@ data class ActivityScheduleSlot(
 
   val runsOnBankHoliday: Boolean = false,
 ) {
+  init {
+    failIfNoDaysSelectedForSlot()
+    failIfDatesAreInvalidForSlot()
+  }
+
+  private fun failIfNoDaysSelectedForSlot() {
+    if (mondayFlag.not() && tuesdayFlag.not() && wednesdayFlag.not() && thursdayFlag.not() && fridayFlag.not() && saturdayFlag.not() && sundayFlag.not()) {
+      throw IllegalArgumentException("One or more days must be specified for a given slot.")
+    }
+  }
+
+  private fun failIfDatesAreInvalidForSlot() {
+    if (!endTime.isAfter(startTime)) {
+      throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
+    }
+  }
+
+  companion object {
+    fun valueOf(
+      activitySchedule: ActivitySchedule,
+      startTime: LocalTime,
+      endTime: LocalTime,
+      daysOfWeek: Set<DayOfWeek>
+    ) = ActivityScheduleSlot(
+      activitySchedule = activitySchedule,
+      startTime = startTime,
+      endTime = endTime,
+      mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
+      tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
+      wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
+      thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
+      fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
+      saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
+      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
+    )
+  }
 
   fun toModel() = ModelActivityScheduleSlot(
     id = this.activityScheduleSlotId,

@@ -121,26 +121,7 @@ data class ActivitySchedule(
   }
 
   fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
-    if (endTime.isAfter(startTime).not()) {
-      throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
-    }
-
-    if (daysOfWeek.isEmpty()) throw IllegalArgumentException("One ore more days must be specified for a given slot.")
-
-    slots.add(
-      ActivityScheduleSlot(
-        activitySchedule = this,
-        startTime = startTime,
-        endTime = endTime,
-        mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
-        tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
-        wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
-        thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
-        fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
-        saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
-        sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
-      )
-    )
+    slots.add(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
   }
 
   fun toModelLite() = ActivityScheduleLite(

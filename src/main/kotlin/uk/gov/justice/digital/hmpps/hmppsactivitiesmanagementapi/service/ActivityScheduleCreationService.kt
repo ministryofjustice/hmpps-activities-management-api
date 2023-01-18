@@ -57,7 +57,7 @@ class ActivityScheduleCreationService(
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
-      val startAndEndTime = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+      val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
       val daysOfWeek = setOfNotNull(
         DayOfWeek.MONDAY.takeIf { slot.monday },
@@ -69,7 +69,7 @@ class ActivityScheduleCreationService(
         DayOfWeek.SUNDAY.takeIf { slot.sunday }
       )
 
-      this.addSlot(startAndEndTime.first, startAndEndTime.second, daysOfWeek)
+      this.addSlot(start, end, daysOfWeek)
     }
   }
 
