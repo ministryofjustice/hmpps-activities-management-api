@@ -139,6 +139,31 @@ data class Activity(
     startDate: LocalDate,
     endDate: LocalDate? = null
   ): ActivitySchedule {
+
+    failIfScheduleDatesClashWithActivityDates(startDate, endDate)
+    failIfScheduleWithDescriptionAlreadyPresentOnActivity(description)
+
+    if (capacity < 1) {
+      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
+    }
+
+    schedules.add(
+      ActivitySchedule.valueOf(
+        activity = this,
+        description = description,
+        internalLocationId = internalLocationId,
+        internalLocationCode = internalLocationCode,
+        internalLocationDescription = internalLocationDescription,
+        capacity = capacity,
+        startDate = startDate,
+        endDate = endDate
+      )
+    )
+
+    return schedules.last()
+  }
+
+  fun failIfScheduleDatesClashWithActivityDates(startDate: LocalDate, endDate: LocalDate?) {
     if (startDate.isBefore(this.startDate)) {
       throw IllegalArgumentException("The schedule start date '$startDate' cannot be before the activity start date ${this.startDate}")
     }
@@ -150,30 +175,12 @@ data class Activity(
     if (endDate != null && this.endDate != null && endDate.isAfter(this.endDate)) {
       throw IllegalArgumentException("The schedule end date '$endDate' cannot be after the activity end date ${this.endDate}")
     }
+  }
 
-    if (capacity < 1) {
-      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
-    }
-
+  fun failIfScheduleWithDescriptionAlreadyPresentOnActivity(description: String) {
     if (schedules.any { it.description.trim().uppercase() == description.trim().uppercase() }) {
       throw IllegalArgumentException("A schedule with the description '$description' already exists.")
     }
-
-    schedules.add(
-      ActivitySchedule(
-        activity = this,
-        description = description,
-        internalLocationId = internalLocationId,
-        internalLocationCode = internalLocationCode,
-        internalLocationDescription = internalLocationDescription,
-        capacity = capacity,
-        startDate = startDate
-      ).apply {
-        this.endDate = endDate
-      }
-    )
-
-    return schedules.last()
   }
 }
 

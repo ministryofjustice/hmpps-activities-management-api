@@ -91,6 +91,29 @@ data class ActivitySchedule(
       }
     }
 
+  companion object {
+    fun valueOf(
+      activity: Activity,
+      description: String,
+      internalLocationId: Int?,
+      internalLocationCode: String?,
+      internalLocationDescription: String?,
+      capacity: Int,
+      startDate: LocalDate,
+      endDate: LocalDate?
+    ) = ActivitySchedule(
+      activity = activity,
+      description = description,
+      internalLocationId = internalLocationId,
+      internalLocationCode = internalLocationCode,
+      internalLocationDescription = internalLocationDescription,
+      capacity = capacity,
+      startDate = startDate
+    ).apply {
+      this.endDate = endDate
+    }
+  }
+
   fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
     if (endTime.isAfter(startTime).not()) {
       throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
