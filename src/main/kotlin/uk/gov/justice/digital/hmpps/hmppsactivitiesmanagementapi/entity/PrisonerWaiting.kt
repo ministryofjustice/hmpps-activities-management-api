@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class PrisonerWaiting(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonerWaitingId: Long? = null,
+  val prisonerWaitingId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

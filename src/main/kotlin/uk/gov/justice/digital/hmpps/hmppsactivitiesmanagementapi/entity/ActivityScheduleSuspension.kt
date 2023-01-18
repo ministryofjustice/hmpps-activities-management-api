@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class ActivityScheduleSuspension(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleSuspensionId: Long? = null,
+  val activityScheduleSuspensionId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)

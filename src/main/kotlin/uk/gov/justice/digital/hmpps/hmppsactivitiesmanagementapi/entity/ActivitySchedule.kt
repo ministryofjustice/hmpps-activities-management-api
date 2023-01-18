@@ -28,7 +28,7 @@ import javax.persistence.Table
 data class ActivitySchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleId: Long? = null,
+  val activityScheduleId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
@@ -138,7 +138,7 @@ data class ActivitySchedule(
   }
 
   fun toModelLite() = ActivityScheduleLite(
-    id = this.activityScheduleId ?: -1,
+    id = this.activityScheduleId,
     description = this.description,
     internalLocation = InternalLocation(
       id = internalLocationId!!,

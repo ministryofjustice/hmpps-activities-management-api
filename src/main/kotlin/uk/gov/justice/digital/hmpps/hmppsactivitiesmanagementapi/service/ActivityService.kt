@@ -73,7 +73,6 @@ class ActivityService(
     val activityEntity = transform(activityCreateRequest, categoryEntity, tierEntity, createdBy)
     val activityEligibilityEntityList = activityCreateRequest.eligibilityRuleIds.map {
       ActivityEligibility(
-        activityEligibilityId = null,
         eligibilityRule = eligibilityRuleRepository.findById(it)
           .orElseThrow { IllegalArgumentException("Eligibility rule $it not found") },
         activity = activityEntity

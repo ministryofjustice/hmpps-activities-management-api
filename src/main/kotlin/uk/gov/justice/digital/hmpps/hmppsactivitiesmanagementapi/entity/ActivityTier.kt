@@ -12,7 +12,7 @@ import javax.persistence.Table
 data class ActivityTier(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityTierId: Long? = null,
+  val activityTierId: Long = -1,
 
   @Column(nullable = false)
   val code: String,

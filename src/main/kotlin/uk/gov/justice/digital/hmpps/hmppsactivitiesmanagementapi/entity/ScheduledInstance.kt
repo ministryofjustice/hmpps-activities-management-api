@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 data class ScheduledInstance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val scheduledInstanceId: Long? = null,
+  val scheduledInstanceId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
@@ -48,7 +48,7 @@ data class ScheduledInstance(
 ) {
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
-    id = this.scheduledInstanceId!!,
+    id = this.scheduledInstanceId,
     date = this.sessionDate,
     startTime = this.startTime,
     endTime = this.endTime,

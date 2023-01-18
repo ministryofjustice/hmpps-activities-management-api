@@ -13,7 +13,7 @@ import javax.persistence.Table
 data class EventPriority(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val eventPriorityId: Long? = null,
+  val eventPriorityId: Long = -1,
 
   val prisonCode: String,
 

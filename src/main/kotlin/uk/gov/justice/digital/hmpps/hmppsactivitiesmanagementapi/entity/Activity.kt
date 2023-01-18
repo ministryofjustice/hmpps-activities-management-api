@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityId: Long? = null,
+  val activityId: Long = -1,
 
   val prisonCode: String,
 
@@ -101,7 +101,7 @@ data class Activity(
   }
 
   fun toModelLite() = ActivityLite(
-    id = activityId!!,
+    id = activityId,
     prisonCode = prisonCode,
     attendanceRequired = attendanceRequired,
     inCell = inCell,
@@ -120,7 +120,7 @@ data class Activity(
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as Activity
 
-    return activityId != null && activityId == other.activityId
+    return activityId == other.activityId
   }
 
   override fun hashCode(): Int = activityId.hashCode()

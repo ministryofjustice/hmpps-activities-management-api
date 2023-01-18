@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 data class ActivityScheduleSlot(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleSlotId: Long? = null,
+  val activityScheduleSlotId: Long = -1,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
@@ -46,7 +46,7 @@ data class ActivityScheduleSlot(
 ) {
 
   fun toModel() = ModelActivityScheduleSlot(
-    id = this.activityScheduleSlotId ?: -1,
+    id = this.activityScheduleSlotId,
     startTime = this.startTime,
     endTime = this.endTime,
     daysOfWeek = this.getDaysOfWeek()
