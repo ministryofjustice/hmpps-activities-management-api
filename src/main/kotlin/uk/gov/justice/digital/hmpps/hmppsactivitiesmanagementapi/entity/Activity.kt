@@ -86,7 +86,7 @@ data class Activity(
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules.filter { schedule ->
-      schedule.slots.any { day.dayOfWeek in it.getDaysOfWeek() }
+      schedule.slots().any { day.dayOfWeek in it.getDaysOfWeek() }
     }
     return if (includeSuspended) {
       byDayOfWeek

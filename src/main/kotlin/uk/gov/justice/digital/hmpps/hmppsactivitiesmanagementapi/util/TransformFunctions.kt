@@ -318,7 +318,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     internalLocation = this.toInternalLocation(),
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
-    slots = this.slots.toModelActivityScheduleSlots(),
+    slots = this.slots().toModelActivityScheduleSlots(),
     startDate = this.startDate,
     endDate = this.endDate
   )

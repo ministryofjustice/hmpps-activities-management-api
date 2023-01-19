@@ -120,7 +120,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity category 1 not found")
+      .hasMessage("Activity Category 1 not found")
   }
 
   @Test
@@ -138,7 +138,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity tier 1 not found")
+      .hasMessage("Activity Tier 1 not found")
   }
 
   @Test
@@ -158,7 +158,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Eligibility rule 1 not found")
+      .hasMessage("Eligibility Rule 1 not found")
   }
 
   @Test
@@ -171,7 +171,7 @@ class ActivityServiceTest {
   @Test
   fun `getActivityById throws entity not found exception for unknown activity ID`() {
     assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("-1")
+      .hasMessage("Activity -1 not found")
   }
 
   @Test
@@ -198,7 +198,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.getActivitiesByCategoryInPrison("MDI", 1) }
       .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Activity category 1 not found")
+      .hasMessage("Activity Category 1 not found")
   }
 
   @Test

@@ -4,18 +4,16 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 @Service
@@ -28,63 +26,43 @@ class ActivityService(
 ) {
   fun getActivityById(activityId: Long) =
     transform(
-      activityRepository.findById(activityId).orElseThrow {
-        EntityNotFoundException(
-          "$activityId"
-        )
-      }
+      activityRepository.findOrThrowNotFound(activityId)
     )
 
   fun getActivitiesByCategoryInPrison(
     prisonCode: String,
     categoryId: Long
-  ): List<ActivityLite> {
-    val activityCategory = activityCategoryRepository.findById(categoryId)
-      .orElseThrow { EntityNotFoundException("Activity category $categoryId not found") }
-
-    return activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, activityCategory)
-      .toModelLite()
-  }
+  ) =
+    activityCategoryRepository.findOrThrowNotFound(categoryId).let {
+      activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, it).toModelLite()
+    }
 
   fun getActivitiesInPrison(
     prisonCode: String
-  ): List<ActivityLite> {
-    return activityRepository.getAllByPrisonCode(prisonCode).toModelLite()
-  }
+  ) = activityRepository.getAllByPrisonCode(prisonCode).toModelLite()
 
-  fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-
-    return activityScheduleRepository.getAllByActivity(activity).toModelLite()
-  }
+  fun getSchedulesForActivity(activityId: Long) =
+    activityRepository.findOrThrowNotFound(activityId)
+      .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun createActivity(activityCreateRequest: ActivityCreateRequest, createdBy: String): ModelActivity {
+  fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
 
-    val categoryEntity = activityCategoryRepository.findById(activityCreateRequest.categoryId!!)
-      .orElseThrow { IllegalArgumentException("Activity category ${activityCreateRequest.categoryId} not found") }
-
-    val tierEntity: ActivityTier? = activityCreateRequest.tierId?.let {
-      activityTierRepository.findById(it)
-        .orElseThrow { IllegalArgumentException("Activity tier ${activityCreateRequest.tierId} not found") }
+    val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
+    val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
+    val activity = transform(request, category, tier, createdBy)
+    val eligibilityRules = request.eligibilityRuleIds.map {
+      ActivityEligibility(eligibilityRule = eligibilityRuleRepository.findOrThrowIllegalArgument(it), activity = activity)
     }
 
-    val activityEntity = transform(activityCreateRequest, categoryEntity, tierEntity, createdBy)
-    val activityEligibilityEntityList = activityCreateRequest.eligibilityRuleIds.map {
-      ActivityEligibility(
-        eligibilityRule = eligibilityRuleRepository.findById(it)
-          .orElseThrow { IllegalArgumentException("Eligibility rule $it not found") },
-        activity = activityEntity
-      )
-    }
-    activityEligibilityEntityList.forEach { aee -> activityEntity.eligibilityRules.add(aee) }
-    val activityPayList = transform(activityCreateRequest.pay, activityEntity)
-    activityPayList.forEach { aee -> activityEntity.activityPay.add(aee) }
+    eligibilityRules.forEach { aee -> activity.eligibilityRules.add(aee) }
+
+    transform(request.pay, activity).forEach { activity.activityPay.add(it) }
+
     try {
-      return transform(activityRepository.saveAndFlush(activityEntity))
+      return transform(activityRepository.saveAndFlush(activity))
     } catch (ex: DataIntegrityViolationException) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison (${activityEntity.prisonCode}): '${activityEntity.summary}'")
+      throw IllegalArgumentException("Duplicate activity name detected for this prison (${activity.prisonCode}): '${activity.summary}'")
     }
   }
 }

@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -21,7 +23,11 @@ class ActivityScheduleCreationService(
   private val prisonApiClient: PrisonApiClient
 ) {
 
-  // TODO resolve hardcoded times for slots. This comes from prison regime!
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
+  // TODO hardcoded times for slots. This will addressed in a separate JIRA ticket.
   private val timeSlots =
     mapOf(
       TimeSlot.AM to Pair(LocalTime.of(9, 0), LocalTime.of(10, 0)),
@@ -49,6 +55,8 @@ class ActivityScheduleCreationService(
         schedule.addSlots(request.slots!!)
 
         val persisted = activityRepository.saveAndFlush(activity)
+
+        log.info("Schedule '${schedule.description}' added to activity '${activity.summary}' at prison '${activity.prisonCode}'")
 
         return persisted.schedules.last().toModelLite()
       }
