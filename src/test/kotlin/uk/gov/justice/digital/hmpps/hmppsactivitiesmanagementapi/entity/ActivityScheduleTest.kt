@@ -316,13 +316,14 @@ class ActivityScheduleTest {
     assertThatThrownBy {
       schedule.addSlot(slotBelongingToAnotherDifferentSchedule)
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Can only add slots that belong to this schedule.")
 
     assertThat(schedule.slots()).containsExactly(expected)
   }
 
   @Test
   fun `fails to add slot when end time not after start time`() {
-    val schedule = activityEntity().schedules.first()
+    val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
       schedule.addSlot(LocalTime.NOON, LocalTime.NOON, setOf(DayOfWeek.MONDAY))
@@ -331,7 +332,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `end date must be after the start date`() {
-    val schedule = activityEntity().schedules.first().apply { endDate = null }
+    val schedule = activityEntity().schedules().first().apply { endDate = null }
 
     assertThat(schedule.endDate).isNull()
 
@@ -341,15 +342,17 @@ class ActivityScheduleTest {
     assertThatThrownBy {
       schedule.endDate = schedule.startDate.minusDays(1)
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("End date must be after the start date")
   }
 
   @Test
   fun `fails if no day specified for a slot`() {
-    val schedule = activityEntity().schedules.first()
+    val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
       schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), emptySet())
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("One or more days must be specified for a given slot.")
   }
 
   @Test
@@ -369,5 +372,6 @@ class ActivityScheduleTest {
         startDate = LocalDate.now()
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The schedule capacity must be greater than zero.")
   }
 }

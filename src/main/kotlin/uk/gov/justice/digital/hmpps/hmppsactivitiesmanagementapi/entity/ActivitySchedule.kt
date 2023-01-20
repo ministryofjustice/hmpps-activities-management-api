@@ -127,7 +127,7 @@ data class ActivitySchedule(
   }
 
   fun addSlot(slot: ActivityScheduleSlot) {
-    if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots than belong to this schedule.")
+    if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
 
     slots.add(slot)
   }

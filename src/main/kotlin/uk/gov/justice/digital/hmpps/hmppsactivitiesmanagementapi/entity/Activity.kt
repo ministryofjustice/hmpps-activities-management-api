@@ -44,10 +44,6 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val schedules: MutableList<ActivitySchedule> = mutableListOf(),
-
-  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -81,6 +77,13 @@ data class Activity(
 
   val createdBy: String
 ) {
+
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val schedules: MutableList<ActivitySchedule> = mutableListOf()
+
+  fun schedules() = schedules.toList()
+
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
@@ -138,12 +141,8 @@ data class Activity(
     capacity: Int,
     startDate: LocalDate,
     endDate: LocalDate? = null
-  ): ActivitySchedule {
-
-    failIfScheduleDatesClashWithActivityDates(startDate, endDate)
-    failIfScheduleWithDescriptionAlreadyPresentOnActivity(description)
-
-    schedules.add(
+  ) =
+    addSchedule(
       ActivitySchedule.valueOf(
         activity = this,
         description = description,
@@ -155,6 +154,13 @@ data class Activity(
         endDate = endDate
       )
     )
+
+  fun addSchedule(schedule: ActivitySchedule): ActivitySchedule {
+    failIfScheduleDatesClashWithActivityDates(schedule.startDate, schedule.endDate)
+    failIfScheduleWithDescriptionAlreadyPresentOnActivity(schedule.description)
+    failIfScheduleBelongsToDifferentActivity(schedule)
+
+    schedules.add(schedule)
 
     return schedules.last()
   }
@@ -176,6 +182,12 @@ data class Activity(
   fun failIfScheduleWithDescriptionAlreadyPresentOnActivity(description: String) {
     if (schedules.any { it.description.trim().uppercase() == description.trim().uppercase() }) {
       throw IllegalArgumentException("A schedule with the description '$description' already exists.")
+    }
+  }
+
+  private fun failIfScheduleBelongsToDifferentActivity(schedule: ActivitySchedule) {
+    if (schedule.activity.activityId != activityId) {
+      throw IllegalArgumentException("Can only add schedules that belong to this activity.")
     }
   }
 }

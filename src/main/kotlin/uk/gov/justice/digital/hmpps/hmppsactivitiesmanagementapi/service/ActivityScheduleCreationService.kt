@@ -58,7 +58,7 @@ class ActivityScheduleCreationService(
 
         log.info("Schedule '${schedule.description}' added to activity '${activity.summary}' at prison '${activity.prisonCode}'")
 
-        return persisted.schedules.last().toModelLite()
+        return persisted.schedules().last().toModelLite()
       }
     }
   }

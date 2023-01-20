@@ -47,7 +47,9 @@ internal fun activityEntity(
     createdBy = "test"
   ).apply {
     eligibilityRules.add(activityEligibilityRule(this))
-    if (!noSchedules) schedules.add(activitySchedule(this, activityScheduleId = 1, timestamp))
+    if (!noSchedules) {
+      this.addSchedule(activitySchedule(this, activityScheduleId = 1, timestamp))
+    }
     waitingList.add(activityWaiting(this, timestamp))
     activityPay.add(activityPay(this))
   }
@@ -55,7 +57,7 @@ internal fun activityEntity(
 internal fun activityCategory() =
   ActivityCategory(activityCategoryId = 1, code = "category code", name = "category name", description = "category description")
 
-internal fun schedule() = activityEntity().schedules.first()
+internal fun schedule() = activityEntity().schedules().first()
 
 internal fun attendanceReasons() = mapOf(
   "ABS" to AttendanceReason(1, "ABS", "Absent"),
@@ -84,6 +86,7 @@ internal fun activitySchedule(
   activity: Activity,
   activityScheduleId: Long = 1,
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  description: String = "schedule description",
   monday: Boolean = true,
   tuesday: Boolean = false,
   wednesday: Boolean = false,
@@ -99,7 +102,7 @@ internal fun activitySchedule(
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
     activity = activity,
-    description = "schedule description",
+    description = description,
     capacity = 1,
     internalLocationId = 1,
     internalLocationCode = "EDU-ROOM-1",

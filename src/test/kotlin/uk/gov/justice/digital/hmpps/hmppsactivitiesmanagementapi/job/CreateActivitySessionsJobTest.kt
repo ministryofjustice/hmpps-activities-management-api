@@ -54,7 +54,7 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isIn(listOf("LEI", "MDI"))
-        activity.schedules.forEach { schedule ->
+        activity.schedules().forEach { schedule ->
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
@@ -80,8 +80,8 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isEqualTo("MDI")
-        assertThat(activity.schedules).hasSize(1)
-        activity.schedules.forEach { schedule ->
+        assertThat(activity.schedules()).hasSize(1)
+        activity.schedules().forEach { schedule ->
           assertThat(schedule.slots()).hasSize(2)
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
@@ -157,7 +157,7 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isEqualTo("MDI")
-        activity.schedules.forEach { schedule ->
+        activity.schedules().forEach { schedule ->
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
@@ -180,10 +180,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "A",
         description = "AAA",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 1, monday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -195,10 +195,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "B",
         description = "BBB",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 2, monday = false, tuesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -210,10 +210,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "C",
         description = "CCC",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 3, monday = false, wednesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -228,10 +228,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "LEI",
         summary = "D",
         description = "DDD",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 4, monday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -243,10 +243,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "LEI",
         summary = "E",
         description = "EEE",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 5, monday = false, tuesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -258,10 +258,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "LEI",
         summary = "F",
         description = "FFF",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 6, monday = false, wednesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -276,10 +276,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "Existing",
         description = "Existing instances",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -311,10 +311,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "Existing",
         description = "Existing instances",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -346,10 +346,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "BH",
         description = "Not on bank holiday",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -375,10 +375,10 @@ class CreateActivitySessionsJobTest {
         prisonCode = "MDI",
         summary = "BH",
         description = "Not on bank holiday",
-        startDate = LocalDate.now().minusDays(1)
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
       ).apply {
-        schedules.clear()
-        schedules.add(
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -407,7 +407,7 @@ class CreateActivitySessionsJobTest {
         startDate = LocalDate.now().minusDays(1),
         noSchedules = true
       ).apply {
-        schedules.add(
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
