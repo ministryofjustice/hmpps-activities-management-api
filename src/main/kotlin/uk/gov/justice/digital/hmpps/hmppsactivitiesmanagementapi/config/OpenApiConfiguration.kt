@@ -41,7 +41,6 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     )
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt", listOf("read", "write")))
 
-
   @Bean
   fun enableLocalTimePrimitiveType() {
     PrimitiveType.enablePartialTime()
