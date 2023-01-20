@@ -67,7 +67,7 @@ class CreateActivitySessionsJob(
           val withNoPreExistingInstances = schedules.filterActivitySchedulesWithNoPreExistingInstance(day)
 
           withNoPreExistingInstances.forEach { schedule ->
-            val filteredSlots = schedule.slots.filter { day.dayOfWeek in it.getDaysOfWeek() }
+            val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
             filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
               schedule.instances.add(
                 ScheduledInstance(

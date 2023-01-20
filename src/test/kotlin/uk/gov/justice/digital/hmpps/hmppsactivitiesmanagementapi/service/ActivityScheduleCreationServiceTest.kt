@@ -39,8 +39,7 @@ class ActivityScheduleCreationServiceTest {
 
   @Test
   fun `can add a schedule with a morning slot to an activity`() {
-    val activity =
-      activityEntity(activityId = 1, prisonCode = "MDI").apply { schedules.clear() }
+    val activity = activityEntity(activityId = 1, prisonCode = "MDI", noSchedules = true)
 
     whenever(repository.findById(1)).thenReturn(Optional.of(activity))
     whenever(repository.saveAndFlush(activity)).thenReturn(activity)

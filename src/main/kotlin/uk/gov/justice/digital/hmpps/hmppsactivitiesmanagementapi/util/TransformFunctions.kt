@@ -59,7 +59,7 @@ fun transform(activity: EntityActivity) =
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
-    schedules = activity.schedules.toModelSchedules(),
+    schedules = activity.schedules().toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay.toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
@@ -318,7 +318,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     internalLocation = this.toInternalLocation(),
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
-    slots = this.slots.toModelActivityScheduleSlots(),
+    slots = this.slots().toModelActivityScheduleSlots(),
     startDate = this.startDate,
     endDate = this.endDate
   )

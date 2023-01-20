@@ -3,6 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -20,11 +23,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class ActivityIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
   fun `createActivity - is successful`() {
@@ -491,6 +500,15 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(daysOfWeek).containsExactly("Mon")
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 0))
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(identifier).isEqualTo(1L)
+      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(description).isEqualTo("new activity schedule with identifier 1 has been created in the activities management service")
     }
   }
 

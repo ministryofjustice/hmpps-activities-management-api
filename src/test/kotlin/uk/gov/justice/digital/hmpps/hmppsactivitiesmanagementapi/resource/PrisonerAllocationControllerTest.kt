@@ -25,7 +25,7 @@ class PrisonerAllocationControllerTest : ControllerTestBase<PrisonerAllocationCo
 
   @Test
   fun `200 response when post prison numbers`() {
-    val allocations = activityEntity().schedules.flatMap { it.allocations }.toModelPrisonerAllocations()
+    val allocations = activityEntity().schedules().flatMap { it.allocations }.toModelPrisonerAllocations()
     val prisonNumbers = allocations.map { it.prisonerNumber }.toSet()
 
     whenever(service.findByPrisonCodeAndPrisonerNumbers("MDI", prisonNumbers)).thenReturn(allocations)

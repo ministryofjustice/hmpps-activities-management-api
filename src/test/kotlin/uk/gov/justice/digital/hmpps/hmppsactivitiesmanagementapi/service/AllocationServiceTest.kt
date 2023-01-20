@@ -14,7 +14,7 @@ class AllocationServiceTest {
 
   @Test
   fun `find allocations for collection of prisoners`() {
-    val allocations = activityEntity().schedules.flatMap { it.allocations }.also { assertThat(it).isNotEmpty }
+    val allocations = activityEntity().schedules().flatMap { it.allocations }.also { assertThat(it).isNotEmpty }
     val prisonNumbers = allocations.map { it.prisonerNumber }
 
     whenever(repository.findByPrisonCodeAndPrisonerNumbers("MDI", prisonNumbers)).thenReturn(allocations)

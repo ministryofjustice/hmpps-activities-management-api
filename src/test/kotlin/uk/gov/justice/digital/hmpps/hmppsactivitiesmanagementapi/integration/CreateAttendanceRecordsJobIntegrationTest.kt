@@ -25,15 +25,15 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     with(activityRepository.findById(4).orElseThrow()) {
       assertThat(description).isEqualTo("Maths Level 1")
-      assertThat(schedules).hasSize(2)
+      assertThat(schedules()).hasSize(2)
 
-      with(schedules.findByDescription("Maths AM")) {
+      with(schedules().findByDescription("Maths AM")) {
         assertThat(allocations).hasSize(2)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
       }
 
-      with(schedules.findByDescription("Maths PM")) {
+      with(schedules().findByDescription("Maths PM")) {
         assertThat(allocations).hasSize(3)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
@@ -43,10 +43,10 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.createAttendanceRecords()
 
     with(activityRepository.findById(4).orElseThrow()) {
-      with(schedules.findByDescription("Maths AM")) {
+      with(schedules().findByDescription("Maths AM")) {
         assertThat(instances.first().attendances).hasSize(2)
       }
-      with(schedules.findByDescription("Maths PM")) {
+      with(schedules().findByDescription("Maths PM")) {
         assertThat(instances.first().attendances).hasSize(2)
       }
     }
@@ -72,9 +72,9 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     with(activityRepository.findById(5).orElseThrow()) {
       assertThat(description).isEqualTo("Gym induction")
-      assertThat(schedules).hasSize(1)
+      assertThat(schedules()).hasSize(1)
 
-      with(schedules.findByDescription("Gym induction AM")) {
+      with(schedules().findByDescription("Gym induction AM")) {
         assertThat(allocations).hasSize(2)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
@@ -84,7 +84,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.createAttendanceRecords()
 
     with(activityRepository.findById(5).orElseThrow()) {
-      with(schedules.findByDescription("Gym induction AM")) {
+      with(schedules().findByDescription("Gym induction AM")) {
         assertThat(instances.first().attendances).isEmpty()
       }
     }

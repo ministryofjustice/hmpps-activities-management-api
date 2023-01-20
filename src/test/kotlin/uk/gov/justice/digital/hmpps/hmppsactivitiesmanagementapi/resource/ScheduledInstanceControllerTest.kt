@@ -30,7 +30,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Test
   fun `200 response when get instance by ID found`() {
-    val instance = activityEntity().schedules.first().instances.first().toModel()
+    val instance = activityEntity().schedules().first().instances.first().toModel()
 
     whenever(scheduledInstanceService.getActivityScheduleInstanceById(1)).thenReturn(instance)
 
@@ -60,7 +60,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Test
   fun `200 response when get attendances by schedule ID found`() {
-    val attendances = activityEntity().schedules.first().instances.first().attendances.map { transform(it) }
+    val attendances = activityEntity().schedules().first().instances.first().attendances.map { transform(it) }
 
     whenever(attendancesService.findAttendancesByScheduledInstance(1)).thenReturn(attendances)
 

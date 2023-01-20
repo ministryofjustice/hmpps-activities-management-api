@@ -155,10 +155,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `can allocate prisoner to a schedule with no allocations`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { allocations.clear() }
-      .also { assertThat(it.allocations).isEmpty() }
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     schedule.allocatePrisoner(
       prisonerNumber = "123456".toPrisonerNumber(),
@@ -181,8 +178,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `can allocate prisoner to a schedule with existing allocation`() {
-    val schedule = activityEntity().schedules
-      .first()
+    val schedule = activitySchedule(activity = activityEntity())
       .also { assertThat(it.allocations).hasSize(1) }
 
     schedule.allocatePrisoner(
@@ -207,10 +203,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `cannot allocate prisoner if already allocated to schedule`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { allocations.clear() }
-      .also { assertThat(it.allocations).isEmpty() }
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
@@ -231,9 +224,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `allocated by cannot be blank when allocating a prisoner`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { allocations.clear() }
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
@@ -247,15 +238,11 @@ class ActivityScheduleTest {
 
   @Test
   fun `can add one day slot only to schedule`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { slots.clear() }
-
-    assertThat(schedule.slots).isEmpty()
+    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
     schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY))
 
-    assertThat(schedule.slots).containsExactly(
+    assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
         startTime = LocalTime.MIDNIGHT,
@@ -267,15 +254,11 @@ class ActivityScheduleTest {
 
   @Test
   fun `can add two day slot to schedule`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { slots.clear() }
-
-    assertThat(schedule.slots).isEmpty()
+    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
     schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
 
-    assertThat(schedule.slots).containsExactly(
+    assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
         startTime = LocalTime.MIDNIGHT,
@@ -288,15 +271,11 @@ class ActivityScheduleTest {
 
   @Test
   fun `can add entire week slot to schedule`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { slots.clear() }
-
-    assertThat(schedule.slots).isEmpty()
+    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
     schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
 
-    assertThat(schedule.slots).containsExactly(
+    assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
         startTime = LocalTime.MIDNIGHT,
@@ -313,12 +292,38 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `fails to add slot when end time not after start time`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { slots.clear() }
+  fun `cannot add slot belonging to another schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    assertThat(schedule.slots).isEmpty()
+    schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
+
+    val expected = EntityActivityScheduleSlot(
+      activitySchedule = schedule,
+      startTime = LocalTime.MIDNIGHT,
+      endTime = LocalTime.MIDNIGHT.plusHours(1),
+      mondayFlag = true,
+      tuesdayFlag = true,
+      wednesdayFlag = true,
+      thursdayFlag = true,
+      fridayFlag = true,
+      saturdayFlag = true,
+      sundayFlag = true
+    )
+
+    val slotBelongingToAnotherDifferentSchedule =
+      expected.copy(activitySchedule = schedule.copy(activityScheduleId = -99))
+
+    assertThatThrownBy {
+      schedule.addSlot(slotBelongingToAnotherDifferentSchedule)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Can only add slots that belong to this schedule.")
+
+    assertThat(schedule.slots()).containsExactly(expected)
+  }
+
+  @Test
+  fun `fails to add slot when end time not after start time`() {
+    val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
       schedule.addSlot(LocalTime.NOON, LocalTime.NOON, setOf(DayOfWeek.MONDAY))
@@ -327,7 +332,7 @@ class ActivityScheduleTest {
 
   @Test
   fun `end date must be after the start date`() {
-    val schedule = activityEntity().schedules.first().apply { endDate = null }
+    val schedule = activityEntity().schedules().first().apply { endDate = null }
 
     assertThat(schedule.endDate).isNull()
 
@@ -337,19 +342,17 @@ class ActivityScheduleTest {
     assertThatThrownBy {
       schedule.endDate = schedule.startDate.minusDays(1)
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("End date must be after the start date")
   }
 
   @Test
   fun `fails if no day specified for a slot`() {
-    val schedule = activityEntity().schedules
-      .first()
-      .apply { slots.clear() }
-
-    assertThat(schedule.slots).isEmpty()
+    val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
       schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), emptySet())
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("One or more days must be specified for a given slot.")
   }
 
   @Test
@@ -369,5 +372,6 @@ class ActivityScheduleTest {
         startDate = LocalDate.now()
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The schedule capacity must be greater than zero.")
   }
 }

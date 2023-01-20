@@ -25,8 +25,9 @@ class TransformFunctionsTest {
   @Test
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.now()
+    val activity = activityEntity(timestamp = timestamp).apply { attendanceRequired = false }
 
-    with(transform(activityEntity(timestamp = timestamp).copy(attendanceRequired = false))) {
+    with(transform(activity)) {
       assertThat(id).isEqualTo(1)
       assertThat(prisonCode).isEqualTo("123")
       assertThat(attendanceRequired).isFalse
@@ -77,7 +78,7 @@ class TransformFunctionsTest {
           ),
           description = "schedule description",
           capacity = 1,
-          activity = activityEntity().toModelLite(),
+          activity = activity.toModelLite(),
           slots = listOf(
             ActivityScheduleSlot(
               id = 1L,
@@ -86,7 +87,7 @@ class TransformFunctionsTest {
               daysOfWeek = listOf("Mon"),
             )
           ),
-          startDate = activityEntity().startDate
+          startDate = activity.startDate
         )
       )
       assertThat(waitingList).containsExactly(
