@@ -61,15 +61,6 @@ data class ActivitySchedule(
   @Fetch(FetchMode.SUBSELECT)
   val allocations: MutableList<Allocation> = mutableListOf(),
 
-  @OneToMany(
-    mappedBy = "activitySchedule",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true
-  )
-  @Fetch(FetchMode.SUBSELECT)
-  val slots: MutableList<ActivityScheduleSlot> = mutableListOf(),
-
   val description: String,
 
   var internalLocationId: Int? = null,
@@ -88,6 +79,15 @@ data class ActivitySchedule(
     }
   }
 
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
+  @Fetch(FetchMode.SUBSELECT)
+  private val slots: MutableList<ActivityScheduleSlot> = mutableListOf()
+
   var endDate: LocalDate? = null
     set(value) {
       field = if (value != null && value.isAfter(startDate).not()) {
@@ -96,6 +96,8 @@ data class ActivitySchedule(
         value
       }
     }
+
+  fun slots() = slots.toList()
 
   companion object {
     fun valueOf(
@@ -121,7 +123,13 @@ data class ActivitySchedule(
   }
 
   fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
-    slots.add(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
+    addSlot(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
+  }
+
+  fun addSlot(slot: ActivityScheduleSlot) {
+    if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
+
+    slots.add(slot)
   }
 
   fun toModelLite() = ActivityScheduleLite(

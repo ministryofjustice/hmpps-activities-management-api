@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 class ScheduledInstanceTest {
 
-  private val instance = activityEntity().schedules.first().instances.first()
+  private val instance = activityEntity().schedules().first().instances.first()
 
   @Test
   fun `instance is not cancelled`() {

@@ -54,7 +54,7 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isIn(listOf("LEI", "MDI"))
-        activity.schedules.forEach { schedule ->
+        activity.schedules().forEach { schedule ->
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
@@ -80,9 +80,9 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isEqualTo("MDI")
-        assertThat(activity.schedules).hasSize(1)
-        activity.schedules.forEach { schedule ->
-          assertThat(schedule.slots).hasSize(2)
+        assertThat(activity.schedules()).hasSize(1)
+        activity.schedules().forEach { schedule ->
+          assertThat(schedule.slots()).hasSize(2)
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
             assertThat(instance.startTime).isIn(listOf(LocalTime.of(9, 30), LocalTime.of(13, 30)))
@@ -157,7 +157,7 @@ class CreateActivitySessionsJobTest {
     with(activitySaveCaptor.allValues) {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isEqualTo("MDI")
-        activity.schedules.forEach { schedule ->
+        activity.schedules().forEach { schedule ->
           schedule.instances.forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
@@ -175,27 +175,45 @@ class CreateActivitySessionsJobTest {
     )
 
     val moorlandActivities = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "A", description = "AAA", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "A",
+        description = "AAA",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 1, monday = true).apply {
             this.instances.clear()
             this.allocations.clear()
           }
         )
       },
-      activityEntity(activityId = 2L, prisonCode = "MDI", summary = "B", description = "BBB", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 2L,
+        prisonCode = "MDI",
+        summary = "B",
+        description = "BBB",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 2, monday = false, tuesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
           }
         )
       },
-      activityEntity(activityId = 3L, prisonCode = "MDI", summary = "C", description = "CCC", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 3L,
+        prisonCode = "MDI",
+        summary = "C",
+        description = "CCC",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 3, monday = false, wednesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -205,27 +223,45 @@ class CreateActivitySessionsJobTest {
     )
 
     val leedsActivities = listOf(
-      activityEntity(activityId = 4L, prisonCode = "LEI", summary = "D", description = "DDD", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 4L,
+        prisonCode = "LEI",
+        summary = "D",
+        description = "DDD",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 4, monday = true).apply {
             this.instances.clear()
             this.allocations.clear()
           }
         )
       },
-      activityEntity(activityId = 5L, prisonCode = "LEI", summary = "E", description = "EEE", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 5L,
+        prisonCode = "LEI",
+        summary = "E",
+        description = "EEE",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 5, monday = false, tuesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
           }
         )
       },
-      activityEntity(activityId = 6L, prisonCode = "LEI", summary = "F", description = "FFF", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 6L,
+        prisonCode = "LEI",
+        summary = "F",
+        description = "FFF",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(activity = this, activityScheduleId = 6, monday = false, wednesday = true).apply {
             this.instances.clear()
             this.allocations.clear()
@@ -235,9 +271,15 @@ class CreateActivitySessionsJobTest {
     )
 
     val activityWithExistingInstance = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "Existing", description = "Existing instances", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "Existing",
+        description = "Existing instances",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -250,16 +292,29 @@ class CreateActivitySessionsJobTest {
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
           ).apply {
             this.instances.clear()
-            this.instances.add(ScheduledInstance(activitySchedule = this, sessionDate = LocalDate.now(), startTime = LocalTime.now(), endTime = LocalTime.now()))
+            this.instances.add(
+              ScheduledInstance(
+                activitySchedule = this,
+                sessionDate = LocalDate.now(),
+                startTime = LocalTime.now(),
+                endTime = LocalTime.now()
+              )
+            )
           }
         )
       }
     )
 
     val activityWithSuspension = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "Existing", description = "Existing instances", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "Existing",
+        description = "Existing instances",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -273,16 +328,28 @@ class CreateActivitySessionsJobTest {
           ).apply {
             this.instances.clear()
             this.suspensions.clear()
-            this.suspensions.add(ActivityScheduleSuspension(activitySchedule = this, suspendedFrom = LocalDate.now(), suspendedUntil = LocalDate.now().plusDays(3)))
+            this.suspensions.add(
+              ActivityScheduleSuspension(
+                activitySchedule = this,
+                suspendedFrom = LocalDate.now(),
+                suspendedUntil = LocalDate.now().plusDays(3)
+              )
+            )
           }
         )
       }
     )
 
     val activityDoesNotRunOnABankHoliday = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "BH", description = "Not on bank holiday", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "BH",
+        description = "Not on bank holiday",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -303,9 +370,15 @@ class CreateActivitySessionsJobTest {
     )
 
     val activityRunsOnABankHoliday = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "BH", description = "Not on bank holiday", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "BH",
+        description = "Not on bank holiday",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -326,9 +399,15 @@ class CreateActivitySessionsJobTest {
     )
 
     val activityWithMultipleSlots = listOf(
-      activityEntity(activityId = 1L, prisonCode = "MDI", summary = "Multiple", description = "Slots", startDate = LocalDate.now().minusDays(1)).apply {
-        schedules.clear()
-        schedules.add(
+      activityEntity(
+        activityId = 1L,
+        prisonCode = "MDI",
+        summary = "Multiple",
+        description = "Slots",
+        startDate = LocalDate.now().minusDays(1),
+        noSchedules = true
+      ).apply {
+        this.addSchedule(
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
@@ -339,39 +418,39 @@ class CreateActivitySessionsJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            noSlots = true
           ).apply {
             this.instances.clear()
             this.suspensions.clear()
-            this.slots.clear()
-            this.slots.addAll(
-              listOf(
-                ActivityScheduleSlot(
-                  activityScheduleSlotId = 1,
-                  activitySchedule = this,
-                  startTime = LocalTime.of(9, 30),
-                  endTime = LocalTime.of(11, 30),
-                  mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-                  tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-                  wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-                  thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-                  fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-                  saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-                  sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-                ),
-                ActivityScheduleSlot(
-                  activityScheduleSlotId = 2,
-                  activitySchedule = this,
-                  startTime = LocalTime.of(13, 30),
-                  endTime = LocalTime.of(15, 30),
-                  mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-                  tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-                  wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-                  thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-                  fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-                  saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-                  sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-                ),
+            this.addSlot(
+              ActivityScheduleSlot(
+                activityScheduleSlotId = 1,
+                activitySchedule = this,
+                startTime = LocalTime.of(9, 30),
+                endTime = LocalTime.of(11, 30),
+                mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
+                tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
+                wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
+                thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
+                fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
+                saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
+                sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
               )
+            )
+            this.addSlot(
+              ActivityScheduleSlot(
+                activityScheduleSlotId = 2,
+                activitySchedule = this,
+                startTime = LocalTime.of(13, 30),
+                endTime = LocalTime.of(15, 30),
+                mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
+                tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
+                wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
+                thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
+                fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
+                saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
+                sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+              ),
             )
           }
         )

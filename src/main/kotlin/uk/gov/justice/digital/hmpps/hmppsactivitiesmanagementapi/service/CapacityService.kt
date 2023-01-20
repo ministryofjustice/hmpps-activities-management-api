@@ -50,11 +50,11 @@ class CapacityService(
   }
 
   private fun sumOfScheduleCapacities(activity: Activity): Int {
-    return activity.schedules.sumOf { schedule -> schedule.capacity }
+    return activity.schedules().sumOf { schedule -> schedule.capacity }
   }
 
   private fun sumOfScheduleAllocations(activity: Activity): Int {
-    return activity.schedules.sumOf { schedule -> schedule.getAllocationsForToday().size }
+    return activity.schedules().sumOf { schedule -> schedule.getAllocationsForToday().size }
   }
 
   private fun ActivitySchedule.getAllocationsForToday(): List<Allocation> {

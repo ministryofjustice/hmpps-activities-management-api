@@ -25,7 +25,7 @@ class AttendancesServiceTest {
   private val service =
     AttendancesService(scheduledInstanceRepository, attendanceRepository, attendanceReasonRepository)
   private val activity = activityEntity()
-  private val activitySchedule = activity.schedules.first()
+  private val activitySchedule = activity.schedules().first()
   private val allocation = activitySchedule.allocations.first()
   private val instance = activitySchedule.instances.first()
   private val attendance = instance.attendances.first()
