@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
@@ -38,6 +39,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
             .email("feedback@digital.justice.gov.uk")
         )
     )
+    .addSecurityItem(SecurityRequirement().addList("bearer-jwt", listOf("read", "write")))
+
 
   @Bean
   fun enableLocalTimePrimitiveType() {
