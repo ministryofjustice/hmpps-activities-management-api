@@ -255,7 +255,7 @@ class PrisonController(
       locationId = locationId
     )
 
-  @GetMapping(value = ["/{prisonCode}/prisonPayBands"])
+  @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
   @ResponseBody
   @Operation(
     summary = "Get a list of pay bands at a given prison",

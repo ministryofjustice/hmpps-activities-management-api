@@ -260,5 +260,5 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   }
 
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
-    get("/prison/$prisonCode/prisonPayBands")
+    get("/prison/$prisonCode/prison-pay-bands")
 }

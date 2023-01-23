@@ -28,7 +28,7 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.getPrisonPayBands(prisonCode: String) =
     get()
-      .uri("/prison/$prisonCode/prisonPayBands")
+      .uri("/prison/$prisonCode/prison-pay-bands")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
