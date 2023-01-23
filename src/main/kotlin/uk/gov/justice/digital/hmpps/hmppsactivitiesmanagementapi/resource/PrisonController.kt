@@ -20,10 +20,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
@@ -34,6 +36,7 @@ class PrisonController(
   private val capacityService: CapacityService,
   private val activityService: ActivityService,
   private val scheduleService: ActivityScheduleService,
+  private val prisonRegimeService: PrisonRegimeService
 ) {
 
   @Operation(
@@ -44,7 +47,12 @@ class PrisonController(
       ApiResponse(
         responseCode = "200",
         description = "Activities",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = ActivityLite::class)))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivityLite::class))
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -72,7 +80,12 @@ class PrisonController(
       ApiResponse(
         responseCode = "200",
         description = "Activities within the category",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = ActivityLite::class)))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivityLite::class))
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -106,7 +119,12 @@ class PrisonController(
       ApiResponse(
         responseCode = "200",
         description = "Activity category capacity",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = CapacityAndAllocated::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CapacityAndAllocated::class)
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -143,7 +161,12 @@ class PrisonController(
       ApiResponse(
         responseCode = "200",
         description = "Locations found",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = InternalLocation::class)))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = InternalLocation::class))
+          )
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -231,4 +254,49 @@ class PrisonController(
       timeSlot = timeSlot,
       locationId = locationId
     )
+
+  @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of pay bands at a given prison",
+    description = "Returns the pay bands at a given prison or a default list of values if none present.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison pay bands found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = PrisonPayBand::class))
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+    ]
+  )
+  fun getPrisonPayBands(
+    @PathVariable("prisonCode")
+    prisonCode: String
+  ): List<PrisonPayBand> = prisonRegimeService.getPayBandsForPrison(prisonCode)
 }

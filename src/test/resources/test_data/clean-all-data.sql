@@ -16,5 +16,6 @@ truncate table activity_schedule_slot restart identity;
 truncate table activity_eligibility restart identity;
 truncate table eligibility_rule restart identity;
 truncate table activity restart identity;
+truncate table prison_pay_band restart identity;
 
 SET REFERENTIAL_INTEGRITY TRUE;

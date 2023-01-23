@@ -14,6 +14,9 @@ import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -21,6 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import java.time.LocalDate
 import javax.persistence.EntityNotFoundException
 
@@ -37,38 +42,41 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   @MockBean
   private lateinit var scheduleService: ActivityScheduleService
 
-  override fun controller() = PrisonController(capacityService, activityService, scheduleService)
+  @MockBean
+  private lateinit var prisonRegimeService: PrisonRegimeService
+
+  override fun controller() = PrisonController(capacityService, activityService, scheduleService, prisonRegimeService)
 
   @Test
   fun `200 response when get category capacity`() {
     val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
 
-    whenever(capacityService.getActivityCategoryCapacityAndAllocated("MDI", 1)).thenReturn(
+    whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 1)).thenReturn(
       expectedModel
     )
 
-    val response = mockMvc.getCategoryCapacity("MDI", 1)
+    val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated("MDI", 1)
+    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 1)
   }
 
   @Test
   fun `404 response when get category capacity and category does not exist`() {
-    whenever(capacityService.getActivityCategoryCapacityAndAllocated("MDI", 2)).thenThrow(
+    whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 2)).thenThrow(
       EntityNotFoundException("not found")
     )
 
-    val response = mockMvc.getCategoryCapacity("MDI", 2)
+    val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated("MDI", 2)
+    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 2)
   }
 
   @Test
@@ -76,7 +84,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val expectedModel = listOf(
       ActivityLite(
         id = 1,
-        prisonCode = "MDI",
+        prisonCode = moorlandPrisonCode,
         attendanceRequired = true,
         inCell = false,
         pieceWork = false,
@@ -95,32 +103,32 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       )
     )
 
-    whenever(activityService.getActivitiesByCategoryInPrison("MDI", 1)).thenReturn(
+    whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 1)).thenReturn(
       expectedModel
     )
 
-    val response = mockMvc.getActivitiesInCategory("MDI", 1)
+    val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison("MDI", 1)
+    verify(activityService, times(1)).getActivitiesByCategoryInPrison(moorlandPrisonCode, 1)
   }
 
   @Test
   fun `404 response when get category activities and category does not exist`() {
-    whenever(activityService.getActivitiesByCategoryInPrison("MDI", 2)).thenThrow(
+    whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)).thenThrow(
       EntityNotFoundException("not found")
     )
 
-    val response = mockMvc.getActivitiesInCategory("MDI", 2)
+    val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison("MDI", 2)
+    verify(activityService, times(1)).getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)
   }
 
   private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: Long) =
@@ -134,7 +142,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val expectedModel = listOf(
       ActivityLite(
         id = 1,
-        prisonCode = "MDI",
+        prisonCode = moorlandPrisonCode,
         attendanceRequired = true,
         inCell = false,
         pieceWork = false,
@@ -153,17 +161,17 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       )
     )
 
-    whenever(activityService.getActivitiesInPrison("MDI")).thenReturn(
+    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode)).thenReturn(
       expectedModel
     )
 
-    val response = mockMvc.getActivities("MDI")
+    val response = mockMvc.getActivities(moorlandPrisonCode)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesInPrison("MDI")
+    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode)
   }
 
   private fun MockMvc.getActivities(prisonCode: String) =
@@ -175,7 +183,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     whenever(
       scheduleService.getActivitySchedulesByPrisonCode(
-        "PVI",
+        pentonvillePrisonCode,
         LocalDate.MIN,
         TimeSlot.AM,
         1
@@ -184,7 +192,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       schedules
     )
 
-    val response = mockMvc.getSchedulesBy("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+    val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -192,7 +200,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(schedules))
 
     verify(scheduleService).getActivitySchedulesByPrisonCode(
-      "PVI",
+      pentonvillePrisonCode,
       LocalDate.MIN,
       TimeSlot.AM,
       1
@@ -203,7 +211,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `200 response when get schedule by prison code and search criteria not found`() {
     whenever(
       scheduleService.getActivitySchedulesByPrisonCode(
-        "PVI",
+        pentonvillePrisonCode,
         LocalDate.MIN,
         TimeSlot.AM,
         1
@@ -212,7 +220,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       emptyList()
     )
 
-    val response = mockMvc.getSchedulesBy("PVI", LocalDate.MIN, TimeSlot.AM, 1)
+    val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -220,7 +228,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     assertThat(response.contentAsString).isEqualTo("[]")
 
     verify(scheduleService).getActivitySchedulesByPrisonCode(
-      "PVI",
+      pentonvillePrisonCode,
       LocalDate.MIN,
       TimeSlot.AM,
       1
@@ -234,4 +242,23 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     locationId: Long
   ) =
     get("/prison/$prisonCode/schedules?date=$date&timeSlot=$timeSlot&locationId=$locationId")
+
+  @Test
+  fun `200 response when get pay bands by Moorland prison code`() {
+    val prisonPayBands = prisonPayBands().map { it.toModelPrisonPayBand() }
+
+    whenever(prisonRegimeService.getPayBandsForPrison(moorlandPrisonCode)).thenReturn(prisonPayBands)
+
+    val response = mockMvc.getPrisonPayBandsBy(moorlandPrisonCode)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands))
+
+    verify(prisonRegimeService).getPayBandsForPrison(moorlandPrisonCode)
+  }
+
+  private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
+    get("/prison/$prisonCode/prison-pay-bands")
 }
