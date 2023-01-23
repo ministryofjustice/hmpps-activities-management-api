@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -19,6 +20,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 internal fun activityModel(activity: Activity) = transform(activity)
+
+const val moorlandPrisonCode = "MDI"
+const val pentonvillePrisonCode = "PVI"
 
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
@@ -55,7 +59,12 @@ internal fun activityEntity(
   }
 
 internal fun activityCategory() =
-  ActivityCategory(activityCategoryId = 1, code = "category code", name = "category name", description = "category description")
+  ActivityCategory(
+    activityCategoryId = 1,
+    code = "category code",
+    name = "category name",
+    description = "category description"
+  )
 
 internal fun schedule() = activityEntity().schedules().first()
 
@@ -187,3 +196,14 @@ private fun activityPay(activity: Activity) =
   )
 
 fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
+
+fun prisonPayBands(prisonCode: String = "DEFAULT") = listOf(
+  PrisonPayBand(
+    prisonPayBandId = 1,
+    prisonCode = prisonCode,
+    displaySequence = 1,
+    payBandAlias = "Pay band 1 $prisonCode alias",
+    payBandDescription = "Pay band 1 $prisonCode description",
+    nomisPayBand = 1
+  )
+)

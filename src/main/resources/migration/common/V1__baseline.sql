@@ -260,6 +260,20 @@ CREATE TABLE event_priority (
 CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
 CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON event_priority (prison_code, event_type, event_category);
 
+create table prison_pay_band
+(
+  prison_pay_band_id   bigserial    NOT NULL CONSTRAINT prison_pay_band_pk PRIMARY KEY,
+  display_sequence     integer      NOT NULL,
+  nomis_pay_band       integer      NOT NULL,
+  pay_band_alias       varchar(30)  NOT NULL,
+  pay_band_description varchar(100) NOT NULL,
+  prison_code          varchar(10)  NOT NULL);
+
+CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_nomis_pay_band ON prison_pay_band (prison_code, nomis_pay_band);
+CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_display_sequence ON prison_pay_band (prison_code, display_sequence);
+CREATE INDEX  idx_prison_pay_band_prison_code ON prison_pay_band (prison_code);
+CREATE INDEX idx_prison_pay_band_pay_band_alias ON prison_pay_band (pay_band_alias);
+
 -- View used to retrieve scheduled activities for a prisoner, or list of prisoners, between dates
 -- This filters out the cancelled & suspended sessions, and checks that the activities and allocations are
 -- within their start and end dates. Dated/expired records are not returned when using this view.

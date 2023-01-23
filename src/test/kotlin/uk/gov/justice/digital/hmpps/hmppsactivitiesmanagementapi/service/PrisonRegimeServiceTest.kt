@@ -9,11 +9,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventPriority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
 class PrisonRegimeServiceTest {
 
   private val eventPriorityRepository: EventPriorityRepository = mock()
-  private val service = PrisonRegimeService(eventPriorityRepository)
+  private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository)
 
   @Test
   fun `default priorities are returned when no priorities for prison`() {
@@ -123,4 +127,55 @@ class PrisonRegimeServiceTest {
 
   private fun priority(eventType: EventType, priority: Int) =
     EventPriority(prisonCode = "MDI", eventType = eventType, priority = priority)
+
+  @Test
+  fun `prison pay bands for Moorland are returned`() {
+    val moorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(moorlandPrisonPayBand))
+
+    assertThat(service.getPayBandsForPrison("MDI")).containsExactly(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 1,
+        alias = "alias",
+        description = "description",
+        nomisPayBand = 1,
+        prisonCode = "MDI"
+      )
+    )
+  }
+
+  @Test
+  fun `default prison pay bands are returned when no pay bands configured for Moorland`() {
+    val defaultPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "DEFAULT",
+    )
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(emptyList())
+    whenever(prisonPayBandRepository.findByPrisonCode("DEFAULT")).thenReturn(listOf(defaultPrisonPayBand))
+
+    assertThat(service.getPayBandsForPrison("MDI")).containsExactly(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 1,
+        alias = "alias",
+        description = "description",
+        nomisPayBand = 1,
+        prisonCode = "DEFAULT"
+      )
+    )
+  }
 }
