@@ -288,14 +288,16 @@ SELECT si.scheduled_instance_id,
            true
        END suspended
 FROM scheduled_instance si
-         JOIN activity_schedule schedule ON schedule.activity_schedule_id = si.activity_schedule_id
+         JOIN activity_schedule schedule
+              ON schedule.activity_schedule_id = si.activity_schedule_id
+                  AND si.session_date >= schedule.start_date
+                  AND (schedule.end_date is null OR schedule.end_date <= si.session_date)
          JOIN allocation alloc
               ON alloc.activity_schedule_id = si.activity_schedule_id
                   AND si.session_date >= alloc.start_date
                   AND (alloc.end_date is null or alloc.end_date <= si.session_date)
          JOIN activity act
               ON act.activity_id = schedule.activity_id
-                  AND si.session_date >= act.start_date
                   AND (act.end_date is null OR act.end_date <= si.session_date)
          JOIN activity_category category on category.activity_category_id = act.activity_category_id
          LEFT JOIN activity_schedule_suspension suspensions
