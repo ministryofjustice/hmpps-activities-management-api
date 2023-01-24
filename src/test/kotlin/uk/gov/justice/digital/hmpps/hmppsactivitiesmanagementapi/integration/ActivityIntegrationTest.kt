@@ -111,8 +111,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(error!!) {
       assertThat(status).isEqualTo(403)
       assertThat(errorCode).isNull()
-      assertThat(userMessage).isEqualTo("Access denied: Access is denied")
-      assertThat(developerMessage).isEqualTo("Access is denied")
+      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
+      assertThat(developerMessage).isEqualTo("Access Denied")
       assertThat(moreInfo).isNull()
     }
   }
