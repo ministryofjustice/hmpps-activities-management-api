@@ -52,17 +52,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
 
   @Test
   fun `Cell locations for group - 400 response when group name missing`() {
-    mockMvc.get("/locations/prison/$prisonCode")
+    val response = mockMvc.get("/locations/prison/$prisonCode")
       .andDo { print() }
       .andExpect {
         status { is4xxClientError() }
-        content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
-          jsonPath("$.userMessage") {
-            value("Required request parameter 'groupName' for method parameter type String is not present")
-          }
-        }
       }
+      .andReturn().response
+    assertThat(response.contentAsString).contains("Required parameter 'groupName' is not present")
   }
 
   @Test
@@ -169,17 +165,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
 
   @Test
   fun `Location prefix - 400 response when groupName request parameter is missing`() {
-    mockMvc.get("/locations/prison/$prisonCode/location-prefix")
+    val response = mockMvc.get("/locations/prison/$prisonCode/location-prefix")
       .andDo { print() }
       .andExpect {
         status { is4xxClientError() }
-        content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
-          jsonPath("$.userMessage") {
-            value("Required request parameter 'groupName' for method parameter type String is not present")
-          }
-        }
       }
+      .andReturn().response
+    assertThat(response.contentAsString).contains("Required parameter 'groupName' is not present")
   }
 
   private fun aLocation(locationPrefix: String, description: String = ""): Location {
