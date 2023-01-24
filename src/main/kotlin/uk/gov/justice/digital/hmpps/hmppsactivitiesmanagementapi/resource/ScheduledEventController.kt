@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.validation.ValidationException
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import java.time.LocalDate
-import javax.validation.ValidationException
 
 @RestController
 @RequestMapping("/scheduled-events")

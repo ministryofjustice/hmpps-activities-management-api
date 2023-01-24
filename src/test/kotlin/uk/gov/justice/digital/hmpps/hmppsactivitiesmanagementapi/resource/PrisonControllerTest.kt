@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.times
@@ -27,7 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Capacit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import java.time.LocalDate
-import javax.persistence.EntityNotFoundException
 
 @WebMvcTest(controllers = [PrisonController::class])
 @ContextConfiguration(classes = [PrisonController::class])

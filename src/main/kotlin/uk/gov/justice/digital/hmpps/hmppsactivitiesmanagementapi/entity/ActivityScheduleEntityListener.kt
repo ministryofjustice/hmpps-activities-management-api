@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.PostPersist
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEventsService
-import javax.persistence.PostPersist
 
 @Component
 class ActivityScheduleEntityListener {

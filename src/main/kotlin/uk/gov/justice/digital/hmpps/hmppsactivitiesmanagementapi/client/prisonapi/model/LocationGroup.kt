@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import javax.validation.Valid
+import jakarta.validation.Valid
 
 /**
  * Cell Locations are grouped for unlock lists as a 2 level tree.

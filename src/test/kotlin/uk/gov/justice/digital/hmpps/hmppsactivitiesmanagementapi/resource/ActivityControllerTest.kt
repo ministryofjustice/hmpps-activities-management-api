@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import com.fasterxml.jackson.core.type.TypeReference
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
@@ -35,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Capacit
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
-import javax.persistence.EntityNotFoundException
 
 @WebMvcTest(controllers = [ActivityController::class])
 @ContextConfiguration(classes = [ActivityController::class])

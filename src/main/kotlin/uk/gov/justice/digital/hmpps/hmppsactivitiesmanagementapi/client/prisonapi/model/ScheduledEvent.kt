@@ -2,8 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
-import javax.validation.Valid
-import javax.validation.constraints.Pattern
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Pattern
 
 /**
  * Scheduled Event
