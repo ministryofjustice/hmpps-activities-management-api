@@ -111,7 +111,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .status(ex.statusCode)
       .body(
         errorResponse ?: ErrorResponse(
-          status = BAD_REQUEST,
+          status = ex.statusCode.value(),
           userMessage = ex.message,
           developerMessage = ex.message
         )
