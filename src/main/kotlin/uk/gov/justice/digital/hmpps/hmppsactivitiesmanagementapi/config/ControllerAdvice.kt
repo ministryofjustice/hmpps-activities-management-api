@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -20,8 +22,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 import org.springframework.web.util.WebUtils
-import javax.persistence.EntityNotFoundException
-import javax.validation.ValidationException
 
 @RestControllerAdvice
 class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
@@ -108,10 +108,10 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       log.error("Failed to parse web client response as ErrorResponse: {}", ex.message)
     }
     return ResponseEntity
-      .status(HttpStatus.valueOf(ex.rawStatusCode))
+      .status(ex.statusCode)
       .body(
         errorResponse ?: ErrorResponse(
-          status = ex.rawStatusCode,
+          status = BAD_REQUEST,
           userMessage = ex.message,
           developerMessage = ex.message
         )
@@ -132,7 +132,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       )
   }
 
-  override fun handleMethodArgumentNotValid(
+  fun handleMethodArgumentNotValid(
     ex: MethodArgumentNotValidException,
     headers: HttpHeaders,
     status: HttpStatus,
@@ -153,7 +153,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       )
   }
 
-  override fun handleExceptionInternal(
+  fun handleExceptionInternal(
     ex: java.lang.Exception,
     @Nullable body: Any?,
     headers: HttpHeaders,

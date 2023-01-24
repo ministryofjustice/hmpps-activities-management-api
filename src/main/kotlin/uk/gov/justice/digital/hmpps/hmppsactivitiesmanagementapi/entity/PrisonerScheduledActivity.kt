@@ -1,13 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.IdClass
+import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.IdClass
-import javax.persistence.Table
 
 /*
  * Read-only entity for the database view V_PRISONER_SCHEDULED_ACTIVITIES

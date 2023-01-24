@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.amazonaws.services.sns.model.MessageAttributeValue
-import com.amazonaws.services.sns.model.PublishRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue
+import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
 @Service
@@ -34,17 +34,22 @@ class EventsPublisher(
   internal fun send(event: OutboundHMPPSDomainEvent) {
     if (enabled) {
       domainEventsTopic.snsClient.publish(
-        PublishRequest(domainEventsTopic.arn, mapper.writeValueAsString(event))
-          .withMessageAttributes(
-            mapOf(
-              "eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.eventType)
-            )
-          )
+        PublishRequest.builder()
+          .topicArn(domainEventsTopic.arn)
+          .message(mapper.writeValueAsString(event))
+          .messageAttributes(metaData(event))
+          .build()
       ).also { log.info("Published $event") }
 
       return
     }
 
     log.info("Ignoring publishing event $event")
+  }
+
+  private fun metaData(payload: OutboundHMPPSDomainEvent): Map<String, MessageAttributeValue> {
+    val messageAttributes: MutableMap<String, MessageAttributeValue> = HashMap()
+    messageAttributes["eventType"] = MessageAttributeValue.builder().dataType("String").stringValue(payload.eventType).build()
+    return messageAttributes
   }
 }

@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.data.jpa.repository.JpaRepository
-import javax.persistence.EntityNotFoundException
 
 inline fun <reified T> JpaRepository<T, Long>.findOrThrowIllegalArgument(id: Long): T =
   this.findById(id).orElseThrow { IllegalArgumentException("${T::class.java.simpleName.spaceOut()} $id not found") }

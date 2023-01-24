@@ -296,7 +296,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
             value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
           }
