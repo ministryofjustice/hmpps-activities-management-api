@@ -21,12 +21,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import java.util.Optional
 import javax.persistence.EntityNotFoundException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
@@ -39,6 +41,7 @@ class ActivityServiceTest {
   private val activityTierRepository: ActivityTierRepository = mock()
   private val eligibilityRuleRepository: EligibilityRuleRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
+  private val prisonPayBandRepository: PrisonPayBandRepository = mock()
 
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
@@ -50,7 +53,8 @@ class ActivityServiceTest {
     activityCategoryRepository,
     activityTierRepository,
     eligibilityRuleRepository,
-    activityScheduleRepository
+    activityScheduleRepository,
+    prisonPayBandRepository
   )
 
   @BeforeEach
@@ -81,6 +85,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBands(offset = 10))
 
     service.createActivity(createActivityRequest, createdBy)
 

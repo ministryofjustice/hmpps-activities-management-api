@@ -11,11 +11,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPay
 class PrisonPayBandIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun `10 default pay bands are returned for Pentonville`() {
+  fun `10 configured pay bands are returned for Pentonville`() {
     val defaultPayBands = webTestClient.getPrisonPayBands(pentonvillePrisonCode)!!
 
     assertThat(defaultPayBands).hasSize(10)
-    assertThat(defaultPayBands.count { it.prisonCode == "DEFAULT" }).isEqualTo(10)
+    assertThat(defaultPayBands.count { it.prisonCode == "PVI" }).isEqualTo(10)
   }
 
   @Test

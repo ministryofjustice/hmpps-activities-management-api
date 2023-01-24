@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -151,7 +150,12 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand, bookingId: Long?, allocatedBy: String) {
+  fun allocatePrisoner(
+    prisonerNumber: PrisonerNumber,
+    payBand: PrisonPayBand,
+    bookingId: Long?,
+    allocatedBy: String
+  ) {
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
 
@@ -160,7 +164,7 @@ data class ActivitySchedule(
         activitySchedule = this,
         prisonerNumber = prisonerNumber.toString(),
         bookingId = bookingId,
-        payBand = payBand.toString(),
+        payBand = payBand,
         // TODO not sure if this is supported in the UI
         startDate = LocalDate.now(),
         allocatedBy = allocatedBy,

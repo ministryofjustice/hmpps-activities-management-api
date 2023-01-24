@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -67,7 +68,7 @@ class TransformFunctionsTest {
               id = 1,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              payBand = "A",
+              payBandId = prisonPayBands().first().prisonPayBandId,
               startDate = timestamp.toLocalDate(),
               endDate = null,
               allocatedTime = timestamp,
@@ -94,7 +95,7 @@ class TransformFunctionsTest {
         ModelActivityWaiting(id = 1, prisonerNumber = "A1234AA", priority = 1, createdTime = timestamp, createdBy = "test")
       )
       assertThat(pay).containsExactly(
-        ModelActivityPay(id = 1, incentiveLevel = "Basic", payBand = "A", rate = 30, pieceRate = 40, pieceRateItems = 50)
+        ModelActivityPay(id = 1, incentiveLevel = "Basic", payBandId = 1, rate = 30, pieceRate = 40, pieceRateItems = 50)
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()

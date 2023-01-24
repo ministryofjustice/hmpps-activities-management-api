@@ -143,7 +143,7 @@ internal fun activitySchedule(
           activitySchedule = this,
           prisonerNumber = "A1234AA",
           bookingId = 10001,
-          payBand = "A",
+          payBand = prisonPayBands().first(),
           startDate = timestamp.toLocalDate(),
           endDate = null,
           allocatedTime = timestamp,
@@ -189,7 +189,7 @@ private fun activityPay(activity: Activity) =
     activityPayId = 1,
     activity = activity,
     incentiveLevel = "Basic",
-    payBand = "A",
+    payBand = prisonPayBands().first(),
     rate = 30,
     pieceRate = 40,
     pieceRateItems = 50
@@ -197,13 +197,30 @@ private fun activityPay(activity: Activity) =
 
 fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
 
-fun prisonPayBands(prisonCode: String = "DEFAULT") = listOf(
+// TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
+fun prisonPayBands(prisonCode: String = moorlandPrisonCode, offset: Long = 0) = listOf(
   PrisonPayBand(
-    prisonPayBandId = 1,
+    prisonPayBandId = 1 + offset,
     prisonCode = prisonCode,
     displaySequence = 1,
-    payBandAlias = "Pay band 1 $prisonCode alias",
-    payBandDescription = "Pay band 1 $prisonCode description",
+    payBandAlias = "Low",
+    payBandDescription = "Pay band 1 $prisonCode description (lowest)",
     nomisPayBand = 1
+  ),
+  PrisonPayBand(
+    prisonPayBandId = 2 + offset,
+    prisonCode = prisonCode,
+    displaySequence = 2,
+    payBandAlias = "Medium",
+    payBandDescription = "Pay band 2 $prisonCode description",
+    nomisPayBand = 2
+  ),
+  PrisonPayBand(
+    prisonPayBandId = 3 + offset,
+    prisonCode = prisonCode,
+    displaySequence = 3,
+    payBandAlias = "High",
+    payBandDescription = "Pay band 3 $prisonCode description (highest)",
+    nomisPayBand = 2
   )
 )

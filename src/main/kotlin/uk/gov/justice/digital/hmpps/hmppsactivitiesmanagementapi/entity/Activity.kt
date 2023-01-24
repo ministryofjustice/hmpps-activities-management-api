@@ -133,6 +133,29 @@ data class Activity(
     return this::class.simpleName + "(activityId = $activityId )"
   }
 
+  fun addEligibilityRule(rule: EligibilityRule) {
+    eligibilityRules.add(ActivityEligibility(eligibilityRule = rule, activity = this))
+  }
+
+  fun addPay(
+    incentiveLevel: String?,
+    payBand: PrisonPayBand,
+    rate: Int?,
+    pieceRate: Int?,
+    pieceRateItems: Int?
+  ) {
+    activityPay.add(
+      ActivityPay(
+        activity = this,
+        incentiveLevel = incentiveLevel,
+        payBand = payBand,
+        rate = rate,
+        pieceRate = pieceRate,
+        pieceRateItems = pieceRateItems
+      )
+    )
+  }
+
   fun addSchedule(
     description: String,
     internalLocationId: Int,

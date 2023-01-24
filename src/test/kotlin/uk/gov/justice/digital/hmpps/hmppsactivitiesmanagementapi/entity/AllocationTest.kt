@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -18,7 +19,8 @@ class AllocationTest {
     prisonerNumber = "1234567890",
     startDate = today,
     allocatedBy = "FAKE USER",
-    allocatedTime = LocalDateTime.now()
+    allocatedTime = LocalDateTime.now(),
+    payBand = prisonPayBands().first()
   )
 
   private val allocationWithEndDate = allocationWithNoEndDate.copy(endDate = tomorrow)

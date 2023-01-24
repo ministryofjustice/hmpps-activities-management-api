@@ -216,12 +216,26 @@ CREATE INDEX idx_prisoner_waiting_activity_id ON prisoner_waiting (activity_id);
 CREATE INDEX idx_prisoner_waiting_prisoner_number ON prisoner_waiting (prisoner_number);
 CREATE INDEX idx_prisoner_waiting_created_time ON prisoner_waiting (created_time);
 
+create table prison_pay_band
+(
+  prison_pay_band_id   bigserial    NOT NULL CONSTRAINT prison_pay_band_pk PRIMARY KEY,
+  display_sequence     integer      NOT NULL,
+  nomis_pay_band       integer      NOT NULL,
+  pay_band_alias       varchar(30)  NOT NULL,
+  pay_band_description varchar(100) NOT NULL,
+  prison_code          varchar(10)  NOT NULL);
+
+CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_nomis_pay_band ON prison_pay_band (prison_code, nomis_pay_band);
+CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_display_sequence ON prison_pay_band (prison_code, display_sequence);
+CREATE INDEX  idx_prison_pay_band_prison_code ON prison_pay_band (prison_code);
+CREATE INDEX idx_prison_pay_band_pay_band_alias ON prison_pay_band (pay_band_alias);
+
 CREATE TABLE allocation (
   allocation_id        bigserial    NOT NULL CONSTRAINT allocation_pk PRIMARY KEY,
   activity_schedule_id bigint       NOT NULL REFERENCES activity_schedule (activity_schedule_id),
   prisoner_number      varchar(7)   NOT NULL,
   booking_id           bigint,
-  pay_band             varchar(10),
+  prison_pay_band_id   bigint       NOT NULL references prison_pay_band(prison_pay_band_id),
   start_date           date         NOT NULL,
   end_date             date,
   allocated_time       timestamp    NOT NULL,
@@ -238,13 +252,13 @@ CREATE INDEX idx_allocation_start_date ON allocation (start_date);
 CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 
 CREATE TABLE activity_pay (
-  activity_pay_id   bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
-  activity_id       bigint    NOT NULL REFERENCES activity (activity_id),
-  incentive_level   varchar(10),
-  pay_band          varchar(10),
-  rate              integer,
-  piece_rate        integer,
-  piece_rate_items  integer
+  activity_pay_id    bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
+  activity_id        bigint    NOT NULL REFERENCES activity (activity_id),
+  incentive_level    varchar(10),
+  prison_pay_band_id bigint    NOT NULL references prison_pay_band(prison_pay_band_id),
+  rate               integer,
+  piece_rate         integer,
+  piece_rate_items   integer
 );
 
 CREATE INDEX idx_activity_pay_activity_id ON activity_pay (activity_id);
@@ -259,20 +273,6 @@ CREATE TABLE event_priority (
 
 CREATE INDEX idx_event_priority_prison_code ON event_priority (prison_code);
 CREATE UNIQUE INDEX idx_event_priority_prison_code_event_type_event_category ON event_priority (prison_code, event_type, event_category);
-
-create table prison_pay_band
-(
-  prison_pay_band_id   bigserial    NOT NULL CONSTRAINT prison_pay_band_pk PRIMARY KEY,
-  display_sequence     integer      NOT NULL,
-  nomis_pay_band       integer      NOT NULL,
-  pay_band_alias       varchar(30)  NOT NULL,
-  pay_band_description varchar(100) NOT NULL,
-  prison_code          varchar(10)  NOT NULL);
-
-CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_nomis_pay_band ON prison_pay_band (prison_code, nomis_pay_band);
-CREATE UNIQUE INDEX idx_prison_pay_band_prison_code_display_sequence ON prison_pay_band (prison_code, display_sequence);
-CREATE INDEX  idx_prison_pay_band_prison_code ON prison_pay_band (prison_code);
-CREATE INDEX idx_prison_pay_band_pay_band_alias ON prison_pay_band (pay_band_alias);
 
 -- View used to retrieve scheduled activities for a prisoner, or list of prisoners, between dates
 -- This filters out the cancelled & suspended sessions, and checks that the activities and allocations are

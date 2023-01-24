@@ -3,10 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
@@ -30,7 +30,8 @@ class ActivityScheduleTest {
         startDate = LocalDate.of(2022, 12, 1),
         endDate = null,
         allocatedBy = "FAKE USER",
-        allocatedTime = LocalDate.of(2022, 12, 1).atStartOfDay()
+        allocatedTime = LocalDate.of(2022, 12, 1).atStartOfDay(),
+        payBand = prisonPayBands().first()
       )
 
       val novemberAllocation = Allocation(
@@ -40,7 +41,8 @@ class ActivityScheduleTest {
         startDate = LocalDate.of(2022, 11, 10),
         endDate = LocalDate.of(2022, 11, 30),
         allocatedBy = "FAKE USER",
-        allocatedTime = LocalDate.of(2022, 11, 10).atStartOfDay()
+        allocatedTime = LocalDate.of(2022, 11, 10).atStartOfDay(),
+        payBand = prisonPayBands().first()
       )
 
       allocations.clear()
@@ -156,10 +158,11 @@ class ActivityScheduleTest {
   @Test
   fun `can allocate prisoner to a schedule with no allocations`() {
     val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+    val prisonPayBand = prisonPayBands().first()
 
     schedule.allocatePrisoner(
       prisonerNumber = "123456".toPrisonerNumber(),
-      payBand = "A".toPayBand(),
+      payBand = prisonPayBand,
       bookingId = 10001,
       allocatedBy = "FRED"
     )
@@ -169,7 +172,7 @@ class ActivityScheduleTest {
     with(schedule.allocations.first()) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("123456")
-      assertThat(payBand).isEqualTo("A")
+      assertThat(payBand).isEqualTo(prisonPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FRED")
       assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
@@ -180,10 +183,11 @@ class ActivityScheduleTest {
   fun `can allocate prisoner to a schedule with existing allocation`() {
     val schedule = activitySchedule(activity = activityEntity())
       .also { assertThat(it.allocations).hasSize(1) }
+    val prisonPayBand = prisonPayBands().first()
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
-      payBand = "B".toPayBand(),
+      payBand = prisonPayBand,
       bookingId = 10001,
       allocatedBy = "FREDDIE"
     )
@@ -194,7 +198,7 @@ class ActivityScheduleTest {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("654321")
       assertThat(bookingId).isEqualTo(10001)
-      assertThat(payBand).isEqualTo("B")
+      assertThat(payBand).isEqualTo(prisonPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FREDDIE")
       assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
@@ -207,7 +211,7 @@ class ActivityScheduleTest {
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
-      payBand = "B".toPayBand(),
+      payBand = prisonPayBands().first(),
       bookingId = 10001,
       allocatedBy = "FREDDIE"
     )
@@ -215,7 +219,7 @@ class ActivityScheduleTest {
     assertThatThrownBy {
       schedule.allocatePrisoner(
         prisonerNumber = "654321".toPrisonerNumber(),
-        payBand = "B".toPayBand(),
+        payBand = prisonPayBands().first(),
         bookingId = 10001,
         allocatedBy = "NOT FREDDIE"
       )
@@ -229,7 +233,7 @@ class ActivityScheduleTest {
     assertThatThrownBy {
       schedule.allocatePrisoner(
         prisonerNumber = "654321".toPrisonerNumber(),
-        payBand = "B".toPayBand(),
+        payBand = prisonPayBands().first(),
         bookingId = 10001,
         allocatedBy = " "
       )

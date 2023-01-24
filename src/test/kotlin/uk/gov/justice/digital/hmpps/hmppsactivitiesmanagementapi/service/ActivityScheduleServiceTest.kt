@@ -8,6 +8,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import java.time.LocalDate
 import java.util.Optional
@@ -17,7 +18,8 @@ class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
-  private val service = ActivityScheduleService(repository, prisonApiClient)
+  private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository)
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {

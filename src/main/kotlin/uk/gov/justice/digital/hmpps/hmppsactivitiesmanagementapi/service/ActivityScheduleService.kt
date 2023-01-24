@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -15,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -26,7 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 @Service
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
-  private val prisonApiClient: PrisonApiClient
+  private val prisonApiClient: PrisonApiClient,
+  private val prisonPayBandRepository: PrisonPayBandRepository
 ) {
 
   companion object {
@@ -88,8 +89,15 @@ class ActivityScheduleService(
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
     val schedule = repository.findOrThrowNotFound(scheduleId)
+
+    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+      .associateBy { it.prisonPayBandId }
+      .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+
+    val payBand = prisonPayBands[request.payBandId!!]
+      ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+
     val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
-    val payBand = request.payBand!!.toPayBand()
 
     val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber.toString(), false).block()
       .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
