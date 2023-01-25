@@ -58,10 +58,10 @@ fun transform(activity: EntityActivity) =
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
-    eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
+    eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
     schedules = activity.schedules().toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
-    pay = activity.activityPay.toModelActivityPayList(),
+    pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
     pieceWork = activity.pieceWork,
@@ -261,13 +261,30 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
+fun transform(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
+  scheduleAndInstances.map {
+    ModelActivitySchedule(
+      id = it.key.activityScheduleId,
+      instances = it.value.toModelScheduledInstances(),
+      allocations = it.key.allocations().toModelAllocations(),
+      description = it.key.description,
+      suspensions = it.key.suspensions.toModelSuspensions(),
+      internalLocation = it.key.toInternalLocation(),
+      capacity = it.key.capacity,
+      activity = it.key.activity.toModelLite(),
+      slots = it.key.slots().toModelActivityScheduleSlots(),
+      startDate = it.key.startDate,
+      endDate = it.key.endDate
+    )
+  }
+
 fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
 
 fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
     id = this.activityScheduleId,
     instances = this.instances.toModelScheduledInstances(),
-    allocations = this.allocations.toModelAllocations(),
+    allocations = this.allocations().toModelAllocations(),
     description = this.description,
     suspensions = this.suspensions.toModelSuspensions(),
     internalLocation = this.toInternalLocation(),

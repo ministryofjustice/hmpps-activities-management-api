@@ -53,7 +53,7 @@ class ActivityScheduleService(
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     locationId: Long? = null
-  ): List<EntityActivitySchedule> {
+  ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
     // TODO consider pushing some/all of the filtering logic into a repository query (perhaps using a JPA Specification)
     val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
       .selectSchedulesAtLocation(locationId)
@@ -61,9 +61,7 @@ class ActivityScheduleService(
       .flatMap { it.instances }
       .selectInstancesRunningOn(date, timeSlot)
 
-    return filteredInstances
-      .groupBy { it.activitySchedule }
-      .map { (schedule, instances) -> schedule.copy(instances = instances.toMutableList()) }
+    return filteredInstances.groupBy { it.activitySchedule }
   }
 
   private fun List<ActivitySchedule>.selectSchedulesAtLocation(locationId: Long?) =
@@ -77,7 +75,7 @@ class ActivityScheduleService(
 
   fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true) =
     LocalDate.now().let { today ->
-      repository.findOrThrowNotFound(scheduleId).allocations
+      repository.findOrThrowNotFound(scheduleId).allocations()
         .filter { !activeOnly || it.isActive(today) }
         .toModelAllocations()
     }

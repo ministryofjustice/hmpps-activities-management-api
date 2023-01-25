@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -85,7 +85,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBands(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
 
     service.createActivity(createActivityRequest, createdBy)
 
@@ -97,8 +97,8 @@ class ActivityServiceTest {
     verify(activityRepository).saveAndFlush(activityArg)
 
     with(activityArg) {
-      assertThat(eligibilityRules.size).isEqualTo(1)
-      assertThat(activityPay.size).isEqualTo(2)
+      assertThat(eligibilityRules()).hasSize(1)
+      assertThat(activityPay()).hasSize(2)
       with(activityCategory) {
         assertThat(activityCategoryId).isEqualTo(1)
         assertThat(code).isEqualTo("category code")

@@ -184,9 +184,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 1, monday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 1, monday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },
@@ -199,9 +198,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 2, monday = false, tuesday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 2, monday = false, tuesday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },
@@ -214,9 +212,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 3, monday = false, wednesday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 3, monday = false, wednesday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },
@@ -232,9 +229,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 4, monday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 4, monday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },
@@ -247,9 +243,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 5, monday = false, tuesday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 5, monday = false, tuesday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },
@@ -262,9 +257,8 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 6, monday = false, wednesday = true).apply {
+          activitySchedule(activity = this, activityScheduleId = 6, monday = false, wednesday = true, noAllocations = true).apply {
             this.instances.clear()
-            this.allocations.clear()
           }
         )
       },

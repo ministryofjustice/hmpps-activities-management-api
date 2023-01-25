@@ -26,7 +26,7 @@ class AttendancesServiceTest {
     AttendancesService(scheduledInstanceRepository, attendanceRepository, attendanceReasonRepository)
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
-  private val allocation = activitySchedule.allocations.first()
+  private val allocation = activitySchedule.allocations().first()
   private val instance = activitySchedule.instances.first()
   private val attendance = instance.attendances.first()
   private val today = LocalDate.now()
@@ -43,7 +43,7 @@ class AttendancesServiceTest {
     verify(attendanceRepository).save(
       Attendance(
         scheduledInstance = instance,
-        prisonerNumber = instance.activitySchedule.allocations.first().prisonerNumber,
+        prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
         posted = false,
         status = AttendanceStatus.SCHEDULED
       )

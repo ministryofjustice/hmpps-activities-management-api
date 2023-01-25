@@ -16,7 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -245,7 +245,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   @Test
   fun `200 response when get pay bands by Moorland prison code`() {
-    val prisonPayBands = prisonPayBands().map { it.toModelPrisonPayBand() }
+    val prisonPayBands = prisonPayBandsLowMediumHigh().map { it.toModelPrisonPayBand() }
 
     whenever(prisonRegimeService.getPayBandsForPrison(moorlandPrisonCode)).thenReturn(prisonPayBands)
 

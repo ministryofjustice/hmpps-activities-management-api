@@ -9,6 +9,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EntityListeners
@@ -51,15 +52,6 @@ data class ActivitySchedule(
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
-  @OneToMany(
-    mappedBy = "activitySchedule",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true
-  )
-  @Fetch(FetchMode.SUBSELECT)
-  val allocations: MutableList<Allocation> = mutableListOf(),
-
   val description: String,
 
   var internalLocationId: Int? = null,
@@ -73,10 +65,23 @@ data class ActivitySchedule(
   val startDate: LocalDate
 ) {
   init {
+    failIfInvalidCapacity()
+  }
+
+  private fun failIfInvalidCapacity() {
     if (capacity < 1) {
       throw IllegalArgumentException("The schedule capacity must be greater than zero.")
     }
   }
+
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
+  @Fetch(FetchMode.SUBSELECT)
+  private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(
     mappedBy = "activitySchedule",
@@ -97,6 +102,8 @@ data class ActivitySchedule(
     }
 
   fun slots() = slots.toList()
+
+  fun allocations() = allocations.toList()
 
   companion object {
     fun valueOf(
@@ -154,6 +161,8 @@ data class ActivitySchedule(
     prisonerNumber: PrisonerNumber,
     payBand: PrisonPayBand,
     bookingId: Long?,
+    startDate: LocalDate = LocalDate.now(),
+    endDate: LocalDate? = null,
     allocatedBy: String
   ) {
     failIfAlreadyAllocated(prisonerNumber)
@@ -166,9 +175,10 @@ data class ActivitySchedule(
         bookingId = bookingId,
         payBand = payBand,
         // TODO not sure if this is supported in the UI
-        startDate = LocalDate.now(),
+        startDate = startDate,
+        endDate = endDate,
         allocatedBy = allocatedBy,
-        allocatedTime = LocalDateTime.now()
+        allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
       )
     )
   }

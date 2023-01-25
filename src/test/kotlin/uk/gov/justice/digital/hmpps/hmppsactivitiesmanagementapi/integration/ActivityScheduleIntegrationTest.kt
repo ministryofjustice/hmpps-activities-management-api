@@ -87,7 +87,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -98,8 +98,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isNoContent
 
     with(repository.findById(1).orElseThrow()) {
-      assertThat(allocations.first().prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocations.first().allocatedBy).isEqualTo("test-client")
+      assertThat(allocations().first().prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocations().first().allocatedBy).isEqualTo("test-client")
     }
   }
 
@@ -110,7 +110,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -136,7 +136,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations).isEmpty() }
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     val error = webTestClient.post()
       .uri("/schedules/1/allocations")

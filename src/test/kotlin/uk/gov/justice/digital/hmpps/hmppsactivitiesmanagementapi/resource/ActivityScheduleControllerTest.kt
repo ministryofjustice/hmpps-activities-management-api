@@ -71,7 +71,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `200 response when get allocations by schedule identifier`() {
-    val expectedAllocations = activityEntity().schedules().first().allocations.toModelAllocations()
+    val expectedAllocations = activityEntity().schedules().first().allocations().toModelAllocations()
 
     whenever(activityScheduleService.getAllocationsBy(1)).thenReturn(expectedAllocations)
 

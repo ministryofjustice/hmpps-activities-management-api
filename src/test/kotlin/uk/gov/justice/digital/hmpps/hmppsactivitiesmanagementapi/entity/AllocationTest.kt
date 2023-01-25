@@ -3,7 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBands
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -20,10 +21,10 @@ class AllocationTest {
     startDate = today,
     allocatedBy = "FAKE USER",
     allocatedTime = LocalDateTime.now(),
-    payBand = prisonPayBands().first()
+    payBand = lowPayBand
   )
 
-  private val allocationWithEndDate = allocationWithNoEndDate.copy(endDate = tomorrow)
+  private val allocationWithEndDate = allocationWithNoEndDate.copy(endDate = tomorrow, payBand = mediumPayBand)
 
   @Test
   fun `check allocation active status that starts today with open end date`() {
@@ -32,6 +33,7 @@ class AllocationTest {
       assertThat(isActive(today)).isTrue
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1000))).isTrue
+      assertThat(payBand.payBandAlias).isEqualTo("Low")
     }
   }
 
@@ -42,6 +44,7 @@ class AllocationTest {
       assertThat(isActive(today)).isTrue
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1))).isFalse
+      assertThat(payBand.payBandAlias).isEqualTo("Medium")
     }
   }
 }
