@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -22,42 +21,32 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class ActivityScheduleTest {
 
-  @Disabled("SAA-311 temporarily disabled, test needs attention")
   @Test
   fun `get allocations for date`() {
-    val schedule = activitySchedule(activity = activityEntity()).apply {
-      val decemberAllocation = Allocation(
-        allocationId = 1,
-        activitySchedule = this,
-        prisonerNumber = "A1234AA",
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true).apply {
+      allocatePrisoner(
+        prisonerNumber = "A1234AA".toPrisonerNumber(),
         startDate = LocalDate.of(2022, 12, 1),
-        endDate = null,
-        allocatedBy = "FAKE USER",
-        allocatedTime = LocalDate.of(2022, 12, 1).atStartOfDay(),
-        payBand = lowPayBand
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = "FAKE USER"
       )
 
-      val novemberAllocation = Allocation(
-        allocationId = 2,
-        activitySchedule = this,
-        prisonerNumber = "A1234AA",
+      allocatePrisoner(
+        prisonerNumber = "A1234AB".toPrisonerNumber(),
         startDate = LocalDate.of(2022, 11, 10),
         endDate = LocalDate.of(2022, 11, 30),
-        allocatedBy = "FAKE USER",
-        allocatedTime = LocalDate.of(2022, 11, 10).atStartOfDay(),
-        payBand = lowPayBand
+        payBand = lowPayBand,
+        bookingId = 2,
+        allocatedBy = "FAKE USER"
       )
-
-//      allocations.clear()
-//      allocations.add(novemberAllocation)
-//      allocations.add(decemberAllocation)
     }
 
     assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-10-01"))).isEmpty()
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-10"))[0].allocationId).isEqualTo(2)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-30"))[0].allocationId).isEqualTo(2)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-12-01"))[0].allocationId).isEqualTo(1)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2025-01-01"))[0].allocationId).isEqualTo(1)
+    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-10"))[0].bookingId).isEqualTo(2)
+    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-30"))[0].bookingId).isEqualTo(2)
+    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-12-01"))[0].bookingId).isEqualTo(1)
+    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2025-01-01"))[0].bookingId).isEqualTo(1)
   }
 
   @Test
