@@ -261,7 +261,7 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-fun transform(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
+fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
   scheduleAndInstances.map {
     ModelActivitySchedule(
       id = it.key.activityScheduleId,
@@ -488,7 +488,7 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
     id = it.activityPayId,
     incentiveLevel = it.incentiveLevel,
-    payBandId = it.payBand.prisonPayBandId,
+    prisonPayBand = it.payBand.toModelPrisonPayBand(),
     rate = it.rate,
     pieceRate = it.pieceRate,
     pieceRateItems = it.pieceRateItems

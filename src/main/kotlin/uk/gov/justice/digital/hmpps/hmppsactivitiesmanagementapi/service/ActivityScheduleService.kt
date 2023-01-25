@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformFilteredInstances
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
@@ -39,14 +39,14 @@ class ActivityScheduleService(
     date: LocalDate,
     timeSlot: TimeSlot?
   ): List<InternalLocation> =
-    transform(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }.distinct()
+    transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }.distinct()
 
   fun getActivitySchedulesByPrisonCode(
     prisonCode: String,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     locationId: Long? = null
-  ): List<ModelActivitySchedule> = transform(schedulesMatching(prisonCode, date, timeSlot, locationId))
+  ): List<ModelActivitySchedule> = transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot, locationId))
 
   private fun schedulesMatching(
     prisonCode: String,

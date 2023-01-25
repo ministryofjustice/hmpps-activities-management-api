@@ -262,7 +262,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(pay).hasSize(1)
       pay.map {
         assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.payBandId).isEqualTo(1)
+        assertThat(it.prisonPayBand.id).isEqualTo(1)
         assertThat(it.rate).isEqualTo(125)
         assertThat(it.pieceRate).isEqualTo(150)
         assertThat(it.pieceRateItems).isEqualTo(1)
@@ -341,7 +341,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       pay.map {
         assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.payBandId).isEqualTo(1)
+        assertThat(it.prisonPayBand.id).isEqualTo(1)
         assertThat(it.rate).isEqualTo(75)
         assertThat(it.pieceRate).isEqualTo(0)
         assertThat(it.pieceRateItems).isEqualTo(0)

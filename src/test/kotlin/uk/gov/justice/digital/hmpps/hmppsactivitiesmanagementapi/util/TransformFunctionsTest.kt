@@ -112,7 +112,7 @@ class TransformFunctionsTest {
         ModelActivityPay(
           id = -1,
           incentiveLevel = "Basic",
-          payBandId = 1,
+          prisonPayBand = lowPayBand.toModelPrisonPayBand(),
           rate = 30,
           pieceRate = 40,
           pieceRateItems = 50
