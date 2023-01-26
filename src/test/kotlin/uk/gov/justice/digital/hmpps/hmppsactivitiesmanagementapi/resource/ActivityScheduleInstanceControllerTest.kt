@@ -56,7 +56,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
 
   @Test
   fun `getActivityScheduledInstancesByDateRange - 400 response when end date missing`() {
-    val response = mockMvc.get("/prisons/MDI/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
       param("startDate", "2022-10-01")
     }
       .andDo { print() }
@@ -64,14 +64,18 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         status {
           is4xxClientError()
         }
+        content {
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Required parameter 'endDate' is not present")
   }
 
   @Test
   fun `getActivityScheduledInstancesByDateRange - 400 response when start date missing`() {
-    val response = mockMvc.get("/prisons/MDI/scheduled-instances") {
+    mockMvc.get("/prisons/MDI/scheduled-instances") {
       param("endDate", "2022-10-01")
     }
       .andDo { print() }
@@ -79,9 +83,13 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         status {
           is4xxClientError()
         }
+        content {
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Required parameter 'startDate' is not present")
   }
 
   @Test
@@ -96,9 +104,9 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat @io.swagger.v3.oas.annotations.Parameter java.time.LocalDate] for value '01/10/2022'")
+            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -116,9 +124,9 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat @io.swagger.v3.oas.annotations.Parameter java.time.LocalDate] for value '01/10/2022'")
+            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
