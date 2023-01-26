@@ -65,7 +65,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
           }
@@ -84,7 +84,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
           }

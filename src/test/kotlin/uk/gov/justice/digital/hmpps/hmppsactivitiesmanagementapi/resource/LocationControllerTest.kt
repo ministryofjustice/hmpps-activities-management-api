@@ -57,7 +57,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       .andExpect {
         status { is4xxClientError() }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Required request parameter 'groupName' for method parameter type String is not present")
           }
@@ -174,7 +174,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       .andExpect {
         status { is4xxClientError() }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Required request parameter 'groupName' for method parameter type String is not present")
           }
