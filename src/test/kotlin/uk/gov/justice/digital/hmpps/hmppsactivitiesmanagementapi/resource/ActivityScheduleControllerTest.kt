@@ -156,7 +156,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andReturn().response
     ) {
 
-      assertThat(contentAsString).contains("Invalid request content")
+      assertThat(contentAsString).contains("Prisoner number must be supplied")
+      assertThat(contentAsString).contains("Pay band must be supplied")
     }
 
     with(

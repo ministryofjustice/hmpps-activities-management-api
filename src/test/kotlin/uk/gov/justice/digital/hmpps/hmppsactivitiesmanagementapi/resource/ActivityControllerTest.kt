@@ -95,7 +95,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    val response = mockMvc.post("/activities") {
+    mockMvc.post("/activities") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -104,9 +104,13 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
         status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value("Required request body is missing: public uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ActivityController.create(java.security.Principal,uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest)")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Failed to read request")
 
     verifyNoInteractions(activityService)
   }
@@ -117,7 +121,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    val response = mockMvc.post("/activities") {
+    mockMvc.post("/activities") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -126,9 +130,15 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
         status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Prison code must be supplied"))
+            value(containsString("Category ID must be supplied"))
+            value(containsString("Activity summary must be supplied"))
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Invalid request content")
 
     verifyNoInteractions(activityService)
   }
@@ -144,7 +154,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    val response = mockMvc.post("/activities") {
+    mockMvc.post("/activities") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -156,9 +166,15 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
         status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Prison code must be supplied"))
+            value(containsString("Category ID must be supplied"))
+            value(containsString("Activity summary must be supplied"))
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Invalid request content")
 
     verifyNoInteractions(activityService)
   }
@@ -174,7 +190,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    val response = mockMvc.post("/activities") {
+    mockMvc.post("/activities") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -186,9 +202,15 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
         status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("The piece rate must be a positive integer"))
+            value(containsString("The piece rate items must be a positive integer"))
+            value(containsString("The earning rate must be a positive integer"))
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Invalid request content")
 
     verifyNoInteractions(activityService)
   }
@@ -204,7 +226,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    val response = mockMvc.post("/activities") {
+    mockMvc.post("/activities") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -229,8 +251,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           }
         }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Invalid request content")
 
     verifyNoInteractions(activityService)
   }
