@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.HttpStatusCode
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
@@ -88,7 +87,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
   fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
     log.info("Method argument type mismatch exception: {}", e.message)
     return ResponseEntity
-      .status(BAD_REQUEST).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+      .status(BAD_REQUEST)
       .body(
         ErrorResponse(
           status = BAD_REQUEST.value(),

@@ -104,7 +104,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
@@ -124,7 +124,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
             value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
