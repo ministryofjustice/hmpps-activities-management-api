@@ -156,7 +156,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andReturn().response
     ) {
 
-      assertThat(contentAsString).contains("Invalid request content")
+      assertThat(contentAsString).contains("Prisoner number must be supplied")
+      assertThat(contentAsString).contains("Pay band must be supplied")
     }
 
     with(
@@ -165,7 +166,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andReturn().response
     ) {
 
-      assertThat(contentAsString).contains("Invalid request content")
+      assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
+      assertThat(contentAsString).contains("Pay band cannot be more than 10 characters")
     }
 
     verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())

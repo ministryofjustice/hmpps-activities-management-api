@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.core.StringStartsWith
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -98,7 +99,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when no date provided`() {
     val prisonerNumbers = setOf("G4793VF")
 
-    val response = mockMvc.post("/scheduled-events/prison/MDI") {
+    mockMvc.post("/scheduled-events/prison/MDI") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -110,14 +111,18 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         status {
           isBadRequest()
         }
+        content {
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Required parameter 'date' is not present")
   }
 
   @Test
   fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when no prisoner numbers are provided`() {
-    val response = mockMvc.post("/scheduled-events/prison/MDI?date=2022-12-14") {
+    mockMvc.post("/scheduled-events/prison/MDI?date=2022-12-14") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
     }
@@ -126,9 +131,13 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         status {
           is4xxClientError()
         }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.userMessage") {
+            value(StringStartsWith("Required request body is missing:"))
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Failed to read request")
   }
 
   @Test
@@ -147,9 +156,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (20/12/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @io.swagger.v3.oas.annotations.Parameter @org.springframework.format.annotation.DateTimeFormat java.time.LocalDate] for value '20/12/2022'")
+            value("Error converting 'date' (20/12/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -171,9 +180,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (AF): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @io.swagger.v3.oas.annotations.Parameter uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot] for value 'AF'")
+            value("Error converting 'timeSlot' (AF): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
           }
         }
       }
@@ -277,7 +286,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
   @Test
   fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when end date missing`() {
-    val response = mockMvc.get("/scheduled-events/prison/MDI") {
+    mockMvc.get("/scheduled-events/prison/MDI") {
       param("prisonerNumber", "A11111A")
       param("startDate", "2022-10-01")
     }
@@ -286,14 +295,18 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         status {
           is4xxClientError()
         }
+        content {
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Required parameter 'endDate' is not present")
   }
 
   @Test
   fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when start date missing`() {
-    val response = mockMvc.get("/scheduled-events/prison/MDI") {
+    mockMvc.get("/scheduled-events/prison/MDI") {
       param("prisonerNumber", "A11111A")
       param("endDate", "2022-10-01")
     }
@@ -302,9 +315,13 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         status {
           is4xxClientError()
         }
+        content {
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+          }
+        }
       }
-      .andReturn().response
-    assertThat(response.contentAsString).contains("Required parameter 'startDate' is not present")
   }
 
   @Test
@@ -319,9 +336,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat @io.swagger.v3.oas.annotations.Parameter java.time.LocalDate] for value '01/10/2022'")
+            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -340,9 +357,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
           is4xxClientError()
         }
         content {
-          contentType(MediaType.APPLICATION_JSON)
+          contentType(MediaType.APPLICATION_PROBLEM_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'; Failed to convert from type [java.lang.String] to type [@org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat @io.swagger.v3.oas.annotations.Parameter java.time.LocalDate] for value '01/10/2022'")
+            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
