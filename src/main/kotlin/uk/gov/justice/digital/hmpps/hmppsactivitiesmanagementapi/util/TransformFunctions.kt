@@ -5,8 +5,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDate
@@ -60,10 +58,10 @@ fun transform(activity: EntityActivity) =
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
-    eligibilityRules = activity.eligibilityRules.toModelEligibilityRules(),
+    eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
     schedules = activity.schedules().toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
-    pay = activity.activityPay.toModelActivityPayList(),
+    pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
     pieceWork = activity.pieceWork,
@@ -78,51 +76,6 @@ fun transform(activity: EntityActivity) =
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
   )
-
-fun transform(
-  activityCreateRequest: ActivityCreateRequest,
-  activityCategory: EntityActivityCategory,
-  activityTier: EntityActivityTier?,
-  createdBy: String
-) =
-  EntityActivity(
-    prisonCode = activityCreateRequest.prisonCode!!,
-    activityCategory = activityCategory,
-    activityTier = activityTier,
-    attendanceRequired = activityCreateRequest.attendanceRequired,
-
-    summary = activityCreateRequest.summary!!,
-    description = activityCreateRequest.description,
-    startDate = activityCreateRequest.startDate ?: LocalDate.now(),
-    endDate = activityCreateRequest.endDate,
-    riskLevel = activityCreateRequest.riskLevel,
-    minimumIncentiveLevel = activityCreateRequest.minimumIncentiveLevel,
-    createdTime = LocalDateTime.now(),
-    createdBy = createdBy
-  )
-
-fun transform(
-  activityPayCreateRequests: List<ActivityPayCreateRequest>,
-  activityEntity: EntityActivity,
-) = activityPayCreateRequests.map { apcr ->
-  EntityActivityPay(
-    activity = activityEntity,
-    incentiveLevel = apcr.incentiveLevel,
-    payBand = apcr.payBand,
-    rate = apcr.rate,
-    pieceRate = apcr.pieceRate,
-    pieceRateItems = apcr.pieceRateItems
-  )
-}
-
-fun transformActivityScheduledInstancesToScheduledEvents(
-  bookingId: Long,
-  prisonerNumber: String,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-  activityScheduledInstances: List<ModelActivityScheduleInstance>,
-): List<ModelScheduledEvent> =
-  activityScheduledInstances.toModelScheduledEvents(bookingId, prisonerNumber, defaultPriority, priorities)
 
 fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
@@ -308,13 +261,30 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
+fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
+  scheduleAndInstances.map {
+    ModelActivitySchedule(
+      id = it.key.activityScheduleId,
+      instances = it.value.toModelScheduledInstances(),
+      allocations = it.key.allocations().toModelAllocations(),
+      description = it.key.description,
+      suspensions = it.key.suspensions.toModelSuspensions(),
+      internalLocation = it.key.toInternalLocation(),
+      capacity = it.key.capacity,
+      activity = it.key.activity.toModelLite(),
+      slots = it.key.slots().toModelActivityScheduleSlots(),
+      startDate = it.key.startDate,
+      endDate = it.key.endDate
+    )
+  }
+
 fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
 
 fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
     id = this.activityScheduleId,
     instances = this.instances.toModelScheduledInstances(),
-    allocations = this.allocations.toModelAllocations(),
+    allocations = this.allocations().toModelAllocations(),
     description = this.description,
     suspensions = this.suspensions.toModelSuspensions(),
     internalLocation = this.toInternalLocation(),
@@ -494,7 +464,7 @@ fun List<EntityAllocation>.toModelAllocations() = map {
     id = it.allocationId,
     prisonerNumber = it.prisonerNumber,
     bookingId = it.bookingId,
-    payBand = it.payBand,
+    payBandId = it.payBand.prisonPayBandId,
     startDate = it.startDate,
     endDate = it.endDate,
     allocatedTime = it.allocatedTime,
@@ -518,7 +488,7 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
     id = it.activityPayId,
     incentiveLevel = it.incentiveLevel,
-    payBand = it.payBand,
+    prisonPayBand = it.payBand.toModelPrisonPayBand(),
     rate = it.rate,
     pieceRate = it.pieceRate,
     pieceRateItems = it.pieceRateItems

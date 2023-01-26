@@ -40,15 +40,7 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf(),
-
-  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
-
-  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  var activityPay: MutableList<ActivityPay> = mutableListOf(),
 
   var attendanceRequired: Boolean = true,
 
@@ -80,9 +72,21 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  private val activityPay: MutableList<ActivityPay> = mutableListOf()
+
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf()
+
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
   private val schedules: MutableList<ActivitySchedule> = mutableListOf()
 
   fun schedules() = schedules.toList()
+
+  fun eligibilityRules() = eligibilityRules.toList()
+
+  fun activityPay() = activityPay.toList()
 
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
@@ -131,6 +135,37 @@ data class Activity(
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(activityId = $activityId )"
+  }
+
+  fun addEligibilityRule(rule: EligibilityRule) {
+    failIfRuleAlreadyPresent(rule)
+
+    eligibilityRules.add(ActivityEligibility(eligibilityRule = rule, activity = this))
+  }
+
+  private fun failIfRuleAlreadyPresent(rule: EligibilityRule) {
+    if (eligibilityRules.any { it.eligibilityRule.eligibilityRuleId == rule.eligibilityRuleId }) {
+      throw IllegalArgumentException("Eligibility rule '${rule.code}' already present on activity")
+    }
+  }
+
+  fun addPay(
+    incentiveLevel: String?,
+    payBand: PrisonPayBand,
+    rate: Int?,
+    pieceRate: Int?,
+    pieceRateItems: Int?
+  ) {
+    activityPay.add(
+      ActivityPay(
+        activity = this,
+        incentiveLevel = incentiveLevel,
+        payBand = payBand,
+        rate = rate,
+        pieceRate = pieceRate,
+        pieceRateItems = pieceRateItems
+      )
+    )
   }
 
   fun addSchedule(

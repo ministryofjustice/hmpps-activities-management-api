@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
@@ -24,7 +26,7 @@ class TransformFunctionsTest {
 
   @Test
   fun `transformation of activity entity to the activity models`() {
-    val timestamp = LocalDateTime.now()
+    val timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     val activity = activityEntity(timestamp = timestamp).apply { attendanceRequired = false }
 
     with(transform(activity)) {
@@ -33,12 +35,19 @@ class TransformFunctionsTest {
       assertThat(attendanceRequired).isFalse
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")
-      assertThat(category).isEqualTo(ModelActivityCategory(id = 1, code = "category code", name = "category name", description = "category description"))
+      assertThat(category).isEqualTo(
+        ModelActivityCategory(
+          id = 1,
+          code = "category code",
+          name = "category name",
+          description = "category description"
+        )
+      )
       assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
-          1,
-          ModelEligibilityRule(1, code = "code", description = "rule description")
+          -1,
+          ModelEligibilityRule(1, code = "OVER_21", description = "The prisoner must be over 21 to attend")
         )
       )
       assertThat(schedules).containsExactly(
@@ -64,10 +73,10 @@ class TransformFunctionsTest {
           internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
           allocations = listOf(
             Allocation(
-              id = 1,
+              id = -1,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              payBand = "A",
+              payBandId = lowPayBand.prisonPayBandId,
               startDate = timestamp.toLocalDate(),
               endDate = null,
               allocatedTime = timestamp,
@@ -91,10 +100,23 @@ class TransformFunctionsTest {
         )
       )
       assertThat(waitingList).containsExactly(
-        ModelActivityWaiting(id = 1, prisonerNumber = "A1234AA", priority = 1, createdTime = timestamp, createdBy = "test")
+        ModelActivityWaiting(
+          id = 1,
+          prisonerNumber = "A1234AA",
+          priority = 1,
+          createdTime = timestamp,
+          createdBy = "test"
+        )
       )
       assertThat(pay).containsExactly(
-        ModelActivityPay(id = 1, incentiveLevel = "Basic", payBand = "A", rate = 30, pieceRate = 40, pieceRateItems = 50)
+        ModelActivityPay(
+          id = -1,
+          incentiveLevel = "Basic",
+          prisonPayBand = lowPayBand.toModelPrisonPayBand(),
+          rate = 30,
+          pieceRate = 40,
+          pieceRateItems = 50
+        )
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()
@@ -105,6 +127,14 @@ class TransformFunctionsTest {
 
   @Test
   fun `transformation of rollout prison entity to rollout prison model`() {
-    assertThat(transform(rolloutPrison())).isEqualTo(RolloutPrison(1, "PVI", "HMP Pentonville", true, rolloutDate = LocalDate.of(2022, 12, 22)))
+    assertThat(transform(rolloutPrison())).isEqualTo(
+      RolloutPrison(
+        1,
+        "PVI",
+        "HMP Pentonville",
+        true,
+        rolloutDate = LocalDate.of(2022, 12, 22)
+      )
+    )
   }
 }

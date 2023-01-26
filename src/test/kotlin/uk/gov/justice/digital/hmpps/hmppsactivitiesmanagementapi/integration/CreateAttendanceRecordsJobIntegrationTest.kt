@@ -28,13 +28,13 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(schedules()).hasSize(2)
 
       with(schedules().findByDescription("Maths AM")) {
-        assertThat(allocations).hasSize(2)
+        assertThat(allocations()).hasSize(2)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
       }
 
       with(schedules().findByDescription("Maths PM")) {
-        assertThat(allocations).hasSize(3)
+        assertThat(allocations()).hasSize(3)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
       }
@@ -75,7 +75,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(schedules()).hasSize(1)
 
       with(schedules().findByDescription("Gym induction AM")) {
-        assertThat(allocations).hasSize(2)
+        assertThat(allocations()).hasSize(2)
         assertThat(instances).hasSize(1)
         assertThat(instances.first().attendances).isEmpty()
       }

@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -10,6 +9,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import javax.persistence.CascadeType
 import javax.persistence.Entity
 import javax.persistence.EntityListeners
@@ -52,15 +52,6 @@ data class ActivitySchedule(
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
-  @OneToMany(
-    mappedBy = "activitySchedule",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true
-  )
-  @Fetch(FetchMode.SUBSELECT)
-  val allocations: MutableList<Allocation> = mutableListOf(),
-
   val description: String,
 
   var internalLocationId: Int? = null,
@@ -74,10 +65,23 @@ data class ActivitySchedule(
   val startDate: LocalDate
 ) {
   init {
+    failIfInvalidCapacity()
+  }
+
+  private fun failIfInvalidCapacity() {
     if (capacity < 1) {
       throw IllegalArgumentException("The schedule capacity must be greater than zero.")
     }
   }
+
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
+  @Fetch(FetchMode.SUBSELECT)
+  private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(
     mappedBy = "activitySchedule",
@@ -98,6 +102,8 @@ data class ActivitySchedule(
     }
 
   fun slots() = slots.toList()
+
+  fun allocations() = allocations.toList()
 
   companion object {
     fun valueOf(
@@ -151,7 +157,14 @@ data class ActivitySchedule(
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
 
-  fun allocatePrisoner(prisonerNumber: PrisonerNumber, payBand: PayBand, bookingId: Long?, allocatedBy: String) {
+  fun allocatePrisoner(
+    prisonerNumber: PrisonerNumber,
+    payBand: PrisonPayBand,
+    bookingId: Long?,
+    startDate: LocalDate = LocalDate.now(),
+    endDate: LocalDate? = null,
+    allocatedBy: String
+  ) {
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
 
@@ -160,11 +173,12 @@ data class ActivitySchedule(
         activitySchedule = this,
         prisonerNumber = prisonerNumber.toString(),
         bookingId = bookingId,
-        payBand = payBand.toString(),
+        payBand = payBand,
         // TODO not sure if this is supported in the UI
-        startDate = LocalDate.now(),
+        startDate = startDate,
+        endDate = endDate,
         allocatedBy = allocatedBy,
-        allocatedTime = LocalDateTime.now()
+        allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
       )
     )
   }

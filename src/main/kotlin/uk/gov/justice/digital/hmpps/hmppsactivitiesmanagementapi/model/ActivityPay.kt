@@ -11,8 +11,8 @@ data class ActivityPay(
   @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
   val incentiveLevel: String? = null,
 
-  @Schema(description = "The pay band (nullable)", example = "A")
-  val payBand: String? = null,
+  @Schema(description = "The pay band for this activity pay")
+  val prisonPayBand: PrisonPayBand,
 
   @Schema(description = "The earning rate for one half day session for someone of this incentive level and pay band (in pence)", example = "150")
   val rate: Int? = null,

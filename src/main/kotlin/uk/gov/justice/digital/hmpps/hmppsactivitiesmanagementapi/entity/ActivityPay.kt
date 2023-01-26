@@ -7,6 +7,7 @@ import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.OneToOne
 import javax.persistence.Table
 
 @Entity
@@ -22,7 +23,9 @@ data class ActivityPay(
 
   var incentiveLevel: String? = null,
 
-  var payBand: String? = null,
+  @OneToOne
+  @JoinColumn(name = "prison_pay_band_id")
+  var payBand: PrisonPayBand,
 
   var rate: Int? = null,
 

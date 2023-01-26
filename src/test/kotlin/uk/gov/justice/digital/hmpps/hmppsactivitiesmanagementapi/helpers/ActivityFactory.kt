@@ -1,13 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
@@ -24,6 +23,16 @@ internal fun activityModel(activity: Activity) = transform(activity)
 const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"
 
+val eligibilityRuleOver21 =
+  EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
+val eligibilityRuleFemale =
+  EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
+
+val lowPayBand = prisonPayBandsLowMediumHigh()[0]
+val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
+
+val activeAllocation = activityEntity().schedules().first().allocations().first()
+
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
   tier: ActivityTier = activityTier(),
@@ -34,7 +43,9 @@ internal fun activityEntity(
   description: String = "Maths basic",
   startDate: LocalDate = timestamp.toLocalDate(),
   endDate: LocalDate? = null,
-  noSchedules: Boolean = false
+  noSchedules: Boolean = false,
+  noEligibilityRules: Boolean = false,
+  noPayBands: Boolean = false
 ) =
   Activity(
     activityId = activityId,
@@ -50,12 +61,22 @@ internal fun activityEntity(
     createdTime = timestamp,
     createdBy = "test"
   ).apply {
-    eligibilityRules.add(activityEligibilityRule(this))
+    if (!noEligibilityRules) {
+      this.addEligibilityRule(eligibilityRuleOver21)
+    }
     if (!noSchedules) {
       this.addSchedule(activitySchedule(this, activityScheduleId = 1, timestamp))
     }
     waitingList.add(activityWaiting(this, timestamp))
-    activityPay.add(activityPay(this))
+    if (!noPayBands) {
+      this.addPay(
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50
+      )
+    }
   }
 
 internal fun activityCategory() =
@@ -80,16 +101,6 @@ internal fun attendanceReasons() = mapOf(
 )
 
 internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
-
-internal fun activityEligibilityRule(activity: Activity): ActivityEligibility {
-  val eligibilityRule = EligibilityRule(eligibilityRuleId = 1, code = "code", "rule description")
-
-  return ActivityEligibility(
-    activityEligibilityId = 1,
-    activity = activity,
-    eligibilityRule = eligibilityRule
-  )
-}
 
 internal fun activitySchedule(
   activity: Activity,
@@ -137,18 +148,11 @@ internal fun activitySchedule(
       }
     )
     if (!noAllocations) {
-      this.allocations.add(
-        Allocation(
-          allocationId = 1,
-          activitySchedule = this,
-          prisonerNumber = "A1234AA",
-          bookingId = 10001,
-          payBand = "A",
-          startDate = timestamp.toLocalDate(),
-          endDate = null,
-          allocatedTime = timestamp,
-          allocatedBy = "Mr Blogs",
-        )
+      this.allocatePrisoner(
+        prisonerNumber = "A1234AA".toPrisonerNumber(),
+        bookingId = 10001,
+        payBand = lowPayBand,
+        allocatedBy = "Mr Blogs",
       )
     }
     if (!noSlots) {
@@ -189,7 +193,7 @@ private fun activityPay(activity: Activity) =
     activityPayId = 1,
     activity = activity,
     incentiveLevel = "Basic",
-    payBand = "A",
+    payBand = lowPayBand,
     rate = 30,
     pieceRate = 40,
     pieceRateItems = 50
@@ -197,13 +201,30 @@ private fun activityPay(activity: Activity) =
 
 fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
 
-fun prisonPayBands(prisonCode: String = "DEFAULT") = listOf(
+// TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
+fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset: Long = 0) = listOf(
   PrisonPayBand(
-    prisonPayBandId = 1,
+    prisonPayBandId = 1 + offset,
     prisonCode = prisonCode,
     displaySequence = 1,
-    payBandAlias = "Pay band 1 $prisonCode alias",
-    payBandDescription = "Pay band 1 $prisonCode description",
+    payBandAlias = "Low",
+    payBandDescription = "Pay band 1 $prisonCode description (lowest)",
     nomisPayBand = 1
+  ),
+  PrisonPayBand(
+    prisonPayBandId = 2 + offset,
+    prisonCode = prisonCode,
+    displaySequence = 2,
+    payBandAlias = "Medium",
+    payBandDescription = "Pay band 2 $prisonCode description",
+    nomisPayBand = 2
+  ),
+  PrisonPayBand(
+    prisonPayBandId = 3 + offset,
+    prisonCode = prisonCode,
+    displaySequence = 3,
+    payBandAlias = "High",
+    payBandDescription = "Pay band 3 $prisonCode description (highest)",
+    nomisPayBand = 2
   )
 )

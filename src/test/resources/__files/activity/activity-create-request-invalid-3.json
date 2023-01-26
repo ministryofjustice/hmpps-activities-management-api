@@ -11,14 +11,13 @@
   "pay": [
     {
       "incentiveLevel": "123456789010",
-      "payBand": "123456789010",
       "rate": 1,
       "pieceRate": 150,
       "pieceRateItems": 10
     },
     {
       "incentiveLevel": "Standard",
-      "payBand": "B",
+      "payBandId": 2,
       "rate": 160,
       "pieceRate": 200,
       "pieceRateItems": 20

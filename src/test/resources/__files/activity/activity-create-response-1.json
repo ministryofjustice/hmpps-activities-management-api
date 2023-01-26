@@ -32,7 +32,14 @@
     {
       "id": 73,
       "incentiveLevel": "Basic",
-      "payBand": "A",
+      "prisonPayBand": {
+        "id": 1,
+        "displaySequence": 1,
+        "alias": "Low",
+        "description": "Pay band 1 (lowest)",
+        "nomisPayBand": 1,
+        "prisonCode": "PVI"
+      },
       "rate": 125,
       "pieceRate": 150,
       "pieceRateItems": 10
@@ -40,7 +47,14 @@
     {
       "id": 74,
       "incentiveLevel": "Standard",
-      "payBand": "B",
+      "prisonPayBand": {
+        "id": 2,
+        "displaySequence": 1,
+        "alias": "Low",
+        "description": "Pay band 1 (lowest)",
+        "nomisPayBand": 1,
+        "prisonCode": "PVI"
+      },
       "rate": 160,
       "pieceRate": 180,
       "pieceRateItems": 15

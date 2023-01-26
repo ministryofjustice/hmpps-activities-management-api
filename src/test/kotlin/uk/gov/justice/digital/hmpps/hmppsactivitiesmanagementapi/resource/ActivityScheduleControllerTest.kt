@@ -71,7 +71,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `200 response when get allocations by schedule identifier`() {
-    val expectedAllocations = activityEntity().schedules().first().allocations.toModelAllocations()
+    val expectedAllocations = activityEntity().schedules().first().allocations().toModelAllocations()
 
     whenever(activityScheduleService.getAllocationsBy(1)).thenReturn(expectedAllocations)
 
@@ -136,7 +136,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   fun `204 response when allocate offender to a schedule`() {
     val request = PrisonerAllocationRequest(
       prisonerNumber = "654321",
-      payBand = "B",
+      payBandId = 1,
     )
 
     val mockPrincipal: Principal = mock()
@@ -151,7 +151,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @Test
   fun `400 response when allocate offender to a schedule request constraints are violated`() {
     with(
-      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = null, payBand = ""))
+      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = null, payBandId = null))
         .andExpect { status { isBadRequest() } }
         .andReturn().response
     ) {
@@ -161,13 +161,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     }
 
     with(
-      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBand = "TOOMANYCHARACTERS"))
+      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBandId = 1))
         .andExpect { status { isBadRequest() } }
         .andReturn().response
     ) {
 
       assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
-      assertThat(contentAsString).contains("Pay band cannot be more than 10 characters")
     }
 
     verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())

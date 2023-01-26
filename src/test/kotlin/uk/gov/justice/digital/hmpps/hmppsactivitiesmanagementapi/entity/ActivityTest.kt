@@ -5,6 +5,10 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -229,5 +233,69 @@ class ActivityTest {
       activity.addSchedule(scheduleBelongingToDifferentActivity)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Can only add schedules that belong to this activity.")
+  }
+
+  @Test
+  fun `can add eligibility rules to activity`() {
+    val activity = activityEntity(noEligibilityRules = true).also { assertThat(it.eligibilityRules()).isEmpty() }
+
+    activity.addEligibilityRule(eligibilityRuleOver21)
+    activity.addEligibilityRule(eligibilityRuleFemale)
+
+    assertThat(activity.eligibilityRules()).containsExactlyInAnyOrder(
+      ActivityEligibility(eligibilityRule = eligibilityRuleOver21, activity = activity),
+      ActivityEligibility(eligibilityRule = eligibilityRuleFemale, activity = activity)
+    )
+  }
+
+  @Test
+  fun `cannot add duplicate eligibility rules to activity`() {
+    val activity = activityEntity(noEligibilityRules = true)
+
+    activity.addEligibilityRule(eligibilityRuleOver21)
+
+    assertThatThrownBy { activity.addEligibilityRule(eligibilityRuleOver21) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Eligibility rule '${eligibilityRuleOver21.code}' already present on activity")
+  }
+
+  @Test
+  fun `can add pay bands to activity`() {
+    val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
+
+    activity.addPay(
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50
+    )
+
+    activity.addPay(
+      incentiveLevel = "Standard",
+      payBand = mediumPayBand,
+      rate = 40,
+      pieceRate = 50,
+      pieceRateItems = 60
+    )
+
+    assertThat(activity.activityPay()).containsExactlyInAnyOrder(
+      ActivityPay(
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+        activity = activity
+      ),
+      ActivityPay(
+        incentiveLevel = "Standard",
+        payBand = mediumPayBand,
+        rate = 40,
+        pieceRate = 50,
+        pieceRateItems = 60,
+        activity = activity
+      )
+    )
   }
 }
