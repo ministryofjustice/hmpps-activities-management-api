@@ -182,7 +182,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     log.info("missing servlet errors: {}", ex)
 
     return ResponseEntity
-      .status(BAD_REQUEST).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+      .status(BAD_REQUEST)
       .body(
         ErrorResponse(
           status = BAD_REQUEST,
