@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -12,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationIdAndDescription
 import java.util.Properties
 import java.util.function.Predicate
-import javax.persistence.EntityNotFoundException
 
 class LocationServiceTest {
 

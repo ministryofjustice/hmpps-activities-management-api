@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -9,24 +11,24 @@ import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
-import org.springframework.lang.Nullable
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
-import org.springframework.web.util.WebUtils
-import javax.persistence.EntityNotFoundException
-import javax.validation.ValidationException
 
 @RestControllerAdvice
 class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
+
   @ExceptionHandler(AccessDeniedException::class)
-  fun handleAccessDeniedException(e: Exception): ResponseEntity<ErrorResponse> {
+  fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)
     return ResponseEntity
       .status(FORBIDDEN)
@@ -40,7 +42,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
   }
 
   @ExceptionHandler(ValidationException::class)
-  fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
+  fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> {
     log.info("Validation exception: {}", e.message)
     return ResponseEntity
       .status(BAD_REQUEST)
@@ -53,8 +55,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       )
   }
 
-  @ExceptionHandler(java.lang.Exception::class)
-  fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {
+  @ExceptionHandler(Exception::class)
+  fun handleException(e: Exception): ResponseEntity<ErrorResponse?>? {
     log.error("Unexpected exception", e)
     return ResponseEntity
       .status(INTERNAL_SERVER_ERROR)
@@ -89,8 +91,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = BAD_REQUEST.value(),
-          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; nested exception is")
-          }",
+          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; Failed to convert from type")}",
           developerMessage = e.message
         )
       )
@@ -108,10 +109,10 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       log.error("Failed to parse web client response as ErrorResponse: {}", ex.message)
     }
     return ResponseEntity
-      .status(HttpStatus.valueOf(ex.rawStatusCode))
+      .status(ex.statusCode)
       .body(
         errorResponse ?: ErrorResponse(
-          status = ex.rawStatusCode,
+          status = BAD_REQUEST,
           userMessage = ex.message,
           developerMessage = ex.message
         )
@@ -119,7 +120,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
   }
 
   @ExceptionHandler(IllegalArgumentException::class)
-  fun handleIllegalArgumentException(e: Exception): ResponseEntity<ErrorResponse> {
+  fun handleIllegalArgumentException(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
     log.info("Exception: {}", e.message)
     return ResponseEntity
       .status(BAD_REQUEST)
@@ -132,12 +133,30 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       )
   }
 
+  override fun handleHttpMessageNotReadable(
+    ex: HttpMessageNotReadableException,
+    headers: HttpHeaders,
+    status: HttpStatusCode,
+    request: WebRequest
+  ): ResponseEntity<Any>? {
+    log.info("Exception not readable: {}", ex.message)
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = ex.localizedMessage,
+          developerMessage = ex.message
+        )
+      )
+  }
+
   override fun handleMethodArgumentNotValid(
     ex: MethodArgumentNotValidException,
     headers: HttpHeaders,
-    status: HttpStatus,
+    status: HttpStatusCode,
     request: WebRequest
-  ): ResponseEntity<Any> {
+  ): ResponseEntity<Any>? {
     val errors = ex.bindingResult.allErrors.map { it.defaultMessage }
 
     log.info("Constraint errors: {}", errors)
@@ -153,31 +172,24 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       )
   }
 
-  override fun handleExceptionInternal(
-    ex: java.lang.Exception,
-    @Nullable body: Any?,
+  override fun handleMissingServletRequestParameter(
+    ex: MissingServletRequestParameterException,
     headers: HttpHeaders,
-    status: HttpStatus,
+    status: HttpStatusCode,
     request: WebRequest
-  ): ResponseEntity<Any> {
-    if (INTERNAL_SERVER_ERROR == status) {
-      request.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST)
-    } else {
-      if (body == null) {
-        return ResponseEntity(
-          ErrorResponse(
-            status = status,
-            userMessage = ex.message,
-            developerMessage = ex.message
-          ),
-          headers,
-          status
-        )
-      }
-    }
-    return ResponseEntity(body, headers, status)
-  }
+  ): ResponseEntity<Any>? {
+    log.info("missing servlet errors: {}", ex)
 
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = ex.message,
+          developerMessage = ex.message
+        )
+      )
+  }
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
@@ -14,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationGroupServiceSelector
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import javax.persistence.EntityNotFoundException
 
 @WebMvcTest(controllers = [LocationController::class])
 @ContextConfiguration(classes = [LocationController::class])

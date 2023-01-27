@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -26,7 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
-import javax.validation.Valid
 
 // TODO add pre-auth annotations to enforce roles when we have them
 

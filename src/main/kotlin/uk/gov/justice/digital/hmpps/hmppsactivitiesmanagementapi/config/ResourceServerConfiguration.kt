@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -10,7 +10,7 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
+@EnableMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
 class ResourceServerConfiguration {
 
   @Bean
@@ -20,8 +20,8 @@ class ResourceServerConfiguration {
       .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
       .and().headers().frameOptions().sameOrigin()
       .and().csrf().disable()
-      .authorizeRequests { auth ->
-        auth.antMatchers(
+      .authorizeHttpRequests { auth ->
+        auth.requestMatchers(
           "/webjars/**",
           "favicon.ico",
           "/health/**",

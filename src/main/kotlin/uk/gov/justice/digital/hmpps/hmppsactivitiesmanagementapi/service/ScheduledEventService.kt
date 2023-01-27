@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -13,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 import java.time.LocalDate
-import javax.persistence.EntityNotFoundException
 
 @Service
 class ScheduledEventService(
