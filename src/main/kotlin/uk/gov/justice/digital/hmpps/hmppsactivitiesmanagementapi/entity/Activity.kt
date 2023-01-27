@@ -92,18 +92,13 @@ data class Activity(
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
-    val byDayOfWeek = this.schedules.filter { schedule ->
-      schedule.slots().any { day.dayOfWeek in it.getDaysOfWeek() }
-    }
+    val byDayOfWeek = this.schedules
+      .filter { it.isActiveOn(day) }
+      .filter { schedule -> schedule.slots().any { day.dayOfWeek in it.getDaysOfWeek() } }
     return if (includeSuspended) {
       byDayOfWeek
     } else {
-      byDayOfWeek.filter {
-        it.suspensions.none { suspension ->
-          !day.isBefore(suspension.suspendedFrom) &&
-            (suspension.suspendedUntil == null || !day.isAfter(suspension.suspendedUntil))
-        }
-      }
+      byDayOfWeek.filter { it.isSuspendedOn(day).not() }
     }
   }
 
@@ -200,7 +195,7 @@ data class Activity(
     return schedules.last()
   }
 
-  fun failIfScheduleDatesClashWithActivityDates(startDate: LocalDate, endDate: LocalDate?) {
+  private fun failIfScheduleDatesClashWithActivityDates(startDate: LocalDate, endDate: LocalDate?) {
     if (startDate.isBefore(this.startDate)) {
       throw IllegalArgumentException("The schedule start date '$startDate' cannot be before the activity start date ${this.startDate}")
     }
@@ -214,7 +209,7 @@ data class Activity(
     }
   }
 
-  fun failIfScheduleWithDescriptionAlreadyPresentOnActivity(description: String) {
+  private fun failIfScheduleWithDescriptionAlreadyPresentOnActivity(description: String) {
     if (schedules.any { it.description.trim().uppercase() == description.trim().uppercase() }) {
       throw IllegalArgumentException("A schedule with the description '$description' already exists.")
     }

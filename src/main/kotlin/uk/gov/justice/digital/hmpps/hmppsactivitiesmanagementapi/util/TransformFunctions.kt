@@ -283,7 +283,7 @@ fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule()
 fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
     id = this.activityScheduleId,
-    instances = this.instances.toModelScheduledInstances(),
+    instances = this.instances().toModelScheduledInstances(),
     allocations = this.allocations().toModelAllocations(),
     description = this.description,
     suspensions = this.suspensions.toModelSuspensions(),

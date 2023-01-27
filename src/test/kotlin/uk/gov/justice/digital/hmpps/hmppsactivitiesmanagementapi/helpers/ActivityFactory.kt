@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Eligibil
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -117,7 +116,8 @@ internal fun activitySchedule(
   runsOnBankHolidays: Boolean = false,
   startDate: LocalDate? = null,
   noSlots: Boolean = false,
-  noAllocations: Boolean = false
+  noAllocations: Boolean = false,
+  noInstances: Boolean = false
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -129,24 +129,6 @@ internal fun activitySchedule(
     internalLocationDescription = "Education - R1",
     startDate = startDate ?: activity.startDate
   ).apply {
-    this.instances.add(
-      ScheduledInstance(
-        scheduledInstanceId = 1,
-        activitySchedule = this,
-        sessionDate = timestamp.toLocalDate(),
-        startTime = timestamp.toLocalTime(),
-        endTime = timestamp.toLocalTime()
-      ).apply {
-        this.attendances.add(
-          Attendance(
-            attendanceId = 1,
-            scheduledInstance = this,
-            prisonerNumber = "A11111A",
-            posted = false
-          )
-        )
-      }
-    )
     if (!noAllocations) {
       this.allocatePrisoner(
         prisonerNumber = "A1234AA".toPrisonerNumber(),
@@ -172,6 +154,21 @@ internal fun activitySchedule(
           runsOnBankHoliday = runsOnBankHolidays
         )
       )
+    }
+    if (!noInstances && !noSlots) {
+      this.addInstance(
+        sessionDate = timestamp.toLocalDate(),
+        slot = this.slots().first()
+      ).apply {
+        this.attendances.add(
+          Attendance(
+            attendanceId = 1,
+            scheduledInstance = this,
+            prisonerNumber = "A11111A",
+            posted = false
+          )
+        )
+      }
     }
   }
 

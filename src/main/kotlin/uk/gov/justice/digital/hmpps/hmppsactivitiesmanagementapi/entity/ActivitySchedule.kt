@@ -14,6 +14,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.DayOfWeek
@@ -33,15 +34,6 @@ data class ActivitySchedule(
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
-
-  @OneToMany(
-    mappedBy = "activitySchedule",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true
-  )
-  @Fetch(FetchMode.SUBSELECT)
-  val instances: MutableList<ScheduledInstance> = mutableListOf(),
 
   @OneToMany(
     mappedBy = "activitySchedule",
@@ -81,6 +73,15 @@ data class ActivitySchedule(
     orphanRemoval = true
   )
   @Fetch(FetchMode.SUBSELECT)
+  private val instances: MutableList<ScheduledInstance> = mutableListOf()
+
+  @OneToMany(
+    mappedBy = "activitySchedule",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true
+  )
+  @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(
@@ -100,6 +101,8 @@ data class ActivitySchedule(
         value
       }
     }
+
+  fun instances() = instances.toList()
 
   fun slots() = slots.toList()
 
@@ -125,6 +128,47 @@ data class ActivitySchedule(
       startDate = startDate
     ).apply {
       this.endDate = endDate
+    }
+  }
+
+  /**
+   * This does not take into account any suspensions that may be in effect.
+   */
+  fun isActiveOn(date: LocalDate): Boolean = date.between(startDate, endDate)
+
+  fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
+
+  fun addInstance(
+    sessionDate: LocalDate,
+    slot: ActivityScheduleSlot
+  ): ScheduledInstance {
+    failIfMatchingInstanceAlreadyPresent(sessionDate, slot)
+    failIfSlotNotPartOfThisSchedule(slot)
+
+    instances.add(
+      ScheduledInstance(
+        activitySchedule = this,
+        sessionDate = sessionDate,
+        startTime = slot.startTime,
+        endTime = slot.endTime
+      )
+    )
+
+    return instances.last()
+  }
+
+  private fun failIfSlotNotPartOfThisSchedule(slot: ActivityScheduleSlot) {
+    if (slots.none { it == slot }) {
+      throw IllegalArgumentException("Cannot add instance for slot '${slot.activityScheduleSlotId}', slot does not belong to this schedule.")
+    }
+  }
+
+  private fun failIfMatchingInstanceAlreadyPresent(
+    sessionDate: LocalDate,
+    slot: ActivityScheduleSlot
+  ) {
+    if (instances.any { it.sessionDate == sessionDate && it.startTime == slot.startTime && it.endTime == slot.endTime }) {
+      throw IllegalArgumentException("An instance for date '$sessionDate', start time '${slot.startTime}' and end time '${slot.endTime}' already exists")
     }
   }
 

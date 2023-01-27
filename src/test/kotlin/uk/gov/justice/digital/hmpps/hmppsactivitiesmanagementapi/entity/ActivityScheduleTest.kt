@@ -21,6 +21,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class ActivityScheduleTest {
 
+  private val today = LocalDate.now()
+  private val yesterday = today.minusDays(1)
+  private val tomorrow = today.plusDays(1)
+
   @Test
   fun `get allocations for date`() {
     val schedule = activitySchedule(activity = activityEntity(), noAllocations = true).apply {
@@ -368,5 +372,117 @@ class ActivityScheduleTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
+  }
+
+  @Test
+  fun `check activity active status that starts today with open end date`() {
+    val scheduleWithNoEndDate = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today
+    )
+
+    with(scheduleWithNoEndDate) {
+      assertThat(isActiveOn(yesterday)).isFalse
+      assertThat(isActiveOn(today)).isTrue
+      assertThat(isActiveOn(tomorrow)).isTrue
+      assertThat(isActiveOn(tomorrow.plusDays(1000))).isTrue
+    }
+  }
+
+  @Test
+  fun `check activity active status that starts today and ends tomorrow`() {
+    val scheduleWithEndDate = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today,
+    ).apply {
+      endDate = tomorrow
+    }
+
+    with(scheduleWithEndDate) {
+      assertThat(isActiveOn(yesterday)).isFalse
+      assertThat(isActiveOn(today)).isTrue
+      assertThat(isActiveOn(tomorrow)).isTrue
+      assertThat(isActiveOn(tomorrow.plusDays(1))).isFalse
+    }
+  }
+
+  @Test
+  fun `can add scheduled instance to a schedule`() {
+    val scheduleWithSlot = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today,
+    ).apply {
+      addSlot(
+        startTime = today.atStartOfDay().toLocalTime(),
+        endTime = today.atStartOfDay().toLocalTime().plusHours(1),
+        setOf(DayOfWeek.MONDAY)
+      )
+    }
+
+    assertThat(scheduleWithSlot.instances()).isEmpty()
+
+    scheduleWithSlot.addInstance(today, scheduleWithSlot.slots().first())
+
+    assertThat(scheduleWithSlot.instances()).hasSize(1)
+  }
+
+  @Test
+  fun `cannot add duplicate scheduled instance to a schedule`() {
+    val scheduleWithSlot = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today,
+    ).apply {
+      addSlot(
+        startTime = today.atStartOfDay().toLocalTime(),
+        endTime = today.atStartOfDay().toLocalTime().plusHours(1),
+        setOf(DayOfWeek.MONDAY)
+      )
+    }
+
+    val slot = scheduleWithSlot.slots().first()
+
+    scheduleWithSlot.addInstance(today, slot)
+
+    assertThatThrownBy {
+      scheduleWithSlot.addInstance(today, slot)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("An instance for date '$today', start time '${slot.startTime}' and end time '${slot.endTime}' already exists")
+
+    assertThat(scheduleWithSlot.instances()).hasSize(1)
+  }
+
+  @Test
+  fun `cannot add scheduled instance to a schedule if slot part of schedule already`() {
+    val scheduleWithSlot = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today,
+    ).apply {
+      addSlot(
+        startTime = today.atStartOfDay().toLocalTime(),
+        endTime = today.atStartOfDay().toLocalTime().plusHours(1),
+        setOf(DayOfWeek.MONDAY)
+      )
+    }
+
+    val slot = scheduleWithSlot.slots().first().copy(activityScheduleSlotId = 2)
+
+    assertThatThrownBy {
+      scheduleWithSlot.addInstance(today, slot)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add instance for slot '${slot.activityScheduleSlotId}', slot does not belong to this schedule.")
+
+    assertThat(scheduleWithSlot.instances()).isEmpty()
   }
 }

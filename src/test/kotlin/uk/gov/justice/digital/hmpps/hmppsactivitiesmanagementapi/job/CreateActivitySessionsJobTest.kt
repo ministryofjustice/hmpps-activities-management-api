@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -55,7 +54,7 @@ class CreateActivitySessionsJobTest {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isIn(listOf("LEI", "MDI"))
         activity.schedules().forEach { schedule ->
-          schedule.instances.forEach { instance ->
+          schedule.instances().forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
         }
@@ -83,7 +82,7 @@ class CreateActivitySessionsJobTest {
         assertThat(activity.schedules()).hasSize(1)
         activity.schedules().forEach { schedule ->
           assertThat(schedule.slots()).hasSize(2)
-          schedule.instances.forEach { instance ->
+          schedule.instances().forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
             assertThat(instance.startTime).isIn(listOf(LocalTime.of(9, 30), LocalTime.of(13, 30)))
           }
@@ -158,7 +157,7 @@ class CreateActivitySessionsJobTest {
       this.forEach { activity ->
         assertThat(activity.prisonCode).isEqualTo("MDI")
         activity.schedules().forEach { schedule ->
-          schedule.instances.forEach { instance ->
+          schedule.instances().forEach { instance ->
             assertThat(instance.sessionDate).isBetween(today, toDate)
           }
         }
@@ -184,9 +183,13 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 1, monday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 1,
+            monday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
       activityEntity(
@@ -198,9 +201,14 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 2, monday = false, tuesday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 2,
+            monday = false,
+            tuesday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
       activityEntity(
@@ -212,9 +220,14 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 3, monday = false, wednesday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 3,
+            monday = false,
+            wednesday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
     )
@@ -229,9 +242,13 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 4, monday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 4,
+            monday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
       activityEntity(
@@ -243,9 +260,14 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 5, monday = false, tuesday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 5,
+            monday = false,
+            tuesday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
       activityEntity(
@@ -257,9 +279,14 @@ class CreateActivitySessionsJobTest {
         noSchedules = true
       ).apply {
         this.addSchedule(
-          activitySchedule(activity = this, activityScheduleId = 6, monday = false, wednesday = true, noAllocations = true).apply {
-            this.instances.clear()
-          }
+          activitySchedule(
+            activity = this,
+            activityScheduleId = 6,
+            monday = false,
+            wednesday = true,
+            noAllocations = true,
+            noInstances = true
+          )
         )
       },
     )
@@ -284,15 +311,11 @@ class CreateActivitySessionsJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            noInstances = true
           ).apply {
-            this.instances.clear()
-            this.instances.add(
-              ScheduledInstance(
-                activitySchedule = this,
-                sessionDate = LocalDate.now(),
-                startTime = LocalTime.now(),
-                endTime = LocalTime.now()
-              )
+            this.addInstance(
+              sessionDate = LocalDate.now(),
+              slot = this.slots().first()
             )
           }
         )
@@ -319,8 +342,8 @@ class CreateActivitySessionsJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            noInstances = true
           ).apply {
-            this.instances.clear()
             this.suspensions.clear()
             this.suspensions.add(
               ActivityScheduleSuspension(
@@ -355,8 +378,8 @@ class CreateActivitySessionsJobTest {
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
             runsOnBankHolidays = false,
+            noInstances = true
           ).apply {
-            this.instances.clear()
             this.suspensions.clear()
           }
         )
@@ -384,8 +407,8 @@ class CreateActivitySessionsJobTest {
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
             runsOnBankHolidays = true,
+            noInstances = true
           ).apply {
-            this.instances.clear()
             this.suspensions.clear()
           }
         )
@@ -412,9 +435,8 @@ class CreateActivitySessionsJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-            noSlots = true
+            noSlots = true,
           ).apply {
-            this.instances.clear()
             this.suspensions.clear()
             this.addSlot(
               ActivityScheduleSlot(

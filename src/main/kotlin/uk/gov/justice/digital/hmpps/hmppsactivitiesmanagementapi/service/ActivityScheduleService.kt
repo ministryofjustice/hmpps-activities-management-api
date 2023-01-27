@@ -58,7 +58,7 @@ class ActivityScheduleService(
     val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
       .selectSchedulesAtLocation(locationId)
       .selectSchedulesWithActiveActivitiesOn(date)
-      .flatMap { it.instances }
+      .flatMap { it.instances() }
       .selectInstancesRunningOn(date, timeSlot)
 
     return filteredInstances.groupBy { it.activitySchedule }

@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
@@ -69,14 +68,7 @@ class CreateActivitySessionsJob(
           withNoPreExistingInstances.forEach { schedule ->
             val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
             filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
-              schedule.instances.add(
-                ScheduledInstance(
-                  activitySchedule = schedule,
-                  sessionDate = day,
-                  startTime = slot.startTime,
-                  endTime = slot.endTime
-                )
-              )
+              schedule.addInstance(sessionDate = day, slot = slot)
               activityChanged = true
               log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
             }
@@ -93,7 +85,7 @@ class CreateActivitySessionsJob(
     this.filter { it.runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day) }
 
   private fun List<ActivitySchedule>.filterActivitySchedulesWithNoPreExistingInstance(day: LocalDate) =
-    this.filter { it.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day } }
+    this.filter { it.instances().none { scheduledInstance -> scheduledInstance.sessionDate == day } }
 
   private fun List<Activity>.filterIsActiveOnDay(day: LocalDate) =
     this.filter { it.isActive(day) }

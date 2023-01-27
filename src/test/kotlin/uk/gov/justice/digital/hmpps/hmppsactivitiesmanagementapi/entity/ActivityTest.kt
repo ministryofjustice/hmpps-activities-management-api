@@ -12,7 +12,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 
 class ActivityTest {
   private val today = LocalDate.now()
@@ -297,5 +299,93 @@ class ActivityTest {
         activity = activity
       )
     )
+  }
+
+  @Test
+  fun `get schedules on date when schedule has no suspensions`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first()
+
+    schedule.addSlot(
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      setOf(*DayOfWeek.values())
+    )
+
+    val schedules = activity.getSchedulesOnDay(schedule.startDate)
+
+    assertThat(schedules).containsExactly(schedule)
+  }
+
+  @Test
+  fun `get schedules on date excluding suspensions`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first()
+
+    schedule.addSlot(
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      setOf(*DayOfWeek.values())
+    )
+
+    val suspension = ActivityScheduleSuspension(
+      activityScheduleSuspensionId = 1,
+      activitySchedule = schedule,
+      schedule.startDate
+    )
+
+    assertThat(suspension.isSuspendedOn(schedule.startDate))
+
+    schedule.suspensions.add(suspension)
+
+    assertThat(activity.getSchedulesOnDay(schedule.startDate, includeSuspended = false)).isEmpty()
+  }
+
+  @Test
+  fun `get schedules on date including suspensions`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first()
+
+    schedule.addSlot(
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      setOf(*DayOfWeek.values())
+    )
+
+    val suspension = ActivityScheduleSuspension(
+      activityScheduleSuspensionId = 1,
+      activitySchedule = schedule,
+      schedule.startDate
+    )
+
+    assertThat(suspension.isSuspendedOn(schedule.startDate))
+
+    schedule.suspensions.add(suspension)
+
+    assertThat(activity.getSchedulesOnDay(schedule.startDate, includeSuspended = true)).containsExactly(schedule)
+  }
+
+  @Test
+  fun `get schedules is empty when schedule is schedule to start in future`() {
+    val activity = activityEntity(noSchedules = true).also { assertThat(it.schedules()).isEmpty() }
+
+    activity.addSchedule(
+      description = "description",
+      internalLocationId = 1,
+      internalLocationCode = "RM1",
+      internalLocationDescription = "Room 1",
+      capacity = 1,
+      startDate = activity.startDate.plusDays(1)
+    ).apply {
+      addSlot(
+        startTime = LocalTime.NOON,
+        endTime = LocalTime.NOON.plusHours(1),
+        setOf(*DayOfWeek.values())
+      )
+    }.also {
+      assertThat(activity.schedules()).hasSize(1)
+    }
+
+    assertThat(activity.getSchedulesOnDay(activity.startDate, includeSuspended = false)).isEmpty()
   }
 }
