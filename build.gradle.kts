@@ -17,6 +17,7 @@ configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
+// Maven Central repo required for spring-cloud-dependencies-parent-4.0.0-M5.pom
 repositories {
   maven { url = uri("https://repo.spring.io/milestone") }
   mavenCentral()
