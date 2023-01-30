@@ -1,19 +1,20 @@
-CREATE TABLE appointment_type (
-    appointment_type_id bigserial       NOT NULL CONSTRAINT appointment_type_pk PRIMARY KEY,
-    parent_id           integer         REFERENCES appointment_type (appointment_type_id),
-    description         varchar(100)    NOT NULL,
-    code                varchar(12)     NOT NULL,
-    active              boolean         NOT NULL DEFAULT true,
-    display_order       integer         NOT NULL
+CREATE TABLE appointment_category (
+    appointment_category_id bigserial       NOT NULL CONSTRAINT appointment_category_pk PRIMARY KEY,
+    parent_id               integer         REFERENCES appointment_category (appointment_category_id),
+    code                    varchar(12)     NOT NULL,
+    description             varchar(100)    NOT NULL,
+    active                  boolean         NOT NULL DEFAULT true,
+    display_order           integer
 );
 
-CREATE INDEX idx_appointment_type_code ON appointment_type (code);
-CREATE INDEX idx_appointment_type_active ON appointment_type (active);
-CREATE INDEX idx_appointment_type_display_order ON appointment_type (display_order);
+CREATE INDEX idx_appointment_category_code ON appointment_category (code);
+CREATE INDEX idx_appointment_category_description ON appointment_category (description);
+CREATE INDEX idx_appointment_category_active ON appointment_category (active);
+CREATE INDEX idx_appointment_category_display_order ON appointment_category (display_order);
 
 CREATE TABLE appointment (
     appointment_id          bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
-    appointment_type_id     integer         NOT NULL REFERENCES appointment_type (appointment_type_id),
+    appointment_category_id integer         NOT NULL REFERENCES appointment_category (appointment_category_id),
     prison_code             varchar(6)      NOT NULL,
     internal_location_id    integer,
     in_cell                 boolean         NOT NULL DEFAULT false,
@@ -49,6 +50,7 @@ CREATE INDEX idx_appointment_allocation_booking_id ON appointment_allocation (bo
 CREATE TABLE appointment_instance (
     appointment_instance_id     bigserial   NOT NULL CONSTRAINT appointment_instance_pk PRIMARY KEY,
     appointment_id              integer     NOT NULL REFERENCES appointment (appointment_id),
+    appointment_category_id     integer     NOT NULL REFERENCES appointment_category (appointment_category_id),
     prison_code                 varchar(6)  NOT NULL,
     internal_location_id        integer,
     in_cell                     boolean     NOT NULL DEFAULT false,
