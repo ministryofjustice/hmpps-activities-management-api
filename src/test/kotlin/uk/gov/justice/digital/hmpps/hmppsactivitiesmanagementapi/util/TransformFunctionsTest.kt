@@ -55,10 +55,10 @@ class TransformFunctionsTest {
           id = 1,
           instances = listOf(
             ModelScheduledInstance(
-              id = 1,
+              id = -1,
               date = timestamp.toLocalDate(),
               startTime = timestamp.toLocalTime(),
-              endTime = timestamp.toLocalTime(),
+              endTime = timestamp.toLocalTime().plusHours(1),
               cancelled = false,
               attendances = listOf(
                 ModelAttendance(

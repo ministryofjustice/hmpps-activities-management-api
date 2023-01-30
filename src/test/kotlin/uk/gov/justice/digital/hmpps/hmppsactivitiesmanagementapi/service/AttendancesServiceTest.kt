@@ -27,7 +27,7 @@ class AttendancesServiceTest {
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
   private val allocation = activitySchedule.allocations().first()
-  private val instance = activitySchedule.instances.first()
+  private val instance = activitySchedule.instances().first()
   private val attendance = instance.attendances.first()
   private val today = LocalDate.now()
   private val tomorrow = today.plusDays(1)
