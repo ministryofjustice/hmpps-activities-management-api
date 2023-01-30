@@ -68,9 +68,16 @@ class CreateActivitySessionsJob(
           withNoPreExistingInstances.forEach { schedule ->
             val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
             filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
-              schedule.addInstance(sessionDate = day, slot = slot)
-              activityChanged = true
-              log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
+              runCatching {
+                schedule.addInstance(sessionDate = day, slot = slot)
+              }
+                .onSuccess {
+                  activityChanged = true
+                  log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
+                }
+                .onFailure {
+                  log.error("Failed to add instance to activity schedule '${schedule.activityScheduleId}'", it)
+                }
             }
           }
           if (activityChanged) {
