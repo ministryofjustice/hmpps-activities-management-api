@@ -13,11 +13,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHol
 import java.time.LocalDate
 
 @Component
-class CreateActivitySessionsJob(
+class CreateScheduledInstancesJob(
   private val activityRepository: ActivityRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val bankHolidayService: BankHolidayService,
-  @Value("\${jobs.create-activity-sessions.days-in-advance}") private val daysInAdvance: Long? = 0L
+  @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L
 ) {
 
   companion object {

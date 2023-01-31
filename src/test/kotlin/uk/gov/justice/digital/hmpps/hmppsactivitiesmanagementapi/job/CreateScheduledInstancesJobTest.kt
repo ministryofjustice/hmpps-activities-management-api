@@ -28,12 +28,12 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @ExtendWith(MockitoExtension::class)
-class CreateActivitySessionsJobTest {
+class CreateScheduledInstancesJobTest {
   private val repository: ActivityRepository = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
   private val bankHolidayService: BankHolidayService = mock { on { isEnglishBankHoliday(any()) } doReturn (false) }
 
-  private val job = CreateActivitySessionsJob(repository, rolloutPrisonRepository, bankHolidayService, 7L)
+  private val job = CreateScheduledInstancesJob(repository, rolloutPrisonRepository, bankHolidayService, 7L)
   private val today = LocalDate.now()
   private val weekFromToday = today.plusWeeks(1)
 
