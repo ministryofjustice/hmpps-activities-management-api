@@ -94,5 +94,5 @@ prison:
     timeout: 10s
 
 jobs:
-  create-activity-sessions:
+  create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS}

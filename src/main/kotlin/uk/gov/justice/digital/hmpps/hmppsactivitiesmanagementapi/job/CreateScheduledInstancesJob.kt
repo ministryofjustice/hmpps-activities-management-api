@@ -13,11 +13,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHol
 import java.time.LocalDate
 
 @Component
-class CreateActivitySessionsJob(
+class CreateScheduledInstancesJob(
   private val activityRepository: ActivityRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val bankHolidayService: BankHolidayService,
-  @Value("\${jobs.create-activity-sessions.days-in-advance}") private val daysInAdvance: Long? = 0L
+  @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L
 ) {
 
   companion object {
@@ -26,7 +26,7 @@ class CreateActivitySessionsJob(
 
   /*
   * This job finds all prisons that are active in the rollout table, and for each one, finds
-  * the activities that are active at that prison between today SCHEDULE_AHEAD_DAYS days
+  * the activities and schedules that are active at that prison between today SCHEDULE_AHEAD_DAYS days
   * into the future. This value is set as an environment variable in the helm configuration.
   *
   * For each day between the two dates it looks at the list of activities in a prison, their schedules and
@@ -36,13 +36,11 @@ class CreateActivitySessionsJob(
   * be amended in-situ by the user action of changing a schedule or slot (i.e. not the responsibility of this job).
   *
   * It will also avoid bank holidays, except for those activities that are marked as running on bank holidays.
-  * It will avoid creating scheduled instances where an activity has planned suspensions or cancellations:
-  * BUT - if suspended activities are paid, we will need to create them and mark them as suspended
-  *     - if cancelled activities are paid, we will still need to create them and mark them as cancelled.
+  * It will avoid creating scheduled instances where an activity has been cancelled:
+  * BUT - if cancelled activities are paid, we will still need to create them and mark them as cancelled.
   *     - the job which creates attendances will also need some logic to deal with these.
   * AND THESE WILL NEED TO BE CATERED FOR WHEN REQUIREMENTS ARE CLEARER
   */
-
   @Async("asyncExecutor")
   fun execute() {
     val today = LocalDate.now()
@@ -62,8 +60,8 @@ class CreateActivitySessionsJob(
 
         filteredForDay.forEach { activity ->
           var activityChanged = false
-          val schedules = activity.getSchedulesOnDay(day, includeSuspended = false)
-          val withNoPreExistingInstances = schedules.filterActivitySchedulesWithNoPreExistingInstance(day)
+          val activeAndSuspendedSchedules = activity.getSchedulesOnDay(day, includeSuspended = true)
+          val withNoPreExistingInstances = activeAndSuspendedSchedules.filterActivitySchedulesWithNoPreExistingInstance(day)
 
           withNoPreExistingInstances.forEach { schedule ->
             val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }

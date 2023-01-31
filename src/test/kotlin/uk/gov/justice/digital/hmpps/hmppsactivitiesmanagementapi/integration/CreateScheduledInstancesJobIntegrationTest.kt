@@ -9,11 +9,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
+class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
-  fun `Schedule instances of activities sessions`() {
+  fun `Schedules instances of activities sessions including bank holidays and suspended schedules`() {
     // Today is stubbed as a bank holiday via the BankHolidayExtension class, via the IntegrationTestBase class.
     jdbcTemplate.update(
       "update activity_schedule_slot set " +
@@ -26,7 +26,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
         "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
         "runs_on_bank_holiday = true"
     )
-    webTestClient.scheduleInstances()
+    webTestClient.createScheduledInstances()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '${LocalDate.now()}'"
@@ -50,7 +50,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
         "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
         "runs_on_bank_holiday = false"
     )
-    webTestClient.scheduleInstances()
+    webTestClient.createScheduledInstances()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '${LocalDate.now()}'"
@@ -59,9 +59,9 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
     assertThat(actualNumberOfScheduledInstances).isEqualTo(0)
   }
 
-  private fun WebTestClient.scheduleInstances() {
+  private fun WebTestClient.createScheduledInstances() {
     post()
-      .uri("/job/create-activity-sessions")
+      .uri("/job/create-scheduled-instances")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isCreated

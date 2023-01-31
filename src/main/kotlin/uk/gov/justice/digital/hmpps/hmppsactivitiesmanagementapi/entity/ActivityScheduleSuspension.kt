@@ -23,6 +23,7 @@ data class ActivityScheduleSuspension(
 
   val suspendedFrom: LocalDate,
 
+  // TODO this needs to be renamed to 'endDate', 'until' implies exclusive and we have been working with inclusive date ranges in other entities.
   val suspendedUntil: LocalDate? = null,
 ) {
   init {
