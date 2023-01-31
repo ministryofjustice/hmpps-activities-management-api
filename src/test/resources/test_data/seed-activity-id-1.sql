@@ -10,6 +10,9 @@ values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (1, 1, '10:00:00', '11:00:00', true);
 
+insert into activity_schedule_suspension(activity_schedule_suspension_id, activity_schedule_id, suspended_from, suspended_until)
+values (1, 1, '2022-10-10', current_timestamp);
+
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (2, 1, 'Maths PM', 2, 'L2', 'Location 2', 10, '2022-10-10');
 

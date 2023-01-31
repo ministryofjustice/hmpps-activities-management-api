@@ -7,7 +7,10 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.firstValue
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -27,36 +30,31 @@ import java.time.LocalTime
 @ExtendWith(MockitoExtension::class)
 class CreateActivitySessionsJobTest {
   private val repository: ActivityRepository = mock()
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
-  private val bankHolidayService: BankHolidayService = mock()
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
+  private val bankHolidayService: BankHolidayService = mock { on { isEnglishBankHoliday(any()) } doReturn (false) }
+
   private val job = CreateActivitySessionsJob(repository, rolloutPrisonRepository, bankHolidayService, 7L)
+  private val today = LocalDate.now()
+  private val weekFromToday = today.plusWeeks(1)
 
   @Captor
   private lateinit var activitySaveCaptor: ArgumentCaptor<Activity>
 
   @Test
   fun `schedules session instances 7 days in advance for multiple active prisons`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(moorlandActivities)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(leedsActivities)
-    whenever(bankHolidayService.isEnglishBankHoliday(any())).thenReturn(false)
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(moorlandActivities)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(leedsActivities)
 
     job.execute()
 
     // Creates 6 instances for 3 activities in Moorland and 3 in Leeds
     verify(repository, times(6)).save(activitySaveCaptor.capture())
-    assertThat(activitySaveCaptor.allValues).hasSize(6)
 
-    with(activitySaveCaptor.allValues) {
-      this.forEach { activity ->
-        assertThat(activity.prisonCode).isIn(listOf("LEI", "MDI"))
-        activity.schedules().forEach { schedule ->
-          schedule.instances().forEach { instance ->
-            assertThat(instance.sessionDate).isBetween(today, toDate)
-          }
+    activitySaveCaptor.savedActivities(6).forEach { activity ->
+      assertThat(activity.prisonCode).isIn(listOf("LEI", "MDI"))
+      activity.schedules().forEach { schedule ->
+        schedule.instances().forEach { instance ->
+          assertThat(instance.sessionDate).isBetween(today, weekFromToday)
         }
       }
     }
@@ -64,28 +62,21 @@ class CreateActivitySessionsJobTest {
 
   @Test
   fun `can schedule multiple slots for the same day`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(activityWithMultipleSlots)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(emptyList())
-    whenever(bankHolidayService.isEnglishBankHoliday(any())).thenReturn(false)
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(activityWithMultipleSlots)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
+    verify(repository).save(activitySaveCaptor.capture())
 
-    with(activitySaveCaptor.allValues) {
-      this.forEach { activity ->
-        assertThat(activity.prisonCode).isEqualTo("MDI")
-        assertThat(activity.schedules()).hasSize(1)
-        activity.schedules().forEach { schedule ->
-          assertThat(schedule.slots()).hasSize(2)
-          schedule.instances().forEach { instance ->
-            assertThat(instance.sessionDate).isBetween(today, toDate)
-            assertThat(instance.startTime).isIn(listOf(LocalTime.of(9, 30), LocalTime.of(13, 30)))
-          }
+    with(activitySaveCaptor.savedActivityAtPrison("MDI")) {
+      assertThat(schedules()).hasSize(1)
+
+      with(schedules().first()) {
+        assertThat(slots()).hasSize(2)
+        instances().forEach { instance ->
+          assertThat(instance.sessionDate).isBetween(today, weekFromToday)
+          assertThat(instance.startTime).isIn(listOf(LocalTime.of(9, 30), LocalTime.of(13, 30)))
         }
       }
     }
@@ -93,77 +84,67 @@ class CreateActivitySessionsJobTest {
 
   @Test
   fun `does not schedule an activity instance when one already exists for a given date`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(activityWithExistingInstance)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(emptyList())
-    whenever(bankHolidayService.isEnglishBankHoliday(any())).thenReturn(false)
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(activityWithExistingInstance)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
 
     job.execute()
 
-    verify(repository, times(0)).save(activitySaveCaptor.capture())
-    assertThat(activitySaveCaptor.allValues.size).isEqualTo(0)
+    verify(repository, never()).save(any())
   }
 
   @Test
-  fun `does not schedule an instance when it has an active suspension`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(activityWithSuspension)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(emptyList())
-    whenever(bankHolidayService.isEnglishBankHoliday(any())).thenReturn(false)
+  fun `does schedule an instance when it has an active suspension`() {
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(activityWithSuspension)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
 
     job.execute()
 
-    verify(repository, times(0)).save(activitySaveCaptor.capture())
-    assertThat(activitySaveCaptor.allValues.size).isEqualTo(0)
+    verify(repository).save(activitySaveCaptor.capture())
+
+    with(activitySaveCaptor.savedActivityAtPrison("MDI")) {
+      assertThat(schedules().first().isSuspendedOn(today)).isTrue
+      assertThat(schedules().first().instances()).hasSize(1)
+    }
   }
 
   @Test
   fun `does not schedule a instance on a bank holiday when activity does not run on bank holidays`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(activityDoesNotRunOnABankHoliday)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(emptyList())
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(activityDoesNotRunOnABankHoliday)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
     job.execute()
 
-    verify(repository, times(0)).save(activitySaveCaptor.capture())
-    assertThat(activitySaveCaptor.allValues.size).isEqualTo(0)
+    verify(repository, never()).save(any())
   }
 
   @Test
   fun `schedules an instance on a bank holiday if activity runs on a bank holiday`() {
-    val today = LocalDate.now()
-    val toDate = today.plusDays(7)
-
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(rolledOutPrisons)
-    whenever(repository.getAllForPrisonBetweenDates("MDI", today, toDate)).thenReturn(activityRunsOnABankHoliday)
-    whenever(repository.getAllForPrisonBetweenDates("LEI", today, toDate)).thenReturn(emptyList())
+    whenever(repository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(activityRunsOnABankHoliday)
+    whenever(repository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
     job.execute()
 
-    verify(repository, times(1)).save(activitySaveCaptor.capture())
-    assertThat(activitySaveCaptor.allValues).hasSize(1)
-    with(activitySaveCaptor.allValues) {
-      this.forEach { activity ->
-        assertThat(activity.prisonCode).isEqualTo("MDI")
-        activity.schedules().forEach { schedule ->
-          schedule.instances().forEach { instance ->
-            assertThat(instance.sessionDate).isBetween(today, toDate)
-          }
+    verify(repository).save(activitySaveCaptor.capture())
+
+    with(activitySaveCaptor.savedActivityAtPrison("MDI")) {
+      schedules().forEach { schedule ->
+        schedule.instances().forEach { instance ->
+          assertThat(instance.sessionDate).isBetween(today, weekFromToday)
         }
       }
     }
   }
+
+  private fun ArgumentCaptor<Activity>.savedActivityAtPrison(expectedPrisonCode: String) =
+    this.firstValue.also {
+      assertThat(this.allValues).hasSize(1)
+      assertThat(this.firstValue.prisonCode).isEqualTo(expectedPrisonCode)
+    }
+
+  private fun ArgumentCaptor<Activity>.savedActivities(expectedNumberOfSavedActivities: Int) =
+    this.allValues.toList().also { assertThat(it).hasSize(expectedNumberOfSavedActivities) }
 
   companion object {
 

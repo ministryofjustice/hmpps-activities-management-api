@@ -13,7 +13,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
-  fun `Schedule instances of activities sessions`() {
+  fun `Schedules instances of activities sessions including bank holidays and suspended schedules`() {
     // Today is stubbed as a bank holiday via the BankHolidayExtension class, via the IntegrationTestBase class.
     jdbcTemplate.update(
       "update activity_schedule_slot set " +
@@ -26,7 +26,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
         "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
         "runs_on_bank_holiday = true"
     )
-    webTestClient.scheduleInstances()
+    webTestClient.createActivitySessions()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '${LocalDate.now()}'"
@@ -50,7 +50,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
         "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
         "runs_on_bank_holiday = false"
     )
-    webTestClient.scheduleInstances()
+    webTestClient.createActivitySessions()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '${LocalDate.now()}'"
@@ -59,7 +59,7 @@ class CreateActivitySessionsJobIntegrationTest : IntegrationTestBase() {
     assertThat(actualNumberOfScheduledInstances).isEqualTo(0)
   }
 
-  private fun WebTestClient.scheduleInstances() {
+  private fun WebTestClient.createActivitySessions() {
     post()
       .uri("/job/create-activity-sessions")
       .accept(MediaType.APPLICATION_JSON)

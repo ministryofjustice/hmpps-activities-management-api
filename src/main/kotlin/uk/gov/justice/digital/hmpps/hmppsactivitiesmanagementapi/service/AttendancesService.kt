@@ -51,8 +51,7 @@ class AttendancesService(
   /**
    * Create attendances on the given date for instances scheduled and allocations active on that date
    *
-   * We do not need to worry about suspensions to schedules. If a schedule is suspended then an instance will not be
-   * present on the date or dates the suspension is in place.
+   * We do not need to worry about cancellations (at present) to schedules.
    */
   fun createAttendanceRecordsFor(date: LocalDate) {
     log.info("Creating attendance records for date: $date")
