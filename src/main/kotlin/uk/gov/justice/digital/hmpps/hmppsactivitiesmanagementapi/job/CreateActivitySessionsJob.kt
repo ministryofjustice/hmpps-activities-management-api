@@ -12,12 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import java.time.LocalDate
 
-/**
- * This job creates attendances on the date of execution for instances scheduled and allocations active on this date.
- *
- * At present, we do also create attendance records for suspended schedules but not for cancelled schedules. As we learn
- * more this will likely change the behaviour of this job.
- */
 @Component
 class CreateActivitySessionsJob(
   private val activityRepository: ActivityRepository,
