@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
@@ -42,6 +43,7 @@ class CreateScheduledInstancesJob(
   * AND THESE WILL NEED TO BE CATERED FOR WHEN REQUIREMENTS ARE CLEARER
   */
   @Async("asyncExecutor")
+  @Transactional
   fun execute() {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance!!)
@@ -66,24 +68,35 @@ class CreateScheduledInstancesJob(
           withNoPreExistingInstances.forEach { schedule ->
             val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
             filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
-              runCatching {
-                schedule.addInstance(sessionDate = day, slot = slot)
-              }
-                .onSuccess {
+              continueToRunOnFailure(
+                block = {
+                  schedule.addInstance(sessionDate = day, slot = slot)
                   activityChanged = true
-                  log.info("Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}")
-                }
-                .onFailure {
-                  log.error("Failed to add instance to activity schedule '${schedule.activityScheduleId}'", it)
-                }
+                },
+                success = "Scheduling activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime}",
+                failure = "Failed to schedule activity at ${prison.code} ${activity.summary} on $day at ${slot.startTime} for schedule ${schedule.description}"
+              )
             }
           }
           if (activityChanged) {
-            activityRepository.save(activity)
+            continueToRunOnFailure(
+              block = { activityRepository.save(activity) },
+              success = "Scheduled activity at ${prison.code} ${activity.summary} on $day",
+              failure = "Failed to schedule activity at ${prison.code} ${activity.summary} on $day",
+            )
           }
         }
       }
     }
+  }
+
+  // TODO meed to decide how we intend to monitor/alert failures!
+  private fun continueToRunOnFailure(block: () -> Unit, success: String, failure: String) {
+    runCatching {
+      block()
+    }
+      .onSuccess { log.info(success) }
+      .onFailure { log.error(failure, it) }
   }
 
   private fun List<ActivityScheduleSlot>.filterActivityScheduleSlotsForBankHoliday(day: LocalDate) =

@@ -182,6 +182,7 @@ CREATE INDEX idx_scheduled_instance_schedule_id ON scheduled_instance (activity_
 CREATE INDEX idx_scheduled_instance_session_date ON scheduled_instance (session_date);
 CREATE INDEX idx_scheduled_instance_start_time ON scheduled_instance (start_time);
 CREATE INDEX idx_scheduled_instance_end_time ON scheduled_instance (end_time);
+CREATE UNIQUE INDEX idx_scheduled_instance_schedule_id_date_times ON scheduled_instance (activity_schedule_id, session_date, start_time, end_time);
 
 CREATE TABLE attendance (
   attendance_id         bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
