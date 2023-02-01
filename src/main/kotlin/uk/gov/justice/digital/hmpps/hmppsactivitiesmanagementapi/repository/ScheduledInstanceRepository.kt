@@ -14,12 +14,10 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
     """
     SELECT si FROM ScheduledInstance si 
     WHERE EXISTS (
-      SELECT 1 FROM si.activitySchedule.allocations a 
-      WHERE a.activitySchedule.activity.prisonCode = :prisonCode 
+      SELECT 1 FROM si.activitySchedule s
+      WHERE s.activity.prisonCode = :prisonCode 
       AND si.sessionDate >= :startDate
       AND si.sessionDate <= :endDate
-      AND (si.cancelled is null or si.cancelled = false)
-      AND a.startDate <= si.sessionDate AND (a.endDate is null or a.endDate >= si.sessionDate)
     )
     """
   )
