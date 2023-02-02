@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -49,6 +48,13 @@ class ActivityService(
     activityRepository.findOrThrowNotFound(activityId)
       .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
 
+  private fun failDuplicateActivity(prisonCode: String, summary: String) {
+    val duplicateActivity = activityRepository.existsActivityByPrisonCodeAndSummary(prisonCode, summary)
+    if (duplicateActivity) {
+      throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
+    }
+  }
+
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
@@ -57,8 +63,9 @@ class ActivityService(
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode!!)
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
+    failDuplicateActivity(request.prisonCode, request.summary!!)
 
-    val activity = Activity(
+    return Activity(
       prisonCode = request.prisonCode,
       activityCategory = category,
       activityTier = tier,
@@ -83,12 +90,6 @@ class ActivityService(
           pieceRateItems = it.pieceRateItems
         )
       }
-    }
-
-    try {
-      return transform(activityRepository.saveAndFlush(activity))
-    } catch (ex: DataIntegrityViolationException) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison (${activity.prisonCode}): '${activity.summary}'")
-    }
+    }.let { transform(activityRepository.saveAndFlush(it)) }
   }
 }
