@@ -136,7 +136,7 @@ class ActivityServiceTest {
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(activityRepository.countByPrisonCodeAndSummary("MDI", "IT level 1")).thenReturn(1)
+    whenever(activityRepository.existsActivityByPrisonCodeAndSummary("MDI", "IT level 1")).thenReturn(true)
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)

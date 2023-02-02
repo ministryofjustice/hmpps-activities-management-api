@@ -49,8 +49,8 @@ class ActivityService(
       .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
 
   private fun failDuplicateActivity(prisonCode: String, summary: String) {
-    val duplicateActivity = activityRepository.countByPrisonCodeAndSummary(prisonCode, summary)
-    if (duplicateActivity > 0) {
+    val duplicateActivity = activityRepository.existsActivityByPrisonCodeAndSummary(prisonCode, summary)
+    if (duplicateActivity) {
       throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
     }
   }
