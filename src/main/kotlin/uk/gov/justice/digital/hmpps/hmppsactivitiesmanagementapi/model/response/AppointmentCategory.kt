@@ -24,7 +24,7 @@ data class AppointmentCategory (
   @Schema(
     description = "The parent category. Signifies that this is a subcategory if not null"
   )
-  val parent: AppointmentCategory?,
+  val parent: AppointmentCategory? = null,
 
   @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
@@ -45,5 +45,5 @@ data class AppointmentCategory (
 
   @Schema(
     description = "Override to the default of ordering alphabetically by description supporting explicit ordering")
-  val displayOrder: Int
+  val displayOrder: Int?
 )

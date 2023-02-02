@@ -53,7 +53,7 @@ CREATE TABLE appointment_schedule (
 CREATE INDEX idx_appointment_schedule_end_date ON appointment_schedule (end_date);
 
 CREATE TABLE appointment_occurrence (
-     appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
+     appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,
      internal_location_id       integer,
      in_cell                    boolean         NOT NULL DEFAULT false,
      start_date                 date            NOT NULL,
