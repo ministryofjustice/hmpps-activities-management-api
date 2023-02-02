@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 data class AppointmentCategory (
   @Schema(
-    description = "The internally-generated identifier for this appointment category"
+    description = "The internally generated identifier for this appointment category"
   )
   val id: Long,
 

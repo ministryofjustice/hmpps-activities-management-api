@@ -5,23 +5,25 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
+  The allocation of a prisoner to an appointment. Standard single appointments will have one prisoner allocated to them.
+  More than one prisoner allocation record signifies the associated appointment is a group appointment.
+  Group appointments support additional checks such as non-associations.
   """
 )
 data class AppointmentAllocation (
   @Schema(
-    description = "The internally-generated identifier for this appointment allocation"
+    description = "The internally generated identifier for this appointment allocation"
   )
   val id: Long,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The NOMIS OFFENDERS.OFFENDER_ID_DISPLAY value for mapping to a prisoner record in NOMIS",
+    example = "A1234BC"
   )
   val prisonerNumber: String,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS"
   )
   val bookingId: Int
 )

@@ -13,7 +13,7 @@ import java.time.LocalTime
 )
 data class Appointment (
   @Schema(
-    description = "The internally-generated identifier for this appointment"
+    description = "The internally generated identifier for this appointment"
   )
   val id: Long,
 
@@ -98,5 +98,5 @@ data class Appointment (
     description = "",
     example = ""
   )
-  val allocations: List<Allocation> = emptyList()
+  val allocations: List<AppointmentAllocation> = emptyList()
 )
