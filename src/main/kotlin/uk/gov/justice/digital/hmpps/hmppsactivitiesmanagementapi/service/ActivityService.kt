@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -93,10 +92,6 @@ class ActivityService(
       }
     }
 
-    try {
-      return transform(activityRepository.saveAndFlush(activity))
-    } catch (ex: DataIntegrityViolationException) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison (${activity.prisonCode}): '${activity.summary}'")
-    }
+    return transform(activityRepository.saveAndFlush(activity))
   }
 }
