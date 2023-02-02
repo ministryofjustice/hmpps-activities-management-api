@@ -65,7 +65,7 @@ class ActivityService(
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
 
-    val activity = Activity(
+    return Activity(
       prisonCode = request.prisonCode,
       activityCategory = category,
       activityTier = tier,
@@ -91,7 +91,5 @@ class ActivityService(
         )
       }
     }.let { transform(activityRepository.saveAndFlush(it)) }
-
-    return activity
   }
 }
