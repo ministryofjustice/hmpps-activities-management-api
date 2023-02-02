@@ -113,6 +113,37 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `createActivity - duplicate`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {}
+    )
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(activityRepository.countByPrisonCodeAndSummary("MDI", "IT level 1")).thenReturn(1)
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
+  }
+
+  @Test
   fun `createActivity - category id not found`() {
     val createdBy = "SCH_ACTIVITY"
 

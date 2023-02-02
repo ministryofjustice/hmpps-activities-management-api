@@ -49,6 +49,13 @@ class ActivityService(
     activityRepository.findOrThrowNotFound(activityId)
       .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
 
+  private fun failDuplicateActivity(prisonCode: String, summary: String) {
+    val duplicateActivity = activityRepository.countByPrisonCodeAndSummary(prisonCode, summary)
+    if (duplicateActivity > 0) {
+      throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
+    }
+  }
+
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
@@ -57,10 +64,7 @@ class ActivityService(
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode!!)
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
-    val duplicateActivity = activityRepository.countByPrisonCodeAndSummary(request.prisonCode, request.summary!!)
-    if (duplicateActivity > 0) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison (${request.prisonCode}): '${request.summary}'")
-    }
+    failDuplicateActivity(request.prisonCode, request.summary!!)
 
     val activity = Activity(
       prisonCode = request.prisonCode,
