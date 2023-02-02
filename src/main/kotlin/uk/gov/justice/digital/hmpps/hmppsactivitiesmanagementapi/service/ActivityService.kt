@@ -90,8 +90,8 @@ class ActivityService(
           pieceRateItems = it.pieceRateItems
         )
       }
-    }
+    }.let { transform(activityRepository.saveAndFlush(it)) }
 
-    return transform(activityRepository.saveAndFlush(activity))
+    return activity
   }
 }
