@@ -9,6 +9,12 @@ import java.time.LocalTime
 @Schema(
   description =
   """
+  The top level appointment containing the initial values for all appointment properties.
+  Joins together one or more appointment occurrences and optionally a schedule if the appointment is recurring.
+  The child appointment occurrences will by default have the same property values.
+  The occurrence property values can be changed independently to support rescheduling, cancelling and altered
+  attendee lists at an individual occurrence level.
+  Editing a property at the appointment level will cascade the edit to all *future* child occurrences
   """
 )
 data class Appointment (
@@ -18,85 +24,130 @@ data class Appointment (
   val id: Long,
 
   @Schema(
-    description = "",
+    description =
+    """
+    The lowest level category of the appointment.
+    A subcategory for new appointments and a legacy category (active = false) for migrated appointments.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
   )
   val category: AppointmentCategory,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
+    example = "SKI, BNI, WEI"
   )
   val prisonCode: String,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
+    Should be null if in cell = true
+    """
   )
   val internalLocationId: Int?,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    Flag to indicate if the location of the activity is in cell rather than an internal prison location.
+    Internal location id should be null if in cell = true
+    """
   )
   val inCell: Boolean,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The date of the appointment or first appointment occurrence in the series"
   )
   val startDate: LocalDate,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The starting time of the appointment or first appointment occurrence in the series"
   )
   val startTime: LocalTime,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The end time of the appointment or first appointment occurrence in the series"
   )
   val endTime: LocalTime?,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    Notes relating to the appointment.
+    The default value if no notes are specified at the occurrence or instance levels
+    """,
+    example = "This appointment will help adjusting to life outside of prison"
   )
   val comment: String,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "The date and time this appointment was created. Will not change"
   )
   val created: LocalDateTime,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that created the appointment.
+    Usually a NOMIS username
+    """,
+    example = "AAA01U"
   )
   val createdBy: String,
 
   @Schema(
-    description = "",
+    description =
+    """
+    The date and time this appointment was last changed.
+    Will be null if the appointment has not been altered since it was created
+    """,
     example = ""
   )
   val updated: LocalDateTime?,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that edited the appointment.
+    Usually a NOMIS username. Will be null if the appointment has not been altered since it was created
+    """,
+    example = "AAA01U"
   )
   val updatedBy: String,
 
   @Schema(
-    description = "",
-    example = ""
+    description = "Supports soft delete of the appointment and child appointment occurrences"
   )
   val deleted: Boolean,
 
   @Schema(
-    description = "",
-    example = ""
+    description =
+    """
+    Indicates that the appointment is a recurring series if not null.
+    The appointment schedule properties will specify when each occurrence in the series reoccurs and on which date
+    the series ends.
+    """,
   )
-  val allocations: List<AppointmentAllocation> = emptyList()
+  val schedule: AppointmentSchedule?,
+
+  @Schema(
+    description =
+    """
+    The individual occurrence or occurrences of this appointment. Non recurring appointments will have a single
+    appointment occurrence containing the same property values as the parent appointment. The same start date, time
+    and end time. Recurring appointments will have a series of occurrences. The first in the series will also
+    contain the same property values as the parent appointment and subsequent occurrences will have start dates
+    following on from the original start date incremented as specified by the appointment's schedule. Each occurrence
+    can be edited independently of the parent. All properties of an occurrence override those of the parent appointment
+    with a null coalesce back to the parent for nullable properties. The full series of occurrences specified by the
+    schedule will be created in advance.
+    """
+  )
+  val occurrences: List<AppointmentOccurrence> = emptyList()
 )

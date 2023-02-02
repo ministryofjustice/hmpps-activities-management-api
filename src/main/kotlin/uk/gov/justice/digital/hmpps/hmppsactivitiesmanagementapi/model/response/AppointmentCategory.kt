@@ -22,7 +22,7 @@ data class AppointmentCategory (
   val id: Long,
 
   @Schema(
-    description = "The parent category of this subcategory"
+    description = "The parent category. Signifies that this is a subcategory if not null"
   )
   val parent: AppointmentCategory?,
 

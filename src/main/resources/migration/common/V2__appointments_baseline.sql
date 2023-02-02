@@ -84,7 +84,7 @@ CREATE INDEX idx_appointment_occurrence_allocation_booking_id ON appointment_occ
 
 CREATE TABLE appointment_instance (
     appointment_instance_id     bigserial   NOT NULL CONSTRAINT appointment_instance_pk PRIMARY KEY,
-    appointment_id              integer     NOT NULL REFERENCES appointment (appointment_id),
+    appointment_occurrence_id   integer     NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
     appointment_category_id     integer     NOT NULL REFERENCES appointment_category (appointment_category_id),
     prison_code                 varchar(6)  NOT NULL,
     internal_location_id        integer,

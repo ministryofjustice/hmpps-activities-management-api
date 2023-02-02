@@ -5,12 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  The allocation of a prisoner to an appointment. Standard single appointments will have one prisoner allocated to them.
-  More than one prisoner allocation record signifies the associated appointment is a group appointment.
-  Group appointments support additional checks such as non-associations.
+  The allocation of a prisoner to an appointment occurrence. Standard single appointments will have one prisoner
+  allocated to its single appointment occurrence. More than one prisoner allocation record signifies the associated
+  appointment is a group appointment. Group appointments support additional checks such as non-associations.
   """
 )
-data class AppointmentAllocation (
+data class AppointmentOccurrenceAllocation (
   @Schema(
     description = "The internally generated identifier for this appointment allocation"
   )
