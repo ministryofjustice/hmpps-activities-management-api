@@ -57,6 +57,10 @@ class ActivityService(
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode!!)
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
+    val duplicateActivity = activityRepository.countByPrisonCodeAndSummary(request.prisonCode, request.summary!!)
+    if (duplicateActivity > 0) {
+      throw IllegalArgumentException("Duplicate activity name detected for this prison (${request.prisonCode}): '${request.summary}'")
+    }
 
     val activity = Activity(
       prisonCode = request.prisonCode,
