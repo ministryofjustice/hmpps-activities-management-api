@@ -13,7 +13,9 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -22,6 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
@@ -114,33 +118,22 @@ class ActivityServiceTest {
 
   @Test
   fun `createActivity - duplicate`() {
-    val createdBy = "SCH_ACTIVITY"
+    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
-    )
+    val createDuplicateActivityRequest: ActivityCreateRequest = mock {
+      on { prisonCode } doReturn (moorlandPrisonCode)
+      on { summary } doReturn ("IT level 1")
+    }
 
-    val activityCategory = activityCategory()
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
-
-    val activityTier = activityTier()
-    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
-
-    val savedActivityEntity: ActivityEntity = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
-      object : TypeReference<ActivityEntity>() {}
-    )
-
-    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
-    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
-    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(activityRepository.existsActivityByPrisonCodeAndSummary("MDI", "IT level 1")).thenReturn(true)
-
-    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
+    assertThatThrownBy { service.createActivity(createDuplicateActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
+
+    verify(activityRepository, never()).saveAndFlush(any())
   }
 
   @Test
