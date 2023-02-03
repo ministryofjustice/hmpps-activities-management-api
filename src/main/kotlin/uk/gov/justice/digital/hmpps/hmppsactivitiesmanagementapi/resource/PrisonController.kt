@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -299,4 +301,57 @@ class PrisonController(
     @PathVariable("prisonCode")
     prisonCode: String
   ): List<PrisonPayBand> = prisonRegimeService.getPayBandsForPrison(prisonCode)
+
+  @GetMapping(value = ["/{prisonCode}/prison-regime"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a prison regime by its code",
+    description = "Returns a single prison regime and its details by its unique prison code.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison regime found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The prison regime for this prison code was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ],
+      )
+    ]
+  )
+  fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): PrisonRegime =
+    prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 }

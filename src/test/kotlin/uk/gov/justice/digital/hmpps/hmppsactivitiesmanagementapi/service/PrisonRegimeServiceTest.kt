@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventPri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
@@ -17,7 +18,9 @@ class PrisonRegimeServiceTest {
 
   private val eventPriorityRepository: EventPriorityRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository)
+  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
+
+  private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository, prisonRegimeRepository)
 
   @Test
   fun `default priorities are returned when no priorities for prison`() {
