@@ -5,7 +5,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory as ModelAppointmentCategory
 
 @Entity
 @Table(name = "appointment_category")
@@ -22,7 +21,7 @@ data class AppointmentCategory(
 
   val displayOrder: Int?
 ) {
-  fun toModel() = ModelAppointmentCategory(
+  fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory(
     id = appointmentCategoryId,
     code = code,
     description = description,

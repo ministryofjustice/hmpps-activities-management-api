@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.*
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import java.time.LocalDate
@@ -42,6 +44,10 @@ data class Appointment (
 
   val updatedBy: String?,
 
+  @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  val occurrences: MutableList<AppointmentOccurrence> = mutableListOf(),
+
   val deleted: Boolean
 ) {
   fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment(
@@ -57,7 +63,8 @@ data class Appointment (
     created = created,
     createdBy = createdBy,
     updated = updated,
-    updatedBy = updatedBy
+    updatedBy = updatedBy,
+    occurrences = occurrences.toModel()
   )
 }
 

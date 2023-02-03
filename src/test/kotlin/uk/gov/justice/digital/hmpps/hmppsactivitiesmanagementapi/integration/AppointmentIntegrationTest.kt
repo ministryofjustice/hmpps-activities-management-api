@@ -43,6 +43,30 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(comment).isEqualTo("Appointment level comment")
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(updated).isNull()
+      assertThat(updatedBy).isNull()
+      assertThat(schedule).isNull()
+      with(occurrences) {
+        assertThat(size).isEqualTo(1)
+        with (get(0)) {
+          assertThat(internalLocationId).isEqualTo(123)
+          assertThat(inCell).isEqualTo(false)
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+          assertThat(comment).isEqualTo("Appointment occurrence level comment")
+          assertThat(cancelled).isEqualTo(false)
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+          with(allocations) {
+            assertThat(size).isEqualTo(1)
+            with (get(0)) {
+              assertThat(prisonerNumber).isEqualTo("A1234BC")
+              assertThat(bookingId).isEqualTo(456)
+            }
+          }
+        }
+      }
     }
   }
 

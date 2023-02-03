@@ -95,7 +95,7 @@ data class AppointmentOccurrence (
     """,
     example = "AAA01U"
   )
-  val updatedBy: String,
+  val updatedBy: String?,
 
   @Schema(
     description =
