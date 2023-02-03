@@ -119,12 +119,7 @@ data class Appointment (
     """,
     example = "AAA01U"
   )
-  val updatedBy: String,
-
-  @Schema(
-    description = "Supports soft delete of the appointment and child appointment occurrences"
-  )
-  val deleted: Boolean,
+  val updatedBy: String?,
 
   @Schema(
     description =
@@ -134,7 +129,7 @@ data class Appointment (
     the series ends.
     """,
   )
-  val schedule: AppointmentSchedule?,
+  val schedule: AppointmentSchedule? = null,
 
   @Schema(
     description =
