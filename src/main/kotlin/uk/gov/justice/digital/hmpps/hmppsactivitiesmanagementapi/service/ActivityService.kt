@@ -70,7 +70,7 @@ class ActivityService(
       activityCategory = category,
       activityTier = tier,
       attendanceRequired = request.attendanceRequired,
-      summary = request.summary!!,
+      summary = request.summary,
       description = request.description,
       startDate = request.startDate ?: LocalDate.now(),
       endDate = request.endDate,

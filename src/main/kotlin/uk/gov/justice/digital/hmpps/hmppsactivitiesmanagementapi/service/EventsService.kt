@@ -26,40 +26,47 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
 
   fun send(outboundEvent: OutboundEvent, identifier: Long) {
     when (outboundEvent) {
-      ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(identifier))
+      ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(ScheduleCreatedInformation(identifier)))
     }
   }
 }
 
-enum class OutboundEvent(val event: (identifier: Long) -> OutboundHMPPSDomainEvent) {
-  ACTIVITY_SCHEDULE_CREATED(event = { identifier: Long ->
-    OutboundHMPPSDomainEvent(
-      eventType = "activities.activity-schedule.created",
-      identifier = identifier,
-      description = "new activity schedule with identifier $identifier has been created in the activities management service"
-    )
-  })
+enum class OutboundEvent {
+  ACTIVITY_SCHEDULE_CREATED {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = "activities.activity-schedule.created",
+        additionalInformation = additionalInformation,
+        description = "A new activity schedule has been created in the activities management service"
+      )
+  };
+
+  abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
 }
 
-// TODO resolve message formats
+interface AdditionalInformation
+
 data class OutboundHMPPSDomainEvent(
   val eventType: String,
-  val identifier: Long,
+  val additionalInformation: AdditionalInformation,
   val version: String = "1",
   val description: String,
   val occurredAt: LocalDateTime = LocalDateTime.now(),
 )
 
+data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
+
+// TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(
   val eventType: String? = null,
-  val additionalInformation: AdditionalInformation,
+  val additionalInformation: InboundAdditionalInformation,
   val version: String,
   val occurredAt: String,
   val description: String
 )
 
-data class AdditionalInformation(
+data class InboundAdditionalInformation(
   val id: Long,
   val nomsNumber: String? = null,
   val reason: String? = null,
-)
+) : AdditionalInformation
