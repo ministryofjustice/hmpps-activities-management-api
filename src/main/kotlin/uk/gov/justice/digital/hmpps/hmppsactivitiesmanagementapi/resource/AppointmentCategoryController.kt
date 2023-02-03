@@ -44,5 +44,5 @@ class AppointmentCategoryController(private val appointmentCategoryRepository: A
   )
   @GetMapping
   @ResponseBody
-  fun getCategories(): List<AppointmentCategory> = appointmentCategoryRepository.findAll().toModel()
+  fun getCategories(): List<AppointmentCategory> = appointmentCategoryRepository.findAllOrdered().toModel()
 }
