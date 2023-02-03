@@ -11,11 +11,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
@@ -197,6 +199,17 @@ private fun activityPay(activity: Activity) =
   )
 
 fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
+
+fun prisonRegime() = PrisonRegime(
+  1,
+  "PVI",
+  LocalTime.of(9, 0),
+  LocalTime.of(12, 0),
+  LocalTime.of(13, 0),
+  LocalTime.of(16, 30),
+  LocalTime.of(18, 0),
+  LocalTime.of(20, 0)
+)
 
 // TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
 fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset: Long = 0) = listOf(

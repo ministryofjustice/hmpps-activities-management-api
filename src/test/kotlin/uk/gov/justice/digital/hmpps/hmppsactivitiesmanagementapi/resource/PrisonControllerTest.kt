@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [PrisonController::class])
@@ -259,6 +261,39 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     verify(prisonRegimeService).getPayBandsForPrison(moorlandPrisonCode)
   }
 
+  @Test
+  fun `200 response when get prison by code found`() {
+    val prisonRegime = transform(prisonRegime())
+
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("PVI")).thenReturn(prisonRegime)
+
+    val response = mockMvc.getPrisonRegimeByPrisonCode("PVI")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonRegime))
+
+    verify(prisonRegimeService).getPrisonRegimeByPrisonCode("PVI")
+  }
+
+  @Test
+  fun `404 response when get prison by code not found`() {
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("PVX")).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getPrisonRegimeByPrisonCode("PVX")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+
+    verify(prisonRegimeService).getPrisonRegimeByPrisonCode("PVX")
+  }
+
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
     get("/prison/$prisonCode/prison-pay-bands")
+
+  private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) =
+    get("/prison/$prisonCode/prison-regime")
 }
