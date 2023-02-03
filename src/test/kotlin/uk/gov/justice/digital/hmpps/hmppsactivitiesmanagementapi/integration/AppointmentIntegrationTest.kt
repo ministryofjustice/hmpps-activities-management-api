@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -48,7 +48,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(schedule).isNull()
       with(occurrences) {
         assertThat(size).isEqualTo(1)
-        with (get(0)) {
+        with(get(0)) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isEqualTo(false)
           assertThat(startDate).isEqualTo(LocalDate.now())
@@ -60,7 +60,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(updatedBy).isNull()
           with(allocations) {
             assertThat(size).isEqualTo(1)
-            with (get(0)) {
+            with(get(0)) {
               assertThat(prisonerNumber).isEqualTo("A1234BC")
               assertThat(bookingId).isEqualTo(456)
             }

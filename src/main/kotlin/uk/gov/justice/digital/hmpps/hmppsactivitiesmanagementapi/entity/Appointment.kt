@@ -1,6 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.SQLDelete
@@ -13,7 +22,7 @@ import java.time.LocalTime
 @Table(name = "appointment")
 @SQLDelete(sql = "UPDATE appointment SET deleted = true WHERE appointment_category_id = ?")
 @Where(clause = "deleted = false")
-data class Appointment (
+data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = -1,
