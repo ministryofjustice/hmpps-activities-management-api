@@ -15,25 +15,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.DayOfWeek
-import java.time.LocalTime
 
 @Service
 class ActivityScheduleCreationService(
   private val activityRepository: ActivityRepository,
-  private val prisonApiClient: PrisonApiClient
+  private val prisonApiClient: PrisonApiClient,
+  private val prisonRegimeService: PrisonRegimeService
 ) {
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
-
-  // TODO hardcoded times for slots. This will addressed in a separate JIRA ticket.
-  private val timeSlots =
-    mapOf(
-      TimeSlot.AM to Pair(LocalTime.of(9, 0), LocalTime.of(10, 0)),
-      TimeSlot.PM to Pair(LocalTime.of(13, 0), LocalTime.of(14, 0)),
-      TimeSlot.ED to Pair(LocalTime.of(18, 0), LocalTime.of(20, 0))
-    )
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createSchedule(
@@ -52,7 +44,7 @@ class ActivityScheduleCreationService(
         startDate = request.startDate!!,
         endDate = request.endDate
       ).let { schedule ->
-        schedule.addSlots(request.slots!!)
+        schedule.addSlots(activity.prisonCode, request.slots!!)
 
         val persisted = activityRepository.saveAndFlush(activity)
 
@@ -63,7 +55,14 @@ class ActivityScheduleCreationService(
     }
   }
 
-  private fun ActivitySchedule.addSlots(slots: List<Slot>) {
+  private fun ActivitySchedule.addSlots(prisonCode: String, slots: List<Slot>) {
+    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
+    val timeSlots =
+      mapOf(
+        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
+        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
+        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish)
+      )
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
