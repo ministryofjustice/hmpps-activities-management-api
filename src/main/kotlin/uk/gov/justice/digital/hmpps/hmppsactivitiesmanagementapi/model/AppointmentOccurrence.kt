@@ -17,7 +17,7 @@ import java.time.LocalTime
   nullable properties. The full series of occurrences specified by the schedule will be created in advance.
   """
 )
-data class AppointmentOccurrence (
+data class AppointmentOccurrence(
   @Schema(
     description = "The internally generated identifier for this appointment occurrence"
   )

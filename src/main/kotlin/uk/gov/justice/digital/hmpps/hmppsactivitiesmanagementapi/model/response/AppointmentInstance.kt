@@ -11,7 +11,7 @@ import java.time.LocalTime
   The fully denormalised representation of the appointment occurrences and allocations.
   """
 )
-data class AppointmentInstance (
+data class AppointmentInstance(
   @Schema(
     description = "The internally generated identifier for this appointment instance"
   )

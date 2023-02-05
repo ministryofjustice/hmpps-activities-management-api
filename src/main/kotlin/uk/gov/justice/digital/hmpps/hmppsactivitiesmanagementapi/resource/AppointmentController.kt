@@ -6,7 +6,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -14,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentController (private val appointmentRepository: AppointmentRepository) {
+class AppointmentController(private val appointmentRepository: AppointmentRepository) {
   @GetMapping(value = ["/{appointmentId}"])
   @ResponseBody
   @Operation(

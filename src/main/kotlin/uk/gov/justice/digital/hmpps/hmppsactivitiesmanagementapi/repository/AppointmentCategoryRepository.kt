@@ -6,8 +6,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCategory
 
 @Repository
-interface AppointmentCategoryRepository : JpaRepository<AppointmentCategory, Long>
-{
+interface AppointmentCategoryRepository : JpaRepository<AppointmentCategory, Long> {
   /**
    * Custom query rather than derived from method name as the latter doesn't support NULLS LAST.
    * PostgreSQL defaults to nulls last but the H2 in memory database used for integration tests orders nulls first.

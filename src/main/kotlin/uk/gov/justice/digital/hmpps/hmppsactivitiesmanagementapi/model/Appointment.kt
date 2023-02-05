@@ -17,7 +17,7 @@ import java.time.LocalTime
   Editing a property at the appointment level will cascade the edit to all *future* child occurrences
   """
 )
-data class Appointment (
+data class Appointment(
   @Schema(
     description = "The internally generated identifier for this appointment"
   )

@@ -10,7 +10,7 @@ import java.time.LocalDate
   and the end date of the series.
   """
 )
-data class AppointmentSchedule (
+data class AppointmentSchedule(
   @Schema(
     description = "The internally generated identifier for this appointment schedule"
   )

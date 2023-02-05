@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema
   appointment is a group appointment. Group appointments support additional checks such as non-associations.
   """
 )
-data class AppointmentOccurrenceAllocation (
+data class AppointmentOccurrenceAllocation(
   @Schema(
     description = "The internally generated identifier for this appointment allocation"
   )

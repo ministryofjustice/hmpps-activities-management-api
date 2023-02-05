@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema
   by description of display order is not specified.
   """
 )
-data class AppointmentCategory (
+data class AppointmentCategory(
   @Schema(
     description = "The internally generated identifier for this appointment category"
   )
@@ -44,6 +44,7 @@ data class AppointmentCategory (
   val active: Boolean,
 
   @Schema(
-    description = "Override to the default of ordering alphabetically by description supporting explicit ordering")
+    description = "Override to the default of ordering alphabetically by description supporting explicit ordering"
+  )
   val displayOrder: Int?
 )
