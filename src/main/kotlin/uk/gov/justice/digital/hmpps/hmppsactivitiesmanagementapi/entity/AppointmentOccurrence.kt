@@ -27,23 +27,23 @@ data class AppointmentOccurrence(
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointment: Appointment,
 
-  val internalLocationId: Int?,
+  var internalLocationId: Int?,
 
-  val inCell: Boolean,
+  var inCell: Boolean,
 
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
-  val startTime: LocalTime,
+  var startTime: LocalTime,
 
-  val endTime: LocalTime?,
+  var endTime: LocalTime?,
 
-  val comment: String,
+  var comment: String,
 
-  val cancelled: Boolean,
+  var cancelled: Boolean,
 
-  val updated: LocalDateTime?,
+  var updated: LocalDateTime?,
 
-  val updatedBy: String?,
+  var updatedBy: String?,
 
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

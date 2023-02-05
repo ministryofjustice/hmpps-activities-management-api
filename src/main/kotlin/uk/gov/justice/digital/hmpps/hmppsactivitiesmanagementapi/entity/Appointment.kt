@@ -29,29 +29,29 @@ data class Appointment(
 
   @OneToOne
   @JoinColumn(name = "appointment_category_id", nullable = false)
-  val category: AppointmentCategory,
+  var category: AppointmentCategory,
 
-  val prisonCode: String,
+  var prisonCode: String,
 
-  val internalLocationId: Int?,
+  var internalLocationId: Int?,
 
-  val inCell: Boolean,
+  var inCell: Boolean,
 
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
-  val startTime: LocalTime,
+  var startTime: LocalTime,
 
-  val endTime: LocalTime?,
+  var endTime: LocalTime?,
 
-  val comment: String,
+  var comment: String,
 
   val created: LocalDateTime,
 
   val createdBy: String,
 
-  val updated: LocalDateTime?,
+  var updated: LocalDateTime?,
 
-  val updatedBy: String?,
+  var updatedBy: String?,
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

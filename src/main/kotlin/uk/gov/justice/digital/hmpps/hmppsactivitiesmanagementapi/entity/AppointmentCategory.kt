@@ -17,9 +17,9 @@ data class AppointmentCategory(
 
   val description: String,
 
-  val active: Boolean,
+  var active: Boolean,
 
-  val displayOrder: Int?
+  var displayOrder: Int?
 ) {
   fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory(
     id = appointmentCategoryId,
