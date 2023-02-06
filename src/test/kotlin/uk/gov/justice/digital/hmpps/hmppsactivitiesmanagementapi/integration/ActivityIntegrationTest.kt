@@ -499,7 +499,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(id).isNotNull
       assertThat(daysOfWeek).containsExactly("Mon")
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(10, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
