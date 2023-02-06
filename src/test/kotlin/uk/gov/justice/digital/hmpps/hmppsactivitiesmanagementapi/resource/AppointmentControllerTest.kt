@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -33,7 +33,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    Assertions.assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointment))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointment))
 
     verify(appointmentService).getAppointmentById(1)
   }
@@ -47,7 +47,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    Assertions.assertThat(response.contentAsString).contains("Appointment -1 not found")
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
 
     verify(appointmentService).getAppointmentById(-1)
   }
