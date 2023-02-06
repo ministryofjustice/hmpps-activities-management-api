@@ -47,7 +47,7 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    Flag to indicate if the location of the activity is in cell rather than an internal prison location.
+    Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
     example = "false"
@@ -69,6 +69,7 @@ data class AppointmentInstance(
   @Schema(
     description = "The date of the appointment instance"
   )
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val appointmentDate: LocalDate,
 
   @Schema(

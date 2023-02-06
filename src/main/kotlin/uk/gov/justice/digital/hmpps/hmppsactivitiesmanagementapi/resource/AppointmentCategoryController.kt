@@ -12,13 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 
 @RestController
 @RequestMapping("/appointment-categories", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentCategoryController(private val appointmentCategoryRepository: AppointmentCategoryRepository) {
+class AppointmentCategoryController(private val appointmentCategoryService: AppointmentCategoryService) {
 
   @Operation(
     summary = "Get the list of top-level appointment categories",
@@ -39,5 +38,5 @@ class AppointmentCategoryController(private val appointmentCategoryRepository: A
   )
   @GetMapping
   @ResponseBody
-  fun getCategories(): List<AppointmentCategory> = appointmentCategoryRepository.findAllOrdered().toModel()
+  fun getCategories(): List<AppointmentCategory> = appointmentCategoryService.getAll()
 }

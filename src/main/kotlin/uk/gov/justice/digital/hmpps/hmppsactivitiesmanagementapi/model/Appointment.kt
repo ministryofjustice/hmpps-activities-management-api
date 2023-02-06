@@ -58,7 +58,7 @@ data class Appointment(
   @Schema(
     description =
     """
-    Flag to indicate if the location of the activity is in cell rather than an internal prison location.
+    Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
     example = "false"
@@ -68,6 +68,7 @@ data class Appointment(
   @Schema(
     description = "The date of the appointment or first appointment occurrence in the series"
   )
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
@@ -97,6 +98,7 @@ data class Appointment(
   @Schema(
     description = "The date and time this appointment was created. Will not change"
   )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   val created: LocalDateTime,
 
   @Schema(
@@ -116,6 +118,7 @@ data class Appointment(
     Will be null if the appointment has not been altered since it was created
     """
   )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   val updated: LocalDateTime?,
 
   @Schema(

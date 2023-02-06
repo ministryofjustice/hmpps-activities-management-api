@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentController(private val appointmentRepository: AppointmentRepository) {
+class AppointmentController(
+  private val appointmentService: AppointmentService
+) {
   @GetMapping(value = ["/{appointmentId}"])
   @ResponseBody
   @Operation(
@@ -60,5 +61,5 @@ class AppointmentController(private val appointmentRepository: AppointmentReposi
     ]
   )
   fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
-    appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    appointmentService.getAppointmentById(appointmentId)
 }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
@@ -24,6 +25,7 @@ data class AppointmentSchedule(
     a number of occurrences. The later case should be used to calculate the end date internally
     """
   )
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate,
 
   @Schema(
