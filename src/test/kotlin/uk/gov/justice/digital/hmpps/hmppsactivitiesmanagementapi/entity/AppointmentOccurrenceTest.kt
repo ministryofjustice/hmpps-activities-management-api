@@ -11,7 +11,7 @@ import java.time.LocalTime
 class AppointmentOccurrenceTest {
   @Test
   fun `entity to model mapping`() {
-    val entity = appointmentEntity().occurrences()[0]
+    val entity = appointmentEntity().occurrences().first()
     val expectedModel = appointmentOccurrenceModel(entity.updated)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
@@ -19,7 +19,7 @@ class AppointmentOccurrenceTest {
   @Test
   fun `entity list to model list mapping`() {
     val entityList = appointmentEntity().occurrences()
-    val expectedModel = listOf(appointmentOccurrenceModel(entityList[0].updated))
+    val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updated))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 }

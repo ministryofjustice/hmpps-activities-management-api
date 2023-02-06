@@ -9,13 +9,13 @@ class AppointmentOccurrenceAllocationTest {
   @Test
   fun `entity to model mapping`() {
     val expectedModel = appointmentOccurrenceAllocationModel()
-    assertThat(appointmentEntity().occurrences()[0].allocations()[0].toModel()).isEqualTo(expectedModel)
+    assertThat(appointmentEntity().occurrences().first().allocations().first().toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val expectedModel = listOf(appointmentOccurrenceAllocationModel())
-    assertThat(appointmentEntity().occurrences()[0].allocations().toModel()).isEqualTo(expectedModel)
+    assertThat(appointmentEntity().occurrences().first().allocations().toModel()).isEqualTo(expectedModel)
   }
 }
 
