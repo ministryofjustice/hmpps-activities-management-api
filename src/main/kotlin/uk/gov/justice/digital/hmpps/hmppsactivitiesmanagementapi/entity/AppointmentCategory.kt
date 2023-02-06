@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory as AppointmentCategoryModel
 
 @Entity
 @Table(name = "appointment_category")
@@ -21,7 +22,7 @@ data class AppointmentCategory(
 
   var displayOrder: Int?
 ) {
-  fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory(
+  fun toModel() = AppointmentCategoryModel(
     id = appointmentCategoryId,
     code = code,
     description = description,

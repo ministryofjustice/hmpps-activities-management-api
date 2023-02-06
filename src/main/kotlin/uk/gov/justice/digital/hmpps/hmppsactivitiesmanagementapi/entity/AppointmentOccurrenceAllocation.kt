@@ -7,6 +7,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationModel
 
 @Entity
 @Table(name = "appointment_occurrence_allocation")
@@ -23,7 +24,7 @@ data class AppointmentOccurrenceAllocation(
 
   val bookingId: Int
 ) {
-  fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation(
+  fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentOccurrenceAllocationId,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId

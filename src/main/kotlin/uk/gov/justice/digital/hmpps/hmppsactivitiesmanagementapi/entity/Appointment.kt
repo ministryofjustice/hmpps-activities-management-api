@@ -17,6 +17,7 @@ import org.hibernate.annotations.Where
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Entity
 @Table(name = "appointment")
@@ -59,7 +60,7 @@ data class Appointment(
 
   val deleted: Boolean
 ) {
-  fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment(
+  fun toModel() = AppointmentModel(
     id = appointmentId,
     category = category.toModel(),
     prisonCode = prisonCode,

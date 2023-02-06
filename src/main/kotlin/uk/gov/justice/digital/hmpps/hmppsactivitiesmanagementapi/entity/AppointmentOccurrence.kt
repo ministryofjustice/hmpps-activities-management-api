@@ -15,6 +15,7 @@ import org.hibernate.annotations.FetchMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence as AppointmentOccurrenceModel
 
 @Entity
 @Table(name = "appointment_occurrence")
@@ -49,7 +50,7 @@ data class AppointmentOccurrence(
   @Fetch(FetchMode.SUBSELECT)
   val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 ) {
-  fun toModel() = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence(
+  fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     internalLocationId = internalLocationId,
     inCell = inCell,
