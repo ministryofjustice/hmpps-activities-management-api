@@ -319,3 +319,16 @@ FROM scheduled_instance si
                    ON suspensions.activity_schedule_id = schedule.activity_schedule_id
                        AND si.session_date >= suspensions.suspended_from
                        AND (suspensions.suspended_until is null OR suspensions.suspended_until <= si.session_date);
+
+CREATE TABLE prison_regime (
+    prison_regime_id bigserial NOT NULL CONSTRAINT prison_regime_pk PRIMARY KEY,
+    prison_code varchar(3) NOT NULL,
+    am_start time NULL,
+    am_finish time NULL,
+    pm_start time NULL,
+    pm_finish time NULL,
+    ed_start time NULL,
+    ed_finish time NULL
+);
+
+CREATE INDEX idx_prison_regime_prison_code ON prison_regime (prison_code);
