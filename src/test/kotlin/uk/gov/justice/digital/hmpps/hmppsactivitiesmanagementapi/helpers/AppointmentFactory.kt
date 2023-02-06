@@ -24,7 +24,7 @@ internal fun appointmentEntity(inCell: Boolean = false) =
     updatedBy = "UPDATE.USER",
     deleted = false
   ).apply {
-    this.occurrences.add(appointmentOccurrenceEntity(this))
+    this.addOccurrence(appointmentOccurrenceEntity(this))
   }
 
 internal fun appointmentOccurrenceEntity(appointment: Appointment) =
@@ -41,7 +41,7 @@ internal fun appointmentOccurrenceEntity(appointment: Appointment) =
     updated = LocalDateTime.now(),
     updatedBy = "UPDATE.USER"
   ).apply {
-    this.allocations.add(appointmentOccurrenceAllocationEntity(this))
+    this.addAllocation(appointmentOccurrenceAllocationEntity(this))
   }
 
 internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence) =
