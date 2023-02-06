@@ -14,30 +14,30 @@ class OutboundEventsServiceTest {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
-  fun `activity created with id 1 is sent to the events publisher`() {
+  fun `activity schedule created event with id 1 is sent to the events publisher`() {
     outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1L)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(identifier).isEqualTo(1L)
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("new activity schedule with identifier 1 has been created in the activities management service")
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
   }
 
   @Test
-  fun `activity created with id 99 is sent to the events publisher`() {
+  fun `activity schedule created event with id 99 is sent to the events publisher`() {
     outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 99L)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(identifier).isEqualTo(99L)
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(99))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("new activity schedule with identifier 99 has been created in the activities management service")
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
   }
 }

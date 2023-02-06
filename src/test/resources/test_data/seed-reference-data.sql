@@ -1,3 +1,7 @@
+------------------
+--- Activities ---
+------------------
+
 --
 -- Categories
 --
@@ -58,3 +62,17 @@ values (1, 1, 1, 'Pay band 1 (lowest)', 'Pay band 1 (lowest)', 'PVI'),
 INSERT INTO prison_regime
 (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
 VALUES('MDI', '09:00:00', '12:00:00', '13:00:00', '16:30:00', '18:00:00', '20:00:00');
+
+--------------------
+--- Appointments ---
+--------------------
+
+--
+-- Appointment categories
+--
+
+INSERT INTO appointment_category (appointment_category_id, code, description) VALUES (1, 'AC2', 'Appointment Category 2');
+INSERT INTO appointment_category (appointment_category_id, code, description, active, display_order) VALUES (2, 'LAC2', 'Legacy Appointment Category 2', false, 2);
+INSERT INTO appointment_category (appointment_category_id, code, description, display_order) VALUES (3, 'AC1', 'Appointment Category 1', 3);
+INSERT INTO appointment_category (appointment_category_id, code, description) VALUES (4, 'AC3', 'Appointment Category 3');
+INSERT INTO appointment_category (appointment_category_id, code, description, active, display_order) VALUES (5, 'LAC1', 'Legacy Appointment Category 1', false, 1);

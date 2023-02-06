@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -506,9 +507,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(identifier).isEqualTo(1L)
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("new activity schedule with identifier 1 has been created in the activities management service")
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
   }
 
