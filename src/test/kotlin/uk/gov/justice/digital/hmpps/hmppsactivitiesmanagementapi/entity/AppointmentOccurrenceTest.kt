@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
@@ -13,14 +13,14 @@ class AppointmentOccurrenceTest {
   fun `entity to model mapping`() {
     val entity = appointmentEntity().occurrences()[0]
     val expectedModel = appointmentOccurrenceModel(entity.updated)
-    Assertions.assertThat(entity.toModel()).isEqualTo(expectedModel)
+    assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entityList = appointmentEntity().occurrences()
     val expectedModel = listOf(appointmentOccurrenceModel(entityList[0].updated))
-    Assertions.assertThat(entityList.toModel()).isEqualTo(expectedModel)
+    assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 }
 
