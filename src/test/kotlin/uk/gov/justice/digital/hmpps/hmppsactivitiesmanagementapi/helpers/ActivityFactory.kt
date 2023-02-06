@@ -198,7 +198,7 @@ private fun activityPay(activity: Activity) =
     pieceRateItems = 50
   )
 
-fun rolloutPrison() = RolloutPrison(1, "PVI", "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
+fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
 
 fun prisonRegime() = PrisonRegime(
   1,

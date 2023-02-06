@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.DayOfWeek
+import java.time.LocalTime
 
 @Service
 class ActivityScheduleCreationService(
@@ -35,6 +36,14 @@ class ActivityScheduleCreationService(
     activityRepository.findOrThrowNotFound(activityId).let { activity ->
       val scheduleLocation = getLocationForSchedule(activity, request)
 
+      val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
+      val timeSlots =
+        mapOf(
+          TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
+          TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
+          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish)
+        )
+
       activity.addSchedule(
         description = request.description!!,
         internalLocationId = scheduleLocation.locationId.toInt(),
@@ -44,7 +53,7 @@ class ActivityScheduleCreationService(
         startDate = request.startDate!!,
         endDate = request.endDate
       ).let { schedule ->
-        schedule.addSlots(activity.prisonCode, request.slots!!)
+        schedule.addSlots(request.slots!!, timeSlots)
 
         val persisted = activityRepository.saveAndFlush(activity)
 
@@ -55,14 +64,7 @@ class ActivityScheduleCreationService(
     }
   }
 
-  private fun ActivitySchedule.addSlots(prisonCode: String, slots: List<Slot>) {
-    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
-    val timeSlots =
-      mapOf(
-        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
-        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish)
-      )
+  private fun ActivitySchedule.addSlots(slots: List<Slot>, timeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) {
 
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!

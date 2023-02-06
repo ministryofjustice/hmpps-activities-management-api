@@ -301,7 +301,7 @@ class PrisonController(
     prisonCode: String
   ): List<PrisonPayBand> = prisonRegimeService.getPayBandsForPrison(prisonCode)
 
-  @GetMapping(value = ["/{prisonCode}/prison-regime"])
+  @GetMapping(value = ["/prison-regime/{prisonCode}"])
   @ResponseBody
   @Operation(
     summary = "Get a prison regime by its code",

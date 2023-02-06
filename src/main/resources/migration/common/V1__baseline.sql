@@ -331,4 +331,4 @@ CREATE TABLE prison_regime (
     ed_finish time NULL
 );
 
-CREATE INDEX idx_prison_regime_prison_code ON prison_regime (prison_code);
+CREATE UNIQUE INDEX idx_prison_regime_prison_code ON prison_regime (prison_code);

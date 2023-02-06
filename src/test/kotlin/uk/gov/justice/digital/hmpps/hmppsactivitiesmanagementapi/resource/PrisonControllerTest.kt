@@ -265,16 +265,16 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `200 response when get prison by code found`() {
     val prisonRegime = transform(prisonRegime())
 
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("PVI")).thenReturn(prisonRegime)
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(pentonvillePrisonCode)).thenReturn(prisonRegime)
 
-    val response = mockMvc.getPrisonRegimeByPrisonCode("PVI")
+    val response = mockMvc.getPrisonRegimeByPrisonCode(pentonvillePrisonCode)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonRegime))
 
-    verify(prisonRegimeService).getPrisonRegimeByPrisonCode("PVI")
+    verify(prisonRegimeService).getPrisonRegimeByPrisonCode(pentonvillePrisonCode)
   }
 
   @Test
@@ -295,5 +295,5 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     get("/prison/$prisonCode/prison-pay-bands")
 
   private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) =
-    get("/prison/$prisonCode/prison-regime")
+    get("/prison/prison-regime/$prisonCode")
 }
