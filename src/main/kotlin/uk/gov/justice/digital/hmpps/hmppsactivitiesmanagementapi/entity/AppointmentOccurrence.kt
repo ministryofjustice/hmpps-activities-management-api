@@ -44,12 +44,12 @@ data class AppointmentOccurrence(
 
   var updated: LocalDateTime?,
 
-  var updatedBy: String?,
-
+  var updatedBy: String?
+) {
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
-) {
+
   fun allocations() = allocations.toList()
 
   fun addAllocation(allocation: AppointmentOccurrenceAllocation) = allocations.add(allocation)

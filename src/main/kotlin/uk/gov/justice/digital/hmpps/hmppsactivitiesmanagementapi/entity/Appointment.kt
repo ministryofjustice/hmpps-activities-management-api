@@ -54,12 +54,12 @@ data class Appointment(
 
   var updatedBy: String?,
 
-  @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf(),
-
   val deleted: Boolean
 ) {
+  @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
+
   fun occurrences() = occurrences.toList()
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
