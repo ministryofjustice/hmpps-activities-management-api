@@ -25,5 +25,5 @@ data class AppointmentOccurrenceAllocation(
   @Schema(
     description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS"
   )
-  val bookingId: Int
+  val bookingId: Long
 )

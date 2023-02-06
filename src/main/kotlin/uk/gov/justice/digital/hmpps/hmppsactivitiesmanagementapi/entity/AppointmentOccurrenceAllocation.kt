@@ -22,7 +22,7 @@ data class AppointmentOccurrenceAllocation(
 
   val prisonerNumber: String,
 
-  val bookingId: Int
+  val bookingId: Long
 ) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentOccurrenceAllocationId,
