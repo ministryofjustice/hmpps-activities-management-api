@@ -1,3 +1,7 @@
+------------------
+--- Activities ---
+------------------
+
 --
 -- Categories
 --
@@ -54,3 +58,17 @@ values (1, 1, 1, 'Pay band 1 (lowest)', 'Pay band 1 (lowest)', 'PVI'),
        (11, 1, 1, 'Low', 'Pay band 1 (Lowest)', 'MDI'),
        (12, 2, 2, 'Medium', 'Pay band 2', 'MDI'),
        (13, 3, 3, 'High', 'Pay band 3 (highest)', 'MDI');
+
+--------------------
+--- Appointments ---
+--------------------
+
+--
+-- Appointment categories
+--
+
+INSERT INTO appointment_category (appointment_category_id, code, description) VALUES (1, 'AC2', 'Appointment Category 2');
+INSERT INTO appointment_category (appointment_category_id, code, description, active, display_order) VALUES (2, 'LAC2', 'Legacy Appointment Category 2', false, 2);
+INSERT INTO appointment_category (appointment_category_id, code, description, display_order) VALUES (3, 'AC1', 'Appointment Category 1', 3);
+INSERT INTO appointment_category (appointment_category_id, code, description) VALUES (4, 'AC3', 'Appointment Category 3');
+INSERT INTO appointment_category (appointment_category_id, code, description, active, display_order) VALUES (5, 'LAC1', 'Legacy Appointment Category 1', false, 1);

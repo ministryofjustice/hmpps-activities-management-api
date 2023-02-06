@@ -70,3 +70,6 @@ sonar-project.properties
 
 #Helm
 **/Chart.lock
+
+# MacOS files
+.DS_Store
