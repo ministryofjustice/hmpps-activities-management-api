@@ -12,7 +12,8 @@ import java.time.LocalDate
 )
 data class AppointmentSchedule(
   @Schema(
-    description = "The internally generated identifier for this appointment schedule"
+    description = "The internally generated identifier for this appointment schedule",
+    example = "12345"
   )
   val id: Long,
 
@@ -26,37 +27,44 @@ data class AppointmentSchedule(
   val endDate: LocalDate,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Monday"
+    description = "Indicates the appointment reoccurs every Monday",
+    example = "false"
   )
   val mondayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Tuesday"
+    description = "Indicates the appointment reoccurs every Tuesday",
+    example = "true"
   )
   val tuesdayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Wednesday"
+    description = "Indicates the appointment reoccurs every Wednesday",
+    example = "false"
   )
   val wednesdayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Thursday"
+    description = "Indicates the appointment reoccurs every Thursday",
+    example = "false"
   )
   val thursdayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Friday"
+    description = "Indicates the appointment reoccurs every Friday",
+    example = "false"
   )
   val fridayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Saturday"
+    description = "Indicates the appointment reoccurs every Saturday",
+    example = "false"
   )
   val saturdayFlag: Boolean,
 
   @Schema(
-    description = "Indicates the appointment reoccurs every Sunday"
+    description = "Indicates the appointment reoccurs every Sunday",
+    example = "false"
   )
   val sundayFlag: Boolean
 )

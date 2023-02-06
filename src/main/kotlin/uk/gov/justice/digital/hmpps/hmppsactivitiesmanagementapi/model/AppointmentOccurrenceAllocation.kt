@@ -12,7 +12,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 data class AppointmentOccurrenceAllocation(
   @Schema(
-    description = "The internally generated identifier for this appointment allocation"
+    description = "The internally generated identifier for this appointment allocation",
+    example = "123456"
   )
   val id: Long,
 
@@ -23,7 +24,8 @@ data class AppointmentOccurrenceAllocation(
   val prisonerNumber: String,
 
   @Schema(
-    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS"
+    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
+    example = "456"
   )
   val bookingId: Long
 )

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -19,7 +20,8 @@ import java.time.LocalTime
 )
 data class AppointmentOccurrence(
   @Schema(
-    description = "The internally generated identifier for this appointment occurrence"
+    description = "The internally generated identifier for this appointment occurrence",
+    example = "123456"
   )
   val id: Long,
 
@@ -28,7 +30,8 @@ data class AppointmentOccurrence(
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
     Should be null if in cell = true
-    """
+    """,
+    example = "123"
   )
   val internalLocationId: Int?,
 
@@ -37,7 +40,8 @@ data class AppointmentOccurrence(
     """
     Flag to indicate if the location of the activity is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
-    """
+    """,
+    example = "false"
   )
   val inCell: Boolean,
 
@@ -47,13 +51,17 @@ data class AppointmentOccurrence(
   val startDate: LocalDate,
 
   @Schema(
-    description = "The starting time of this appointment occurrence"
+    description = "The starting time of this appointment occurrence",
+    example = "13:00"
   )
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
-    description = "The end time of this appointment occurrence"
+    description = "The end time of this appointment occurrence",
+    example = "13:30"
   )
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
   @Schema(
@@ -71,7 +79,8 @@ data class AppointmentOccurrence(
     """
     Supports cancelling of this appointment occurrence. This is different from (soft) deleting the parent appointment
     and can be used to highlight where an appointment has been cancelled on unlock lists and similar
-    """
+    """,
+    example = "false"
   )
   val cancelled: Boolean,
 
@@ -81,8 +90,7 @@ data class AppointmentOccurrence(
     The date and time this appointment occurrence was last changed.
     Will be null if the appointment occurrence has not been altered independently from the parent appointment
     since it was created
-    """,
-    example = ""
+    """
   )
   val updated: LocalDateTime?,
 

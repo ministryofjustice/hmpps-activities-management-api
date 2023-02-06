@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import java.time.LocalDate
@@ -19,7 +20,8 @@ import java.time.LocalTime
 )
 data class Appointment(
   @Schema(
-    description = "The internally generated identifier for this appointment"
+    description = "The internally generated identifier for this appointment",
+    example = "12345"
   )
   val id: Long,
 
@@ -39,7 +41,7 @@ data class Appointment(
     The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
     Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
     """,
-    example = "SKI, BNI, WEI"
+    example = "SKI"
   )
   val prisonCode: String,
 
@@ -48,7 +50,8 @@ data class Appointment(
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
     Should be null if in cell = true
-    """
+    """,
+    example = "123"
   )
   val internalLocationId: Int?,
 
@@ -57,7 +60,8 @@ data class Appointment(
     """
     Flag to indicate if the location of the activity is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
-    """
+    """,
+    example = "false"
   )
   val inCell: Boolean,
 
@@ -67,13 +71,17 @@ data class Appointment(
   val startDate: LocalDate,
 
   @Schema(
-    description = "The starting time of the appointment or first appointment occurrence in the series"
+    description = "The starting time of the appointment or first appointment occurrence in the series",
+    example = "09:00"
   )
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
-    description = "The end time of the appointment or first appointment occurrence in the series"
+    description = "The end time of the appointment or first appointment occurrence in the series",
+    example = "10:30"
   )
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
   @Schema(
@@ -106,8 +114,7 @@ data class Appointment(
     """
     The date and time this appointment was last changed.
     Will be null if the appointment has not been altered since it was created
-    """,
-    example = ""
+    """
   )
   val updated: LocalDateTime?,
 

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalTime
@@ -13,7 +14,8 @@ import java.time.LocalTime
 )
 data class AppointmentInstance(
   @Schema(
-    description = "The internally generated identifier for this appointment instance"
+    description = "The internally generated identifier for this appointment instance",
+    example = "123456"
   )
   val id: Long,
 
@@ -28,7 +30,7 @@ data class AppointmentInstance(
 
   @Schema(
     description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
-    example = "SKI, BNI, WEI"
+    example = "SKI"
   )
   val prisonCode: String,
 
@@ -37,7 +39,8 @@ data class AppointmentInstance(
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
     Should be null if in cell = true
-    """
+    """,
+    example = "123"
   )
   val internalLocationId: Int?,
 
@@ -46,7 +49,8 @@ data class AppointmentInstance(
     """
     Flag to indicate if the location of the activity is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
-    """
+    """,
+    example = "false"
   )
   val inCell: Boolean,
 
@@ -57,7 +61,8 @@ data class AppointmentInstance(
   val prisonerNumber: String,
 
   @Schema(
-    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS"
+    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
+    example = "456"
   )
   val bookingId: Int,
 
@@ -67,13 +72,17 @@ data class AppointmentInstance(
   val appointmentDate: LocalDate,
 
   @Schema(
-    description = "The starting time of the appointment instance"
+    description = "The starting time of the appointment instance",
+    example = "09:00"
   )
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
-    description = "The end time of the appointment instance"
+    description = "The end time of the appointment instance",
+    example = "10:30"
   )
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
   @Schema(
@@ -91,12 +100,14 @@ data class AppointmentInstance(
     description =
     """
     Simple attendance marking model. Expectation that this will be enhanced to support non attendance reasons in future
-    """
+    """,
+    example = "false"
   )
   val attended: Boolean,
 
   @Schema(
-    description = "Indicates that the parent appointment occurrence was cancelled"
+    description = "Indicates that the parent appointment occurrence was cancelled",
+    example = "false"
   )
   val cancelled: Boolean
 )

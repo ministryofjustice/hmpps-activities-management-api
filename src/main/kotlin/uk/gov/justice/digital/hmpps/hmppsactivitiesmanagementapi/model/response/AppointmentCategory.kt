@@ -17,7 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 data class AppointmentCategory(
   @Schema(
-    description = "The internally generated identifier for this appointment category"
+    description = "The internally generated identifier for this appointment category",
+    example = "51"
   )
   val id: Long,
 
@@ -28,7 +29,7 @@ data class AppointmentCategory(
 
   @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
-    example = "CHAP, MEDO, GYMW"
+    example = "CHAP"
   )
   val code: String,
 
@@ -39,12 +40,14 @@ data class AppointmentCategory(
   val description: String,
 
   @Schema(
-    description = "Flag to indicate if this (sub)category) is active. Only active (sub)categories are valid for create and update requests"
+    description = "Flag to indicate if this (sub)category) is active. Only active (sub)categories are valid for create and update requests",
+    example = "true"
   )
   val active: Boolean,
 
   @Schema(
-    description = "Override to the default of ordering alphabetically by description supporting explicit ordering"
+    description = "Override to the default of ordering alphabetically by description supporting explicit ordering",
+    example = "1"
   )
   val displayOrder: Int?
 )
