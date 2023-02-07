@@ -38,5 +38,5 @@ class AppointmentCategoryController(private val appointmentCategoryService: Appo
   )
   @GetMapping
   @ResponseBody
-  fun getCategories(): List<AppointmentCategory> = appointmentCategoryService.getAll()
+  fun getAppointmentCategories(): List<AppointmentCategory> = appointmentCategoryService.getAll()
 }
