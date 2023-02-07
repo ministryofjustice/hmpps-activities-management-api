@@ -174,6 +174,8 @@ internal fun activitySchedule(
     }
   }
 
+internal fun allocation() = activitySchedule(activityEntity()).allocations().first()
+
 private fun activityWaiting(
   activity: Activity,
   timestamp: LocalDateTime

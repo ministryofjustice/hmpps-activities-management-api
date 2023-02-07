@@ -36,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot as ModelActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
@@ -461,20 +460,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   )
 }
 
-fun List<EntityAllocation>.toModelAllocations() = map {
-  ModelAllocation(
-    id = it.allocationId,
-    prisonerNumber = it.prisonerNumber,
-    bookingId = it.bookingId,
-    payBandId = it.payBand.prisonPayBandId,
-    startDate = it.startDate,
-    endDate = it.endDate,
-    allocatedTime = it.allocatedTime,
-    allocatedBy = it.allocatedBy,
-    activitySummary = it.activitySummary(),
-    scheduleDescription = it.scheduleDescription()
-  )
-}
+fun List<EntityAllocation>.toModelAllocations() = map { it.toModel() }
 
 fun List<EntityAllocation>.toModelPrisonerAllocations() =
   toModelAllocations().groupBy { it.prisonerNumber }.map { PrisonerAllocations(it.key, it.value) }

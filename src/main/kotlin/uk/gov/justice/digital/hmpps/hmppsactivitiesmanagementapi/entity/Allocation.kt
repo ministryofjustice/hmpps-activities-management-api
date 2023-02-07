@@ -11,6 +11,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Entity
 @Table(name = "allocation")
@@ -50,4 +51,18 @@ data class Allocation(
   fun activitySummary() = activitySchedule.activity.summary
 
   fun scheduleDescription() = activitySchedule.description
+
+  fun toModel() =
+    ModelAllocation(
+      id = allocationId,
+      prisonerNumber = prisonerNumber,
+      bookingId = bookingId,
+      payBandId = payBand.prisonPayBandId,
+      startDate = startDate,
+      endDate = endDate,
+      allocatedTime = allocatedTime,
+      allocatedBy = allocatedBy,
+      activitySummary = activitySummary(),
+      scheduleDescription = activitySchedule.description
+    )
 }
