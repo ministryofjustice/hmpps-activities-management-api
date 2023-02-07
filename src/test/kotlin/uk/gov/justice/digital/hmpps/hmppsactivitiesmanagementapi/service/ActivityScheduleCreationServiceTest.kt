@@ -12,10 +12,12 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
@@ -24,7 +26,8 @@ class ActivityScheduleCreationServiceTest {
 
   private val repository: ActivityRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
-  private val service = ActivityScheduleCreationService(repository, prisonApiClient)
+  private val prisonRegimeService: PrisonRegimeService = mock()
+  private val service = ActivityScheduleCreationService(repository, prisonApiClient, prisonRegimeService)
   private val location = Location(
     locationId = 1,
     locationType = "type",
@@ -44,6 +47,7 @@ class ActivityScheduleCreationServiceTest {
     whenever(repository.findById(1)).thenReturn(Optional.of(activity))
     whenever(repository.saveAndFlush(activity)).thenReturn(activity)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("MDI")).thenReturn(transform(prisonRegime()))
 
     val request = ActivityScheduleCreateRequest(
       description = "Test schedule",
@@ -58,7 +62,7 @@ class ActivityScheduleCreationServiceTest {
         ActivityScheduleSlot(
           id = -1,
           startTime = LocalTime.of(9, 0),
-          endTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(12, 0),
           daysOfWeek = listOf("Mon")
         )
       )

@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -8,8 +10,11 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventPriority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
@@ -17,7 +22,9 @@ class PrisonRegimeServiceTest {
 
   private val eventPriorityRepository: EventPriorityRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository)
+  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
+
+  private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository, prisonRegimeRepository)
 
   @Test
   fun `default priorities are returned when no priorities for prison`() {
@@ -177,5 +184,18 @@ class PrisonRegimeServiceTest {
         prisonCode = "DEFAULT"
       )
     )
+  }
+
+  @Test
+  fun `returns a prison regime for known prison code`() {
+    whenever(prisonRegimeRepository.findByPrisonCode("PVI")).thenReturn(prisonRegime())
+
+    assertThat(service.getPrisonRegimeByPrisonCode("PVI")).isInstanceOf(PrisonRegime::class.java)
+  }
+
+  @Test
+  fun `throws entity not found exception for unknown prison code`() {
+    assertThatThrownBy { service.getPrisonRegimeByPrisonCode("PVX") }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("PVX")
   }
 }

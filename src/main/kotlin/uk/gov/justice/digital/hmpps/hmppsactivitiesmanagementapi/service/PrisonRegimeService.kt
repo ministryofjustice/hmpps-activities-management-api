@@ -1,16 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 
 @Service
 class PrisonRegimeService(
   private val eventPriorityRepository: EventPriorityRepository,
-  private val prisonPayBandRepository: PrisonPayBandRepository
+  private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val prisonRegimeRepository: PrisonRegimeRepository
 ) {
 
   /**
@@ -34,6 +38,13 @@ class PrisonRegimeService(
     prisonPayBandRepository.findByPrisonCode(code)
       .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
       .map { it.toModelPrisonPayBand() }
+
+  /**
+   * Returns the prison regime configured for a prison (if any).
+   */
+  fun getPrisonRegimeByPrisonCode(code: String) = transform(
+    prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code)
+  )
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)
