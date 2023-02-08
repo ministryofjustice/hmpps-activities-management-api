@@ -1,8 +1,8 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@6.0
-  codecov: codecov/codecov@3.2.0
+  hmpps: ministryofjustice/hmpps@7.1.0
+  codecov: codecov/codecov@3.2.4
 
 parameters:
   alerts-slack-channel:
