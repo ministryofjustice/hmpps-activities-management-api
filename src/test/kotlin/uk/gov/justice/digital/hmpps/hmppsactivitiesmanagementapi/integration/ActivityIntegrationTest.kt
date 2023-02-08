@@ -11,6 +11,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand1
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand2
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand3
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
@@ -263,7 +266,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(pay).hasSize(1)
       pay.map {
         assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.prisonPayBand.id).isEqualTo(1)
+        assertThat(it.prisonPayBand).isEqualTo(testPayBand1)
         assertThat(it.rate).isEqualTo(125)
         assertThat(it.pieceRate).isEqualTo(150)
         assertThat(it.pieceRateItems).isEqualTo(1)
@@ -287,7 +290,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.allocatedPrisoner("A11111A")) {
-      assertThat(payBandId).isEqualTo(1)
+      assertThat(prisonPayBand).isEqualTo(testPayBand1)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -295,7 +298,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.allocatedPrisoner("A22222A")) {
-      assertThat(payBandId).isEqualTo(2)
+      assertThat(prisonPayBand).isEqualTo(testPayBand2)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -313,7 +316,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.allocatedPrisoner("A11111A")) {
-      assertThat(payBandId).isEqualTo(3)
+      assertThat(prisonPayBand).isEqualTo(testPayBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -321,7 +324,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.allocatedPrisoner("A22222A")) {
-      assertThat(payBandId).isEqualTo(3)
+      assertThat(prisonPayBand).isEqualTo(testPayBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -342,7 +345,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       pay.map {
         assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.prisonPayBand.id).isEqualTo(1)
+        assertThat(it.prisonPayBand).isEqualTo(testPayBand1)
         assertThat(it.rate).isEqualTo(75)
         assertThat(it.pieceRate).isEqualTo(0)
         assertThat(it.pieceRateItems).isEqualTo(0)
@@ -366,7 +369,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.allocatedPrisoner("B11111B")) {
-      assertThat(payBandId).isEqualTo(1)
+      assertThat(prisonPayBand).isEqualTo(testPayBand1)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -374,7 +377,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.allocatedPrisoner("B22222B")) {
-      assertThat(payBandId).isEqualTo(2)
+      assertThat(prisonPayBand).isEqualTo(testPayBand2)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -393,7 +396,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.allocatedPrisoner("B11111B")) {
-      assertThat(payBandId).isEqualTo(3)
+      assertThat(prisonPayBand).isEqualTo(testPayBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -401,7 +404,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.allocatedPrisoner("B22222B")) {
-      assertThat(payBandId).isEqualTo(3)
+      assertThat(prisonPayBand).isEqualTo(testPayBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")

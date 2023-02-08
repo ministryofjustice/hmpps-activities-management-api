@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
 @Entity
 @Table(name = "prison_pay_band")
@@ -29,4 +30,14 @@ data class PrisonPayBand(
 
   @Column(name = "nomis_pay_band", nullable = false)
   val nomisPayBand: Int
-)
+) {
+  fun toModel(): ModelPrisonPayBand = ModelPrisonPayBand(
+
+    id = prisonPayBandId,
+    displaySequence = displaySequence,
+    alias = payBandAlias,
+    description = payBandDescription,
+    nomisPayBand = nomisPayBand,
+    prisonCode = prisonCode
+  )
+}

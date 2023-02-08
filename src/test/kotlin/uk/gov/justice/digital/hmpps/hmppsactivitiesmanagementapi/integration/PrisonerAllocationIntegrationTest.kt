@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand1
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand3
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import java.time.LocalDate
@@ -29,7 +31,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          payBandId = 1,
+          prisonPayBand = testPayBand1,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -41,7 +43,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          payBandId = 3,
+          prisonPayBand = testPayBand3,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -58,7 +60,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          payBandId = 2,
+          prisonPayBand = testPayBand2,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -70,7 +72,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          payBandId = 3,
+          prisonPayBand = testPayBand3,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -99,7 +101,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          payBandId = 1,
+          prisonPayBand = testPayBand1,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -111,7 +113,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          payBandId = 3,
+          prisonPayBand = testPayBand3,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -128,7 +130,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          payBandId = 2,
+          prisonPayBand = testPayBand2,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -140,7 +142,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          payBandId = 3,
+          prisonPayBand = testPayBand3,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -157,7 +159,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10003,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          payBandId = 2,
+          prisonPayBand = testPayBand2,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = LocalDate.of(2022, 10, 11),
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
