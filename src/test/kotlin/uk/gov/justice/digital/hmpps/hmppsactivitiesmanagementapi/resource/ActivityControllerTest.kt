@@ -334,6 +334,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           summary = "Maths",
           description = "Beginner maths",
           riskLevel = "High",
+          minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,

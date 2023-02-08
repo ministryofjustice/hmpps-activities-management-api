@@ -63,6 +63,8 @@ data class Activity(
 
   var riskLevel: String? = null,
 
+  var minimumIncentiveNomisCode: String? = null,
+
   var minimumIncentiveLevel: String? = null,
 
   val createdTime: LocalDateTime,
@@ -114,6 +116,7 @@ data class Activity(
     description = description,
     category = activityCategory.toModel(),
     riskLevel = riskLevel,
+    minimumIncentiveNomisCode = minimumIncentiveNomisCode,
     minimumIncentiveLevel = minimumIncentiveLevel,
   )
 

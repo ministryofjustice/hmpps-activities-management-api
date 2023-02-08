@@ -35,6 +35,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         summary = "Maths",
         description = "Maths Level 1",
         riskLevel = "High",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
@@ -65,6 +66,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         summary = "Maths",
         description = "Maths Level 1",
         riskLevel = "High",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,

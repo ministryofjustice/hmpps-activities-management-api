@@ -59,6 +59,10 @@ data class ActivityCreateRequest(
   @Schema(description = "The most recent risk assessment level for this activity", example = "High")
   val riskLevel: String?,
 
+  @field:Size(max = 10, message = "Minimum incentive level NOMIS code should not exceed {max} characters")
+  @Schema(description = "The NOMIS code for the minimum incentive/earned privilege level for this activity", example = "BAS")
+  val minimumIncentiveNomisCode: String?,
+
   @field:Size(max = 10, message = "Minimum incentive level should not exceed {max} characters")
   @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
   val minimumIncentiveLevel: String?,

@@ -73,6 +73,7 @@ fun transform(activity: EntityActivity) =
     startDate = activity.startDate,
     endDate = activity.endDate,
     riskLevel = activity.riskLevel,
+    minimumIncentiveNomisCode = activity.minimumIncentiveNomisCode,
     minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy

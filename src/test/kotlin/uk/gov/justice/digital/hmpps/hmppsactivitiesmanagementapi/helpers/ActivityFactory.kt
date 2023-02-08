@@ -56,6 +56,7 @@ internal fun activityEntity(
     summary = summary,
     description = description,
     riskLevel = "High",
+    minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",
     startDate = startDate,
     endDate = endDate,
