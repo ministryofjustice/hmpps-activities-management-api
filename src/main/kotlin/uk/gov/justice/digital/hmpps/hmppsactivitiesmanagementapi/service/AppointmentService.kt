@@ -24,18 +24,17 @@ class AppointmentService(
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
-  //@Transactional
+  // @Transactional
   fun createAppointment(request: AppointmentCreateRequest): Appointment {
+    appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId)
+    // val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId)
 
-
-    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId)
-
-    val prisoners = request.prisonerNumbers.map{ prisonerNumber ->
-      prisonApiClient.getPrisonerDetails(prisonerNumber, false)
+//    val prisoners = request.prisonerNumbers.map{ prisonerNumber ->
+//      prisonApiClient.getPrisonerDetails(prisonerNumber, false)
 //        .let { prisoner -> prisoner ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
 //        .let { prisoner -> prisoner.activeFlag ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
 //        .let { prisoner -> prisoner.agencyId != request.prisonCode ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
-    }
+//    }
 
     TODO("Not yet implemented")
   }

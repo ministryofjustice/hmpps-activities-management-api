@@ -12,7 +12,7 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
   fun findByPrisonerNumbers(prisonerNumbers: List<String>): Mono<List<Prisoner>> {
     return prisonerSearchApiWebClient.post()
       .uri("/prisoner-search/prisoner-numbers")
-      .bodyValue(prisonerNumbers)
+      .bodyValue(PrisonerNumbers(prisonerNumbers))
       .retrieve()
       .bodyToMono(typeReference<List<Prisoner>>())
   }
