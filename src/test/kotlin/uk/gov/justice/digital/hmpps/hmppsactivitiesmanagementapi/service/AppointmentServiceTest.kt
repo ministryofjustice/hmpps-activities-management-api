@@ -7,13 +7,27 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.util.Optional
 
 class AppointmentServiceTest {
+  private val appointmentCategoryRepository: AppointmentCategoryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
+  private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository = mock()
+  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
 
-  private val service = AppointmentService(appointmentRepository)
+  private val service = AppointmentService(
+    appointmentCategoryRepository,
+    appointmentRepository,
+    appointmentOccurrenceRepository,
+    appointmentOccurrenceAllocationRepository,
+    appointmentInstanceRepository
+  )
 
   @Test
   fun `getAppointmentById returns an appointment for known appointment id`() {

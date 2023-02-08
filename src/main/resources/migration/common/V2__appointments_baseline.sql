@@ -97,7 +97,7 @@ CREATE TABLE appointment_instance (
     end_time                    time,
     comment                     text,
     attended                    boolean,
-    cancelled                   boolean
+    cancelled                   boolean     NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_appointment_instance_appointment_occurrence_id ON appointment_instance (appointment_occurrence_id);

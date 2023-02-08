@@ -104,7 +104,7 @@ data class AppointmentInstance(
     """,
     example = "false"
   )
-  val attended: Boolean,
+  val attended: Boolean?,
 
   @Schema(
     description = "Indicates that the parent appointment occurrence was cancelled",

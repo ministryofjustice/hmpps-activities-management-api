@@ -121,6 +121,6 @@ class AppointmentController(
     @Valid @RequestBody @Parameter(
       description = "The create request with the new appointment or series of appointment occurrences details",
       required = true
-    ) appointmentCreateRequest: AppointmentCreateRequest
-  ): Appointment = appointmentService.createAppointment(appointmentCreateRequest)
+    ) request: AppointmentCreateRequest
+  ): Appointment = appointmentService.createAppointment(request)
 }
