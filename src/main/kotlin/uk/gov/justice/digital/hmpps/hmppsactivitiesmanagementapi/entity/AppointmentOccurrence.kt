@@ -28,7 +28,7 @@ data class AppointmentOccurrence(
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointment: Appointment,
 
-  var internalLocationId: Int?,
+  var internalLocationId: Long?,
 
   var inCell: Boolean,
 

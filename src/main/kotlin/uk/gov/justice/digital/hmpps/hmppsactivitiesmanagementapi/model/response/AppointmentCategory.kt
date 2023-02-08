@@ -35,7 +35,7 @@ data class AppointmentCategory(
 
   @Schema(
     description = "The description of the appointment category",
-    example = "Chaplaincy, Medical - Doctor, Gym - Weights"
+    example = "Chaplaincy"
   )
   val description: String,
 

@@ -1,6 +1,6 @@
 CREATE TABLE appointment_category (
     appointment_category_id bigserial       NOT NULL CONSTRAINT appointment_category_pk PRIMARY KEY,
-    parent_id               integer         REFERENCES appointment_category (appointment_category_id),
+    parent_id               bigint          REFERENCES appointment_category (appointment_category_id),
     code                    varchar(12)     NOT NULL,
     description             varchar(100)    NOT NULL,
     active                  boolean         NOT NULL DEFAULT true,
@@ -14,9 +14,9 @@ CREATE INDEX idx_appointment_category_display_order ON appointment_category (dis
 
 CREATE TABLE appointment (
     appointment_id          bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
-    appointment_category_id integer         NOT NULL REFERENCES appointment_category (appointment_category_id),
+    appointment_category_id bigint          NOT NULL REFERENCES appointment_category (appointment_category_id),
     prison_code             varchar(6)      NOT NULL,
-    internal_location_id    integer,
+    internal_location_id    bigint,
     in_cell                 boolean         NOT NULL DEFAULT false,
     start_date              date            NOT NULL,
     start_time              time            NOT NULL,
@@ -55,7 +55,7 @@ CREATE INDEX idx_appointment_schedule_end_date ON appointment_schedule (end_date
 CREATE TABLE appointment_occurrence (
      appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,
      appointment_id             bigint          NOT NULL REFERENCES appointment (appointment_id),
-     internal_location_id       integer,
+     internal_location_id       bigint,
      in_cell                    boolean         NOT NULL DEFAULT false,
      start_date                 date            NOT NULL,
      start_time                 time            NOT NULL,
@@ -74,9 +74,9 @@ CREATE INDEX idx_appointment_occurrence_end_time ON appointment_occurrence (end_
 
 CREATE TABLE appointment_occurrence_allocation (
     appointment_occurrence_allocation_id    bigserial   NOT NULL CONSTRAINT appointment_allocation_pk PRIMARY KEY,
-    appointment_occurrence_id               integer     NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
+    appointment_occurrence_id               bigint      NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
     prisoner_number                         varchar(10) NOT NULL,
-    booking_id                              integer     NOT NULL
+    booking_id                              bigint      NOT NULL
 );
 
 CREATE INDEX idx_appointment_occurrence_allocation_appointment_occurrence_id ON appointment_occurrence_allocation (appointment_occurrence_id);
@@ -85,13 +85,13 @@ CREATE INDEX idx_appointment_occurrence_allocation_booking_id ON appointment_occ
 
 CREATE TABLE appointment_instance (
     appointment_instance_id     bigserial   NOT NULL CONSTRAINT appointment_instance_pk PRIMARY KEY,
-    appointment_occurrence_id   integer     NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
-    appointment_category_id     integer     NOT NULL REFERENCES appointment_category (appointment_category_id),
+    appointment_occurrence_id   bigint      NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
+    appointment_category_id     bigint      NOT NULL REFERENCES appointment_category (appointment_category_id),
     prison_code                 varchar(6)  NOT NULL,
-    internal_location_id        integer,
+    internal_location_id        bigint,
     in_cell                     boolean     NOT NULL DEFAULT false,
     prisoner_number             varchar(10) NOT NULL,
-    booking_id                  integer     NOT NULL,
+    booking_id                  bigint      NOT NULL,
     appointment_date            date        NOT NULL,
     start_time                  time        NOT NULL,
     end_time                    time,

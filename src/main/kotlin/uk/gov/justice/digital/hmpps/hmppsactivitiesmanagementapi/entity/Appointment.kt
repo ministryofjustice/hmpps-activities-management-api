@@ -34,7 +34,7 @@ data class Appointment(
 
   var prisonCode: String,
 
-  var internalLocationId: Int?,
+  var internalLocationId: Long?,
 
   var inCell: Boolean,
 

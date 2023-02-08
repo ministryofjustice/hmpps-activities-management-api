@@ -42,7 +42,7 @@ data class AppointmentInstance(
     """,
     example = "123"
   )
-  val internalLocationId: Int?,
+  val internalLocationId: Long?,
 
   @Schema(
     description =
@@ -64,7 +64,7 @@ data class AppointmentInstance(
     description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
     example = "456"
   )
-  val bookingId: Int,
+  val bookingId: Long,
 
   @Schema(
     description = "The date of the appointment instance"
