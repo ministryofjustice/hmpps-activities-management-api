@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
@@ -17,13 +18,24 @@ class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
   private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
-  private val appointmentInstanceRepository: AppointmentInstanceRepository
+  private val appointmentInstanceRepository: AppointmentInstanceRepository,
+  private val prisonApiClient: PrisonApiClient
 ) {
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
+  //@Transactional
   fun createAppointment(request: AppointmentCreateRequest): Appointment {
+
+
     val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId)
+
+    val prisoners = request.prisonerNumbers.map{ prisonerNumber ->
+      prisonApiClient.getPrisonerDetails(prisonerNumber, false)
+//        .let { prisoner -> prisoner ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
+//        .let { prisoner -> prisoner.activeFlag ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
+//        .let { prisoner -> prisoner.agencyId != request.prisonCode ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
+    }
 
     TODO("Not yet implemented")
   }
