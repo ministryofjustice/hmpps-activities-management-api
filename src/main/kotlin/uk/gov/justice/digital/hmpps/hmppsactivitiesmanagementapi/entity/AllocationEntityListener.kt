@@ -24,7 +24,7 @@ class AllocationEntityListener {
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocation.allocationId)
     }.onFailure {
       log.error(
-        "Failed to send allocation creation event for allocation ${allocation.allocationId}",
+        "Failed to send prisoner allocated event for allocation ${allocation.allocationId}",
         it
       )
     }
