@@ -4,9 +4,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -20,32 +17,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentService(
   private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val appointmentRepository: AppointmentRepository,
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
-  private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
-  private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient
 ) {
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
-  // @Transactional
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
-    appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId)
+    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
 
-    // val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
+    // TODO: Check that the supplied prison code is in the principle's case load
 
-    // prisoners.filter { prisoner -> prisoner.prisonId !== request.prisonCode }
-    // val inactivePrisoners = prisoners.filter { prisoner -> prisoner.prisonId !== request.prisonCode }
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
+      .filter { prisoner -> prisoner.prisonId === request.prisonCode }
+    val validPrisonerNumbers = prisoners.map { prisoner -> prisoner.prisonerNumber }
 
-    // val missingPrisoners = request.prisonerNumbers.filter { number -> prisoners.all { prisoner -> prisoner.prisonerNumber === number } }
-
-//    val prisoners = request.prisonerNumbers.map{ prisonerNumber ->
-//      prisonApiClient.getPrisonerDetails(prisonerNumber, false)
-//        .let { prisoner -> prisoner ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-//        .let { prisoner -> prisoner.activeFlag ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
-//        .let { prisoner -> prisoner.agencyId != request.prisonCode ?: throw IllegalStateException("Prisoner $prisonerNumber is not active.") }
-//    }
+    request.prisonerNumbers.filter { number -> !validPrisonerNumbers.contains(number) }.let {
+      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) ${it.joinToString(", ")} not found, were inactive or are residents of a different prison.")
+    }
 
     return AppointmentEntity(
       category = category,
@@ -67,11 +55,11 @@ class AppointmentService(
           startTime = this.startTime,
           endTime = this.endTime
         ).apply {
-          request.prisonerNumbers.map { number ->
+          prisoners.map { prisoner ->
             AppointmentOccurrenceAllocationEntity(
               appointmentOccurrence = this,
-              prisonerNumber = number,
-              bookingId = -1
+              prisonerNumber = prisoner.prisonerNumber,
+              bookingId = prisoner.bookingId!!.toLong()
             )
           }.forEach { allocation -> this.addAllocation(allocation) }
         }
