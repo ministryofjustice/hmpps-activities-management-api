@@ -122,5 +122,5 @@ class AppointmentController(
       description = "The create request with the new appointment or series of appointment occurrences details",
       required = true
     ) request: AppointmentCreateRequest
-  ): Appointment = appointmentService.createAppointment(request)
+  ): Appointment = appointmentService.createAppointment(request, principal)
 }

@@ -38,13 +38,13 @@ data class AppointmentOccurrence(
 
   var endTime: LocalTime?,
 
-  var comment: String,
+  var comment: String? = null,
 
-  var cancelled: Boolean,
+  var cancelled: Boolean = false,
 
-  var updated: LocalDateTime?,
+  var updated: LocalDateTime? = null,
 
-  var updatedBy: String?
+  var updatedBy: String? = null
 ) {
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

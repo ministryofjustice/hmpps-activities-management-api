@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
@@ -20,13 +21,15 @@ class AppointmentServiceTest {
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
 
   private val service = AppointmentService(
     appointmentCategoryRepository,
     appointmentRepository,
     appointmentOccurrenceRepository,
     appointmentOccurrenceAllocationRepository,
-    appointmentInstanceRepository
+    appointmentInstanceRepository,
+    prisonerSearchApiClient
   )
 
   @Test

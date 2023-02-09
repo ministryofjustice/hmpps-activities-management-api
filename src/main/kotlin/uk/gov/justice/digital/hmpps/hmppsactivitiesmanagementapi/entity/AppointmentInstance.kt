@@ -43,11 +43,11 @@ data class AppointmentInstance(
 
   var endTime: LocalTime?,
 
-  var comment: String,
+  var comment: String? = null,
 
-  val attended: Boolean?,
+  val attended: Boolean? = null,
 
-  val cancelled: Boolean,
+  val cancelled: Boolean = false,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,

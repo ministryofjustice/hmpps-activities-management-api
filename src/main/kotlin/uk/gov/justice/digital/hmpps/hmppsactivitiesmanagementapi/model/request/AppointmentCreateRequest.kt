@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 import java.time.LocalTime
@@ -15,12 +16,12 @@ import java.time.LocalTime
   """
 )
 data class AppointmentCreateRequest(
-  @field:NotEmpty(message = "Category id must be supplied")
+  @field:NotNull(message = "Category id must be supplied")
   @Schema(
     description = "The category id for this appointment. Must exist and be active",
     example = "21"
   )
-  val categoryId: Long,
+  val categoryId: Long?,
 
   @field:NotEmpty(message = "Prison code must be supplied")
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
@@ -28,7 +29,7 @@ data class AppointmentCreateRequest(
     description = "The NOMIS prison code where this activity takes place",
     example = "PVI"
   )
-  val prisonCode: String,
+  val prisonCode: String?,
 
   @Schema(
     description =
@@ -50,28 +51,28 @@ data class AppointmentCreateRequest(
   )
   val inCell: Boolean,
 
-  @field:NotEmpty(message = "Start date must be supplied")
+  @field:NotNull(message = "Start date must be supplied")
   @Schema(
     description = "The date of the appointment or first appointment occurrence in the series"
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
+  val startDate: LocalDate?,
 
-  @field:NotEmpty(message = "Start time must be supplied")
+  @field:NotNull(message = "Start time must be supplied")
   @Schema(
     description = "The starting time of the appointment or first appointment occurrence in the series",
     example = "09:00"
   )
   @JsonFormat(pattern = "HH:mm")
-  val startTime: LocalTime,
+  val startTime: LocalTime?,
 
-  @field:NotEmpty(message = "End time must be supplied")
+  @field:NotNull(message = "End time must be supplied")
   @Schema(
     description = "The end time of the appointment or first appointment occurrence in the series",
     example = "10:30"
   )
   @JsonFormat(pattern = "HH:mm")
-  val endTime: LocalTime,
+  val endTime: LocalTime?,
 
   @Schema(
     description =
@@ -81,12 +82,12 @@ data class AppointmentCreateRequest(
     """,
     example = "This appointment will help adjusting to life outside of prison"
   )
-  val comment: String,
+  val comment: String = "",
 
   @field:NotEmpty(message = "At least one prisoner number must be supplied")
   @Schema(
     description = "The prisoner or prisoners to allocate to the created appointment or series of appointment occurrences",
-    example = "['A1234BC']"
+    example = "[\"A1234BC\"]"
   )
-  val prisonerNumbers: List<String>
+  val prisonerNumbers: List<String> = emptyList()
 )

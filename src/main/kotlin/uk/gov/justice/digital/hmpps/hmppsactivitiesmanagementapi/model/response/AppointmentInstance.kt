@@ -95,7 +95,7 @@ data class AppointmentInstance(
     """,
     example = "This appointment will help prisoner A1234BC adjust to life outside of prison"
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description =

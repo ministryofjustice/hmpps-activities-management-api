@@ -60,7 +60,7 @@ CREATE TABLE appointment_occurrence (
      start_date                 date            NOT NULL,
      start_time                 time            NOT NULL,
      end_time                   time,
-     comment                    text            NOT NULL DEFAULT '',
+     comment                    text,
      cancelled                  boolean         NOT NULL DEFAULT false,
      updated                    timestamp,
      updated_by                 varchar(100)

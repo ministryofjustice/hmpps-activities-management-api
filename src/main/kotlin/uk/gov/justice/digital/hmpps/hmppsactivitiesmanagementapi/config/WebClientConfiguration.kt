@@ -63,7 +63,7 @@ class WebClientConfiguration(
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder
   ): WebClient {
-    return getOAuthWebClient(
+    return getPrisonApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonApiUrl
@@ -75,7 +75,25 @@ class WebClientConfiguration(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder
   ): WebClient {
-    return getOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
+    return getPrisonApiOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
+  }
+
+  @Bean
+  fun prisonerSearchApiHealthWebClient(): WebClient {
+    return WebClient.builder().baseUrl(prisonerSearchApiUrl).build()
+  }
+
+  @Bean
+  fun prisonerSearchApiUserWebClient(): WebClient {
+    val exchangeStrategies = ExchangeStrategies.builder()
+      .codecs { configurer: ClientCodecConfigurer -> configurer.defaultCodecs().maxInMemorySize(-1) }
+      .build()
+
+    return WebClient.builder()
+      .baseUrl(prisonerSearchApiUrl)
+      .filter(addAuthHeaderFilterFunction())
+      .exchangeStrategies(exchangeStrategies)
+      .build()
   }
 
   @Bean
@@ -85,20 +103,40 @@ class WebClientConfiguration(
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder
   ): WebClient {
-    return getOAuthWebClient(
+    return getPrisonerSearchApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonerSearchApiUrl
     )
   }
 
-  private fun getOAuthWebClient(
+  @Bean
+  fun prisonerSearchApiAppWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder
+  ): WebClient {
+    return getPrisonerSearchApiOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl)
+  }
+
+  private fun getPrisonApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
     rootUri: String
   ): WebClient {
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prison-api")
+    return builder.baseUrl(rootUri)
+      .apply(oauth2Client.oauth2Configuration())
+      .build()
+  }
+
+  private fun getPrisonerSearchApiOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+    rootUri: String
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId("prisoner-search-api")
     return builder.baseUrl(rootUri)
       .apply(oauth2Client.oauth2Configuration())
       .build()
