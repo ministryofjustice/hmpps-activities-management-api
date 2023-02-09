@@ -22,7 +22,7 @@ Tools required:
 
 `$ ./gradlew`
 
-`$ ./gradlew clean build`
+`$ ./gradlew clean build` 
 
 ## Running the service
 

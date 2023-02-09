@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rollout
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -76,7 +77,14 @@ class TransformFunctionsTest {
               id = -1,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              payBandId = lowPayBand.prisonPayBandId,
+              prisonPayBand = PrisonPayBand(
+                id = lowPayBand.prisonPayBandId,
+                displaySequence = lowPayBand.displaySequence,
+                alias = lowPayBand.payBandAlias,
+                description = lowPayBand.payBandDescription,
+                prisonCode = lowPayBand.prisonCode,
+                nomisPayBand = lowPayBand.nomisPayBand
+              ),
               startDate = timestamp.toLocalDate(),
               endDate = null,
               allocatedTime = timestamp,

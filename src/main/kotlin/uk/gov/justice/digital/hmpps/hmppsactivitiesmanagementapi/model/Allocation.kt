@@ -21,8 +21,8 @@ data class Allocation(
 
   val scheduleDescription: String,
 
-  @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band identifier given to this prisoner", example = "1")
-  val payBandId: Long,
+  @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
+  val prisonPayBand: PrisonPayBand,
 
   @Schema(description = "The date when the prisoner will start the activity", example = "10/09/2022")
   @JsonFormat(pattern = "dd/MM/yyyy")

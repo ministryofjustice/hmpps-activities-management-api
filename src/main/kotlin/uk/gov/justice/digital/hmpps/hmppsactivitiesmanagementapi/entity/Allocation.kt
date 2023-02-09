@@ -57,7 +57,7 @@ data class Allocation(
       id = allocationId,
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
-      payBandId = payBand.prisonPayBandId,
+      prisonPayBand = payBand.toModel(),
       startDate = startDate,
       endDate = endDate,
       allocatedTime = allocatedTime,
