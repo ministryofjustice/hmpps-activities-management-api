@@ -111,6 +111,7 @@ class TransformFunctionsTest {
       assertThat(pay).containsExactly(
         ModelActivityPay(
           id = -1,
+          incentiveNomisCode = "BAS",
           incentiveLevel = "Basic",
           prisonPayBand = lowPayBand.toModelPrisonPayBand(),
           rate = 30,

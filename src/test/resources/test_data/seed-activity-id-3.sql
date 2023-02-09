@@ -10,17 +10,17 @@ values (3, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1'
 insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by)
 values (4, 'PVI', 2, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-10-21', null, null, 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER');
 
-insert into activity_pay(activity_pay_id, activity_id, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (1, 1, 'Basic', 1, 101, 0, 0);
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (1, 1, 'BAS', 'Basic', 1, 101, 0, 0);
 
-insert into activity_pay(activity_pay_id, activity_id, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (2, 2, 'Standard', 2, 102, 0, 0);
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (2, 2, 'STD', 'Standard', 2, 102, 0, 0);
 
-insert into activity_pay(activity_pay_id, activity_id, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (3, 3, 'Enhanced', 3, 103, 0, 0);
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (3, 3, 'ENH', 'Enhanced', 3, 103, 0, 0);
 
-insert into activity_pay(activity_pay_id, activity_id, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (4, 4, 'Gold', 4, 104, 0, 0);
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (4, 4, 'GLD', 'Gold', 4, 104, 0, 0);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 1, 'Geography AM', 1, 'L1', 'Location MDI 1', 10, '2022-10-01');

@@ -83,6 +83,7 @@ class ActivityService(
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
+          incentiveNomisCode = it.incentiveNomisCode!!,
           incentiveLevel = it.incentiveLevel!!,
           payBand = prisonPayBands[it.payBandId]
             ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),

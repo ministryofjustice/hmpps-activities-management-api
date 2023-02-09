@@ -476,6 +476,7 @@ private fun List<EntitySuspension>.toModelSuspensions() = map {
 private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
     id = it.activityPayId,
+    incentiveNomisCode = it.incentiveNomisCode,
     incentiveLevel = it.incentiveLevel,
     prisonPayBand = it.payBand.toModelPrisonPayBand(),
     rate = it.rate,

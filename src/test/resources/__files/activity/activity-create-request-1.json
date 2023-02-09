@@ -10,6 +10,7 @@
   "minimumIncentiveLevel": "Basic",
   "pay": [
     {
+      "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
       "payBandId": 11,
       "rate": 125,
@@ -17,6 +18,7 @@
       "pieceRateItems": 10
     },
     {
+      "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
       "payBandId": 12,
       "rate": 160,

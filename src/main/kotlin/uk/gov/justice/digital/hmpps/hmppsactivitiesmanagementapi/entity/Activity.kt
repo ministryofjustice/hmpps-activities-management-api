@@ -148,6 +148,7 @@ data class Activity(
   }
 
   fun addPay(
+    incentiveNomisCode: String,
     incentiveLevel: String,
     payBand: PrisonPayBand,
     rate: Int?,
@@ -157,6 +158,7 @@ data class Activity(
     activityPay.add(
       ActivityPay(
         activity = this,
+        incentiveNomisCode = incentiveNomisCode,
         incentiveLevel = incentiveLevel,
         payBand = payBand,
         rate = rate,

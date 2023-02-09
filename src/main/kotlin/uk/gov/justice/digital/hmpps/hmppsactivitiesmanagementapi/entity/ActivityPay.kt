@@ -21,6 +21,8 @@ data class ActivityPay(
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
+  val incentiveNomisCode: String,
+
   var incentiveLevel: String,
 
   @OneToOne

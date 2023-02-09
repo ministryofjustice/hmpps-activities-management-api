@@ -72,6 +72,7 @@ internal fun activityEntity(
     waitingList.add(activityWaiting(this, timestamp))
     if (!noPayBands) {
       this.addPay(
+        incentiveNomisCode = "BAS",
         incentiveLevel = "Basic",
         payBand = lowPayBand,
         rate = 30,
@@ -194,6 +195,7 @@ private fun activityPay(activity: Activity) =
   ActivityPay(
     activityPayId = 1,
     activity = activity,
+    incentiveNomisCode = "BAS",
     incentiveLevel = "Basic",
     payBand = lowPayBand,
     rate = 30,

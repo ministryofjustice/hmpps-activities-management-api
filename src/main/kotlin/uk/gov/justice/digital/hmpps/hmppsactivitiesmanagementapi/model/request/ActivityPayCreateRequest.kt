@@ -9,6 +9,11 @@ import jakarta.validation.constraints.Size
 @Schema(description = "Describes the pay rates and bands to be created for an activity")
 data class ActivityPayCreateRequest(
 
+  @field:NotEmpty(message = "NOMIS code for the minimum incentive level must be supplied")
+  @field:Size(max = 3, message = "NOMIS code for the incentive level should not exceed {max} characters")
+  @Schema(description = "The NOMIS code for the incentive/earned privilege level (nullable)", example = "BAS")
+  val incentiveNomisCode: String?,
+
   @field:NotEmpty(message = "Minimum incentive level must be supplied")
   @field:Size(max = 10, message = "Incentive level should not exceed {max} characters")
   @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")

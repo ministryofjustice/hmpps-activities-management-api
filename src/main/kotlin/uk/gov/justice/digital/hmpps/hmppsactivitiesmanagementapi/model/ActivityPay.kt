@@ -8,8 +8,11 @@ data class ActivityPay(
   @Schema(description = "The internally-generated ID for this activity pay", example = "123456")
   val id: Long,
 
+  @Schema(description = "The NOMIS code for the incentive/earned privilege level (nullable)", example = "BAS")
+  val incentiveNomisCode: String,
+
   @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
-  val incentiveLevel: String? = null,
+  val incentiveLevel: String,
 
   @Schema(description = "The pay band for this activity pay")
   val prisonPayBand: PrisonPayBand,

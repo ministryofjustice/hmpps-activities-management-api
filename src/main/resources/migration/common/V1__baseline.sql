@@ -254,13 +254,14 @@ CREATE INDEX idx_allocation_start_date ON allocation (start_date);
 CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 
 CREATE TABLE activity_pay (
-  activity_pay_id    bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
-  activity_id        bigint    NOT NULL REFERENCES activity (activity_id),
-  incentive_level    varchar(10) NOT NULL,
-  prison_pay_band_id bigint    NOT NULL references prison_pay_band(prison_pay_band_id),
-  rate               integer,
-  piece_rate         integer,
-  piece_rate_items   integer
+  activity_pay_id       bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
+  activity_id           bigint    NOT NULL REFERENCES activity (activity_id),
+  incentive_nomis_code  varchar(3) NOT NULL,
+  incentive_level       varchar(10) NOT NULL,
+  prison_pay_band_id    bigint    NOT NULL references prison_pay_band(prison_pay_band_id),
+  rate                  integer,
+  piece_rate            integer,
+  piece_rate_items      integer
 );
 
 CREATE INDEX idx_activity_pay_activity_id ON activity_pay (activity_id);

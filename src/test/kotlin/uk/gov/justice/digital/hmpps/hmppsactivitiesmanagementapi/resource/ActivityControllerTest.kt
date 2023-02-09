@@ -136,6 +136,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Prison code must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
+            value(containsString("Minimum incentive level NOMIS code must be supplied"))
+            value(containsString("Minimum incentive level must be supplied"))
           }
         }
       }
@@ -172,6 +174,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Prison code must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
+            value(containsString("Minimum incentive level NOMIS code must be supplied"))
+            value(containsString("Minimum incentive level must be supplied"))
           }
         }
       }
@@ -245,6 +249,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Summary should not exceed 50 characters"))
             value(containsString("Pay band must be supplied"))
             value(containsString("Prison code should not exceed 3 characters"))
+            value(containsString("Minimum incentive level NOMIS code should not exceed 3 characters"))
             value(containsString("Minimum incentive level should not exceed 10 characters"))
             value(containsString("Risk level should not exceed 10 characters"))
             value(containsString("Description should not exceed 300 characters"))
