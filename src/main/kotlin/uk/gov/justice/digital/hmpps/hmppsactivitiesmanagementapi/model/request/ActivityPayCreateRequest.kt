@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
@@ -8,9 +9,10 @@ import jakarta.validation.constraints.Size
 @Schema(description = "Describes the pay rates and bands to be created for an activity")
 data class ActivityPayCreateRequest(
 
+  @field:NotEmpty(message = "Minimum incentive level must be supplied")
   @field:Size(max = 10, message = "Incentive level should not exceed {max} characters")
   @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
-  val incentiveLevel: String? = null,
+  val incentiveLevel: String?,
 
   @field:NotNull(message = "Pay band must be supplied")
   @Schema(description = "The id of the prison pay band used", example = "1")

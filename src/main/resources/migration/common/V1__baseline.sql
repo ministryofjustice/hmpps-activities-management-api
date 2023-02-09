@@ -101,8 +101,8 @@ CREATE TABLE activity (
   start_date           date         NOT NULL,
   end_date             date,
   risk_level           varchar(10),
-  minimum_incentive_nomis_code varchar(10),
-  minimum_incentive_level      varchar(10),
+  minimum_incentive_nomis_code varchar(3) NOT NULL,
+  minimum_incentive_level      varchar(10) NOT NULL,
   created_time         timestamp    NOT NULL,
   created_by           varchar(100) NOT NULL,
   UNIQUE (prison_code, summary)
@@ -256,7 +256,7 @@ CREATE INDEX idx_allocation_end_date ON allocation (end_date);
 CREATE TABLE activity_pay (
   activity_pay_id    bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
   activity_id        bigint    NOT NULL REFERENCES activity (activity_id),
-  incentive_level    varchar(10),
+  incentive_level    varchar(10) NOT NULL,
   prison_pay_band_id bigint    NOT NULL references prison_pay_band(prison_pay_band_id),
   rate               integer,
   piece_rate         integer,

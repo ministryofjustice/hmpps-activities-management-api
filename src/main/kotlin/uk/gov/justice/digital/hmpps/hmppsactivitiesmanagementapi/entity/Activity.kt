@@ -63,9 +63,9 @@ data class Activity(
 
   var riskLevel: String? = null,
 
-  var minimumIncentiveNomisCode: String? = null,
+  var minimumIncentiveNomisCode: String,
 
-  var minimumIncentiveLevel: String? = null,
+  var minimumIncentiveLevel: String,
 
   val createdTime: LocalDateTime,
 
@@ -148,7 +148,7 @@ data class Activity(
   }
 
   fun addPay(
-    incentiveLevel: String?,
+    incentiveLevel: String,
     payBand: PrisonPayBand,
     rate: Int?,
     pieceRate: Int?,
