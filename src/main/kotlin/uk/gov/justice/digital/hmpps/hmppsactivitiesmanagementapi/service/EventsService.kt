@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
 import java.time.LocalDateTime
 
 @Service
@@ -27,6 +28,7 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
   fun send(outboundEvent: OutboundEvent, identifier: Long) {
     when (outboundEvent) {
       ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(ScheduleCreatedInformation(identifier)))
+      PRISONER_ALLOCATED -> publisher.send(PRISONER_ALLOCATED.event(PrisonerAllocatedInformation(identifier)))
     }
   }
 }
@@ -38,6 +40,14 @@ enum class OutboundEvent {
         eventType = "activities.activity-schedule.created",
         additionalInformation = additionalInformation,
         description = "A new activity schedule has been created in the activities management service"
+      )
+  },
+  PRISONER_ALLOCATED {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = "activities.prisoner.allocated",
+        additionalInformation = additionalInformation,
+        description = "A prisoner has been allocated to an activity in the activities management service"
       )
   };
 
@@ -55,6 +65,8 @@ data class OutboundHMPPSDomainEvent(
 )
 
 data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
+
+data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(
