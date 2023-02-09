@@ -28,7 +28,7 @@ import org.springframework.web.reactive.function.client.WebClient
 class WebClientConfiguration(
   @Value("\${hmpps.auth.url}") private val oauthApiUrl: String,
   @Value("\${prison.api.url}") private val prisonApiUrl: String,
-  @Value("https://prisoner-offender-search-dev.prison.service.justice.gov.uk") private val prisonerSearchApiUrl: String,
+  @Value("\${prisoner-search.api.url}") private val prisonerSearchApiUrl: String,
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   private val webClientBuilder: WebClient.Builder
 ) {
