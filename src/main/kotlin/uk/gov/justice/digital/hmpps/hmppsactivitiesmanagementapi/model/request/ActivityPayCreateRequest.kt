@@ -11,12 +11,12 @@ data class ActivityPayCreateRequest(
 
   @field:NotEmpty(message = "NOMIS code for the minimum incentive level must be supplied")
   @field:Size(max = 3, message = "NOMIS code for the incentive level should not exceed {max} characters")
-  @Schema(description = "The NOMIS code for the incentive/earned privilege level (nullable)", example = "BAS")
+  @Schema(description = "The NOMIS code for the incentive/earned privilege level", example = "BAS")
   val incentiveNomisCode: String?,
 
   @field:NotEmpty(message = "Minimum incentive level must be supplied")
   @field:Size(max = 10, message = "Incentive level should not exceed {max} characters")
-  @Schema(description = "The incentive/earned privilege level (nullable)", example = "Basic")
+  @Schema(description = "The incentive/earned privilege level", example = "Basic")
   val incentiveLevel: String?,
 
   @field:NotNull(message = "Pay band must be supplied")
