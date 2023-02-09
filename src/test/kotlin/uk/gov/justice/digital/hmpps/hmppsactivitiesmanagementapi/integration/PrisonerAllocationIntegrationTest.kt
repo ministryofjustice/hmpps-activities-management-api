@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand1
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand2
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPayBand3
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import java.time.LocalDate
@@ -32,7 +32,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          prisonPayBand = testPayBand1,
+          prisonPayBand = testPentonvillePayBandOne,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -44,7 +44,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          prisonPayBand = testPayBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -61,7 +61,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          prisonPayBand = testPayBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -73,7 +73,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          prisonPayBand = testPayBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -102,7 +102,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          prisonPayBand = testPayBand1,
+          prisonPayBand = testPentonvillePayBandOne,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -114,7 +114,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10001,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          prisonPayBand = testPayBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -131,7 +131,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          prisonPayBand = testPayBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
@@ -143,7 +143,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10002,
           activitySummary = "Maths",
           scheduleDescription = "Maths PM",
-          prisonPayBand = testPayBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
@@ -160,7 +160,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           bookingId = 10003,
           activitySummary = "Maths",
           scheduleDescription = "Maths AM",
-          prisonPayBand = testPayBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = LocalDate.of(2022, 10, 11),
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
