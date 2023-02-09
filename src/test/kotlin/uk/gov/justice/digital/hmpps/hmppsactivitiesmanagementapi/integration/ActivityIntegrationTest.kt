@@ -3,10 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -548,7 +548,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       )
     )
 
-    Mockito.`when`(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
+    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
     val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
 
     with(schedule) {

@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -110,19 +110,17 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       )
     ).expectStatus().isNoContent
 
-    var allocationId: Long
-
-    with(repository.findById(1).orElseThrow()) {
-      allocationId = allocations().first().allocationId
-      assertThat(allocations().first().prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocations().first().allocatedBy).isEqualTo("test-client")
+    val allocation = with(repository.findById(1).orElseThrow().allocations().first()) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocatedBy).isEqualTo("test-client")
+      this
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.prisoner.allocated")
-      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocationId))
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
       assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
     }
@@ -194,7 +192,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   )
   fun `the allocation should be persisted even if the subsequent event notification fails`() {
 
-    `when`(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
+    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
 
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
 
@@ -208,9 +206,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       )
     ).expectStatus().isNoContent
 
-    with(repository.findById(1).orElseThrow()) {
-      assertThat(allocations().first().prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocations().first().allocatedBy).isEqualTo("test-client")
+    with(repository.findById(1).orElseThrow().allocations().first()) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocatedBy).isEqualTo("test-client")
     }
   }
 
