@@ -2,7 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -11,8 +16,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerAllocatedInformation
+import java.time.LocalDateTime
 
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
   private lateinit var repository: ActivityScheduleRepository
@@ -97,9 +110,19 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       )
     ).expectStatus().isNoContent
 
-    with(repository.findById(1).orElseThrow()) {
-      assertThat(allocations().first().prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocations().first().allocatedBy).isEqualTo("test-client")
+    val allocation = with(repository.findById(1).orElseThrow().allocations().first()) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocatedBy).isEqualTo("test-client")
+      this
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
+      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
     }
   }
 
@@ -160,6 +183,32 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(userMessage).isEqualTo("Access denied: Access Denied")
       assertThat(developerMessage).isEqualTo("Access Denied")
       assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `the allocation should be persisted even if the subsequent event notification fails`() {
+
+    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
+
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+      )
+    ).expectStatus().isNoContent
+
+    with(repository.findById(1).orElseThrow().allocations().first()) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocatedBy).isEqualTo("test-client")
     }
   }
 
