@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
@@ -183,6 +185,32 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(userMessage).isEqualTo("Access denied: Access Denied")
       assertThat(developerMessage).isEqualTo("Access Denied")
       assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql"
+  )
+  fun `the allocation should be persisted even if the subsequent event notification fails`() {
+
+    `when`(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
+
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+      )
+    ).expectStatus().isNoContent
+
+    with(repository.findById(1).orElseThrow()) {
+      assertThat(allocations().first().prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocations().first().allocatedBy).isEqualTo("test-client")
     }
   }
 
