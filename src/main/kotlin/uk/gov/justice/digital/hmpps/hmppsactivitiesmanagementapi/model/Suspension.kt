@@ -8,13 +8,13 @@ import java.time.LocalDate
 data class Suspension(
 
   @Schema(description = "The date from which the activity schedule was suspended", example = "02/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val suspendedFrom: LocalDate,
 
   @Schema(
     description = "The date until which the activity schedule was suspended. If null, the schedule is suspended indefinately",
     example = "02/09/2022"
   )
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val suspendedUntil: LocalDate? = null,
 )

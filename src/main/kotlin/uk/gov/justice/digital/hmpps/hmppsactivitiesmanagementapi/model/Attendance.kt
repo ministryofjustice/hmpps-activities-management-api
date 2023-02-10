@@ -25,7 +25,7 @@ data class Attendance(
   val posted: Boolean,
 
   @Schema(description = "The date and time the attendance was updated", example = "10/09/2023")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val recordedTime: LocalDateTime? = null,
 
   @Schema(description = "The person whom updated the attendance", example = "10/09/2023")

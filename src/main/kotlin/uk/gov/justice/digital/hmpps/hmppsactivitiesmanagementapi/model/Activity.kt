@@ -55,11 +55,11 @@ data class Activity(
   val pay: List<ActivityPay> = emptyList(),
 
   @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "21/12/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
   @Schema(description = "The most recent risk assessment level for this activity", example = "High")
@@ -69,7 +69,7 @@ data class Activity(
   val minimumIncentiveLevel: String?,
 
   @Schema(description = "The date and time when this activity was created", example = "01/09/2022 9:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,
 
   @Schema(description = "The person who created this activity", example = "Adam Smith")

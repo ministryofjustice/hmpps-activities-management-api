@@ -20,6 +20,6 @@ data class RolloutPrison(
   var active: Boolean,
 
   @Schema(description = "The date rolled out", example = "30/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val rolloutDate: LocalDate?,
 )

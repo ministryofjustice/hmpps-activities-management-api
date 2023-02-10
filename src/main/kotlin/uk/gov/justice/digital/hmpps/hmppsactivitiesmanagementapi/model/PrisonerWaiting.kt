@@ -17,7 +17,7 @@ data class PrisonerWaiting(
   val priority: Int,
 
   @Schema(description = "The date and time when this person was added to the waiting list", example = "01/09/2022 9:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,
 
   @Schema(description = "The staff members name who added this person to the waiting list", example = "Adam Smith")
