@@ -28,16 +28,16 @@ class OutboundEventsServiceTest {
   }
 
   @Test
-  fun `activity schedule created event with id 99 is sent to the events publisher`() {
-    outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 99L)
+  fun `prisoner allocated event with id 1 is sent to the events publisher`() {
+    outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, 1L)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(99))
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(1))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+      assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
     }
   }
 }

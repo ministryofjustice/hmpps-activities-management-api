@@ -3,8 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.fasterxml.jackson.core.type.TypeReference
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -518,6 +520,61 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
       assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-9.sql"
+  )
+  @Test
+  fun `the activity should be persisted even if the subsequent event notification fails`() {
+
+    val today = LocalDate.now()
+    val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
+      description = "Integration test schedule",
+      startDate = today,
+      locationId = 1,
+      capacity = 10,
+      slots = listOf(Slot("AM", monday = true))
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      locationId = 1,
+      location = Location(
+        locationId = 1,
+        locationType = "CELL",
+        description = "House_block_7-1-002",
+        agencyId = "MDI",
+        currentOccupancy = 1,
+        locationPrefix = "LEI-House-block-7-1-002",
+        operationalCapacity = 2,
+        userDescription = "user description",
+        internalLocationCode = "internal location code"
+      )
+    )
+
+    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
+    val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
+
+    with(schedule) {
+      assertThat(capacity).isEqualTo(10)
+      assertThat(startDate).isEqualTo(today)
+      assertThat(description).isEqualTo("Integration test schedule")
+      assertThat(slots).hasSize(1)
+      assertThat(internalLocation).isEqualTo(
+        InternalLocation(
+          id = 1,
+          code = "internal location code",
+          description = "House_block_7-1-002"
+        )
+      )
+    }
+
+    with(schedule.slots.first()) {
+      assertThat(id).isNotNull
+      assertThat(daysOfWeek).containsExactly("Mon")
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
   }
 

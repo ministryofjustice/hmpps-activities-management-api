@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 
 @Entity
 @Table(name = "allocation")
+@EntityListeners(AllocationEntityListener::class)
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

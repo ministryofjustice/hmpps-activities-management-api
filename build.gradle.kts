@@ -1,7 +1,7 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.1"
-  kotlin("plugin.spring") version "1.8.0"
-  kotlin("plugin.jpa") version "1.8.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.0"
+  kotlin("plugin.spring") version "1.8.10"
+  kotlin("plugin.jpa") version "1.8.10"
   jacoco
 }
 
@@ -39,7 +39,7 @@ dependencies {
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
-  runtimeOnly("org.postgresql:postgresql:42.5.2")
+  runtimeOnly("org.postgresql:postgresql:42.5.3")
 
   // Test dependencies
   testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
