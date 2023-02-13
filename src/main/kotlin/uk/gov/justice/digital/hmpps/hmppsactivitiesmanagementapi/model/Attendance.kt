@@ -28,8 +28,7 @@ data class Attendance(
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val recordedTime: LocalDateTime? = null,
 
-  // TODO Is this example correct?
-  @Schema(description = "The person who updated the attendance", example = "10/09/2023")
+  @Schema(description = "The person who updated the attendance", example = "A.JONES")
   val recordedBy: String? = null,
 
   @Schema(description = "SCHEDULED, COMPLETED, CANCELLED.", example = "SCHEDULED")
