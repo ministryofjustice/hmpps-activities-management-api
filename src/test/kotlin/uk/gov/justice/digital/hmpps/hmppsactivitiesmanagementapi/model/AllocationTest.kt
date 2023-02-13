@@ -1,33 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.assertj.core.api.Assertions
-import org.junit.jupiter.api.BeforeAll
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
-class AllocationTest {
-
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM uuuu")
-  private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM uuuu HH:mm:ss")
-
-  companion object {
-    private val objectMapper = ObjectMapper()
-
-    @JvmStatic
-    @BeforeAll
-    fun `setup`() {
-
-      objectMapper.registerModule(JavaTimeModule())
-      objectMapper.registerKotlinModule()
-      objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-    }
-  }
+class AllocationTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
@@ -59,9 +37,9 @@ class AllocationTest {
     val json = objectMapper.writeValueAsString(allocation)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
-    Assertions.assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
-    Assertions.assertThat(jsonMap["endDate"]).isEqualTo(expectedEndDate)
-    Assertions.assertThat(jsonMap["allocatedTime"]).isEqualTo(expectedAllocatedTime)
-    Assertions.assertThat(jsonMap["deallocatedTime"]).isEqualTo(expectedDeallocatedTime)
+    assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
+    assertThat(jsonMap["endDate"]).isEqualTo(expectedEndDate)
+    assertThat(jsonMap["allocatedTime"]).isEqualTo(expectedAllocatedTime)
+    assertThat(jsonMap["deallocatedTime"]).isEqualTo(expectedDeallocatedTime)
   }
 }

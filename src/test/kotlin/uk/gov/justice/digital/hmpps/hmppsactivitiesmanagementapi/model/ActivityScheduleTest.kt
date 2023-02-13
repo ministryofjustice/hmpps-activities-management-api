@@ -1,32 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.assertj.core.api.Assertions
-import org.junit.jupiter.api.BeforeAll
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-class ActivityScheduleTest {
-
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM uuuu")
-
-  companion object {
-    private val objectMapper = ObjectMapper()
-
-    @JvmStatic
-    @BeforeAll
-    fun `setup`() {
-
-      objectMapper.registerModule(JavaTimeModule())
-      objectMapper.registerKotlinModule()
-      objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-    }
-  }
+class ActivityScheduleTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {
@@ -61,7 +40,7 @@ class ActivityScheduleTest {
     val json = objectMapper.writeValueAsString(activitySchedule)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
-    Assertions.assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
-    Assertions.assertThat(jsonMap["endDate"]).isEqualTo(expectedEndDate)
+    assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
+    assertThat(jsonMap["endDate"]).isEqualTo(expectedEndDate)
   }
 }

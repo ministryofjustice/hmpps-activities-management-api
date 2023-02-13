@@ -1,37 +1,16 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-class SuspensionTest {
-
-  private val formatter = DateTimeFormatter.ofPattern("dd MMM uuuu")
-
-  companion object {
-    private val objectMapper = ObjectMapper()
-
-    @JvmStatic
-    @BeforeAll
-    fun `setup`() {
-
-      objectMapper.registerModule(JavaTimeModule())
-      objectMapper.registerKotlinModule()
-      objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-    }
-  }
+class SuspensionTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {
 
-    val originalSuspendedFrom = LocalDate.parse("01 Feb 2023", formatter)
-    val originalSuspendedUntil = LocalDate.parse("07 Feb 2023", formatter)
+    val originalSuspendedFrom = LocalDate.parse("01 Feb 2023", dateFormatter)
+    val originalSuspendedUntil = LocalDate.parse("07 Feb 2023", dateFormatter)
     val expectedSuspendedFrom = "2023-02-01"
     val expectedSuspendedUntil = "2023-02-07"
 

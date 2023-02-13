@@ -1,36 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.assertj.core.api.Assertions
-import org.junit.jupiter.api.BeforeAll
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
-class ActivityScheduleInstanceTest {
-
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM uuuu")
-  private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM uuuu HH:mm:ss")
-  private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-
-  companion object {
-    private val objectMapper = ObjectMapper()
-
-    @JvmStatic
-    @BeforeAll
-    fun `setup`() {
-
-      objectMapper.registerModule(JavaTimeModule())
-      objectMapper.registerKotlinModule()
-      objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-    }
-  }
+class ActivityScheduleInstanceTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
@@ -78,9 +55,9 @@ class ActivityScheduleInstanceTest {
     val json = objectMapper.writeValueAsString(activityScheduleInstance)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
-    Assertions.assertThat(jsonMap["date"]).isEqualTo(expectedDate)
-    Assertions.assertThat(jsonMap["startTime"]).isEqualTo(expectedStartTime)
-    Assertions.assertThat(jsonMap["endTime"]).isEqualTo(expectedEndTime)
-    Assertions.assertThat(jsonMap["cancelledTime"]).isEqualTo(expectedCancelledTime)
+    assertThat(jsonMap["date"]).isEqualTo(expectedDate)
+    assertThat(jsonMap["startTime"]).isEqualTo(expectedStartTime)
+    assertThat(jsonMap["endTime"]).isEqualTo(expectedEndTime)
+    assertThat(jsonMap["cancelledTime"]).isEqualTo(expectedCancelledTime)
   }
 }
