@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -18,6 +19,7 @@ import java.time.LocalDate
 @Service
 class ScheduledEventService(
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val prisonRegimeService: PrisonRegimeService
@@ -32,20 +34,20 @@ class ScheduledEventService(
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
-    // TODO: Change this to use the prisonerSearchAPI to get the booking ID! This endpoint will be deprecated soon.
-  ) = prisonApiClient.getPrisonerDetails(prisonerNumber).block()
+  ) = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.firstOrNull()
     ?.also {
-      if (it.agencyId != prisonCode || it.bookingId == null) {
+      if (it.prisonId != prisonCode || it.bookingId == null) {
         throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
       }
     }
     ?.let { prisonerDetail ->
+      val bookingId = prisonerDetail.bookingId!!.toLong()
       val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)?.active ?: false
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-      getSinglePrisonerEventCalls(prisonerDetail.bookingId!!, prisonRolledOut, dateRange)
+      getSinglePrisonerEventCalls(bookingId, prisonRolledOut, dateRange)
         .map { t ->
           transformToPrisonerScheduledEvents(
-            prisonerDetail.bookingId,
+            bookingId,
             prisonCode,
             prisonerNumber,
             dateRange,

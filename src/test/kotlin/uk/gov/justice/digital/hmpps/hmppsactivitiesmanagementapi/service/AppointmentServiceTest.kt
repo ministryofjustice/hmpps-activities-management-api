@@ -15,11 +15,13 @@ import java.util.Optional
 class AppointmentServiceTest {
   private val appointmentCategoryRepository: AppointmentCategoryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
 
   private val service = AppointmentService(
     appointmentCategoryRepository,
     appointmentRepository,
+    locationService,
     prisonerSearchApiClient
   )
 
