@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -90,4 +91,13 @@ data class AppointmentCreateRequest(
     example = "[\"A1234BC\"]"
   )
   val prisonerNumbers: List<String> = emptyList()
-)
+) {
+  @AssertTrue(message = "Internal location id must be supplied if in cell = false")
+  public fun isInternalLocationIdValid() = inCell || internalLocationId != null
+
+  @AssertTrue(message = "Start date must not be in the past")
+  public fun isStartDateValid() = startDate == null || startDate >= LocalDate.now()
+
+  @AssertTrue(message = "End time must be after the start time")
+  public fun isEndTimeValid() = endTime == null || (startTime != null && endTime > startTime)
+}

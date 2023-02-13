@@ -95,19 +95,19 @@ data class Prisoner(
   @get:JsonProperty("gender", required = true) val gender: kotlin.String,
 
   @Schema(example = "White: Eng./Welsh/Scot./N.Irish/British", required = true, description = "Ethnicity")
-  @get:JsonProperty("ethnicity", required = true) val ethnicity: kotlin.String,
+  @get:JsonProperty("ethnicity") val ethnicity: kotlin.String?,
 
   @Schema(example = "true", required = true, description = "Youth Offender?")
   @get:JsonProperty("youthOffender", required = true) val youthOffender: kotlin.Boolean,
 
   @Schema(example = "Widowed", required = true, description = "Marital Status")
-  @get:JsonProperty("maritalStatus", required = true) val maritalStatus: kotlin.String,
+  @get:JsonProperty("maritalStatus") val maritalStatus: kotlin.String?,
 
   @Schema(example = "Church of England (Anglican)", required = true, description = "Religion")
-  @get:JsonProperty("religion", required = true) val religion: kotlin.String,
+  @get:JsonProperty("religion") val religion: kotlin.String?,
 
   @Schema(example = "Egyptian", required = true, description = "Nationality")
-  @get:JsonProperty("nationality", required = true) val nationality: kotlin.String,
+  @get:JsonProperty("nationality") val nationality: kotlin.String?,
 
   @Schema(example = "ACTIVE IN", required = true, description = "Status of the prisoner")
   @get:JsonProperty("status", required = true) val status: kotlin.String,

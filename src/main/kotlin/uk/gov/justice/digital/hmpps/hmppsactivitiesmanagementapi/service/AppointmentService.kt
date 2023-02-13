@@ -17,22 +17,29 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentService(
   private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val appointmentRepository: AppointmentRepository,
+  private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient
 ) {
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
-    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-
     // TODO: Check that the supplied prison code is in the principle's case load
 
+    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
+
+    if (!request.inCell) {
+      locationService.getLocationsForAppointments(request.prisonCode!!)
+        ?.firstOrNull { location -> location.locationId == request.internalLocationId }
+        ?: throw IllegalArgumentException("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
+    }
+
     val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
-      .filter { prisoner -> prisoner.prisonId === request.prisonCode }
+      .filter { prisoner -> prisoner.prisonId == request.prisonCode }
     val validPrisonerNumbers = prisoners.map { prisoner -> prisoner.prisonerNumber }
 
     request.prisonerNumbers.filter { number -> !validPrisonerNumbers.contains(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) ${it.joinToString(", ")} not found, were inactive or are residents of a different prison.")
+      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
     }
 
     return AppointmentEntity(
