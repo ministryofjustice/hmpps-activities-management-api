@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthH
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 import java.util.Optional
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
@@ -48,22 +49,26 @@ abstract class IntegrationTestBase {
   companion object {
     @JvmField
     internal val prisonApiMockServer = PrisonApiMockServer()
+    internal val prisonerSearchApiMockServer = PrisonerSearchApiMockServer()
 
     @BeforeAll
     @JvmStatic
     fun startMocks() {
       prisonApiMockServer.start()
+      prisonerSearchApiMockServer.start()
     }
 
     @AfterAll
     @JvmStatic
     fun stopMocks() {
       prisonApiMockServer.stop()
+      prisonerSearchApiMockServer.stop()
     }
 
     @AfterEach
     fun afterEach() {
       prisonApiMockServer.resetAll()
+      prisonerSearchApiMockServer.resetAll()
     }
   }
 

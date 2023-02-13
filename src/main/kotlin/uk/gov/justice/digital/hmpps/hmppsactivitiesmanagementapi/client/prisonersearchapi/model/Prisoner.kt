@@ -80,109 +80,109 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class Prisoner(
 
   @Schema(example = "A1234AA", required = true, description = "Prisoner Number")
-  @get:JsonProperty("prisonerNumber", required = true) val prisonerNumber: kotlin.String,
+  @get:JsonProperty("prisonerNumber", required = true) val prisonerNumber: String,
 
   @Schema(example = "Robert", required = true, description = "First Name")
-  @get:JsonProperty("firstName", required = true) val firstName: kotlin.String,
+  @get:JsonProperty("firstName", required = true) val firstName: String,
 
   @Schema(example = "Larsen", required = true, description = "Last name")
-  @get:JsonProperty("lastName", required = true) val lastName: kotlin.String,
+  @get:JsonProperty("lastName", required = true) val lastName: String,
 
   @Schema(example = "Wed Apr 02 01:00:00 BST 1975", required = true, description = "Date of Birth")
   @get:JsonProperty("dateOfBirth", required = true) val dateOfBirth: java.time.LocalDate,
 
   @Schema(example = "Female", required = true, description = "Gender")
-  @get:JsonProperty("gender", required = true) val gender: kotlin.String,
+  @get:JsonProperty("gender", required = true) val gender: String,
 
-  @Schema(example = "White: Eng./Welsh/Scot./N.Irish/British", required = true, description = "Ethnicity")
-  @get:JsonProperty("ethnicity") val ethnicity: kotlin.String?,
+  @Schema(example = "White: Eng./Welsh/Scot./N.Irish/British", description = "Ethnicity")
+  @get:JsonProperty("ethnicity") val ethnicity: String? = null,
 
-  @Schema(example = "true", required = true, description = "Youth Offender?")
-  @get:JsonProperty("youthOffender", required = true) val youthOffender: kotlin.Boolean,
+  @Schema(example = "true", description = "Youth Offender?")
+  @get:JsonProperty("youthOffender") val youthOffender: Boolean? = null,
 
-  @Schema(example = "Widowed", required = true, description = "Marital Status")
-  @get:JsonProperty("maritalStatus") val maritalStatus: kotlin.String?,
+  @Schema(example = "Widowed", description = "Marital Status")
+  @get:JsonProperty("maritalStatus") val maritalStatus: String? = null,
 
-  @Schema(example = "Church of England (Anglican)", required = true, description = "Religion")
-  @get:JsonProperty("religion") val religion: kotlin.String?,
+  @Schema(example = "Church of England (Anglican)", description = "Religion")
+  @get:JsonProperty("religion") val religion: String? = null,
 
-  @Schema(example = "Egyptian", required = true, description = "Nationality")
-  @get:JsonProperty("nationality") val nationality: kotlin.String?,
+  @Schema(example = "Egyptian", description = "Nationality")
+  @get:JsonProperty("nationality") val nationality: String? = null,
 
   @Schema(example = "ACTIVE IN", required = true, description = "Status of the prisoner")
-  @get:JsonProperty("status", required = true) val status: kotlin.String,
+  @get:JsonProperty("status", required = true) val status: String,
 
-  @Schema(example = "Robbery", required = true, description = "Most serious offence for this sentence")
-  @get:JsonProperty("mostSeriousOffence", required = true) val mostSeriousOffence: kotlin.String,
+  @Schema(example = "Robbery", description = "Most serious offence for this sentence")
+  @get:JsonProperty("mostSeriousOffence") val mostSeriousOffence: String? = null,
 
-  @Schema(example = "true", required = true, description = "Indicates a restricted patient")
-  @get:JsonProperty("restrictedPatient", required = true) val restrictedPatient: kotlin.Boolean,
-
-  @Schema(example = "12/394773H", description = "PNC Number")
-  @get:JsonProperty("pncNumber") val pncNumber: kotlin.String? = null,
+  @Schema(example = "true", description = "Indicates a restricted patient")
+  @get:JsonProperty("restrictedPatient") val restrictedPatient: Boolean? = null,
 
   @Schema(example = "12/394773H", description = "PNC Number")
-  @get:JsonProperty("pncNumberCanonicalShort") val pncNumberCanonicalShort: kotlin.String? = null,
+  @get:JsonProperty("pncNumber") val pncNumber: String? = null,
+
+  @Schema(example = "12/394773H", description = "PNC Number")
+  @get:JsonProperty("pncNumberCanonicalShort") val pncNumberCanonicalShort: String? = null,
 
   @Schema(example = "2012/394773H", description = "PNC Number")
-  @get:JsonProperty("pncNumberCanonicalLong") val pncNumberCanonicalLong: kotlin.String? = null,
+  @get:JsonProperty("pncNumberCanonicalLong") val pncNumberCanonicalLong: String? = null,
 
   @Schema(example = "29906/12J", description = "CRO Number")
-  @get:JsonProperty("croNumber") val croNumber: kotlin.String? = null,
+  @get:JsonProperty("croNumber") val croNumber: String? = null,
 
   @Schema(example = "0001200924", description = "Booking No.")
-  @get:JsonProperty("bookingId") val bookingId: kotlin.String? = null,
+  @get:JsonProperty("bookingId") val bookingId: String? = null,
 
   @Schema(example = "38412A", description = "Book Number")
-  @get:JsonProperty("bookNumber") val bookNumber: kotlin.String? = null,
+  @get:JsonProperty("bookNumber") val bookNumber: String? = null,
 
   @Schema(example = "John James", description = "Middle Names")
-  @get:JsonProperty("middleNames") val middleNames: kotlin.String? = null,
+  @get:JsonProperty("middleNames") val middleNames: String? = null,
 
   @Schema(example = "CRT", description = "Last Movement Type Code of prisoner")
-  @get:JsonProperty("lastMovementTypeCode") val lastMovementTypeCode: kotlin.String? = null,
+  @get:JsonProperty("lastMovementTypeCode") val lastMovementTypeCode: String? = null,
 
   @Schema(example = "CA", description = "Last Movement Reason of prisoner")
-  @get:JsonProperty("lastMovementReasonCode") val lastMovementReasonCode: kotlin.String? = null,
+  @get:JsonProperty("lastMovementReasonCode") val lastMovementReasonCode: String? = null,
 
   @Schema(example = "IN", description = "In/Out Status")
   @get:JsonProperty("inOutStatus") val inOutStatus: Prisoner.InOutStatus? = null,
 
   @Schema(example = "MDI", description = "Prison ID")
-  @get:JsonProperty("prisonId") val prisonId: kotlin.String? = null,
+  @get:JsonProperty("prisonId") val prisonId: String? = null,
 
   @Schema(example = "HMP Leeds", description = "Prison Name")
-  @get:JsonProperty("prisonName") val prisonName: kotlin.String? = null,
+  @get:JsonProperty("prisonName") val prisonName: String? = null,
 
   @Schema(example = "A-1-002", description = "In prison cell location")
-  @get:JsonProperty("cellLocation") val cellLocation: kotlin.String? = null,
+  @get:JsonProperty("cellLocation") val cellLocation: String? = null,
 
   @Schema(example = "null", description = "Aliases Names and Details")
-  @get:JsonProperty("aliases") val aliases: kotlin.collections.List<PrisonerAlias>? = null,
+  @get:JsonProperty("aliases") val aliases: List<PrisonerAlias>? = null,
 
   @Schema(example = "null", description = "Alerts")
-  @get:JsonProperty("alerts") val alerts: kotlin.collections.List<PrisonerAlert>? = null,
+  @get:JsonProperty("alerts") val alerts: List<PrisonerAlert>? = null,
 
   @Schema(example = "HIGH", description = "Cell Sharing Risk Assessment")
-  @get:JsonProperty("csra") val csra: kotlin.String? = null,
+  @get:JsonProperty("csra") val csra: String? = null,
 
   @Schema(example = "C", description = "Prisoner Category")
-  @get:JsonProperty("category") val category: kotlin.String? = null,
+  @get:JsonProperty("category") val category: String? = null,
 
   @Schema(example = "SENTENCED", description = "Legal Status")
   @get:JsonProperty("legalStatus") val legalStatus: Prisoner.LegalStatus? = null,
 
   @Schema(example = "LIFE", description = "The prisoner's imprisonment status code.")
-  @get:JsonProperty("imprisonmentStatus") val imprisonmentStatus: kotlin.String? = null,
+  @get:JsonProperty("imprisonmentStatus") val imprisonmentStatus: String? = null,
 
   @Schema(example = "Serving Life Imprisonment", description = "The prisoner's imprisonment status description.")
-  @get:JsonProperty("imprisonmentStatusDescription") val imprisonmentStatusDescription: kotlin.String? = null,
+  @get:JsonProperty("imprisonmentStatusDescription") val imprisonmentStatusDescription: String? = null,
 
   @Schema(example = "false", description = "Indicates that the offender has been recalled")
-  @get:JsonProperty("recall") val recall: kotlin.Boolean? = null,
+  @get:JsonProperty("recall") val recall: Boolean? = null,
 
   @Schema(example = "true", description = "Indicates that the offender has an indeterminate sentence")
-  @get:JsonProperty("indeterminateSentence") val indeterminateSentence: kotlin.Boolean? = null,
+  @get:JsonProperty("indeterminateSentence") val indeterminateSentence: Boolean? = null,
 
   @Schema(example = "Fri Apr 03 01:00:00 BST 2020", description = "Start Date for this sentence")
   @get:JsonProperty("sentenceStartDate") val sentenceStartDate: java.time.LocalDate? = null,
@@ -215,7 +215,7 @@ data class Prisoner(
   @get:JsonProperty("topupSupervisionExpiryDate") val topupSupervisionExpiryDate: java.time.LocalDate? = null,
 
   @Schema(example = "10", description = "Days added to sentence term due to adjustments.")
-  @get:JsonProperty("additionalDaysAwarded") val additionalDaysAwarded: kotlin.Int? = null,
+  @get:JsonProperty("additionalDaysAwarded") val additionalDaysAwarded: Int? = null,
 
   @Schema(example = "Mon May 01 01:00:00 BST 2023", description = "Release date for Non determinant sentence (if applicable). This will be based on one of ARD, CRD, NPD or PRRD.")
   @get:JsonProperty("nonDtoReleaseDate") val nonDtoReleaseDate: java.time.LocalDate? = null,
@@ -245,31 +245,31 @@ data class Prisoner(
   @get:JsonProperty("tariffDate") val tariffDate: java.time.LocalDate? = null,
 
   @Schema(example = "Outside - released from Leeds", description = "current prison or outside with last movement information.")
-  @get:JsonProperty("locationDescription") val locationDescription: kotlin.String? = null,
+  @get:JsonProperty("locationDescription") val locationDescription: String? = null,
 
   @Schema(example = "LEI", description = "Supporting prison ID for POM")
-  @get:JsonProperty("supportingPrisonId") val supportingPrisonId: kotlin.String? = null,
+  @get:JsonProperty("supportingPrisonId") val supportingPrisonId: String? = null,
 
   @Schema(example = "HAZLWD", description = "Which hospital the offender has been discharged to")
-  @get:JsonProperty("dischargedHospitalId") val dischargedHospitalId: kotlin.String? = null,
+  @get:JsonProperty("dischargedHospitalId") val dischargedHospitalId: String? = null,
 
   @Schema(example = "Hazelwood House", description = "Hospital name to which the offender was discharged")
-  @get:JsonProperty("dischargedHospitalDescription") val dischargedHospitalDescription: kotlin.String? = null,
+  @get:JsonProperty("dischargedHospitalDescription") val dischargedHospitalDescription: String? = null,
 
   @Schema(example = "Fri May 01 01:00:00 BST 2020", description = "Date of discharge")
   @get:JsonProperty("dischargeDate") val dischargeDate: java.time.LocalDate? = null,
 
   @Schema(example = "Psychiatric Hospital Discharge to Hazelwood House", description = "Any additional discharge details")
-  @get:JsonProperty("dischargeDetails") val dischargeDetails: kotlin.String? = null,
+  @get:JsonProperty("dischargeDetails") val dischargeDetails: String? = null,
 
   @Schema(example = "null", description = "")
   @get:JsonProperty("currentIncentive") val currentIncentive: uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive? = null,
 
   @Schema(example = "200", description = "Height in centimetres of the offender")
-  @get:JsonProperty("heightCentimetres") val heightCentimetres: kotlin.Int? = null,
+  @get:JsonProperty("heightCentimetres") val heightCentimetres: Int? = null,
 
   @Schema(example = "102", description = "Weight in kilograms of the offender")
-  @get:JsonProperty("weightKilograms") val weightKilograms: kotlin.Int? = null,
+  @get:JsonProperty("weightKilograms") val weightKilograms: Int? = null,
 
   @Schema(example = "Blonde", description = "Hair colour. From PROFILE_CODES table where PROFILE_TYPE = HAIR. Allowable values extracted 07/02/2023.")
   @get:JsonProperty("hairColour") val hairColour: Prisoner.HairColour? = null,
@@ -290,14 +290,14 @@ data class Prisoner(
   @get:JsonProperty("build") val build: Prisoner.Build? = null,
 
   @Schema(example = "10", description = "UK shoe size")
-  @get:JsonProperty("shoeSize") val shoeSize: kotlin.Int? = null
+  @get:JsonProperty("shoeSize") val shoeSize: Int? = null
 ) {
 
   /**
    * In/Out Status
    * Values: iN,oUT
    */
-  enum class InOutStatus(val value: kotlin.String) {
+  enum class InOutStatus(val value: String) {
     @JsonProperty("IN") iN("IN"),
     @JsonProperty("OUT") oUT("OUT")
   }
@@ -306,7 +306,7 @@ data class Prisoner(
    * Legal Status
    * Values: rECALL,dEAD,iNDETERMINATESENTENCE,sENTENCED,cONVICTEDUNSENTENCED,cIVILPRISONER,iMMIGRATIONDETAINEE,rEMAND,uNKNOWN,oTHER
    */
-  enum class LegalStatus(val value: kotlin.String) {
+  enum class LegalStatus(val value: String) {
     @JsonProperty("RECALL") rECALL("RECALL"),
     @JsonProperty("DEAD") dEAD("DEAD"),
     @JsonProperty("INDETERMINATE_SENTENCE") iNDETERMINATESENTENCE("INDETERMINATE_SENTENCE"),
@@ -323,7 +323,7 @@ data class Prisoner(
    * Indicates which type of non-DTO release date is the effective release date. One of 'ARD’, 'CRD’, ‘NPD’ or 'PRRD’.
    * Values: aRD,cRD,nPD,pRRD
    */
-  enum class NonDtoReleaseDateType(val value: kotlin.String) {
+  enum class NonDtoReleaseDateType(val value: String) {
     @JsonProperty("ARD") aRD("ARD"),
     @JsonProperty("CRD") cRD("CRD"),
     @JsonProperty("NPD") nPD("NPD"),
@@ -334,7 +334,7 @@ data class Prisoner(
    * Hair colour. From PROFILE_CODES table where PROFILE_TYPE = HAIR. Allowable values extracted 07/02/2023.
    * Values: bald,balding,black,blonde,brown,brunette,dark,dyed,ginger,grey,light,mouse,multiMinusColoured,red,white
    */
-  enum class HairColour(val value: kotlin.String) {
+  enum class HairColour(val value: String) {
     @JsonProperty("Bald") bald("Bald"),
     @JsonProperty("Balding") balding("Balding"),
     @JsonProperty("Black") black("Black"),
@@ -356,7 +356,7 @@ data class Prisoner(
    * Right eye colour. From PROFILE_CODES table where PROFILE_TYPE = R_EYE_C. Allowable values extracted 07/02/2023.
    * Values: blue,brown,clouded,green,grey,hazel,missing,pink,white
    */
-  enum class RightEyeColour(val value: kotlin.String) {
+  enum class RightEyeColour(val value: String) {
     @JsonProperty("Blue") blue("Blue"),
     @JsonProperty("Brown") brown("Brown"),
     @JsonProperty("Clouded") clouded("Clouded"),
@@ -372,7 +372,7 @@ data class Prisoner(
    * Left eye colour. From PROFILE_CODES table where PROFILE_TYPE = L_EYE_C. Allowable values extracted 07/02/2023.
    * Values: blue,brown,clouded,green,grey,hazel,missing,pink,white
    */
-  enum class LeftEyeColour(val value: kotlin.String) {
+  enum class LeftEyeColour(val value: String) {
     @JsonProperty("Blue") blue("Blue"),
     @JsonProperty("Brown") brown("Brown"),
     @JsonProperty("Clouded") clouded("Clouded"),
@@ -388,7 +388,7 @@ data class Prisoner(
    * Facial hair. From PROFILE_CODES table where PROFILE_TYPE = FACIAL_HAIR. Allowable values extracted 07/02/2023.
    * Values: fullBeard,cleanShaven,goateeBeard,moustacheOnly,notApplicableLeftParenthesisFemaleOffenderRightParenthesis,noFacialHair,sideburns
    */
-  enum class FacialHair(val value: kotlin.String) {
+  enum class FacialHair(val value: String) {
     @JsonProperty("Full Beard") fullBeard("Full Beard"),
     @JsonProperty("Clean Shaven") cleanShaven("Clean Shaven"),
     @JsonProperty("Goatee Beard") goateeBeard("Goatee Beard"),
@@ -402,7 +402,7 @@ data class Prisoner(
    * Shape of face. From PROFILE_CODES table where PROFILE_TYPE = FACE. Allowable values extracted 07/02/2023.
    * Values: angular,bullet,oval,round,square,triangular
    */
-  enum class ShapeOfFace(val value: kotlin.String) {
+  enum class ShapeOfFace(val value: String) {
     @JsonProperty("Angular") angular("Angular"),
     @JsonProperty("Bullet") bullet("Bullet"),
     @JsonProperty("Oval") oval("Oval"),
@@ -415,7 +415,7 @@ data class Prisoner(
    * Build. From PROFILE_CODES table where PROFILE_TYPE = BUILD. Allowable values extracted 07/02/2023.
    * Values: fat,frail,heavy,medium,muscular,obese,proportional,slight,small,stocky,stooped,thin
    */
-  enum class Build(val value: kotlin.String) {
+  enum class Build(val value: String) {
     @JsonProperty("Fat") fat("Fat"),
     @JsonProperty("Frail") frail("Frail"),
     @JsonProperty("Heavy") heavy("Heavy"),

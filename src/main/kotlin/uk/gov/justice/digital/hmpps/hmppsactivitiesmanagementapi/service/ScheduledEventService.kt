@@ -35,7 +35,10 @@ class ScheduledEventService(
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
   ) = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.firstOrNull()
-    ?.also {
+    .also {
+      if (it == null) {
+        throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
+      }
       if (it.prisonId != prisonCode || it.bookingId == null) {
         throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
       }
