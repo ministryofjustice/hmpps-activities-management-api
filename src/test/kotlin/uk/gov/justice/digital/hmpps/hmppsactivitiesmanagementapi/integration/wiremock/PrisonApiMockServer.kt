@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 import java.time.LocalDate
@@ -283,6 +284,18 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(location))
+            .withStatus(200)
+        )
+    )
+  }
+
+  fun stubGetUserCaseLoads(prisonCode: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/users/me/caseLoads?allCaseloads=false"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(listOf(CaseLoad(caseLoadId = prisonCode, description = "Moorland (HMP & YOI)", type = CaseLoad.Type.INST, currentlyActive = true))))
             .withStatus(200)
         )
     )

@@ -29,20 +29,20 @@ data class CaseLoad(
 ) {
   /**
    * Type of case load. Note: Reference Code CSLD_TYPE
-   * Values: cOMM,iNST,aPP
+   * Values: COMM,INST,APP
    */
   enum class Type(val value: String) {
-    @JsonProperty("COMM") cOMM("COMM"),
-    @JsonProperty("INST") iNST("INST"),
-    @JsonProperty("APP") aPP("APP")
+    @JsonProperty("COMM") COMM("COMM"),
+    @JsonProperty("INST") INST("INST"),
+    @JsonProperty("APP") APP("APP")
   }
 
   /**
    * Functional Use of the case load
-   * Values: gENERAL,aDMIN
+   * Values: GENERAL,ADMIN
    */
   enum class CaseloadFunction(val value: String) {
-    @JsonProperty("GENERAL") gENERAL("GENERAL"),
-    @JsonProperty("ADMIN") aDMIN("ADMIN")
+    @JsonProperty("GENERAL") GENERAL("GENERAL"),
+    @JsonProperty("ADMIN") ADMIN("ADMIN")
   }
 }
