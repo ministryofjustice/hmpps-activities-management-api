@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
@@ -19,13 +20,14 @@ class AppointmentService(
   private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val appointmentRepository: AppointmentRepository,
   private val locationService: LocationService,
+  private val prisonApiUserClient: PrisonApiUserClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient
 ) {
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
-    // TODO: Check that the supplied prison code is in the principle's case load
+    failIfPrisonCodeNotInUserCaseLoad(request.prisonCode!!)
 
     val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
 
@@ -39,7 +41,7 @@ class AppointmentService(
 
     return AppointmentEntity(
       category = category,
-      prisonCode = request.prisonCode!!,
+      prisonCode = request.prisonCode,
       internalLocationId = if (request.inCell) null else request.internalLocationId,
       inCell = request.inCell,
       startDate = request.startDate!!,
@@ -67,6 +69,12 @@ class AppointmentService(
         }
       )
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
+  }
+
+  private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
+    prisonApiUserClient.getUserCaseLoads().block()
+      ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
+      ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
   }
 
   private fun failIfLocationNotFound(request: AppointmentCreateRequest) {
