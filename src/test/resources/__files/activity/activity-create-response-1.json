@@ -63,5 +63,12 @@
   "startDate": "16/12/2022",
   "endDate": null,
   "createdTime": "16/12/2022 14:38",
-  "createdBy": "activities-management-admin-1"
+  "createdBy": "activities-management-admin-1",
+  "minimumEducationLevel": [
+    {
+      "id": 3,
+      "educationLevelCode": "1",
+      "educationLevelDescription": "Reading Measure 1.0"
+    }
+  ]
 }

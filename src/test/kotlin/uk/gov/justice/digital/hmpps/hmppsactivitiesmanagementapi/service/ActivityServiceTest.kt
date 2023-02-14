@@ -103,6 +103,7 @@ class ActivityServiceTest {
     with(activityArg) {
       assertThat(eligibilityRules()).hasSize(1)
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
       with(activityCategory) {
         assertThat(activityCategoryId).isEqualTo(1)
         assertThat(code).isEqualTo("category code")

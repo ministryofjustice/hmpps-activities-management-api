@@ -19,5 +19,11 @@
       "pieceRate": 180,
       "pieceRateItems": 15
     }
+  ],
+  "minimumEducationLevel": [
+    {
+      "educationLevelCode": "1",
+      "educationLevelDescription": "Reading Measure 1.0"
+    }
   ]
 }

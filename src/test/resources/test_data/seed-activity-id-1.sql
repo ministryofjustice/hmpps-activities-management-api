@@ -4,6 +4,9 @@ values (1, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1'
 insert into activity_pay(activity_pay_id, activity_id, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
 values (1, 1, 'Basic', 1, 125, 150, 1);
 
+insert into activity_minimum_education_level(activity_minimum_education_level_id, activity_id, education_level_code, education_level_description)
+values (1, 1, '1', 'Reading Measure 1.0');
+
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 

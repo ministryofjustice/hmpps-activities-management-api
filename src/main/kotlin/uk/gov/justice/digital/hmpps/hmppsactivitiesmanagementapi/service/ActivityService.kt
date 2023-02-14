@@ -90,6 +90,12 @@ class ActivityService(
           pieceRateItems = it.pieceRateItems
         )
       }
+      request.minimumEducationLevel.forEach {
+        this.addMinimumEducationLevel(
+          educationLevelCode = it.educationLevelCode!!,
+          educationLevelDescription = it.educationLevelDescription!!
+        )
+      }
     }.let { transform(activityRepository.saveAndFlush(it)) }
   }
 }

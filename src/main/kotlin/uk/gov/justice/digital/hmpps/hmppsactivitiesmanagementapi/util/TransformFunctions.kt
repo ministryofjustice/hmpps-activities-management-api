@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel as EntityActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
@@ -31,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance as ModelActivityScheduleInstance
@@ -75,7 +77,8 @@ fun transform(activity: EntityActivity) =
     riskLevel = activity.riskLevel,
     minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
-    createdBy = activity.createdBy
+    createdBy = activity.createdBy,
+    minimumEducationLevel = activity.activityMinimumEducationLevel().toModelActivityMinimumEducationLevelList()
   )
 
 fun transformPrisonerScheduledActivityToScheduledEvents(
@@ -480,6 +483,14 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
     rate = it.rate,
     pieceRate = it.pieceRate,
     pieceRateItems = it.pieceRateItems
+  )
+}
+
+private fun List<EntityActivityMinimumEducationLevel>.toModelActivityMinimumEducationLevelList() = map {
+  ModelActivityMinimumEducationLevel(
+    id = it.activityMinimumEducationLevelId,
+    educationLevelCode = it.educationLevelCode,
+    educationLevelDescription = it.educationLevelDescription
   )
 }
 

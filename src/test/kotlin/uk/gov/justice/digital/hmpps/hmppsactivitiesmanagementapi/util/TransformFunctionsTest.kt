@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
@@ -130,6 +131,13 @@ class TransformFunctionsTest {
       assertThat(endDate).isNull()
       assertThat(createdTime).isEqualTo(timestamp)
       assertThat(createdBy).isEqualTo("test")
+      assertThat(minimumEducationLevel).containsExactly(
+        ModelActivityMinimumEducationLevel(
+          id = -1,
+          educationLevelCode = "1",
+          educationLevelDescription = "Reading Measure 1.0"
+        )
+      )
     }
   }
 

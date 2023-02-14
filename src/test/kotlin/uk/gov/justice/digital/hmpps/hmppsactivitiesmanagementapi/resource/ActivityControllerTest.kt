@@ -248,6 +248,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Minimum incentive level should not exceed 10 characters"))
             value(containsString("Risk level should not exceed 10 characters"))
             value(containsString("Description should not exceed 300 characters"))
+            value(containsString("Education level code should not exceed 10 characters"))
+            value(containsString("Education level description should not exceed 60 characters"))
           }
         }
       }

@@ -46,7 +46,8 @@ internal fun activityEntity(
   endDate: LocalDate? = null,
   noSchedules: Boolean = false,
   noEligibilityRules: Boolean = false,
-  noPayBands: Boolean = false
+  noPayBands: Boolean = false,
+  noMinimumEducationLevels: Boolean = false
 ) =
   Activity(
     activityId = activityId,
@@ -76,6 +77,12 @@ internal fun activityEntity(
         rate = 30,
         pieceRate = 40,
         pieceRateItems = 50
+      )
+    }
+    if (!noMinimumEducationLevels) {
+      this.addMinimumEducationLevel(
+        educationLevelCode = "1",
+        educationLevelDescription = "Reading Measure 1.0"
       )
     }
   }

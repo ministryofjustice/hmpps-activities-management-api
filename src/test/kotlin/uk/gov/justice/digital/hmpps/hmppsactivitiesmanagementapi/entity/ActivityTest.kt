@@ -388,4 +388,22 @@ class ActivityTest {
 
     assertThat(activity.getSchedulesOnDay(activity.startDate, includeSuspended = false)).isEmpty()
   }
+
+  @Test
+  fun `can add minimum education levels to activity`() {
+    val activity = activityEntity(noMinimumEducationLevels = true).also { assertThat(it.activityMinimumEducationLevel()).isEmpty() }
+
+    activity.addMinimumEducationLevel(
+      educationLevelCode = "1",
+      educationLevelDescription = "Reading Measure 1.0"
+    )
+
+    assertThat(activity.activityMinimumEducationLevel()).containsExactlyInAnyOrder(
+      ActivityMinimumEducationLevel(
+        educationLevelCode = "1",
+        educationLevelDescription = "Reading Measure 1.0",
+        activity = activity
+      )
+    )
+  }
 }
