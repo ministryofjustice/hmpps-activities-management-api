@@ -33,7 +33,7 @@ class AppointmentService(
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
       .filter { prisoner -> prisoner.prisonId == request.prisonCode }
-      .associateBy { it.prisonerNumber}
+      .associateBy { it.prisonerNumber }
 
     failIfMissingPrisoners(request.prisonerNumbers, prisonerMap)
 
