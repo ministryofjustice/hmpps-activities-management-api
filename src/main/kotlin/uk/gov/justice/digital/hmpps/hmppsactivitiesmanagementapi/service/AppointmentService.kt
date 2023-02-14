@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -28,19 +29,13 @@ class AppointmentService(
 
     val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
 
-    if (!request.inCell) {
-      locationService.getLocationsForAppointments(request.prisonCode!!)
-        ?.firstOrNull { location -> location.locationId == request.internalLocationId }
-        ?: throw IllegalArgumentException("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
-    }
+    failIfLocationNotFound(request)
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
       .filter { prisoner -> prisoner.prisonId == request.prisonCode }
-    val validPrisonerNumbers = prisoners.map { prisoner -> prisoner.prisonerNumber }
+      .associateBy { it.prisonerNumber}
 
-    request.prisonerNumbers.filter { number -> !validPrisonerNumbers.contains(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
-    }
+    failIfMissingPrisoners(request.prisonerNumbers, prisonerMap)
 
     return AppointmentEntity(
       category = category,
@@ -62,7 +57,7 @@ class AppointmentService(
           startTime = this.startTime,
           endTime = this.endTime
         ).apply {
-          prisoners.map { prisoner ->
+          prisonerMap.map { (_, prisoner) ->
             AppointmentOccurrenceAllocationEntity(
               appointmentOccurrence = this,
               prisonerNumber = prisoner.prisonerNumber,
@@ -72,5 +67,19 @@ class AppointmentService(
         }
       )
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
+  }
+
+  private fun failIfLocationNotFound(request: AppointmentCreateRequest) {
+    if (!request.inCell) {
+      locationService.getLocationsForAppointments(request.prisonCode!!)
+        ?.firstOrNull { location -> location.locationId == request.internalLocationId }
+        ?: throw IllegalArgumentException("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
+    }
+  }
+
+  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
+    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
+      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
+    }
   }
 }
