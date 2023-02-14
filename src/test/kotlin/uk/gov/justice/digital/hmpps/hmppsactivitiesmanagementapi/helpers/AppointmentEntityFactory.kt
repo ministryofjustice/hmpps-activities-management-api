@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -51,3 +52,26 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
     prisonerNumber = "A1234BC",
     bookingId = 456
   )
+
+internal fun appointmentInstanceEntity(inCell: Boolean = false): AppointmentInstance {
+  val appointment = appointmentEntity(inCell);
+  var occurrence = appointment.occurrences().first()
+  val allocation = occurrence.allocations().first()
+
+  return AppointmentInstance(
+    appointmentInstanceId = 1,
+    appointmentOccurrence = occurrence,
+    category = appointment.category,
+    prisonCode = appointment.prisonCode,
+    internalLocationId = appointment.internalLocationId,
+    inCell = appointment.inCell,
+    prisonerNumber = allocation.prisonerNumber,
+    bookingId = allocation.bookingId,
+    appointmentDate = appointment.startDate,
+    startTime = appointment.startTime,
+    endTime = appointment.endTime,
+    comment = "Appointment instance level comment",
+    attended = true,
+    cancelled = false
+  )
+}

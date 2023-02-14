@@ -95,8 +95,8 @@ data class AppointmentCreateRequest(
   val prisonerNumbers: List<String> = emptyList()
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
-  public fun isInternalLocationIdValid() = inCell || internalLocationId != null
+  private fun isInternalLocationId() = inCell || internalLocationId != null
 
   @AssertTrue(message = "End time must be after the start time")
-  public fun isEndTimeValid() = endTime == null || (startTime != null && endTime > startTime)
+  private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
 }
