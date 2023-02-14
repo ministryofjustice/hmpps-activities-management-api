@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -54,8 +54,8 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
   )
 
 internal fun appointmentInstanceEntity(inCell: Boolean = false): AppointmentInstance {
-  val appointment = appointmentEntity(inCell);
-  var occurrence = appointment.occurrences().first()
+  val appointment = appointmentEntity(inCell)
+  val occurrence = appointment.occurrences().first()
   val allocation = occurrence.allocations().first()
 
   return AppointmentInstance(

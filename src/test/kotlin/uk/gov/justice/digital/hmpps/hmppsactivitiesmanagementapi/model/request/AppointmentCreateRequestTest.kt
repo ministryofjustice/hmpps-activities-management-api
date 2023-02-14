@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import jakarta.validation.ConstraintViolation
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 import jakarta.validation.Validation
 import jakarta.validation.Validator
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import java.time.LocalDate
 import java.time.LocalTime
