@@ -27,7 +27,7 @@ data class AppointmentInstance(
   @JoinColumn(name = "appointment_category_id", nullable = false)
   var category: AppointmentCategory,
 
-  var prisonCode: String,
+  val prisonCode: String,
 
   var internalLocationId: Long?,
 
@@ -45,9 +45,9 @@ data class AppointmentInstance(
 
   var comment: String? = null,
 
-  val attended: Boolean? = null,
+  var attended: Boolean? = null,
 
-  val cancelled: Boolean = false,
+  var cancelled: Boolean = false,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,

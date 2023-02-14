@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.AssertTrue
+import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -27,7 +28,7 @@ data class AppointmentCreateRequest(
   @field:NotEmpty(message = "Prison code must be supplied")
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
   @Schema(
-    description = "The NOMIS prison code where this activity takes place",
+    description = "The NOMIS prison code where this appointment takes place",
     example = "PVI"
   )
   val prisonCode: String?,
@@ -53,6 +54,7 @@ data class AppointmentCreateRequest(
   val inCell: Boolean,
 
   @field:NotNull(message = "Start date must be supplied")
+  @field:FutureOrPresent(message = "Start date must not be in the past")
   @Schema(
     description = "The date of the appointment or first appointment occurrence in the series"
   )
@@ -94,9 +96,6 @@ data class AppointmentCreateRequest(
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   public fun isInternalLocationIdValid() = inCell || internalLocationId != null
-
-  @AssertTrue(message = "Start date must not be in the past")
-  public fun isStartDateValid() = startDate == null || startDate >= LocalDate.now()
 
   @AssertTrue(message = "End time must be after the start time")
   public fun isEndTimeValid() = endTime == null || (startTime != null && endTime > startTime)

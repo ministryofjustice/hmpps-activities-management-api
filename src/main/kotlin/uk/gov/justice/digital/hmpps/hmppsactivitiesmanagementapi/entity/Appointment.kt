@@ -32,7 +32,7 @@ data class Appointment(
   @JoinColumn(name = "appointment_category_id", nullable = false)
   var category: AppointmentCategory,
 
-  var prisonCode: String,
+  val prisonCode: String,
 
   var internalLocationId: Long?,
 
