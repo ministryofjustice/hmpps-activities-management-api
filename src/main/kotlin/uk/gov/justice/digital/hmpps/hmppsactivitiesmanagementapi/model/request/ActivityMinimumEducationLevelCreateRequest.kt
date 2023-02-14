@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
-import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 
 @Schema(description = "Describes the minimum education levels to be created for an activity")
