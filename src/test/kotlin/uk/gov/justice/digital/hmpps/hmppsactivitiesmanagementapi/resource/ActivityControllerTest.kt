@@ -138,6 +138,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Activity summary must be supplied"))
             value(containsString("Minimum incentive level NOMIS code must be supplied"))
             value(containsString("Minimum incentive level must be supplied"))
+            value(containsString("Risk level must be supplied"))
           }
         }
       }

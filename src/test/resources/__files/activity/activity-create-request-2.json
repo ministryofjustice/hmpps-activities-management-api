@@ -6,6 +6,7 @@
   "payPerSession": "H",
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
   "pay": [
     {
       "incentiveNomisCode": "BAS",

@@ -45,6 +45,7 @@ object ScheduledInstanceFixture {
         startDate = LocalDate.of(2022, 10, 1),
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
+        riskLevel = "high",
         createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
         createdBy = "CREATED BY"
       ),

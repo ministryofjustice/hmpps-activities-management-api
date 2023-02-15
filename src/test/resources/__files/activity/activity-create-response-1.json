@@ -66,6 +66,7 @@
   "endDate": null,
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
   "createdTime": "16/12/2022 14:38",
   "createdBy": "activities-management-admin-1"
 }

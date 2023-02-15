@@ -146,7 +146,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
@@ -181,7 +181,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           payPerSession = PayPerSession.H,
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
@@ -227,7 +227,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
