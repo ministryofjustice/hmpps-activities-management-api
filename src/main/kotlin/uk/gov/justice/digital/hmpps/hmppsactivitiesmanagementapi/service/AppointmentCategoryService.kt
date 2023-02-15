@@ -8,6 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 class AppointmentCategoryService(
   private val appointmentCategoryRepository: AppointmentCategoryRepository
 ) {
-  fun getAll() =
-    appointmentCategoryRepository.findAllOrdered().toModel()
+  fun getAll(includeInactive: Boolean) =
+    appointmentCategoryRepository.findAllOrdered().filter { includeInactive || it.active }.toModel()
 }

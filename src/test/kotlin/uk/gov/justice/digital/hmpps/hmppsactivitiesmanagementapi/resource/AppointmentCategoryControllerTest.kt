@@ -25,7 +25,7 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
   fun `200 response when get all appointment categories`() {
     val appointmentCategories = appointmentCategoryEntities().toModel()
 
-    whenever(appointmentCategoryService.getAll()).thenReturn(appointmentCategories)
+    whenever(appointmentCategoryService.getAll(false)).thenReturn(appointmentCategories)
 
     val response = mockMvc
       .get("/appointment-categories")
