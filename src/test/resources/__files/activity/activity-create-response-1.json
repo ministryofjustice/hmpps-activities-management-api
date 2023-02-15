@@ -31,6 +31,7 @@
   "pay": [
     {
       "id": 73,
+      "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
       "prisonPayBand": {
         "id": 1,
@@ -46,6 +47,7 @@
     },
     {
       "id": 74,
+      "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
       "prisonPayBand": {
         "id": 2,
@@ -62,6 +64,8 @@
   ],
   "startDate": "2022-12-16",
   "endDate": null,
+  "minimumIncentiveNomisCode": "BAS",
+  "minimumIncentiveLevel": "Basic",
   "createdTime": "2022-12-16T14:38:00",
   "createdBy": "activities-management-admin-1"
 }

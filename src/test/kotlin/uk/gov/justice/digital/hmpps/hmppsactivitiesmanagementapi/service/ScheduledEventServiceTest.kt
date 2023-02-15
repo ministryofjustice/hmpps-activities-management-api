@@ -13,6 +13,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
@@ -26,12 +27,14 @@ import java.time.LocalTime
 
 class ScheduledEventServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
+    prisonerSearchApiClient,
     rolloutPrisonRepository,
     prisonerScheduledActivityRepository,
     prisonRegimeService,
@@ -117,10 +120,10 @@ class ScheduledEventServiceTest {
     val prisonerDetailsMono = if (withPrisonerDetailsException) {
       Mono.error(Exception("Error"))
     } else {
-      Mono.just(InmateDetailFixture.instance(agencyId = prisonOverride))
+      Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonId = prisonOverride)))
     }
 
-    whenever(prisonApiClient.getPrisonerDetails(prisonerNumber))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)))
       .thenReturn(prisonerDetailsMono)
 
     whenever(prisonApiClient.getScheduledAppointments(900001, dateRange))

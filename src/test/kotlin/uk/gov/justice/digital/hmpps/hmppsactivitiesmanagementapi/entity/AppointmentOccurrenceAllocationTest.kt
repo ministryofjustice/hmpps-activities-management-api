@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceAllocationModel
 
 class AppointmentOccurrenceAllocationTest {
   @Test
@@ -18,6 +18,3 @@ class AppointmentOccurrenceAllocationTest {
     assertThat(appointmentEntity().occurrences().first().allocations().toModel()).isEqualTo(expectedModel)
   }
 }
-
-internal fun appointmentOccurrenceAllocationModel() =
-  AppointmentOccurrenceAllocation(1, "A1234BC", 456)

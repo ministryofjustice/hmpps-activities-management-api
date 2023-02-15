@@ -40,7 +40,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 11, 1)
 
       // Setup prison API stubs
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
@@ -69,7 +69,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 10, 1)
 
       // Set up prison API stubs
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
@@ -98,7 +98,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 10, 1)
 
       // Set up prison API stubs
-      prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumberNotFound(prisonerNumber)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
@@ -123,10 +123,10 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("(developer message)Resource with id [$prisonerNumber] not found.")
+        assertThat(developerMessage).isEqualTo("Prisoner '$prisonerNumber' not found")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("(user message)Resource with id [$prisonerNumber] not found.")
+        assertThat(userMessage).isEqualTo("Not found: Prisoner '$prisonerNumber' not found")
       }
     }
 
@@ -138,7 +138,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
@@ -178,7 +178,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
@@ -218,7 +218,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisitsNotFound(bookingId, startDate, endDate)
@@ -258,7 +258,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)

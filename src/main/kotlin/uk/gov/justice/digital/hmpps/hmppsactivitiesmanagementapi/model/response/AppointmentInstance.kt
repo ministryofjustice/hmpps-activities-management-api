@@ -42,7 +42,7 @@ data class AppointmentInstance(
     """,
     example = "123"
   )
-  val internalLocationId: Int?,
+  val internalLocationId: Long?,
 
   @Schema(
     description =
@@ -64,7 +64,7 @@ data class AppointmentInstance(
     description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
     example = "456"
   )
-  val bookingId: Int,
+  val bookingId: Long,
 
   @Schema(
     description = "The date of the appointment instance"
@@ -95,7 +95,7 @@ data class AppointmentInstance(
     """,
     example = "This appointment will help prisoner A1234BC adjust to life outside of prison"
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description =
@@ -104,7 +104,7 @@ data class AppointmentInstance(
     """,
     example = "false"
   )
-  val attended: Boolean,
+  val attended: Boolean?,
 
   @Schema(
     description = "Indicates that the parent appointment occurrence was cancelled",

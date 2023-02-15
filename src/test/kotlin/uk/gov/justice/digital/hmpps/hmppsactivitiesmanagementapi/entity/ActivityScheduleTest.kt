@@ -72,6 +72,7 @@ class ActivityScheduleTest {
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "High",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ModelActivityCategory(
           id = 1L,
@@ -118,6 +119,7 @@ class ActivityScheduleTest {
           summary = "Maths",
           description = "Maths basic",
           riskLevel = "High",
+          minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ModelActivityCategory(
             id = 1L,

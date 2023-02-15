@@ -24,6 +24,21 @@ Tools required:
 
 `$ ./gradlew clean build` 
 
+## Environment variables
+
+The system client id and secret used to retrieve the OAuth 2.0 Access Token needed for service to service API calls can be set as local environment variables.
+This allows API calls made from this service that do not use the caller's token to successfully authenticate.
+
+The process of adding the environment variables to your local development environment varies based on OS and shell used.
+For zsh, add the following lines to your `.zprofile` file replacing the text in quotes with the dev client id and secret: 
+
+```
+export SYSTEM_CLIENT_ID="<system.client.id>"
+export SYSTEM_CLIENT_SECRET="<system.client.secret>"
+```
+
+N.B. you must escape any '$' characters with '\$'
+
 ## Running the service
 
 Start up the docker dependencies using the docker-compose file in the `hmpps-activities-management-api` service.

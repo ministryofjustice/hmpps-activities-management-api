@@ -30,8 +30,8 @@ class AllocationTest : ModelTest() {
       bookingId = 123,
       prisonPayBand = PrisonPayBand(1, 1, "Alias", "Desc", 1, "PVI"),
       prisonerNumber = "1234",
-      scheduleDescription = "Blah blah"
-
+      scheduleDescription = "Blah blah",
+      scheduleId = 123
     )
 
     val json = objectMapper.writeValueAsString(allocation)

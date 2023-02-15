@@ -29,9 +29,12 @@ class LocationService(
     return LocationPrefixDto(locationPrefix)
   }
 
-  fun getVideoLinkRoomsForPrison(agencyId: String): List<LocationIdAndDescription>? =
+  fun getLocationsForAppointments(agencyId: String): List<Location>? =
     prisonApiClient
       .getLocationsForTypeUnrestricted(agencyId, "APP").block()
+
+  fun getVideoLinkRoomsForPrison(agencyId: String): List<LocationIdAndDescription>? =
+    getLocationsForAppointments(agencyId)
       ?.filter { it.locationType == "VIDE" }
       ?.map { LocationIdAndDescription(it.locationId, it.userDescription ?: it.description) }
 

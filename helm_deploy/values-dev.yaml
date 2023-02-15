@@ -10,6 +10,7 @@ generic-service:
   env:
     HMPPS_AUTH_URL: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://api-dev.prison.service.justice.gov.uk
+    PRISONER_SEARCH_API_URL: https://prisoner-offender-search-dev.prison.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SPRING_PROFILES_ACTIVE: dev
     SCHEDULE_AHEAD_DAYS: 14

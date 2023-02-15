@@ -32,9 +32,9 @@ data class Appointment(
   @JoinColumn(name = "appointment_category_id", nullable = false)
   var category: AppointmentCategory,
 
-  var prisonCode: String,
+  val prisonCode: String,
 
-  var internalLocationId: Int?,
+  var internalLocationId: Long?,
 
   var inCell: Boolean,
 
@@ -46,15 +46,15 @@ data class Appointment(
 
   var comment: String,
 
-  val created: LocalDateTime,
+  val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 
-  var updated: LocalDateTime?,
+  var updated: LocalDateTime? = null,
 
-  var updatedBy: String?,
+  var updatedBy: String? = null,
 
-  val deleted: Boolean
+  val deleted: Boolean = false
 ) {
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

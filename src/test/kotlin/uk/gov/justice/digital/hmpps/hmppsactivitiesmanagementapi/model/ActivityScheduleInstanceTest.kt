@@ -43,7 +43,8 @@ class ActivityScheduleInstanceTest : ModelTest() {
           attendanceRequired = true,
           category = ActivityCategory(id = 1, code = "11", name = "Cat 1", description = "Cat 1 desc"),
           description = "Some Desc",
-          summary = "Blah"
+          summary = "Blah",
+          minimumIncentiveNomisCode = "N1"
         ),
         description = "Some Desc",
         capacity = 10,

@@ -35,7 +35,8 @@ class ActivityTest : ModelTest() {
       startDate = originalStartDate,
       endDate = originalEndDate,
       createdBy = "TestUser",
-      createdTime = originalCreatedTime
+      createdTime = originalCreatedTime,
+      minimumIncentiveNomisCode = "N1"
     )
 
     val json = objectMapper.writeValueAsString(activity)
