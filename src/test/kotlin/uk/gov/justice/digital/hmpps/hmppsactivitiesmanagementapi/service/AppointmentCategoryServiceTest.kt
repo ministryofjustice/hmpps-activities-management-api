@@ -17,6 +17,6 @@ class AppointmentCategoryServiceTest {
   fun `findAll returns all appointment categories`() {
     val entities = appointmentCategoryEntities()
     whenever(appointmentCategoryRepository.findAllOrdered()).thenReturn(entities)
-    assertThat(service.getAll()).isEqualTo(entities.toModel())
+    assertThat(service.getAll(false)).isEqualTo(entities.toModel())
   }
 }
