@@ -1,6 +1,7 @@
 {
   "attendanceRequired": false,
   "eligibilityRuleIds": [1],
+  "riskLevel": "high",
   "pay": [
     {
       "incentiveNomisCode": "BAS",

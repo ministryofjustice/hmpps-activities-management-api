@@ -55,8 +55,9 @@ data class ActivityCreateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 
+  @field:NotEmpty(message = "Risk level must be supplied")
   @field:Size(max = 10, message = "Risk level should not exceed {max} characters")
-  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
   val riskLevel: String?,
 
   @field:NotEmpty(message = "Minimum incentive level NOMIS code must be supplied")
