@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -25,8 +26,9 @@ class ActivityService(
   private val activityTierRepository: ActivityTierRepository,
   private val eligibilityRuleRepository: EligibilityRuleRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
-  private val prisonPayBandRepository: PrisonPayBandRepository
-) {
+  private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val prisonApiClient: PrisonApiClient
+  ) {
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId)
@@ -64,6 +66,7 @@ class ActivityService(
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
+    checkEducationLevels(request)
 
     return Activity(
       prisonCode = request.prisonCode,
@@ -97,5 +100,18 @@ class ActivityService(
         )
       }
     }.let { transform(activityRepository.saveAndFlush(it)) }
+  }
+
+  private fun checkEducationLevels(request: ActivityCreateRequest) {
+    request.minimumEducationLevel.forEach {
+      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", it.educationLevelCode!!).block()!!
+      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+    }
+  }
+
+  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String) {
+    if (requestDescription != apiDescription) {
+      throw IllegalArgumentException("The education level description '${requestDescription}' does not match that of the NOMIS education level '${apiDescription}'")
+    }
   }
 }

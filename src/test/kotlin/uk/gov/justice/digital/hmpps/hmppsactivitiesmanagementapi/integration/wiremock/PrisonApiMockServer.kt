@@ -276,6 +276,18 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
+  fun stubGetEducationLevel(domain: String, educationLevelCode: String, jsonResponseFile: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/$domain/codes/$educationLevelCode"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile(jsonResponseFile)
+            .withStatus(200)
+        )
+    )
+  }
+
   fun stubGetLocation(locationId: Long, location: Location) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId"))

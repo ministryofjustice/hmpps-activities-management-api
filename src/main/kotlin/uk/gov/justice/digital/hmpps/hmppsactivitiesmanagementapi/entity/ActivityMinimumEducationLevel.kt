@@ -20,9 +20,9 @@ data class ActivityMinimumEducationLevel(
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  var educationLevelCode: String,
+  val educationLevelCode: String,
 
-  var educationLevelDescription: String,
+  val educationLevelDescription: String,
 
 ) {
   override fun equals(other: Any?): Boolean {

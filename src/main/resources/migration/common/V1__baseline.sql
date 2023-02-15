@@ -341,3 +341,6 @@ CREATE TABLE activity_minimum_education_level (
 );
 
 CREATE INDEX idx_activity_minimum_education_level_activity_id ON activity_minimum_education_level (activity_id);
+
+CREATE UNIQUE INDEX idx_activity_minimum_edu_level_activity_edu_code
+    ON activity_minimum_education_level (activity_id, education_level_code);
