@@ -75,14 +75,16 @@ class ActivityService(
       startDate = request.startDate ?: LocalDate.now(),
       endDate = request.endDate,
       riskLevel = request.riskLevel,
-      minimumIncentiveLevel = request.minimumIncentiveLevel,
+      minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
+      minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy
     ).apply {
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
-          incentiveLevel = it.incentiveLevel,
+          incentiveNomisCode = it.incentiveNomisCode!!,
+          incentiveLevel = it.incentiveLevel!!,
           payBand = prisonPayBands[it.payBandId]
             ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),
           rate = it.rate,

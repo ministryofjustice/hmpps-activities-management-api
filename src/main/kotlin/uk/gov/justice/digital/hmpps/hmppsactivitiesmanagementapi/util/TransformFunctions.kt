@@ -73,6 +73,7 @@ fun transform(activity: EntityActivity) =
     startDate = activity.startDate,
     endDate = activity.endDate,
     riskLevel = activity.riskLevel,
+    minimumIncentiveNomisCode = activity.minimumIncentiveNomisCode,
     minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy
@@ -475,6 +476,7 @@ private fun List<EntitySuspension>.toModelSuspensions() = map {
 private fun List<EntityActivityPay>.toModelActivityPayList() = map {
   ModelActivityPay(
     id = it.activityPayId,
+    incentiveNomisCode = it.incentiveNomisCode,
     incentiveLevel = it.incentiveLevel,
     prisonPayBand = it.payBand.toModelPrisonPayBand(),
     rate = it.rate,

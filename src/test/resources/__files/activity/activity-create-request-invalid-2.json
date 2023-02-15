@@ -8,6 +8,7 @@
   "eligibilityRuleIds": [1],
   "pay": [
     {
+      "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
       "payBand": "A",
       "rate": 0,
@@ -15,6 +16,7 @@
       "pieceRateItems": 10
     },
     {
+      "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
       "payBand": "B",
       "rate": 160,
