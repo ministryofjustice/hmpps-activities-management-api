@@ -28,7 +28,7 @@ class ActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val prisonApiClient: PrisonApiClient
-  ) {
+) {
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId)
@@ -104,14 +104,15 @@ class ActivityService(
 
   private fun checkEducationLevels(request: ActivityCreateRequest) {
     request.minimumEducationLevel.forEach {
-      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", it.educationLevelCode!!).block()!!
+      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", it.educationLevelCode!!).block()
+        ?: throw IllegalArgumentException("The education level code '$it.educationLevelCode!!' does not exist in NOMIS")
       failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
     }
   }
 
   private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String) {
     if (requestDescription != apiDescription) {
-      throw IllegalArgumentException("The education level description '${requestDescription}' does not match that of the NOMIS education level '${apiDescription}'")
+      throw IllegalArgumentException("The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'")
     }
   }
 }

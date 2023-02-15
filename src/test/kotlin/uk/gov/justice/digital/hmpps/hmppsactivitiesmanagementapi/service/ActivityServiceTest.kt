@@ -19,6 +19,9 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.EducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -46,6 +49,17 @@ class ActivityServiceTest {
   private val eligibilityRuleRepository: EligibilityRuleRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
+
+  private val educationLevel = EducationLevel(
+    domain = "EDU_LEVEL",
+    code = "1",
+    description = "Reading Measure 1.0",
+    parentCode = "STL",
+    activeFlag = "Y",
+    listSeq = 6,
+    systemDataFlag = "N"
+  )
 
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
@@ -58,7 +72,8 @@ class ActivityServiceTest {
     activityTierRepository,
     eligibilityRuleRepository,
     activityScheduleRepository,
-    prisonPayBandRepository
+    prisonPayBandRepository,
+    prisonApiClient
   )
 
   @BeforeEach
@@ -90,6 +105,7 @@ class ActivityServiceTest {
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "1")).thenReturn(Mono.just(educationLevel))
 
     service.createActivity(createActivityRequest, createdBy)
 
