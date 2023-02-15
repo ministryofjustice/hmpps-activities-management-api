@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -38,5 +40,10 @@ class AppointmentCategoryController(private val appointmentCategoryService: Appo
   )
   @GetMapping
   @ResponseBody
-  fun getAppointmentCategories(): List<AppointmentCategory> = appointmentCategoryService.getAll()
+  fun getAppointmentCategories(
+    @RequestParam(
+      value = "includeInactive",
+      required = false
+    ) @Parameter(description = "If true will return all appointment categories otherwise only active categories will be returned. Defaults to false.") includeInactive: Boolean?,
+  ): List<AppointmentCategory> = appointmentCategoryService.getAll(includeInactive ?: false)
 }

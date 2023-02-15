@@ -9,7 +9,10 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
@@ -75,6 +78,8 @@ class AppointmentServiceTest {
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison code '${request.prisonCode}' not found in user's case load")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -87,6 +92,22 @@ class AppointmentServiceTest {
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category ${request.categoryId} not found")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `createAppointment throws illegal argument exception when requested category id is inactive`() {
+    val request = appointmentCreateRequest()
+    val principal: Principal = mock()
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity(active = false)))
+
+    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Appointment Category ${request.categoryId} is not active")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -100,6 +121,8 @@ class AppointmentServiceTest {
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -114,6 +137,8 @@ class AppointmentServiceTest {
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -130,6 +155,8 @@ class AppointmentServiceTest {
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test

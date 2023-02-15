@@ -8,8 +8,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
   @Test
-  fun `get list of activity categories`() {
+  fun `get list of activity categories by default returns only active categories`() {
     assertThat(webTestClient.getAppointmentCategories()!!).containsExactly(
+      AppointmentCategory(id = 3, code = "AC1", description = "Appointment Category 1", active = true, displayOrder = 3),
+      AppointmentCategory(id = 1, code = "AC2", description = "Appointment Category 2", active = true, displayOrder = null),
+      AppointmentCategory(id = 4, code = "AC3", description = "Appointment Category 3", active = true, displayOrder = null)
+    )
+  }
+
+  @Test
+  fun `get list of activity categories including inactive returns all categories`() {
+    assertThat(webTestClient.getAppointmentCategories(true)!!).containsExactly(
       AppointmentCategory(id = 5, code = "LAC1", description = "Legacy Appointment Category 1", active = false, displayOrder = 1),
       AppointmentCategory(id = 2, code = "LAC2", description = "Legacy Appointment Category 2", active = false, displayOrder = 2),
       AppointmentCategory(id = 3, code = "AC1", description = "Appointment Category 1", active = true, displayOrder = 3),
@@ -29,6 +38,16 @@ class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentCategories() =
     get()
       .uri("/appointment-categories")
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(AppointmentCategory::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getAppointmentCategories(includeInactive: Boolean) =
+    get()
+      .uri("/appointment-categories?includeInactive=$includeInactive")
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
       .expectStatus().isOk

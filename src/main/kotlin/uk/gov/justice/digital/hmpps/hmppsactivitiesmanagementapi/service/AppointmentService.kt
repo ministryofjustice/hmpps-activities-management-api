@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -30,6 +31,7 @@ class AppointmentService(
     failIfPrisonCodeNotInUserCaseLoad(request.prisonCode!!)
 
     val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
+    failIfCategoryIsNotActive(category)
 
     failIfLocationNotFound(request)
 
@@ -75,6 +77,10 @@ class AppointmentService(
     prisonApiUserClient.getUserCaseLoads().block()
       ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
       ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
+  }
+
+  private fun failIfCategoryIsNotActive(category: AppointmentCategory) {
+    if (!category.active) throw IllegalArgumentException("Appointment Category ${category.appointmentCategoryId} is not active")
   }
 
   private fun failIfLocationNotFound(request: AppointmentCreateRequest) {
