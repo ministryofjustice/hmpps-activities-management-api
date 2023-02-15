@@ -19,6 +19,8 @@ data class Allocation(
 
   val activitySummary: String,
 
+  val scheduleId: Long,
+
   val scheduleDescription: String,
 
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")

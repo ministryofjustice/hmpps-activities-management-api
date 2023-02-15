@@ -65,6 +65,7 @@ data class Allocation(
       allocatedTime = allocatedTime,
       allocatedBy = allocatedBy,
       activitySummary = activitySummary(),
+      scheduleId = activitySchedule.activityScheduleId,
       scheduleDescription = activitySchedule.description
     )
 }

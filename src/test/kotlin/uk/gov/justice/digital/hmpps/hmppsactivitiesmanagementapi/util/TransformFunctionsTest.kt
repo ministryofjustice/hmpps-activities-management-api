@@ -90,6 +90,7 @@ class TransformFunctionsTest {
               allocatedTime = timestamp,
               allocatedBy = "Mr Blogs",
               activitySummary = "Maths",
+              scheduleId = 1,
               scheduleDescription = "schedule description"
             )
           ),
