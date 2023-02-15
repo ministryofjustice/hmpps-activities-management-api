@@ -98,7 +98,7 @@ data class Appointment(
   @Schema(
     description = "The date and time this appointment was created. Will not change"
   )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val created: LocalDateTime,
 
   @Schema(
@@ -118,7 +118,7 @@ data class Appointment(
     Will be null if the appointment has not been altered since it was created
     """
   )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val updated: LocalDateTime?,
 
   @Schema(

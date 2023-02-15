@@ -93,7 +93,7 @@ data class AppointmentOccurrence(
     since it was created
     """
   )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val updated: LocalDateTime?,
 
   @Schema(
