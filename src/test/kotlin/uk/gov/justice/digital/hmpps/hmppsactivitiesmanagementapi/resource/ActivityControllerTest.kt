@@ -355,6 +355,13 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(10, 20),
             daysOfWeek = listOf("Mon"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           )
         ),
         startDate = LocalDate.now()
