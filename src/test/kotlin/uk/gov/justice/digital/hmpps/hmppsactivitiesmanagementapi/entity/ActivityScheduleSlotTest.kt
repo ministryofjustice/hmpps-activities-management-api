@@ -8,6 +8,32 @@ import java.time.LocalTime
 class ActivityScheduleSlotTest {
 
   @Test
+  fun `conversion to model sets day flags and days-of-week list correctly`() {
+
+    val slot = ActivityScheduleSlot(
+      activityScheduleSlotId = 1,
+      activitySchedule = mock(),
+      startTime = LocalTime.now(),
+      endTime = LocalTime.now(),
+      mondayFlag = true,
+      wednesdayFlag = true,
+      fridayFlag = true,
+      sundayFlag = true
+    )
+
+    with(slot.toModel()) {
+      assertThat(mondayFlag).isTrue
+      assertThat(tuesdayFlag).isFalse
+      assertThat(wednesdayFlag).isTrue
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isTrue
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isTrue
+      assertThat(daysOfWeek).containsExactly("Mon", "Wed", "Fri", "Sun")
+    }
+  }
+
+  @Test
   fun `conversion to model sets monday flag correctly`() {
 
     val slot = ActivityScheduleSlot(
@@ -26,8 +52,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Mon")
+      assertThat(daysOfWeek).containsExactly("Mon")
     }
   }
 
@@ -50,8 +75,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Tue")
+      assertThat(daysOfWeek).containsExactly("Tue")
     }
   }
 
@@ -74,8 +98,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Wed")
+      assertThat(daysOfWeek).containsExactly("Wed")
     }
   }
 
@@ -98,8 +121,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Thu")
+      assertThat(daysOfWeek).containsExactly("Thu")
     }
   }
 
@@ -122,8 +144,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isTrue
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Fri")
+      assertThat(daysOfWeek).containsExactly("Fri")
     }
   }
 
@@ -146,8 +167,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isTrue
       assertThat(sundayFlag).isFalse
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Sat")
+      assertThat(daysOfWeek).containsExactly("Sat")
     }
   }
 
@@ -170,8 +190,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isTrue
-      assertThat(daysOfWeek.size).isEqualTo(1)
-      assertThat(daysOfWeek).contains("Sun")
+      assertThat(daysOfWeek).containsExactly("Sun")
     }
   }
 }

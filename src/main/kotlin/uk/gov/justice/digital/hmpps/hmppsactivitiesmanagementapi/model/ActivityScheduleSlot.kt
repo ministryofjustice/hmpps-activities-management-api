@@ -28,24 +28,24 @@ data class ActivityScheduleSlot(
   @Schema(description = "The days of the week on which the schedule slot takes place", example = "[Mon,Tue,Wed]")
   val daysOfWeek: List<String>,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Monday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Monday", example = "true")
   val mondayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Tuesday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Tuesday", example = "true")
   val tuesdayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Wednesday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Wednesday", example = "true")
   val wednesdayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Thursday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Thursday", example = "true")
   val thursdayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Friday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Friday", example = "true")
   val fridayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Saturday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Saturday", example = "true")
   val saturdayFlag: Boolean,
 
-  @Schema(description = "Indicates whether the schedule slot takes place on a Sunday")
+  @Schema(description = "Indicates whether the schedule slot takes place on a Sunday", example = "true")
   val sundayFlag: Boolean,
 )
