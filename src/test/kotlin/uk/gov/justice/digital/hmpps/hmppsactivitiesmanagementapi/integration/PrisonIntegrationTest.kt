@@ -34,7 +34,8 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         payPerSession = PayPerSession.H,
         summary = "Maths",
         description = "Maths Level 1",
-        riskLevel = "High",
+        riskLevel = "high",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
@@ -64,7 +65,8 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         payPerSession = PayPerSession.H,
         summary = "Maths",
         description = "Maths Level 1",
-        riskLevel = "High",
+        riskLevel = "high",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,

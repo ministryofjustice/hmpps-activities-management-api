@@ -146,7 +146,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
+          minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
@@ -180,7 +181,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           payPerSession = PayPerSession.H,
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
+          minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
@@ -225,7 +227,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           summary = "Maths",
           description = "Maths Level 1",
-          riskLevel = "High",
+          riskLevel = "high",
+          minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
@@ -267,6 +270,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
       assertThat(pay).hasSize(1)
       pay.map {
+        assertThat(it.incentiveNomisCode).isEqualTo("BAS")
         assertThat(it.incentiveLevel).isEqualTo("Basic")
         assertThat(it.prisonPayBand).isEqualTo(testPentonvillePayBandOne)
         assertThat(it.rate).isEqualTo(125)
@@ -346,6 +350,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2", "Description of Category 2"))
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       pay.map {
+        assertThat(it.incentiveNomisCode).isEqualTo("BAS")
         assertThat(it.incentiveLevel).isEqualTo("Basic")
         assertThat(it.prisonPayBand).isEqualTo(testPentonvillePayBandOne)
         assertThat(it.rate).isEqualTo(75)

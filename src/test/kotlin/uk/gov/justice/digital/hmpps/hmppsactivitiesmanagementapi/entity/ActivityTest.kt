@@ -58,6 +58,7 @@ class ActivityTest {
       summary = "Maths",
       description = "Maths basic",
       riskLevel = "High",
+      minimumIncentiveNomisCode = "BAS",
       minimumIncentiveLevel = "Basic",
       category = ActivityCategory(
         id = 1L,
@@ -83,6 +84,7 @@ class ActivityTest {
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "High",
+        minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
@@ -266,6 +268,7 @@ class ActivityTest {
     val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
 
     activity.addPay(
+      incentiveNomisCode = "BAS",
       incentiveLevel = "Basic",
       payBand = lowPayBand,
       rate = 30,
@@ -274,6 +277,7 @@ class ActivityTest {
     )
 
     activity.addPay(
+      incentiveNomisCode = "STD",
       incentiveLevel = "Standard",
       payBand = mediumPayBand,
       rate = 40,
@@ -283,6 +287,7 @@ class ActivityTest {
 
     assertThat(activity.activityPay()).containsExactlyInAnyOrder(
       ActivityPay(
+        incentiveNomisCode = "BAS",
         incentiveLevel = "Basic",
         payBand = lowPayBand,
         rate = 30,
@@ -291,6 +296,7 @@ class ActivityTest {
         activity = activity
       ),
       ActivityPay(
+        incentiveNomisCode = "STD",
         incentiveLevel = "Standard",
         payBand = mediumPayBand,
         rate = 40,

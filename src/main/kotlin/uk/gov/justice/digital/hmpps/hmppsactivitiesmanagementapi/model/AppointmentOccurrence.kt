@@ -33,7 +33,7 @@ data class AppointmentOccurrence(
     """,
     example = "123"
   )
-  val internalLocationId: Int?,
+  val internalLocationId: Long?,
 
   @Schema(
     description =

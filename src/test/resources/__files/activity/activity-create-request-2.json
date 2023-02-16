@@ -4,8 +4,12 @@
   "summary": "Maths",
   "categoryId": 1,
   "payPerSession": "H",
+  "minimumIncentiveNomisCode": "BAS",
+  "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
   "pay": [
     {
+      "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
       "payBandId": 1,
       "rate": 125,
@@ -13,6 +17,7 @@
       "pieceRateItems": 10
     },
     {
+      "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
       "payBandId": 2,
       "rate": 160,

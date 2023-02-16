@@ -43,6 +43,9 @@ object ScheduledInstanceFixture {
         summary = "ACTIVITY SUMMARY $activityId",
         description = "ACTIVITY DESCRIPTION $activityId",
         startDate = LocalDate.of(2022, 10, 1),
+        minimumIncentiveNomisCode = "BAS",
+        minimumIncentiveLevel = "Basic",
+        riskLevel = "high",
         createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
         createdBy = "CREATED BY"
       ),
