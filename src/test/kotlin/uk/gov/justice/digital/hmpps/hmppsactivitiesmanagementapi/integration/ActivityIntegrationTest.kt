@@ -44,6 +44,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   fun `createActivity - is successful`() {
 
+    prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
+
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
       object : TypeReference<ActivityCreateRequest>() {}
