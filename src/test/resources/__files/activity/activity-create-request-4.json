@@ -1,0 +1,30 @@
+{
+  "prisonCode": "MDI",
+  "attendanceRequired": false,
+  "summary": "IT level 1",
+  "description": "A basic IT course suitable for introduction to the subject",
+  "categoryId": 1,
+  "tierId": 1,
+  "eligibilityRuleIds": [],
+  "pay": [
+    {
+      "incentiveLevel": "Basic",
+      "payBandId": 11,
+      "rate": 125,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "incentiveLevel": "Standard",
+      "payBandId": 12,
+      "rate": 160,
+      "pieceRate": 180,
+      "pieceRateItems": 15
+    }
+  ],  "minimumEducationLevel": [
+    {
+      "educationLevelCode": "1",
+      "educationLevelDescription": "Reading Measure 2.0"
+    }
+  ]
+}

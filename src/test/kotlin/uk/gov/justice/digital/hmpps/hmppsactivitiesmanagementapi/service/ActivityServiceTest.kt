@@ -282,4 +282,47 @@ class ActivityServiceTest {
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity 1 not found")
   }
+
+  @Test
+  fun `createActivity - education level code not found`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-3.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "0"))
+      .thenThrow(EntityNotFoundException("Reference code for domain [EDU_LEVEL] and code [0] not found."))
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Reference code for domain [EDU_LEVEL] and code [0] not found.")
+  }
+
+  @Test
+  fun `createActivity - education level description does not match NOMIS`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-4.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "1")).thenReturn(Mono.just(educationLevel))
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The education level description 'Reading Measure 2.0' does not match that of the NOMIS education level 'Reading Measure 1.0'")
+  }
 }

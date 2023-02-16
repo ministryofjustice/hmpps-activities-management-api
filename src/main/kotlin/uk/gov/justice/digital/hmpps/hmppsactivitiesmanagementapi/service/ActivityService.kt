@@ -104,13 +104,17 @@ class ActivityService(
 
   private fun checkEducationLevels(request: ActivityCreateRequest) {
     request.minimumEducationLevel.forEach {
-      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", it.educationLevelCode!!).block()
-        ?: throw IllegalArgumentException("The education level code '$it.educationLevelCode!!' does not exist in NOMIS")
-      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      val educationLevelCode = it.educationLevelCode!!
+      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", educationLevelCode).block()!!
+      if (educationLevel.description == null) {
+        throw IllegalArgumentException("The education level code '$educationLevelCode' does not exist in NOMIS")
+      } else {
+        failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      }
     }
   }
 
-  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String) {
+  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String?) {
     if (requestDescription != apiDescription) {
       throw IllegalArgumentException("The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'")
     }

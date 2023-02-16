@@ -5,26 +5,26 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 data class EducationLevel(
 
-  @Schema(example = "EDU_LEVEL", required = true, description = "Domain.")
-  @JsonProperty("domain", required = true) val domain: String,
+  @Schema(example = "EDU_LEVEL", description = "Domain.")
+  @JsonProperty("domain") val domain: String? = null,
 
-  @Schema(example = "1", required = true, description = "Education level code.")
-  @JsonProperty("code", required = true) val code: String,
+  @Schema(example = "1", description = "Education level code.")
+  @JsonProperty("code") val code: String? = null,
 
-  @Schema(example = "Reading Measure 1.0", required = true, description = "Education level description.")
-  @JsonProperty("description", required = true) val description: String,
+  @Schema(example = "Reading Measure 1.0", description = "Education level description.")
+  @JsonProperty("description") val description: String? = null,
 
-  @Schema(example = "STL", required = true, description = "Parent code.")
-  @JsonProperty("parentCode", required = true) val parentCode: String,
+  @Schema(example = "STL", description = "Parent code.")
+  @JsonProperty("parentCode") val parentCode: String? = null,
 
-  @Schema(example = "Y", required = true, description = "Active flag.")
-  @JsonProperty("activeFlag", required = true) val activeFlag: String,
+  @Schema(example = "Y", description = "Active flag.")
+  @JsonProperty("activeFlag") val activeFlag: String? = null,
 
-  @Schema(example = "Reading Measure 1.0", required = true, description = "List sequence.")
-  @JsonProperty("listSeq", required = true) val listSeq: Int,
+  @Schema(example = "Reading Measure 1.0", description = "List sequence.")
+  @JsonProperty("listSeq") val listSeq: Int? = null,
 
-  @Schema(example = "N", required = true, description = "System data flag.")
-  @JsonProperty("systemDataFlag", required = true) val systemDataFlag: String,
+  @Schema(example = "N", description = "System data flag.")
+  @JsonProperty("systemDataFlag") val systemDataFlag: String? = null,
 
   @Schema(example = "null", description = "List of sub codes.")
   @JsonProperty("subCodes") val subCodes: List<String>? = null
