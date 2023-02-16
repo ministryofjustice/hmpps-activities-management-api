@@ -62,8 +62,8 @@ data class Activity(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
-  val riskLevel: String?,
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
 
   @Schema(description = "The NOMIS code for the minimum incentive/earned privilege level for this activity", example = "BAS")
   val minimumIncentiveNomisCode: String,

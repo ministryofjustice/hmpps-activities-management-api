@@ -36,8 +36,8 @@ data class ActivityLite(
   @Schema(description = "The category for this activity, one of the high-level categories")
   val category: ActivityCategory,
 
-  @Schema(description = "The most recent risk assessment level for this activity", example = "High")
-  val riskLevel: String?,
+  @Schema(description = "The most recent risk assessment level for this activity", example = "high")
+  val riskLevel: String,
 
   @Schema(description = "The NOMIS code for the minimum incentive/earned privilege level for this activity", example = "BAS")
   val minimumIncentiveNomisCode: String,

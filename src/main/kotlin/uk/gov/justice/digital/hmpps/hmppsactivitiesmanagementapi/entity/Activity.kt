@@ -61,7 +61,7 @@ data class Activity(
 
   var endDate: LocalDate? = null,
 
-  var riskLevel: String? = null,
+  var riskLevel: String,
 
   var minimumIncentiveNomisCode: String,
 

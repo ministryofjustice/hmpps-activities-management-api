@@ -74,7 +74,7 @@ class ActivityService(
       description = request.description,
       startDate = request.startDate ?: LocalDate.now(),
       endDate = request.endDate,
-      riskLevel = request.riskLevel,
+      riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),

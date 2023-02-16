@@ -100,7 +100,7 @@ CREATE TABLE activity (
   description          varchar(300),
   start_date           date         NOT NULL,
   end_date             date,
-  risk_level           varchar(10),
+  risk_level           varchar(10)  NOT NULL,
   minimum_incentive_nomis_code varchar(3) NOT NULL,
   minimum_incentive_level      varchar(10) NOT NULL,
   created_time         timestamp    NOT NULL,

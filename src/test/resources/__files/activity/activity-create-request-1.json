@@ -8,6 +8,7 @@
   "eligibilityRuleIds": [1],
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
   "pay": [
     {
       "incentiveNomisCode": "BAS",

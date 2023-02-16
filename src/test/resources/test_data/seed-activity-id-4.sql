@@ -1,5 +1,5 @@
 insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by)
-values (4, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1', current_date, null, null, 'BAS', 'Basic', current_timestamp, 'SEED USER');
+values (4, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1', current_date, null, 'high', 'BAS', 'Basic', current_timestamp, 'SEED USER');
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 4, 'Maths AM', 1, 'L1', 'Location 1', 10, current_date);
