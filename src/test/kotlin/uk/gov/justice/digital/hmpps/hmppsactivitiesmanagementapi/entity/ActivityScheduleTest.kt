@@ -87,6 +87,13 @@ class ActivityScheduleTest {
           startTime = LocalTime.of(10, 20),
           endTime = LocalTime.of(11, 20),
           daysOfWeek = listOf("Mon"),
+          mondayFlag = true,
+          tuesdayFlag = false,
+          wednesdayFlag = false,
+          thursdayFlag = false,
+          fridayFlag = false,
+          saturdayFlag = false,
+          sundayFlag = false
         )
       ),
       startDate = LocalDate.now().plusDays(1)
@@ -134,6 +141,13 @@ class ActivityScheduleTest {
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(11, 20),
             daysOfWeek = listOf("Mon"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           )
         ),
         startDate = LocalDate.now().plusDays(1)

@@ -63,7 +63,14 @@ class ActivityScheduleCreationServiceTest {
           id = -1,
           startTime = LocalTime.of(9, 0),
           endTime = LocalTime.of(12, 0),
-          daysOfWeek = listOf("Mon")
+          daysOfWeek = listOf("Mon"),
+          mondayFlag = true,
+          tuesdayFlag = false,
+          wednesdayFlag = false,
+          thursdayFlag = false,
+          fridayFlag = false,
+          saturdayFlag = false,
+          sundayFlag = false
         )
       )
     }

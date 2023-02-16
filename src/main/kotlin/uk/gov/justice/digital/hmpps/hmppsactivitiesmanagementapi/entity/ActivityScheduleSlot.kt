@@ -87,6 +87,13 @@ data class ActivityScheduleSlot(
     endTime = this.endTime,
     daysOfWeek = this.getDaysOfWeek()
       .map { day -> day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) },
+    mondayFlag = this.mondayFlag,
+    tuesdayFlag = this.tuesdayFlag,
+    wednesdayFlag = this.wednesdayFlag,
+    thursdayFlag = this.thursdayFlag,
+    fridayFlag = this.fridayFlag,
+    saturdayFlag = this.saturdayFlag,
+    sundayFlag = this.sundayFlag
   )
 
   fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
