@@ -28,7 +28,7 @@ data class ActivitySchedule(
   val description: String,
 
   @Schema(description = "Indicates the dates between which the schedule has been suspended")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val suspensions: List<Suspension> = emptyList(),
 
   @Schema(description = "The NOMIS internal location for this schedule", example = "98877667")
@@ -43,11 +43,11 @@ data class ActivitySchedule(
   @Schema(description = "The slots associated with this activity schedule")
   val slots: List<ActivityScheduleSlot> = emptyList(),
 
-  @Schema(description = "The date on which this schedule will start. From this date, any schedules will be created as real, planned instances", example = "21/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The date on which this schedule will start. From this date, any schedules will be created as real, planned instances", example = "2022-09-21")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
-  @Schema(description = "The date on which this schedule will end. From this date, any schedules will be created as real, planned instances", example = "21/10/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The date on which this schedule will end. From this date, any schedules will be created as real, planned instances", example = "2022-10-21")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 )

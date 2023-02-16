@@ -19,7 +19,7 @@ data class RolloutPrison(
   @Schema(description = "Flag to indicate if this prison is presently active", example = "true")
   var active: Boolean,
 
-  @Schema(description = "The date rolled out", example = "30/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The date rolled out", example = "2022-09-30")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val rolloutDate: LocalDate?,
 )
