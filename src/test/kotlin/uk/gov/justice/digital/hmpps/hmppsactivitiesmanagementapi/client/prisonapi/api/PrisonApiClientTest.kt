@@ -8,8 +8,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.EducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
@@ -276,7 +276,7 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
 
     assertThat(prisonApiClient.getEducationLevel("EDU_LEVEL", "1").block()!!).isEqualTo(
-      EducationLevel(
+      ReferenceCode(
         domain = "EDU_LEVEL",
         code = "1",
         description = "Reading Measure 1.0",

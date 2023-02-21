@@ -6,11 +6,11 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.EducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
@@ -231,7 +231,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
 
-  fun getEducationLevel(domain: String, educationLevelCode: String): Mono<EducationLevel> =
+  fun getEducationLevel(domain: String, educationLevelCode: String): Mono<ReferenceCode> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -239,5 +239,5 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(domain, educationLevelCode)
       }
       .retrieve()
-      .bodyToMono(typeReference<EducationLevel>())
+      .bodyToMono(typeReference<ReferenceCode>())
 }

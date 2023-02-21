@@ -21,7 +21,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.EducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -51,7 +51,7 @@ class ActivityServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
-  private val educationLevel = EducationLevel(
+  private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
     code = "1",
     description = "Reading Measure 1.0",

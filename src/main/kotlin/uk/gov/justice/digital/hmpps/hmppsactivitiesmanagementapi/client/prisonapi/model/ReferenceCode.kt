@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
-data class EducationLevel(
+data class ReferenceCode(
 
   @Schema(example = "EDU_LEVEL", description = "Domain.")
   @JsonProperty("domain") val domain: String? = null,
