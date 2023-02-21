@@ -26,23 +26,23 @@ data class Allocation(
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
   val prisonPayBand: PrisonPayBand,
 
-  @Schema(description = "The date when the prisoner will start the activity", example = "10/09/2022")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The date when the prisoner will start the activity", example = "2022-09-10")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
-  @Schema(description = "The date when the prisoner will stop attending the activity", example = "10/09/2023")
-  @JsonFormat(pattern = "dd/MM/yyyy")
+  @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "The date and time the prisoner was allocated to the activity", example = "01/09/2022 9:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @Schema(description = "The date and time the prisoner was allocated to the activity", example = "2022-09-01T09:00:00")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val allocatedTime: LocalDateTime? = null,
 
   @Schema(description = "The person who allocated the prisoner to the activity", example = "Mr Blogs")
   val allocatedBy: String? = null,
 
-  @Schema(description = "The date and time the prisoner was deallocated from the activity", example = "02/09/2022 9:00")
-  @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+  @Schema(description = "The date and time the prisoner was deallocated from the activity", example = "2022-09-02T09:00:00")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val deallocatedTime: LocalDateTime? = null,
 
   @Schema(description = "The person who deallocated the prisoner from the activity", example = "Mrs Blogs")

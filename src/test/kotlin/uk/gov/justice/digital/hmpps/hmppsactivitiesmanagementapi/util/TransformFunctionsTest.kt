@@ -104,6 +104,13 @@ class TransformFunctionsTest {
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),
               daysOfWeek = listOf("Mon"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false
             )
           ),
           startDate = activity.startDate

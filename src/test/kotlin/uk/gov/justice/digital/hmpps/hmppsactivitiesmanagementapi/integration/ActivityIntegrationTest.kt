@@ -164,6 +164,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           )
         ),
         startDate = LocalDate.of(2022, 10, 10)
@@ -199,6 +206,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             startTime = LocalTime.of(14, 0),
             endTime = LocalTime.of(15, 0),
             daysOfWeek = listOf("Mon"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           )
         ),
         startDate = LocalDate.of(2022, 10, 10)
@@ -245,12 +259,26 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon", "Wed"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = true,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           ),
           ActivityScheduleSlot(
             id = 2L,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
             daysOfWeek = listOf("Mon", "Thu"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = true,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10)
