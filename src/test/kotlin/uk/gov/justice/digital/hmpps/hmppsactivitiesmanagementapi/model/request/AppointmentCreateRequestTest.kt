@@ -61,6 +61,12 @@ class AppointmentCreateRequestTest {
   }
 
   @Test
+  fun `start time must be in the future`() {
+    val request = appointmentCreateRequest(startDate = LocalDate.now(), startTime = LocalTime.now().minusMinutes(1), endTime = LocalTime.now().plusHours(1))
+    assertSingleValidationError(validator.validate(request), "startTime", "Start time must be in the future")
+  }
+
+  @Test
   fun `end time must be supplied`() {
     val request = appointmentCreateRequest(endTime = null)
     assertSingleValidationError(validator.validate(request), "endTime", "End time must be supplied")

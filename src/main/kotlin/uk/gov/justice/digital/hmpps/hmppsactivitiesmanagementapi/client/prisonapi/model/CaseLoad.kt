@@ -29,12 +29,13 @@ data class CaseLoad(
 ) {
   /**
    * Type of case load. Note: Reference Code CSLD_TYPE
-   * Values: COMM,INST,APP
+   * Values: COMM,INST,APP,DUMMY
    */
   enum class Type(val value: String) {
     @JsonProperty("COMM") COMM("COMM"),
     @JsonProperty("INST") INST("INST"),
-    @JsonProperty("APP") APP("APP")
+    @JsonProperty("APP") APP("APP"),
+    @JsonProperty("DUMMY") DUMMY("DUMMY")
   }
 
   /**
