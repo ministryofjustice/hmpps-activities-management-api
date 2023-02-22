@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -96,6 +97,9 @@ data class AppointmentCreateRequest(
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell || internalLocationId != null
+
+  @AssertTrue(message = "Start time must be in the future")
+  private fun isStartTime() = startDate == null || startTime == null || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
