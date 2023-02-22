@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
@@ -229,4 +230,17 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
+
+  fun getReferenceCode(domain: String, code: String): Mono<ReferenceCode> =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/reference-domains/domains/{domain}/codes/{code}")
+          .build(domain, code)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<ReferenceCode>())
+
+  fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
+    getReferenceCode("EDU_LEVEL", educationLevelCode)
 }

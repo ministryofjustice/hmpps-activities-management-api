@@ -74,6 +74,10 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  private val activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
+
+  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
   private val activityPay: MutableList<ActivityPay> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -89,6 +93,8 @@ data class Activity(
   fun eligibilityRules() = eligibilityRules.toList()
 
   fun activityPay() = activityPay.toList()
+
+  fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
@@ -164,6 +170,19 @@ data class Activity(
         rate = rate,
         pieceRate = pieceRate,
         pieceRateItems = pieceRateItems
+      )
+    )
+  }
+
+  fun addMinimumEducationLevel(
+    educationLevelCode: String,
+    educationLevelDescription: String
+  ) {
+    activityMinimumEducationLevel.add(
+      ActivityMinimumEducationLevel(
+        activity = this,
+        educationLevelCode = educationLevelCode,
+        educationLevelDescription = educationLevelDescription,
       )
     )
   }

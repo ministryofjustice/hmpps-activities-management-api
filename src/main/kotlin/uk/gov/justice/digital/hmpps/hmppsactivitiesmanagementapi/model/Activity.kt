@@ -76,7 +76,10 @@ data class Activity(
   val createdTime: LocalDateTime,
 
   @Schema(description = "The person who created this activity", example = "Adam Smith")
-  val createdBy: String
+  val createdBy: String,
+
+  @Schema(description = "The list of minimum education levels that can apply to this activity")
+  val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList()
 )
 
 enum class PayPerSession { H, F }

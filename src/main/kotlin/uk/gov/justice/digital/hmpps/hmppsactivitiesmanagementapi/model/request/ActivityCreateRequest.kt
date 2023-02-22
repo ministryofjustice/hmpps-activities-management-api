@@ -77,4 +77,8 @@ data class ActivityCreateRequest(
   @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
+
+  @field:Valid
+  @Schema(description = "The list of minimum education levels that apply to this activity")
+  val minimumEducationLevel: List<ActivityMinimumEducationLevelCreateRequest> = emptyList(),
 )

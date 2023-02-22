@@ -5,13 +5,9 @@
   "description": "A basic IT course suitable for introduction to the subject",
   "categoryId": 1,
   "tierId": 1,
-  "eligibilityRuleIds": [1],
-  "minimumIncentiveNomisCode": "BAS",
-  "minimumIncentiveLevel": "Basic",
-  "riskLevel": "high",
+  "eligibilityRuleIds": [],
   "pay": [
     {
-      "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
       "payBandId": 11,
       "rate": 125,
@@ -19,18 +15,16 @@
       "pieceRateItems": 10
     },
     {
-      "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
       "payBandId": 12,
       "rate": 160,
       "pieceRate": 180,
       "pieceRateItems": 15
     }
-  ],
-  "minimumEducationLevel": [
+  ],  "minimumEducationLevel": [
     {
       "educationLevelCode": "1",
-      "educationLevelDescription": "Reading Measure 1.0"
+      "educationLevelDescription": "Reading Measure 2.0"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "domain": "EDU_LEVEL",
+  "code": "1",
+  "description": "Reading Measure 1.0",
+  "parentCode": "STL",
+  "activeFlag": "Y",
+  "listSeq": 6,
+  "systemDataFlag": "N"
+}

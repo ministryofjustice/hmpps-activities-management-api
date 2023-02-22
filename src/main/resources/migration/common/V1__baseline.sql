@@ -334,3 +334,15 @@ CREATE TABLE prison_regime (
 );
 
 CREATE UNIQUE INDEX idx_prison_regime_prison_code ON prison_regime (prison_code);
+
+CREATE TABLE activity_minimum_education_level (
+  activity_minimum_education_level_id    bigserial NOT NULL CONSTRAINT activity_minimum_education_level_pk PRIMARY KEY,
+  activity_id                            bigint    NOT NULL REFERENCES activity (activity_id),
+  education_level_code                   varchar(10)   NOT NULL,
+  education_level_description            varchar(60)   NOT NULL
+);
+
+CREATE INDEX idx_activity_minimum_education_level_activity_id ON activity_minimum_education_level (activity_id);
+
+CREATE UNIQUE INDEX idx_activity_minimum_edu_level_activity_edu_code
+    ON activity_minimum_education_level (activity_id, education_level_code);

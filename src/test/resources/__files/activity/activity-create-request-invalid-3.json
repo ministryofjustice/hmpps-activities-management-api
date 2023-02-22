@@ -25,5 +25,11 @@
       "pieceRate": 200,
       "pieceRateItems": 20
     }
+  ],
+  "minimumEducationLevel": [
+    {
+      "educationLevelCode": "123456789010",
+      "educationLevelDescription": "12345678901234567890123456789012345678901234567890123456789062"
+    }
   ]
 }
