@@ -6,11 +6,11 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -37,12 +37,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
-        category = ActivityCategory(
-          id = 1L,
-          code = "C1",
-          name = "Category 1",
-          description = "Description of Category 1"
-        )
+        category = educationCategory
       )
     )
   }
@@ -68,12 +63,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
-        category = ActivityCategory(
-          id = 1L,
-          code = "C1",
-          name = "Category 1",
-          description = "Description of Category 1"
-        )
+        category = educationCategory
       )
     )
   }
