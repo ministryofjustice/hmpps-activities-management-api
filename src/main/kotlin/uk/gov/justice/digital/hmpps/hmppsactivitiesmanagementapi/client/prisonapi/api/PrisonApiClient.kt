@@ -231,13 +231,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
 
-  fun getEducationLevel(domain: String, educationLevelCode: String): Mono<ReferenceCode> =
+  fun getReferenceCode(domain: String, code: String): Mono<ReferenceCode> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/api/reference-domains/domains/{domain}/codes/{educationLevelCode}")
-          .build(domain, educationLevelCode)
+          .path("/api/reference-domains/domains/{domain}/codes/{code}")
+          .build(domain, code)
       }
       .retrieve()
       .bodyToMono(typeReference<ReferenceCode>())
+
+  fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
+    getReferenceCode("EDU_LEVEL", educationLevelCode)
 }

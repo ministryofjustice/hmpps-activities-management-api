@@ -275,7 +275,7 @@ class PrisonApiClientTest {
   fun `getEducationLevel - success`() {
     prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
 
-    assertThat(prisonApiClient.getEducationLevel("EDU_LEVEL", "1").block()!!).isEqualTo(
+    assertThat(prisonApiClient.getEducationLevel("1").block()!!).isEqualTo(
       ReferenceCode(
         domain = "EDU_LEVEL",
         code = "1",

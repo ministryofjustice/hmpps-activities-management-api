@@ -107,9 +107,9 @@ class ActivityService(
   private fun checkEducationLevels(request: ActivityCreateRequest) {
     request.minimumEducationLevel.forEach {
       val educationLevelCode = it.educationLevelCode!!
-      val educationLevel = prisonApiClient.getEducationLevel("EDU_LEVEL", educationLevelCode).block()!!
-      if (educationLevel.description == null) {
-        throw IllegalArgumentException("The education level code '$educationLevelCode' does not exist in NOMIS")
+      val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
+      if (educationLevel.activeFlag != "Y") {
+        throw IllegalArgumentException("The education level code '$educationLevelCode' is not active in NOMIS")
       } else {
         failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
       }

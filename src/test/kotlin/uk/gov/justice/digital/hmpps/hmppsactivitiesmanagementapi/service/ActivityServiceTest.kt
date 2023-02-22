@@ -61,6 +61,16 @@ class ActivityServiceTest {
     systemDataFlag = "N"
   )
 
+  private val inactiveEducationLevel = ReferenceCode(
+    domain = "EDU_LEVEL",
+    code = "1",
+    description = "Reading Measure 1.0",
+    parentCode = "STL",
+    activeFlag = "N",
+    listSeq = 6,
+    systemDataFlag = "N"
+  )
+
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   @Captor
@@ -105,7 +115,7 @@ class ActivityServiceTest {
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
     service.createActivity(createActivityRequest, createdBy)
 
@@ -284,28 +294,6 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `createActivity - education level code not found`() {
-    val createdBy = "SCH_ACTIVITY"
-
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-3.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
-    )
-
-    val activityCategory = activityCategory()
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
-    val activityTier = activityTier()
-    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "0"))
-      .thenThrow(EntityNotFoundException("Reference code for domain [EDU_LEVEL] and code [0] not found."))
-
-    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
-      .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Reference code for domain [EDU_LEVEL] and code [0] not found.")
-  }
-
-  @Test
   fun `createActivity - education level description does not match NOMIS`() {
     val createdBy = "SCH_ACTIVITY"
 
@@ -319,10 +307,31 @@ class ActivityServiceTest {
     val activityTier = activityTier()
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(prisonApiClient.getEducationLevel("EDU_LEVEL", "1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The education level description 'Reading Measure 2.0' does not match that of the NOMIS education level 'Reading Measure 1.0'")
+  }
+
+  @Test
+  fun `createActivity - education level is not active in NOMIS`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-5.json"),
+      object : TypeReference<ActivityCreateRequest>() {}
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(inactiveEducationLevel))
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The education level code '1' is not active in NOMIS")
   }
 }
