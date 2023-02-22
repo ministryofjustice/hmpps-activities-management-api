@@ -99,7 +99,7 @@ data class AppointmentCreateRequest(
   private fun isInternalLocationId() = inCell || internalLocationId != null
 
   @AssertTrue(message = "Start time must be in the future")
-  private fun isStartTime() = startDate == null || startTime == null || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()
+  private fun isStartTime() = startDate == null || startTime == null || startDate < LocalDate.now() || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
