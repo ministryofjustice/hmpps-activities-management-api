@@ -55,13 +55,21 @@ function allocatePrisoners() {
     ;;
   esac
 
-  while IFS="," read -r schedule_id prison_number pay_band_id; do
-    curl -s -o /dev/null \
-      -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
-      -d '{ "prisonerNumber": "'"${prison_number}"'", "payBandId": '"${pay_band_id}"' }' \
-      POST "$API_HOST/schedules/${schedule_id}/allocations"
-    echo ""
+  TIMESTAMP=$(date +%Y-%m-%dT%H-%M-%S)
+  SUCCESS_FILE=allocation-successes-$TIMESTAMP.txt
+  ERROR_FILE=allocation-failures-$TIMESTAMP.txt
 
+  while IFS="," read -r schedule_id prison_number pay_band_id; do
+    ERROR_MESSAGE=$(curl -s -o /dev/null \
+      -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+      -d '{ "prisonerNumber": "'"$prison_number"'", "payBandId": '"$pay_band_id"' }' \
+      POST "$API_HOST/schedules/$schedule_id/allocations" | jq -c '[.developerMessage]')
+
+    if [ -z "$ERROR_MESSAGE" ]; then
+      echo "$schedule_id","$prison_number","$pay_band_id" >> "$SUCCESS_FILE"
+    else
+      echo "$schedule_id","$prison_number","$pay_band_id" - "$ERROR_MESSAGE" >> "$ERROR_FILE"
+    fi
   done <"$BATCH_ALLOCATIONS_CSV_FILE"
 }
 
