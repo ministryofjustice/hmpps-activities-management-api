@@ -13,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
@@ -27,7 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
@@ -151,12 +151,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
-          category = ActivityCategory(
-            id = 1L,
-            code = "C1",
-            name = "Category 1",
-            description = "Description of Category 1"
-          )
+          category = educationCategory
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -193,12 +188,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
-          category = ActivityCategory(
-            id = 1L,
-            code = "C1",
-            name = "Category 1",
-            description = "Description of Category 1"
-          )
+          category = educationCategory
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -246,12 +236,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
-          category = ActivityCategory(
-            id = 1L,
-            code = "C1",
-            name = "Category 1",
-            description = "Description of Category 1",
-          ),
+          category = educationCategory,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -296,7 +281,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
-      assertThat(category).isEqualTo(ActivityCategory(1, "C1", "Category 1", "Description of Category 1"))
+      assertThat(category).isEqualTo(educationCategory)
       assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
       assertThat(pay).hasSize(1)
       pay.map {
@@ -377,7 +362,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
-      assertThat(category).isEqualTo(ActivityCategory(2, "C2", "Category 2", "Description of Category 2"))
+      assertThat(category).isEqualTo(educationCategory)
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
       pay.map {
         assertThat(it.incentiveNomisCode).isEqualTo("BAS")

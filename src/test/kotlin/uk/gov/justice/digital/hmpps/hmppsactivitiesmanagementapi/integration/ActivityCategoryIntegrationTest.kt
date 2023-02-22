@@ -4,18 +4,28 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.gymSportsFitnessCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.inductionCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.industriesCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.interventionsCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.leisureAndSocialCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.servicesCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 
 class ActivityCategoryIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `get list of activity categories`() {
-    with(webTestClient.getActivityCategories()!!) {
-      assertThat(size).isEqualTo(3)
-      assertThat(get(0)).isEqualTo(ActivityCategory(id = 1, code = "C1", name = "Category 1", description = "Description of Category 1"))
-      assertThat(get(1)).isEqualTo(ActivityCategory(id = 2, code = "C2", name = "Category 2", description = "Description of Category 2"))
-      assertThat(get(2)).isEqualTo(ActivityCategory(id = 3, code = "C3", name = "Category 3", description = "Description of Category 3"))
-    }
+    assertThat(webTestClient.getActivityCategories()!!).containsExactlyInAnyOrder(
+      educationCategory,
+      industriesCategory,
+      servicesCategory,
+      gymSportsFitnessCategory,
+      inductionCategory,
+      interventionsCategory,
+      leisureAndSocialCategory
+    )
   }
 
   private fun WebTestClient.getActivityCategories() =
