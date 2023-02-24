@@ -138,7 +138,8 @@ internal fun activitySchedule(
     internalLocationId = 1,
     internalLocationCode = "EDU-ROOM-1",
     internalLocationDescription = "Education - R1",
-    startDate = startDate ?: activity.startDate
+    startDate = startDate ?: activity.startDate,
+    runsOnBankHoliday = runsOnBankHolidays
   ).apply {
     if (!noAllocations) {
       this.allocatePrisoner(
@@ -161,8 +162,7 @@ internal fun activitySchedule(
           thursdayFlag = thursday,
           fridayFlag = friday,
           saturdayFlag = saturday,
-          sundayFlag = sunday,
-          runsOnBankHoliday = runsOnBankHolidays
+          sundayFlag = sunday
         )
       )
     }

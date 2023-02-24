@@ -109,7 +109,8 @@ class ActivityTest {
       internalLocationCode = "WW",
       internalLocationDescription = "The wood work room description",
       capacity = 10,
-      startDate = activity.startDate
+      startDate = activity.startDate,
+      runsOnBankHoliday = true
     )
 
     assertThat(activity.schedules()).containsExactly(
@@ -120,7 +121,8 @@ class ActivityTest {
         internalLocationCode = "WW",
         internalLocationDescription = "The wood work room description",
         capacity = 10,
-        startDate = activity.startDate
+        startDate = activity.startDate,
+        runsOnBankHoliday = true
       )
     )
   }
@@ -137,7 +139,8 @@ class ActivityTest {
         internalLocationCode = "WW",
         internalLocationDescription = "The wood work room description",
         capacity = 10,
-        startDate = activity.startDate.minusDays(1)
+        startDate = activity.startDate.minusDays(1),
+        runsOnBankHoliday = true
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.startDate.minusDays(1)}' cannot be before the activity start date ${activity.startDate}")
@@ -156,7 +159,8 @@ class ActivityTest {
         internalLocationCode = "WW",
         internalLocationDescription = "The wood work room description",
         capacity = 10,
-        startDate = activity.endDate!!
+        startDate = activity.endDate!!,
+        runsOnBankHoliday = true
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.endDate}' must be before the activity end date ${activity.endDate}")
@@ -176,7 +180,8 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 10,
         startDate = activity.startDate,
-        endDate = activity.endDate!!.plusDays(1)
+        endDate = activity.endDate!!.plusDays(1),
+        runsOnBankHoliday = true
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule end date '${activity.endDate!!.plusDays(1)}' cannot be after the activity end date ${activity.endDate}")
@@ -195,6 +200,7 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 0,
         startDate = activity.startDate,
+        runsOnBankHoliday = true
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -211,7 +217,8 @@ class ActivityTest {
       internalLocationCode = "WW",
       internalLocationDescription = "The wood work room description",
       capacity = 10,
-      startDate = activity.startDate
+      startDate = activity.startDate,
+      runsOnBankHoliday = true
     )
 
     assertThatThrownBy {
@@ -221,7 +228,8 @@ class ActivityTest {
         internalLocationCode = "WW2",
         internalLocationDescription = "The wood work room description 2",
         capacity = 10,
-        startDate = activity.startDate
+        startDate = activity.startDate,
+        runsOnBankHoliday = true
       )
     }
   }
@@ -381,7 +389,8 @@ class ActivityTest {
       internalLocationCode = "RM1",
       internalLocationDescription = "Room 1",
       capacity = 1,
-      startDate = activity.startDate.plusDays(1)
+      startDate = activity.startDate.plusDays(1),
+      runsOnBankHoliday = true
     ).apply {
       addSlot(
         startTime = LocalTime.NOON,

@@ -54,7 +54,10 @@ data class ActivitySchedule(
 
   val capacity: Int,
 
-  val startDate: LocalDate
+  val startDate: LocalDate,
+
+  val runsOnBankHoliday: Boolean = false,
+
 ) {
   init {
     failIfInvalidCapacity()
@@ -117,7 +120,8 @@ data class ActivitySchedule(
       internalLocationDescription: String?,
       capacity: Int,
       startDate: LocalDate,
-      endDate: LocalDate?
+      endDate: LocalDate?,
+      runsOnBankHoliday: Boolean,
     ) = ActivitySchedule(
       activity = activity,
       description = description,
@@ -125,7 +129,8 @@ data class ActivitySchedule(
       internalLocationCode = internalLocationCode,
       internalLocationDescription = internalLocationDescription,
       capacity = capacity,
-      startDate = startDate
+      startDate = startDate,
+      runsOnBankHoliday = runsOnBankHoliday
     ).apply {
       this.endDate = endDate
     }

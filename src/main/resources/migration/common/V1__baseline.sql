@@ -133,7 +133,8 @@ CREATE TABLE activity_schedule (
   internal_location_description varchar(100),
   capacity                      integer      NOT NULL,
   start_date                    date         NOT NULL,
-  end_date                      date
+  end_date                      date,
+  runs_on_bank_holiday          bool         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_activity_schedule_activity_id ON activity_schedule (activity_id);
@@ -151,8 +152,7 @@ CREATE TABLE activity_schedule_slot (
   thursday_flag                 bool         NOT NULL DEFAULT false,
   friday_flag                   bool         NOT NULL DEFAULT false,
   saturday_flag                 bool         NOT NULL DEFAULT false,
-  sunday_flag                   bool         NOT NULL DEFAULT false,
-  runs_on_bank_holiday          bool         NOT NULL DEFAULT false
+  sunday_flag                   bool         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_act_sched_slot_activity_schedule_id ON activity_schedule_slot (activity_schedule_id);

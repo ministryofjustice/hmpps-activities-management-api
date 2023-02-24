@@ -113,7 +113,8 @@ class TransformFunctionsTest {
               sundayFlag = false
             )
           ),
-          startDate = activity.startDate
+          startDate = activity.startDate,
+          runsOnBankHoliday = false
         )
       )
       assertThat(waitingList).containsExactly(

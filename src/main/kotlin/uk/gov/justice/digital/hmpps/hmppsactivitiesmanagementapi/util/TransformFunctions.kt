@@ -276,7 +276,8 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
       activity = it.key.activity.toModelLite(),
       slots = it.key.slots().toModelActivityScheduleSlots(),
       startDate = it.key.startDate,
-      endDate = it.key.endDate
+      endDate = it.key.endDate,
+      runsOnBankHoliday = it.key.runsOnBankHoliday
     )
   }
 
@@ -294,7 +295,8 @@ fun EntityActivitySchedule.toModelSchedule() =
     activity = this.activity.toModelLite(),
     slots = this.slots().toModelActivityScheduleSlots(),
     startDate = this.startDate,
-    endDate = this.endDate
+    endDate = this.endDate,
+    runsOnBankHoliday = this.runsOnBankHoliday
   )
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
