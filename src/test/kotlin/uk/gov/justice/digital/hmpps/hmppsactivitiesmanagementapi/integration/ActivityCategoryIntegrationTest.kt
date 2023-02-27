@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.industriesCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.interventionsCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.leisureAndSocialCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.servicesCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 
@@ -24,7 +25,8 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
       gymSportsFitnessCategory,
       inductionCategory,
       interventionsCategory,
-      leisureAndSocialCategory
+      leisureAndSocialCategory,
+      notInWorkCategory
     )
   }
 
