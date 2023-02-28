@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -117,5 +118,7 @@ data class AppointmentOccurrence(
     will be used.
     """
   )
-  val allocations: List<AppointmentOccurrenceAllocation> = emptyList()
+  val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
+
+  val instances: List<AppointmentInstance> = emptyList()
 )

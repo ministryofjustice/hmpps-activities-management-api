@@ -162,6 +162,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               assertThat(bookingId).isEqualTo(1)
             }
           }
+          with(instances) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(id).isGreaterThan(0)
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
         }
       }
     }

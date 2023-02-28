@@ -67,6 +67,14 @@ data class AppointmentOccurrence(
     updatedBy = updatedBy,
     allocations = allocations.toModel()
   )
+
+  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val instances: MutableList<AppointmentInstance> = mutableListOf()
+
+  fun instances() = instances.toList()
+
+  fun addInstance(instance: AppointmentInstance) = instances.add(instance)
 }
 
 fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
