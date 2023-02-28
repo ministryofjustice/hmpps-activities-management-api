@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.faithAndSpiritualityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.gymSportsFitnessCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.inductionCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.industriesCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.interventionsCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.leisureAndSocialCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.notInWorkCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.servicesCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.otherCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.prisonJobsCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 
 class ActivityCategoryIntegrationTest : IntegrationTestBase() {
@@ -21,12 +22,13 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
     assertThat(webTestClient.getActivityCategories()!!).containsExactlyInAnyOrder(
       educationCategory,
       industriesCategory,
-      servicesCategory,
+      prisonJobsCategory,
       gymSportsFitnessCategory,
       inductionCategory,
       interventionsCategory,
-      leisureAndSocialCategory,
-      notInWorkCategory
+      faithAndSpiritualityCategory,
+      notInWorkCategory,
+      otherCategory
     )
   }
 
