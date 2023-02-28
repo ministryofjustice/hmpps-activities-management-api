@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
@@ -64,10 +63,11 @@ class CreateScheduledInstancesJob(
           var activityChanged = false
           val activeAndSuspendedSchedules = activity.getSchedulesOnDay(day, includeSuspended = true)
           val withNoPreExistingInstances = activeAndSuspendedSchedules.filterActivitySchedulesWithNoPreExistingInstance(day)
+          val filteredForBankHolidays = withNoPreExistingInstances.filterSchedulesForBankHoliday(day)
 
-          withNoPreExistingInstances.forEach { schedule ->
+          filteredForBankHolidays.forEach { schedule ->
             val filteredSlots = schedule.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
-            filteredSlots.filterActivityScheduleSlotsForBankHoliday(day).forEach { slot ->
+            filteredSlots.forEach { slot ->
               continueToRunOnFailure(
                 block = {
                   schedule.addInstance(sessionDate = day, slot = slot)
@@ -99,7 +99,7 @@ class CreateScheduledInstancesJob(
       .onFailure { log.error(failure, it) }
   }
 
-  private fun List<ActivityScheduleSlot>.filterActivityScheduleSlotsForBankHoliday(day: LocalDate) =
+  private fun List<ActivitySchedule>.filterSchedulesForBankHoliday(day: LocalDate) =
     this.filter { it.runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day) }
 
   private fun List<ActivitySchedule>.filterActivitySchedulesWithNoPreExistingInstance(day: LocalDate) =

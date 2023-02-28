@@ -50,4 +50,7 @@ data class ActivitySchedule(
   @Schema(description = "The date on which this schedule will end. From this date, any schedules will be created as real, planned instances", example = "2022-10-21")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
+
+  @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
+  val runsOnBankHoliday: Boolean
 )
