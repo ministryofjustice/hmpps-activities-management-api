@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -155,6 +154,5 @@ data class Appointment(
     schedule will be created in advance.
     """
   )
-  val occurrences: List<AppointmentOccurrence> = emptyList(),
-  val instances: List<AppointmentInstance> = emptyList()
+  val occurrences: List<AppointmentOccurrence> = emptyList()
 )

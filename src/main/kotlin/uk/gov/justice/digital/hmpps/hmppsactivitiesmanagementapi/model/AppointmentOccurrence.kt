@@ -120,5 +120,13 @@ data class AppointmentOccurrence(
   )
   val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
 
+  @Schema(
+    description =
+    """
+    The instance or instances of this appointment occurrence. Single non recurring appointments such as medical will have one
+    instance record. A group appointment e.g. gym or chaplaincy sessions will have more than one instance record.
+    Instances are at the occurrence level supporting alteration of attendees in any future occurrence.
+    """
+  )
   val instances: List<AppointmentInstance> = emptyList()
 )
