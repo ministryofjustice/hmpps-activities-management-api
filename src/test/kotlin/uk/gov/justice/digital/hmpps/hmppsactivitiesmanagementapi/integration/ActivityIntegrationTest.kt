@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
@@ -151,6 +152,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
+          minimumEducationLevel = listOf(
+            ActivityMinimumEducationLevel(
+              id = 1,
+              educationLevelCode = "1",
+              educationLevelDescription = "Reading Measure 1.0"
+            )
+          ),
           category = educationCategory
         ),
         slots = listOf(
@@ -188,6 +196,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
+          minimumEducationLevel = listOf(
+            ActivityMinimumEducationLevel(
+              id = 1,
+              educationLevelCode = "1",
+              educationLevelDescription = "Reading Measure 1.0"
+            )
+          ),
           category = educationCategory
         ),
         slots = listOf(

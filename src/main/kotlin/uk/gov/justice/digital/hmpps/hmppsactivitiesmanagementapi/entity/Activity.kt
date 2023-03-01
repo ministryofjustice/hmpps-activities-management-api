@@ -124,6 +124,7 @@ data class Activity(
     riskLevel = riskLevel,
     minimumIncentiveNomisCode = minimumIncentiveNomisCode,
     minimumIncentiveLevel = minimumIncentiveLevel,
+    minimumEducationLevel = activityMinimumEducationLevel().toModel(),
   )
 
   override fun equals(other: Any?): Boolean {

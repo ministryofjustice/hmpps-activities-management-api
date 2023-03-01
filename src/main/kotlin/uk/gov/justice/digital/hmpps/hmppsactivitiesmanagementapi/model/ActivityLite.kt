@@ -44,4 +44,7 @@ data class ActivityLite(
 
   @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
   val minimumIncentiveLevel: String,
+
+  @Schema(description = "The list of minimum education levels that can apply to this activity")
+  val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList()
 )

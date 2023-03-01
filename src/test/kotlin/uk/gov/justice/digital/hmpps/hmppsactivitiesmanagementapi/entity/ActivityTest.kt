@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 
 class ActivityTest {
   private val today = LocalDate.now()
@@ -86,6 +87,13 @@ class ActivityTest {
         riskLevel = "High",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
+        minimumEducationLevel = listOf(
+          ModelActivityMinimumEducationLevel(
+            id = -1,
+            educationLevelCode = "1",
+            educationLevelDescription = "Reading Measure 1.0"
+          )
+        ),
         category = ActivityCategory(
           id = 1L,
           code = "category code",

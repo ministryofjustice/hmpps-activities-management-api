@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -74,6 +75,13 @@ class ActivityScheduleTest {
         riskLevel = "High",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
+        minimumEducationLevel = listOf(
+          ActivityMinimumEducationLevel(
+            id = -1,
+            educationLevelCode = "1",
+            educationLevelDescription = "Reading Measure 1.0"
+          )
+        ),
         category = ModelActivityCategory(
           id = 1L,
           code = "category code",
@@ -128,6 +136,13 @@ class ActivityScheduleTest {
           riskLevel = "High",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
+          minimumEducationLevel = listOf(
+            ActivityMinimumEducationLevel(
+              id = -1,
+              educationLevelCode = "1",
+              educationLevelDescription = "Reading Measure 1.0"
+            )
+          ),
           category = ModelActivityCategory(
             id = 1L,
             code = "category code",
