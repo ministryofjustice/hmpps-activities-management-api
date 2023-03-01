@@ -5,7 +5,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -46,7 +46,8 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
     false,
     updated,
     "UPDATE.USER",
-    allocations = listOf(appointmentOccurrenceAllocationModel())
+    allocations = listOf(appointmentOccurrenceAllocationModel()),
+    instances = listOf(appointmentInstanceModel())
   )
 
 fun appointmentInstanceModel() =

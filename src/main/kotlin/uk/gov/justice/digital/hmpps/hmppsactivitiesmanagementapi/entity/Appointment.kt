@@ -78,7 +78,7 @@ data class Appointment(
     createdBy = createdBy,
     updated = updated,
     updatedBy = updatedBy,
-    occurrences = occurrences.toModel()
+    occurrences = occurrences.toModel(),
   )
 }
 
