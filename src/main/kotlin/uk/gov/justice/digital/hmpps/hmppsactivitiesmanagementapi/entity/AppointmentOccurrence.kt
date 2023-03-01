@@ -77,7 +77,6 @@ data class AppointmentOccurrence(
     allocations = allocations.toModel(),
     instances = instances.toModel()
   )
-
 }
 
 fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
