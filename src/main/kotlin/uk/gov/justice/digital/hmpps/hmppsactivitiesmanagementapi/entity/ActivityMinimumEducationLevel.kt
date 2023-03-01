@@ -8,6 +8,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 
 @Entity
 @Table(name = "activity_minimum_education_level")
@@ -39,4 +40,12 @@ data class ActivityMinimumEducationLevel(
   override fun toString(): String {
     return this::class.simpleName + "(activityMinimumEducatinLevelId = $activityMinimumEducationLevelId )"
   }
+
+  fun toModel() = ModelActivityMinimumEducationLevel(
+    id = activityMinimumEducationLevelId,
+    educationLevelCode = educationLevelCode,
+    educationLevelDescription = educationLevelDescription
+  )
 }
+
+fun List<ActivityMinimumEducationLevel>.toModel() = map { it.toModel() }
