@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
@@ -149,9 +150,9 @@ class CreateScheduledInstancesJobTest {
   companion object {
 
     val rolledOutPrisons = listOf(
-      RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1)),
-      RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1)),
-      RolloutPrison(3, "XXX", "Other prison", false, null),
+      RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1), AppointmentsDataSource.ACTIVITIES_SERVICE),
+      RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1), AppointmentsDataSource.ACTIVITIES_SERVICE),
+      RolloutPrison(3, "XXX", "Other prison", false, null, AppointmentsDataSource.ACTIVITIES_SERVICE),
     )
 
     val moorlandActivities = listOf(

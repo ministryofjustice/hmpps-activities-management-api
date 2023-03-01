@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -210,7 +211,7 @@ private fun activityPay(activity: Activity) =
     pieceRateItems = 50
   )
 
-fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
+fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville", true, LocalDate.of(2022, 12, 22), AppointmentsDataSource.PRISON_API)
 
 fun prisonRegime() = PrisonRegime(
   1,

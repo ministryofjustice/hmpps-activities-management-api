@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
@@ -159,7 +160,8 @@ class TransformFunctionsTest {
         "PVI",
         "HMP Pentonville",
         true,
-        rolloutDate = LocalDate.of(2022, 12, 22)
+        rolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsDataSource = AppointmentsDataSource.PRISON_API
       )
     )
   }

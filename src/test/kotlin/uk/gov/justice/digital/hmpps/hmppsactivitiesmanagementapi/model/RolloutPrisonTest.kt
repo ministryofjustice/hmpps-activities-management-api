@@ -18,7 +18,8 @@ class RolloutPrisonTest : ModelTest() {
       description = "Some Desc",
       rolloutDate = originalRolloutDate,
       active = true,
-      code = "1234"
+      code = "1234",
+      appointmentsDataSource = AppointmentsDataSource.ACTIVITIES_SERVICE
     )
 
     val json = objectMapper.writeValueAsString(rolloutPrison)

@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
@@ -31,6 +33,7 @@ class ScheduledEventServiceTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
+  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -38,6 +41,8 @@ class ScheduledEventServiceTest {
     rolloutPrisonRepository,
     prisonerScheduledActivityRepository,
     prisonRegimeService,
+    appointmentInstanceRepository
+
   )
 
   @BeforeEach
@@ -61,6 +66,7 @@ class ScheduledEventServiceTest {
           description = "Description",
           active = active,
           rolloutDate = rolloutDate,
+          appointmentsDataSource = AppointmentsDataSource.PRISON_API
         )
       )
   }
