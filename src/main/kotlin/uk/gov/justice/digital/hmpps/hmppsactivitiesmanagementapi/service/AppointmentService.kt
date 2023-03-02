@@ -62,20 +62,19 @@ class AppointmentService(
           startTime = this.startTime,
           endTime = this.endTime
         ).apply {
-          prisonerMap.map { (_, prisoner) ->
-            AppointmentOccurrenceAllocationEntity(
-              appointmentOccurrence = this,
-              prisonerNumber = prisoner.prisonerNumber,
-              bookingId = prisoner.bookingId!!.toLong()
+          prisonerMap.values.forEach { prisoner ->
+            this.addAllocation(
+              AppointmentOccurrenceAllocationEntity(
+                appointmentOccurrence = this,
+                prisonerNumber = prisoner.prisonerNumber,
+                bookingId = prisoner.bookingId!!.toLong()
+              )
             )
-          }.forEach { allocation -> this.addAllocation(allocation) }
-        }
-          .apply {
-            prisonerMap.map { (_, prisoner) ->
+            this.addInstance(
               AppointmentInstanceEntity(
                 appointmentOccurrence = this,
                 prisonerNumber = prisoner.prisonerNumber,
-                bookingId = prisoner.bookingId!!.toLong(),
+                bookingId = prisoner.bookingId.toLong(),
                 appointmentDate = this.startDate,
                 category = category,
                 endTime = this.endTime,
@@ -84,8 +83,9 @@ class AppointmentService(
                 prisonCode = request.prisonCode,
                 startTime = this.startTime
               )
-            }.forEach { instance -> this.addInstance(instance) }
+            )
           }
+        }
       )
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
   }
