@@ -8,7 +8,10 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -62,6 +65,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           with(allocations) {
+            assertThat(size).isEqualTo(1)
+            with(get(0)) {
+              assertThat(prisonerNumber).isEqualTo("A1234BC")
+              assertThat(bookingId).isEqualTo(456)
+            }
+          }
+          with(instances) {
             assertThat(size).isEqualTo(1)
             with(get(0)) {
               assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -122,6 +132,26 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
   }
 
+  @Test
+  fun `create appointment single appointment two prisoner success`() {
+    val request = appointmentCreateRequest(prisonerNumbers = listOf("A12345BC", "B23456CE"))
+
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.getLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 1, prisonId = request.prisonCode!!)
+      )
+    )
+
+    val appointment = webTestClient.createAppointment(request)!!
+
+    assertSingleAppointmentTwoPrisoner(appointment, request)
+    assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+  }
+
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
@@ -162,6 +192,93 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               assertThat(bookingId).isEqualTo(1)
             }
           }
+          with(instances) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(id).isGreaterThan(0)
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
+    with(appointment) {
+      assertThat(id).isGreaterThan(0)
+      assertThat(category.id).isEqualTo(request.categoryId)
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(inCell).isEqualTo(request.inCell)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(startTime).isEqualTo(request.startTime)
+      assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(comment).isEqualTo(request.comment)
+      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(updated).isNull()
+      assertThat(updatedBy).isNull()
+      assertThat(schedule).isNull()
+      with(occurrences) {
+        assertThat(size).isEqualTo(1)
+        with(occurrences.first()) {
+          assertThat(id).isGreaterThan(0)
+          assertThat(category.id).isEqualTo(request.categoryId)
+          assertThat(prisonCode).isEqualTo(request.prisonCode)
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isEqualTo(request.inCell)
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isNull()
+          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(createdBy).isEqualTo("test-client")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+          with(allocations) {
+            assertThat(size).isEqualTo(2)
+          }
+          assertThat(
+            allocations.containsAll(
+              listOf(
+                AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
+                AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2)
+              )
+            )
+          )
+          with(instances) {
+            assertThat(size).isEqualTo(2)
+          }
+          assertThat(
+            instances.containsAll(
+              listOf(
+                AppointmentInstance(
+                  id = -1,
+                  category = AppointmentCategory(
+                    id = 1, parent = null, code = "TEST",
+                    description = "Test Category", active = true, displayOrder = 2
+                  ),
+                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
+                  bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
+                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
+                  comment = null, attended = null, cancelled = false
+                ),
+                AppointmentInstance(
+                  id = -1,
+                  category = AppointmentCategory(
+                    id = 1, parent = null, code = "TEST",
+                    description = "Test Category", active = true, displayOrder = 2
+                  ),
+                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
+                  bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
+                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
+                  comment = null, attended = null, cancelled = false
+                )
+              )
+            )
+          )
         }
       }
     }

@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance as AppointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
@@ -61,13 +62,29 @@ class AppointmentService(
           startTime = this.startTime,
           endTime = this.endTime
         ).apply {
-          prisonerMap.map { (_, prisoner) ->
-            AppointmentOccurrenceAllocationEntity(
-              appointmentOccurrence = this,
-              prisonerNumber = prisoner.prisonerNumber,
-              bookingId = prisoner.bookingId!!.toLong()
+          prisonerMap.values.forEach { prisoner ->
+            this.addAllocation(
+              AppointmentOccurrenceAllocationEntity(
+                appointmentOccurrence = this,
+                prisonerNumber = prisoner.prisonerNumber,
+                bookingId = prisoner.bookingId!!.toLong()
+              )
             )
-          }.forEach { allocation -> this.addAllocation(allocation) }
+            this.addInstance(
+              AppointmentInstanceEntity(
+                appointmentOccurrence = this,
+                prisonerNumber = prisoner.prisonerNumber,
+                bookingId = prisoner.bookingId.toLong(),
+                appointmentDate = this.startDate,
+                category = category,
+                endTime = this.endTime,
+                inCell = this.inCell,
+                internalLocationId = this.internalLocationId,
+                prisonCode = request.prisonCode,
+                startTime = this.startTime
+              )
+            )
+          }
         }
       )
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }

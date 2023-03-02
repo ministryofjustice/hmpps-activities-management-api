@@ -44,6 +44,9 @@ internal fun appointmentOccurrenceEntity(appointment: Appointment) =
   ).apply {
     this.addAllocation(appointmentOccurrenceAllocationEntity(this))
   }
+    .apply {
+      this.addInstance(appointmentInstanceEntity(this))
+    }
 
 internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence) =
   AppointmentOccurrenceAllocation(
@@ -53,25 +56,20 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
     bookingId = 456
   )
 
-internal fun appointmentInstanceEntity(inCell: Boolean = false): AppointmentInstance {
-  val appointment = appointmentEntity(inCell)
-  val occurrence = appointment.occurrences().first()
-  val allocation = occurrence.allocations().first()
-
-  return AppointmentInstance(
+internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurrence) =
+  AppointmentInstance(
     appointmentInstanceId = 1,
-    appointmentOccurrence = occurrence,
-    category = appointment.category,
-    prisonCode = appointment.prisonCode,
-    internalLocationId = appointment.internalLocationId,
-    inCell = appointment.inCell,
-    prisonerNumber = allocation.prisonerNumber,
-    bookingId = allocation.bookingId,
-    appointmentDate = appointment.startDate,
-    startTime = appointment.startTime,
-    endTime = appointment.endTime,
+    appointmentOccurrence = appointmentOccurrence,
+    category = appointmentCategoryEntity(),
+    prisonCode = "TPR",
+    internalLocationId = 123,
+    inCell = false,
+    prisonerNumber = "A1234BC",
+    bookingId = 456,
+    appointmentDate = LocalDate.now(),
+    startTime = LocalTime.of(9, 0),
+    endTime = LocalTime.of(10, 30),
     comment = "Appointment instance level comment",
     attended = true,
     cancelled = false
   )
-}

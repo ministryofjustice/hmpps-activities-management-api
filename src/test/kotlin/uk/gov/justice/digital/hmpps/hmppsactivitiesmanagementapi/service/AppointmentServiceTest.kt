@@ -24,12 +24,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.lang.IllegalArgumentException
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 
@@ -218,6 +222,13 @@ class AppointmentServiceTest {
               assertThat(bookingId).isEqualTo(1)
             }
           }
+          with(instances()) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
         }
       }
     }
@@ -253,6 +264,32 @@ class AppointmentServiceTest {
           listOf(
             AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "A12345BC", bookingId = 1),
             AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "B23456CE", bookingId = 2)
+          )
+        )
+        assertThat(occurrences().first().instances().toModel()).containsAll(
+          listOf(
+            AppointmentInstance(
+              id = -1,
+              category = AppointmentCategory(
+                id = 1, parent = null, code = "TEST",
+                description = "Test Category", active = true, displayOrder = 2
+              ),
+              prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
+              bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
+              startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
+              comment = null, attended = null, cancelled = false
+            ),
+            AppointmentInstance(
+              id = -1,
+              category = AppointmentCategory(
+                id = 1, parent = null, code = "TEST",
+                description = "Test Category", active = true, displayOrder = 2
+              ),
+              prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
+              bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
+              startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
+              comment = null, attended = null, cancelled = false
+            )
           )
         )
       }
