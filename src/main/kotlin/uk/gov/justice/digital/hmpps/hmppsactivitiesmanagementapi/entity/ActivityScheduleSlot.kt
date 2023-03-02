@@ -42,7 +42,6 @@ data class ActivityScheduleSlot(
 
   val sundayFlag: Boolean = false,
 
-  val runsOnBankHoliday: Boolean = false,
 ) {
   init {
     failIfNoDaysSelectedForSlot()

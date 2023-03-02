@@ -23,9 +23,10 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
         "thursday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY)}, " +
         "friday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY)}, " +
         "saturday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY)}, " +
-        "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
-        "runs_on_bank_holiday = true"
+        "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}"
     )
+    jdbcTemplate.update("update activity_schedule set runs_on_bank_holiday = true")
+
     webTestClient.createScheduledInstances()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(
@@ -47,9 +48,10 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
         "thursday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY)}, " +
         "friday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY)}, " +
         "saturday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY)}, " +
-        "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}, " +
-        "runs_on_bank_holiday = false"
+        "sunday_flag = ${LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY)}"
     )
+    jdbcTemplate.update("update activity_schedule set runs_on_bank_holiday = false")
+
     webTestClient.createScheduledInstances()
 
     val actualNumberOfScheduledInstances = jdbcTemplate.queryForObject<Long>(

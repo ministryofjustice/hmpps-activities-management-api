@@ -8,6 +8,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
@@ -37,6 +38,13 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
+        minimumEducationLevel = listOf(
+          ActivityMinimumEducationLevel(
+            id = 1,
+            educationLevelCode = "1",
+            educationLevelDescription = "Reading Measure 1.0"
+          )
+        ),
         category = educationCategory
       )
     )
@@ -63,6 +71,13 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
+        minimumEducationLevel = listOf(
+          ActivityMinimumEducationLevel(
+            id = 1,
+            educationLevelCode = "1",
+            educationLevelDescription = "Reading Measure 1.0"
+          )
+        ),
         category = educationCategory
       )
     )

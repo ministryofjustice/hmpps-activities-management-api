@@ -51,7 +51,8 @@ class ActivityScheduleCreationService(
         internalLocationDescription = scheduleLocation.description,
         capacity = request.capacity!!,
         startDate = request.startDate!!,
-        endDate = request.endDate
+        endDate = request.endDate,
+        runsOnBankHoliday = request.runsOnBankHoliday
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
 

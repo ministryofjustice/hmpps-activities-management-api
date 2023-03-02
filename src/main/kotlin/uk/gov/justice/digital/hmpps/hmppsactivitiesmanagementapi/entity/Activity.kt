@@ -124,6 +124,7 @@ data class Activity(
     riskLevel = riskLevel,
     minimumIncentiveNomisCode = minimumIncentiveNomisCode,
     minimumIncentiveLevel = minimumIncentiveLevel,
+    minimumEducationLevel = activityMinimumEducationLevel().toModel(),
   )
 
   override fun equals(other: Any?): Boolean {
@@ -194,7 +195,8 @@ data class Activity(
     internalLocationDescription: String,
     capacity: Int,
     startDate: LocalDate,
-    endDate: LocalDate? = null
+    endDate: LocalDate? = null,
+    runsOnBankHoliday: Boolean
   ) =
     addSchedule(
       ActivitySchedule.valueOf(
@@ -205,7 +207,8 @@ data class Activity(
         internalLocationDescription = internalLocationDescription,
         capacity = capacity,
         startDate = startDate,
-        endDate = endDate
+        endDate = endDate,
+        runsOnBankHoliday = runsOnBankHoliday
       )
     )
 

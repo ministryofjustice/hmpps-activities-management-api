@@ -58,7 +58,10 @@ data class ActivityScheduleCreateRequest(
 
   @field:NotEmpty(message = "The activity schedule must have one or more unique slots")
   @Schema(description = "The days and times an activity schedule can take place")
-  val slots: List<Slot>?
+  val slots: List<Slot>?,
+
+  @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
+  val runsOnBankHoliday: Boolean = false
 )
 
 @Schema(

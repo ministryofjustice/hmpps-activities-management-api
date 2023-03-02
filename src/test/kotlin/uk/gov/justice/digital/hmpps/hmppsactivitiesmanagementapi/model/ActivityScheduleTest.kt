@@ -35,7 +35,8 @@ class ActivityScheduleTest : ModelTest() {
       description = "Some Desc",
       capacity = 10,
       startDate = originalStartDate,
-      endDate = originalEndDate
+      endDate = originalEndDate,
+      runsOnBankHoliday = true
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)
