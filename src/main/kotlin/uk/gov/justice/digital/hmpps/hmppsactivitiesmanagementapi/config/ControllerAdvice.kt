@@ -36,8 +36,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = FORBIDDEN,
           userMessage = "Access denied: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -50,8 +50,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Validation failure: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -64,8 +64,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = INTERNAL_SERVER_ERROR,
           userMessage = "Unexpected error: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -78,8 +78,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = NOT_FOUND.value(),
           userMessage = "Not found: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -92,8 +92,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST.value(),
           userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; Failed to convert from type")}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -114,8 +114,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         errorResponse ?: ErrorResponse(
           status = BAD_REQUEST,
           userMessage = ex.message,
-          developerMessage = ex.message
-        )
+          developerMessage = ex.message,
+        ),
       )
   }
 
@@ -128,8 +128,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Exception: ${e.message}",
-          developerMessage = e.message
-        )
+          developerMessage = e.message,
+        ),
       )
   }
 
@@ -137,7 +137,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     ex: HttpMessageNotReadableException,
     headers: HttpHeaders,
     status: HttpStatusCode,
-    request: WebRequest
+    request: WebRequest,
   ): ResponseEntity<Any>? {
     log.info("Exception not readable: {}", ex.message)
     return ResponseEntity
@@ -146,8 +146,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = ex.localizedMessage,
-          developerMessage = ex.message
-        )
+          developerMessage = ex.message,
+        ),
       )
   }
 
@@ -155,7 +155,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     ex: MethodArgumentNotValidException,
     headers: HttpHeaders,
     status: HttpStatusCode,
-    request: WebRequest
+    request: WebRequest,
   ): ResponseEntity<Any>? {
     val errors = ex.bindingResult.allErrors.map { it.defaultMessage }
 
@@ -167,8 +167,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "One or more constraint violations occurred",
-          developerMessage = errors.joinToString(", ")
-        )
+          developerMessage = errors.joinToString(", "),
+        ),
       )
   }
 
@@ -176,7 +176,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     ex: MissingServletRequestParameterException,
     headers: HttpHeaders,
     status: HttpStatusCode,
-    request: WebRequest
+    request: WebRequest,
   ): ResponseEntity<Any>? {
     log.info("missing servlet errors: {}", ex)
 
@@ -186,8 +186,8 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = ex.message,
-          developerMessage = ex.message
-        )
+          developerMessage = ex.message,
+        ),
       )
   }
   companion object {
@@ -200,14 +200,14 @@ data class ErrorResponse(
   val errorCode: Int? = null,
   val userMessage: String? = null,
   val developerMessage: String? = null,
-  val moreInfo: String? = null
+  val moreInfo: String? = null,
 ) {
   constructor(
     status: HttpStatus,
     errorCode: Int? = null,
     userMessage: String? = null,
     developerMessage: String? = null,
-    moreInfo: String? = null
+    moreInfo: String? = null,
   ) :
     this(status.value(), errorCode, userMessage, developerMessage, moreInfo)
 }

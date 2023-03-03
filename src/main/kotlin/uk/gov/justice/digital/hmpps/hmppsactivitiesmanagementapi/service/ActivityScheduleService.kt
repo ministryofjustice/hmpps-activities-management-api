@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonPayBandRepository: PrisonPayBandRepository
+  private val prisonPayBandRepository: PrisonPayBandRepository,
 ) {
 
   companion object {
@@ -37,7 +37,7 @@ class ActivityScheduleService(
   fun getScheduledInternalLocations(
     prisonCode: String,
     date: LocalDate,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): List<InternalLocation> =
     transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }.distinct()
 
@@ -45,14 +45,14 @@ class ActivityScheduleService(
     prisonCode: String,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-    locationId: Long? = null
+    locationId: Long? = null,
   ): List<ModelActivitySchedule> = transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot, locationId))
 
   private fun schedulesMatching(
     prisonCode: String,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-    locationId: Long? = null
+    locationId: Long? = null,
   ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
     // TODO consider pushing some/all of the filtering logic into a repository query (perhaps using a JPA Specification)
     val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
@@ -106,7 +106,7 @@ class ActivityScheduleService(
       prisonerNumber = prisonerNumber,
       bookingId = prisonerDetails.bookingId,
       payBand = payBand,
-      allocatedBy = allocatedBy
+      allocatedBy = allocatedBy,
     )
 
     repository.saveAndFlush(schedule)

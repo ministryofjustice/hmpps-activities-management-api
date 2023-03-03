@@ -8,7 +8,7 @@ internal fun appointmentCategoryEntity(active: Boolean = true) =
     code = "TEST",
     description = "Test Category",
     active = active,
-    displayOrder = 2
+    displayOrder = 2,
   )
 
 internal fun appointmentCategoryEntities() =
@@ -18,20 +18,20 @@ internal fun appointmentCategoryEntities() =
       code = "AC1",
       description = "Appointment Category 1",
       active = true,
-      displayOrder = 1
+      displayOrder = 1,
     ),
     AppointmentCategory(
       appointmentCategoryId = 2,
       code = "AC2",
       description = "Appointment Category 2",
       active = true,
-      displayOrder = 2
+      displayOrder = 2,
     ),
     AppointmentCategory(
       appointmentCategoryId = 3,
       code = "AC3",
       description = "Appointment Category 3",
       active = true,
-      displayOrder = 3
-    )
+      displayOrder = 3,
+    ),
   )

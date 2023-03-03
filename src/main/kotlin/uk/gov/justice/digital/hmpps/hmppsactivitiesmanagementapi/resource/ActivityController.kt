@@ -38,7 +38,7 @@ import java.security.Principal
 class ActivityController(
   private val activityService: ActivityService,
   private val capacityService: CapacityService,
-  private val scheduleCreationService: ActivityScheduleCreationService
+  private val scheduleCreationService: ActivityScheduleCreationService,
 ) {
 
   @GetMapping(value = ["/{activityId}"])
@@ -55,8 +55,8 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Activity::class)
-          )
+            schema = Schema(implementation = Activity::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -65,8 +65,8 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -75,8 +75,8 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -85,11 +85,11 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
@@ -121,15 +121,18 @@ class ActivityController(
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-    ]
+    ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun create(
     principal: Principal,
-    @Valid @RequestBody @Parameter(
+    @Valid
+    @RequestBody
+    @Parameter(
       description = "The create request with the new activity details",
-      required = true
-    ) activity: ActivityCreateRequest
+      required = true,
+    )
+    activity: ActivityCreateRequest,
   ): Activity = activityService.createActivity(activity, principal.name)
 
   @Operation(
@@ -143,8 +146,8 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = CapacityAndAllocated::class)
-          )
+            schema = Schema(implementation = CapacityAndAllocated::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -152,8 +155,9 @@ class ActivityController(
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -161,8 +165,9 @@ class ActivityController(
         description = "Forbidden, requires an appropriate role",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -170,11 +175,12 @@ class ActivityController(
         description = "Activity ID not found",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{activityId}/capacity"])
   @ResponseBody
@@ -192,8 +198,8 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ActivityScheduleLite::class)
-          )
+            schema = Schema(implementation = ActivityScheduleLite::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -201,8 +207,9 @@ class ActivityController(
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -210,8 +217,9 @@ class ActivityController(
         description = "Forbidden, requires an appropriate role",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -219,11 +227,12 @@ class ActivityController(
         description = "Activity ID not found",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{activityId}/schedules"])
   @ResponseBody
@@ -263,18 +272,21 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun addSchedule(
     @PathVariable activityId: Long,
-    @Valid @RequestBody @Parameter(
+    @Valid
+    @RequestBody
+    @Parameter(
       description = "The create request with the new activity schedule details",
-      required = true
-    ) request: ActivityScheduleCreateRequest
+      required = true,
+    )
+    request: ActivityScheduleCreateRequest,
   ) = scheduleCreationService.createSchedule(activityId, request)
 }

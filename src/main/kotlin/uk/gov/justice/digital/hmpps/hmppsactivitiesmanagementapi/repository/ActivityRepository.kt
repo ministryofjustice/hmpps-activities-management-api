@@ -20,12 +20,12 @@ interface ActivityRepository : JpaRepository<Activity, Long> {
     where a.prisonCode = :prisonCode
     and a.startDate <= :toDate
     and (a.endDate is null or a.endDate >= :fromDate)
-    """
+    """,
   )
   fun getAllForPrisonBetweenDates(
     @Param("prisonCode") prisonCode: String,
     @Param("fromDate") fromDate: LocalDate,
-    @Param("toDate") toDate: LocalDate
+    @Param("toDate") toDate: LocalDate,
   ): List<Activity>
 
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>

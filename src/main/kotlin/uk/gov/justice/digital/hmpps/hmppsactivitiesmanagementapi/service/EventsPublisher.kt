@@ -14,7 +14,7 @@ class EventsPublisher(
   private val hmppsQueueService: HmppsQueueService,
   private val mapper: ObjectMapper,
   @Value("\${feature.events.sns.enabled:false}")
-  private val enabled: Boolean
+  private val enabled: Boolean,
 ) {
 
   companion object {
@@ -38,7 +38,7 @@ class EventsPublisher(
           .topicArn(domainEventsTopic.arn)
           .message(mapper.writeValueAsString(event))
           .messageAttributes(metaData(event))
-          .build()
+          .build(),
       ).also { log.info("Published $event") }
 
       return

@@ -36,7 +36,7 @@ class ActivityScheduleCreationService(
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createSchedule(
     activityId: Long,
-    request: ActivityScheduleCreateRequest
+    request: ActivityScheduleCreateRequest,
   ): ActivityScheduleLite {
     activityRepository.findOrThrowNotFound(activityId).let { activity ->
       val scheduleLocation = getLocationForSchedule(activity, request)
@@ -46,7 +46,7 @@ class ActivityScheduleCreationService(
         mapOf(
           TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
           TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish)
+          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
         )
 
       activity.addSchedule(
@@ -57,7 +57,7 @@ class ActivityScheduleCreationService(
         capacity = request.capacity!!,
         startDate = request.startDate!!,
         endDate = request.endDate,
-        runsOnBankHoliday = request.runsOnBankHoliday
+        runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
         schedule.addInstances(activity, schedule.slots(), daysInAdvance)
@@ -72,7 +72,6 @@ class ActivityScheduleCreationService(
   }
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>, timeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) {
-
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
@@ -83,7 +82,7 @@ class ActivityScheduleCreationService(
         DayOfWeek.THURSDAY.takeIf { slot.thursday },
         DayOfWeek.FRIDAY.takeIf { slot.friday },
         DayOfWeek.SATURDAY.takeIf { slot.saturday },
-        DayOfWeek.SUNDAY.takeIf { slot.sunday }
+        DayOfWeek.SUNDAY.takeIf { slot.sunday },
       )
 
       this.addSlot(start, end, daysOfWeek)

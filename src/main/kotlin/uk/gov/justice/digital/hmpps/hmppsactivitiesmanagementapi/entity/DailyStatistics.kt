@@ -38,5 +38,5 @@ data class DailyStatistics(
 
   var peopleInEducation: Int? = null,
 
-  var vacancies: Int? = null
+  var vacancies: Int? = null,
 )

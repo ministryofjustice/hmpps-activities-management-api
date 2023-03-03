@@ -25,8 +25,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
           .scheme("bearer")
           .bearerFormat("JWT")
           .`in`(SecurityScheme.In.HEADER)
-          .name("Authorization")
-      )
+          .name("Authorization"),
+      ),
     )
     .info(
       Info()
@@ -36,8 +36,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
         .contact(
           Contact()
             .name("HMPPS Digital Studio")
-            .email("feedback@digital.justice.gov.uk")
-        )
+            .email("feedback@digital.justice.gov.uk"),
+        ),
     )
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt", listOf("read", "write")))
 

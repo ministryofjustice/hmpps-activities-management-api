@@ -44,7 +44,7 @@ data class ActivityMinimumEducationLevel(
   fun toModel() = ModelActivityMinimumEducationLevel(
     id = activityMinimumEducationLevelId,
     educationLevelCode = educationLevelCode,
-    educationLevelDescription = educationLevelDescription
+    educationLevelDescription = educationLevelDescription,
   )
 }
 

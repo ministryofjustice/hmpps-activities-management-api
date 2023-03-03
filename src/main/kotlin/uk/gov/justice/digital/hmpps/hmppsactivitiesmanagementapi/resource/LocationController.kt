@@ -43,8 +43,8 @@ class LocationController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = Location::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = Location::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -66,8 +66,8 @@ class LocationController(
         responseCode = "404",
         description = "Requested resource not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getCellLocationsForGroup(
     @PathVariable("prisonCode") prisonCode: String,
@@ -91,8 +91,8 @@ class LocationController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = LocationGroup::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = LocationGroup::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -114,11 +114,11 @@ class LocationController(
         responseCode = "404",
         description = "Requested resource not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getLocationGroups(
-    @PathVariable("prisonCode") prisonCode: String
+    @PathVariable("prisonCode") prisonCode: String,
   ): List<LocationGroup>? = locationGroupServiceSelector.getLocationGroups(prisonCode)
 
   @GetMapping(
@@ -138,8 +138,8 @@ class LocationController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = LocationPrefixDto::class)
-          )
+            schema = Schema(implementation = LocationPrefixDto::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -161,8 +161,8 @@ class LocationController(
         responseCode = "404",
         description = "Requested resource not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getLocationPrefixForGroup(
     @PathVariable("prisonCode") prisonCode: String,

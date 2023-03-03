@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 class PrisonRegimeService(
   private val eventPriorityRepository: EventPriorityRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
-  private val prisonRegimeRepository: PrisonRegimeRepository
+  private val prisonRegimeRepository: PrisonRegimeRepository,
 ) {
 
   /**
@@ -43,7 +43,7 @@ class PrisonRegimeService(
    * Returns the prison regime configured for a prison (if any).
    */
   fun getPrisonRegimeByPrisonCode(code: String) = transform(
-    prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code)
+    prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code),
   )
 }
 

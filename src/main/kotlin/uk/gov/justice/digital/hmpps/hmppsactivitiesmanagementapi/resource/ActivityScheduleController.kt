@@ -48,8 +48,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = CapacityAndAllocated::class)
-          )
+            schema = Schema(implementation = CapacityAndAllocated::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -57,8 +57,9 @@ class ActivityScheduleController(
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -66,8 +67,9 @@ class ActivityScheduleController(
         description = "Forbidden, requires an appropriate role",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -75,11 +77,12 @@ class ActivityScheduleController(
         description = "Schedule ID not found",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{activityScheduleId}/capacity"])
   @ResponseBody
@@ -100,8 +103,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = Allocation::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = Allocation::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -110,8 +113,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -120,8 +123,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -129,18 +132,21 @@ class ActivityScheduleController(
         description = "Schedule ID not found",
         content = [
           Content(
-            mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)
-          )
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getAllocationsBy(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
       value = "activeOnly",
-      required = false
-    ) @Parameter(description = "If true will only return active allocations. Defaults to true.") activeOnly: Boolean?,
+      required = false,
+    )
+    @Parameter(description = "If true will only return active allocations. Defaults to true.")
+    activeOnly: Boolean?,
   ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
 
   @GetMapping(value = ["/{scheduleId}"])
@@ -157,8 +163,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ActivitySchedule::class)
-          )
+            schema = Schema(implementation = ActivitySchedule::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -167,8 +173,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -177,8 +183,8 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -187,11 +193,11 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
     scheduleService.getScheduleById(scheduleId)
@@ -228,20 +234,23 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocate(
     principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,
-    @RequestBody @Parameter(
+    @RequestBody
+    @Parameter(
       description = "The prisoner allocation request details",
-      required = true
-    ) @Valid prisonerAllocationRequest: PrisonerAllocationRequest
+      required = true,
+    )
+    @Valid
+    prisonerAllocationRequest: PrisonerAllocationRequest,
   ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
     .let { ResponseEntity.noContent().build() }
 }

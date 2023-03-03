@@ -54,7 +54,7 @@ data class Appointment(
 
   var updatedBy: String? = null,
 
-  val deleted: Boolean = false
+  val deleted: Boolean = false,
 ) {
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

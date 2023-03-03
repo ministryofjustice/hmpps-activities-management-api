@@ -38,8 +38,8 @@ class PrisonerAllocationController(private val allocationsService: AllocationsSe
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = PrisonerAllocations::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = PrisonerAllocations::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -48,8 +48,8 @@ class PrisonerAllocationController(private val allocationsService: AllocationsSe
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -58,22 +58,26 @@ class PrisonerAllocationController(private val allocationsService: AllocationsSe
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   @ResponseStatus(HttpStatus.OK)
   fun prisonerAllocations(
     @PathVariable prisonCode: String,
-    @RequestBody @Parameter(
+    @RequestBody
+    @Parameter(
       description = "The required prisoner numbers (mandatory)",
-      required = true
-    ) prisonerNumbers: List<String>,
+      required = true,
+    )
+    prisonerNumbers: List<String>,
     @RequestParam(
       value = "activeOnly",
-      required = false
-    ) @Parameter(description = "If true will only return active allocations. Defaults to true.") activeOnly: Boolean?,
+      required = false,
+    )
+    @Parameter(description = "If true will only return active allocations. Defaults to true.")
+    activeOnly: Boolean?,
   ) = allocationsService.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonerNumbers.toSet(), activeOnly ?: true)
 }

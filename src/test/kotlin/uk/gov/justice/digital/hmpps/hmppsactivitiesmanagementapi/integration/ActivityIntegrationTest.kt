@@ -44,12 +44,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `createActivity - is successful`() {
-
     prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activity = webTestClient.createActivity(createActivityRequest)
@@ -66,13 +65,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `createActivity - failed duplicate prison code - summary`() {
-
     val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val error = webTestClient.post()
@@ -97,13 +95,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `createActivity - failed authorisation`() {
-
     val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val error = webTestClient.post()
@@ -127,7 +124,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all schedules of an activity`() {
@@ -156,10 +153,10 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ActivityMinimumEducationLevel(
               id = 1,
               educationLevelCode = "1",
-              educationLevelDescription = "Reading Measure 1.0"
-            )
+              educationLevelDescription = "Reading Measure 1.0",
+            ),
           ),
-          category = educationCategory
+          category = educationCategory,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -173,10 +170,10 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             thursdayFlag = false,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
-          )
+            sundayFlag = false,
+          ),
         ),
-        startDate = LocalDate.of(2022, 10, 10)
+        startDate = LocalDate.of(2022, 10, 10),
       ),
       ActivityScheduleLite(
         id = 2,
@@ -200,10 +197,10 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ActivityMinimumEducationLevel(
               id = 1,
               educationLevelCode = "1",
-              educationLevelDescription = "Reading Measure 1.0"
-            )
+              educationLevelDescription = "Reading Measure 1.0",
+            ),
           ),
-          category = educationCategory
+          category = educationCategory,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -217,16 +214,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             thursdayFlag = false,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
-          )
+            sundayFlag = false,
+          ),
         ),
-        startDate = LocalDate.of(2022, 10, 10)
+        startDate = LocalDate.of(2022, 10, 10),
       ),
     )
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-8.sql"
+    "classpath:test_data/seed-activity-id-8.sql",
   )
   @Test
   fun `get schedules of an activity with multiple slots`() {
@@ -265,7 +262,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             thursdayFlag = false,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
+            sundayFlag = false,
           ),
           ActivityScheduleSlot(
             id = 2L,
@@ -278,16 +275,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             thursdayFlag = true,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
+            sundayFlag = false,
           ),
         ),
-        startDate = LocalDate.of(2022, 10, 10)
+        startDate = LocalDate.of(2022, 10, 10),
       ),
     )
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get scheduled maths activities with morning and afternoon`() {
@@ -369,7 +366,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-2.sql"
+    "classpath:test_data/seed-activity-id-2.sql",
   )
   @Test
   fun `get scheduled english activities for morning and afternoon`() {
@@ -472,7 +469,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
   private fun WebTestClient.createActivity(
-    activityCreateRequest: ActivityCreateRequest
+    activityCreateRequest: ActivityCreateRequest,
   ) =
     post()
       .uri("/activities")
@@ -492,7 +489,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Sql(
-    "classpath:test_data/seed-activity-id-9.sql"
+    "classpath:test_data/seed-activity-id-9.sql",
   )
   @Test
   fun `schedule an activity`() {
@@ -502,7 +499,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       startDate = today,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     prisonApiMockServer.stubGetLocation(
@@ -516,8 +513,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         locationPrefix = "LEI-House-block-7-1-002",
         operationalCapacity = 2,
         userDescription = "user description",
-        internalLocationCode = "internal location code"
-      )
+        internalLocationCode = "internal location code",
+      ),
     )
 
     val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
@@ -531,8 +528,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         InternalLocation(
           id = 1,
           code = "internal location code",
-          description = "House_block_7-1-002"
-        )
+          description = "House_block_7-1-002",
+        ),
       )
     }
 
@@ -554,18 +551,17 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-9.sql"
+    "classpath:test_data/seed-activity-id-9.sql",
   )
   @Test
   fun `the activity should be persisted even if the subsequent event notification fails`() {
-
     val today = LocalDate.now()
     val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
       description = "Integration test schedule",
       startDate = today,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     prisonApiMockServer.stubGetLocation(
@@ -579,8 +575,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         locationPrefix = "LEI-House-block-7-1-002",
         operationalCapacity = 2,
         userDescription = "user description",
-        internalLocationCode = "internal location code"
-      )
+        internalLocationCode = "internal location code",
+      ),
     )
 
     whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
@@ -595,8 +591,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         InternalLocation(
           id = 1,
           code = "internal location code",
-          description = "House_block_7-1-002"
-        )
+          description = "House_block_7-1-002",
+        ),
       )
     }
 
@@ -610,7 +606,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.createActivitySchedule(
     activityId: Long,
-    activityScheduleCreateRequest: ActivityScheduleCreateRequest
+    activityScheduleCreateRequest: ActivityScheduleCreateRequest,
   ) =
     post()
       .uri("/activities/$activityId/schedules")

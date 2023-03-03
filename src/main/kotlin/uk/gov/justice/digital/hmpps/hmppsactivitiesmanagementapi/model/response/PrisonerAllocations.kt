@@ -10,5 +10,5 @@ data class PrisonerAllocations(
   val prisonerNumber: String,
 
   @Schema(description = "The list of allocations for the prisoner")
-  val allocations: List<Allocation>
+  val allocations: List<Allocation>,
 )

@@ -19,7 +19,7 @@ import java.time.LocalDate
 class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
-  private val attendanceReasonRepository: AttendanceReasonRepository
+  private val attendanceReasonRepository: AttendanceReasonRepository,
 ) {
 
   companion object {
@@ -62,7 +62,7 @@ class AttendancesService(
         instance.forEachActiveAllocation(date) { allocation ->
           createAttendanceRecordIfNoPreExistingRecord(
             instance,
-            allocation
+            allocation,
           )
         }
       }
@@ -78,7 +78,7 @@ class AttendancesService(
   private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
     if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
         instance,
-        allocation.prisonerNumber
+        allocation.prisonerNumber,
       )
     ) {
       log.info("Attendance record already exists for allocation ${allocation.allocationId} and scheduled instance ${instance.scheduledInstanceId}")
@@ -89,8 +89,8 @@ class AttendancesService(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
-        posted = false
-      )
+        posted = false,
+      ),
     )
   }
 }

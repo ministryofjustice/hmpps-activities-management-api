@@ -58,7 +58,7 @@ class ActivityServiceTest {
     parentCode = "STL",
     activeFlag = "Y",
     listSeq = 6,
-    systemDataFlag = "N"
+    systemDataFlag = "N",
   )
 
   private val inactiveEducationLevel = ReferenceCode(
@@ -68,7 +68,7 @@ class ActivityServiceTest {
     parentCode = "STL",
     activeFlag = "N",
     listSeq = 6,
-    systemDataFlag = "N"
+    systemDataFlag = "N",
   )
 
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
@@ -83,7 +83,7 @@ class ActivityServiceTest {
     eligibilityRuleRepository,
     activityScheduleRepository,
     prisonPayBandRepository,
-    prisonApiClient
+    prisonApiClient,
   )
 
   @BeforeEach
@@ -97,7 +97,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activityCategory = activityCategory()
@@ -108,7 +108,7 @@ class ActivityServiceTest {
 
     val savedActivityEntity: ActivityEntity = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-entity-1.json"),
-      object : TypeReference<ActivityEntity>() {}
+      object : TypeReference<ActivityEntity>() {},
     )
 
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
@@ -169,7 +169,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
@@ -185,7 +185,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activityCategory = activityCategory()
@@ -203,7 +203,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activityCategory = activityCategory()
@@ -241,8 +241,8 @@ class ActivityServiceTest {
     assertThat(
       service.getActivitiesByCategoryInPrison(
         "MDI",
-        1
-      )
+        1,
+      ),
     ).isEqualTo(listOf(activityEntity()).toModelLite())
 
     verify(activityRepository, times(1)).getAllByPrisonCodeAndActivityCategory("MDI", category)
@@ -265,7 +265,7 @@ class ActivityServiceTest {
     assertThat(
       service.getActivitiesInPrison(
         "MDI",
-      )
+      ),
     ).isEqualTo(listOf(activityEntity()).toModelLite())
 
     verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
@@ -299,7 +299,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-4.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activityCategory = activityCategory()
@@ -320,7 +320,7 @@ class ActivityServiceTest {
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-5.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val activityCategory = activityCategory()

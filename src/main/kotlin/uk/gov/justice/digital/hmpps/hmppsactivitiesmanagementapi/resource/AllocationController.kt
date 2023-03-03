@@ -33,8 +33,8 @@ class AllocationController(private val allocationsService: AllocationsService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Allocation::class)
-          )
+            schema = Schema(implementation = Allocation::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -43,8 +43,8 @@ class AllocationController(private val allocationsService: AllocationsService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -53,8 +53,8 @@ class AllocationController(private val allocationsService: AllocationsService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -63,11 +63,11 @@ class AllocationController(private val allocationsService: AllocationsService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)

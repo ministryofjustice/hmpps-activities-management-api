@@ -14,7 +14,7 @@ import java.util.Properties
 class LocationService(
   private val prisonApiClient: PrisonApiClient,
   @Qualifier("locationGroupServiceSelector") private val locationGroupService: LocationGroupService,
-  @Qualifier("whereaboutsGroups") private val groupsProperties: Properties
+  @Qualifier("whereaboutsGroups") private val groupsProperties: Properties,
 ) {
 
   fun getLocationPrefixFromGroup(agencyId: String, group: String): LocationPrefixDto {

@@ -55,7 +55,7 @@ class ActivityScheduleCreationServiceTest {
       startDate = activity.startDate,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     with(service.createSchedule(1, request)) {
@@ -71,8 +71,8 @@ class ActivityScheduleCreationServiceTest {
           thursdayFlag = false,
           fridayFlag = false,
           saturdayFlag = false,
-          sundayFlag = false
-        )
+          sundayFlag = false,
+        ),
       )
       with(activity.schedules()[0].instances()) {
         assertThat(size).isEqualTo(2)
@@ -93,7 +93,7 @@ class ActivityScheduleCreationServiceTest {
       startDate = LocalDate.now(),
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     assertThatThrownBy {
@@ -110,7 +110,7 @@ class ActivityScheduleCreationServiceTest {
       startDate = LocalDate.now(),
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     assertThatThrownBy {

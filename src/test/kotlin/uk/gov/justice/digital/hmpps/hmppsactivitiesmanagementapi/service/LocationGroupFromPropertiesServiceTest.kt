@@ -90,11 +90,11 @@ class LocationGroupFromPropertiesServiceTest {
       .containsExactly(
         group("1", "A", "B", "C", "D-D"),
         group("2"),
-        group("3", "X", "Y", "Z")
+        group("3", "X", "Y", "Z"),
       )
     assertThat(service.getLocationGroups("LDS"))
       .containsExactly(
-        group("1", "B", "C", "D-D", "F")
+        group("1", "B", "C", "D-D", "F"),
       )
     assertThat(service.getLocationGroups("")).isEmpty()
     assertThat(service.getLocationGroups("XXX")).isEmpty()
@@ -110,7 +110,7 @@ class LocationGroupFromPropertiesServiceTest {
     assertThat(service.getLocationGroups("HLI"))
       .containsExactly(
         group("A Wing", "Landing 1", "Landing 2"),
-        group("B Wing")
+        group("B Wing"),
       )
   }
 
@@ -174,8 +174,8 @@ class LocationGroupFromPropertiesServiceTest {
         "1",
         "PQ",
         "Z",
-        ""
-      )
+        "",
+      ),
     ).containsExactly("PQR", "X", "1")
   }
 
@@ -193,8 +193,8 @@ class LocationGroupFromPropertiesServiceTest {
         "1",
         "PQ",
         "Z",
-        ""
-      )
+        "",
+      ),
     ).containsExactlyInAnyOrder("1", "X", "PQR")
   }
 
@@ -212,27 +212,27 @@ class LocationGroupFromPropertiesServiceTest {
     groupsProperties.setProperty("MDI_2", "MDI-2-.+")
     groupsProperties.setProperty(
       "MDI_1_A",
-      "MDI-1-1-0(0[1-9]|1[0-2]),MDI-1-2-0(0[1-9]|1[0-2]),MDI-1-3-0(0[1-9]|1[0-2])"
+      "MDI-1-1-0(0[1-9]|1[0-2]),MDI-1-2-0(0[1-9]|1[0-2]),MDI-1-3-0(0[1-9]|1[0-2])",
     )
     groupsProperties.setProperty(
       "MDI_1_B",
-      "MDI-1-1-0(1[3-9]|2[0-6]),MDI-1-2-0(1[3-9]|2[0-6]),MDI-1-3-0(1[3-9]|2[0-6])"
+      "MDI-1-1-0(1[3-9]|2[0-6]),MDI-1-2-0(1[3-9]|2[0-6]),MDI-1-3-0(1[3-9]|2[0-6])",
     )
     groupsProperties.setProperty(
       "MDI_1_C",
-      "MDI-1-1-0(2[7-9]|3[0-8]),MDI-1-2-0(2[7-9]|3[0-8]),MDI-1-3-0(2[7-9]|3[0-8])"
+      "MDI-1-1-0(2[7-9]|3[0-8]),MDI-1-2-0(2[7-9]|3[0-8]),MDI-1-3-0(2[7-9]|3[0-8])",
     )
     groupsProperties.setProperty(
       "MDI_2_A",
-      "MDI-2-1-0(0[1-9]|1[0-2]),MDI-2-2-0(0[1-9]|1[0-2]),MDI-2-3-0(0[1-9]|1[0-2])"
+      "MDI-2-1-0(0[1-9]|1[0-2]),MDI-2-2-0(0[1-9]|1[0-2]),MDI-2-3-0(0[1-9]|1[0-2])",
     )
     groupsProperties.setProperty(
       "MDI_2_B",
-      "MDI-2-1-0(1[3-9]|2[0-6]),MDI-2-2-0(1[3-9]|2[0-6]),MDI-2-3-0(1[3-9]|2[0-6])"
+      "MDI-2-1-0(1[3-9]|2[0-6]),MDI-2-2-0(1[3-9]|2[0-6]),MDI-2-3-0(1[3-9]|2[0-6])",
     )
     groupsProperties.setProperty(
       "MDI_2_C",
-      "MDI-2-1-0(2[7-9]|3[0-8]),MDI-2-2-0(2[7-9]|3[0-8]),MDI-2-3-0(2[7-9]|3[0-8])"
+      "MDI-2-1-0(2[7-9]|3[0-8]),MDI-2-2-0(2[7-9]|3[0-8]),MDI-2-3-0(2[7-9]|3[0-8])",
     )
     val ONE_A_PREFIXES = arrayOf(
       "MDI-1-1-001",
@@ -270,7 +270,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-3-009",
       "MDI-1-3-010",
       "MDI-1-3-011",
-      "MDI-1-3-012"
+      "MDI-1-3-012",
     )
     val ONE_B_PREFIXES = arrayOf(
       "MDI-1-1-013",
@@ -314,7 +314,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-3-023",
       "MDI-1-3-024",
       "MDI-1-3-025",
-      "MDI-1-3-026"
+      "MDI-1-3-026",
     )
     val ONE_C_PREFIXES = arrayOf(
       "MDI-1-1-027",
@@ -352,36 +352,36 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-3-035",
       "MDI-1-3-036",
       "MDI-1-3-037",
-      "MDI-1-3-038"
+      "MDI-1-3-038",
     )
     val extraPrefixes = arrayOf(
-      "MDI-1-1-039"
+      "MDI-1-1-039",
     )
 
     val locationPrefixes = arrayOf(*ONE_A_PREFIXES, *ONE_B_PREFIXES, *ONE_C_PREFIXES, *extraPrefixes)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1"),
-        *locationPrefixes
-      )
+        *locationPrefixes,
+      ),
     ).containsExactly(*locationPrefixes)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1_A"),
-        *locationPrefixes
-      )
+        *locationPrefixes,
+      ),
     ).containsExactly(*ONE_A_PREFIXES)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1_B"),
-        *locationPrefixes
-      )
+        *locationPrefixes,
+      ),
     ).containsExactly(*ONE_B_PREFIXES)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1_C"),
-        *locationPrefixes
-      )
+        *locationPrefixes,
+      ),
     ).containsExactly(*ONE_C_PREFIXES)
   }
 
@@ -398,8 +398,8 @@ class LocationGroupFromPropertiesServiceTest {
         predicates,
         "HLI-A-1-001",
         "HLI-A-2-001",
-        "HLI-B-1-001"
-      )
+        "HLI-B-1-001",
+      ),
     ).containsExactly("HLI-A-1-001", "HLI-A-2-001")
   }
 
@@ -416,8 +416,8 @@ class LocationGroupFromPropertiesServiceTest {
         predicates,
         "HLI-A-1-001",
         "HLI-A-2-001",
-        "HLI-B-1-001"
-      )
+        "HLI-B-1-001",
+      ),
     ).containsExactly("HLI-A-2-001")
   }
 
@@ -436,7 +436,7 @@ class LocationGroupFromPropertiesServiceTest {
 
     private fun applyPredicatesToLocations(
       predicate: Predicate<Location>,
-      vararg locationPrefixes: String
+      vararg locationPrefixes: String,
     ): List<String?> {
       return locationPrefixes.map(::location).filter(predicate::test).map { it.locationPrefix }.toList()
     }
@@ -453,7 +453,7 @@ class LocationGroupFromPropertiesServiceTest {
         locationPrefix = locationPrefix,
         operationalCapacity = 0,
         userDescription = "",
-        internalLocationCode = ""
+        internalLocationCode = "",
       )
     }
   }

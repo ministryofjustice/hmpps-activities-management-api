@@ -14,7 +14,7 @@ data class PrisonerAllocationRequest(
 
   @Schema(
     description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner",
-    example = "1"
+    example = "1",
   )
   @field:NotNull(message = "Pay band must be supplied")
   val payBandId: Long? = null,

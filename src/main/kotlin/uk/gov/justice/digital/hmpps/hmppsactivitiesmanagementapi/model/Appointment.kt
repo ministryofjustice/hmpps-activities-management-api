@@ -16,12 +16,12 @@ import java.time.LocalTime
   The occurrence property values can be changed independently to support rescheduling, cancelling and altered
   attendee lists at an individual occurrence level.
   Editing a property at the appointment level will cascade the edit to all *future* child occurrences
-  """
+  """,
 )
 data class Appointment(
   @Schema(
     description = "The internally generated identifier for this appointment",
-    example = "12345"
+    example = "12345",
   )
   val id: Long,
 
@@ -41,7 +41,7 @@ data class Appointment(
     The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
     Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
     """,
-    example = "SKI"
+    example = "SKI",
   )
   val prisonCode: String,
 
@@ -51,7 +51,7 @@ data class Appointment(
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
     Should be null if in cell = true
     """,
-    example = "123"
+    example = "123",
   )
   val internalLocationId: Long?,
 
@@ -61,26 +61,26 @@ data class Appointment(
     Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
-    example = "false"
+    example = "false",
   )
   val inCell: Boolean,
 
   @Schema(
-    description = "The date of the appointment or first appointment occurrence in the series"
+    description = "The date of the appointment or first appointment occurrence in the series",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
     description = "The starting time of the appointment or first appointment occurrence in the series",
-    example = "09:00"
+    example = "09:00",
   )
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
     description = "The end time of the appointment or first appointment occurrence in the series",
-    example = "10:30"
+    example = "10:30",
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
@@ -91,12 +91,12 @@ data class Appointment(
     Notes relating to the appointment.
     The default value if no notes are specified at the occurrence or instance levels
     """,
-    example = "This appointment will help adjusting to life outside of prison"
+    example = "This appointment will help adjusting to life outside of prison",
   )
   val comment: String,
 
   @Schema(
-    description = "The date and time this appointment was created. Will not change"
+    description = "The date and time this appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val created: LocalDateTime,
@@ -107,7 +107,7 @@ data class Appointment(
     The username of the user authenticated via HMPPS auth that created the appointment.
     Usually a NOMIS username
     """,
-    example = "AAA01U"
+    example = "AAA01U",
   )
   val createdBy: String,
 
@@ -116,7 +116,7 @@ data class Appointment(
     """
     The date and time this appointment was last changed.
     Will be null if the appointment has not been altered since it was created
-    """
+    """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val updated: LocalDateTime?,
@@ -127,7 +127,7 @@ data class Appointment(
     The username of the user authenticated via HMPPS auth that edited the appointment.
     Usually a NOMIS username. Will be null if the appointment has not been altered since it was created
     """,
-    example = "AAA01U"
+    example = "AAA01U",
   )
   val updatedBy: String?,
 
@@ -152,7 +152,7 @@ data class Appointment(
     can be edited independently of the parent. All properties of an occurrence override those of the parent appointment
     with a null coalesce back to the parent for nullable properties. The full series of occurrences specified by the
     schedule will be created in advance.
-    """
+    """,
   )
-  val occurrences: List<AppointmentOccurrence> = emptyList()
+  val occurrences: List<AppointmentOccurrence> = emptyList(),
 )

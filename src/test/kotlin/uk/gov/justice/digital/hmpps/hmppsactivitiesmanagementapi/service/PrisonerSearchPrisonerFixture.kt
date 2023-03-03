@@ -22,7 +22,7 @@ object PrisonerSearchPrisonerFixture {
     bookingId: Long = 900001,
     bookNumber: String = "BK01",
     middleNames: String = "James",
-    prisonId: String = "MDI"
+    prisonId: String = "MDI",
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -42,6 +42,6 @@ object PrisonerSearchPrisonerFixture {
       bookingId = bookingId.toString(),
       bookNumber = bookNumber,
       middleNames = middleNames,
-      prisonId = prisonId
+      prisonId = prisonId,
     )
 }

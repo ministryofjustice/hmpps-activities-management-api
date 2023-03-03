@@ -12,7 +12,7 @@ import java.time.LocalDate
   e.g. Tuesday PM and Thursday AM - suitable for Houseblock 2 to attend.
   e.g. Monday AM and Thursday PM - suitable for Houseblock 3 to attend.
   this 'lite' version of ActivitySchedule does not have allocated or instances.
-  """
+  """,
 )
 data class ActivityScheduleLite(
 

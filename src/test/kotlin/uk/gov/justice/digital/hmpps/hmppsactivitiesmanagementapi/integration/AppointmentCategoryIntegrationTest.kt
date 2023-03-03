@@ -12,7 +12,7 @@ class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
     assertThat(webTestClient.getAppointmentCategories()!!).containsExactly(
       AppointmentCategory(id = 3, code = "AC1", description = "Appointment Category 1", active = true, displayOrder = 3),
       AppointmentCategory(id = 1, code = "AC2", description = "Appointment Category 2", active = true, displayOrder = null),
-      AppointmentCategory(id = 4, code = "AC3", description = "Appointment Category 3", active = true, displayOrder = null)
+      AppointmentCategory(id = 4, code = "AC3", description = "Appointment Category 3", active = true, displayOrder = null),
     )
   }
 
@@ -23,7 +23,7 @@ class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
       AppointmentCategory(id = 2, code = "LAC2", description = "Legacy Appointment Category 2", active = false, displayOrder = 2),
       AppointmentCategory(id = 3, code = "AC1", description = "Appointment Category 1", active = true, displayOrder = 3),
       AppointmentCategory(id = 1, code = "AC2", description = "Appointment Category 2", active = true, displayOrder = null),
-      AppointmentCategory(id = 4, code = "AC3", description = "Appointment Category 3", active = true, displayOrder = null)
+      AppointmentCategory(id = 4, code = "AC3", description = "Appointment Category 3", active = true, displayOrder = null),
     )
   }
 

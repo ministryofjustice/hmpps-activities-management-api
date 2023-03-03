@@ -10,7 +10,7 @@ import java.time.LocalTime
   Describes a slot for an activity schedule. There can be several of these defined for one activity schedule.
   An activity schedule slot describes when, during the week, an activity will be run.
   e.g. Tuesday PM on a Monday and Thursday.
-  """
+  """,
 )
 data class ActivityScheduleSlot(
 

@@ -9,5 +9,5 @@ data class ActivityEligibility(
   val id: Long,
 
   @Schema(description = "The eligiblity rule which applies")
-  val eligibility: EligibilityRule
+  val eligibility: EligibilityRule,
 )
