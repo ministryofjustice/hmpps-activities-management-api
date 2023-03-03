@@ -42,15 +42,15 @@ class TransformFunctionsTest {
           id = 1,
           code = "category code",
           name = "category name",
-          description = "category description"
-        )
+          description = "category description",
+        ),
       )
       assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
           -1,
-          ModelEligibilityRule(1, code = "OVER_21", description = "The prisoner must be over 21 to attend")
-        )
+          ModelEligibilityRule(1, code = "OVER_21", description = "The prisoner must be over 21 to attend"),
+        ),
       )
       assertThat(schedules).containsExactly(
         ModelActivitySchedule(
@@ -67,10 +67,10 @@ class TransformFunctionsTest {
                   id = 1,
                   prisonerNumber = "A11111A",
                   posted = false,
-                  status = "SCHEDULED"
-                )
-              )
-            )
+                  status = "SCHEDULED",
+                ),
+              ),
+            ),
           ),
           internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
           allocations = listOf(
@@ -84,7 +84,7 @@ class TransformFunctionsTest {
                 alias = lowPayBand.payBandAlias,
                 description = lowPayBand.payBandDescription,
                 prisonCode = lowPayBand.prisonCode,
-                nomisPayBand = lowPayBand.nomisPayBand
+                nomisPayBand = lowPayBand.nomisPayBand,
               ),
               startDate = timestamp.toLocalDate(),
               endDate = null,
@@ -92,8 +92,8 @@ class TransformFunctionsTest {
               allocatedBy = "Mr Blogs",
               activitySummary = "Maths",
               scheduleId = 1,
-              scheduleDescription = "schedule description"
-            )
+              scheduleDescription = "schedule description",
+            ),
           ),
           description = "schedule description",
           capacity = 1,
@@ -110,12 +110,12 @@ class TransformFunctionsTest {
               thursdayFlag = false,
               fridayFlag = false,
               saturdayFlag = false,
-              sundayFlag = false
-            )
+              sundayFlag = false,
+            ),
           ),
           startDate = activity.startDate,
-          runsOnBankHoliday = false
-        )
+          runsOnBankHoliday = false,
+        ),
       )
       assertThat(waitingList).containsExactly(
         ModelActivityWaiting(
@@ -123,8 +123,8 @@ class TransformFunctionsTest {
           prisonerNumber = "A1234AA",
           priority = 1,
           createdTime = timestamp,
-          createdBy = "test"
-        )
+          createdBy = "test",
+        ),
       )
       assertThat(pay).containsExactly(
         ModelActivityPay(
@@ -134,8 +134,8 @@ class TransformFunctionsTest {
           prisonPayBand = lowPayBand.toModelPrisonPayBand(),
           rate = 30,
           pieceRate = 40,
-          pieceRateItems = 50
-        )
+          pieceRateItems = 50,
+        ),
       )
       assertThat(startDate).isEqualTo(timestamp.toLocalDate())
       assertThat(endDate).isNull()
@@ -145,8 +145,8 @@ class TransformFunctionsTest {
         ModelActivityMinimumEducationLevel(
           id = -1,
           educationLevelCode = "1",
-          educationLevelDescription = "Reading Measure 1.0"
-        )
+          educationLevelDescription = "Reading Measure 1.0",
+        ),
       )
     }
   }
@@ -159,8 +159,8 @@ class TransformFunctionsTest {
         "PVI",
         "HMP Pentonville",
         true,
-        rolloutDate = LocalDate.of(2022, 12, 22)
-      )
+        rolloutDate = LocalDate.of(2022, 12, 22),
+      ),
     )
   }
 }

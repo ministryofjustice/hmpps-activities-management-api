@@ -30,7 +30,7 @@ class WebClientConfiguration(
   @Value("\${prison.api.url}") private val prisonApiUrl: String,
   @Value("\${prisoner-search.api.url}") private val prisonerSearchApiUrl: String,
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
-  private val webClientBuilder: WebClient.Builder
+  private val webClientBuilder: WebClient.Builder,
 ) {
 
   @Bean
@@ -61,19 +61,19 @@ class WebClientConfiguration(
   fun prisonApiWebClient(
     clientRegistrationRepository: ClientRegistrationRepository,
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
-    builder: WebClient.Builder
+    builder: WebClient.Builder,
   ): WebClient {
     return getPrisonApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
-      prisonApiUrl
+      prisonApiUrl,
     )
   }
 
   @Bean
   fun prisonApiAppWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder
+    builder: WebClient.Builder,
   ): WebClient {
     return getPrisonApiOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
   }
@@ -81,7 +81,7 @@ class WebClientConfiguration(
   private fun getPrisonApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-    rootUri: String
+    rootUri: String,
   ): WebClient {
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prison-api")
@@ -113,19 +113,19 @@ class WebClientConfiguration(
   fun prisonerSearchApiWebClient(
     clientRegistrationRepository: ClientRegistrationRepository,
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
-    builder: WebClient.Builder
+    builder: WebClient.Builder,
   ): WebClient {
     return getPrisonerSearchApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
-      prisonerSearchApiUrl
+      prisonerSearchApiUrl,
     )
   }
 
   @Bean
   fun prisonerSearchApiAppWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder
+    builder: WebClient.Builder,
   ): WebClient {
     return getPrisonerSearchApiOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl)
   }
@@ -133,7 +133,7 @@ class WebClientConfiguration(
   private fun getPrisonerSearchApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-    rootUri: String
+    rootUri: String,
   ): WebClient {
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prisoner-search-api")
@@ -145,7 +145,7 @@ class WebClientConfiguration(
   @Bean
   fun authorizedClientManagerAppScope(
     clientRegistrationRepository: ClientRegistrationRepository?,
-    oAuth2AuthorizedClientService: OAuth2AuthorizedClientService?
+    oAuth2AuthorizedClientService: OAuth2AuthorizedClientService?,
   ): OAuth2AuthorizedClientManager {
     val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build()
     val authorizedClientManager =
@@ -163,7 +163,7 @@ class WebClientConfiguration(
   // and adds it to the request
   private fun authorizedClientManager(
     clientRegistrationRepository: ClientRegistrationRepository,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository
+    authorizedClientRepository: OAuth2AuthorizedClientRepository,
   ): OAuth2AuthorizedClientManager {
     val defaultClientCredentialsTokenResponseClient = DefaultClientCredentialsTokenResponseClient()
     val authentication = UserContext.getAuthentication()
@@ -177,7 +177,7 @@ class WebClientConfiguration(
     val authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder()
       .clientCredentials { clientCredentialsGrantBuilder: OAuth2AuthorizedClientProviderBuilder.ClientCredentialsGrantBuilder ->
         clientCredentialsGrantBuilder.accessTokenResponseClient(
-          defaultClientCredentialsTokenResponseClient
+          defaultClientCredentialsTokenResponseClient,
         )
       }
       .build()
@@ -197,7 +197,7 @@ class WebClientConfiguration(
       next.exchange(
         ClientRequest.from(request)
           .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-          .build()
+          .build(),
       )
     }
 }

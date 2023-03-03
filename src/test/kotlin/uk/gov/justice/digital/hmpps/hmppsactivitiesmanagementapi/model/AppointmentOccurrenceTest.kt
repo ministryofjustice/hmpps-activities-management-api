@@ -10,7 +10,6 @@ class AppointmentOccurrenceTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalStartTime = LocalTime.parse("10:21:22", timeFormatter)
     val originalEndTime = LocalTime.parse("11:22:23", timeFormatter)
@@ -31,7 +30,7 @@ class AppointmentOccurrenceTest : ModelTest() {
       inCell = true,
       updatedBy = "A.Jones",
       updated = originalUpdatedTime,
-      cancelled = false
+      cancelled = false,
     )
 
     val json = objectMapper.writeValueAsString(appointmentOccurrence)

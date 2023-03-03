@@ -13,11 +13,11 @@ object PrisonApiCourtHearingFixture {
       longDescription = "Aberdeen Sheriff's Court (ABDSHF)",
       agencyType = Agency.AgencyType.CRT,
       active = true,
-      courtType = Agency.CourtType.OTHER
-    )
+      courtType = Agency.CourtType.OTHER,
+    ),
   ) = PrisonApiCourtHearing(
     id = id,
     dateTime = dateTime,
-    location = location
+    location = location,
   )
 }

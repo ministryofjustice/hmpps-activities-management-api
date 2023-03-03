@@ -25,7 +25,7 @@ class ActivityScheduleEntityListener {
     }.onFailure {
       log.error(
         "Failed to send activity schedule creation event for activity schedule ${schedule.activityScheduleId}",
-        it
+        it,
       )
     }
   }

@@ -18,7 +18,7 @@ import java.time.LocalTime
 class PrisonIntegrationTest : IntegrationTestBase() {
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all activities in a category for a prison`() {
@@ -42,16 +42,16 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ActivityMinimumEducationLevel(
             id = 1,
             educationLevelCode = "1",
-            educationLevelDescription = "Reading Measure 1.0"
-          )
+            educationLevelDescription = "Reading Measure 1.0",
+          ),
         ),
-        category = educationCategory
-      )
+        category = educationCategory,
+      ),
     )
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all activities for a prison`() {
@@ -75,16 +75,16 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ActivityMinimumEducationLevel(
             id = 1,
             educationLevelCode = "1",
-            educationLevelDescription = "Reading Measure 1.0"
-          )
+            educationLevelDescription = "Reading Measure 1.0",
+          ),
         ),
-        category = educationCategory
-      )
+        category = educationCategory,
+      ),
     )
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all scheduled prison locations for HMP Pentonville on Oct 10th 2022`() {
@@ -97,7 +97,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all scheduled prison locations for HMP Pentonville morning of Oct 10th 2022`() {
@@ -108,7 +108,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all scheduled prison locations for HMP Pentonville afternoon of Oct 10th 2022`() {
@@ -143,7 +143,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getLocationsPrisonByCode(
     code: String,
     date: LocalDate? = LocalDate.now(),
-    timeSlot: TimeSlot? = null
+    timeSlot: TimeSlot? = null,
   ) =
     get()
       .uri("/prison/$code/locations?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
@@ -156,7 +156,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get all schedules for Pentonville prison on Monday 10th October 2022`() {
@@ -198,7 +198,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get morning schedules for Pentonville prison on Monday 10th October 2022`() {
@@ -225,7 +225,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get afternoon schedules for Pentonville prison on Monday 10th October 2022`() {
@@ -253,7 +253,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getSchedulesByPrison(
     prisonCode: String,
     date: LocalDate? = LocalDate.now(),
-    timeSlot: TimeSlot? = null
+    timeSlot: TimeSlot? = null,
   ) =
     get()
       .uri { builder ->

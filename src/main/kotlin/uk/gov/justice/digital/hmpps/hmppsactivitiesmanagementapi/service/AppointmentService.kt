@@ -23,7 +23,7 @@ class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
   private val locationService: LocationService,
   private val prisonApiUserClient: PrisonApiUserClient,
-  private val prisonerSearchApiClient: PrisonerSearchApiClient
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
@@ -51,7 +51,7 @@ class AppointmentService(
       startTime = request.startTime!!,
       endTime = request.endTime,
       comment = request.comment,
-      createdBy = principal.name
+      createdBy = principal.name,
     ).apply {
       this.addOccurrence(
         AppointmentOccurrenceEntity(
@@ -60,15 +60,15 @@ class AppointmentService(
           inCell = this.inCell,
           startDate = this.startDate,
           startTime = this.startTime,
-          endTime = this.endTime
+          endTime = this.endTime,
         ).apply {
           prisonerMap.values.forEach { prisoner ->
             this.addAllocation(
               AppointmentOccurrenceAllocationEntity(
                 appointmentOccurrence = this,
                 prisonerNumber = prisoner.prisonerNumber,
-                bookingId = prisoner.bookingId!!.toLong()
-              )
+                bookingId = prisoner.bookingId!!.toLong(),
+              ),
             )
             this.addInstance(
               AppointmentInstanceEntity(
@@ -81,11 +81,11 @@ class AppointmentService(
                 inCell = this.inCell,
                 internalLocationId = this.internalLocationId,
                 prisonCode = request.prisonCode,
-                startTime = this.startTime
-              )
+                startTime = this.startTime,
+              ),
             )
           }
-        }
+        },
       )
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
   }

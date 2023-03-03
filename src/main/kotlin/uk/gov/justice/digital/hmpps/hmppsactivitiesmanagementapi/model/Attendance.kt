@@ -18,7 +18,7 @@ data class Attendance(
 
   @Schema(
     description = "Free text to allow comments to be put against the attendance",
-    example = "Prisoner was too unwell to attend the activity."
+    example = "Prisoner was too unwell to attend the activity.",
   )
   var comment: String? = null,
 
@@ -40,5 +40,5 @@ data class Attendance(
   @Schema(description = "The bonus amount in pence to pay the prisoner for the activity", example = "50")
   val bonusAmount: Int? = null,
 
-  val pieces: Int? = null
+  val pieces: Int? = null,
 )

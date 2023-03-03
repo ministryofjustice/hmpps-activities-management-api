@@ -5,5 +5,5 @@ enum class EventType(val defaultPriority: Int) {
   VISIT(2),
   ADJUDICATION_HEARING(3),
   APPOINTMENT(4),
-  ACTIVITY(5)
+  ACTIVITY(5),
 }

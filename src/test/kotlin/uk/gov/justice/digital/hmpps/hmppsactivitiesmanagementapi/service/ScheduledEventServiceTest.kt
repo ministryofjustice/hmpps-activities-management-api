@@ -61,7 +61,7 @@ class ScheduledEventServiceTest {
           description = "Description",
           active = active,
           rolloutDate = rolloutDate,
-        )
+        ),
       )
   }
 
@@ -413,7 +413,7 @@ class ScheduledEventServiceTest {
         EventType.VISIT to listOf(Priority(22)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(23)),
         EventType.COURT_HEARING to listOf(Priority(24)),
-      )
+      ),
     )
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -466,7 +466,7 @@ class ScheduledEventServiceTest {
         EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
         EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
-      )
+      ),
     )
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -514,7 +514,7 @@ class ScheduledEventServiceTest {
         EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
         EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
-      )
+      ),
     )
 
     // Mocked activities from the database view - with category set to LEISURE
@@ -630,7 +630,7 @@ class ScheduledEventServiceTest {
         EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
         EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
-      )
+      ),
     )
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(

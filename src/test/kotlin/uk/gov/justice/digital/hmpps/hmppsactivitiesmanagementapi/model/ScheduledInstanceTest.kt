@@ -10,7 +10,6 @@ class ScheduledInstanceTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalStartTime = LocalTime.parse("10:21:22", timeFormatter)
     val originalEndTime = LocalTime.parse("11:22:23", timeFormatter)

@@ -26,7 +26,7 @@ import java.security.Principal
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentController(
-  private val appointmentService: AppointmentService
+  private val appointmentService: AppointmentService,
 ) {
   @GetMapping(value = ["/{appointmentId}"])
   @ResponseBody
@@ -42,8 +42,8 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class)
-          )
+            schema = Schema(implementation = Appointment::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -52,8 +52,8 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -62,11 +62,11 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
     appointmentService.getAppointmentById(appointmentId)
@@ -79,9 +79,8 @@ class AppointmentController(
     """
     Create an appointment or series of appointment occurrences and allocate the supplied prisoner or prisoners to them.
     Does not require any specific roles
-    """
+    """,
   )
-
   @ApiResponses(
     value = [
       ApiResponse(
@@ -90,8 +89,8 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class)
-          )
+            schema = Schema(implementation = Appointment::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -100,8 +99,8 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -110,17 +109,20 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
-    ]
+    ],
   )
   fun createAppointment(
     principal: Principal,
-    @Valid @RequestBody @Parameter(
+    @Valid
+    @RequestBody
+    @Parameter(
       description = "The create request with the new appointment or series of appointment occurrences details",
-      required = true
-    ) request: AppointmentCreateRequest
+      required = true,
+    )
+    request: AppointmentCreateRequest,
   ): Appointment = appointmentService.createAppointment(request, principal)
 }

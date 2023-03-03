@@ -34,9 +34,9 @@ class BankHolidayServiceTest {
       englandAndWales = RegionBankHolidays(
         division = "england-and-wales",
         events = listOf(
-          BankHoliday(title = "Stubbed bank holiday", date = LocalDate.now())
-        )
-      )
+          BankHoliday(title = "Stubbed bank holiday", date = LocalDate.now()),
+        ),
+      ),
     )
   }
 }

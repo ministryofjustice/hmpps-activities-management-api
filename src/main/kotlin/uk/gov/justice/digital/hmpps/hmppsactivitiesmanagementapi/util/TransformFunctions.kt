@@ -75,7 +75,7 @@ fun transform(activity: EntityActivity) =
     minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy,
-    minimumEducationLevel = activity.activityMinimumEducationLevel().toModel()
+    minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
   )
 
 fun transformPrisonerScheduledActivityToScheduledEvents(
@@ -109,7 +109,7 @@ fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
       date = it.sessionDate,
       startTime = it.startTime!!,
       endTime = it.endTime,
-      priority = priorities?.let { pList -> getPriority(it.activityCategory, pList) } ?: defaultPriority
+      priority = priorities?.let { pList -> getPriority(it.activityCategory, pList) } ?: defaultPriority,
     )
   }
 
@@ -133,7 +133,7 @@ fun transformToPrisonerScheduledEvents(
       prisonerNumber,
       EventType.APPOINTMENT.name,
       EventType.APPOINTMENT.defaultPriority,
-      eventPriorities[EventType.APPOINTMENT]
+      eventPriorities[EventType.APPOINTMENT],
     ),
     courtHearings?.prisonApiCourtHearingsToScheduledEvents(
       bookingId,
@@ -141,19 +141,19 @@ fun transformToPrisonerScheduledEvents(
       prisonerNumber,
       EventType.COURT_HEARING.name,
       EventType.COURT_HEARING.defaultPriority,
-      eventPriorities[EventType.COURT_HEARING]
+      eventPriorities[EventType.COURT_HEARING],
     ),
     visits?.prisonApiScheduledEventToScheduledEvents(
       prisonerNumber,
       EventType.VISIT.name,
       EventType.VISIT.defaultPriority,
-      eventPriorities[EventType.VISIT]
+      eventPriorities[EventType.VISIT],
     ),
     activities?.prisonApiScheduledEventToScheduledEvents(
       prisonerNumber,
       EventType.ACTIVITY.name,
       EventType.ACTIVITY.defaultPriority,
-      eventPriorities[EventType.ACTIVITY]
+      eventPriorities[EventType.ACTIVITY],
     ),
   )
 
@@ -195,7 +195,7 @@ fun transformToPrisonerScheduledEvents(
       EventType.ACTIVITY.name,
       EventType.ACTIVITY.defaultPriority,
       eventPriorities[EventType.ACTIVITY],
-    )
+    ),
   )
 
 fun transformToPrisonerScheduledEvents(
@@ -234,7 +234,7 @@ fun transformToPrisonerScheduledEvents(
       prisonCode,
       EventType.ACTIVITY.name,
       EventType.ACTIVITY.defaultPriority,
-      eventPriorities[EventType.ACTIVITY]
+      eventPriorities[EventType.ACTIVITY],
     ),
   )
 
@@ -243,7 +243,7 @@ fun EntityActivityCategory.toModelActivityCategory() =
     this.activityCategoryId,
     this.code,
     this.name,
-    this.description
+    this.description,
   )
 
 private fun EntityActivityTier.toModelActivityTier() =
@@ -256,7 +256,7 @@ private fun EntityActivityTier.toModelActivityTier() =
 private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   ModelActivityEligibility(
     it.activityEligibilityId,
-    it.eligibilityRule.let { er -> ModelEligibilityRule(er.eligibilityRuleId, er.code, er.description) }
+    it.eligibilityRule.let { er -> ModelEligibilityRule(er.eligibilityRuleId, er.code, er.description) },
   )
 }
 
@@ -276,7 +276,7 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
       slots = it.key.slots().toModelActivityScheduleSlots(),
       startDate = it.key.startDate,
       endDate = it.key.endDate,
-      runsOnBankHoliday = it.key.runsOnBankHoliday
+      runsOnBankHoliday = it.key.runsOnBankHoliday,
     )
   }
 
@@ -295,7 +295,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     slots = this.slots().toModelActivityScheduleSlots(),
     startDate = this.startDate,
     endDate = this.endDate,
-    runsOnBankHoliday = this.runsOnBankHoliday
+    runsOnBankHoliday = this.runsOnBankHoliday,
   )
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
@@ -319,7 +319,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
-    attendances = it.attendances.map { attendance -> transform(attendance) }
+    attendances = it.attendances.map { attendance -> transform(attendance) },
   )
 }
 
@@ -327,7 +327,7 @@ private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(
   bookingId: Long?,
   prisonerNumber: String?,
   defaultPriority: Int?,
-  priorities: List<Priority>?
+  priorities: List<Priority>?,
 ) =
   map {
     ModelScheduledEvent(
@@ -348,23 +348,26 @@ private fun List<ModelActivityScheduleInstance>.toModelScheduledEvents(
       startTime = it.startTime,
       endTime = it.endTime,
       priority = priorities?.let { pList -> getPriority(it.activitySchedule.activity.category.code, pList) }
-        ?: defaultPriority
+        ?: defaultPriority,
     )
   }
 
 private fun getPriority(category: String?, priorities: List<Priority>): Int? =
   priorities.fold(listOf<Priority>()) { acc, next ->
-    if (next.eventCategory == null && acc.isEmpty()) listOf(next)
-    else when (next.eventCategory) {
-      EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
-      EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
-      EventCategory.INDUCTION -> if (category == "IND" || category == "INDUC") listOf(next) else acc
-      EventCategory.INDUSTRIES -> if (category == "LACO") listOf(next) else acc
-      EventCategory.INTERVENTIONS -> if (category == "INTERV") listOf(next) else acc
-      EventCategory.LEISURE_SOCIAL -> if (category == "LEI") listOf(next) else acc
-      EventCategory.SERVICES -> if (category == "SERV") listOf(next) else acc
-      else -> {
-        acc
+    if (next.eventCategory == null && acc.isEmpty()) {
+      listOf(next)
+    } else {
+      when (next.eventCategory) {
+        EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
+        EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
+        EventCategory.INDUCTION -> if (category == "IND" || category == "INDUC") listOf(next) else acc
+        EventCategory.INDUSTRIES -> if (category == "LACO") listOf(next) else acc
+        EventCategory.INTERVENTIONS -> if (category == "INTERV") listOf(next) else acc
+        EventCategory.LEISURE_SOCIAL -> if (category == "LEI") listOf(next) else acc
+        EventCategory.SERVICES -> if (category == "SERV") listOf(next) else acc
+        else -> {
+          acc
+        }
       }
     }
   }.firstOrNull()?.priority
@@ -373,7 +376,7 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
   prisonerNumber: String?,
   eventType: String?,
   defaultPriority: Int?,
-  priorities: List<Priority>?
+  priorities: List<Priority>?,
 ) = map {
   ModelScheduledEvent(
     prisonCode = it.agencyId,
@@ -393,7 +396,7 @@ private fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEven
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
-      ?: defaultPriority
+      ?: defaultPriority,
   )
 }
 
@@ -401,7 +404,7 @@ private fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduled
   prisonCode: String,
   eventType: String?,
   defaultPriority: Int?,
-  priorities: List<Priority>?
+  priorities: List<Priority>?,
 ) = map {
   ModelScheduledEvent(
     prisonCode = prisonCode,
@@ -421,7 +424,7 @@ private fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduled
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priorities?.let { pList -> getPriority(it.eventType, pList) }
-      ?: defaultPriority
+      ?: defaultPriority,
   )
 }
 
@@ -431,7 +434,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   prisonerNumber: String?,
   eventType: String?,
   defaultPriority: Int?,
-  priorities: List<Priority>?
+  priorities: List<Priority>?,
 ) = this.hearings?.map {
   ModelScheduledEvent(
     prisonCode = prisonCode,
@@ -451,7 +454,7 @@ private fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
     startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
     endTime = null,
     priority = priorities?.let { pList -> getPriority(null, pList) }
-      ?: defaultPriority
+      ?: defaultPriority,
   )
 }
 
@@ -463,7 +466,7 @@ fun List<EntityAllocation>.toModelPrisonerAllocations() =
 private fun List<EntitySuspension>.toModelSuspensions() = map {
   ModelSuspension(
     suspendedFrom = it.suspendedFrom,
-    suspendedUntil = it.suspendedUntil
+    suspendedUntil = it.suspendedUntil,
   )
 }
 
@@ -475,7 +478,7 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
     prisonPayBand = it.payBand.toModelPrisonPayBand(),
     rate = it.rate,
     pieceRate = it.pieceRate,
-    pieceRateItems = it.pieceRateItems
+    pieceRateItems = it.pieceRateItems,
   )
 }
 
@@ -483,7 +486,7 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
   ModelInternalLocation(
     id = internalLocationId!!,
     code = internalLocationCode!!,
-    description = internalLocationDescription!!
+    description = internalLocationDescription!!,
   )
 }
 
@@ -492,7 +495,7 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   code = prison.code,
   description = prison.description,
   active = prison.active,
-  rolloutDate = prison.rolloutDate
+  rolloutDate = prison.rolloutDate,
 )
 
 fun transform(attendance: EntityAttendance): ModelAttendance =
@@ -503,7 +506,7 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
       ModelAttendanceReason(
         id = it.attendanceReasonId,
         code = it.code,
-        description = it.description
+        description = it.description,
       )
     },
     comment = attendance.comment,
@@ -513,7 +516,7 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     status = attendance.status.name,
     payAmount = attendance.payAmount,
     bonusAmount = attendance.bonusAmount,
-    pieces = attendance.pieces
+    pieces = attendance.pieces,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
@@ -523,7 +526,7 @@ fun EntityPrisonPayBand.toModelPrisonPayBand() =
     description = this.payBandDescription,
     displaySequence = this.displaySequence,
     nomisPayBand = this.nomisPayBand,
-    prisonCode = this.prisonCode
+    prisonCode = this.prisonCode,
   )
 
 fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
@@ -534,5 +537,5 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmStart = prisonRegime.pmStart,
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
-  edFinish = prisonRegime.edFinish
+  edFinish = prisonRegime.edFinish,
 )

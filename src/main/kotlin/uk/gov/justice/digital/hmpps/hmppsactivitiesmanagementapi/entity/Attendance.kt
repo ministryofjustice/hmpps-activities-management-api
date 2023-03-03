@@ -44,7 +44,7 @@ data class Attendance(
 
   var bonusAmount: Int? = null,
 
-  var pieces: Int? = null
+  var pieces: Int? = null,
 ) {
 
   @Override

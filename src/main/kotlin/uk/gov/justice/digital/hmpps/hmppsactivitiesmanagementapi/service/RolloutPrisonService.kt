@@ -9,6 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 class RolloutPrisonService(private val repository: RolloutPrisonRepository) {
 
   fun getByPrisonCode(code: String) = transform(
-    repository.findByCode(code) ?: throw EntityNotFoundException(code)
+    repository.findByCode(code) ?: throw EntityNotFoundException(code),
   )
 }

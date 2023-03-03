@@ -8,5 +8,5 @@ data class CapacityAndAllocated(
   val capacity: Int,
 
   @Schema(description = "The number of slots currently filled in the activity or category", example = "27")
-  val allocated: Int
+  val allocated: Int,
 )

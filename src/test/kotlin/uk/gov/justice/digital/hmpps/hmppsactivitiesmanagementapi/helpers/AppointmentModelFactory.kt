@@ -28,7 +28,7 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     "CREATE.USER",
     updated,
     "UPDATE.USER",
-    occurrences = listOf(appointmentOccurrenceModel(occurrenceUpdated))
+    occurrences = listOf(appointmentOccurrenceModel(occurrenceUpdated)),
   )
 
 fun appointmentOccurrenceAllocationModel() =
@@ -47,7 +47,7 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
     updated,
     "UPDATE.USER",
     allocations = listOf(appointmentOccurrenceAllocationModel()),
-    instances = listOf(appointmentInstanceModel())
+    instances = listOf(appointmentInstanceModel()),
   )
 
 fun appointmentInstanceModel() =
@@ -64,7 +64,7 @@ fun appointmentInstanceModel() =
     LocalTime.of(10, 30),
     "Appointment instance level comment",
     attended = true,
-    cancelled = false
+    cancelled = false,
   )
 
 fun appointmentCreateRequest(
@@ -76,7 +76,7 @@ fun appointmentCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   comment: String = "Appointment level comment",
-  prisonerNumbers: List<String> = listOf("A1234BC")
+  prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
   AppointmentCreateRequest(
     categoryId,
@@ -87,5 +87,5 @@ fun appointmentCreateRequest(
     startTime,
     endTime,
     comment,
-    prisonerNumbers
+    prisonerNumbers,
   )

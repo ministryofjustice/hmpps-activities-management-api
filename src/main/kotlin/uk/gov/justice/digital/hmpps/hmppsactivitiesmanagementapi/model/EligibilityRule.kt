@@ -12,5 +12,5 @@ data class EligibilityRule(
   val code: String,
 
   @Schema(description = "The description for this eligibility rule", example = "The prisoner must be over 21 to attend")
-  val description: String
+  val description: String,
 )

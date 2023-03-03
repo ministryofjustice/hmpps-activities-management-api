@@ -11,7 +11,7 @@ class CapacitiesIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `get capacity of a category`() {
     with(webTestClient.getCategoryCapacity("PVI", 1)!!) {
@@ -22,7 +22,7 @@ class CapacitiesIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `get capacity of an activity`() {
     with(webTestClient.getActivityCapacity(1)!!) {
@@ -33,7 +33,7 @@ class CapacitiesIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `get capacity of a schedule`() {
     with(webTestClient.getScheduleCapacity(1)!!) {

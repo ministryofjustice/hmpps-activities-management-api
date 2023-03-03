@@ -23,5 +23,5 @@ data class EventPriority(
   @Enumerated(EnumType.STRING)
   val eventCategory: EventCategory? = null,
 
-  val priority: Int
+  val priority: Int,
 )

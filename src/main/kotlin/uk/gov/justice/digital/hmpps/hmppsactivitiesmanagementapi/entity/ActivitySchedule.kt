@@ -39,7 +39,7 @@ data class ActivitySchedule(
     mappedBy = "activitySchedule",
     fetch = FetchType.EAGER,
     cascade = [CascadeType.ALL],
-    orphanRemoval = true
+    orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
@@ -73,7 +73,7 @@ data class ActivitySchedule(
     mappedBy = "activitySchedule",
     fetch = FetchType.EAGER,
     cascade = [CascadeType.ALL],
-    orphanRemoval = true
+    orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
@@ -82,7 +82,7 @@ data class ActivitySchedule(
     mappedBy = "activitySchedule",
     fetch = FetchType.EAGER,
     cascade = [CascadeType.ALL],
-    orphanRemoval = true
+    orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<Allocation> = mutableListOf()
@@ -91,7 +91,7 @@ data class ActivitySchedule(
     mappedBy = "activitySchedule",
     fetch = FetchType.EAGER,
     cascade = [CascadeType.ALL],
-    orphanRemoval = true
+    orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
   private val slots: MutableList<ActivityScheduleSlot> = mutableListOf()
@@ -130,7 +130,7 @@ data class ActivitySchedule(
       internalLocationDescription = internalLocationDescription,
       capacity = capacity,
       startDate = startDate,
-      runsOnBankHoliday = runsOnBankHoliday
+      runsOnBankHoliday = runsOnBankHoliday,
     ).apply {
       this.endDate = endDate
     }
@@ -145,7 +145,7 @@ data class ActivitySchedule(
 
   fun addInstance(
     sessionDate: LocalDate,
-    slot: ActivityScheduleSlot
+    slot: ActivityScheduleSlot,
   ): ScheduledInstance {
     failIfMatchingInstanceAlreadyPresent(sessionDate, slot)
     failIfSlotNotPartOfThisSchedule(slot)
@@ -155,8 +155,8 @@ data class ActivitySchedule(
         activitySchedule = this,
         sessionDate = sessionDate,
         startTime = slot.startTime,
-        endTime = slot.endTime
-      )
+        endTime = slot.endTime,
+      ),
     )
 
     return instances.last()
@@ -170,7 +170,7 @@ data class ActivitySchedule(
 
   private fun failIfMatchingInstanceAlreadyPresent(
     sessionDate: LocalDate,
-    slot: ActivityScheduleSlot
+    slot: ActivityScheduleSlot,
   ) {
     if (instances.any { it.sessionDate == sessionDate && it.startTime == slot.startTime && it.endTime == slot.endTime }) {
       throw IllegalArgumentException("An instance for date '$sessionDate', start time '${slot.startTime}' and end time '${slot.endTime}' already exists")
@@ -193,13 +193,13 @@ data class ActivitySchedule(
     internalLocation = InternalLocation(
       id = internalLocationId!!,
       code = internalLocationCode!!,
-      description = internalLocationDescription!!
+      description = internalLocationDescription!!,
     ),
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,
-    endDate = this.endDate
+    endDate = this.endDate,
   )
 
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
@@ -212,7 +212,7 @@ data class ActivitySchedule(
     bookingId: Long?,
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
-    allocatedBy: String
+    allocatedBy: String,
   ) {
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
@@ -227,8 +227,8 @@ data class ActivitySchedule(
         startDate = startDate,
         endDate = endDate,
         allocatedBy = allocatedBy,
-        allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
-      )
+        allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
+      ),
     )
   }
 

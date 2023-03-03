@@ -62,7 +62,7 @@ data class AppointmentInstance(
     endTime = endTime,
     comment = comment,
     attended = attended,
-    cancelled = cancelled
+    cancelled = cancelled,
   )
 }
 

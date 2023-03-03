@@ -34,7 +34,7 @@ class ActivityScheduleTest {
         startDate = LocalDate.of(2022, 12, 1),
         payBand = lowPayBand,
         bookingId = 1,
-        allocatedBy = "FAKE USER"
+        allocatedBy = "FAKE USER",
       )
 
       allocatePrisoner(
@@ -43,7 +43,7 @@ class ActivityScheduleTest {
         endDate = LocalDate.of(2022, 11, 30),
         payBand = lowPayBand,
         bookingId = 2,
-        allocatedBy = "FAKE USER"
+        allocatedBy = "FAKE USER",
       )
     }
 
@@ -56,7 +56,6 @@ class ActivityScheduleTest {
 
   @Test
   fun `converted to model lite`() {
-
     val expectedModel = ActivityScheduleLite(
       id = 1,
       description = "schedule description",
@@ -79,15 +78,15 @@ class ActivityScheduleTest {
           ActivityMinimumEducationLevel(
             id = -1,
             educationLevelCode = "1",
-            educationLevelDescription = "Reading Measure 1.0"
-          )
+            educationLevelDescription = "Reading Measure 1.0",
+          ),
         ),
         category = ModelActivityCategory(
           id = 1L,
           code = "category code",
           name = "category name",
-          description = "category description"
-        )
+          description = "category description",
+        ),
       ),
       slots = listOf(
         ActivityScheduleSlot(
@@ -101,17 +100,17 @@ class ActivityScheduleTest {
           thursdayFlag = false,
           fridayFlag = false,
           saturdayFlag = false,
-          sundayFlag = false
-        )
+          sundayFlag = false,
+        ),
       ),
-      startDate = LocalDate.now().plusDays(1)
+      startDate = LocalDate.now().plusDays(1),
     )
     assertThat(
       activitySchedule(
         activityEntity(),
         timestamp = LocalDate.now().atTime(10, 20),
-        startDate = LocalDate.now().plusDays(1)
-      ).toModelLite()
+        startDate = LocalDate.now().plusDays(1),
+      ).toModelLite(),
     ).isEqualTo(expectedModel)
   }
 
@@ -140,15 +139,15 @@ class ActivityScheduleTest {
             ActivityMinimumEducationLevel(
               id = -1,
               educationLevelCode = "1",
-              educationLevelDescription = "Reading Measure 1.0"
-            )
+              educationLevelDescription = "Reading Measure 1.0",
+            ),
           ),
           category = ModelActivityCategory(
             id = 1L,
             code = "category code",
             name = "category name",
-            description = "category description"
-          )
+            description = "category description",
+          ),
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -162,11 +161,11 @@ class ActivityScheduleTest {
             thursdayFlag = false,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
-          )
+            sundayFlag = false,
+          ),
         ),
-        startDate = LocalDate.now().plusDays(1)
-      )
+        startDate = LocalDate.now().plusDays(1),
+      ),
     )
 
     assertThat(
@@ -174,11 +173,11 @@ class ActivityScheduleTest {
         activitySchedule(
           activityEntity(),
           timestamp = LocalDate.now().atTime(10, 20),
-          startDate = LocalDate.now().plusDays(1)
-        )
-      ).toModelLite()
+          startDate = LocalDate.now().plusDays(1),
+        ),
+      ).toModelLite(),
     ).isEqualTo(
-      expectedModel
+      expectedModel,
     )
   }
 
@@ -190,7 +189,7 @@ class ActivityScheduleTest {
       prisonerNumber = "123456".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
-      allocatedBy = "FRED"
+      allocatedBy = "FRED",
     )
 
     assertThat(schedule.allocations()).hasSize(1)
@@ -214,7 +213,7 @@ class ActivityScheduleTest {
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
-      allocatedBy = "FREDDIE"
+      allocatedBy = "FREDDIE",
     )
 
     assertThat(schedule.allocations()).hasSize(2)
@@ -239,7 +238,7 @@ class ActivityScheduleTest {
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
-      allocatedBy = "FREDDIE"
+      allocatedBy = "FREDDIE",
     )
 
     assertThatThrownBy {
@@ -247,7 +246,7 @@ class ActivityScheduleTest {
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
-        allocatedBy = "NOT FREDDIE"
+        allocatedBy = "NOT FREDDIE",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
@@ -261,7 +260,7 @@ class ActivityScheduleTest {
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
-        allocatedBy = " "
+        allocatedBy = " ",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
@@ -277,8 +276,8 @@ class ActivityScheduleTest {
         activitySchedule = schedule,
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
-        mondayFlag = true
-      )
+        mondayFlag = true,
+      ),
     )
   }
 
@@ -294,8 +293,8 @@ class ActivityScheduleTest {
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
-        wednesdayFlag = true
-      )
+        wednesdayFlag = true,
+      ),
     )
   }
 
@@ -316,8 +315,8 @@ class ActivityScheduleTest {
         thursdayFlag = true,
         fridayFlag = true,
         saturdayFlag = true,
-        sundayFlag = true
-      )
+        sundayFlag = true,
+      ),
     )
   }
 
@@ -337,7 +336,7 @@ class ActivityScheduleTest {
       thursdayFlag = true,
       fridayFlag = true,
       saturdayFlag = true,
-      sundayFlag = true
+      sundayFlag = true,
     )
 
     val slotBelongingToAnotherDifferentSchedule =
@@ -391,7 +390,7 @@ class ActivityScheduleTest {
       activity = activityEntity(),
       description = "description",
       capacity = 1,
-      startDate = LocalDate.now()
+      startDate = LocalDate.now(),
     )
 
     assertThatThrownBy {
@@ -399,7 +398,7 @@ class ActivityScheduleTest {
         activity = activityEntity(),
         description = "description",
         capacity = 0,
-        startDate = LocalDate.now()
+        startDate = LocalDate.now(),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -411,7 +410,7 @@ class ActivityScheduleTest {
       activity = activityEntity(),
       description = "description",
       capacity = 1,
-      startDate = today
+      startDate = today,
     )
 
     with(scheduleWithNoEndDate) {
@@ -452,7 +451,7 @@ class ActivityScheduleTest {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
         endTime = today.atStartOfDay().toLocalTime().plusHours(1),
-        setOf(DayOfWeek.MONDAY)
+        setOf(DayOfWeek.MONDAY),
       )
     }
 
@@ -474,7 +473,7 @@ class ActivityScheduleTest {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
         endTime = today.atStartOfDay().toLocalTime().plusHours(1),
-        setOf(DayOfWeek.MONDAY)
+        setOf(DayOfWeek.MONDAY),
       )
     }
 
@@ -502,7 +501,7 @@ class ActivityScheduleTest {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
         endTime = today.atStartOfDay().toLocalTime().plusHours(1),
-        setOf(DayOfWeek.MONDAY)
+        setOf(DayOfWeek.MONDAY),
       )
     }
 

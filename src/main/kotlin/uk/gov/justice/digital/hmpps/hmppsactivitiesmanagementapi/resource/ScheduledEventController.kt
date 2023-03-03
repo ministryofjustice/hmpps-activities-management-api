@@ -30,7 +30,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
 
   @GetMapping(
     value = ["/prison/{prisonCode}"],
-    produces = [MediaType.APPLICATION_JSON_VALUE]
+    produces = [MediaType.APPLICATION_JSON_VALUE],
   )
   @ResponseBody
   @Operation(
@@ -51,8 +51,8 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = PrisonerScheduledEvents::class)
-          )
+            schema = Schema(implementation = PrisonerScheduledEvents::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -74,8 +74,8 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         responseCode = "404",
         description = "Requested resource not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
     @PathVariable("prisonCode")
@@ -110,7 +110,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
   @PostMapping(
     value = ["/prison/{prisonCode}"],
     consumes = [MediaType.APPLICATION_JSON_VALUE],
-    produces = [MediaType.APPLICATION_JSON_VALUE]
+    produces = [MediaType.APPLICATION_JSON_VALUE],
   )
   @ResponseBody
   @Operation(
@@ -131,8 +131,8 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = PrisonerScheduledEvents::class)
-          )
+            schema = Schema(implementation = PrisonerScheduledEvents::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -154,8 +154,8 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
         responseCode = "404",
         description = "Requested resource not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
     @PathVariable("prisonCode")
@@ -173,7 +173,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
 
     @RequestBody(required = true)
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
-    prisonerNumbers: Set<String>
+    prisonerNumbers: Set<String>,
   ): PrisonerScheduledEvents? {
     return scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, date, timeSlot)
   }

@@ -22,7 +22,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.prisonerNumber = :prisonerNumber
     AND sa.suspended = false
     AND sa.cancelled = false
-    """
+    """,
   )
   fun getScheduledActivitiesForPrisonerAndDateRange(
     prisonCode: String,
@@ -39,7 +39,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.prisonerNumber in :prisonerNumbers
     AND sa.suspended = false
     AND sa.cancelled = false
-    """
+    """,
   )
   fun getScheduledActivitiesForPrisonerListAndDate(
     prisonCode: String,

@@ -20,7 +20,7 @@ import java.time.temporal.ChronoUnit
 
 class AppointmentIntegrationTest : IntegrationTestBase() {
   @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql"
+    "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
   fun `get appointment authorisation required`() {
@@ -31,7 +31,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql"
+    "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
   fun `get single appointment`() {
@@ -93,7 +93,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-deleted-id-2.sql"
+    "classpath:test_data/seed-appointment-deleted-id-2.sql",
   )
   @Test
   fun `get deleted appointment returns 404 not found`() {
@@ -122,8 +122,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!)
-      )
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+      ),
     )
 
     val appointment = webTestClient.createAppointment(request)!!
@@ -142,8 +142,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       request.prisonerNumbers,
       listOf(
         PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 1, prisonId = request.prisonCode!!)
-      )
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 1, prisonId = request.prisonCode!!),
+      ),
     )
 
     val appointment = webTestClient.createAppointment(request)!!
@@ -244,9 +244,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             allocations.containsAll(
               listOf(
                 AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
-                AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2)
-              )
-            )
+                AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
+              ),
+            ),
           )
           with(instances) {
             assertThat(size).isEqualTo(2)
@@ -257,27 +257,35 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
                 AppointmentInstance(
                   id = -1,
                   category = AppointmentCategory(
-                    id = 1, parent = null, code = "TEST",
-                    description = "Test Category", active = true, displayOrder = 2
+                    id = 1,
+                    parent = null,
+                    code = "TEST",
+                    description = "Test Category",
+                    active = true,
+                    displayOrder = 2,
                   ),
                   prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
                   bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
                   startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false
+                  comment = null, attended = null, cancelled = false,
                 ),
                 AppointmentInstance(
                   id = -1,
                   category = AppointmentCategory(
-                    id = 1, parent = null, code = "TEST",
-                    description = "Test Category", active = true, displayOrder = 2
+                    id = 1,
+                    parent = null,
+                    code = "TEST",
+                    description = "Test Category",
+                    active = true,
+                    displayOrder = 2,
                   ),
                   prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
                   bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
                   startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false
-                )
-              )
-            )
+                  comment = null, attended = null, cancelled = false,
+                ),
+              ),
+            ),
           )
         }
       }
@@ -295,7 +303,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
   private fun WebTestClient.createAppointment(
-    request: AppointmentCreateRequest
+    request: AppointmentCreateRequest,
   ) =
     post()
       .uri("/appointments")

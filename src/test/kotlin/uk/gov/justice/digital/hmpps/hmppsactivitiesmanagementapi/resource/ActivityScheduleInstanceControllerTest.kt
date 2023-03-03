@@ -37,7 +37,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         "MDI",
         LocalDateRange(startDate, endDate),
         TimeSlot.AM,
-      )
+      ),
     ).thenReturn(results)
 
     val response = mockMvc.getPrisonerScheduledInstances("MDI", startDate, endDate, TimeSlot.AM)
@@ -50,7 +50,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
     verify(scheduledInstanceService).getActivityScheduleInstancesByDateRange(
       "MDI",
       LocalDateRange(startDate, endDate),
-      TimeSlot.AM
+      TimeSlot.AM,
     )
   }
 
