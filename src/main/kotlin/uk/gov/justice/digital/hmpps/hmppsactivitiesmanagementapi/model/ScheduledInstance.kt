@@ -35,5 +35,5 @@ data class ScheduledInstance(
   val cancelledBy: String? = null,
 
   @Schema(description = "The attendance records for this scheduled instance")
-  val attendances: List<Attendance> = emptyList()
+  val attendances: List<Attendance> = emptyList(),
 )

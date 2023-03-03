@@ -13,14 +13,18 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class PhysicalCharacteristic(
 
   @Schema(example = "null", description = "Type code of physical characteristic")
-  @JsonProperty("type") val type: String,
+  @JsonProperty("type")
+  val type: String,
 
   @Schema(example = "null", description = "Type of physical characteristic")
-  @JsonProperty("characteristic") val characteristic: String,
+  @JsonProperty("characteristic")
+  val characteristic: String,
 
   @Schema(example = "null", description = "Detailed information about the physical characteristic")
-  @JsonProperty("detail") val detail: String,
+  @JsonProperty("detail")
+  val detail: String,
 
   @Schema(example = "null", description = "Image Id Ref")
-  @JsonProperty("imageId") val imageId: Long? = null
+  @JsonProperty("imageId")
+  val imageId: Long? = null,
 )

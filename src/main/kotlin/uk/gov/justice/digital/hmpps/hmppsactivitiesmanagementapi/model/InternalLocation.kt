@@ -12,5 +12,5 @@ data class InternalLocation(
   val code: String,
 
   @Schema(description = "The NOMIS internal location description for this schedule", example = "Education - R1")
-  val description: String
+  val description: String,
 )

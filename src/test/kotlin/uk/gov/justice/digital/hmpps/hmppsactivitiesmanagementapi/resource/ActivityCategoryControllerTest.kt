@@ -30,8 +30,8 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
         id = 1,
         code = "category code",
         name = "category name",
-        description = "category description"
-      )
+        description = "category description",
+      ),
     )
 
     whenever(activityCategoryRepository.findAll()).thenReturn(listOf(activityCategory()))

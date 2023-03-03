@@ -12,11 +12,14 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class ProfileInformation(
 
   @Schema(example = "null", description = "Type of profile information")
-  @JsonProperty("type") val type: String,
+  @JsonProperty("type")
+  val type: String,
 
   @Schema(example = "null", description = "Profile Question")
-  @JsonProperty("question") val question: String,
+  @JsonProperty("question")
+  val question: String,
 
   @Schema(example = "null", description = "Profile Result Answer")
-  @JsonProperty("resultValue") val resultValue: String
+  @JsonProperty("resultValue")
+  val resultValue: String,
 )

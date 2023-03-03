@@ -47,7 +47,7 @@ internal fun activityEntity(
   noSchedules: Boolean = false,
   noEligibilityRules: Boolean = false,
   noPayBands: Boolean = false,
-  noMinimumEducationLevels: Boolean = false
+  noMinimumEducationLevels: Boolean = false,
 ) =
   Activity(
     activityId = activityId,
@@ -62,7 +62,7 @@ internal fun activityEntity(
     startDate = startDate,
     endDate = endDate,
     createdTime = timestamp,
-    createdBy = "test"
+    createdBy = "test",
   ).apply {
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)
@@ -78,13 +78,13 @@ internal fun activityEntity(
         payBand = lowPayBand,
         rate = 30,
         pieceRate = 40,
-        pieceRateItems = 50
+        pieceRateItems = 50,
       )
     }
     if (!noMinimumEducationLevels) {
       this.addMinimumEducationLevel(
         educationLevelCode = "1",
-        educationLevelDescription = "Reading Measure 1.0"
+        educationLevelDescription = "Reading Measure 1.0",
       )
     }
   }
@@ -94,7 +94,7 @@ internal fun activityCategory() =
     activityCategoryId = 1,
     code = "category code",
     name = "category name",
-    description = "category description"
+    description = "category description",
   )
 
 internal fun schedule() = activityEntity().schedules().first()
@@ -128,7 +128,7 @@ internal fun activitySchedule(
   startDate: LocalDate? = null,
   noSlots: Boolean = false,
   noAllocations: Boolean = false,
-  noInstances: Boolean = false
+  noInstances: Boolean = false,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -139,7 +139,7 @@ internal fun activitySchedule(
     internalLocationCode = "EDU-ROOM-1",
     internalLocationDescription = "Education - R1",
     startDate = startDate ?: activity.startDate,
-    runsOnBankHoliday = runsOnBankHolidays
+    runsOnBankHoliday = runsOnBankHolidays,
   ).apply {
     if (!noAllocations) {
       this.allocatePrisoner(
@@ -162,22 +162,22 @@ internal fun activitySchedule(
           thursdayFlag = thursday,
           fridayFlag = friday,
           saturdayFlag = saturday,
-          sundayFlag = sunday
-        )
+          sundayFlag = sunday,
+        ),
       )
     }
     if (!noInstances && !noSlots) {
       this.addInstance(
         sessionDate = timestamp.toLocalDate(),
-        slot = this.slots().first()
+        slot = this.slots().first(),
       ).apply {
         this.attendances.add(
           Attendance(
             attendanceId = 1,
             scheduledInstance = this,
             prisonerNumber = "A11111A",
-            posted = false
-          )
+            posted = false,
+          ),
         )
       }
     }
@@ -187,7 +187,7 @@ internal fun allocation() = activitySchedule(activityEntity()).allocations().fir
 
 private fun activityWaiting(
   activity: Activity,
-  timestamp: LocalDateTime
+  timestamp: LocalDateTime,
 ) =
   PrisonerWaiting(
     prisonerWaitingId = 1,
@@ -195,7 +195,7 @@ private fun activityWaiting(
     prisonerNumber = "A1234AA",
     priority = 1,
     createdTime = timestamp,
-    createdBy = "test"
+    createdBy = "test",
   )
 
 private fun activityPay(activity: Activity) =
@@ -207,7 +207,7 @@ private fun activityPay(activity: Activity) =
     payBand = lowPayBand,
     rate = 30,
     pieceRate = 40,
-    pieceRateItems = 50
+    pieceRateItems = 50,
   )
 
 fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville", true, LocalDate.of(2022, 12, 22))
@@ -220,7 +220,7 @@ fun prisonRegime() = PrisonRegime(
   LocalTime.of(13, 0),
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
-  LocalTime.of(20, 0)
+  LocalTime.of(20, 0),
 )
 
 // TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
@@ -231,7 +231,7 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     displaySequence = 1,
     payBandAlias = "Low",
     payBandDescription = "Pay band 1 $prisonCode description (lowest)",
-    nomisPayBand = 1
+    nomisPayBand = 1,
   ),
   PrisonPayBand(
     prisonPayBandId = 2 + offset,
@@ -239,7 +239,7 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     displaySequence = 2,
     payBandAlias = "Medium",
     payBandDescription = "Pay band 2 $prisonCode description",
-    nomisPayBand = 2
+    nomisPayBand = 2,
   ),
   PrisonPayBand(
     prisonPayBandId = 3 + offset,
@@ -247,6 +247,6 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     displaySequence = 3,
     payBandAlias = "High",
     payBandDescription = "Pay band 3 $prisonCode description (highest)",
-    nomisPayBand = 2
-  )
+    nomisPayBand = 2,
+  ),
 )

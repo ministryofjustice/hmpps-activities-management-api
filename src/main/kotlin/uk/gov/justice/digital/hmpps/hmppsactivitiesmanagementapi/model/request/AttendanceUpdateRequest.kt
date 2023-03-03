@@ -9,5 +9,5 @@ data class AttendanceUpdateRequest(
   val id: Long,
 
   @Schema(description = "The reason codes- ABS, ACCAB, ATT, CANC, NREQ, SUS, UNACAB, REST", example = "ATT")
-  val attendanceReason: String
+  val attendanceReason: String,
 )

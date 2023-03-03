@@ -42,8 +42,8 @@ class ScheduledInstanceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ActivityScheduleInstance::class)
-          )
+            schema = Schema(implementation = ActivityScheduleInstance::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -60,11 +60,11 @@ class ScheduledInstanceController(
         responseCode = "404",
         description = "The scheduled instance was not found.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getScheduledInstanceById(
-    @PathVariable("instanceId") instanceId: Long
+    @PathVariable("instanceId") instanceId: Long,
   ): ActivityScheduleInstance = scheduledInstanceService.getActivityScheduleInstanceById(instanceId)
 
   @GetMapping(value = ["/{instanceId}/attendances"])
@@ -81,8 +81,8 @@ class ScheduledInstanceController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = Attendance::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = Attendance::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -99,10 +99,10 @@ class ScheduledInstanceController(
         responseCode = "404",
         description = "The scheduled instance was not found.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getAttendancesByScheduledInstance(
-    @PathVariable("instanceId") instanceId: Long
+    @PathVariable("instanceId") instanceId: Long,
   ): List<Attendance> = attendancesService.findAttendancesByScheduledInstance(instanceId)
 }

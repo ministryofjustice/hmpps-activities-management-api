@@ -44,7 +44,7 @@ data class AppointmentOccurrence(
 
   var updated: LocalDateTime? = null,
 
-  var updatedBy: String? = null
+  var updatedBy: String? = null,
 ) {
 
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -75,7 +75,7 @@ data class AppointmentOccurrence(
     updated = updated,
     updatedBy = updatedBy,
     allocations = allocations.toModel(),
-    instances = instances.toModel()
+    instances = instances.toModel(),
   )
 }
 

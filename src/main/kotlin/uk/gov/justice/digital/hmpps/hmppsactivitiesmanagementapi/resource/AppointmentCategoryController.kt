@@ -35,15 +35,17 @@ class AppointmentCategoryController(private val appointmentCategoryService: Appo
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping
   @ResponseBody
   fun getAppointmentCategories(
     @RequestParam(
       value = "includeInactive",
-      required = false
-    ) @Parameter(description = "If true will return all appointment categories otherwise only active categories will be returned. Defaults to false.") includeInactive: Boolean?,
+      required = false,
+    )
+    @Parameter(description = "If true will return all appointment categories otherwise only active categories will be returned. Defaults to false.")
+    includeInactive: Boolean?,
   ): List<AppointmentCategory> = appointmentCategoryService.getAll(includeInactive ?: false)
 }

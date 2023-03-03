@@ -30,7 +30,7 @@ import java.util.Optional
 @ActiveProfiles("test")
 @Sql(
   "classpath:test_data/clean-all-data.sql",
-  "classpath:test_data/seed-reference-data.sql"
+  "classpath:test_data/seed-reference-data.sql",
 )
 abstract class IntegrationTestBase {
 
@@ -74,7 +74,7 @@ abstract class IntegrationTestBase {
 
   internal fun setAuthorisation(
     user: String = "test-client",
-    roles: List<String> = listOf()
+    roles: List<String> = listOf(),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =

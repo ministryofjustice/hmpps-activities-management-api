@@ -9,7 +9,6 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets day flags and days-of-week list correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
@@ -18,7 +17,7 @@ class ActivityScheduleSlotTest {
       mondayFlag = true,
       wednesdayFlag = true,
       fridayFlag = true,
-      sundayFlag = true
+      sundayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -35,13 +34,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets monday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      mondayFlag = true
+      mondayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -58,13 +56,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets tuesday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      tuesdayFlag = true
+      tuesdayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -81,13 +78,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets wednesday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      wednesdayFlag = true
+      wednesdayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -104,13 +100,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets thursday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      thursdayFlag = true
+      thursdayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -127,13 +122,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets fridayFlag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      fridayFlag = true
+      fridayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -150,13 +144,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets saturday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      saturdayFlag = true
+      saturdayFlag = true,
     )
 
     with(slot.toModel()) {
@@ -173,13 +166,12 @@ class ActivityScheduleSlotTest {
 
   @Test
   fun `conversion to model sets sunday flag correctly`() {
-
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       activitySchedule = mock(),
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
-      sundayFlag = true
+      sundayFlag = true,
     )
 
     with(slot.toModel()) {

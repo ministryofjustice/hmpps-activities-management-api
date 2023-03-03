@@ -64,7 +64,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
@@ -96,7 +96,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
@@ -128,7 +128,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
@@ -147,7 +147,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): Mono<List<PrisonerSchedule>> {
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->

@@ -25,57 +25,72 @@ import jakarta.validation.Valid
 data class OffenceHistoryDetail(
 
   @Schema(example = "1123456", description = "Prisoner booking id")
-  @JsonProperty("bookingId") val bookingId: Long,
+  @JsonProperty("bookingId")
+  val bookingId: Long,
 
   @Valid
   @Schema(example = "Sat Feb 10 00:00:00 GMT 2018", description = "Date the offence took place")
-  @JsonProperty("offenceDate") val offenceDate: java.time.LocalDate,
+  @JsonProperty("offenceDate")
+  val offenceDate: java.time.LocalDate,
 
   @Schema(
     example = "Commit an act / series of acts with intent to pervert the course of public justice",
     required = true,
-    description = "Description associated with the offence code"
+    description = "Description associated with the offence code",
   )
-  @JsonProperty("offenceDescription") val offenceDescription: String,
+  @JsonProperty("offenceDescription")
+  val offenceDescription: String,
 
   @Schema(example = "RR84070", description = "Reference Code")
-  @JsonProperty("offenceCode") val offenceCode: String,
+  @JsonProperty("offenceCode")
+  val offenceCode: String,
 
   @Schema(example = "RR84", description = "Statute code")
-  @JsonProperty("statuteCode") val statuteCode: String,
+  @JsonProperty("statuteCode")
+  val statuteCode: String,
 
   @Schema(example = "null", description = "Identifies the main offence per booking")
-  @JsonProperty("mostSerious") val mostSerious: Boolean,
+  @JsonProperty("mostSerious")
+  val mostSerious: Boolean,
 
   @Valid
   @Schema(
     example = "Sat Mar 10 00:00:00 GMT 2018",
-    description = "End date if range the offence was believed to have taken place"
+    description = "End date if range the offence was believed to have taken place",
   )
-  @JsonProperty("offenceRangeDate") val offenceRangeDate: java.time.LocalDate? = null,
+  @JsonProperty("offenceRangeDate")
+  val offenceRangeDate: java.time.LocalDate? = null,
 
   @Schema(example = "null", description = "Primary result code ")
-  @JsonProperty("primaryResultCode") val primaryResultCode: String? = null,
+  @JsonProperty("primaryResultCode")
+  val primaryResultCode: String? = null,
 
   @Schema(example = "null", description = "Secondary result code")
-  @JsonProperty("secondaryResultCode") val secondaryResultCode: String? = null,
+  @JsonProperty("secondaryResultCode")
+  val secondaryResultCode: String? = null,
 
   @Schema(example = "null", description = "Description for Primary result")
-  @JsonProperty("primaryResultDescription") val primaryResultDescription: String? = null,
+  @JsonProperty("primaryResultDescription")
+  val primaryResultDescription: String? = null,
 
   @Schema(example = "null", description = "Description for Secondary result")
-  @JsonProperty("secondaryResultDescription") val secondaryResultDescription: String? = null,
+  @JsonProperty("secondaryResultDescription")
+  val secondaryResultDescription: String? = null,
 
   @Schema(example = "null", description = "Conviction flag for Primary result ")
-  @JsonProperty("primaryResultConviction") val primaryResultConviction: Boolean? = null,
+  @JsonProperty("primaryResultConviction")
+  val primaryResultConviction: Boolean? = null,
 
   @Schema(example = "null", description = "Conviction flag for Secondary result ")
-  @JsonProperty("secondaryResultConviction") val secondaryResultConviction: Boolean? = null,
+  @JsonProperty("secondaryResultConviction")
+  val secondaryResultConviction: Boolean? = null,
 
   @Valid
   @Schema(example = "Sat Feb 10 00:00:00 GMT 2018", description = "Latest court date associated with the offence")
-  @JsonProperty("courtDate") val courtDate: java.time.LocalDate? = null,
+  @JsonProperty("courtDate")
+  val courtDate: java.time.LocalDate? = null,
 
   @Schema(example = "100", description = "Court case id")
-  @JsonProperty("caseId") val caseId: Long? = null
+  @JsonProperty("caseId")
+  val caseId: Long? = null,
 )

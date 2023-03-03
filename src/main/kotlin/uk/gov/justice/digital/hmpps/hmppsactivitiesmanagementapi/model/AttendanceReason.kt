@@ -11,5 +11,5 @@ data class AttendanceReason(
   val code: String,
 
   @Schema(description = "The detailed description for this attendance reason", example = "Unacceptable absence")
-  val description: String
+  val description: String,
 )

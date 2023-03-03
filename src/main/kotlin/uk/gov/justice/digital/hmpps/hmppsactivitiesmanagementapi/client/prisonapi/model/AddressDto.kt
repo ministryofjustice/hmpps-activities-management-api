@@ -27,57 +27,74 @@ import jakarta.validation.Valid
 data class AddressDto(
 
   @Schema(example = "false", description = "Primary Address")
-  @JsonProperty("primary") val primary: Boolean,
+  @JsonProperty("primary")
+  val primary: Boolean,
 
   @Schema(example = "false", description = "No Fixed Address")
-  @JsonProperty("noFixedAddress") val noFixedAddress: Boolean,
+  @JsonProperty("noFixedAddress")
+  val noFixedAddress: Boolean,
 
   @Schema(example = "543524", description = "Address Id")
-  @JsonProperty("addressId") val addressId: Long? = null,
+  @JsonProperty("addressId")
+  val addressId: Long? = null,
 
   @Schema(example = "BUS", description = "Address Type. Note: Reference domain is ADDR_TYPE")
-  @JsonProperty("addressType") val addressType: String? = null,
+  @JsonProperty("addressType")
+  val addressType: String? = null,
 
   @Schema(example = "3B", description = "Flat")
-  @JsonProperty("flat") val flat: String? = null,
+  @JsonProperty("flat")
+  val flat: String? = null,
 
   @Schema(example = "Liverpool Prison", description = "Premise")
-  @JsonProperty("premise") val premise: String? = null,
+  @JsonProperty("premise")
+  val premise: String? = null,
 
   @Schema(example = "Slinn Street", description = "Street")
-  @JsonProperty("street") val street: String? = null,
+  @JsonProperty("street")
+  val street: String? = null,
 
   @Schema(example = "Brincliffe", description = "Locality")
-  @JsonProperty("locality") val locality: String? = null,
+  @JsonProperty("locality")
+  val locality: String? = null,
 
   @Schema(example = "Liverpool", description = "Town/City. Note: Reference domain is CITY")
-  @JsonProperty("town") val town: String? = null,
+  @JsonProperty("town")
+  val town: String? = null,
 
   @Schema(example = "LI1 5TH", description = "Postal Code")
-  @JsonProperty("postalCode") val postalCode: String? = null,
+  @JsonProperty("postalCode")
+  val postalCode: String? = null,
 
   @Schema(example = "HEREFORD", description = "County. Note: Reference domain is COUNTY")
-  @JsonProperty("county") val county: String? = null,
+  @JsonProperty("county")
+  val county: String? = null,
 
   @Schema(example = "ENG", description = "Country. Note: Reference domain is COUNTRY")
-  @JsonProperty("country") val country: String? = null,
+  @JsonProperty("country")
+  val country: String? = null,
 
   @Schema(example = "This is a comment text", description = "Comment")
-  @JsonProperty("comment") val comment: String? = null,
+  @JsonProperty("comment")
+  val comment: String? = null,
 
   @Valid
   @Schema(example = "Thu May 12 01:00:00 BST 2005", description = "Date Added")
-  @JsonProperty("startDate") val startDate: java.time.LocalDate? = null,
+  @JsonProperty("startDate")
+  val startDate: java.time.LocalDate? = null,
 
   @Valid
   @Schema(example = "Fri Feb 12 00:00:00 GMT 2021", description = "Date ended")
-  @JsonProperty("endDate") val endDate: java.time.LocalDate? = null,
+  @JsonProperty("endDate")
+  val endDate: java.time.LocalDate? = null,
 
   @Valid
   @Schema(example = "null", description = "The phone number associated with the address")
-  @JsonProperty("phones") val phones: List<Telephone>? = null,
+  @JsonProperty("phones")
+  val phones: List<Telephone>? = null,
 
   @Valid
   @Schema(example = "null", description = "The address usages/types")
-  @JsonProperty("addressUsages") val addressUsages: List<AddressUsageDto>? = null
+  @JsonProperty("addressUsages")
+  val addressUsages: List<AddressUsageDto>? = null,
 )

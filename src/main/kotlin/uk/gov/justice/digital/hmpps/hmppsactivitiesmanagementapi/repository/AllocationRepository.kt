@@ -11,7 +11,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
     value =
     "FROM Allocation a " +
       "WHERE a.prisonerNumber IN (:prisonerNumbers) " +
-      "  AND a.activitySchedule.activity.prisonCode = :prisonCode"
+      "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonerNumbers: List<String>): List<Allocation>
 }

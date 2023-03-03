@@ -19,32 +19,42 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class PhysicalAttributes(
 
   @Schema(example = "M", description = "Gender Code")
-  @JsonProperty("sexCode") val sexCode: String?,
+  @JsonProperty("sexCode")
+  val sexCode: String?,
 
   @Schema(example = "Male", description = "Gender")
-  @JsonProperty("gender") val gender: String,
+  @JsonProperty("gender")
+  val gender: String,
 
   @Schema(example = "W1", description = "Ethnicity Code")
-  @JsonProperty("raceCode") val raceCode: String?,
+  @JsonProperty("raceCode")
+  val raceCode: String?,
 
   @Schema(example = "White: Eng./Welsh/Scot./N.Irish/British", description = "Ethnicity")
-  @JsonProperty("ethnicity") val ethnicity: String?,
+  @JsonProperty("ethnicity")
+  val ethnicity: String?,
 
   @Schema(example = "5", description = "Height in Feet")
-  @JsonProperty("heightFeet") val heightFeet: Int?,
+  @JsonProperty("heightFeet")
+  val heightFeet: Int?,
 
   @Schema(example = "60", description = "Height in Inches")
-  @JsonProperty("heightInches") val heightInches: Int?,
+  @JsonProperty("heightInches")
+  val heightInches: Int?,
 
   @Schema(example = "1.76", description = "Height in Metres (to 2dp)")
-  @JsonProperty("heightMetres") val heightMetres: java.math.BigDecimal?,
+  @JsonProperty("heightMetres")
+  val heightMetres: java.math.BigDecimal?,
 
   @Schema(example = "176", description = "Height in Centimetres")
-  @JsonProperty("heightCentimetres") val heightCentimetres: Int?,
+  @JsonProperty("heightCentimetres")
+  val heightCentimetres: Int?,
 
   @Schema(example = "50", description = "Weight in Pounds")
-  @JsonProperty("weightPounds") val weightPounds: Int?,
+  @JsonProperty("weightPounds")
+  val weightPounds: Int?,
 
   @Schema(example = "67", description = "Weight in Kilograms")
-  @JsonProperty("weightKilograms") val weightKilograms: Int?
+  @JsonProperty("weightKilograms")
+  val weightKilograms: Int?,
 )

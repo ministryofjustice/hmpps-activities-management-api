@@ -13,7 +13,7 @@ class LocalDateRangeTest {
       "2020-01-02",
       "2020-01-03",
       "2020-01-04",
-      "2020-01-05"
+      "2020-01-05",
     )
     val startDate = LocalDate.of(2020, 1, 1)
     val endDate = LocalDate.of(2020, 1, 5)
@@ -28,7 +28,7 @@ class LocalDateRangeTest {
     val expected = listOf(
       "2020-01-01",
       "2020-01-03",
-      "2020-01-05"
+      "2020-01-05",
     )
     val startDate = LocalDate.of(2020, 1, 1)
     val endDate = LocalDate.of(2020, 1, 5)

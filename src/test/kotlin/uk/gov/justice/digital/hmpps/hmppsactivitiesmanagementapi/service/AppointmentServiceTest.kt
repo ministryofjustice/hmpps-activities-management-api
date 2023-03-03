@@ -52,7 +52,7 @@ class AppointmentServiceTest {
     appointmentRepository,
     locationService,
     prisonApiUserClient,
-    prisonerSearchApiClient
+    prisonerSearchApiClient,
   )
 
   @BeforeEach
@@ -177,9 +177,9 @@ class AppointmentServiceTest {
       .thenReturn(
         Mono.just(
           listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!)
-          )
-        )
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+          ),
+        ),
       )
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
@@ -249,9 +249,9 @@ class AppointmentServiceTest {
         Mono.just(
           listOf(
             PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!)
-          )
-        )
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!),
+          ),
+        ),
       )
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
@@ -263,34 +263,42 @@ class AppointmentServiceTest {
         assertThat(occurrences().first().allocations().toModel()).containsAll(
           listOf(
             AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "A12345BC", bookingId = 1),
-            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "B23456CE", bookingId = 2)
-          )
+            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "B23456CE", bookingId = 2),
+          ),
         )
         assertThat(occurrences().first().instances().toModel()).containsAll(
           listOf(
             AppointmentInstance(
               id = -1,
               category = AppointmentCategory(
-                id = 1, parent = null, code = "TEST",
-                description = "Test Category", active = true, displayOrder = 2
+                id = 1,
+                parent = null,
+                code = "TEST",
+                description = "Test Category",
+                active = true,
+                displayOrder = 2,
               ),
               prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
               bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
               startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-              comment = null, attended = null, cancelled = false
+              comment = null, attended = null, cancelled = false,
             ),
             AppointmentInstance(
               id = -1,
               category = AppointmentCategory(
-                id = 1, parent = null, code = "TEST",
-                description = "Test Category", active = true, displayOrder = 2
+                id = 1,
+                parent = null,
+                code = "TEST",
+                description = "Test Category",
+                active = true,
+                displayOrder = 2,
               ),
               prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
               bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
               startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-              comment = null, attended = null, cancelled = false
-            )
-          )
+              comment = null, attended = null, cancelled = false,
+            ),
+          ),
         )
       }
     }

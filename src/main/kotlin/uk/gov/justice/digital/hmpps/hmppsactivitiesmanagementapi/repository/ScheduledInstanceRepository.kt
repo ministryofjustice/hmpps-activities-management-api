@@ -19,11 +19,11 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
       AND si.sessionDate >= :startDate
       AND si.sessionDate <= :endDate
     )
-    """
+    """,
   )
   fun getActivityScheduleInstancesByPrisonCodeAndDateRange(
     prisonCode: String,
     startDate: LocalDate,
-    endDate: LocalDate
+    endDate: LocalDate,
   ): List<ScheduledInstance>
 }

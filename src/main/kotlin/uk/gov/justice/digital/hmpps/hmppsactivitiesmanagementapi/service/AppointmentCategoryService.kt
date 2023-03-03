@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 
 @Service
 class AppointmentCategoryService(
-  private val appointmentCategoryRepository: AppointmentCategoryRepository
+  private val appointmentCategoryRepository: AppointmentCategoryRepository,
 ) {
   fun getAll(includeInactive: Boolean) =
     appointmentCategoryRepository.findAllOrdered().filter { includeInactive || it.active }.toModel()

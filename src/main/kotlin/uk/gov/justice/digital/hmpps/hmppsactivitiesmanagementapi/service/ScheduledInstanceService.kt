@@ -21,7 +21,7 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
     val activities = repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
       prisonCode,
       dateRange.start,
-      dateRange.endInclusive
+      dateRange.endInclusive,
     ).toModel()
 
     return if (slot != null) {

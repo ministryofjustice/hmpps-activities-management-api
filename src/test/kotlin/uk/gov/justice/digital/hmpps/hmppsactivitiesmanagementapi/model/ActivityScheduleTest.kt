@@ -9,7 +9,6 @@ class ActivityScheduleTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {
-
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalEndDate = LocalDate.parse("07 Feb 2023", dateFormatter)
 
@@ -30,13 +29,13 @@ class ActivityScheduleTest : ModelTest() {
         category = ActivityCategory(id = 1, code = "11", name = "Cat 1", description = "Cat 1 desc"),
         description = "Some Desc",
         summary = "Blah",
-        minimumIncentiveNomisCode = "N1"
+        minimumIncentiveNomisCode = "N1",
       ),
       description = "Some Desc",
       capacity = 10,
       startDate = originalStartDate,
       endDate = originalEndDate,
-      runsOnBankHoliday = true
+      runsOnBankHoliday = true,
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)

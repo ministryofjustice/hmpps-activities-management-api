@@ -14,16 +14,19 @@ import jakarta.validation.constraints.Pattern
 data class CourtHearing(
 
   @Schema(example = "123456789", description = "The court hearing identifier.")
-  @JsonProperty("id") val id: Long? = null,
+  @JsonProperty("id")
+  val id: Long? = null,
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(
     example = "2021-07-05T10:35:17",
-    description = "The date and start time of the court hearing in Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS."
+    description = "The date and start time of the court hearing in Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.",
   )
-  @JsonProperty("dateTime") val dateTime: String? = null,
+  @JsonProperty("dateTime")
+  val dateTime: String? = null,
 
   @Valid
   @Schema(example = "null", description = "")
-  @JsonProperty("location") val location: Agency? = null
+  @JsonProperty("location")
+  val location: Agency? = null,
 )

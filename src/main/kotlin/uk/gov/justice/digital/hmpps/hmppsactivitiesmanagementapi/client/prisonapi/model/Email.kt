@@ -10,5 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class Email(
 
   @Schema(example = "null", description = "Email")
-  @JsonProperty("email") val email: String? = null
+  @JsonProperty("email")
+  val email: String? = null,
 )

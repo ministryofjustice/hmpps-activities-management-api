@@ -12,5 +12,6 @@ data class CourtHearings(
 
   @Valid
   @Schema(example = "null", description = "")
-  @JsonProperty("hearings") val hearings: List<CourtHearing>? = null
+  @JsonProperty("hearings")
+  val hearings: List<CourtHearing>? = null,
 )

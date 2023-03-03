@@ -35,86 +35,110 @@ import jakarta.validation.constraints.Pattern
 data class ScheduledEvent(
 
   @Schema(example = "null", description = "Offender booking id")
-  @JsonProperty("bookingId") val bookingId: Long,
+  @JsonProperty("bookingId")
+  val bookingId: Long,
 
   @Schema(example = "null", description = "Class of event")
-  @JsonProperty("eventClass") val eventClass: String,
+  @JsonProperty("eventClass")
+  val eventClass: String,
 
   @Schema(example = "null", description = "Status of event")
-  @JsonProperty("eventStatus") val eventStatus: String,
+  @JsonProperty("eventStatus")
+  val eventStatus: String,
 
   @Schema(example = "null", description = "Type of scheduled event (as a code)")
-  @JsonProperty("eventType") val eventType: String,
+  @JsonProperty("eventType")
+  val eventType: String,
 
   @Schema(example = "null", description = "Description of scheduled event type")
-  @JsonProperty("eventTypeDesc") val eventTypeDesc: String,
+  @JsonProperty("eventTypeDesc")
+  val eventTypeDesc: String,
 
   @Schema(example = "null", description = "Sub type (or reason) of scheduled event (as a code)")
-  @JsonProperty("eventSubType") val eventSubType: String,
+  @JsonProperty("eventSubType")
+  val eventSubType: String,
 
   @Schema(example = "null", description = "Description of scheduled event sub type")
-  @JsonProperty("eventSubTypeDesc") val eventSubTypeDesc: String,
+  @JsonProperty("eventSubTypeDesc")
+  val eventSubTypeDesc: String,
 
   @Valid
   @Schema(example = "null", description = "Date on which event occurs")
-  @JsonProperty("eventDate") val eventDate: java.time.LocalDate,
+  @JsonProperty("eventDate")
+  val eventDate: java.time.LocalDate,
 
   @Schema(example = "null", description = "Code identifying underlying source of event data")
-  @JsonProperty("eventSource") val eventSource: String,
+  @JsonProperty("eventSource")
+  val eventSource: String,
 
   @Schema(example = "null", description = "Activity id if any. Used to attend or pay an activity.")
-  @JsonProperty("eventId") val eventId: Long? = null,
+  @JsonProperty("eventId")
+  val eventId: Long? = null,
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(example = "2021-07-05T10:35:17", description = "Date and time at which event starts")
-  @JsonProperty("startTime") val startTime: String? = null,
+  @JsonProperty("startTime")
+  val startTime: String? = null,
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(example = "2021-07-05T10:35:17", description = "Date and time at which event ends")
-  @JsonProperty("endTime") val endTime: String? = null,
+  @JsonProperty("endTime")
+  val endTime: String? = null,
 
   @Schema(
     example = "null",
-    description = "Location at which event takes place (could be an internal location, agency or external address)."
+    description = "Location at which event takes place (could be an internal location, agency or external address).",
   )
-  @JsonProperty("eventLocation") val eventLocation: String? = null,
+  @JsonProperty("eventLocation")
+  val eventLocation: String? = null,
 
   @Schema(example = "null", description = "Id of an internal event location")
-  @JsonProperty("eventLocationId") val eventLocationId: Long? = null,
+  @JsonProperty("eventLocationId")
+  val eventLocationId: Long? = null,
 
   @Schema(example = "WWI", description = "The agency ID for the booked internal location")
-  @JsonProperty("agencyId") val agencyId: String? = null,
+  @JsonProperty("agencyId")
+  val agencyId: String? = null,
 
   @Schema(example = "null", description = "Source-specific code for the type or nature of the event")
-  @JsonProperty("eventSourceCode") val eventSourceCode: String? = null,
+  @JsonProperty("eventSourceCode")
+  val eventSourceCode: String? = null,
 
   @Schema(example = "null", description = "Source-specific description for type or nature of the event")
-  @JsonProperty("eventSourceDesc") val eventSourceDesc: String? = null,
+  @JsonProperty("eventSourceDesc")
+  val eventSourceDesc: String? = null,
 
   @Schema(
     example = "null",
-    description = "Activity attendance, possible values are the codes in the 'PS_PA_OC' reference domain."
+    description = "Activity attendance, possible values are the codes in the 'PS_PA_OC' reference domain.",
   )
-  @JsonProperty("eventOutcome") val eventOutcome: String? = null,
+  @JsonProperty("eventOutcome")
+  val eventOutcome: String? = null,
 
   @Schema(
     example = "null",
-    description = "Activity performance, possible values are the codes in the 'PERFORMANCE' reference domain."
+    description = "Activity performance, possible values are the codes in the 'PERFORMANCE' reference domain.",
   )
-  @JsonProperty("performance") val performance: String? = null,
+  @JsonProperty("performance")
+  val performance: String? = null,
 
   @Schema(example = "null", description = "Activity no-pay reason.")
-  @JsonProperty("outcomeComment") val outcomeComment: String? = null,
+  @JsonProperty("outcomeComment")
+  val outcomeComment: String? = null,
 
   @Schema(example = "null", description = "Activity paid flag.")
-  @JsonProperty("paid") val paid: Boolean? = null,
+  @JsonProperty("paid")
+  val paid: Boolean? = null,
 
   @Schema(example = "null", description = "Amount paid per activity session in pounds")
-  @JsonProperty("payRate") val payRate: java.math.BigDecimal? = null,
+  @JsonProperty("payRate")
+  val payRate: java.math.BigDecimal? = null,
 
   @Schema(example = "null", description = "The code for the activity location")
-  @JsonProperty("locationCode") val locationCode: String? = null,
+  @JsonProperty("locationCode")
+  val locationCode: String? = null,
 
   @Schema(example = "null", description = "Staff member who created the appointment")
-  @JsonProperty("createUserId") val createUserId: String? = null
+  @JsonProperty("createUserId")
+  val createUserId: String? = null,
 )

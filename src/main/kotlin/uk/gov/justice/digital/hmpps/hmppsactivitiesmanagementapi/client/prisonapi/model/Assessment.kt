@@ -26,55 +26,71 @@ import jakarta.validation.Valid
 data class Assessment(
 
   @Schema(example = "123456", description = "Booking number")
-  @JsonProperty("bookingId") val bookingId: Long,
+  @JsonProperty("bookingId")
+  val bookingId: Long,
 
   @Schema(example = "GV09876N", description = "Offender number (e.g. NOMS Number).")
-  @JsonProperty("offenderNo") val offenderNo: String?,
+  @JsonProperty("offenderNo")
+  val offenderNo: String?,
 
   @Schema(example = "C", description = "Classification code")
-  @JsonProperty("classificationCode") val classificationCode: String,
+  @JsonProperty("classificationCode")
+  val classificationCode: String,
 
   @Schema(example = "Cat C", description = "Classification description")
-  @JsonProperty("classification") val classification: String?,
+  @JsonProperty("classification")
+  val classification: String?,
 
   @Schema(example = "CATEGORY", description = "Identifies the type of assessment")
-  @JsonProperty("assessmentCode") val assessmentCode: String,
+  @JsonProperty("assessmentCode")
+  val assessmentCode: String,
 
   @Schema(example = "Categorisation", description = "Assessment description")
-  @JsonProperty("assessmentDescription") val assessmentDescription: String,
+  @JsonProperty("assessmentDescription")
+  val assessmentDescription: String,
 
   @Schema(example = "null", description = "Indicates the presence of a cell sharing alert")
-  @JsonProperty("cellSharingAlertFlag") val cellSharingAlertFlag: Boolean,
+  @JsonProperty("cellSharingAlertFlag")
+  val cellSharingAlertFlag: Boolean,
 
   @Valid
   @Schema(example = "Sun Feb 11 00:00:00 GMT 2018", description = "Date assessment was created")
-  @JsonProperty("assessmentDate") val assessmentDate: java.time.LocalDate,
+  @JsonProperty("assessmentDate")
+  val assessmentDate: java.time.LocalDate,
 
   @Valid
   @Schema(example = "Sun Feb 11 00:00:00 GMT 2018", description = "Date of next review")
-  @JsonProperty("nextReviewDate") val nextReviewDate: java.time.LocalDate,
+  @JsonProperty("nextReviewDate")
+  val nextReviewDate: java.time.LocalDate,
 
   @Valid
   @Schema(example = "Sun Feb 11 00:00:00 GMT 2018", description = "Date of assessment approval")
-  @JsonProperty("approvalDate") val approvalDate: java.time.LocalDate? = null,
+  @JsonProperty("approvalDate")
+  val approvalDate: java.time.LocalDate? = null,
 
   @Schema(example = "MDI", description = "The assessment creation agency id")
-  @JsonProperty("assessmentAgencyId") val assessmentAgencyId: String? = null,
+  @JsonProperty("assessmentAgencyId")
+  val assessmentAgencyId: String? = null,
 
   @Schema(example = "A", description = "The status of the assessment")
-  @JsonProperty("assessmentStatus") val assessmentStatus: AssessmentStatus? = null,
+  @JsonProperty("assessmentStatus")
+  val assessmentStatus: AssessmentStatus? = null,
 
   @Schema(example = "1", description = "Sequence number of assessment within booking")
-  @JsonProperty("assessmentSeq") val assessmentSeq: Int? = null,
+  @JsonProperty("assessmentSeq")
+  val assessmentSeq: Int? = null,
 
   @Schema(example = "Comment details", description = "Comment from assessor")
-  @JsonProperty("assessmentComment") val assessmentComment: String? = null,
+  @JsonProperty("assessmentComment")
+  val assessmentComment: String? = null,
 
   @Schema(example = "130000", description = "Staff member who made the assessment")
-  @JsonProperty("assessorId") val assessorId: Long? = null,
+  @JsonProperty("assessorId")
+  val assessorId: Long? = null,
 
   @Schema(example = "NGK33Y", description = "Username who made the assessment")
-  @JsonProperty("assessorUser") val assessorUser: String? = null
+  @JsonProperty("assessorUser")
+  val assessorUser: String? = null,
 ) {
 
   /**
@@ -85,9 +101,11 @@ data class Assessment(
 
     @JsonProperty("P")
     P("P"),
+
     @JsonProperty("A")
     A("A"),
+
     @JsonProperty("I")
-    I("I")
+    I("I"),
   }
 }

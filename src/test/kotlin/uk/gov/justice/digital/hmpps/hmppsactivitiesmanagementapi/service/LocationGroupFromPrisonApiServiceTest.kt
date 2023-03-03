@@ -39,7 +39,7 @@ class LocationGroupFromPrisonApiServiceTest {
       locationPrefix = description,
       operationalCapacity = 0,
       userDescription = "",
-      internalLocationCode = ""
+      internalLocationCode = "",
     )
   }
 }

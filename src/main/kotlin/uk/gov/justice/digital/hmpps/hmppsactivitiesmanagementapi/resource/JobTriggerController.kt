@@ -18,13 +18,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateSched
 @RequestMapping("/job", produces = [MediaType.APPLICATION_JSON_VALUE])
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
-  private val createAttendanceRecordsJob: CreateAttendanceRecordsJob
+  private val createAttendanceRecordsJob: CreateAttendanceRecordsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
   @Operation(
     summary = "Trigger the job to create the scheduled instances in advance for the active schedules on activities",
-    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code."
+    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
@@ -36,7 +36,7 @@ class JobTriggerController(
   @PostMapping(value = ["/create-attendance-records"])
   @Operation(
     summary = "Trigger the job to create attendance records in advance",
-    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code."
+    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)

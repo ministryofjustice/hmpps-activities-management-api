@@ -22,7 +22,7 @@ import java.time.LocalDate
   An activity schedule has one or more slot which describes when, during the week, an activity will be run and where:
   
   e.g. Monday AM and Thursday PM, Tuesday PM and Thursday AM.
-  """
+  """,
 )
 data class ActivityScheduleCreateRequest(
 
@@ -34,14 +34,14 @@ data class ActivityScheduleCreateRequest(
   @field:NotNull(message = "The start date must be supplied")
   @Schema(
     description = "The date on which this activity scheduled will start. This cannot be before to the activity start date.",
-    example = "2022-12-23"
+    example = "2022-12-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val startDate: LocalDate? = null,
 
   @Schema(
     description = "The (optional) date on which this activity scheduled will end. If supplied this must be after to the start date.",
-    example = "2023-12-23"
+    example = "2023-12-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
@@ -52,7 +52,7 @@ data class ActivityScheduleCreateRequest(
   @field:Positive(message = "The capacity must be a positive integer")
   @Schema(
     description = "The maximum number of prisoners allowed for a scheduled instance of this schedule",
-    example = "10"
+    example = "10",
   )
   val capacity: Int?,
 
@@ -61,7 +61,7 @@ data class ActivityScheduleCreateRequest(
   val slots: List<Slot>?,
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
-  val runsOnBankHoliday: Boolean = false
+  val runsOnBankHoliday: Boolean = false,
 )
 
 @Schema(
@@ -69,7 +69,7 @@ data class ActivityScheduleCreateRequest(
     Describes time slot and day (or days) the scheduled activity would run. At least one day must be specified.
     
     e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
-  """
+  """,
 )
 
 data class Slot(
@@ -77,7 +77,7 @@ data class Slot(
   @field:NotNull(message = "The time slot must supplied")
   @Schema(
     description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
-    example = "AM"
+    example = "AM",
   )
   val timeSlot: String?,
 

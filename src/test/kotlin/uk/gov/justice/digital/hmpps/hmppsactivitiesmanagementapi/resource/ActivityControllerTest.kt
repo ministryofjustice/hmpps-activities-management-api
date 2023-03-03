@@ -54,15 +54,14 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - success`() {
-
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val createActivityResponse: Activity = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-response-1.json"),
-      object : TypeReference<Activity>() {}
+      object : TypeReference<Activity>() {},
     )
 
     val mockPrincipal: Principal = mock()
@@ -76,7 +75,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
-          createActivityRequest
+          createActivityRequest,
         )
       }
         .andDo { print() }
@@ -91,7 +90,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - no request body`() {
-
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
@@ -117,7 +115,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, empty json`() {
-
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
@@ -148,10 +145,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, required properties missing`() {
-
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-invalid-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val mockPrincipal: Principal = mock()
@@ -162,7 +158,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        createActivityRequest
+        createActivityRequest,
       )
     }
       .andDo { print() }
@@ -186,10 +182,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, rate 0 or negative`() {
-
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-invalid-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val mockPrincipal: Principal = mock()
@@ -200,7 +195,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        createActivityRequest
+        createActivityRequest,
       )
     }
       .andDo { print() }
@@ -222,10 +217,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, character lengths exceeded`() {
-
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-invalid-3.json"),
-      object : TypeReference<ActivityCreateRequest>() {}
+      object : TypeReference<ActivityCreateRequest>() {},
     )
 
     val mockPrincipal: Principal = mock()
@@ -236,7 +230,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        createActivityRequest
+        createActivityRequest,
       )
     }
       .andDo { print() }
@@ -348,8 +342,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             id = 1L,
             code = "EDUCATION",
             name = "Education",
-            description = "Such as classes in English, maths, construction and computer skills"
-          )
+            description = "Such as classes in English, maths, construction and computer skills",
+          ),
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -363,11 +357,11 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             thursdayFlag = false,
             fridayFlag = false,
             saturdayFlag = false,
-            sundayFlag = false
-          )
+            sundayFlag = false,
+          ),
         ),
-        startDate = LocalDate.now()
-      )
+        startDate = LocalDate.now(),
+      ),
     )
 
     whenever(activityService.getSchedulesForActivity(1)).thenReturn(expectedModel)
@@ -405,7 +399,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       startDate = today,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true))
+      slots = listOf(Slot("AM", monday = true)),
     )
 
     mockMvc.createActivitySchedule(1, request)

@@ -8,7 +8,6 @@ class SuspensionTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {
-
     val originalSuspendedFrom = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalSuspendedUntil = LocalDate.parse("07 Feb 2023", dateFormatter)
     val expectedSuspendedFrom = "2023-02-01"

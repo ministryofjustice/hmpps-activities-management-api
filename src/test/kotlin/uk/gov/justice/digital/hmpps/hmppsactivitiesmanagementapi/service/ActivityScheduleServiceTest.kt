@@ -76,7 +76,7 @@ class ActivityScheduleServiceTest {
     val allocations = service.getAllocationsBy(1, false)
     assertThat(allocations).hasSize(3)
     assertThat(allocations).containsExactlyInAnyOrder(
-      *listOf(active, ended, future).toModelAllocations().toTypedArray()
+      *listOf(active, ended, future).toModelAllocations().toTypedArray(),
     )
   }
 

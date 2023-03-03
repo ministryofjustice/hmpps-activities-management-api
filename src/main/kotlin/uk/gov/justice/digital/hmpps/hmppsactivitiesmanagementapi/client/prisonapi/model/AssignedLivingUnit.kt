@@ -13,14 +13,18 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class AssignedLivingUnit(
 
   @Schema(example = "null", required = true, description = "Agency Id")
-  @JsonProperty("agencyId", required = true) val agencyId: String,
+  @JsonProperty("agencyId", required = true)
+  val agencyId: String,
 
   @Schema(example = "null", required = true, description = "location Id")
-  @JsonProperty("locationId", required = true) val locationId: Long,
+  @JsonProperty("locationId", required = true)
+  val locationId: Long,
 
   @Schema(example = "null", required = true, description = "Living Unit Desc")
-  @JsonProperty("description", required = true) val description: String,
+  @JsonProperty("description", required = true)
+  val description: String,
 
   @Schema(example = "null", required = true, description = "Name of the agency where this living unit resides")
-  @JsonProperty("agencyName", required = true) val agencyName: String
+  @JsonProperty("agencyName", required = true)
+  val agencyName: String,
 )

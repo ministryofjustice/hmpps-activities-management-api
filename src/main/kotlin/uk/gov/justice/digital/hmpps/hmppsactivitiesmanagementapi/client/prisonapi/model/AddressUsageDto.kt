@@ -13,14 +13,18 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class AddressUsageDto(
 
   @Schema(example = "23422313", description = "Address ID of the associated address")
-  @JsonProperty("addressId") val addressId: Long? = null,
+  @JsonProperty("addressId")
+  val addressId: Long? = null,
 
   @Schema(example = "HDC", description = "The address usages")
-  @JsonProperty("addressUsage") val addressUsage: String? = null,
+  @JsonProperty("addressUsage")
+  val addressUsage: String? = null,
 
   @Schema(example = "HDC Address", description = "The address usages description")
-  @JsonProperty("addressUsageDescription") val addressUsageDescription: String? = null,
+  @JsonProperty("addressUsageDescription")
+  val addressUsageDescription: String? = null,
 
   @Schema(example = "true", description = "Active Flag")
-  @JsonProperty("activeFlag") val activeFlag: Boolean? = null
+  @JsonProperty("activeFlag")
+  val activeFlag: Boolean? = null,
 )

@@ -19,7 +19,6 @@ abstract class ModelTest {
     @JvmStatic
     @BeforeAll
     fun `setup`() {
-
       objectMapper.registerModule(JavaTimeModule())
       objectMapper.registerKotlinModule()
       objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)

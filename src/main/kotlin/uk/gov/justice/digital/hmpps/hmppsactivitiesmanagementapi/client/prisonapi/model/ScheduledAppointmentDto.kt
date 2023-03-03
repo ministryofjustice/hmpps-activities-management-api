@@ -24,44 +24,57 @@ import jakarta.validation.constraints.Pattern
 data class ScheduledAppointmentDto(
 
   @Schema(example = "null", description = "Appointment id")
-  @JsonProperty("id") val id: Long? = null,
+  @JsonProperty("id")
+  val id: Long? = null,
 
   @Schema(example = "null", description = "Offender number (e.g. NOMS Number)")
-  @JsonProperty("offenderNo") val offenderNo: String? = null,
+  @JsonProperty("offenderNo")
+  val offenderNo: String? = null,
 
   @Schema(example = "null", description = "Offender first name")
-  @JsonProperty("firstName") val firstName: String? = null,
+  @JsonProperty("firstName")
+  val firstName: String? = null,
 
   @Schema(example = "null", description = "Offender last name")
-  @JsonProperty("lastName") val lastName: String? = null,
+  @JsonProperty("lastName")
+  val lastName: String? = null,
 
   @Valid
   @Schema(example = "null", description = "Date the appointment is scheduled")
-  @JsonProperty("date") val date: java.time.LocalDate? = null,
+  @JsonProperty("date")
+  val date: java.time.LocalDate? = null,
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(example = "2021-07-05T10:35:17", description = "Date and time at which appointment starts")
-  @JsonProperty("startTime") val startTime: String? = null,
+  @JsonProperty("startTime")
+  val startTime: String? = null,
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(example = "2021-07-05T10:35:17", description = "Date and time at which appointment ends")
-  @JsonProperty("endTime") val endTime: String? = null,
+  @JsonProperty("endTime")
+  val endTime: String? = null,
 
   @Schema(example = "null", description = "Description of appointment type")
-  @JsonProperty("appointmentTypeDescription") val appointmentTypeDescription: String? = null,
+  @JsonProperty("appointmentTypeDescription")
+  val appointmentTypeDescription: String? = null,
 
   @Schema(example = "null", description = "Appointment code")
-  @JsonProperty("appointmentTypeCode") val appointmentTypeCode: String? = null,
+  @JsonProperty("appointmentTypeCode")
+  val appointmentTypeCode: String? = null,
 
   @Schema(example = "null", description = "Description of location the appointment is held")
-  @JsonProperty("locationDescription") val locationDescription: String? = null,
+  @JsonProperty("locationDescription")
+  val locationDescription: String? = null,
 
   @Schema(example = "null", description = "Id of location the appointment is held")
-  @JsonProperty("locationId") val locationId: Long? = null,
+  @JsonProperty("locationId")
+  val locationId: Long? = null,
 
   @Schema(example = "null", description = "Staff member who created the appointment")
-  @JsonProperty("createUserId") val createUserId: String? = null,
+  @JsonProperty("createUserId")
+  val createUserId: String? = null,
 
   @Schema(example = "null", description = "Agency the appointment belongs to")
-  @JsonProperty("agencyId") val agencyId: String? = null
+  @JsonProperty("agencyId")
+  val agencyId: String? = null,
 )

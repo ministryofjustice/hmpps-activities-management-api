@@ -39,7 +39,7 @@ enum class OutboundEvent {
       OutboundHMPPSDomainEvent(
         eventType = "activities.activity-schedule.created",
         additionalInformation = additionalInformation,
-        description = "A new activity schedule has been created in the activities management service"
+        description = "A new activity schedule has been created in the activities management service",
       )
   },
   PRISONER_ALLOCATED {
@@ -47,9 +47,9 @@ enum class OutboundEvent {
       OutboundHMPPSDomainEvent(
         eventType = "activities.prisoner.allocated",
         additionalInformation = additionalInformation,
-        description = "A prisoner has been allocated to an activity in the activities management service"
+        description = "A prisoner has been allocated to an activity in the activities management service",
       )
-  };
+  }, ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
 }
@@ -74,7 +74,7 @@ data class InboundHMPPSDomainEvent(
   val additionalInformation: InboundAdditionalInformation,
   val version: String,
   val occurredAt: String,
-  val description: String
+  val description: String,
 )
 
 data class InboundAdditionalInformation(

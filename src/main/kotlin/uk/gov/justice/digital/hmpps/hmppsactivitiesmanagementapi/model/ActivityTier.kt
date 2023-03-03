@@ -12,5 +12,5 @@ data class ActivityTier(
   val code: String,
 
   @Schema(description = "The detailed description for this activity tier", example = "Work, education and maintenance")
-  val description: String
+  val description: String,
 )

@@ -161,7 +161,7 @@ class CreateScheduledInstancesJobTest {
         summary = "A",
         description = "AAA",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -169,8 +169,8 @@ class CreateScheduledInstancesJobTest {
             activityScheduleId = 1,
             monday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
       activityEntity(
@@ -179,7 +179,7 @@ class CreateScheduledInstancesJobTest {
         summary = "B",
         description = "BBB",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -188,8 +188,8 @@ class CreateScheduledInstancesJobTest {
             monday = false,
             tuesday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
       activityEntity(
@@ -198,7 +198,7 @@ class CreateScheduledInstancesJobTest {
         summary = "C",
         description = "CCC",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -207,8 +207,8 @@ class CreateScheduledInstancesJobTest {
             monday = false,
             wednesday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
     )
@@ -220,7 +220,7 @@ class CreateScheduledInstancesJobTest {
         summary = "D",
         description = "DDD",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -228,8 +228,8 @@ class CreateScheduledInstancesJobTest {
             activityScheduleId = 4,
             monday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
       activityEntity(
@@ -238,7 +238,7 @@ class CreateScheduledInstancesJobTest {
         summary = "E",
         description = "EEE",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -247,8 +247,8 @@ class CreateScheduledInstancesJobTest {
             monday = false,
             tuesday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
       activityEntity(
@@ -257,7 +257,7 @@ class CreateScheduledInstancesJobTest {
         summary = "F",
         description = "FFF",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -266,8 +266,8 @@ class CreateScheduledInstancesJobTest {
             monday = false,
             wednesday = true,
             noAllocations = true,
-            noInstances = true
-          )
+            noInstances = true,
+          ),
         )
       },
     )
@@ -279,7 +279,7 @@ class CreateScheduledInstancesJobTest {
         summary = "Existing",
         description = "Existing instances",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -292,15 +292,15 @@ class CreateScheduledInstancesJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-            noInstances = true
+            noInstances = true,
           ).apply {
             this.addInstance(
               sessionDate = LocalDate.now(),
-              slot = this.slots().first()
+              slot = this.slots().first(),
             )
-          }
+          },
         )
-      }
+      },
     )
 
     val activityWithSuspension = listOf(
@@ -310,7 +310,7 @@ class CreateScheduledInstancesJobTest {
         summary = "Existing",
         description = "Existing instances",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -323,19 +323,19 @@ class CreateScheduledInstancesJobTest {
             friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-            noInstances = true
+            noInstances = true,
           ).apply {
             this.suspensions.clear()
             this.suspensions.add(
               ActivityScheduleSuspension(
                 activitySchedule = this,
                 suspendedFrom = LocalDate.now(),
-                suspendedUntil = LocalDate.now().plusDays(3)
-              )
+                suspendedUntil = LocalDate.now().plusDays(3),
+              ),
             )
-          }
+          },
         )
-      }
+      },
     )
 
     val activityDoesNotRunOnABankHoliday = listOf(
@@ -345,7 +345,7 @@ class CreateScheduledInstancesJobTest {
         summary = "BH",
         description = "Not on bank holiday",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -359,12 +359,12 @@ class CreateScheduledInstancesJobTest {
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
             runsOnBankHolidays = false,
-            noInstances = true
+            noInstances = true,
           ).apply {
             this.suspensions.clear()
-          }
+          },
         )
-      }
+      },
     )
 
     val activityRunsOnABankHoliday = listOf(
@@ -374,7 +374,7 @@ class CreateScheduledInstancesJobTest {
         summary = "BH",
         description = "Not on bank holiday",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -388,12 +388,12 @@ class CreateScheduledInstancesJobTest {
             saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
             sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
             runsOnBankHolidays = true,
-            noInstances = true
+            noInstances = true,
           ).apply {
             this.suspensions.clear()
-          }
+          },
         )
-      }
+      },
     )
 
     val activityWithMultipleSlots = listOf(
@@ -403,7 +403,7 @@ class CreateScheduledInstancesJobTest {
         summary = "Multiple",
         description = "Slots",
         startDate = LocalDate.now().minusDays(1),
-        noSchedules = true
+        noSchedules = true,
       ).apply {
         this.addSchedule(
           activitySchedule(
@@ -432,7 +432,7 @@ class CreateScheduledInstancesJobTest {
                 fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
                 saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
                 sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-              )
+              ),
             )
             this.addSlot(
               ActivityScheduleSlot(
@@ -449,9 +449,9 @@ class CreateScheduledInstancesJobTest {
                 sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
               ),
             )
-          }
+          },
         )
-      }
+      },
     )
   }
 }

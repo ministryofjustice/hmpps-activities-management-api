@@ -19,31 +19,40 @@ import jakarta.validation.Valid
 data class Alias(
 
   @Schema(example = "Mike", description = "First name of offender alias")
-  @JsonProperty("firstName") val firstName: String,
+  @JsonProperty("firstName")
+  val firstName: String,
 
   @Schema(example = "Smith", description = "Last name of offender alias")
-  @JsonProperty("lastName") val lastName: String,
+  @JsonProperty("lastName")
+  val lastName: String,
 
   @Schema(example = "32", description = "Age of Offender")
-  @JsonProperty("age") val age: Int,
+  @JsonProperty("age")
+  val age: Int,
 
   @Valid
   @Schema(example = "Thu Feb 28 00:00:00 GMT 1980", description = "Date of Birth of Offender")
-  @JsonProperty("dob") val dob: java.time.LocalDate,
+  @JsonProperty("dob")
+  val dob: java.time.LocalDate,
 
   @Schema(example = "Male", description = "Gender")
-  @JsonProperty("gender") val gender: String,
+  @JsonProperty("gender")
+  val gender: String,
 
   @Valid
   @Schema(example = "Fri Feb 15 00:00:00 GMT 2019", description = "Date of creation")
-  @JsonProperty("createDate") val createDate: java.time.LocalDate,
+  @JsonProperty("createDate")
+  val createDate: java.time.LocalDate,
 
   @Schema(example = "John", description = "Middle names of offender alias")
-  @JsonProperty("middleName") val middleName: String? = null,
+  @JsonProperty("middleName")
+  val middleName: String? = null,
 
   @Schema(example = "Mixed: White and Black African", description = "Ethnicity")
-  @JsonProperty("ethnicity") val ethnicity: String? = null,
+  @JsonProperty("ethnicity")
+  val ethnicity: String? = null,
 
   @Schema(example = "Alias Name", description = "Type of Alias")
-  @JsonProperty("nameType") val nameType: String? = null
+  @JsonProperty("nameType")
+  val nameType: String? = null,
 )

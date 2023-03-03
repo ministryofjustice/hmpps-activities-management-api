@@ -9,7 +9,6 @@ class AllocationTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalEndDate = LocalDate.parse("07 Feb 2023", dateFormatter)
     val originalAllocatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter)
@@ -31,7 +30,7 @@ class AllocationTest : ModelTest() {
       prisonPayBand = PrisonPayBand(1, 1, "Alias", "Desc", 1, "PVI"),
       prisonerNumber = "1234",
       scheduleDescription = "Blah blah",
-      scheduleId = 123
+      scheduleId = 123,
     )
 
     val json = objectMapper.writeValueAsString(allocation)

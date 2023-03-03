@@ -27,58 +27,75 @@ import jakarta.validation.Valid
 data class OffenderSentenceTerms(
 
   @Schema(example = "1132400", description = "Offender booking id.")
-  @JsonProperty("bookingId") val bookingId: Long,
+  @JsonProperty("bookingId")
+  val bookingId: Long,
 
   @Schema(example = "2", description = "Sentence number within booking id.")
-  @JsonProperty("sentenceSequence") val sentenceSequence: Int,
+  @JsonProperty("sentenceSequence")
+  val sentenceSequence: Int,
 
   @Schema(example = "1", description = "Sentence term number within sentence.")
-  @JsonProperty("termSequence") val termSequence: Int,
+  @JsonProperty("termSequence")
+  val termSequence: Int,
 
   @Valid
   @Schema(example = "Mon Dec 31 00:00:00 GMT 2018", description = "Start date of sentence term.")
-  @JsonProperty("startDate") val startDate: java.time.LocalDate,
+  @JsonProperty("startDate")
+  val startDate: java.time.LocalDate,
 
   @Schema(example = "null", description = "Whether this is a life sentence.")
-  @JsonProperty("lifeSentence") val lifeSentence: Boolean,
+  @JsonProperty("lifeSentence")
+  val lifeSentence: Boolean,
 
   @Schema(example = "null", description = "Court case id")
-  @JsonProperty("caseId") val caseId: String,
+  @JsonProperty("caseId")
+  val caseId: String,
 
   @Schema(example = "null", description = "Fine amount.")
-  @JsonProperty("fineAmount") val fineAmount: Double,
+  @JsonProperty("fineAmount")
+  val fineAmount: Double,
 
   @Schema(example = "IMP", description = "Sentence term code.")
-  @JsonProperty("sentenceTermCode") val sentenceTermCode: String,
+  @JsonProperty("sentenceTermCode")
+  val sentenceTermCode: String,
 
   @Schema(example = "1", description = "Sentence line number")
-  @JsonProperty("lineSeq") val lineSeq: Long,
+  @JsonProperty("lineSeq")
+  val lineSeq: Long,
 
   @Valid
   @Schema(example = "Mon Dec 31 00:00:00 GMT 2018", description = "Sentence start date")
-  @JsonProperty("sentenceStartDate") val sentenceStartDate: java.time.LocalDate,
+  @JsonProperty("sentenceStartDate")
+  val sentenceStartDate: java.time.LocalDate,
 
   @Schema(
     example = "2",
-    description = "Sentence number which this sentence follows if consecutive, otherwise concurrent."
+    description = "Sentence number which this sentence follows if consecutive, otherwise concurrent.",
   )
-  @JsonProperty("consecutiveTo") val consecutiveTo: Int? = null,
+  @JsonProperty("consecutiveTo")
+  val consecutiveTo: Int? = null,
 
   @Schema(example = "2", description = "Sentence type, using reference data from table SENTENCE_CALC_TYPES.")
-  @JsonProperty("sentenceType") val sentenceType: String? = null,
+  @JsonProperty("sentenceType")
+  val sentenceType: String? = null,
 
   @Schema(example = "2", description = "Sentence type description.")
-  @JsonProperty("sentenceTypeDescription") val sentenceTypeDescription: String? = null,
+  @JsonProperty("sentenceTypeDescription")
+  val sentenceTypeDescription: String? = null,
 
   @Schema(example = "null", description = "Sentence length years.")
-  @JsonProperty("years") val years: Int? = null,
+  @JsonProperty("years")
+  val years: Int? = null,
 
   @Schema(example = "null", description = "Sentence length months.")
-  @JsonProperty("months") val months: Int? = null,
+  @JsonProperty("months")
+  val months: Int? = null,
 
   @Schema(example = "null", description = "Sentence length weeks.")
-  @JsonProperty("weeks") val weeks: Int? = null,
+  @JsonProperty("weeks")
+  val weeks: Int? = null,
 
   @Schema(example = "null", description = "Sentence length days.")
-  @JsonProperty("days") val days: Int? = null
+  @JsonProperty("days")
+  val days: Int? = null,
 )

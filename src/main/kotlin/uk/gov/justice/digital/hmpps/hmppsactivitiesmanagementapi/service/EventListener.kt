@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 @Service
 class EventListener(
   private val mapper: ObjectMapper,
-  private val inboundEventsService: InboundEventsService
+  private val inboundEventsService: InboundEventsService,
 ) {
 
   @SqsListener("activities", factory = "hmppsQueueContainerFactoryProxy")
@@ -27,5 +27,5 @@ data class HMPPSMessageAttributes(val eventType: HMPPSEventType)
 
 data class HMPPSMessage(
   val Message: String,
-  val MessageAttributes: HMPPSMessageAttributes
+  val MessageAttributes: HMPPSMessageAttributes,
 )

@@ -16,16 +16,19 @@ import jakarta.validation.Valid
 data class LocationGroup(
 
   @Schema(example = "Block A", required = true, description = "The name of the group")
-  @JsonProperty("name", required = true) val name: String,
+  @JsonProperty("name", required = true)
+  val name: String,
 
   @Schema(example = "A", required = true, description = "A key for the group")
-  @JsonProperty("key", required = true) val key: String,
+  @JsonProperty("key", required = true)
+  val key: String,
 
   @Valid
   @Schema(
     example = "[{\"name\": \"Landing A/1\", \"key\":\"1\"}, {\"name\": \"Landing A/2\", \"key\": \"2\"}]",
     required = true,
-    description = "The child groups of this group"
+    description = "The child groups of this group",
   )
-  @JsonProperty("children", required = true) val children: List<LocationGroup>
+  @JsonProperty("children", required = true)
+  val children: List<LocationGroup>,
 )

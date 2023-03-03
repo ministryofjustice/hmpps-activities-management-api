@@ -20,38 +20,48 @@ import jakarta.validation.Valid
 data class Agency(
 
   @Schema(example = "MDI", description = "Agency identifier.")
-  @JsonProperty("agencyId") val agencyId: String,
+  @JsonProperty("agencyId")
+  val agencyId: String,
 
   @Schema(example = "Moorland (HMP & YOI)", description = "Agency description.")
-  @JsonProperty("description") val description: String,
+  @JsonProperty("description")
+  val description: String,
 
   @Schema(example = "INST", description = "Agency type.  Reference domain is AGY_LOC_TYPE")
-  @JsonProperty("agencyType") val agencyType: AgencyType,
+  @JsonProperty("agencyType")
+  val agencyType: AgencyType,
 
   @Schema(example = "true", description = "Indicates the Agency is active")
-  @JsonProperty("active") val active: Boolean,
+  @JsonProperty("active")
+  val active: Boolean,
 
   @Schema(example = "Moorland (HMP & YOI)", description = "Long description of the agency")
-  @JsonProperty("longDescription") val longDescription: String? = null,
+  @JsonProperty("longDescription")
+  val longDescription: String? = null,
 
   @Schema(example = "CC", description = "Court Type.  Reference domain is JURISDICTION")
-  @JsonProperty("courtType") val courtType: CourtType? = null,
+  @JsonProperty("courtType")
+  val courtType: CourtType? = null,
 
   @Valid
   @Schema(example = "Thu Jan 12 00:00:00 GMT 2012", description = "Date agency became inactive")
-  @JsonProperty("deactivationDate") val deactivationDate: java.time.LocalDate? = null,
+  @JsonProperty("deactivationDate")
+  val deactivationDate: java.time.LocalDate? = null,
 
   @Valid
   @Schema(example = "null", description = "List of addresses associated with agency")
-  @JsonProperty("addresses") val addresses: List<AddressDto>? = null,
+  @JsonProperty("addresses")
+  val addresses: List<AddressDto>? = null,
 
   @Valid
   @Schema(example = "null", description = "List of phones associated with agency")
-  @JsonProperty("phones") val phones: List<Telephone>? = null,
+  @JsonProperty("phones")
+  val phones: List<Telephone>? = null,
 
   @Valid
   @Schema(example = "null", description = "List of emails associated with agency")
-  @JsonProperty("emails") val emails: List<Email>? = null
+  @JsonProperty("emails")
+  val emails: List<Email>? = null,
 ) {
 
   /**
@@ -62,46 +72,66 @@ data class Agency(
 
     @JsonProperty("CRC")
     CRC("CRC"),
+
     @JsonProperty("POLSTN")
     POLSTN("POLSTN"),
+
     @JsonProperty("INST")
     INST("INST"),
+
     @JsonProperty("COMM")
     COMM("COMM"),
+
     @JsonProperty("APPR")
     APPR("APPR"),
+
     @JsonProperty("CRT")
     CRT("CRT"),
+
     @JsonProperty("POLICE")
     POLICE("POLICE"),
+
     @JsonProperty("IMDC")
     IMDC("IMDC"),
+
     @JsonProperty("TRN")
     TRN("TRN"),
+
     @JsonProperty("OUT")
     OUT("OUT"),
+
     @JsonProperty("YOT")
     YOT("YOT"),
+
     @JsonProperty("SCH")
     SCH("SCH"),
+
     @JsonProperty("STC")
     STC("STC"),
+
     @JsonProperty("HOST")
     HOST("HOST"),
+
     @JsonProperty("AIRPORT")
     AIRPORT("AIRPORT"),
+
     @JsonProperty("HSHOSP")
     HSHOSP("HSHOSP"),
+
     @JsonProperty("HOSPITAL")
     HOSPITAL("HOSPITAL"),
+
     @JsonProperty("PECS")
     PECS("PECS"),
+
     @JsonProperty("PAR")
     PAR("PAR"),
+
     @JsonProperty("PNP")
     PNP("PNP"),
+
     @JsonProperty("PSY")
-    PSY("PSY")
+    PSY("PSY"),
   }
 
   /**
@@ -112,23 +142,32 @@ data class Agency(
 
     @JsonProperty("CACD")
     CACD("CACD"),
+
     @JsonProperty("CB")
     CB("CB"),
+
     @JsonProperty("CC")
     CC("CC"),
+
     @JsonProperty("CO")
     CO("CO"),
+
     @JsonProperty("DCM")
     DCM("DCM"),
+
     @JsonProperty("GCM")
     GCM("GCM"),
+
     @JsonProperty("IMM")
     IMM("IMM"),
+
     @JsonProperty("MC")
     MC("MC"),
+
     @JsonProperty("OTHER")
     OTHER("OTHER"),
+
     @JsonProperty("YC")
-    YC("YC")
+    YC("YC"),
   }
 }

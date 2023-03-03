@@ -37,7 +37,7 @@ class PrisonRegimeServiceTest {
         EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
         EventType.APPOINTMENT to listOf(Priority(4)),
         EventType.ACTIVITY to listOf(Priority(5)),
-      )
+      ),
     )
 
     verify(eventPriorityRepository).findByPrisonCode("PVI")
@@ -52,7 +52,7 @@ class PrisonRegimeServiceTest {
         priority(EventType.VISIT, 3),
         priority(EventType.ADJUDICATION_HEARING, 4),
         priority(EventType.COURT_HEARING, 5),
-      )
+      ),
     )
 
     assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
@@ -62,7 +62,7 @@ class PrisonRegimeServiceTest {
         EventType.VISIT to listOf(Priority(3)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
         EventType.COURT_HEARING to listOf(Priority(5)),
-      )
+      ),
     )
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
@@ -77,7 +77,7 @@ class PrisonRegimeServiceTest {
         priority(EventType.VISIT, 2),
         priority(EventType.ADJUDICATION_HEARING, 3),
         priority(EventType.COURT_HEARING, 4),
-      )
+      ),
     )
 
     assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
@@ -87,7 +87,7 @@ class PrisonRegimeServiceTest {
         EventType.VISIT to listOf(Priority(2)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
         EventType.COURT_HEARING to listOf(Priority(4)),
-      )
+      ),
     )
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
@@ -108,7 +108,7 @@ class PrisonRegimeServiceTest {
         priority(EventType.VISIT, 9),
         priority(EventType.ADJUDICATION_HEARING, 10),
         priority(EventType.COURT_HEARING, 11),
-      )
+      ),
     )
 
     assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
@@ -126,7 +126,7 @@ class PrisonRegimeServiceTest {
         EventType.VISIT to listOf(Priority(9)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(10)),
         EventType.COURT_HEARING to listOf(Priority(11)),
-      )
+      ),
     )
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
@@ -155,8 +155,8 @@ class PrisonRegimeServiceTest {
         alias = "alias",
         description = "description",
         nomisPayBand = 1,
-        prisonCode = "MDI"
-      )
+        prisonCode = "MDI",
+      ),
     )
   }
 
@@ -181,8 +181,8 @@ class PrisonRegimeServiceTest {
         alias = "alias",
         description = "description",
         nomisPayBand = 1,
-        prisonCode = "DEFAULT"
-      )
+        prisonCode = "DEFAULT",
+      ),
     )
   }
 

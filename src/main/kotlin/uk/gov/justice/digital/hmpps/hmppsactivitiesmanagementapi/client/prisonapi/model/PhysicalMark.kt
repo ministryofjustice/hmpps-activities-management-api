@@ -15,20 +15,26 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class PhysicalMark(
 
   @Schema(example = "null", description = "Type of Mark")
-  @JsonProperty("type") val type: String,
+  @JsonProperty("type")
+  val type: String,
 
   @Schema(example = "null", description = "Left or Right Side")
-  @JsonProperty("side") val side: String,
+  @JsonProperty("side")
+  val side: String,
 
   @Schema(example = "null", description = "Where on the body")
-  @JsonProperty("bodyPart") val bodyPart: String,
+  @JsonProperty("bodyPart")
+  val bodyPart: String,
 
   @Schema(example = "null", description = "Image orientation")
-  @JsonProperty("orientation") val orientation: String,
+  @JsonProperty("orientation")
+  val orientation: String,
 
   @Schema(example = "null", description = "More information")
-  @JsonProperty("comment") val comment: String,
+  @JsonProperty("comment")
+  val comment: String,
 
   @Schema(example = "null", description = "Image Id Ref")
-  @JsonProperty("imageId") val imageId: Long? = null
+  @JsonProperty("imageId")
+  val imageId: Long? = null,
 )

@@ -25,7 +25,7 @@ class AllocationEntityListener {
     }.onFailure {
       log.error(
         "Failed to send prisoner allocated event for allocation ${allocation.allocationId}",
-        it
+        it,
       )
     }
   }
