@@ -79,7 +79,7 @@ data class Activity(
   val createdBy: String,
 
   @Schema(description = "The list of minimum education levels that can apply to this activity")
-  val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList()
+  val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList(),
 )
 
 enum class PayPerSession { H, F }

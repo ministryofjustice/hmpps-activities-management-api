@@ -18,7 +18,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   private lateinit var attendanceRepository: AttendanceRepository
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get morning attendances for a scheduled activity instance`() {
@@ -29,7 +29,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `morning attendances are marked for an activity with attendance records`() {
@@ -42,8 +42,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .bodyValue(
         listOf(
           AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS")
-        )
+          AttendanceUpdateRequest(2, "ABS"),
+        ),
       )
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
@@ -56,7 +56,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `403 error morning attendances are marked without the correct role`() {
@@ -68,8 +68,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .bodyValue(
         listOf(
           AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS")
-        )
+          AttendanceUpdateRequest(2, "ABS"),
+        ),
       )
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))

@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
 
   @Sql(
-    "classpath:test_data/seed-activity-id-6.sql"
+    "classpath:test_data/seed-activity-id-6.sql",
   )
   @Test
   fun `get only active allocations for a group of prisoners at Pentonville`() {
@@ -37,7 +37,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
-          allocatedBy = "MR BLOGS"
+          allocatedBy = "MR BLOGS",
         ),
         Allocation(
           id = 4,
@@ -50,8 +50,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
-          allocatedBy = "MR BLOGS"
-        )
+          allocatedBy = "MR BLOGS",
+        ),
       )
     }
 
@@ -68,7 +68,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
-          allocatedBy = "MRS BLOGS"
+          allocatedBy = "MRS BLOGS",
         ),
         Allocation(
           id = 5,
@@ -81,8 +81,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
-          allocatedBy = "MRS BLOGS"
-        )
+          allocatedBy = "MRS BLOGS",
+        ),
       )
     }
 
@@ -90,7 +90,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-6.sql"
+    "classpath:test_data/seed-activity-id-6.sql",
   )
   @Test
   fun `get all allocations for a group of prisoners at Pentonville`() {
@@ -111,7 +111,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
-          allocatedBy = "MR BLOGS"
+          allocatedBy = "MR BLOGS",
         ),
         Allocation(
           id = 4,
@@ -124,8 +124,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
-          allocatedBy = "MR BLOGS"
-        )
+          allocatedBy = "MR BLOGS",
+        ),
       )
     }
 
@@ -142,7 +142,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
-          allocatedBy = "MRS BLOGS"
+          allocatedBy = "MRS BLOGS",
         ),
         Allocation(
           id = 5,
@@ -155,8 +155,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
-          allocatedBy = "MRS BLOGS"
-        )
+          allocatedBy = "MRS BLOGS",
+        ),
       )
     }
 
@@ -173,8 +173,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           startDate = LocalDate.of(2022, 10, 10),
           endDate = LocalDate.of(2022, 10, 11),
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
-          allocatedBy = "MRS BLOGS"
-        )
+          allocatedBy = "MRS BLOGS",
+        ),
       )
     }
   }
@@ -182,7 +182,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
   private fun List<PrisonerAllocations>.prisoner(prisonerNumber: String) = first { it.prisonerNumber == prisonerNumber }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-6.sql"
+    "classpath:test_data/seed-activity-id-6.sql",
   )
   @Test
   fun `no allocations found for a group of prisoners at Moorland`() {

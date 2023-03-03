@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class ActivityCategory(
   @Schema(
     description = "The internally-generated identifier for this activity category",
-    example = "1"
+    example = "1",
   )
   val id: Long,
 
@@ -17,5 +17,5 @@ data class ActivityCategory(
   val name: String,
 
   @Schema(description = "The description of the activity category", example = "Such as association, library time and social clubs, like music or art")
-  val description: String?
+  val description: String?,
 )

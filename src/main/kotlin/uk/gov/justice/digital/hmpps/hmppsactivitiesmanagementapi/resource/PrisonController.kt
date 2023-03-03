@@ -37,7 +37,7 @@ class PrisonController(
   private val capacityService: CapacityService,
   private val activityService: ActivityService,
   private val scheduleService: ActivityScheduleService,
-  private val prisonRegimeService: PrisonRegimeService
+  private val prisonRegimeService: PrisonRegimeService,
 ) {
 
   @Operation(
@@ -51,8 +51,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityLite::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = ActivityLite::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -64,8 +64,8 @@ class PrisonController(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{prisonCode}/activities"])
   @ResponseBody
@@ -84,8 +84,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityLite::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = ActivityLite::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -102,8 +102,8 @@ class PrisonController(
         responseCode = "404",
         description = "Category ID not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/activities"])
   @ResponseBody
@@ -123,8 +123,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = CapacityAndAllocated::class)
-          )
+            schema = Schema(implementation = CapacityAndAllocated::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -141,8 +141,8 @@ class PrisonController(
         responseCode = "404",
         description = "Category ID not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/capacity"])
   @ResponseBody
@@ -165,8 +165,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = InternalLocation::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = InternalLocation::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -179,7 +179,7 @@ class PrisonController(
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-    ]
+    ],
   )
   fun getScheduledPrisonLocations(
     @PathVariable("prisonCode")
@@ -190,7 +190,7 @@ class PrisonController(
     date: LocalDate?,
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "AM, PM or ED")
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ): List<InternalLocation> =
     scheduleService.getScheduledInternalLocations(prisonCode, date ?: LocalDate.now(), timeSlot)
 
@@ -208,8 +208,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivitySchedule::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = ActivitySchedule::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -218,8 +218,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -228,32 +228,39 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
-    ]
+    ],
   )
   fun getSchedulesByPrisonCode(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(
       value = "date",
-      required = false
-    ) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Parameter(description = "Date of activity, default today") date: LocalDate?,
+      required = false,
+    )
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Date of activity, default today")
+    date: LocalDate?,
     @RequestParam(
       value = "timeSlot",
-      required = false
-    ) @Parameter(description = "AM, PM or ED") timeSlot: TimeSlot?,
+      required = false,
+    )
+    @Parameter(description = "AM, PM or ED")
+    timeSlot: TimeSlot?,
     @RequestParam(
       value = "locationId",
-      required = false
-    ) @Parameter(description = "The internal NOMIS location id of the activity") locationId: Long?,
+      required = false,
+    )
+    @Parameter(description = "The internal NOMIS location id of the activity")
+    locationId: Long?,
   ): List<ActivitySchedule> =
     scheduleService.getActivitySchedulesByPrisonCode(
       prisonCode = prisonCode,
       date = date ?: LocalDate.now(),
       timeSlot = timeSlot,
-      locationId = locationId
+      locationId = locationId,
     )
 
   @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
@@ -270,8 +277,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = PrisonPayBand::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = PrisonPayBand::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -280,8 +287,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -290,15 +297,15 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
-    ]
+    ],
   )
   fun getPrisonPayBands(
     @PathVariable("prisonCode")
-    prisonCode: String
+    prisonCode: String,
   ): List<PrisonPayBand> = prisonRegimeService.getPayBandsForPrison(prisonCode)
 
   @GetMapping(value = ["/prison-regime/{prisonCode}"])
@@ -315,8 +322,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = PrisonRegime::class)
-          )
+            schema = Schema(implementation = PrisonRegime::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -325,8 +332,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -335,8 +342,8 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
       ),
       ApiResponse(
@@ -345,11 +352,11 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
         ],
-      )
-    ]
+      ),
+    ],
   )
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): PrisonRegime =
     prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)

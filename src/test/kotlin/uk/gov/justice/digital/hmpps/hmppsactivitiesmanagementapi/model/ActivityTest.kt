@@ -10,7 +10,6 @@ class ActivityTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalEndDate = LocalDate.parse("07 Feb 2023", dateFormatter)
     val originalCreatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter)
@@ -36,7 +35,7 @@ class ActivityTest : ModelTest() {
       endDate = originalEndDate,
       createdBy = "TestUser",
       createdTime = originalCreatedTime,
-      minimumIncentiveNomisCode = "N1"
+      minimumIncentiveNomisCode = "N1",
     )
 
     val json = objectMapper.writeValueAsString(activity)

@@ -27,8 +27,8 @@ class AllocationServiceTest {
     assertThat(
       service.findByPrisonCodeAndPrisonerNumbers(
         "MDI",
-        prisonNumbers.toSet()
-      )
+        prisonNumbers.toSet(),
+      ),
     ).isEqualTo(allocations.toModelPrisonerAllocations())
   }
 

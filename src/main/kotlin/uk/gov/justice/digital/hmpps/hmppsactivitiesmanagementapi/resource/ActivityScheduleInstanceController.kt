@@ -41,8 +41,8 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityScheduleInstance::class))
-          )
+            array = ArraySchema(schema = Schema(implementation = ActivityScheduleInstance::class)),
+          ),
         ],
       ),
       ApiResponse(
@@ -54,8 +54,8 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getActivityScheduleInstancesByDateRange(
     @PathVariable("prisonCode")

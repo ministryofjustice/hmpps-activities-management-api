@@ -19,7 +19,7 @@ class CapacityService(
 ) {
   fun getActivityCategoryCapacityAndAllocated(
     prisonCode: String,
-    categoryId: Long
+    categoryId: Long,
   ): CapacityAndAllocated {
     val activityCategory = activityCategoryRepository.findOrThrowNotFound(categoryId)
     val activities = activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, activityCategory)
@@ -30,7 +30,7 @@ class CapacityService(
   }
 
   fun getActivityCapacityAndAllocated(
-    activityId: Long
+    activityId: Long,
   ): CapacityAndAllocated {
     val activity = activityRepository.findOrThrowNotFound(activityId)
     val capacity = sumOfScheduleCapacities(activity)
@@ -40,7 +40,7 @@ class CapacityService(
   }
 
   fun getActivityScheduleCapacityAndAllocated(
-    scheduleId: Long
+    scheduleId: Long,
   ): CapacityAndAllocated {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     val capacity = schedule.capacity

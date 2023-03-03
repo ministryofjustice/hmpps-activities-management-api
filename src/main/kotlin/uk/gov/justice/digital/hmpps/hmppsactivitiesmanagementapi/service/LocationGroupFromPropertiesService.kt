@@ -14,7 +14,7 @@ import java.util.regex.Pattern
  */
 @Service("overrideLocationGroupService")
 class LocationGroupFromPropertiesService(
-  @Qualifier("whereaboutsGroups") private val groupsProperties: Properties
+  @Qualifier("whereaboutsGroups") private val groupsProperties: Properties,
 ) : LocationGroupService {
 
   /**

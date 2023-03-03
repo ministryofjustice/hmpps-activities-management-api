@@ -90,7 +90,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     prisonCode: String,
     startDate: LocalDate,
     endDate: LocalDate,
-    timeSlot: TimeSlot? = null
+    timeSlot: TimeSlot? = null,
   ) =
     get()
       .uri { builder ->

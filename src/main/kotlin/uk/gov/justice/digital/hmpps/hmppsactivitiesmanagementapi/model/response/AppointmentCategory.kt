@@ -13,41 +13,41 @@ import io.swagger.v3.oas.annotations.media.Schema
   but not supported when creating or editing appointments.
   Display order supports explicit ordering of categories and subcategories. Ordering will default to alphabetically
   by description of display order is not specified.
-  """
+  """,
 )
 data class AppointmentCategory(
   @Schema(
     description = "The internally generated identifier for this appointment category",
-    example = "51"
+    example = "51",
   )
   val id: Long,
 
   @Schema(
-    description = "The parent category. Signifies that this is a subcategory if not null"
+    description = "The parent category. Signifies that this is a subcategory if not null",
   )
   val parent: AppointmentCategory? = null,
 
   @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
-    example = "CHAP"
+    example = "CHAP",
   )
   val code: String,
 
   @Schema(
     description = "The description of the appointment category",
-    example = "Chaplaincy"
+    example = "Chaplaincy",
   )
   val description: String,
 
   @Schema(
     description = "Flag to indicate if this (sub)category) is active. Only active (sub)categories are valid for create and update requests",
-    example = "true"
+    example = "true",
   )
   val active: Boolean,
 
   @Schema(
     description = "Override to the default of ordering alphabetically by description supporting explicit ordering",
-    example = "1"
+    example = "1",
   )
-  val displayOrder: Int?
+  val displayOrder: Int?,
 )

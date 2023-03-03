@@ -47,14 +47,14 @@ object ScheduledInstanceFixture {
         minimumIncentiveLevel = "Basic",
         riskLevel = "high",
         createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
-        createdBy = "CREATED BY"
+        createdBy = "CREATED BY",
       ),
       description = "DESCRIPTION $activityScheduleId",
       internalLocationId = locationId,
       internalLocationCode = "LOCATION_CODE $locationId",
       internalLocationDescription = "LOCATION_DESCRIPTION $locationId",
       capacity = 10,
-      startDate = date
+      startDate = date,
     ),
     sessionDate = date,
     startTime = startTime,

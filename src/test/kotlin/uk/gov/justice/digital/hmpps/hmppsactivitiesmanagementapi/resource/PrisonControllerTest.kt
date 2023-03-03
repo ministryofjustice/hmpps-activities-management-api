@@ -54,7 +54,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
 
     whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 1)).thenReturn(
-      expectedModel
+      expectedModel,
     )
 
     val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 1)
@@ -69,7 +69,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   @Test
   fun `404 response when get category capacity and category does not exist`() {
     whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 2)).thenThrow(
-      EntityNotFoundException("not found")
+      EntityNotFoundException("not found"),
     )
 
     val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 2)
@@ -101,13 +101,13 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           id = 1L,
           code = "LEISURE_SOCIAL",
           name = "Leisure and social",
-          description = "Such as association, library time and social clubs, like music or art"
-        )
-      )
+          description = "Such as association, library time and social clubs, like music or art",
+        ),
+      ),
     )
 
     whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 1)).thenReturn(
-      expectedModel
+      expectedModel,
     )
 
     val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 1)
@@ -122,7 +122,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   @Test
   fun `404 response when get category activities and category does not exist`() {
     whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)).thenThrow(
-      EntityNotFoundException("not found")
+      EntityNotFoundException("not found"),
     )
 
     val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 2)
@@ -160,13 +160,13 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           id = 1L,
           code = "LEISURE_SOCIAL",
           name = "Leisure and social",
-          description = "Such as association, library time and social clubs, like music or art"
-        )
-      )
+          description = "Such as association, library time and social clubs, like music or art",
+        ),
+      ),
     )
 
     whenever(activityService.getActivitiesInPrison(moorlandPrisonCode)).thenReturn(
-      expectedModel
+      expectedModel,
     )
 
     val response = mockMvc.getActivities(moorlandPrisonCode)
@@ -190,10 +190,10 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         pentonvillePrisonCode,
         LocalDate.MIN,
         TimeSlot.AM,
-        1
-      )
+        1,
+      ),
     ).thenReturn(
-      schedules
+      schedules,
     )
 
     val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
@@ -207,7 +207,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       pentonvillePrisonCode,
       LocalDate.MIN,
       TimeSlot.AM,
-      1
+      1,
     )
   }
 
@@ -218,10 +218,10 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         pentonvillePrisonCode,
         LocalDate.MIN,
         TimeSlot.AM,
-        1
-      )
+        1,
+      ),
     ).thenReturn(
-      emptyList()
+      emptyList(),
     )
 
     val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
@@ -235,7 +235,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       pentonvillePrisonCode,
       LocalDate.MIN,
       TimeSlot.AM,
-      1
+      1,
     )
   }
 
@@ -243,7 +243,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     prisonCode: String,
     date: LocalDate,
     timeSlot: TimeSlot,
-    locationId: Long
+    locationId: Long,
   ) =
     get("/prison/$prisonCode/schedules?date=$date&timeSlot=$timeSlot&locationId=$locationId")
 

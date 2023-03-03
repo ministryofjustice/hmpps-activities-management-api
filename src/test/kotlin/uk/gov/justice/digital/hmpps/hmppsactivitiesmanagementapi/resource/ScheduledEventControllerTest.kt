@@ -36,8 +36,8 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
-        TimeSlot.AM
-      )
+        TimeSlot.AM,
+      ),
     ).thenReturn(result)
 
     val response =
@@ -45,7 +45,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
-        TimeSlot.AM.name
+        TimeSlot.AM.name,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
@@ -57,7 +57,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "MDI",
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
-      TimeSlot.AM
+      TimeSlot.AM,
     )
   }
 
@@ -70,8 +70,8 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
-        TimeSlot.AM
-      )
+        TimeSlot.AM,
+      ),
     ).thenThrow(RuntimeException("Error"))
 
     val response =
@@ -79,7 +79,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
-        TimeSlot.AM.name
+        TimeSlot.AM.name,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { is5xxServerError() } }
@@ -91,7 +91,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "MDI",
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
-      TimeSlot.AM
+      TimeSlot.AM,
     )
   }
 
@@ -103,7 +103,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        prisonerNumbers
+        prisonerNumbers,
       )
     }
       .andDo { print() }
@@ -147,7 +147,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        prisonerNumbers
+        prisonerNumbers,
       )
     }
       .andDo { print() }
@@ -171,7 +171,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        prisonerNumbers
+        prisonerNumbers,
       )
     }
       .andDo { print() }
@@ -199,7 +199,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         "A11111A",
         LocalDateRange(startDate, endDate),
-      )
+      ),
     ).thenReturn(result)
 
     val response = mockMvc.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -232,7 +232,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         "A11111A",
         LocalDateRange(startDate, endDate),
-      )
+      ),
     ).thenThrow(RuntimeException("Error"))
 
     val response = mockMvc.getScheduledEventsByPrisonAndPrisonerAndDateRange(
@@ -265,7 +265,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "MDI",
         "A11111A",
         LocalDateRange(startDate, endDate),
-      )
+      ),
     ).thenReturn(result)
 
     mockMvc.get("/scheduled-events/prison/MDI") {
@@ -390,7 +390,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     prisonCode: String,
     prisonerNumber: String,
     startDate: LocalDate,
-    endDate: LocalDate
+    endDate: LocalDate,
   ) =
     get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
 
@@ -398,13 +398,13 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
-    timeSlot: String
+    timeSlot: String,
   ) =
     post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
-        prisonerNumbers
+        prisonerNumbers,
       )
     }
 }

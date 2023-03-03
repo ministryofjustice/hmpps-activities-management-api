@@ -21,7 +21,7 @@ class AllocationTest {
     startDate = today,
     allocatedBy = "FAKE USER",
     allocatedTime = LocalDateTime.now(),
-    payBand = lowPayBand
+    payBand = lowPayBand,
   )
 
   private val allocationWithEndDate = allocationWithNoEndDate.copy(endDate = tomorrow, payBand = mediumPayBand)

@@ -11,7 +11,6 @@ class AppointmentTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
     val originalStartTime = LocalTime.parse("10:21:22", timeFormatter)
     val originalEndTime = LocalTime.parse("11:22:23", timeFormatter)
@@ -31,7 +30,7 @@ class AppointmentTest : ModelTest() {
         code = "C11",
         description = "Blah",
         active = true,
-        displayOrder = 1
+        displayOrder = 1,
       ),
       prisonCode = "PVI",
       internalLocationId = null,
@@ -43,7 +42,7 @@ class AppointmentTest : ModelTest() {
       createdBy = "A. Jones",
       inCell = true,
       updatedBy = "A.Jones",
-      updated = originalUpdatedTime
+      updated = originalUpdatedTime,
     )
 
     val json = objectMapper.writeValueAsString(appointment)

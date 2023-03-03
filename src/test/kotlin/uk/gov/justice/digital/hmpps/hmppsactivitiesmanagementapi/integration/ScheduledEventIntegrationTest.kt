@@ -312,17 +312,17 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     private fun readAppointmentsStubbedResults() = mapper.readValue(
       this::class.java.getResource("/__files/scheduled-events/appointments-1.json"),
-      object : TypeReference<List<ScheduledEvent>>() {}
+      object : TypeReference<List<ScheduledEvent>>() {},
     )
 
     private fun readCourtHearingStubbedResults() = mapper.readValue(
       this::class.java.getResource("/__files/scheduled-events/court-hearings-1.json"),
-      object : TypeReference<List<ScheduledEvent>>() {}
+      object : TypeReference<List<ScheduledEvent>>() {},
     )
 
     private fun readVisitsStubbedResults() = mapper.readValue(
       this::class.java.getResource("/__files/scheduled-events/visits-1.json"),
-      object : TypeReference<List<ScheduledEvent>>() {}
+      object : TypeReference<List<ScheduledEvent>>() {},
     )
 
     @Test

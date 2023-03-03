@@ -266,8 +266,8 @@ class PrisonApiClientTest {
         locationPrefix = "LEI-House-block-7-1-002",
         operationalCapacity = 2,
         userDescription = "user description",
-        internalLocationCode = "internal location code"
-      )
+        internalLocationCode = "internal location code",
+      ),
     )
   }
 
@@ -283,8 +283,8 @@ class PrisonApiClientTest {
         parentCode = "STL",
         activeFlag = "Y",
         listSeq = 6,
-        systemDataFlag = "N"
-      )
+        systemDataFlag = "N",
+      ),
     )
   }
 }

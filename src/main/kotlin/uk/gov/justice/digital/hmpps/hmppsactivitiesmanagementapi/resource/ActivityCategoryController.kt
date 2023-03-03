@@ -39,8 +39,8 @@ class ActivityCategoryController(private val activityCategoryRepository: Activit
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   @GetMapping
   @ResponseBody

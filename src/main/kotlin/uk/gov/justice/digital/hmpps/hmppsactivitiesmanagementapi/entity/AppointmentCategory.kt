@@ -20,14 +20,14 @@ data class AppointmentCategory(
 
   var active: Boolean,
 
-  var displayOrder: Int?
+  var displayOrder: Int?,
 ) {
   fun toModel() = AppointmentCategoryModel(
     id = appointmentCategoryId,
     code = code,
     description = description,
     active = active,
-    displayOrder = displayOrder
+    displayOrder = displayOrder,
   )
 }
 

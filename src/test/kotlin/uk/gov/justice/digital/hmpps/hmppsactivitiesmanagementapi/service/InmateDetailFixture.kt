@@ -34,6 +34,6 @@ object InmateDetailFixture {
       bookingNo = bookingNo,
       middleName = middleName,
       agencyId = agencyId,
-      age = age
+      age = age,
     )
 }

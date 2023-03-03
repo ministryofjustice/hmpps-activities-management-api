@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 class AllocationIntegrationTest : IntegrationTestBase() {
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql"
+    "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
   fun `get allocation by id`() {

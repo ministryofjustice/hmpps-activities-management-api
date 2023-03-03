@@ -22,12 +22,12 @@ data class AppointmentOccurrenceAllocation(
 
   val prisonerNumber: String,
 
-  val bookingId: Long
+  val bookingId: Long,
 ) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentOccurrenceAllocationId,
     prisonerNumber = prisonerNumber,
-    bookingId = bookingId
+    bookingId = bookingId,
   )
 }
 

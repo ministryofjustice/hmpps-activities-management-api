@@ -21,8 +21,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/bookings/appointments-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -33,8 +33,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/scheduled-event-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -45,8 +45,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/schedules/appointments-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -57,8 +57,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/scheduled-event-activity-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -69,8 +69,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/scheduled-event-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -81,8 +81,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/schedules/activities-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -93,8 +93,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .withBodyFile("prisonapi/bookings/court-hearings-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -105,8 +105,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .withBodyFile("prisonapi/court-hearings-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -117,8 +117,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/schedules/court-events-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -129,8 +129,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/bookings/visits-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -141,8 +141,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/scheduled-event-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -153,8 +153,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/schedules/visits-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -165,8 +165,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/inmate-details-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -177,8 +177,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/inmate-details-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -189,8 +189,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -201,8 +201,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/location-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -213,8 +213,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("error-500.json")
-            .withStatus(500)
-        )
+            .withStatus(500),
+        ),
     )
   }
 
@@ -225,8 +225,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -237,8 +237,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/location-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -249,8 +249,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -261,8 +261,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/location-group-404.json")
-            .withStatus(404)
-        )
+            .withStatus(404),
+        ),
     )
   }
 
@@ -273,8 +273,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -285,8 +285,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -297,8 +297,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(location))
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -309,8 +309,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(listOf(appointmentLocation(locationId, prisonCode))))
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -321,8 +321,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(userCaseLoads(prisonCode)))
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 }

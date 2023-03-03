@@ -65,8 +65,8 @@ class ActivityTest {
         id = 1L,
         code = "category code",
         name = "category name",
-        description = "category description"
-      )
+        description = "category description",
+      ),
     )
     assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
   }
@@ -91,16 +91,16 @@ class ActivityTest {
           ModelActivityMinimumEducationLevel(
             id = -1,
             educationLevelCode = "1",
-            educationLevelDescription = "Reading Measure 1.0"
-          )
+            educationLevelDescription = "Reading Measure 1.0",
+          ),
         ),
         category = ActivityCategory(
           id = 1L,
           code = "category code",
           name = "category name",
-          description = "category description"
-        )
-      )
+          description = "category description",
+        ),
+      ),
     )
 
     assertThat(listOf(activityEntity()).toModelLite()).isEqualTo(expectedModel)
@@ -118,7 +118,7 @@ class ActivityTest {
       internalLocationDescription = "The wood work room description",
       capacity = 10,
       startDate = activity.startDate,
-      runsOnBankHoliday = true
+      runsOnBankHoliday = true,
     )
 
     assertThat(activity.schedules()).containsExactly(
@@ -130,8 +130,8 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 10,
         startDate = activity.startDate,
-        runsOnBankHoliday = true
-      )
+        runsOnBankHoliday = true,
+      ),
     )
   }
 
@@ -148,7 +148,7 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 10,
         startDate = activity.startDate.minusDays(1),
-        runsOnBankHoliday = true
+        runsOnBankHoliday = true,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.startDate.minusDays(1)}' cannot be before the activity start date ${activity.startDate}")
@@ -168,7 +168,7 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 10,
         startDate = activity.endDate!!,
-        runsOnBankHoliday = true
+        runsOnBankHoliday = true,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.endDate}' must be before the activity end date ${activity.endDate}")
@@ -189,7 +189,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate,
         endDate = activity.endDate!!.plusDays(1),
-        runsOnBankHoliday = true
+        runsOnBankHoliday = true,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule end date '${activity.endDate!!.plusDays(1)}' cannot be after the activity end date ${activity.endDate}")
@@ -208,7 +208,7 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description",
         capacity = 0,
         startDate = activity.startDate,
-        runsOnBankHoliday = true
+        runsOnBankHoliday = true,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -226,7 +226,7 @@ class ActivityTest {
       internalLocationDescription = "The wood work room description",
       capacity = 10,
       startDate = activity.startDate,
-      runsOnBankHoliday = true
+      runsOnBankHoliday = true,
     )
 
     assertThatThrownBy {
@@ -237,7 +237,7 @@ class ActivityTest {
         internalLocationDescription = "The wood work room description 2",
         capacity = 10,
         startDate = activity.startDate,
-        runsOnBankHoliday = true
+        runsOnBankHoliday = true,
       )
     }
   }
@@ -264,7 +264,7 @@ class ActivityTest {
 
     assertThat(activity.eligibilityRules()).containsExactlyInAnyOrder(
       ActivityEligibility(eligibilityRule = eligibilityRuleOver21, activity = activity),
-      ActivityEligibility(eligibilityRule = eligibilityRuleFemale, activity = activity)
+      ActivityEligibility(eligibilityRule = eligibilityRuleFemale, activity = activity),
     )
   }
 
@@ -289,7 +289,7 @@ class ActivityTest {
       payBand = lowPayBand,
       rate = 30,
       pieceRate = 40,
-      pieceRateItems = 50
+      pieceRateItems = 50,
     )
 
     activity.addPay(
@@ -298,7 +298,7 @@ class ActivityTest {
       payBand = mediumPayBand,
       rate = 40,
       pieceRate = 50,
-      pieceRateItems = 60
+      pieceRateItems = 60,
     )
 
     assertThat(activity.activityPay()).containsExactlyInAnyOrder(
@@ -309,7 +309,7 @@ class ActivityTest {
         rate = 30,
         pieceRate = 40,
         pieceRateItems = 50,
-        activity = activity
+        activity = activity,
       ),
       ActivityPay(
         incentiveNomisCode = "STD",
@@ -318,8 +318,8 @@ class ActivityTest {
         rate = 40,
         pieceRate = 50,
         pieceRateItems = 60,
-        activity = activity
-      )
+        activity = activity,
+      ),
     )
   }
 
@@ -331,7 +331,7 @@ class ActivityTest {
     schedule.addSlot(
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values())
+      setOf(*DayOfWeek.values()),
     )
 
     val schedules = activity.getSchedulesOnDay(schedule.startDate)
@@ -347,13 +347,13 @@ class ActivityTest {
     schedule.addSlot(
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values())
+      setOf(*DayOfWeek.values()),
     )
 
     val suspension = ActivityScheduleSuspension(
       activityScheduleSuspensionId = 1,
       activitySchedule = schedule,
-      schedule.startDate
+      schedule.startDate,
     )
 
     assertThat(suspension.isSuspendedOn(schedule.startDate))
@@ -371,13 +371,13 @@ class ActivityTest {
     schedule.addSlot(
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values())
+      setOf(*DayOfWeek.values()),
     )
 
     val suspension = ActivityScheduleSuspension(
       activityScheduleSuspensionId = 1,
       activitySchedule = schedule,
-      schedule.startDate
+      schedule.startDate,
     )
 
     assertThat(suspension.isSuspendedOn(schedule.startDate))
@@ -398,12 +398,12 @@ class ActivityTest {
       internalLocationDescription = "Room 1",
       capacity = 1,
       startDate = activity.startDate.plusDays(1),
-      runsOnBankHoliday = true
+      runsOnBankHoliday = true,
     ).apply {
       addSlot(
         startTime = LocalTime.NOON,
         endTime = LocalTime.NOON.plusHours(1),
-        setOf(*DayOfWeek.values())
+        setOf(*DayOfWeek.values()),
       )
     }.also {
       assertThat(activity.schedules()).hasSize(1)
@@ -418,15 +418,15 @@ class ActivityTest {
 
     activity.addMinimumEducationLevel(
       educationLevelCode = "1",
-      educationLevelDescription = "Reading Measure 1.0"
+      educationLevelDescription = "Reading Measure 1.0",
     )
 
     assertThat(activity.activityMinimumEducationLevel()).containsExactlyInAnyOrder(
       ActivityMinimumEducationLevel(
         educationLevelCode = "1",
         educationLevelDescription = "Reading Measure 1.0",
-        activity = activity
-      )
+        activity = activity,
+      ),
     )
   }
 }

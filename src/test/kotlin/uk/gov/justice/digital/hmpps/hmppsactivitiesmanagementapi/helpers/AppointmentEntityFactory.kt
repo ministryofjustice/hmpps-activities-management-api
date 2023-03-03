@@ -23,7 +23,7 @@ internal fun appointmentEntity(inCell: Boolean = false) =
     createdBy = "CREATE.USER",
     updated = LocalDateTime.now(),
     updatedBy = "UPDATE.USER",
-    deleted = false
+    deleted = false,
   ).apply {
     this.addOccurrence(appointmentOccurrenceEntity(this))
   }
@@ -40,7 +40,7 @@ internal fun appointmentOccurrenceEntity(appointment: Appointment) =
     comment = "Appointment occurrence level comment",
     cancelled = false,
     updated = LocalDateTime.now(),
-    updatedBy = "UPDATE.USER"
+    updatedBy = "UPDATE.USER",
   ).apply {
     this.addAllocation(appointmentOccurrenceAllocationEntity(this))
   }
@@ -53,7 +53,7 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
     appointmentOccurrenceAllocationId = 1,
     appointmentOccurrence = appointmentOccurrence,
     prisonerNumber = "A1234BC",
-    bookingId = 456
+    bookingId = 456,
   )
 
 internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurrence) =
@@ -71,5 +71,5 @@ internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurre
     endTime = LocalTime.of(10, 30),
     comment = "Appointment instance level comment",
     attended = true,
-    cancelled = false
+    cancelled = false,
   )

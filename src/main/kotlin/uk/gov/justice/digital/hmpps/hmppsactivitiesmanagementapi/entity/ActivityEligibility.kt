@@ -22,5 +22,5 @@ data class ActivityEligibility(
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
-  val activity: Activity
+  val activity: Activity,
 )

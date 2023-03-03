@@ -29,7 +29,7 @@ data class PrisonPayBand(
   val payBandDescription: String,
 
   @Column(name = "nomis_pay_band", nullable = false)
-  val nomisPayBand: Int
+  val nomisPayBand: Int,
 ) {
   fun toModel() = ModelPrisonPayBand(
 
@@ -38,6 +38,6 @@ data class PrisonPayBand(
     alias = payBandAlias,
     description = payBandDescription,
     nomisPayBand = nomisPayBand,
-    prisonCode = prisonCode
+    prisonCode = prisonCode,
   )
 }
