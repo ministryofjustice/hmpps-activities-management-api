@@ -26,7 +26,7 @@ class ActivityScheduleCreationService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
-  @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L
+  @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
 
   companion object {
