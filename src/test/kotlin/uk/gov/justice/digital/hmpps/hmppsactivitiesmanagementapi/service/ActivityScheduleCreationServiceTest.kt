@@ -27,7 +27,8 @@ class ActivityScheduleCreationServiceTest {
   private val repository: ActivityRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
-  private val service = ActivityScheduleCreationService(repository, prisonApiClient, prisonRegimeService)
+  private val bankHolidayService: BankHolidayService = mock()
+  private val service = ActivityScheduleCreationService(repository, prisonApiClient, prisonRegimeService, bankHolidayService)
   private val location = Location(
     locationId = 1,
     locationType = "type",

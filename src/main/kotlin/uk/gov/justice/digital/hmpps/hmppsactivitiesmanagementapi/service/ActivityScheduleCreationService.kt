@@ -9,19 +9,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Service
 class ActivityScheduleCreationService(
   private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonRegimeService: PrisonRegimeService
+  private val prisonRegimeService: PrisonRegimeService,
+  private val bankHolidayService: BankHolidayService
 ) {
 
   companion object {
@@ -55,6 +58,7 @@ class ActivityScheduleCreationService(
         runsOnBankHoliday = request.runsOnBankHoliday
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
+        schedule.addInstances(activity, schedule.slots(), 14)
 
         val persisted = activityRepository.saveAndFlush(activity)
 
@@ -81,6 +85,34 @@ class ActivityScheduleCreationService(
       )
 
       this.addSlot(start, end, daysOfWeek)
+    }
+  }
+
+  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, daysInAdvance: Long) {
+    val today = LocalDate.now()
+    val endDay = today.plusDays(daysInAdvance)
+    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+
+    listOfDatesToSchedule.forEach { day ->
+      slots.forEach { slot ->
+        val daysOfWeek = setOfNotNull(
+          DayOfWeek.MONDAY.takeIf { slot.mondayFlag },
+          DayOfWeek.TUESDAY.takeIf { slot.tuesdayFlag },
+          DayOfWeek.WEDNESDAY.takeIf { slot.wednesdayFlag },
+          DayOfWeek.THURSDAY.takeIf { slot.thursdayFlag },
+          DayOfWeek.FRIDAY.takeIf { slot.fridayFlag },
+          DayOfWeek.SATURDAY.takeIf { slot.saturdayFlag },
+          DayOfWeek.SUNDAY.takeIf { slot.sundayFlag }
+        )
+
+        if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
+          (
+            runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
+            )
+        ) {
+          this.addInstance(sessionDate = day, slot = slot)
+        }
+      }
     }
   }
 
