@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -24,7 +25,8 @@ class ActivityScheduleCreationService(
   private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val prisonRegimeService: PrisonRegimeService,
-  private val bankHolidayService: BankHolidayService
+  private val bankHolidayService: BankHolidayService,
+  @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L
 ) {
 
   companion object {
@@ -58,7 +60,7 @@ class ActivityScheduleCreationService(
         runsOnBankHoliday = request.runsOnBankHoliday
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(activity, schedule.slots(), 14)
+        schedule.addInstances(activity, schedule.slots(), daysInAdvance)
 
         val persisted = activityRepository.saveAndFlush(activity)
 

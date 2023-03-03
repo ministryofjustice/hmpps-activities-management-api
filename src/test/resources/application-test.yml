@@ -32,6 +32,10 @@ jobs:
   create-scheduled-instances:
     days-in-advance: 2
 
+online:
+  create-scheduled-instances:
+    days-in-advance: 14
+
 hmpps:
   auth:
     url: http://localhost:8090/auth

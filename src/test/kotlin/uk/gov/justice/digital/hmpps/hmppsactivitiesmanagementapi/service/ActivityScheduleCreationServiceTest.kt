@@ -74,6 +74,13 @@ class ActivityScheduleCreationServiceTest {
           sundayFlag = false
         )
       )
+      with(activity.schedules()[0].instances()) {
+        assertThat(size).isEqualTo(2)
+        assertThat(this[0].startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(this[0].endTime).isEqualTo(LocalTime.of(12, 0))
+        assertThat(this[1].startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(this[1].endTime).isEqualTo(LocalTime.of(12, 0))
+      }
     }
   }
 
