@@ -103,7 +103,7 @@ class ActivityScheduleCreationService(
           DayOfWeek.THURSDAY.takeIf { slot.thursdayFlag },
           DayOfWeek.FRIDAY.takeIf { slot.fridayFlag },
           DayOfWeek.SATURDAY.takeIf { slot.saturdayFlag },
-          DayOfWeek.SUNDAY.takeIf { slot.sundayFlag }
+          DayOfWeek.SUNDAY.takeIf { slot.sundayFlag },
         )
 
         if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
