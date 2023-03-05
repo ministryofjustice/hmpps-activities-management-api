@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
@@ -108,15 +109,15 @@ class ScheduledEventService(
           ScheduledEvent(
 
             bookingId = bookingId,
-            startTime = it.appointmentDate.format(DateTimeFormatter.ISO_DATE) + "T" + it.startTime.format(DateTimeFormatter.ISO_TIME),
-            endTime = it.endTime?.let { endTime -> it.appointmentDate.format(DateTimeFormatter.ISO_DATE) + "T" + endTime.format(DateTimeFormatter.ISO_TIME) },
+            startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
+            endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
             eventType = "APP",
             eventTypeDesc = "Appointment",
             eventClass = "INT_MOV",
             eventId = it.appointmentInstanceId,
-            eventStatus = "SCH", // TODO Find existing or create constant
+            eventStatus = "SCH",
             eventDate = it.appointmentDate,
-            eventSource = "APP", // TODO Find existing or create constant
+            eventSource = "APP",
             eventSubType = it.category.appointmentCategoryId.toString(),
             eventSubTypeDesc = it.category.description,
           )

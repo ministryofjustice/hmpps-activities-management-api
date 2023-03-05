@@ -673,6 +673,7 @@ class ScheduledEventServiceTest {
       assertThat(appointments!![0].eventClass).isEqualTo("INT_MOV")
       assertThat(appointments!![0].eventId).isEqualTo(41)
       assertThat(appointments!![0].eventStatus).isEqualTo("SCH")
+      assertThat(appointments!![0].startTime).isEqualTo(startTime)
 
       assertThat(activities).isNotNull
       assertThat(activities).hasSize(1)
