@@ -65,7 +65,7 @@ data class ActivityScheduleSlot(
       activitySchedule: ActivitySchedule,
       startTime: LocalTime,
       endTime: LocalTime,
-      daysOfWeek: Set<DayOfWeek>
+      daysOfWeek: Set<DayOfWeek>,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       startTime = startTime,
@@ -76,7 +76,7 @@ data class ActivityScheduleSlot(
       thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
       fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
       saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
-      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
+      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
     )
   }
 
@@ -92,7 +92,7 @@ data class ActivityScheduleSlot(
     thursdayFlag = this.thursdayFlag,
     fridayFlag = this.fridayFlag,
     saturdayFlag = this.saturdayFlag,
-    sundayFlag = this.sundayFlag
+    sundayFlag = this.sundayFlag,
   )
 
   fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
@@ -102,7 +102,7 @@ data class ActivityScheduleSlot(
     DayOfWeek.THURSDAY.takeIf { thursdayFlag },
     DayOfWeek.FRIDAY.takeIf { fridayFlag },
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
-    DayOfWeek.SUNDAY.takeIf { sundayFlag }
+    DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
 
   @Override

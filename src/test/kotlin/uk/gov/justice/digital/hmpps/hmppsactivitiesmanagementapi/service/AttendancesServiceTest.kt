@@ -45,8 +45,8 @@ class AttendancesServiceTest {
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
         posted = false,
-        status = AttendanceStatus.SCHEDULED
-      )
+        status = AttendanceStatus.SCHEDULED,
+      ),
     )
   }
 
@@ -67,8 +67,8 @@ class AttendancesServiceTest {
     whenever(
       attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
         instance,
-        allocation.prisonerNumber
-      )
+        allocation.prisonerNumber,
+      ),
     ).thenReturn(true)
 
     service.createAttendanceRecordsFor(today)

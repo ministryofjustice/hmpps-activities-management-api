@@ -26,5 +26,5 @@ data class RolloutPrison(
   val rolloutDate: LocalDate?,
 
   @Enumerated(STRING)
-  val appointmentsDataSource: AppointmentsDataSource
+  val appointmentsDataSource: AppointmentsDataSource,
 )

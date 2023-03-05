@@ -21,5 +21,5 @@ data class PrisonPayBand(
   val nomisPayBand: Int,
 
   @Schema(description = "The prison code for the pay band. Can also be 'DEFAULT' if none set up for prison", example = "MDI")
-  val prisonCode: String
+  val prisonCode: String,
 )

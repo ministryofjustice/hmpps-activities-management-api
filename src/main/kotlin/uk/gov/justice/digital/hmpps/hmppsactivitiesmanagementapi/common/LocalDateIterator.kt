@@ -5,7 +5,7 @@ import java.time.LocalDate
 class LocalDateIterator(
   startDate: LocalDate,
   private val endDate: LocalDate,
-  private val stepDays: Long
+  private val stepDays: Long,
 ) : Iterator<LocalDate> {
   private var currentDate = startDate
 

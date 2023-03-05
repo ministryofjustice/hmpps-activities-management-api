@@ -69,7 +69,7 @@ data class Activity(
 
   val createdTime: LocalDateTime,
 
-  val createdBy: String
+  val createdBy: String,
 ) {
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -160,7 +160,7 @@ data class Activity(
     payBand: PrisonPayBand,
     rate: Int?,
     pieceRate: Int?,
-    pieceRateItems: Int?
+    pieceRateItems: Int?,
   ) {
     activityPay.add(
       ActivityPay(
@@ -170,21 +170,21 @@ data class Activity(
         payBand = payBand,
         rate = rate,
         pieceRate = pieceRate,
-        pieceRateItems = pieceRateItems
-      )
+        pieceRateItems = pieceRateItems,
+      ),
     )
   }
 
   fun addMinimumEducationLevel(
     educationLevelCode: String,
-    educationLevelDescription: String
+    educationLevelDescription: String,
   ) {
     activityMinimumEducationLevel.add(
       ActivityMinimumEducationLevel(
         activity = this,
         educationLevelCode = educationLevelCode,
         educationLevelDescription = educationLevelDescription,
-      )
+      ),
     )
   }
 
@@ -196,7 +196,7 @@ data class Activity(
     capacity: Int,
     startDate: LocalDate,
     endDate: LocalDate? = null,
-    runsOnBankHoliday: Boolean
+    runsOnBankHoliday: Boolean,
   ) =
     addSchedule(
       ActivitySchedule.valueOf(
@@ -208,8 +208,8 @@ data class Activity(
         capacity = capacity,
         startDate = startDate,
         endDate = endDate,
-        runsOnBankHoliday = runsOnBankHoliday
-      )
+        runsOnBankHoliday = runsOnBankHoliday,
+      ),
     )
 
   fun addSchedule(schedule: ActivitySchedule): ActivitySchedule {

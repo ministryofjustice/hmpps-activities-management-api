@@ -10,7 +10,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentInstance as AppointmentInstanceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance as AppointmentInstanceModel
 
 @Entity
 @Table(name = "appointment_instance")
@@ -62,7 +62,7 @@ data class AppointmentInstance(
     endTime = endTime,
     comment = comment,
     attended = attended,
-    cancelled = cancelled
+    cancelled = cancelled,
   )
 }
 

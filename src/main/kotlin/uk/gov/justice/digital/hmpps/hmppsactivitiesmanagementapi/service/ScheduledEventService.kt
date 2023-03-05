@@ -27,7 +27,7 @@ class ScheduledEventService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val prisonRegimeService: PrisonRegimeService,
-  private val appointmentInstanceRepository: AppointmentInstanceRepository
+  private val appointmentInstanceRepository: AppointmentInstanceRepository,
 ) {
   /**
    *  Get scheduled events for a prison, a single prisoner, between two dates and with an optional time slot.
@@ -72,7 +72,7 @@ class ScheduledEventService(
               prisonCode,
               EventType.ACTIVITY.defaultPriority,
               eventPriorities[EventType.ACTIVITY],
-              getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot)
+              getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
             )
           }
         }
@@ -88,11 +88,10 @@ class ScheduledEventService(
         prisonApiClient.getScheduledActivities(bookingId, dateRange)
       } else {
         Mono.just(emptyList())
-      }
+      },
     )
 
   private fun getScheduledAppointments(appointmentsDataSource: AppointmentsDataSource, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
-
     return if (appointmentsDataSource == AppointmentsDataSource.PRISON_API) {
       prisonApiClient.getScheduledAppointments(bookingId, dateRange)
     } else {
@@ -103,7 +102,6 @@ class ScheduledEventService(
   private fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> =
 
     Mono.create {
-
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
         .map {
           ScheduledEvent(
@@ -119,7 +117,7 @@ class ScheduledEventService(
             eventDate = it.appointmentDate,
             eventSource = "", // TODO Ask Dave
             eventSubType = it.category.appointmentCategoryId.toString(),
-            eventSubTypeDesc = it.category.description
+            eventSubTypeDesc = it.category.description,
           )
         }
     }
@@ -174,7 +172,7 @@ class ScheduledEventService(
             prisonCode,
             EventType.ACTIVITY.defaultPriority,
             eventPriorities[EventType.ACTIVITY],
-            getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot)
+            getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot),
           )
         }
       }
@@ -185,7 +183,7 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     prisonRolledOut: Boolean,
     date: LocalDate,
-    timeSlot: TimeSlot?
+    timeSlot: TimeSlot?,
   ) =
     Mono.zip(
       prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
@@ -195,7 +193,7 @@ class ScheduledEventService(
         prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)
       } else {
         Mono.just(emptyList())
-      }
+      },
     )
 
   private fun getMultiplePrisonerScheduledActivities(

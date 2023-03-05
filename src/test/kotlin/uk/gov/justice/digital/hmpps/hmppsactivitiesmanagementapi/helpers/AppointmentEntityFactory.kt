@@ -23,7 +23,7 @@ internal fun appointmentEntity(inCell: Boolean = false) =
     createdBy = "CREATE.USER",
     updated = LocalDateTime.now(),
     updatedBy = "UPDATE.USER",
-    deleted = false
+    deleted = false,
   ).apply {
     this.addOccurrence(appointmentOccurrenceEntity(this))
   }
@@ -40,38 +40,36 @@ internal fun appointmentOccurrenceEntity(appointment: Appointment) =
     comment = "Appointment occurrence level comment",
     cancelled = false,
     updated = LocalDateTime.now(),
-    updatedBy = "UPDATE.USER"
+    updatedBy = "UPDATE.USER",
   ).apply {
     this.addAllocation(appointmentOccurrenceAllocationEntity(this))
   }
+    .apply {
+      this.addInstance(appointmentInstanceEntity(this))
+    }
 
 internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence) =
   AppointmentOccurrenceAllocation(
     appointmentOccurrenceAllocationId = 1,
     appointmentOccurrence = appointmentOccurrence,
     prisonerNumber = "A1234BC",
-    bookingId = 456
+    bookingId = 456,
   )
 
-internal fun appointmentInstanceEntity(inCell: Boolean = false): AppointmentInstance {
-  val appointment = appointmentEntity(inCell)
-  val occurrence = appointment.occurrences().first()
-  val allocation = occurrence.allocations().first()
-
-  return AppointmentInstance(
+internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurrence) =
+  AppointmentInstance(
     appointmentInstanceId = 1,
-    appointmentOccurrence = occurrence,
-    category = appointment.category,
-    prisonCode = appointment.prisonCode,
-    internalLocationId = appointment.internalLocationId,
-    inCell = appointment.inCell,
-    prisonerNumber = allocation.prisonerNumber,
-    bookingId = allocation.bookingId,
-    appointmentDate = appointment.startDate,
-    startTime = appointment.startTime,
-    endTime = appointment.endTime,
+    appointmentOccurrence = appointmentOccurrence,
+    category = appointmentCategoryEntity(),
+    prisonCode = "TPR",
+    internalLocationId = 123,
+    inCell = false,
+    prisonerNumber = "A1234BC",
+    bookingId = 456,
+    appointmentDate = LocalDate.now(),
+    startTime = LocalTime.of(9, 0),
+    endTime = LocalTime.of(10, 30),
     comment = "Appointment instance level comment",
     attended = true,
-    cancelled = false
+    cancelled = false,
   )
-}

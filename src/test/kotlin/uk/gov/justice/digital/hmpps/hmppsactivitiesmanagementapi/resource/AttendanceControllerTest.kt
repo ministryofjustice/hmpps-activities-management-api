@@ -27,8 +27,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       content = mapper.writeValueAsBytes(
         listOf(
           AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS")
-        )
+          AttendanceUpdateRequest(2, "ABS"),
+        ),
       )
     }
       .andExpect { status { isNoContent() } }
@@ -36,8 +36,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).mark(
       listOf(
         AttendanceUpdateRequest(1, "ATT"),
-        AttendanceUpdateRequest(2, "ABS")
-      )
+        AttendanceUpdateRequest(2, "ABS"),
+      ),
     )
   }
 }

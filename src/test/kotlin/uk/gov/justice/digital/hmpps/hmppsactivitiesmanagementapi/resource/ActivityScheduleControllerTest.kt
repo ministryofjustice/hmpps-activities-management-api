@@ -153,9 +153,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     with(
       mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = null, payBandId = null))
         .andExpect { status { isBadRequest() } }
-        .andReturn().response
+        .andReturn().response,
     ) {
-
       assertThat(contentAsString).contains("Prisoner number must be supplied")
       assertThat(contentAsString).contains("Pay band must be supplied")
     }
@@ -163,9 +162,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     with(
       mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBandId = 1))
         .andExpect { status { isBadRequest() } }
-        .andReturn().response
+        .andReturn().response,
     ) {
-
       assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
     }
 

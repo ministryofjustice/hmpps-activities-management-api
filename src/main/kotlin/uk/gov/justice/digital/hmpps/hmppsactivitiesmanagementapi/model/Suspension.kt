@@ -13,7 +13,7 @@ data class Suspension(
 
   @Schema(
     description = "The date until which the activity schedule was suspended. If null, the schedule is suspended indefinitely",
-    example = "2022-09-02"
+    example = "2022-09-02",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val suspendedUntil: LocalDate? = null,

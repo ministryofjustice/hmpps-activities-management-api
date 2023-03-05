@@ -16,13 +16,13 @@ import java.time.LocalTime
   """
   Describes an appointment or series of appointment occurrences to be created, the initial property values and prisoner or
   prisoners to allocate. 
-  """
+  """,
 )
 data class AppointmentCreateRequest(
   @field:NotNull(message = "Category id must be supplied")
   @Schema(
     description = "The category id for this appointment. Must exist and be active",
-    example = "21"
+    example = "21",
   )
   val categoryId: Long?,
 
@@ -30,7 +30,7 @@ data class AppointmentCreateRequest(
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
   @Schema(
     description = "The NOMIS prison code where this appointment takes place",
-    example = "PVI"
+    example = "PVI",
   )
   val prisonCode: String?,
 
@@ -40,7 +40,7 @@ data class AppointmentCreateRequest(
     The NOMIS internal location id within the specified prison. This must be supplied if inCell is false.
     The internal location id must exist, must be within the prison specified by the prisonCode property and be active. 
     """,
-    example = "123"
+    example = "123",
   )
   val internalLocationId: Long?,
 
@@ -50,14 +50,14 @@ data class AppointmentCreateRequest(
     Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
     Internal location id will be ignored if inCell is true
     """,
-    example = "false"
+    example = "false",
   )
   val inCell: Boolean,
 
   @field:NotNull(message = "Start date must be supplied")
   @field:FutureOrPresent(message = "Start date must not be in the past")
   @Schema(
-    description = "The date of the appointment or first appointment occurrence in the series"
+    description = "The date of the appointment or first appointment occurrence in the series",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate?,
@@ -65,7 +65,7 @@ data class AppointmentCreateRequest(
   @field:NotNull(message = "Start time must be supplied")
   @Schema(
     description = "The starting time of the appointment or first appointment occurrence in the series",
-    example = "09:00"
+    example = "09:00",
   )
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime?,
@@ -73,7 +73,7 @@ data class AppointmentCreateRequest(
   @field:NotNull(message = "End time must be supplied")
   @Schema(
     description = "The end time of the appointment or first appointment occurrence in the series",
-    example = "10:30"
+    example = "10:30",
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
@@ -84,16 +84,16 @@ data class AppointmentCreateRequest(
     Notes relating to the appointment.
     The default value if no notes are specified at the occurrence or instance levels
     """,
-    example = "This appointment will help adjusting to life outside of prison"
+    example = "This appointment will help adjusting to life outside of prison",
   )
   val comment: String = "",
 
   @field:NotEmpty(message = "At least one prisoner number must be supplied")
   @Schema(
     description = "The prisoner or prisoners to allocate to the created appointment or series of appointment occurrences",
-    example = "[\"A1234BC\"]"
+    example = "[\"A1234BC\"]",
   )
-  val prisonerNumbers: List<String> = emptyList()
+  val prisonerNumbers: List<String> = emptyList(),
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell || internalLocationId != null

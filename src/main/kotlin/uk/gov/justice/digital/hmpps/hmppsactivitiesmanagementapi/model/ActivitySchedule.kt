@@ -11,7 +11,7 @@ import java.time.LocalDate
   An activity schedule describes when, during the week, an activity will be run and where.
   e.g. Tuesday PM and Thursday AM - suitable for Houseblock 2 to attend.
   e.g. Monday AM and Thursday PM - suitable for Houseblock 3 to attend.
-  """
+  """,
 )
 data class ActivitySchedule(
 
@@ -52,5 +52,5 @@ data class ActivitySchedule(
   val endDate: LocalDate? = null,
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
-  val runsOnBankHoliday: Boolean
+  val runsOnBankHoliday: Boolean,
 )

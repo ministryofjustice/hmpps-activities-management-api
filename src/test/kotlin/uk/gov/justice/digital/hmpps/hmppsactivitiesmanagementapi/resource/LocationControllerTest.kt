@@ -103,7 +103,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
   fun `Location groups - Error response when service throws exception`() {
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
     whenever(
-      locationGroupServiceSelector.getLocationGroups(prisonCode)
+      locationGroupServiceSelector.getLocationGroups(prisonCode),
     ).thenThrow(RuntimeException("Error"))
 
     val response = mockMvc.get("/locations/prison/$prisonCode/location-groups")
@@ -194,7 +194,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       agencyId = "",
       internalLocationCode = "",
       locationUsage = "",
-      locationType = ""
+      locationType = "",
     )
   }
 }

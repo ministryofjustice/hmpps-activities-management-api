@@ -50,8 +50,8 @@ class RolloutController(
         responseCode = "404",
         description = "The prison for this code was not found.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      )
-    ]
+      ),
+    ],
   )
   fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrison =
     prisonService.getByPrisonCode(prisonCode)

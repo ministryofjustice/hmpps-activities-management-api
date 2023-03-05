@@ -8,7 +8,6 @@ class AttendanceTest : ModelTest() {
 
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalRecordedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter)
 
     val expectedRecordedTime = "2023-01-31T10:21:22"
@@ -18,7 +17,7 @@ class AttendanceTest : ModelTest() {
       prisonerNumber = "1234",
       recordedTime = originalRecordedTime,
       posted = true,
-      status = "Y"
+      status = "Y",
 
     )
 

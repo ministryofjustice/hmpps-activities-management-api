@@ -22,6 +22,6 @@ object PrisonerScheduledEventsFixture {
     appointments = appointments,
     activities = activities,
     visits = visits,
-    courtHearings = courtHearings
+    courtHearings = courtHearings,
   )
 }

@@ -26,5 +26,5 @@ data class PrisonerWaiting(
 
   val createdTime: LocalDateTime,
 
-  val createdBy: String
+  val createdBy: String,
 )

@@ -13,7 +13,7 @@ interface AppointmentInstanceRepository : JpaRepository<AppointmentInstance, Lon
     value =
     "FROM AppointmentInstance ai " +
       "WHERE ai.bookingId = :bookingId" +
-      "  AND ai.appointmentDate BETWEEN :startDate AND :endDate"
+      "  AND ai.appointmentDate BETWEEN :startDate AND :endDate",
   )
   fun findByBookingIdAndDateRange(bookingId: Long, startDate: LocalDate, endDate: LocalDate): List<AppointmentInstance>
 }

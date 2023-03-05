@@ -28,7 +28,7 @@ class ActivityCategoryIntegrationTest : IntegrationTestBase() {
       interventionsCategory,
       faithAndSpiritualityCategory,
       notInWorkCategory,
-      otherCategory
+      otherCategory,
     )
   }
 

@@ -8,7 +8,6 @@ class RolloutPrisonTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {
-
     val originalRolloutDate = LocalDate.parse("01 Feb 2023", dateFormatter)
 
     val expectedRolloutDate = "2023-02-01"
@@ -19,7 +18,7 @@ class RolloutPrisonTest : ModelTest() {
       rolloutDate = originalRolloutDate,
       active = true,
       code = "1234",
-      appointmentsDataSource = AppointmentsDataSource.ACTIVITIES_SERVICE
+      appointmentsDataSource = AppointmentsDataSource.ACTIVITIES_SERVICE,
     )
 
     val json = objectMapper.writeValueAsString(rolloutPrison)

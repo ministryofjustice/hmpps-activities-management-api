@@ -27,23 +27,23 @@ class ActivityService(
   private val eligibilityRuleRepository: EligibilityRuleRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
-  private val prisonApiClient: PrisonApiClient
+  private val prisonApiClient: PrisonApiClient,
 ) {
   fun getActivityById(activityId: Long) =
     transform(
-      activityRepository.findOrThrowNotFound(activityId)
+      activityRepository.findOrThrowNotFound(activityId),
     )
 
   fun getActivitiesByCategoryInPrison(
     prisonCode: String,
-    categoryId: Long
+    categoryId: Long,
   ) =
     activityCategoryRepository.findOrThrowNotFound(categoryId).let {
       activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, it).toModelLite()
     }
 
   fun getActivitiesInPrison(
-    prisonCode: String
+    prisonCode: String,
   ) = activityRepository.getAllByPrisonCode(prisonCode).toModelLite()
 
   fun getSchedulesForActivity(activityId: Long) =
@@ -81,7 +81,7 @@ class ActivityService(
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
-      createdBy = createdBy
+      createdBy = createdBy,
     ).apply {
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
@@ -92,13 +92,13 @@ class ActivityService(
             ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),
           rate = it.rate,
           pieceRate = it.pieceRate,
-          pieceRateItems = it.pieceRateItems
+          pieceRateItems = it.pieceRateItems,
         )
       }
       request.minimumEducationLevel.forEach {
         this.addMinimumEducationLevel(
           educationLevelCode = it.educationLevelCode!!,
-          educationLevelDescription = it.educationLevelDescription!!
+          educationLevelDescription = it.educationLevelDescription!!,
         )
       }
     }.let { transform(activityRepository.saveAndFlush(it)) }

@@ -7,7 +7,6 @@ import java.time.LocalDateTime
 class PrisonerWaitingTest : ModelTest() {
   @Test
   fun `dates and times are serialized correctly`() {
-
     val originalCreatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter)
 
     val expectedCreatedTime = "2023-01-31T10:21:22"
@@ -17,7 +16,7 @@ class PrisonerWaitingTest : ModelTest() {
       createdBy = "TestUser",
       createdTime = originalCreatedTime,
       priority = 1,
-      prisonerNumber = "1234"
+      prisonerNumber = "1234",
     )
 
     val json = objectMapper.writeValueAsString(prisonerWaiting)

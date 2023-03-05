@@ -43,7 +43,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-    ]
+    ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun markAttendances(@RequestBody attendances: List<AttendanceUpdateRequest>): ResponseEntity<Any> =

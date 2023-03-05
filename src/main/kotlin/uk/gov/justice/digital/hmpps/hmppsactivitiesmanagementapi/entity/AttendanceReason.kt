@@ -15,7 +15,7 @@ data class AttendanceReason(
 
   val code: String,
 
-  val description: String
+  val description: String,
 ) {
 
   @Override

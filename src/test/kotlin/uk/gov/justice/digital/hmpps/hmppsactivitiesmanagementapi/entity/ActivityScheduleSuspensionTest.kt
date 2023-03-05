@@ -16,7 +16,7 @@ class ActivityScheduleSuspensionTest {
   private val suspension = ActivityScheduleSuspension(
     activitySchedule = schedule,
     suspendedFrom = startDate,
-    suspendedUntil = untilDate
+    suspendedUntil = untilDate,
   )
 
   @Test
@@ -37,7 +37,7 @@ class ActivityScheduleSuspensionTest {
       ActivityScheduleSuspension(
         activitySchedule = schedule,
         suspendedFrom = startDate,
-        suspendedUntil = startDate
+        suspendedUntil = startDate,
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
@@ -50,7 +50,7 @@ class ActivityScheduleSuspensionTest {
       ActivityScheduleSuspension(
         activitySchedule = schedule,
         suspendedFrom = schedule.startDate.minusDays(1),
-        suspendedUntil = untilDate
+        suspendedUntil = untilDate,
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
@@ -60,7 +60,7 @@ class ActivityScheduleSuspensionTest {
       ActivityScheduleSuspension(
         activitySchedule = schedule,
         suspendedFrom = schedule.startDate,
-        suspendedUntil = schedule.endDate!!.plusDays(1)
+        suspendedUntil = schedule.endDate!!.plusDays(1),
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)

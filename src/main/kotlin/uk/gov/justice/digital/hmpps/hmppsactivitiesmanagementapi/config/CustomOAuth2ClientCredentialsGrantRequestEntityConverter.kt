@@ -12,6 +12,7 @@ class CustomOAuth2ClientCredentialsGrantRequestEntityConverter : OAuth2ClientCre
     val request = super.convert(grantRequest)
     val body = Objects.requireNonNull(request).body
     val headers = request.headers
+
     @Suppress("UNCHECKED_CAST")
     val formParameters = body as MultiValueMap<String, Any>
     formParameters.add("username", username)

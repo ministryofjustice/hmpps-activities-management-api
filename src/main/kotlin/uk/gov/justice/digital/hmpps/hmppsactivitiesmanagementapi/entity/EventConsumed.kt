@@ -24,5 +24,5 @@ data class EventConsumed(
 
   val prisonerNumber: String,
 
-  val eventData: String
+  val eventData: String,
 )

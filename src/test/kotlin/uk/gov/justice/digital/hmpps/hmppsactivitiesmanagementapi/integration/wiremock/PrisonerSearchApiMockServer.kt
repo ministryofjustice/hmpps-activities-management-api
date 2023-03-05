@@ -20,8 +20,8 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonersearchapi/prisoner-1.json")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -33,8 +33,8 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(prisoners))
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 
@@ -46,8 +46,8 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody("[]")
-            .withStatus(200)
-        )
+            .withStatus(200),
+        ),
     )
   }
 }

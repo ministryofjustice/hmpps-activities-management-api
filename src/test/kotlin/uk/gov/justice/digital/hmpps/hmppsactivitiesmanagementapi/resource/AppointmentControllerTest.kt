@@ -98,7 +98,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         principal = mockPrincipal
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
-          request
+          request,
         )
       }
         .andDo { print() }

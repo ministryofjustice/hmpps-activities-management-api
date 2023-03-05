@@ -18,7 +18,7 @@ data class ActivityCategory(
 
   val name: String,
 
-  val description: String?
+  val description: String?,
 ) {
   fun toModel() = ModelActivityCategory(
     id = activityCategoryId,

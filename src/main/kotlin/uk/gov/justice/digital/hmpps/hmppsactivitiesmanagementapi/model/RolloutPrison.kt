@@ -24,5 +24,5 @@ data class RolloutPrison(
   val rolloutDate: LocalDate?,
 
   @Schema(description = "The data source for the appointments data", example = "ACTIVITIES_API")
-  val appointmentsDataSource: AppointmentsDataSource
+  val appointmentsDataSource: AppointmentsDataSource,
 )
