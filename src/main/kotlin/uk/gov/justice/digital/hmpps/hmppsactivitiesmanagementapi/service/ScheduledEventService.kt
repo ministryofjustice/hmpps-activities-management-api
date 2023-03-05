@@ -83,7 +83,7 @@ class ScheduledEventService(
   private fun getSinglePrisonerEventCalls(bookingId: Long, prisonRolledOut: RolloutPrison, dateRange: LocalDateRange) =
 
     Mono.zip(
-      getScheduledAppointments(prisonRolledOut.appointmentsDataSource, bookingId, dateRange),
+      getScheduledAppointments(prisonRolledOut, bookingId, dateRange),
       prisonApiClient.getScheduledCourtHearings(bookingId, dateRange),
       prisonApiClient.getScheduledVisits(bookingId, dateRange),
       if (!prisonRolledOut.active) {
@@ -93,8 +93,8 @@ class ScheduledEventService(
       },
     )
 
-  private fun getScheduledAppointments(appointmentsDataSource: AppointmentsDataSource, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
-    return if (appointmentsDataSource == AppointmentsDataSource.PRISON_API) {
+  private fun getScheduledAppointments(prisonRolledOut: RolloutPrison, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
+    return if (!prisonRolledOut.active || prisonRolledOut.appointmentsDataSource == AppointmentsDataSource.PRISON_API) {
       prisonApiClient.getScheduledAppointments(bookingId, dateRange)
     } else {
       getScheduledAppointments(bookingId, dateRange)
@@ -107,7 +107,6 @@ class ScheduledEventService(
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
         .map {
           ScheduledEvent(
-
             bookingId = bookingId,
             startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
             endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
