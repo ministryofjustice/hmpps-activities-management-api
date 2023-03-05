@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Service
 class ScheduledEventService(
@@ -101,26 +102,26 @@ class ScheduledEventService(
 
   private fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> =
 
-    Mono.create {
+    Mono.just(
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
         .map {
           ScheduledEvent(
 
             bookingId = bookingId,
-            startTime = it.startTime.toString(), // TODO Check format
-            endTime = it.endTime.toString(), // TODO Check format
+            startTime = it.appointmentDate.format(DateTimeFormatter.ISO_DATE) + "T" + it.startTime.format(DateTimeFormatter.ISO_TIME),
+            endTime = it.endTime?.let { endTime -> it.appointmentDate.format(DateTimeFormatter.ISO_DATE) + "T" + endTime.format(DateTimeFormatter.ISO_TIME) },
             eventType = "APP",
             eventTypeDesc = "Appointment",
             eventClass = "INT_MOV",
-            eventId = null, // TODO Ask Dave,
-            eventStatus = "", // TODO Ask Dave,
+            eventId = it.appointmentInstanceId,
+            eventStatus = "SCH", // TODO Find existing or create constant
             eventDate = it.appointmentDate,
-            eventSource = "", // TODO Ask Dave
+            eventSource = "APP", // TODO Find existing or create constant
             eventSubType = it.category.appointmentCategoryId.toString(),
             eventSubTypeDesc = it.category.description,
           )
-        }
-    }
+        },
+    )
 
   private fun getSinglePrisonerScheduledActivities(
     prisonCode: String,
