@@ -207,7 +207,7 @@ class ScheduledEventServiceTest {
   )
 
   @Test
-  fun `get scheduled events - prison api data source - multiple prisoners - rolled out prison - success`() {
+  fun `get scheduled events - multiple prisoners - rolled out prison - success`() {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("G4793VF", "G1234GK")
     val date = LocalDate.of(2022, 12, 14)
