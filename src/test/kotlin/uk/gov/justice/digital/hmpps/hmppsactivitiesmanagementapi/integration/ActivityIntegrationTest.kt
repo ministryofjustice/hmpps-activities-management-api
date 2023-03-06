@@ -7,6 +7,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
@@ -41,6 +43,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @Autowired
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   @Test
   fun `createActivity - is successful`() {
@@ -539,6 +544,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
+
+    val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
+    val scheduleInstances = scheduleFromDB.get().instances()
+    assertThat(scheduleInstances).hasSize(1)
+    assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
+    assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
 
     verify(eventsPublisher).send(eventCaptor.capture())
 

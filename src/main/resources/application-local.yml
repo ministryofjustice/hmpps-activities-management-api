@@ -46,3 +46,7 @@ prisoner-search:
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS:0}
+
+online:
+  create-scheduled-instances:
+    days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE:14}
