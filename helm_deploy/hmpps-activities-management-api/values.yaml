@@ -34,6 +34,7 @@ generic-service:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     DB_SSL_MODE: "verify-full"
     SCHEDULE_AHEAD_DAYS: 60
+    SCHEDULE_AHEAD_DAYS_ONLINE: 14
     JMS_LISTENER_MODE: "ON"
     FEATURE_EVENTS_SNS_ENABLED: false
 

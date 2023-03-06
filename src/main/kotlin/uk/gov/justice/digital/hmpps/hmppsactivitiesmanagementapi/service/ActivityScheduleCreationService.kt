@@ -60,7 +60,7 @@ class ActivityScheduleCreationService(
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(activity, schedule.slots(), daysInAdvance)
+        schedule.addInstances(activity, schedule.slots())
 
         val persisted = activityRepository.saveAndFlush(activity)
 
@@ -75,35 +75,30 @@ class ActivityScheduleCreationService(
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
-      val daysOfWeek = setOfNotNull(
-        DayOfWeek.MONDAY.takeIf { slot.monday },
-        DayOfWeek.TUESDAY.takeIf { slot.tuesday },
-        DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
-        DayOfWeek.THURSDAY.takeIf { slot.thursday },
-        DayOfWeek.FRIDAY.takeIf { slot.friday },
-        DayOfWeek.SATURDAY.takeIf { slot.saturday },
-        DayOfWeek.SUNDAY.takeIf { slot.sunday },
-      )
+      val daysOfWeek = getDaysOfWeek(slot)
 
       this.addSlot(start, end, daysOfWeek)
     }
   }
 
-  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, daysInAdvance: Long) {
+  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
 
     listOfDatesToSchedule.forEach { day ->
       slots.forEach { slot ->
-        val daysOfWeek = setOfNotNull(
-          DayOfWeek.MONDAY.takeIf { slot.mondayFlag },
-          DayOfWeek.TUESDAY.takeIf { slot.tuesdayFlag },
-          DayOfWeek.WEDNESDAY.takeIf { slot.wednesdayFlag },
-          DayOfWeek.THURSDAY.takeIf { slot.thursdayFlag },
-          DayOfWeek.FRIDAY.takeIf { slot.fridayFlag },
-          DayOfWeek.SATURDAY.takeIf { slot.saturdayFlag },
-          DayOfWeek.SUNDAY.takeIf { slot.sundayFlag },
+        val daysOfWeek = getDaysOfWeek(
+          Slot(
+            timeSlot = "",
+            monday = slot.mondayFlag,
+            tuesday = slot.tuesdayFlag,
+            wednesday = slot.wednesdayFlag,
+            thursday = slot.thursdayFlag,
+            friday = slot.fridayFlag,
+            saturday = slot.saturdayFlag,
+            sunday = slot.sundayFlag,
+          ),
         )
 
         if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
@@ -127,5 +122,17 @@ class ActivityScheduleCreationService(
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
+  }
+
+  private fun getDaysOfWeek(slot: Slot): Set<DayOfWeek> {
+    return setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { slot.monday },
+      DayOfWeek.TUESDAY.takeIf { slot.tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
+      DayOfWeek.THURSDAY.takeIf { slot.thursday },
+      DayOfWeek.FRIDAY.takeIf { slot.friday },
+      DayOfWeek.SATURDAY.takeIf { slot.saturday },
+      DayOfWeek.SUNDAY.takeIf { slot.sunday },
+    )
   }
 }
