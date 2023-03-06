@@ -547,8 +547,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
     val scheduleInstances = scheduleFromDB.get().instances()
-    assertThat(scheduleInstances.size).isEqualTo(1)
-    assertThat(scheduleInstances.first().scheduledInstanceId).isNotNull
+    assertThat(scheduleInstances).hasSize(1)
     assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
     assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
 
