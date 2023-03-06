@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  Describes an activity category. Categories can have a two level hierarchy, category and subcategory.
+  Describes an appointment category. Categories can have a two level hierarchy, category and subcategory.
   Subcategory level categories will have a parent.
   Tables referencing appointment category should use the id primary key.
   Mapping to NOMIS is via the code property.
