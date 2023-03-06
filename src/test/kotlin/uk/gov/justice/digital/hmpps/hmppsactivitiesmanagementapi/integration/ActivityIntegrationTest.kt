@@ -30,7 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
@@ -45,7 +45,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
-  private lateinit var scheduledInstanceRepository: ScheduledInstanceRepository
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   @Test
   fun `createActivity - is successful`() {
@@ -545,7 +545,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
 
-    val scheduleInstances = scheduledInstanceRepository.getActivityScheduleInstancesByActivityScheduleId(schedule.id)
+    val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
+    val scheduleInstances = scheduleFromDB.get().instances()
     assertThat(scheduleInstances.size).isEqualTo(1)
     assertThat(scheduleInstances.first().scheduledInstanceId).isNotNull
     assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
