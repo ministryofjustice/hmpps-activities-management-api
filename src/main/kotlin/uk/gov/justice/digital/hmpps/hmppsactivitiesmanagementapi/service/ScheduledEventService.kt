@@ -4,23 +4,18 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 class ScheduledEventService(
@@ -29,7 +24,7 @@ class ScheduledEventService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val prisonRegimeService: PrisonRegimeService,
-  private val appointmentInstanceRepository: AppointmentInstanceRepository,
+  private val appointmentInstanceService: AppointmentInstanceService,
 ) {
   /**
    *  Get scheduled events for a prison, a single prisoner, between two dates and with an optional time slot.
@@ -83,7 +78,7 @@ class ScheduledEventService(
   private fun getSinglePrisonerEventCalls(bookingId: Long, prisonRolledOut: RolloutPrison, dateRange: LocalDateRange) =
 
     Mono.zip(
-      getScheduledAppointments(prisonRolledOut, bookingId, dateRange),
+      appointmentInstanceService.getScheduledEvents(prisonRolledOut, bookingId, dateRange),
       prisonApiClient.getScheduledCourtHearings(bookingId, dateRange),
       prisonApiClient.getScheduledVisits(bookingId, dateRange),
       if (!prisonRolledOut.active) {
@@ -91,36 +86,6 @@ class ScheduledEventService(
       } else {
         Mono.just(emptyList())
       },
-    )
-
-  private fun getScheduledAppointments(prisonRolledOut: RolloutPrison, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
-    return if (!prisonRolledOut.active || prisonRolledOut.appointmentsDataSource == AppointmentsDataSource.PRISON_API) {
-      prisonApiClient.getScheduledAppointments(bookingId, dateRange)
-    } else {
-      getScheduledAppointments(bookingId, dateRange)
-    }
-  }
-
-  private fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> =
-
-    Mono.just(
-      appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
-        .map {
-          ScheduledEvent(
-            bookingId = bookingId,
-            startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
-            endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
-            eventType = "APP",
-            eventTypeDesc = "Appointment",
-            eventClass = "INT_MOV",
-            eventId = it.appointmentInstanceId,
-            eventStatus = "SCH",
-            eventDate = it.appointmentDate,
-            eventSource = "APP",
-            eventSubType = it.category.appointmentCategoryId.toString(),
-            eventSubTypeDesc = it.category.description,
-          )
-        },
     )
 
   private fun getSinglePrisonerScheduledActivities(
@@ -153,7 +118,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot? = null,
   ): PrisonerScheduledEvents? {
     val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)?.active ?: false
+    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)!!
     return getMultiplePrisonerEventCalls(prisonCode, prisonerNumbers, prisonRolledOut, date, timeSlot)
       .map { t ->
         transformToPrisonerScheduledEvents(
@@ -168,7 +133,7 @@ class ScheduledEventService(
         )
       }.block()
       ?.apply {
-        if (prisonRolledOut) {
+        if (prisonRolledOut.active) {
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
             EventType.ACTIVITY.defaultPriority,
@@ -182,15 +147,15 @@ class ScheduledEventService(
   private fun getMultiplePrisonerEventCalls(
     prisonCode: String,
     prisonerNumbers: Set<String>,
-    prisonRolledOut: Boolean,
+    rolloutPrison: RolloutPrison,
     date: LocalDate,
     timeSlot: TimeSlot?,
   ) =
     Mono.zip(
-      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
+      appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, date, timeSlot),
       prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
       prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
-      if (!prisonRolledOut) {
+      if (!rolloutPrison.active) {
         prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)
       } else {
         Mono.just(emptyList())

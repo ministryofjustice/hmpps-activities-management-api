@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
@@ -16,14 +17,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
@@ -35,7 +33,7 @@ class ScheduledEventServiceTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
-  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
+  private val appointmentInstanceService: AppointmentInstanceService = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -43,7 +41,7 @@ class ScheduledEventServiceTest {
     rolloutPrisonRepository,
     prisonerScheduledActivityRepository,
     prisonRegimeService,
-    appointmentInstanceRepository,
+    appointmentInstanceService,
 
   )
 
@@ -84,7 +82,7 @@ class ScheduledEventServiceTest {
     val courtEventsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.courtInstance()))
 
     // Produces mocked responses of type Mono.just(List<PrisonerSchedule>) for each of appointments, visits and court hearings
-    whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot))
+    whenever(appointmentInstanceService.getPrisonerSchedules(eq(prisonCode), eq(prisonerNumbers), any(), eq(date), eq(timeSlot)))
       .thenReturn(scheduledAppointmentsMono)
 
     whenever(prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot))
@@ -92,30 +90,6 @@ class ScheduledEventServiceTest {
 
     whenever(prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot))
       .thenReturn(courtEventsMono)
-  }
-
-  private fun setupAppointmentInstanceMocks(
-    bookingId: Long,
-    startTime: LocalTime,
-    endTime: LocalTime,
-    appointmentInstanceId: Long = 41,
-    appointmentDate: LocalDate,
-    appointmentCategoryId: Long = 42,
-    appointmentCategoryDescription: String = "Cat Desc",
-  ) {
-    val appointmentInstance = mock<AppointmentInstance>()
-    val appointmentCategory = mock<AppointmentCategory>()
-
-    whenever(appointmentInstance.bookingId).thenReturn(bookingId)
-    whenever(appointmentInstance.startTime).thenReturn(startTime)
-    whenever(appointmentInstance.endTime).thenReturn(endTime)
-    whenever(appointmentInstance.appointmentInstanceId).thenReturn(appointmentInstanceId)
-    whenever(appointmentInstance.appointmentDate).thenReturn(appointmentDate)
-    whenever(appointmentCategory.appointmentCategoryId).thenReturn(appointmentCategoryId)
-    whenever(appointmentCategory.description).thenReturn(appointmentCategoryDescription)
-    whenever(appointmentInstance.category).thenReturn(appointmentCategory)
-
-    whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any())).thenReturn(listOf(appointmentInstance))
   }
 
   private fun setupSinglePrisonerApiMocks(
@@ -158,7 +132,7 @@ class ScheduledEventServiceTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)))
       .thenReturn(prisonerDetailsMono)
 
-    whenever(prisonApiClient.getScheduledAppointments(900001, dateRange))
+    whenever(appointmentInstanceService.getScheduledEvents(any(), eq(900001), eq(dateRange)))
       .thenReturn(scheduledAppointmentsMono)
 
     whenever(prisonApiClient.getScheduledVisits(900001, dateRange))
@@ -302,7 +276,7 @@ class ScheduledEventServiceTest {
   }
 
   @Test
-  fun `get scheduled events - single prisoner - rolled out prison - prison api data source - success`() {
+  fun `get scheduled events - single prisoner - rolled out prison - success`() {
     val prisonCode = "MDI"
     val prisonerNumber = "G4793VF"
     val startDate = LocalDate.of(2022, 12, 14)
@@ -352,121 +326,6 @@ class ScheduledEventServiceTest {
         assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
         assertThat(it.startTime).isEqualTo(LocalTime.of(17, 0, 0))
         assertThat(it.endTime).isEqualTo(LocalTime.of(18, 0, 0))
-        assertThat(it.priority).isEqualTo(4)
-      }
-
-      assertThat(visits).isNotNull
-      assertThat(visits).hasSize(1)
-
-      visits!!.map {
-        assertThat(it.prisonCode).isEqualTo("MDI")
-        assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-        assertThat(it.bookingId).isEqualTo(900001)
-        assertThat(it.locationId).isEqualTo(1)
-        assertThat(it.location).isEqualTo("VISITS ROOM")
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
-        assertThat(it.eventId).isEqualTo(1)
-        assertThat(it.eventType).isEqualTo("VISIT")
-        assertThat(it.eventTypeDesc).isEqualTo("Visit")
-        assertThat(it.eventStatus).isEqualTo("SCH")
-        assertThat(it.event).isEqualTo("VISIT")
-        assertThat(it.eventDesc).isEqualTo("Visits")
-        assertThat(it.details).isEqualTo("Social Contact")
-        assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(17, 0, 0))
-        assertThat(it.endTime).isEqualTo(LocalTime.of(18, 0, 0))
-        assertThat(it.priority).isEqualTo(2)
-      }
-
-      assertThat(courtHearings).isNotNull
-      assertThat(courtHearings).hasSize(1)
-
-      courtHearings!!.map {
-        assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-        assertThat(it.prisonCode).isEqualTo("MDI")
-        assertThat(it.bookingId).isEqualTo(900001)
-        assertThat(it.eventId).isEqualTo(1L)
-        assertThat(it.eventType).isEqualTo("COURT_HEARING")
-        assertThat(it.location).isEqualTo("Aberdeen Sheriff's Court (abdshf)")
-        assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(10, 0, 0))
-        assertThat(it.priority).isEqualTo(1)
-      }
-
-      assertThat(activities).isNotNull
-      assertThat(activities).hasSize(1)
-      activities!!.map {
-        assertThat(it.prisonCode).isEqualTo("MDI")
-        assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-        assertThat(it.bookingId).isEqualTo(900001)
-        assertThat(it.eventId).isEqualTo(1L)
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
-        assertThat(it.eventType).isEqualTo("PRISON_ACT")
-        assertThat(it.event).isEqualTo("English level 1")
-        assertThat(it.eventDesc).isEqualTo("HB1 AM")
-        assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(10, 0, 0))
-        assertThat(it.endTime).isEqualTo(LocalTime.of(11, 30, 0))
-        assertThat(it.priority).isEqualTo(5)
-      }
-    }
-  }
-
-  @Test
-  fun `get scheduled events - single prisoner - rolled out prison - activities api data source - success`() {
-    val bookingId = 900001L
-    val prisonCode = "MDI"
-    val prisonerNumber = "G4793VF"
-    val startDate = LocalDate.of(2022, 12, 14)
-    val startTime = LocalTime.of(10, 0, 0)
-    val endDate = LocalDate.of(2022, 12, 15)
-    val endTime = LocalTime.of(11, 0, 0)
-    val dateRange = LocalDateRange(startDate, endDate)
-    val timeSlot: TimeSlot = TimeSlot.AM
-
-    setupAppointmentInstanceMocks(bookingId = bookingId, startTime = startTime, endTime = endTime, appointmentDate = startDate)
-    setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = true, rolloutDate = LocalDate.of(2022, 12, 22), AppointmentsDataSource.ACTIVITIES_SERVICE)
-
-    // Uses the default event priorities for all types of event
-    whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-      .thenReturn(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
-
-    // Activities from the database view
-    whenever(prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate))
-      .thenReturn(listOf(activityFromDbInstance()))
-
-    val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
-      prisonCode,
-      prisonerNumber,
-      LocalDateRange(startDate, endDate),
-      timeSlot,
-    )
-
-    // Should not be called - this is a rolled-out prison
-    verify(prisonApiClient, never()).getScheduledActivities(any(), any())
-
-    with(result!!) {
-      assertThat(prisonerNumbers).containsExactlyInAnyOrder(prisonerNumber)
-      assertThat(appointments).isNotNull
-      assertThat(appointments).hasSize(1)
-
-      appointments!!.map {
-        assertThat(it.prisonCode).isNull()
-        assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-        assertThat(it.bookingId).isEqualTo(bookingId)
-        assertThat(it.eventId).isEqualTo(41)
-        assertThat(it.eventStatus).isEqualTo("SCH")
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
-        assertThat(it.eventType).isEqualTo("APPOINTMENT")
-        assertThat(it.event).isEqualTo("42")
-        assertThat(it.locationId).isNull()
-        assertThat(it.location).isNull()
-        assertThat(it.eventDesc).isEqualTo("Cat Desc")
-        assertThat(it.details).isNull()
-        assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(10, 0, 0))
-        assertThat(it.endTime).isEqualTo(LocalTime.of(11, 0, 0))
         assertThat(it.priority).isEqualTo(4)
       }
 
@@ -687,7 +546,7 @@ class ScheduledEventServiceTest {
   }
 
   @Test
-  fun `get scheduled events - single prisoner - not rolled out prison - prison api data source - success`() {
+  fun `get scheduled events - single prisoner - not rolled out prison - success`() {
     val prisonCode = "MDI"
     val prisonerNumber = "A1111AA"
     val startDate = LocalDate.of(2022, 12, 14)
@@ -725,64 +584,6 @@ class ScheduledEventServiceTest {
       assertThat(appointments).hasSize(1)
       assertThat(appointments!![0].prisonerNumber).isEqualTo("A1111AA")
       assertThat(appointments!![0].priority).isEqualTo(4)
-      assertThat(activities).isNotNull
-      assertThat(activities).hasSize(1)
-      assertThat(activities!![0].prisonerNumber).isEqualTo("A1111AA")
-      assertThat(activities!![0].priority).isEqualTo(5)
-      assertThat(visits).isNotNull
-      assertThat(visits).hasSize(1)
-      assertThat(visits!![0].prisonerNumber).isEqualTo("A1111AA")
-      assertThat(visits!![0].priority).isEqualTo(2)
-      assertThat(courtHearings).isNotNull
-      assertThat(courtHearings).hasSize(1)
-      assertThat(courtHearings!![0].prisonerNumber).isEqualTo("A1111AA")
-      assertThat(courtHearings!![0].priority).isEqualTo(1)
-    }
-  }
-
-  @Test
-  fun `get scheduled events - single prisoner - not rolled out prison - activities service data source - success`() {
-    val prisonCode = "MDI"
-    val prisonerNumber = "A1111AA"
-    val startDate = LocalDate.of(2022, 12, 14)
-
-    val endDate = LocalDate.of(2022, 12, 15)
-    val dateRange = LocalDateRange(startDate, endDate)
-    val timeSlot: TimeSlot = TimeSlot.AM
-
-    setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22), AppointmentsDataSource.ACTIVITIES_SERVICE)
-
-    val scheduledActivitiesMono = Mono.just(listOf(PrisonApiScheduledEventFixture.activityInstance()))
-    whenever(prisonApiClient.getScheduledActivities(900001, dateRange)).thenReturn(scheduledActivitiesMono)
-
-    whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-      .thenReturn(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
-
-    val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
-      prisonCode,
-      prisonerNumber,
-      LocalDateRange(startDate, endDate),
-      timeSlot,
-    )
-
-    // Should not be called - NOT a rolled out prison so data source should be ignored
-    verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
-
-    // Should not be called - NOT a rolled out prison
-    verify(prisonerScheduledActivityRepository, never())
-      .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
-
-    // Should be called - this is NOT a rolled out prison
-    verify(prisonApiClient).getScheduledActivities(any(), any())
-
-    with(result!!) {
-      assertThat(this.prisonerNumbers).containsExactly("A1111AA")
-      assertThat(appointments).isNotNull
-      assertThat(appointments).hasSize(1)
-      assertThat(appointments!![0].prisonerNumber).isEqualTo("A1111AA")
-      assertThat(appointments!![0].priority).isEqualTo(4)
-
       assertThat(activities).isNotNull
       assertThat(activities).hasSize(1)
       assertThat(activities!![0].prisonerNumber).isEqualTo("A1111AA")

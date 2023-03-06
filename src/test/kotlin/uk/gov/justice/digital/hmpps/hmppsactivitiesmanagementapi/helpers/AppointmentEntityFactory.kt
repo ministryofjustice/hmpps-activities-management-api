@@ -56,7 +56,7 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
     bookingId = 456,
   )
 
-internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurrence) =
+internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurrence, appointmentDate: LocalDate = LocalDate.now()) =
   AppointmentInstance(
     appointmentInstanceId = 1,
     appointmentOccurrence = appointmentOccurrence,
@@ -66,7 +66,7 @@ internal fun appointmentInstanceEntity(appointmentOccurrence: AppointmentOccurre
     inCell = false,
     prisonerNumber = "A1234BC",
     bookingId = 456,
-    appointmentDate = LocalDate.now(),
+    appointmentDate = appointmentDate,
     startTime = LocalTime.of(9, 0),
     endTime = LocalTime.of(10, 30),
     comment = "Appointment instance level comment",
