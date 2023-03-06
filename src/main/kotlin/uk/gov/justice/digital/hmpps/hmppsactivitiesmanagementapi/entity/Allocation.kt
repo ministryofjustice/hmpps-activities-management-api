@@ -50,6 +50,8 @@ data class Allocation(
 ) {
   fun isActive(date: LocalDate) = date.between(startDate, endDate)
 
+  fun isUnemployment() = activitySchedule.activity.activityCategory.code == "SAA_NOT_IN_WORK"
+
   fun activitySummary() = activitySchedule.activity.summary
 
   fun scheduleDescription() = activitySchedule.description
@@ -67,5 +69,6 @@ data class Allocation(
       activitySummary = activitySummary(),
       scheduleId = activitySchedule.activityScheduleId,
       scheduleDescription = activitySchedule.description,
+      isUnemployment = isUnemployment(),
     )
 }

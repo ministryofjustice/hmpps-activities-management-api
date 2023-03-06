@@ -23,6 +23,9 @@ data class Allocation(
 
   val scheduleDescription: String,
 
+  @Schema(description = "Indicates whether this allocation is to an activity within the 'Not in work' category")
+  val isUnemployment: Boolean = false,
+
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
   val prisonPayBand: PrisonPayBand,
 
