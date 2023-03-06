@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -28,11 +30,17 @@ class AppointmentInstanceService(
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun getScheduledEvents(rolloutPrison: RolloutPrison, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
+    log.info("Fetching scheduled events for Rollout Prison [$rolloutPrison], Booking ID [$bookingId] and Date Range [$dateRange]")
     return if (shouldUsePrisonApi(rolloutPrison)) {
+      log.info("Fetching scheduled events from Prison API")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange)
     } else {
+      log.info("Fetching scheduled events from Appointment Instance Repository")
       Mono.just(
         appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive).toScheduledEvent(),
       )
@@ -46,9 +54,15 @@ class AppointmentInstanceService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): Mono<List<PrisonerSchedule>> {
+    log.info(
+      "Fetching prisoner schedules for Rollout Prison [$rolloutPrison], Prison Code [$prisonCode], " +
+        "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
+    )
     return if (shouldUsePrisonApi(rolloutPrison)) {
+      log.info("Fetching prisoner schedules from Prison API")
       prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)
     } else {
+      log.info("Fetching prisoner schedules from Appointment Instance Repository")
       val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
       val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
       val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
