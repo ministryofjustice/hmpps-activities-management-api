@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
@@ -428,5 +429,20 @@ class ActivityTest {
         activity = activity,
       ),
     )
+  }
+
+  @Test
+  fun `isUnemployment flag true when activity is within the 'non work' category`() {
+    val unemploymentActivity = activityEntity(category = activityCategory(code = "SAA_NOT_IN_WORK"))
+    with(unemploymentActivity) {
+      assertThat(isUnemployment()).isTrue
+    }
+  }
+
+  @Test
+  fun `isUnemployment flag false when activity is not within the 'non work' category`() {
+    with(activityWithEndDate) {
+      assertThat(isUnemployment()).isFalse
+    }
   }
 }

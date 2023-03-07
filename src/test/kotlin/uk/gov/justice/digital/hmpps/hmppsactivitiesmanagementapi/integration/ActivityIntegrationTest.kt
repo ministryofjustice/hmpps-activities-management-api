@@ -7,6 +7,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
@@ -42,9 +44,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private lateinit var eventsPublisher: EventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
+  @Autowired
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
+
   @Test
   fun `createActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
+    prisonApiMockServer.stubGetEducationLevel(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
@@ -499,7 +508,18 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       startDate = today,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true)),
+      slots = listOf(
+        Slot(
+          "AM",
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+          saturday = true,
+          sunday = true,
+        ),
+      ),
     )
 
     prisonApiMockServer.stubGetLocation(
@@ -535,10 +555,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(schedule.slots.first()) {
       assertThat(id).isNotNull
-      assertThat(daysOfWeek).containsExactly("Mon")
+      assertThat(daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
+
+    val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
+    val scheduleInstances = scheduleFromDB.get().instances()
+    assertThat(scheduleInstances).hasSize(13)
+    assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
+    assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
 
     verify(eventsPublisher).send(eventCaptor.capture())
 

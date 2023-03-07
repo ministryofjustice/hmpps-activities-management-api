@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -9,12 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Service
@@ -22,6 +25,8 @@ class ActivityScheduleCreationService(
   private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val prisonRegimeService: PrisonRegimeService,
+  private val bankHolidayService: BankHolidayService,
+  @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
 
   companion object {
@@ -55,6 +60,7 @@ class ActivityScheduleCreationService(
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
+        schedule.addInstances(activity, schedule.slots())
 
         val persisted = activityRepository.saveAndFlush(activity)
 
@@ -69,17 +75,40 @@ class ActivityScheduleCreationService(
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
-      val daysOfWeek = setOfNotNull(
-        DayOfWeek.MONDAY.takeIf { slot.monday },
-        DayOfWeek.TUESDAY.takeIf { slot.tuesday },
-        DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
-        DayOfWeek.THURSDAY.takeIf { slot.thursday },
-        DayOfWeek.FRIDAY.takeIf { slot.friday },
-        DayOfWeek.SATURDAY.takeIf { slot.saturday },
-        DayOfWeek.SUNDAY.takeIf { slot.sunday },
-      )
+      val daysOfWeek = getDaysOfWeek(slot)
 
       this.addSlot(start, end, daysOfWeek)
+    }
+  }
+
+  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>) {
+    val today = LocalDate.now()
+    val endDay = today.plusDays(daysInAdvance)
+    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+
+    listOfDatesToSchedule.forEach { day ->
+      slots.forEach { slot ->
+        val daysOfWeek = getDaysOfWeek(
+          Slot(
+            timeSlot = "",
+            monday = slot.mondayFlag,
+            tuesday = slot.tuesdayFlag,
+            wednesday = slot.wednesdayFlag,
+            thursday = slot.thursdayFlag,
+            friday = slot.fridayFlag,
+            saturday = slot.saturdayFlag,
+            sunday = slot.sundayFlag,
+          ),
+        )
+
+        if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
+          (
+            runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
+            )
+        ) {
+          this.addInstance(sessionDate = day, slot = slot)
+        }
+      }
     }
   }
 
@@ -93,5 +122,17 @@ class ActivityScheduleCreationService(
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
+  }
+
+  private fun getDaysOfWeek(slot: Slot): Set<DayOfWeek> {
+    return setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { slot.monday },
+      DayOfWeek.TUESDAY.takeIf { slot.tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
+      DayOfWeek.THURSDAY.takeIf { slot.thursday },
+      DayOfWeek.FRIDAY.takeIf { slot.friday },
+      DayOfWeek.SATURDAY.takeIf { slot.saturday },
+      DayOfWeek.SUNDAY.takeIf { slot.sunday },
+    )
   }
 }

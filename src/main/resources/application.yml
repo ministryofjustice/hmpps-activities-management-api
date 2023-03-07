@@ -102,3 +102,7 @@ prison:
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS}
+
+online:
+  create-scheduled-instances:
+    days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE}
