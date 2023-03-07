@@ -64,6 +64,8 @@ data class Appointment(
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
+  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+
   fun toModel() = AppointmentModel(
     id = appointmentId,
     category = category.toModel(),

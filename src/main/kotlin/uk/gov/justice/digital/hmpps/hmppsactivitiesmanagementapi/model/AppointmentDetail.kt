@@ -44,7 +44,7 @@ data class AppointmentDetail(
     The summary of the internal location this appointment will take place. Will be null if in cell = true
     """,
   )
-  val internalLocationId: AppointmentLocationSummary?,
+  val internalLocation: AppointmentLocationSummary?,
 
   @Schema(
     description =
