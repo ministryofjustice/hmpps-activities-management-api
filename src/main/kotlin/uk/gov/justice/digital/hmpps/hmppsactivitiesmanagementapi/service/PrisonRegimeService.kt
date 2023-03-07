@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalTime
 
 @Service
 class PrisonRegimeService(
@@ -51,14 +52,14 @@ class PrisonRegimeService(
   fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot): LocalTimeRange {
     val prisonRegime = getPrisonRegimeByPrisonCode(prisonCode)
     val start = when (timeSlot) {
-      TimeSlot.AM -> prisonRegime.amStart
+      TimeSlot.AM -> LocalTime.MIDNIGHT
       TimeSlot.PM -> prisonRegime.pmStart
       TimeSlot.ED -> prisonRegime.edStart
     }
     val end = when (timeSlot) {
-      TimeSlot.AM -> prisonRegime.amFinish
-      TimeSlot.PM -> prisonRegime.pmFinish
-      TimeSlot.ED -> prisonRegime.edFinish
+      TimeSlot.AM -> prisonRegime.pmStart
+      TimeSlot.PM -> prisonRegime.edStart
+      TimeSlot.ED -> LocalTime.of(23, 59)
     }
 
     return LocalTimeRange(start = start, end = end)

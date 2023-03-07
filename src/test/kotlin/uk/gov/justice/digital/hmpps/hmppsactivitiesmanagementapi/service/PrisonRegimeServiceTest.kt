@@ -24,7 +24,6 @@ class PrisonRegimeServiceTest {
   private val eventPriorityRepository: EventPriorityRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonRegimeRepository: PrisonRegimeRepository = mock()
-  private val prisonRegime: PrisonRegime = mock()
 
   private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository, prisonRegimeRepository)
 
@@ -208,8 +207,8 @@ class PrisonRegimeServiceTest {
       .thenReturn(prisonRegime())
     val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM)
 
-    assertThat(result.start).isEqualTo("09:00")
-    assertThat(result.end).isEqualTo("12:00")
+    assertThat(result.start).isEqualTo("00:00")
+    assertThat(result.end).isEqualTo("13:00")
   }
 
   @Test
@@ -220,7 +219,7 @@ class PrisonRegimeServiceTest {
     val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM)
 
     assertThat(result.start).isEqualTo("13:00")
-    assertThat(result.end).isEqualTo("16:30")
+    assertThat(result.end).isEqualTo("18:00")
   }
 
   @Test
@@ -231,6 +230,6 @@ class PrisonRegimeServiceTest {
     val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED)
 
     assertThat(result.start).isEqualTo("18:00")
-    assertThat(result.end).isEqualTo("20:00")
+    assertThat(result.end).isEqualTo("23:59")
   }
 }
