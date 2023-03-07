@@ -99,6 +99,8 @@ data class Activity(
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
+  fun isUnemployment() = activityCategory.code == "SAA_NOT_IN_WORK"
+
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules
       .filter { it.isActiveOn(day) }

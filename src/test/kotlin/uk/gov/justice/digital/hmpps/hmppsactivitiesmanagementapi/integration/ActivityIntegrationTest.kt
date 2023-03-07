@@ -49,7 +49,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `createActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
+    prisonApiMockServer.stubGetEducationLevel(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
@@ -504,7 +508,18 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       startDate = today,
       locationId = 1,
       capacity = 10,
-      slots = listOf(Slot("AM", monday = true)),
+      slots = listOf(
+        Slot(
+          "AM",
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+          saturday = true,
+          sunday = true,
+        ),
+      ),
     )
 
     prisonApiMockServer.stubGetLocation(
@@ -540,14 +555,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(schedule.slots.first()) {
       assertThat(id).isNotNull
-      assertThat(daysOfWeek).containsExactly("Mon")
+      assertThat(daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
     }
 
     val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
     val scheduleInstances = scheduleFromDB.get().instances()
-    assertThat(scheduleInstances).hasSize(1)
+    assertThat(scheduleInstances).hasSize(if (LocalTime.now().hour >= 9) 13 else 14)
     assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
     assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
 

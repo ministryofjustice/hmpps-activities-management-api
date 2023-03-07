@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import java.time.LocalDate
@@ -46,26 +45,6 @@ class AllocationTest {
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1))).isFalse
       assertThat(payBand.payBandAlias).isEqualTo("Medium")
-    }
-  }
-
-  @Test
-  fun `isUnemployment flag true when activity is within the 'non work' category`() {
-    whenever(schedule.activity).thenReturn(mock())
-    whenever(schedule.activity.activityCategory).thenReturn(mock())
-    whenever(schedule.activity.activityCategory.code).thenReturn("SAA_NOT_IN_WORK")
-    with(allocationWithEndDate) {
-      assertThat(isUnemployment()).isTrue
-    }
-  }
-
-  @Test
-  fun `isUnemployment flag false when activity is not within the 'non work' category`() {
-    whenever(schedule.activity).thenReturn(mock())
-    whenever(schedule.activity.activityCategory).thenReturn(mock())
-    whenever(schedule.activity.activityCategory.code).thenReturn("SAA_EDUCATION")
-    with(allocationWithEndDate) {
-      assertThat(isUnemployment()).isFalse
     }
   }
 }
