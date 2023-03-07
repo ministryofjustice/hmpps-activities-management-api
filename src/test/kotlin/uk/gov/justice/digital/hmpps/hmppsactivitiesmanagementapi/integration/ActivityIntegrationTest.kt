@@ -562,7 +562,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
     val scheduleInstances = scheduleFromDB.get().instances()
-    assertThat(scheduleInstances).hasSize(if (LocalTime.now().hour >= 9) 13 else 14)
+    assertThat(scheduleInstances).hasSize(13)
     assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
     assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
 
