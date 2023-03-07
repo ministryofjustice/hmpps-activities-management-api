@@ -70,12 +70,17 @@ class AppointmentInstanceService(
       val locationMap = locationService.getLocationsForAppointments(prisonCode)!!
         .associateBy { it.locationId }
 
-      val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList()).block()!!
-        .associateBy { it.prisonerNumber }
+      val prisonersWithAppointments = appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(prisonCode, prisonerNumbers, date, earliestStartTime, latestStartTime)
+      log.info("Fetched [${prisonersWithAppointments.size}] prisoners with appointments from the Appointment Instance Repository")
+
+      val prisonerMap = if (prisonersWithAppointments.isNotEmpty()) {
+        prisonerSearchApiClient.findByPrisonerNumbers(prisonersWithAppointments.map { it.prisonerNumber }).block()!!
+          .associateBy { it.prisonerNumber }
+      } else { emptyMap() }
 
       Mono.just(
-        appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(prisonCode, prisonerMap.keys, date, earliestStartTime, latestStartTime)
-          .toPrisonerSchedule(prisonerMap, locationMap),
+
+        prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap),
       )
     }
   }
@@ -88,7 +93,7 @@ class AppointmentInstanceService(
    *  - If the prison IS rolled out (rolloutPrison.active == true) AND the data source is set to PRISON_API then use
    *  the Prison API
    *  - If the prison IS rolled out (rolloutPrison.active == true) AND the data source is set to ACTIVITIES_SERVICE
-   *  then use theAppointment Instance Repository
+   *  then use the Appointment Instance Repository
    *
    *  @return true if the Prison API should be used, false otherwise
    */
