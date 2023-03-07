@@ -63,6 +63,8 @@ data class AppointmentOccurrence(
 
   fun addInstance(instance: AppointmentInstance) = instances.add(instance)
 
+  fun prisonerCount() = allocations.count()
+
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     internalLocationId = internalLocationId,

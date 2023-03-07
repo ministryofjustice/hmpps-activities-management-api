@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory as AppointmentCategoryModel
 
 @Entity
@@ -28,6 +29,12 @@ data class AppointmentCategory(
     description = description,
     active = active,
     displayOrder = displayOrder,
+  )
+
+  fun toSummary() = AppointmentCategorySummary(
+    id = appointmentCategoryId,
+    code = code,
+    description = description,
   )
 }
 

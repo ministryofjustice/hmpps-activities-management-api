@@ -64,7 +64,11 @@ data class Appointment(
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
+  fun internalLocationIds() = listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull().distinct()
+
   fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+
+  fun usernames() = listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull().distinct()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
