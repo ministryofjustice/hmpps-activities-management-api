@@ -89,10 +89,10 @@ internal fun activityEntity(
     }
   }
 
-internal fun activityCategory() =
+internal fun activityCategory(code: String = "category code") =
   ActivityCategory(
     activityCategoryId = 1,
-    code = "category code",
+    code = code,
     name = "category name",
     description = "category description",
   )

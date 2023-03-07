@@ -67,5 +67,6 @@ data class Allocation(
       activitySummary = activitySummary(),
       scheduleId = activitySchedule.activityScheduleId,
       scheduleDescription = activitySchedule.description,
+      isUnemployment = activitySchedule.activity.isUnemployment(),
     )
 }
