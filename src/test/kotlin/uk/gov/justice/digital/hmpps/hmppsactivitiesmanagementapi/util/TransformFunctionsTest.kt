@@ -2,14 +2,22 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -160,6 +168,107 @@ class TransformFunctionsTest {
         "HMP Pentonville",
         true,
         rolloutDate = LocalDate.of(2022, 12, 22),
+      ),
+    )
+  }
+
+  @Test
+  fun `location to appointment location summary returns unknown for null locations`() {
+    assertThat((null as Location?).toAppointmentLocationSummary(1, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, "TPR", "UNKNOWN"),
+    )
+  }
+
+  @Test
+  fun `location to appointment location summary mapping`() {
+    assertThat(appointmentLocation(1, "TPR").toAppointmentLocationSummary(1, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, "TPR", "Test Appointment Location"),
+    )
+  }
+
+  @Test
+  fun `user detail to summary returns unknown for null user details`() {
+    assertThat((null as UserDetail?).toSummary("TEST.USER")).isEqualTo(
+      UserSummary(-1, "TEST.USER", "UNKNOWN", "UNKNOWN"),
+    )
+  }
+
+  @Test
+  fun `user detail to summary mapping`() {
+    assertThat(userDetail(1, "TEST.USER", "TEST", "USER").toSummary("TEST.USER")).isEqualTo(
+      UserSummary(1, "TEST.USER", "TEST", "USER"),
+    )
+  }
+
+  @Test
+  fun `prisoner to summary mapping`() {
+    assertThat(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ).toSummary(),
+    ).isEqualTo(
+      PrisonerSummary(
+        "A1234BC",
+        456,
+        "TEST",
+        "PRISONER",
+        "TPR",
+        "1-2-3",
+      ),
+    )
+  }
+
+  @Test
+  fun `prisoner to summary mapping defaults`() {
+    assertThat(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = null,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = null,
+        cellLocation = null,
+      ).toSummary(),
+    ).isEqualTo(
+      PrisonerSummary(
+        "A1234BC",
+        -1,
+        "TEST",
+        "PRISONER",
+        "UNKNOWN",
+        "UNKNOWN",
+      ),
+    )
+  }
+
+  @Test
+  fun `prisoner list to summary list mapping`() {
+    assertThat(
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 456,
+          firstName = "TEST",
+          lastName = "PRISONER",
+          prisonId = "TPR",
+          cellLocation = "1-2-3",
+        ),
+      ).toSummary(),
+    ).isEqualTo(
+      listOf(
+        PrisonerSummary(
+          "A1234BC",
+          456,
+          "TEST",
+          "PRISONER",
+          "TPR",
+          "1-2-3",
+        ),
       ),
     )
   }

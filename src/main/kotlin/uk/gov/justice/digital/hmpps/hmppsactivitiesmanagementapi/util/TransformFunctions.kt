@@ -560,13 +560,14 @@ fun UserDetail?.toSummary(username: String) =
     UserSummary(this.staffId, this.username, this.firstName, this.lastName)
   }
 
-fun List<Prisoner>.toSummary() = map {
+fun Prisoner.toSummary() =
   PrisonerSummary(
-    it.prisonerNumber,
-    it.bookingId?.toLong() ?: -1,
-    it.firstName,
-    it.lastName,
-    it.prisonId ?: "UNKNOWN",
-    it.cellLocation ?: "UNKNOWN",
+    prisonerNumber,
+    bookingId?.toLong() ?: -1,
+    firstName,
+    lastName,
+    prisonId ?: "UNKNOWN",
+    cellLocation ?: "UNKNOWN",
   )
-}
+
+fun List<Prisoner>.toSummary() = map { it.toSummary() }
