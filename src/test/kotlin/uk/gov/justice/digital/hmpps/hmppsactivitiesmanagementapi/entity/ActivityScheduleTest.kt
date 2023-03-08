@@ -515,4 +515,56 @@ class ActivityScheduleTest {
 
     assertThat(scheduleWithSlot.instances()).isEmpty()
   }
+
+  @Test
+  fun `end and deallocate single allocation from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true, startDate = yesterday).apply {
+      allocatePrisoner(
+        prisonerNumber = "A1234AA".toPrisonerNumber(),
+        startDate = yesterday,
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = "FAKE USER",
+      )
+    }
+
+    assertThat(schedule.endDate).isNull()
+    assertThat(schedule.allocations().first().status(PrisonerStatus.ACTIVE)).isTrue
+
+    val endDateTime = LocalDateTime.now()
+    schedule.endAndDeallocate(LocalDateTime.now())
+
+    assertThat(schedule.endDate).isEqualTo(endDateTime.toLocalDate())
+    assertThat(schedule.allocations().first().status(PrisonerStatus.ENDED)).isTrue
+  }
+
+  @Test
+  fun `end and deallocate multiple allocations from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true, startDate = yesterday).apply {
+      allocatePrisoner(
+        prisonerNumber = "A1234AA".toPrisonerNumber(),
+        startDate = yesterday,
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = "FAKE USER",
+      )
+
+      allocatePrisoner(
+        prisonerNumber = "B1234BB".toPrisonerNumber(),
+        startDate = yesterday,
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = "FAKE USER",
+      )
+    }
+
+    assertThat(schedule.endDate).isNull()
+    schedule.allocations().forEach { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue }
+
+    val endDateTime = LocalDateTime.now()
+    schedule.endAndDeallocate(LocalDateTime.now())
+
+    assertThat(schedule.endDate).isEqualTo(endDateTime.toLocalDate())
+    schedule.allocations().forEach { assertThat(it.status(PrisonerStatus.ENDED)).isTrue }
+  }
 }
