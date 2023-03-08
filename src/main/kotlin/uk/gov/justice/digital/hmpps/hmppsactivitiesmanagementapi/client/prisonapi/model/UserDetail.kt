@@ -35,7 +35,7 @@ data class UserDetail(
   @get:JsonProperty("accountStatus", required = true) val accountStatus: AccountStatus,
 
   @Schema(example = "2021-07-05T10:35:17", required = true, description = "Date the user account was locked")
-  @get:JsonProperty("lockDate", required = true) val lockDate: String,
+  @get:JsonProperty("lockDate") val lockDate: String? = null,
 
   @Schema(example = "true", required = true, description = "Indicate if the account is active")
   @get:JsonProperty("active", required = true) val active: Boolean,
