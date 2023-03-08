@@ -63,7 +63,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
       whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
 
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange).block()
+      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -81,7 +81,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
       whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
 
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange).block()
+      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -99,7 +99,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
       whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
 
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange).block()
+      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -136,7 +136,7 @@ class AppointmentInstanceServiceTest {
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
         .thenReturn(listOf(appointmentInstanceEntity(mock(), startDate)))
 
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange).block()
+      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(prisonApiClient, never()).getScheduledAppointments(any(), any())
@@ -160,7 +160,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
       whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
 
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot).block()
+      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -179,7 +179,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
       whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
 
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot).block()
+      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -198,7 +198,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
       whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
 
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot).block()
+      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
@@ -239,7 +239,7 @@ class AppointmentInstanceServiceTest {
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))
         .thenReturn(listOf(appointmentInstanceEntity(mock(), startDate, prisonerNumbers.first())))
 
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot).block()
+      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(prisonApiClient, never()).getScheduledAppointmentsForPrisonerNumbers(any(), any(), any(), any())

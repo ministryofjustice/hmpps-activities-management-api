@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent
@@ -34,16 +33,19 @@ class AppointmentInstanceService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getScheduledEvents(rolloutPrison: RolloutPrison, bookingId: Long, dateRange: LocalDateRange): Mono<List<ScheduledEvent>> {
+  fun getScheduledEvents(
+    rolloutPrison: RolloutPrison,
+    bookingId: Long,
+    dateRange: LocalDateRange,
+  ): List<ScheduledEvent> {
     log.info("Fetching scheduled events for Rollout Prison [$rolloutPrison], Booking ID [$bookingId] and Date Range [$dateRange]")
     return if (shouldUsePrisonApi(rolloutPrison)) {
       log.info("Fetching scheduled events from Prison API")
-      prisonApiClient.getScheduledAppointments(bookingId, dateRange)
+      prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
     } else {
       log.info("Fetching scheduled events from Appointment Instance Repository")
-      Mono.just(
-        appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive).toScheduledEvent(),
-      )
+      appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
+        .toScheduledEvent()
     }
   }
 
@@ -53,14 +55,14 @@ class AppointmentInstanceService(
     rolloutPrison: RolloutPrison,
     date: LocalDate,
     timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> {
+  ): List<PrisonerSchedule> {
     log.info(
       "Fetching prisoner schedules for Rollout Prison [$rolloutPrison], Prison Code [$prisonCode], " +
         "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
     )
     return if (shouldUsePrisonApi(rolloutPrison)) {
       log.info("Fetching prisoner schedules from Prison API")
-      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot)
+      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot).block() ?: emptyList()
     } else {
       log.info("Fetching prisoner schedules from Appointment Instance Repository")
       val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
@@ -70,18 +72,23 @@ class AppointmentInstanceService(
       val locationMap = locationService.getLocationsForAppointments(prisonCode)!!
         .associateBy { it.locationId }
 
-      val prisonersWithAppointments = appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(prisonCode, prisonerNumbers, date, earliestStartTime, latestStartTime)
+      val prisonersWithAppointments = appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(
+        prisonCode,
+        prisonerNumbers,
+        date,
+        earliestStartTime,
+        latestStartTime,
+      )
       log.info("Fetched [${prisonersWithAppointments.size}] prisoners with appointments from the Appointment Instance Repository")
 
       val prisonerMap = if (prisonersWithAppointments.isNotEmpty()) {
         prisonerSearchApiClient.findByPrisonerNumbers(prisonersWithAppointments.map { it.prisonerNumber }).block()!!
           .associateBy { it.prisonerNumber }
-      } else { emptyMap() }
+      } else {
+        emptyMap()
+      }
 
-      Mono.just(
-
-        prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap),
-      )
+      prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap)
     }
   }
 

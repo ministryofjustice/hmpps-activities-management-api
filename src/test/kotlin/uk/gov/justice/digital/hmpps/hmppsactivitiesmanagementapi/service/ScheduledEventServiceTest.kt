@@ -77,7 +77,7 @@ class ScheduledEventServiceTest {
     date: LocalDate,
     timeSlot: TimeSlot?,
   ) {
-    val scheduledAppointmentsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance()))
+    val scheduledAppointmentsMono = listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance())
     val scheduledVisitsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.visitInstance()))
     val courtEventsMono = Mono.just(listOf(PrisonApiPrisonerScheduleFixture.courtInstance()))
 
@@ -103,12 +103,10 @@ class ScheduledEventServiceTest {
     withPrisonerDetailsException: Boolean = false,
     prisonOverride: String = prisonCode,
   ) {
-    val scheduledAppointmentsMono = if (appointmentsException) {
-      Mono.error(Exception("Error"))
-    } else if (!withAppointmentSubType.isNullOrEmpty()) {
-      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = withAppointmentSubType)))
+    val scheduledAppointments = if (!withAppointmentSubType.isNullOrEmpty()) {
+      listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = withAppointmentSubType))
     } else {
-      Mono.just(listOf(PrisonApiScheduledEventFixture.appointmentInstance()))
+      listOf(PrisonApiScheduledEventFixture.appointmentInstance())
     }
 
     val scheduledVisitsMono = if (visitsException) {
@@ -132,8 +130,13 @@ class ScheduledEventServiceTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)))
       .thenReturn(prisonerDetailsMono)
 
-    whenever(appointmentInstanceService.getScheduledEvents(any(), eq(900001), eq(dateRange)))
-      .thenReturn(scheduledAppointmentsMono)
+    if (appointmentsException) {
+      whenever(appointmentInstanceService.getScheduledEvents(any(), eq(900001), eq(dateRange)))
+        .thenThrow(RuntimeException("Error"))
+    } else {
+      whenever(appointmentInstanceService.getScheduledEvents(any(), eq(900001), eq(dateRange)))
+        .thenReturn(scheduledAppointments)
+    }
 
     whenever(prisonApiClient.getScheduledVisits(900001, dateRange))
       .thenReturn(scheduledVisitsMono)
@@ -730,7 +733,7 @@ class ScheduledEventServiceTest {
       )
     }
       .isInstanceOf(Exception::class.java)
-      .hasMessage("java.lang.Exception: Error")
+      .hasMessage("Error")
   }
 
   @Test

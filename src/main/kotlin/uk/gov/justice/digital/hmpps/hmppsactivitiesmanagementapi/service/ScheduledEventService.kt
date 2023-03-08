@@ -78,7 +78,7 @@ class ScheduledEventService(
   private fun getSinglePrisonerEventCalls(bookingId: Long, prisonRolledOut: RolloutPrison, dateRange: LocalDateRange) =
 
     Mono.zip(
-      appointmentInstanceService.getScheduledEvents(prisonRolledOut, bookingId, dateRange),
+      Mono.just(appointmentInstanceService.getScheduledEvents(prisonRolledOut, bookingId, dateRange)),
       prisonApiClient.getScheduledCourtHearings(bookingId, dateRange),
       prisonApiClient.getScheduledVisits(bookingId, dateRange),
       if (!prisonRolledOut.active) {
@@ -152,7 +152,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot?,
   ) =
     Mono.zip(
-      appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, date, timeSlot),
+      Mono.just(appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, date, timeSlot)),
       prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
       prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot),
       if (!rolloutPrison.active) {
