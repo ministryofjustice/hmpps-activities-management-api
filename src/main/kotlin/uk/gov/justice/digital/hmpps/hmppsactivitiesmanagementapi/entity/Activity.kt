@@ -230,12 +230,6 @@ data class Activity(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun endAndDeallocateActiveSchedules(date: LocalDateTime) {
-    // TODO should and activity have an end date to be ended?
-
-    schedules.filter { it.isActiveOn(date.toLocalDate()) }.forEach { it.endAndDeallocate(date) }
-  }
-
   fun toModelLite() = ActivityLite(
     id = activityId,
     prisonCode = prisonCode,

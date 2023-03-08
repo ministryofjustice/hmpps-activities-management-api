@@ -227,18 +227,8 @@ data class ActivitySchedule(
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
-  fun ends(date: LocalDate) = date == endDate
-
-  fun endAndDeallocate(date: LocalDateTime) {
-    endDate = date.toLocalDate()
-
-    allocations.deallocateNonEndedAllocations(date)
-
-    // TODO delete any future instances when ended!!
-  }
-
-  private fun List<Allocation>.deallocateNonEndedAllocations(date: LocalDateTime) {
-    this.filter { !it.status(PrisonerStatus.ENDED) }.forEach { it.deallocate(date) }
+  fun removeAllScheduledInstancesOnOrAfter(date: LocalDate) {
+    instances.removeIf { it.sessionDate >= date }
   }
 
   fun toModelLite() = ActivityScheduleLite(

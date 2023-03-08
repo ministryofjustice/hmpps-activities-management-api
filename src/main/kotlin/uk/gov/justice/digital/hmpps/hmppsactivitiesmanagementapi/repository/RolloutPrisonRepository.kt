@@ -7,4 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 @Repository
 interface RolloutPrisonRepository : JpaRepository<RolloutPrison, Long> {
   fun findByCode(code: String): RolloutPrison?
+
+  fun findAllByActiveIsTrue(): List<RolloutPrison>
 }

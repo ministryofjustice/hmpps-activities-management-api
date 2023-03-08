@@ -244,7 +244,8 @@ CREATE TABLE allocation (
   allocated_by         varchar(100) NOT NULL,
   deallocated_time     timestamp,
   deallocated_by       varchar(100),
-  deallocated_reason   varchar(100)
+  deallocated_reason   varchar(100),
+  prisoner_status      varchar(30)  NOT NULL
 );
 
 CREATE INDEX idx_allocation_activity_schedule_id ON allocation (activity_schedule_id);
@@ -252,6 +253,7 @@ CREATE INDEX idx_allocation_prisoner_number ON allocation (prisoner_number);
 CREATE INDEX idx_allocation_booking_id ON allocation (booking_id);
 CREATE INDEX idx_allocation_start_date ON allocation (start_date);
 CREATE INDEX idx_allocation_end_date ON allocation (end_date);
+CREATE INDEX idx_allocation_prisoner_status ON allocation(prisoner_status);
 
 CREATE TABLE activity_pay (
   activity_pay_id       bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,

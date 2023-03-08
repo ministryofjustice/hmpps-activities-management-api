@@ -451,19 +451,4 @@ class ActivityTest {
       assertThat(isUnemployment()).isFalse
     }
   }
-
-  @Test
-  fun `activity schedule is ended and allocation is deallocated`() {
-    val activity = activityEntity(startDate = yesterday, endDate = today)
-
-    assertThat(activity.schedules()).hasSize(1)
-    assertThat(activity.schedules().first().endDate).isNull()
-    assertThat(activity.schedules().first().allocations()).hasSize(1)
-    assertThat(activity.schedules().first().allocations().first().status(PrisonerStatus.ACTIVE)).isTrue
-
-    activity.endAndDeallocateActiveSchedules(today.atStartOfDay())
-
-    assertThat(activity.schedules().first().endDate).isEqualTo(today)
-    assertThat(activity.schedules().first().allocations().first().status(PrisonerStatus.ENDED)).isTrue
-  }
 }
