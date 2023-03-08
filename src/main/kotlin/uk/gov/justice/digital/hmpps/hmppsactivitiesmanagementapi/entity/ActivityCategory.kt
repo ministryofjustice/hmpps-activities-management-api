@@ -20,6 +20,9 @@ data class ActivityCategory(
 
   val description: String?,
 ) {
+
+  fun isNotInWork() = code == "SAA_NOT_IN_WORK"
+
   fun toModel() = ModelActivityCategory(
     id = activityCategoryId,
     code = code,
