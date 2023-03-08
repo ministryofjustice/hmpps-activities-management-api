@@ -1,11 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDate
@@ -539,3 +545,28 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
 )
+
+fun Location?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
+  if (this == null) {
+    AppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
+  } else {
+    AppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+  }
+
+fun UserDetail?.toSummary(username: String) =
+  if (this == null) {
+    UserSummary(-1, username, "UNKNOWN", "UNKNOWN")
+  } else {
+    UserSummary(this.staffId, this.username, this.firstName, this.lastName)
+  }
+
+fun List<Prisoner>.toSummary() = map {
+  PrisonerSummary(
+    it.prisonerNumber,
+    it.bookingId?.toLong() ?: -1,
+    it.firstName,
+    it.lastName,
+    it.prisonId ?: "UNKNOWN",
+    it.cellLocation ?: "UNKNOWN",
+  )
+}
