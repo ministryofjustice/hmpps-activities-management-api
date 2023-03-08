@@ -66,16 +66,16 @@ class AppointmentOccurrenceTest {
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
           AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
-          false,
-          LocalDate.now(),
-          LocalTime.of(9, 0),
-          LocalTime.of(10, 30),
+          entity.inCell,
+          entity.startDate,
+          entity.startTime,
+          entity.endTime,
           "Appointment occurrence level comment",
           isEdited = false,
           isCancelled = false,
-          updated = entity.updated,
+          entity.updated,
           updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
-          prisonerCount = 1,
+          1,
         ),
       ),
     )
@@ -101,6 +101,17 @@ class AppointmentOccurrenceTest {
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
       assertThat(comment).isEqualTo("Appointment level comment")
+    }
+  }
+
+  @Test
+  fun `entity to summary mapping updated by null`() {
+    val entity = appointmentEntity().occurrences().first()
+    entity.updatedBy = null
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
+    with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
+      assertThat(updatedBy).isNull()
     }
   }
 }

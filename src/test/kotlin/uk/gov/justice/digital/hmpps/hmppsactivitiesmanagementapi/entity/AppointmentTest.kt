@@ -3,7 +3,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 
 class AppointmentTest {
   @Test
@@ -66,5 +75,109 @@ class AppointmentTest {
   fun `usernames removes duplicates`() {
     val entity = appointmentEntity(createdBy = "CREATE.USER", updatedBy = "CREATE.USER").apply { occurrences().first().updatedBy = "CREATE.USER" }
     assertThat(entity.usernames()).containsExactly("CREATE.USER")
+  }
+
+  @Test
+  fun `entity to detail mapping`() {
+    val entity = appointmentEntity()
+    val occurrenceEntity = entity.occurrences().first()
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    assertThat(entity.toDetail(locationMap, userMap, prisoners)).isEqualTo(
+      AppointmentDetail(
+        entity.appointmentId,
+        AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
+        entity.prisonCode,
+        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+        entity.inCell,
+        entity.startDate,
+        entity.startTime,
+        entity.endTime,
+        entity.comment,
+        entity.created,
+        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+        entity.updated,
+        UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+        occurrences = listOf(
+          AppointmentOccurrenceSummary(
+            occurrenceEntity.appointmentOccurrenceId,
+            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
+            occurrenceEntity.inCell,
+            occurrenceEntity.startDate,
+            occurrenceEntity.startTime,
+            occurrenceEntity.endTime,
+            "Appointment occurrence level comment",
+            isEdited = false,
+            isCancelled = false,
+            occurrenceEntity.updated,
+            UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+            1,
+          ),
+        ),
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun `entity to detail mapping in cell nullifies internal location`() {
+    val entity = appointmentEntity(inCell = true)
+    entity.internalLocationId = 123
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetail(locationMap, userMap, prisoners)) {
+      assertThat(internalLocation).isNull()
+      assertThat(inCell).isTrue
+    }
+  }
+
+  @Test
+  fun `entity to detail mapping updated by null`() {
+    val entity = appointmentEntity(updatedBy = null)
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetail(locationMap, userMap, prisoners)) {
+      assertThat(updatedBy).isNull()
+    }
   }
 }
