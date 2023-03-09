@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 
 @RestController

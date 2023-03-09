@@ -5,7 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AttendanceReason as modelAttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as modelAttendanceReason
 
 @Entity
 @Table(name = "attendance_reason")

@@ -11,7 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 
 @WebMvcTest(controllers = [AttendanceReasonController::class])

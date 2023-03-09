@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 
 val sickReason =
   AttendanceReason(

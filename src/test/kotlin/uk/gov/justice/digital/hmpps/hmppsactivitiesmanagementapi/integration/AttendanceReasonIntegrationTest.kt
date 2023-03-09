@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.restReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.sickReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.suspendedReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 
 class AttendanceReasonIntegrationTest : IntegrationTestBase() {
 
