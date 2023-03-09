@@ -51,8 +51,6 @@ class OffenderDeallocationServiceTest {
       assertThat(deallocatedBy).isNotNull
     }
 
-    // TODO need to test future instances are removed.
-
     verify(activityScheduleRepo).saveAndFlush(schedule)
   }
 
@@ -81,8 +79,6 @@ class OffenderDeallocationServiceTest {
       assertThat(deallocatedReason).isNotNull
       assertThat(deallocatedBy).isNotNull
     }
-
-    // TODO need to test no future instances are removed.
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
   }

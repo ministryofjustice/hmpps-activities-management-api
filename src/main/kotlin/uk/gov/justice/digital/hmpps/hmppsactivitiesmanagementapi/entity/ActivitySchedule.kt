@@ -227,10 +227,6 @@ data class ActivitySchedule(
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
-  fun removeAllScheduledInstancesOnOrAfter(date: LocalDate) {
-    instances.removeIf { it.sessionDate >= date }
-  }
-
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId,
     description = this.description,

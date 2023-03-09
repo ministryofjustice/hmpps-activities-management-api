@@ -30,7 +30,7 @@ class OffenderDeallocationService(
     rolloutPrisonRepository.findAllByActiveIsTrue().forEach { prison ->
       activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
         if (activity.ends(today)) {
-          activity.schedules().deallocateAllOffendersAndRemoveFutureInstances(now)
+          activity.schedules().deallocateAllOffenders(now)
         } else {
           activity.schedules().deallocateOffendersEnding(today, now)
         }
@@ -51,13 +51,11 @@ class OffenderDeallocationService(
     }
   }
 
-  private fun List<ActivitySchedule>.deallocateAllOffendersAndRemoveFutureInstances(dateTime: LocalDateTime) {
+  private fun List<ActivitySchedule>.deallocateAllOffenders(dateTime: LocalDateTime) {
     this.forEach { schedule ->
       continueToRunOnFailure(
         block = {
           schedule.allocations().deallocate(dateTime)
-          schedule.removeAllScheduledInstancesOnOrAfter(dateTime.toLocalDate().plusDays(1))
-
           activityScheduleRepository.saveAndFlush(schedule)
         },
       )
