@@ -17,6 +17,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -149,9 +150,9 @@ class CreateScheduledInstancesJobTest {
   companion object {
 
     val rolledOutPrisons = listOf(
-      RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1)),
-      RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1)),
-      RolloutPrison(3, "XXX", "Other prison", false, null),
+      RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1), AppointmentsDataSource.ACTIVITIES_SERVICE),
+      RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1), AppointmentsDataSource.ACTIVITIES_SERVICE),
+      RolloutPrison(3, "XXX", "Other prison", false, null, AppointmentsDataSource.ACTIVITIES_SERVICE),
     )
 
     val moorlandActivities = listOf(

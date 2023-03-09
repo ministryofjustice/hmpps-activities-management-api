@@ -1,9 +1,10 @@
 CREATE TABLE rollout_prison (
   rollout_prison_id bigserial   NOT NULL CONSTRAINT rollout_prison_pk PRIMARY KEY,
-  code              varchar(5)  NOT NULL UNIQUE,
-  description       varchar(60) NOT NULL,
-  active            boolean     NOT NULL DEFAULT false,
-  rollout_date      date
+  code                          varchar(5)  NOT NULL UNIQUE,
+  description                   varchar(60) NOT NULL,
+  active                        boolean     NOT NULL DEFAULT false,
+  rollout_date                  date,
+  appointments_data_source      varchar(20) NOT NULL
 );
 
 CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
