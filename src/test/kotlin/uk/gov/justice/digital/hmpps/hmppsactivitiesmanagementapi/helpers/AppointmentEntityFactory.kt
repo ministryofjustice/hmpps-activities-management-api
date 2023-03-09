@@ -11,6 +11,7 @@ import java.time.LocalTime
 internal fun appointmentEntity(
   internalLocationId: Long = 123,
   inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now(),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
@@ -21,7 +22,7 @@ internal fun appointmentEntity(
   prisonCode = "TPR",
   internalLocationId = if (inCell) null else internalLocationId,
   inCell = inCell,
-  startDate = LocalDate.now(),
+  startDate = startDate,
   startTime = LocalTime.of(9, 0),
   endTime = LocalTime.of(10, 30),
   comment = "Appointment level comment",
@@ -32,18 +33,18 @@ internal fun appointmentEntity(
   deleted = false,
 ).apply {
   for (i in 1..numberOfOccurrences) {
-    val startDate = this.startDate.plusDays(i - 1L)
-    this.addOccurrence(appointmentOccurrenceEntity(this, startDate, prisonerNumberToBookingIdMap))
+    val occurrenceStartDate = this.startDate.plusDays(i - 1L)
+    this.addOccurrence(appointmentOccurrenceEntity(this, occurrenceStartDate, prisonerNumberToBookingIdMap))
   }
 }
 
-internal fun appointmentOccurrenceEntity(appointment: Appointment, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+private fun appointmentOccurrenceEntity(appointment: Appointment, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = 1,
     appointment = appointment,
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
-    startDate = appointment.startDate,
+    startDate = startDate,
     startTime = appointment.startTime,
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
@@ -56,7 +57,7 @@ internal fun appointmentOccurrenceEntity(appointment: Appointment, startDate: Lo
     prisonerNumberToBookingIdMap.map { this.addInstance(appointmentInstanceEntity(this, startDate, it.key, it.value)) }
   }
 
-internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
+private fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
   AppointmentOccurrenceAllocation(
     appointmentOccurrenceAllocationId = 1,
     appointmentOccurrence = appointmentOccurrence,
@@ -64,11 +65,11 @@ internal fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoin
     bookingId = bookingId,
   )
 
-internal fun appointmentInstanceEntity(
+private fun appointmentInstanceEntity(
   appointmentOccurrence: AppointmentOccurrence,
   appointmentDate: LocalDate = LocalDate.now(),
   prisonerNumber: String = "A1234BC",
-  bookingId: Long = 456
+  bookingId: Long = 456,
 ) =
   AppointmentInstance(
     appointmentInstanceId = 1,

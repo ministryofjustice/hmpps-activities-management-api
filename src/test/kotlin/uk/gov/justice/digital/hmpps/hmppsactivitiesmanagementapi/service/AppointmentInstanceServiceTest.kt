@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerSchedules
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
@@ -134,7 +134,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.active).thenReturn(true)
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
-        .thenReturn(listOf(appointmentInstanceEntity(mock(), startDate)))
+        .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
@@ -237,7 +237,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.active).thenReturn(true)
       whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))
-        .thenReturn(listOf(appointmentInstanceEntity(mock(), startDate, prisonerNumbers.first())))
+        .thenReturn(appointmentEntity(startDate = startDate, prisonerNumberToBookingIdMap = mapOf("P123" to 456)).occurrences().first().instances())
 
       val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 

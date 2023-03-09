@@ -631,4 +631,3 @@ fun Prisoner.toSummary() =
   )
 
 fun List<Prisoner>.toSummary() = map { it.toSummary() }
-
