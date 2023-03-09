@@ -24,6 +24,6 @@ data class RolloutPrison(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val rolloutDate: LocalDate?,
 
-  @Schema(description = "The data source for the appointments data", example = "ACTIVITIES_API")
+  @Schema(description = "The data source for the appointments data", example = "ACTIVITIES_SERVICE")
   val appointmentsDataSource: AppointmentsDataSource,
 )
