@@ -47,7 +47,7 @@ class ScheduledEventService(
     }
     ?.let { prisonerDetail ->
       val bookingId = prisonerDetail.bookingId!!.toLong()
-      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)!!
+      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode) ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
       getSinglePrisonerEventCalls(bookingId, prisonRolledOut, dateRange)
         .map { t ->

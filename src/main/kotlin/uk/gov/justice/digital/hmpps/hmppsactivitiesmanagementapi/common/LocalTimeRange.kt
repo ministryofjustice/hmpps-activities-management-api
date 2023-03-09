@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common
 
 import java.time.LocalTime
 

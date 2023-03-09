@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
@@ -49,21 +49,29 @@ class PrisonRegimeService(
     prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code),
   )
 
-  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot): LocalTimeRange {
-    val prisonRegime = getPrisonRegimeByPrisonCode(prisonCode)
-    val start = when (timeSlot) {
-      TimeSlot.AM -> LocalTime.MIDNIGHT
-      TimeSlot.PM -> prisonRegime.pmStart
-      TimeSlot.ED -> prisonRegime.edStart
-    }
-    val end = when (timeSlot) {
-      TimeSlot.AM -> prisonRegime.pmStart
-      TimeSlot.PM -> prisonRegime.edStart
-      TimeSlot.ED -> LocalTime.of(23, 59)
-    }
+  /**
+   *  Converts a TimeSlot for a given Prison into a time range.
+   *
+   *  Note that there can be gaps between time ranges (e.g. PM finishes at 16:30 but PM doesn't start until 18:00)
+   *  and that's why :
+   *
+   *   - The start of a period is either midnight or the end of the previous period
+   *   - The end of a period is either the start of the next period or one minute to midnight.
+   *
+   *   @param prisonCode The code of the prison to look up the times for
+   *   @param timeSlot The timeslot to convert
+   */
+  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot): LocalTimeRange =
+    getPrisonRegimeByPrisonCode(prisonCode)
+      .let { pr ->
+        val (start, end) = when (timeSlot) {
+          TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
+          TimeSlot.PM -> pr.pmStart to pr.edStart
+          TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
+        }
 
-    return LocalTimeRange(start = start, end = end)
-  }
+        LocalTimeRange(start, end)
+      }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)

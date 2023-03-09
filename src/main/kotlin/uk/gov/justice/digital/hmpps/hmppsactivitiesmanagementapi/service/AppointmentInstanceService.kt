@@ -9,13 +9,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.map.toPrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.map.toScheduledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toPrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toScheduledEvent
 import java.time.LocalDate
 import java.time.LocalTime
+
+private const val EVENT_CLASS = "INT_MOV"
+private const val EVENT_SOURCE = "APP"
+private const val EVENT_STATUS = "SCH"
+private const val EVENT_TYPE = "APP"
+private const val EVENT_TYPE_DESC = "Appointment"
 
 /**
  * Fetches appointment data from either the Prison API or the Appointment Instance Repository, depending on the rollout
@@ -38,14 +44,13 @@ class AppointmentInstanceService(
     bookingId: Long,
     dateRange: LocalDateRange,
   ): List<ScheduledEvent> {
-    log.info("Fetching scheduled events for Rollout Prison [$rolloutPrison], Booking ID [$bookingId] and Date Range [$dateRange]")
-    return if (shouldUsePrisonApi(rolloutPrison)) {
-      log.info("Fetching scheduled events from Prison API")
+    return if (rolloutPrison.shouldUsePrisonApi()) {
+      log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
     } else {
-      log.info("Fetching scheduled events from Appointment Instance Repository")
+      log.info("Fetching scheduled events from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
-        .toScheduledEvent()
+        .toScheduledEvent(EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
     }
   }
 
@@ -56,15 +61,17 @@ class AppointmentInstanceService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<PrisonerSchedule> {
-    log.info(
-      "Fetching prisoner schedules for Rollout Prison [$rolloutPrison], Prison Code [$prisonCode], " +
-        "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
-    )
-    return if (shouldUsePrisonApi(rolloutPrison)) {
-      log.info("Fetching prisoner schedules from Prison API")
+    return if (rolloutPrison.shouldUsePrisonApi()) {
+      log.info(
+        "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
+          "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
+      )
       prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot).block() ?: emptyList()
     } else {
-      log.info("Fetching prisoner schedules from Appointment Instance Repository")
+      log.info(
+        "Fetching prisoner schedules from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
+          "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
+      )
       val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
       val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
       val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
@@ -79,7 +86,6 @@ class AppointmentInstanceService(
         earliestStartTime,
         latestStartTime,
       )
-      log.info("Fetched [${prisonersWithAppointments.size}] prisoners with appointments from the Appointment Instance Repository")
 
       val prisonerMap = if (prisonersWithAppointments.isNotEmpty()) {
         prisonerSearchApiClient.findByPrisonerNumbers(prisonersWithAppointments.map { it.prisonerNumber }).block()!!
@@ -88,22 +94,10 @@ class AppointmentInstanceService(
         emptyMap()
       }
 
-      prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap)
+      prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
     }
   }
 
-  /**
-   * Determines whether the data should be fetched from the Prison API or the Appointment Instance Repository
-   *
-   *
-   *  - If the prison is not yet rolled out (rolloutPrison.active == false) then use the Prison API
-   *  - If the prison IS rolled out (rolloutPrison.active == true) AND the data source is set to PRISON_API then use
-   *  the Prison API
-   *  - If the prison IS rolled out (rolloutPrison.active == true) AND the data source is set to ACTIVITIES_SERVICE
-   *  then use the Appointment Instance Repository
-   *
-   *  @return true if the Prison API should be used, false otherwise
-   */
-  private fun shouldUsePrisonApi(rolloutPrison: RolloutPrison) =
-    !rolloutPrison.active || rolloutPrison.appointmentsDataSource == AppointmentsDataSource.PRISON_API
+  private fun RolloutPrison.shouldUsePrisonApi() =
+    !this.active || this.appointmentsDataSource == AppointmentsDataSource.PRISON_API
 }
