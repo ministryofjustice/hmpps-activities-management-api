@@ -176,7 +176,6 @@ internal fun activitySchedule(
             attendanceId = 1,
             scheduledInstance = this,
             prisonerNumber = "A11111A",
-            posted = false,
           ),
         )
       }
