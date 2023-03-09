@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType.STRING
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -21,4 +23,7 @@ data class RolloutPrison(
   var active: Boolean = false,
 
   val rolloutDate: LocalDate?,
+
+  @Enumerated(STRING)
+  val appointmentsDataSource: AppointmentsDataSource,
 )
