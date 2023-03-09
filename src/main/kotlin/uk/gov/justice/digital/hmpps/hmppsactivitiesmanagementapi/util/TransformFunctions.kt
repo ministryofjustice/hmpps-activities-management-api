@@ -510,7 +510,6 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
       )
     },
     comment = attendance.comment,
-    posted = attendance.posted,
     recordedTime = attendance.recordedTime,
     recordedBy = attendance.recordedBy,
     status = attendance.status.name,

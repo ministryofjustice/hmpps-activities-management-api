@@ -26,8 +26,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
         listOf(
-          AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS"),
+          AttendanceUpdateRequest(1, "ATT", null, null, null, null),
+          AttendanceUpdateRequest(2, "ABS", null, null, null, null),
         ),
       )
     }
@@ -35,8 +35,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
     verify(attendancesService).mark(
       listOf(
-        AttendanceUpdateRequest(1, "ATT"),
-        AttendanceUpdateRequest(2, "ABS"),
+        AttendanceUpdateRequest(1, "ATT", null, null, null, null),
+        AttendanceUpdateRequest(2, "ABS", null, null, null, null),
       ),
     )
   }

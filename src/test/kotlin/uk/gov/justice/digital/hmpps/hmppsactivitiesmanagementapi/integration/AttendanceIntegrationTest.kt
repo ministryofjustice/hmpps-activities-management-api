@@ -21,17 +21,6 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  fun `get morning attendances for a scheduled activity instance`() {
-    val attendances = webTestClient.getAttendancesForInstance(1)!!
-
-    assertThat(attendances.prisonerAttendanceReason("A11111A").posted).isFalse
-    assertThat(attendances.prisonerAttendanceReason("A22222A").posted).isFalse
-  }
-
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
-  @Test
   fun `morning attendances are marked for an activity with attendance records`() {
     val unmarkedAttendances = attendanceRepository.findAll().also { assertThat(it).hasSize(2) }
     unmarkedAttendances.forEach { assertThat(it.attendanceReason).isNull() }
@@ -41,8 +30,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS"),
+          AttendanceUpdateRequest(1, "ATT", null, null, null, null),
+          AttendanceUpdateRequest(2, "ABS", null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -67,8 +56,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS"),
+          AttendanceUpdateRequest(1, "ATT", null, null, null, null),
+          AttendanceUpdateRequest(2, "ABS", null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)

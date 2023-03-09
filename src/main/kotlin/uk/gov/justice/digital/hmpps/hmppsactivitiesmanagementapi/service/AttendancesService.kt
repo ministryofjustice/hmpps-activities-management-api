@@ -42,6 +42,9 @@ class AttendancesService(
         attendanceReason =
           attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason.uppercase().trim()]
         status = AttendanceStatus.COMPLETED
+        comment = attendanceUpdatesById[it.attendanceId]!!.comment
+        issuePayment = attendanceUpdatesById[it.attendanceId]!!.issuePayment
+        incentiveLevelWarningIssued = attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued
       }
     }
 
@@ -89,7 +92,6 @@ class AttendancesService(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
-        posted = false,
       ),
     )
   }
