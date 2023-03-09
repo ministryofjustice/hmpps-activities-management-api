@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.OffenderDeallocationJob
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
 // within the namespace without requiring authentication
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateSched
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
   private val createAttendanceRecordsJob: CreateAttendanceRecordsJob,
+  private val offenderDeallocationJob: OffenderDeallocationJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -43,5 +45,17 @@ class JobTriggerController(
   fun triggerCreateAttendanceRecordsJob(): String {
     createAttendanceRecordsJob.execute()
     return "Create attendance records triggered"
+  }
+
+  @PostMapping(value = ["/deallocate-offenders"])
+  @Operation(
+    summary = "Trigger the job to deallocate offenders when end dates are reached",
+    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.CREATED)
+  fun triggerDeallocateOffendersJob(): String {
+    offenderDeallocationJob.execute()
+    return "Deallocate offenders when end dates are reached triggered"
   }
 }

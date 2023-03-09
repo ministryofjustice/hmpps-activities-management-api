@@ -89,7 +89,6 @@ class AttendancesService(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
-        posted = false,
       ),
     )
   }

@@ -177,7 +177,9 @@ CREATE TABLE scheduled_instance (
   end_time              time,
   cancelled             boolean   NOT NULL DEFAULT false,
   cancelled_time        timestamp,
-  cancelled_by          varchar(100)
+  cancelled_by          varchar(100),
+  cancelled_reason      varchar(60),
+  comment               varchar(250)
 );
 
 CREATE INDEX idx_scheduled_instance_schedule_id ON scheduled_instance (activity_schedule_id);
@@ -245,7 +247,11 @@ CREATE TABLE allocation (
   allocated_by         varchar(100) NOT NULL,
   deallocated_time     timestamp,
   deallocated_by       varchar(100),
-  deallocated_reason   varchar(100)
+  deallocated_reason   varchar(100),
+  suspended_time       timestamp,
+  suspended_by         varchar(100),
+  suspended_reason     varchar(100),
+  prisoner_status      varchar(30)  NOT NULL
 );
 
 CREATE INDEX idx_allocation_activity_schedule_id ON allocation (activity_schedule_id);
@@ -253,6 +259,7 @@ CREATE INDEX idx_allocation_prisoner_number ON allocation (prisoner_number);
 CREATE INDEX idx_allocation_booking_id ON allocation (booking_id);
 CREATE INDEX idx_allocation_start_date ON allocation (start_date);
 CREATE INDEX idx_allocation_end_date ON allocation (end_date);
+CREATE INDEX idx_allocation_prisoner_status ON allocation(prisoner_status);
 
 CREATE TABLE activity_pay (
   activity_pay_id       bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
