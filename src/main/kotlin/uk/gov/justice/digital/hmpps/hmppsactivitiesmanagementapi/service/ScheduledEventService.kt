@@ -118,7 +118,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot? = null,
   ): PrisonerScheduledEvents? {
     val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)!!
+    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode) ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
     return getMultiplePrisonerEventCalls(prisonCode, prisonerNumbers, prisonRolledOut, date, timeSlot)
       .map { t ->
         transformToPrisonerScheduledEvents(
