@@ -189,18 +189,20 @@ CREATE INDEX idx_scheduled_instance_end_time ON scheduled_instance (end_time);
 CREATE UNIQUE INDEX idx_scheduled_instance_schedule_id_date_times ON scheduled_instance (activity_schedule_id, session_date, start_time, end_time);
 
 CREATE TABLE attendance (
-  attendance_id         bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
-  scheduled_instance_id bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
-  prisoner_number       varchar(7) NOT NULL,
-  attendance_reason_id  bigint REFERENCES attendance_reason (attendance_reason_id),
-  comment               varchar(200),
-  posted                boolean,
-  recorded_time         timestamp,
-  recorded_by           varchar(100),
-  status                varchar(20), -- SCH, CANC, COMP, PAID?
-  pay_amount            integer,
-  bonus_amount          integer,
-  pieces                integer
+  attendance_id                     bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
+  scheduled_instance_id             bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
+  prisoner_number                   varchar(7) NOT NULL,
+  attendance_reason_id              bigint REFERENCES attendance_reason (attendance_reason_id),
+  comment                           varchar(200),
+  recorded_time                     timestamp,
+  recorded_by                       varchar(100),
+  status                            varchar(20), -- WAITING, COMPLETED, LOCKED
+  pay_amount                        integer,
+  bonus_amount                      integer,
+  pieces                            integer,
+  issue_payment                     bool,
+  case_note_id                      bigint,
+  incentive_level_warning_issued    bool
 );
 
 CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_instance_id);

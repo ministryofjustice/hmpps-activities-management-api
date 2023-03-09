@@ -8,6 +8,18 @@ data class AttendanceUpdateRequest(
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long,
 
-  @Schema(description = "The reason codes- ABS, ACCAB, ATT, CANC, NREQ, SUS, UNACAB, REST", example = "ATT")
+  @Schema(description = "The reason codes- SICK, REFUSED, NREQ, REST, CLASH, OTHER, SUSP, CANC, ATT", example = "ATT")
   val attendanceReason: String,
+
+  @Schema(description = "Comments could be more detail for SICK or the absence reason for OTHER", example = "Prisoner has COVID-19")
+  val comment: String?,
+
+  @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
+  val issuePayment: Boolean?,
+
+  @Schema(description = "Case note provided for REFUSED", example = "Prisoner refused to attend the scheduled activity without reasonable excuse")
+  val caseNote: String?,
+
+  @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
+  val incentiveLevelWarningIssued: Boolean?,
 )

@@ -36,13 +36,19 @@ data class Attendance(
   val recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
-  var status: AttendanceStatus = AttendanceStatus.SCHEDULED,
+  var status: AttendanceStatus = AttendanceStatus.WAITING,
 
   var payAmount: Int? = null,
 
   var bonusAmount: Int? = null,
 
   var pieces: Int? = null,
+
+  var issuePayment: Boolean? = null,
+
+  var caseNoteId: Long? = null,
+
+  var incentiveLevelWarningIssued: Boolean? = null,
 ) {
 
   @Override
@@ -52,7 +58,7 @@ data class Attendance(
 }
 
 enum class AttendanceStatus {
-  CANCELLED,
+  WAITING,
   COMPLETED,
-  SCHEDULED,
+  LOCKED,
 }
