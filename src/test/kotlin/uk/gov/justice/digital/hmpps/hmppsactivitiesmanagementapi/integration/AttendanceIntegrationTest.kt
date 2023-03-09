@@ -24,8 +24,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   fun `get morning attendances for a scheduled activity instance`() {
     val attendances = webTestClient.getAttendancesForInstance(1)!!
 
-    assertThat(attendances.prisonerAttendanceReason("A11111A").posted).isFalse
-    assertThat(attendances.prisonerAttendanceReason("A22222A").posted).isFalse
+    assertThat(attendances.prisonerAttendanceReason("A11111A").attendanceReason).isNull()
+    assertThat(attendances.prisonerAttendanceReason("A22222A").attendanceReason).isNull()
   }
 
   @Sql(

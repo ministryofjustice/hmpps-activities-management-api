@@ -44,7 +44,6 @@ class AttendancesServiceTest {
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
-        posted = false,
         status = AttendanceStatus.SCHEDULED,
       ),
     )

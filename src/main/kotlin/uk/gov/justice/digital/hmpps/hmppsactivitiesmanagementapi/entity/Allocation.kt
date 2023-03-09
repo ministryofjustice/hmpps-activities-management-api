@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -41,18 +43,45 @@ data class Allocation(
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
-
-  var deallocatedTime: LocalDateTime? = null,
-
-  var deallocatedBy: String? = null,
-
-  var deallocatedReason: String? = null,
 ) {
+  var deallocatedTime: LocalDateTime? = null
+    private set
+
+  var deallocatedBy: String? = null
+    private set
+
+  var deallocatedReason: String? = null
+    private set
+
+  var suspendedTime: LocalDateTime? = null
+    private set
+
+  var suspendedBy: String? = null
+    private set
+
+  var suspendedReason: String? = null
+    private set
+
+  @Enumerated(EnumType.STRING)
+  var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
+    private set
+
   fun isActive(date: LocalDate) = date.between(startDate, endDate)
 
-  fun activitySummary() = activitySchedule.activity.summary
+  private fun activitySummary() = activitySchedule.activity.summary
 
-  fun scheduleDescription() = activitySchedule.description
+  fun ends(date: LocalDate) = date == endDate
+
+  fun deallocate(dateTime: LocalDateTime) {
+    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+
+    prisonerStatus = PrisonerStatus.ENDED
+    deallocatedReason = "Allocation end date reached"
+    deallocatedBy = "SYSTEM"
+    deallocatedTime = dateTime
+  }
+
+  fun status(status: PrisonerStatus) = prisonerStatus == status
 
   fun toModel() =
     ModelAllocation(
@@ -69,4 +98,13 @@ data class Allocation(
       scheduleDescription = activitySchedule.description,
       isUnemployment = activitySchedule.activity.isUnemployment(),
     )
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(allocationId = $allocationId )"
+  }
+}
+
+enum class PrisonerStatus {
+  ACTIVE, SUSPENDED, ENDED
 }
