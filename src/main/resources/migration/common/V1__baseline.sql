@@ -247,6 +247,9 @@ CREATE TABLE allocation (
   deallocated_time     timestamp,
   deallocated_by       varchar(100),
   deallocated_reason   varchar(100),
+  suspended_time       timestamp,
+  suspended_by         varchar(100),
+  suspended_reason     varchar(100),
   prisoner_status      varchar(30)  NOT NULL
 );
 

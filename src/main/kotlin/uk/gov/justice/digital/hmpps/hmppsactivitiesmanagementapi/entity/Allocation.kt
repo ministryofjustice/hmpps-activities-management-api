@@ -53,6 +53,15 @@ data class Allocation(
   var deallocatedReason: String? = null
     private set
 
+  var suspendedTime: LocalDateTime? = null
+    private set
+
+  var suspendedBy: String? = null
+    private set
+
+  var suspendedReason: String? = null
+    private set
+
   @Enumerated(EnumType.STRING)
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
     private set
