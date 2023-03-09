@@ -10,5 +10,5 @@ values (1, 10, 'Geography AM', 1, 'L1', 'Location MDI 1', 10, '2022-10-01');
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (1, 1, '10:01:00', '11:00:00', true);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null, null, null);

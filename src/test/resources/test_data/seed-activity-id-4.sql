@@ -28,8 +28,8 @@ values (4, 2, 'A44444A', 10004, 4, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, prisoner_status)
 values (5, 2, 'A22223A', 1023, 4, current_date + 1, null, current_timestamp, 'MRS BLOGS', null, null, null, 'ACTIVE');
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (1, current_date, '10:00:00', '11:00:00', false, null, null);
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (1, current_date, '10:00:00', '11:00:00', false, null, null, null, null);
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (2, current_date, '14:00:00', '15:00:00', false, null, null);
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (2, current_date, '14:00:00', '15:00:00', false, null, null, null, null);

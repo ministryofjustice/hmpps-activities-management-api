@@ -176,7 +176,9 @@ CREATE TABLE scheduled_instance (
   end_time              time,
   cancelled             boolean   NOT NULL DEFAULT false,
   cancelled_time        timestamp,
-  cancelled_by          varchar(100)
+  cancelled_by          varchar(100),
+  cancelled_reason      varchar(60),
+  comment               varchar(250)
 );
 
 CREATE INDEX idx_scheduled_instance_schedule_id ON scheduled_instance (activity_schedule_id);
