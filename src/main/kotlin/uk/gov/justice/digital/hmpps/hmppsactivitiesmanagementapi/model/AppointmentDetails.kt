@@ -9,11 +9,11 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  The top level appointment detail for display purposes. Contains only properties needed to make additional API calls
+  The top level appointment details for display purposes. Contains only properties needed to make additional API calls
   and to display.
   """,
 )
-data class AppointmentDetail(
+data class AppointmentDetails(
   @Schema(
     description = "The internally generated identifier for this appointment",
     example = "12345",

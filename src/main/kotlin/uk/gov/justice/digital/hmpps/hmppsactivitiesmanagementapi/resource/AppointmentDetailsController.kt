@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentDetailService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentDetailsService
 
 @RestController
 @RequestMapping("/appointment-details", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentDetailController(
-  private val appointmentDetailService: AppointmentDetailService,
+class AppointmentDetailsController(
+  private val appointmentDetailsService: AppointmentDetailsService,
 ) {
   @GetMapping(value = ["/{appointmentId}"])
   @ResponseBody
@@ -34,7 +34,7 @@ class AppointmentDetailController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentDetail::class),
+            schema = Schema(implementation = AppointmentDetails::class),
           ),
         ],
       ),
@@ -60,6 +60,6 @@ class AppointmentDetailController(
       ),
     ],
   )
-  fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetail =
-    appointmentDetailService.getAppointmentDetailById(appointmentId)
+  fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetails =
+    appointmentDetailsService.getAppointmentDetailsById(appointmentId)
 }

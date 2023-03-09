@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
@@ -78,7 +78,7 @@ class AppointmentTest {
   }
 
   @Test
-  fun `entity to detail mapping`() {
+  fun `entity to details mapping`() {
     val entity = appointmentEntity()
     val occurrenceEntity = entity.occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
@@ -96,8 +96,8 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetail(locationMap, userMap, prisoners)).isEqualTo(
-      AppointmentDetail(
+    assertThat(entity.toDetails(locationMap, userMap, prisoners)).isEqualTo(
+      AppointmentDetails(
         entity.appointmentId,
         AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
         entity.prisonCode,
@@ -135,7 +135,7 @@ class AppointmentTest {
   }
 
   @Test
-  fun `entity to detail mapping in cell nullifies internal location`() {
+  fun `entity to details mapping in cell nullifies internal location`() {
     val entity = appointmentEntity(inCell = true)
     entity.internalLocationId = 123
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
@@ -153,14 +153,14 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetail(locationMap, userMap, prisoners)) {
+    with(entity.toDetails(locationMap, userMap, prisoners)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
   }
 
   @Test
-  fun `entity to detail mapping updated by null`() {
+  fun `entity to details mapping updated by null`() {
     val entity = appointmentEntity(updatedBy = null)
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
@@ -176,7 +176,7 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetail(locationMap, userMap, prisoners)) {
+    with(entity.toDetails(locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
     }
   }

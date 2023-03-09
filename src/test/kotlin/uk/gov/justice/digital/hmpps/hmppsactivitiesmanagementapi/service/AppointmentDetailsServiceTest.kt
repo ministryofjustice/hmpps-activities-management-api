@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
@@ -28,7 +28,7 @@ class AppointmentDetailsServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
-  private val service = AppointmentDetailService(
+  private val service = AppointmentDetailsService(
     appointmentRepository,
     locationService,
     prisonerSearchApiClient,
@@ -41,7 +41,7 @@ class AppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getAppointmentDetailById returns a mapped appointment detail for known appointment id`() {
+  fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {
     val entity = appointmentEntity()
     val occurrenceEntity = entity.occurrences().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
@@ -69,8 +69,8 @@ class AppointmentDetailsServiceTest {
         ),
       ),
     )
-    Assertions.assertThat(service.getAppointmentDetailById(1)).isEqualTo(
-      AppointmentDetail(
+    Assertions.assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
+      AppointmentDetails(
         entity.appointmentId,
         AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
         entity.prisonCode,
@@ -108,8 +108,8 @@ class AppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getAppointmentDetailById throws entity not found exception for unknown appointment id`() {
-    Assertions.assertThatThrownBy { service.getAppointmentDetailById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+  fun `getAppointmentDetailsById throws entity not found exception for unknown appointment id`() {
+    Assertions.assertThatThrownBy { service.getAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment -1 not found")
   }
 }

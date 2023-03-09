@@ -7,7 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -16,9 +16,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-class AppointmentDetailIntegrationTest : IntegrationTestBase() {
+class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   @Test
-  fun `get appointment detail authorisation required`() {
+  fun `get appointment details authorisation required`() {
     webTestClient.get()
       .uri("/appointment-details/1")
       .exchange()
@@ -26,7 +26,7 @@ class AppointmentDetailIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `get appointment detail by unknown id returns 404 not found`() {
+  fun `get appointment details by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointments-details/-1")
       .headers(setAuthorisation(roles = listOf()))
@@ -38,7 +38,7 @@ class AppointmentDetailIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-deleted-id-2.sql",
   )
   @Test
-  fun `get deleted appointment detail returns 404 not found`() {
+  fun `get deleted appointment details returns 404 not found`() {
     webTestClient.get()
       .uri("/appointments/2")
       .headers(setAuthorisation(roles = listOf()))
@@ -50,7 +50,7 @@ class AppointmentDetailIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
-  fun `get single appointment detail`() {
+  fun `get single appointment details`() {
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -58,9 +58,9 @@ class AppointmentDetailIntegrationTest : IntegrationTestBase() {
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
     )
 
-    val appointmentDetail = webTestClient.getAppointmentDetailById(1)
+    val appointmentDetails = webTestClient.getAppointmentDetailsById(1)
 
-    with(appointmentDetail!!) {
+    with(appointmentDetails!!) {
       assertThat(id).isEqualTo(1)
       assertThat(category).isEqualTo(AppointmentCategorySummary(3, "AC1", "Appointment Category 1"))
       assertThat(prisonCode).isEqualTo("TPR")
@@ -104,13 +104,13 @@ class AppointmentDetailIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.getAppointmentDetailById(id: Long) =
+  private fun WebTestClient.getAppointmentDetailsById(id: Long) =
     get()
       .uri("/appointment-details/$id")
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentDetail::class.java)
+      .expectBody(AppointmentDetails::class.java)
       .returnResult().responseBody
 }
