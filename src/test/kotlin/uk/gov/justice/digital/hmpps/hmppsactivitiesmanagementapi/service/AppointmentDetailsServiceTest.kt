@@ -48,11 +48,9 @@ class AppointmentDetailsServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode, entity.internalLocationIds())!!)
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
     whenever(prisonApiClient.getUserDetailsList(entity.usernames())).thenReturn(
-      Mono.just(
-        listOf(
-          userDetail(1, "CREATE.USER", "CREATE", "USER"),
-          userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-        ),
+      listOf(
+        userDetail(1, "CREATE.USER", "CREATE", "USER"),
+        userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(entity.prisonerNumbers())).thenReturn(

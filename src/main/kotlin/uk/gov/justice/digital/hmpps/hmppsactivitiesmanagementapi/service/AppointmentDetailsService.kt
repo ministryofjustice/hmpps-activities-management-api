@@ -19,7 +19,7 @@ class AppointmentDetailsService(
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode, appointment.internalLocationIds())!!
 
-    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).block()!!.associateBy { it.username }
+    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 
     val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointment.prisonerNumbers()).block()!!
 

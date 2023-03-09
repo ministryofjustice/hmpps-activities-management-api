@@ -97,7 +97,7 @@ data class AppointmentOccurrence(
       isEdited = false,
       isCancelled = false,
       updated = updated,
-      updatedBy = if (updatedBy == null) null else userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!),
+      updatedBy?.let { userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
     )
 }

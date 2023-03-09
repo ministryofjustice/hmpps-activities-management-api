@@ -245,11 +245,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
     getReferenceCode("EDU_LEVEL", educationLevelCode)
 
-  fun getUserDetailsList(usernames: List<String>): Mono<List<UserDetail>> {
+  fun getUserDetailsList(usernames: List<String>): List<UserDetail> {
     return prisonApiWebClient.post()
       .uri("/api/users/list")
       .bodyValue(usernames)
       .retrieve()
       .bodyToMono(typeReference<List<UserDetail>>())
+      .block() ?: emptyList()
   }
 }

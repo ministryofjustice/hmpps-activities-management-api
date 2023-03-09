@@ -293,7 +293,7 @@ class PrisonApiClientTest {
   fun `getUserDetailsList - success`() {
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
 
-    assertThat(prisonApiClient.getUserDetailsList(listOf("TEST.USER")).block()!!).isEqualTo(
+    assertThat(prisonApiClient.getUserDetailsList(listOf("TEST.USER"))).isEqualTo(
       listOf(
         userDetail(1, "TEST.USER", "TEST1", "USER1"),
       ),
