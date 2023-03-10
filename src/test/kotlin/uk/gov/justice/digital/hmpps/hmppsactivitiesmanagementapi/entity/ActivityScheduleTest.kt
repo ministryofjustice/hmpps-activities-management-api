@@ -47,11 +47,11 @@ class ActivityScheduleTest {
       )
     }
 
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-10-01"))).isEmpty()
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-10"))[0].bookingId).isEqualTo(2)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-11-30"))[0].bookingId).isEqualTo(2)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2022-12-01"))[0].bookingId).isEqualTo(1)
-    assertThat(schedule.getAllocationsOnDate(LocalDate.parse("2025-01-01"))[0].bookingId).isEqualTo(1)
+    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-10-01"))).isEmpty()
+    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-11-10"))[0].bookingId).isEqualTo(2)
+    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-11-30"))[0].bookingId).isEqualTo(2)
+    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-12-01"))[0].bookingId).isEqualTo(1)
+    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2025-01-01"))[0].bookingId).isEqualTo(1)
   }
 
   @Test

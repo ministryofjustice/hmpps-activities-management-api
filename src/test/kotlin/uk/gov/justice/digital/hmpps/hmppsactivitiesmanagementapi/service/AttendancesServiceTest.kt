@@ -6,6 +6,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -47,6 +48,18 @@ class AttendancesServiceTest {
         status = AttendanceStatus.SCHEDULED,
       ),
     )
+  }
+
+  @Test
+  fun `attendance record is not created when allocation is inactive `() {
+    instance.activitySchedule.activity.attendanceRequired = true
+    allocation.deallocate(today.atStartOfDay())
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+
+    service.createAttendanceRecordsFor(today)
+
+    verifyNoInteractions(attendanceRepository)
   }
 
   @Test

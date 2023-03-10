@@ -66,7 +66,7 @@ data class Allocation(
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
     private set
 
-  fun isActive(date: LocalDate) = date.between(startDate, endDate)
+  fun isActive(date: LocalDate) = date.between(startDate, endDate) && status(PrisonerStatus.ENDED).not()
 
   private fun activitySummary() = activitySchedule.activity.summary
 

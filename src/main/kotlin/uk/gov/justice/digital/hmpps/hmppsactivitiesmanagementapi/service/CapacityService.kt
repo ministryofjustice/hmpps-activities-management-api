@@ -58,6 +58,6 @@ class CapacityService(
   }
 
   private fun ActivitySchedule.getAllocationsForToday(): List<Allocation> {
-    return this.getAllocationsOnDate(LocalDate.now())
+    return this.getActiveAllocationsOnDate(LocalDate.now())
   }
 }
