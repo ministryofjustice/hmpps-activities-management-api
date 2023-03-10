@@ -43,13 +43,13 @@ class AppointmentInstanceService(
     bookingId: Long,
     dateRange: LocalDateRange,
   ): List<ScheduledEvent> {
-    return if (!rolloutPrison.isAppointmentsEnabled()) {
-      log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
-      prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
-    } else {
+    return if (rolloutPrison.isAppointmentsEnabled()) {
       log.info("Fetching scheduled events from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
         .toScheduledEvent(EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
+    } else {
+      log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
+      prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
     }
   }
 
@@ -60,13 +60,7 @@ class AppointmentInstanceService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<PrisonerSchedule> {
-    return if (!rolloutPrison.isAppointmentsEnabled()) {
-      log.info(
-        "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
-          "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
-      )
-      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot).block() ?: emptyList()
-    } else {
+    return if (rolloutPrison.isAppointmentsEnabled()) {
       log.info(
         "Fetching prisoner schedules from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
           "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
@@ -94,6 +88,12 @@ class AppointmentInstanceService(
       }
 
       prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
+    } else {
+      log.info(
+        "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
+          "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
+      )
+      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, timeSlot).block() ?: emptyList()
     }
   }
 }
