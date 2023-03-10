@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import java.time.LocalDate
 
 @Schema(description = "Describes one instance of a prison which may or may not be active (rolled out)")
@@ -24,6 +23,7 @@ data class RolloutPrison(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val rolloutDate: LocalDate?,
 
-  @Schema(description = "The data source for the appointments data", example = "ACTIVITIES_SERVICE")
-  val appointmentsDataSource: AppointmentsDataSource,
+  @Schema(description = "Whether appointments are being fetched from the activities service (as opposed to the Prison API)", example = "true")
+  val isAppointmentsEnabled: Boolean,
+
 )

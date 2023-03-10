@@ -25,5 +25,8 @@ data class RolloutPrison(
   val rolloutDate: LocalDate?,
 
   @Enumerated(STRING)
-  val appointmentsDataSource: AppointmentsDataSource,
-)
+  private val appointmentsDataSource: AppointmentsDataSource,
+) {
+  fun isAppointmentsEnabled() =
+    this.active && this.appointmentsDataSource == AppointmentsDataSource.ACTIVITIES_SERVICE
+}
