@@ -2,9 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import java.time.LocalDate
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 
 @Schema(description = "Describes one instance of a prison which may or may not be active (rolled out)")
 data class RolloutPrison(
@@ -28,13 +26,4 @@ data class RolloutPrison(
   @Schema(description = "Whether appointments are being fetched from the activities service (as opposed to the Prison API)", example = "true")
   val isAppointmentsEnabled: Boolean,
 
-) {
-  fun toModel(prison: RolloutPrison) = ModelRolloutPrison(
-    id = prison.rolloutPrisonId,
-    code = prison.code,
-    description = prison.description,
-    active = prison.active,
-    rolloutDate = prison.rolloutDate,
-    isAppointmentsEnabled = prison.isAppointmentsEnabled(),
-  )
-}
+)
