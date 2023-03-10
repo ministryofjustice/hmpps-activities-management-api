@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
@@ -210,4 +212,50 @@ class ScheduledInstanceController(
   ) {
     scheduledInstanceService.uncancelScheduledInstance(instanceId)
   }
+
+  @PutMapping(value = ["/{instanceId}/cancel"])
+  @ResponseBody
+  @Operation(
+    summary = "Cancel a scheduled instance",
+    description = "Cancels scheduled instance and associated attendance records",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Scheduled instance successfully cancelled",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The scheduled instance was not found.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun cancelScheduledInstance(
+    @PathVariable("instanceId")
+    instanceId: Long,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The scheduled instance cancellation request",
+      required = true,
+    )
+    scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest,
+  ): ResponseEntity<Any> = scheduledInstanceService.cancelScheduledInstance(instanceId, scheduleInstanceCancelRequest).let { ResponseEntity.noContent().build() }
 }
