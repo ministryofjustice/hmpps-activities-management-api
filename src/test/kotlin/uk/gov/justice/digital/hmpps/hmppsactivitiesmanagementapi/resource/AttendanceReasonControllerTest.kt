@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -12,16 +11,16 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceReasonService
 
 @WebMvcTest(controllers = [AttendanceReasonController::class])
 @ContextConfiguration(classes = [AttendanceReasonController::class])
 class AttendanceReasonControllerTest : ControllerTestBase<AttendanceReasonController>() {
 
   @MockBean
-  private lateinit var attendanceReasonRepository: AttendanceReasonRepository
+  private lateinit var attendanceReasonService: AttendanceReasonService
 
-  override fun controller() = AttendanceReasonController(attendanceReasonRepository)
+  override fun controller() = AttendanceReasonController(attendanceReasonService)
 
   @Test
   fun `200 response when get attendance reasons`() {
@@ -42,7 +41,7 @@ class AttendanceReasonControllerTest : ControllerTestBase<AttendanceReasonContro
       ),
     )
 
-    whenever(attendanceReasonRepository.findAll()).thenReturn(listOf(attendanceReason()))
+    whenever(attendanceReasonService.getAll()).thenReturn(listOf(attendanceReason().toModel()))
 
     val response = mockMvc
       .get("/attendance-reasons")
@@ -52,6 +51,6 @@ class AttendanceReasonControllerTest : ControllerTestBase<AttendanceReasonContro
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(attendanceReasonRepository, times(1)).findAll()
+    verify(attendanceReasonService).getAll()
   }
 }

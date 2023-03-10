@@ -12,13 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceReasonService
 
 @RestController
 @RequestMapping("/attendance-reasons", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AttendanceReasonController(private val attendanceReasonRepository: AttendanceReasonRepository) {
+class AttendanceReasonController(private val attendanceReasonService: AttendanceReasonService) {
 
   @Operation(
     summary = "Get the list of attendance reasons",
@@ -44,5 +43,5 @@ class AttendanceReasonController(private val attendanceReasonRepository: Attenda
   )
   @GetMapping
   @ResponseBody
-  fun getAttendanceReasons(): List<AttendanceReason> = attendanceReasonRepository.findAll().toModel()
+  fun getAttendanceReasons(): List<AttendanceReason> = attendanceReasonService.getAll()
 }
