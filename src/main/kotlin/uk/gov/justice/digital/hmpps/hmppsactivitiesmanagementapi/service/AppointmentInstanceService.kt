@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toPrisonerSchedule
@@ -44,7 +43,7 @@ class AppointmentInstanceService(
     bookingId: Long,
     dateRange: LocalDateRange,
   ): List<ScheduledEvent> {
-    return if (rolloutPrison.shouldUsePrisonApi()) {
+    return if (!rolloutPrison.isAppointmentsEnabled()) {
       log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
     } else {
@@ -61,7 +60,7 @@ class AppointmentInstanceService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<PrisonerSchedule> {
-    return if (rolloutPrison.shouldUsePrisonApi()) {
+    return if (!rolloutPrison.isAppointmentsEnabled()) {
       log.info(
         "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
           "Prisoner Numbers [$prisonerNumbers], Date  [$date] and TimeSlot [$timeSlot]",
@@ -97,7 +96,4 @@ class AppointmentInstanceService(
       prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
     }
   }
-
-  private fun RolloutPrison.shouldUsePrisonApi() =
-    !this.active || this.appointmentsDataSource == AppointmentsDataSource.PRISON_API
 }
