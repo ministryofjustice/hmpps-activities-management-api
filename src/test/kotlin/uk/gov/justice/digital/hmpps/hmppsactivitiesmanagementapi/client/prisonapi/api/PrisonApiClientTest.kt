@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
 
@@ -284,6 +285,17 @@ class PrisonApiClientTest {
         activeFlag = "Y",
         listSeq = 6,
         systemDataFlag = "N",
+      ),
+    )
+  }
+
+  @Test
+  fun `getUserDetailsList - success`() {
+    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
+
+    assertThat(prisonApiClient.getUserDetailsList(listOf("TEST.USER"))).isEqualTo(
+      listOf(
+        userDetail(1, "TEST.USER", "TEST1", "USER1"),
       ),
     )
   }

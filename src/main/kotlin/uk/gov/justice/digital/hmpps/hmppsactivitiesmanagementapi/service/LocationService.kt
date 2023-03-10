@@ -33,6 +33,11 @@ class LocationService(
     prisonApiClient
       .getLocationsForTypeUnrestricted(agencyId, "APP").block()
 
+  fun getLocationsForAppointmentsMap(agencyId: String, locationIds: List<Long?>) =
+    getLocationsForAppointments(agencyId)
+      ?.filter { locationIds.contains(it.locationId) }
+      ?.associateBy { it.locationId }
+
   fun getVideoLinkRoomsForPrison(agencyId: String): List<LocationIdAndDescription>? =
     getLocationsForAppointments(agencyId)
       ?.filter { it.locationType == "VIDE" }

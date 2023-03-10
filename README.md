@@ -28,6 +28,7 @@ Tools required:
 
 The system client id and secret used to retrieve the OAuth 2.0 Access Token needed for service to service API calls can be set as local environment variables.
 This allows API calls made from this service that do not use the caller's token to successfully authenticate.
+The create scheduled instances and records jobs also require an environment variable to specify the days ahead to create.
 
 The process of adding the environment variables to your local development environment varies based on OS and shell used.
 For zsh, add the following lines to your `.zprofile` file replacing the text in quotes with the dev client id and secret: 
@@ -35,9 +36,10 @@ For zsh, add the following lines to your `.zprofile` file replacing the text in 
 ```
 export SYSTEM_CLIENT_ID="<system.client.id>"
 export SYSTEM_CLIENT_SECRET="<system.client.secret>"
+export SCHEDULE_AHEAD_DAYS=46
 ```
 
-N.B. you must escape any '$' characters with '\$'
+N.B. you must escape any '$' characters with '\\$'
 
 ## Running the service
 

@@ -10,6 +10,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationIdAndDescription
 import java.util.Properties
 import java.util.function.Predicate
@@ -138,6 +139,26 @@ class LocationServiceTest {
     whenever(groupsProperties.getProperty(anyString())).thenReturn("MDI-2-")
     val locationPrefixDto = locationService.getLocationPrefixFromGroup("MDI", "Houseblock 7")
     assertThat(locationPrefixDto.locationPrefix).isEqualTo("MDI-2-")
+  }
+
+  @Test
+  fun `getLocationsForAppointments returns locations`() {
+    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
+      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"))))
+
+    val locations = locationService.getLocationsForAppointments("TPR")
+
+    assertThat(locations).containsExactly(appointmentLocation(1, "TPR"))
+  }
+
+  @Test
+  fun `getLocationsForAppointmentsMap returns matching locations`() {
+    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
+      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"), appointmentLocation(2, "TPR"))))
+
+    val locations = locationService.getLocationsForAppointmentsMap("TPR", listOf(2))
+
+    assertThat(locations).isEqualTo(mapOf(2L to appointmentLocation(2, "TPR")))
   }
 
   private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> {

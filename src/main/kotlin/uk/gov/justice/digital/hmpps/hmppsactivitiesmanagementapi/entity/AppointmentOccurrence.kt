@@ -12,6 +12,11 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -63,6 +68,8 @@ data class AppointmentOccurrence(
 
   fun addInstance(instance: AppointmentInstance) = instances.add(instance)
 
+  fun prisonerCount() = allocations.count()
+
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     internalLocationId = internalLocationId,
@@ -77,6 +84,29 @@ data class AppointmentOccurrence(
     allocations = allocations.toModel(),
     instances = instances.toModel(),
   )
+
+  fun toSummary(prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, appointmentComment: String) =
+    AppointmentOccurrenceSummary(
+      appointmentOccurrenceId,
+      if (inCell) null else locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode),
+      inCell,
+      startDate,
+      startTime,
+      endTime,
+      comment ?: appointmentComment,
+      isEdited = false,
+      isCancelled = false,
+      updated = updated,
+      updatedBy?.let { userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!) },
+      prisonerCount = prisonerCount(),
+    )
 }
 
 fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
+
+fun List<AppointmentOccurrence>.toSummary(
+  prisonCode: String,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+  appointmentComment: String,
+) = map { it.toSummary(prisonCode, locationMap, userMap, appointmentComment) }

@@ -19,10 +19,11 @@ object PrisonerSearchPrisonerFixture {
     status: String = "IN",
     mostSeriousOffence: String = "Test Offence",
     restrictedPatient: Boolean = false,
-    bookingId: Long = 900001,
+    bookingId: Long? = 900001,
     bookNumber: String = "BK01",
     middleNames: String = "James",
-    prisonId: String = "MDI",
+    prisonId: String? = "MDI",
+    cellLocation: String? = "1-2-3",
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -39,9 +40,10 @@ object PrisonerSearchPrisonerFixture {
       mostSeriousOffence = mostSeriousOffence,
       restrictedPatient = restrictedPatient,
       inOutStatus = inOutStatus,
-      bookingId = bookingId.toString(),
+      bookingId = bookingId?.toString(),
       bookNumber = bookNumber,
       middleNames = middleNames,
       prisonId = prisonId,
+      cellLocation = cellLocation,
     )
 }

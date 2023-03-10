@@ -118,7 +118,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val request = appointmentCreateRequest()
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
-    prisonApiMockServer.getLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -137,7 +137,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val request = appointmentCreateRequest(prisonerNumbers = listOf("A12345BC", "B23456CE"))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
-    prisonApiMockServer.getLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
