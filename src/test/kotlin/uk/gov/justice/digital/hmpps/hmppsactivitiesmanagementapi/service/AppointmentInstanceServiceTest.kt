@@ -65,6 +65,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
+      verify(prisonApiClient).getScheduledAppointments(bookingId, dateRange)
     }
 
     @Test
@@ -101,6 +102,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(prisonApiClient, never()).getScheduledAppointments(any(), any())
+      verify(appointmentInstanceRepository).findByBookingIdAndDateRange(bookingId, startDate, endDate)
     }
   }
 
@@ -124,6 +126,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
+      verify(prisonApiClient).getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)
     }
 
     @Test
@@ -164,6 +167,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(prisonApiClient, never()).getScheduledAppointmentsForPrisonerNumbers(any(), any(), any(), any())
+      verify(appointmentInstanceRepository).findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any())
     }
   }
 }
