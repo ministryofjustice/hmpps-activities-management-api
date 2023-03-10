@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import java.time.LocalDate
 
 class RolloutPrisonTest : ModelTest() {
@@ -18,6 +19,7 @@ class RolloutPrisonTest : ModelTest() {
       rolloutDate = originalRolloutDate,
       active = true,
       code = "1234",
+      appointmentsDataSource = AppointmentsDataSource.ACTIVITIES_SERVICE,
     )
 
     val json = objectMapper.writeValueAsString(rolloutPrison)

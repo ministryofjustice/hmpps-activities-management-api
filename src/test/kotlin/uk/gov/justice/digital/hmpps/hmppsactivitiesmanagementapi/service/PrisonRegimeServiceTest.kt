@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventPriority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -197,5 +198,38 @@ class PrisonRegimeServiceTest {
   fun `throws entity not found exception for unknown prison code`() {
     assertThatThrownBy { service.getPrisonRegimeByPrisonCode("PVX") }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("PVX")
+  }
+
+  @Test
+  fun `returns correct times for AM timeslot`() {
+    val prisonCode = "PBI"
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
+      .thenReturn(prisonRegime())
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM)
+
+    assertThat(result.start).isEqualTo("00:00")
+    assertThat(result.end).isEqualTo("13:00")
+  }
+
+  @Test
+  fun `returns correct times for PM timeslot`() {
+    val prisonCode = "PBI"
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
+      .thenReturn(prisonRegime())
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM)
+
+    assertThat(result.start).isEqualTo("13:00")
+    assertThat(result.end).isEqualTo("18:00")
+  }
+
+  @Test
+  fun `returns correct times for ED timeslot`() {
+    val prisonCode = "PBI"
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
+      .thenReturn(prisonRegime())
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED)
+
+    assertThat(result.start).isEqualTo("18:00")
+    assertThat(result.end).isEqualTo("23:59")
   }
 }

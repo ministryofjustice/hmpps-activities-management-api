@@ -34,6 +34,9 @@ class ActivityTest {
       assertThat(isActive(today)).isTrue
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1000))).isTrue
+      assertThat(ends(yesterday)).isFalse
+      assertThat(ends(today)).isFalse
+      assertThat(ends(tomorrow)).isFalse
     }
   }
 
@@ -44,6 +47,9 @@ class ActivityTest {
       assertThat(isActive(today)).isTrue
       assertThat(isActive(tomorrow)).isTrue
       assertThat(isActive(tomorrow.plusDays(1))).isFalse
+      assertThat(ends(yesterday)).isFalse
+      assertThat(ends(today)).isFalse
+      assertThat(ends(tomorrow)).isTrue
     }
   }
 

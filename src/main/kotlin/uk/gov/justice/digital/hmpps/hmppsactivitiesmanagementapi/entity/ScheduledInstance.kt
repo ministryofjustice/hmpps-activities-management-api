@@ -45,6 +45,10 @@ data class ScheduledInstance(
   var cancelledTime: LocalDateTime? = null,
 
   var cancelledBy: String? = null,
+
+  var cancelledReason: String? = null,
+
+  var comment: String? = null,
 ) {
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),

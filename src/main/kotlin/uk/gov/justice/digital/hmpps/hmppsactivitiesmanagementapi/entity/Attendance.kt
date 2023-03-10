@@ -31,8 +31,6 @@ data class Attendance(
 
   var comment: String? = null,
 
-  val posted: Boolean,
-
   val recordedTime: LocalDateTime? = null,
 
   val recordedBy: String? = null,

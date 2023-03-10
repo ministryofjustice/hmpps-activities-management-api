@@ -99,7 +99,7 @@ data class Activity(
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
-  fun isUnemployment() = activityCategory.code == "SAA_NOT_IN_WORK"
+  fun isUnemployment() = activityCategory.isNotInWork()
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
     val byDayOfWeek = this.schedules
@@ -112,23 +112,6 @@ data class Activity(
     }
   }
 
-  fun toModelLite() = ActivityLite(
-    id = activityId,
-    prisonCode = prisonCode,
-    attendanceRequired = attendanceRequired,
-    inCell = inCell,
-    pieceWork = pieceWork,
-    outsideWork = outsideWork,
-    payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
-    summary = summary,
-    description = description,
-    category = activityCategory.toModel(),
-    riskLevel = riskLevel,
-    minimumIncentiveNomisCode = minimumIncentiveNomisCode,
-    minimumIncentiveLevel = minimumIncentiveLevel,
-    minimumEducationLevel = activityMinimumEducationLevel().toModel(),
-  )
-
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -138,11 +121,6 @@ data class Activity(
   }
 
   override fun hashCode(): Int = activityId.hashCode()
-
-  @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityId = $activityId )"
-  }
 
   fun addEligibilityRule(rule: EligibilityRule) {
     failIfRuleAlreadyPresent(rule)
@@ -249,8 +227,32 @@ data class Activity(
       throw IllegalArgumentException("Can only add schedules that belong to this activity.")
     }
   }
+
+  fun ends(date: LocalDate) = date == endDate
+
+  fun toModelLite() = ActivityLite(
+    id = activityId,
+    prisonCode = prisonCode,
+    attendanceRequired = attendanceRequired,
+    inCell = inCell,
+    pieceWork = pieceWork,
+    outsideWork = outsideWork,
+    payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
+    summary = summary,
+    description = description,
+    category = activityCategory.toModel(),
+    riskLevel = riskLevel,
+    minimumIncentiveNomisCode = minimumIncentiveNomisCode,
+    minimumIncentiveLevel = minimumIncentiveLevel,
+    minimumEducationLevel = activityMinimumEducationLevel().toModel(),
+  )
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(activityId = $activityId )"
+  }
 }
 
 fun List<Activity>.toModelLite() = map { it.toModelLite() }
 
-enum class PayPerSession { H, F }
+enum class PayPerSession(val label: String) { H("Half day"), F("Full day") }

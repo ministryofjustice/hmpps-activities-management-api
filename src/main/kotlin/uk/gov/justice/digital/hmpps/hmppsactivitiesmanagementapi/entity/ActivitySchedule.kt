@@ -187,21 +187,6 @@ data class ActivitySchedule(
     slots.add(slot)
   }
 
-  fun toModelLite() = ActivityScheduleLite(
-    id = this.activityScheduleId,
-    description = this.description,
-    internalLocation = InternalLocation(
-      id = internalLocationId!!,
-      code = internalLocationCode!!,
-      description = internalLocationDescription!!,
-    ),
-    capacity = this.capacity,
-    activity = this.activity.toModelLite(),
-    slots = this.slots.map { it.toModel() },
-    startDate = this.startDate,
-    endDate = this.endDate,
-  )
-
   fun getAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter {
     !date.isBefore(it.startDate) && (it.endDate == null || !date.isAfter(it.endDate))
   }
@@ -216,6 +201,8 @@ data class ActivitySchedule(
   ) {
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
+
+    // TODO you should only be able to allocate if schedule is active (the end date has not passed) !!!
 
     allocations.add(
       Allocation(
@@ -239,6 +226,21 @@ data class ActivitySchedule(
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
+
+  fun toModelLite() = ActivityScheduleLite(
+    id = this.activityScheduleId,
+    description = this.description,
+    internalLocation = InternalLocation(
+      id = internalLocationId!!,
+      code = internalLocationCode!!,
+      description = internalLocationDescription!!,
+    ),
+    capacity = this.capacity,
+    activity = this.activity.toModelLite(),
+    slots = this.slots.map { it.toModel() },
+    startDate = this.startDate,
+    endDate = this.endDate,
+  )
 
   @Override
   override fun toString(): String {

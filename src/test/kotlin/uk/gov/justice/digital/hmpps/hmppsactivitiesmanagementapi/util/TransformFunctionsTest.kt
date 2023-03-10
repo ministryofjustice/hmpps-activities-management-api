@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -66,7 +67,6 @@ class TransformFunctionsTest {
                 ModelAttendance(
                   id = 1,
                   prisonerNumber = "A11111A",
-                  posted = false,
                   status = "SCHEDULED",
                 ),
               ),
@@ -160,6 +160,7 @@ class TransformFunctionsTest {
         "HMP Pentonville",
         true,
         rolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsDataSource = AppointmentsDataSource.PRISON_API,
       ),
     )
   }

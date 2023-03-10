@@ -16,7 +16,6 @@ class AttendanceTest : ModelTest() {
       id = 1,
       prisonerNumber = "1234",
       recordedTime = originalRecordedTime,
-      posted = true,
       status = "Y",
 
     )

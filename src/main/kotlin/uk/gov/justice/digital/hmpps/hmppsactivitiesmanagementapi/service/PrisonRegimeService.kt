@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
@@ -9,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalTime
 
 @Service
 class PrisonRegimeService(
@@ -45,6 +48,30 @@ class PrisonRegimeService(
   fun getPrisonRegimeByPrisonCode(code: String) = transform(
     prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code),
   )
+
+  /**
+   *  Converts a TimeSlot for a given Prison into a time range.
+   *
+   *  Note that there can be gaps between time ranges (e.g. PM finishes at 16:30 but PM doesn't start until 18:00)
+   *  and that's why :
+   *
+   *   - The start of a period is either midnight or the end of the previous period
+   *   - The end of a period is either the start of the next period or one minute to midnight.
+   *
+   *   @param prisonCode The code of the prison to look up the times for
+   *   @param timeSlot The timeslot to convert
+   */
+  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot): LocalTimeRange =
+    getPrisonRegimeByPrisonCode(prisonCode)
+      .let { pr ->
+        val (start, end) = when (timeSlot) {
+          TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
+          TimeSlot.PM -> pr.pmStart to pr.edStart
+          TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
+        }
+
+        LocalTimeRange(start, end)
+      }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)

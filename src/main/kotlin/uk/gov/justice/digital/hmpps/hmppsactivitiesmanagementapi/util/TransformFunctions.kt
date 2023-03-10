@@ -1,6 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -10,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -496,6 +502,7 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   description = prison.description,
   active = prison.active,
   rolloutDate = prison.rolloutDate,
+  appointmentsDataSource = prison.appointmentsDataSource,
 )
 
 fun transform(attendance: EntityAttendance): ModelAttendance =
@@ -519,7 +526,6 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
       )
     },
     comment = attendance.comment,
-    posted = attendance.posted,
     recordedTime = attendance.recordedTime,
     recordedBy = attendance.recordedBy,
     status = attendance.status.name,
@@ -548,3 +554,59 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
 )
+
+/**
+ * Maps a List<AppointmentInstance> to a List<PrisonerSchedule>
+ *
+ *   @param prisonerLookup Map of prisonerNumber -> Prisoner to facilitate data lookup
+ *   @param locationLookup Map of locationId -> Location to facilitate data lookup
+ */
+fun List<AppointmentInstance>.toPrisonerSchedule(
+  prisonerLookup: Map<String, Prisoner>,
+  locationLookup: Map<Long, Location>,
+  eventType: String,
+  eventStatus: String,
+) = map {
+  PrisonerSchedule(
+    cellLocation = prisonerLookup[it.prisonerNumber]?.cellLocation!!,
+    comment = it.comment,
+    event = it.category.code,
+    eventDescription = it.category.description,
+    eventLocation = locationLookup[it.internalLocationId]?.userDescription,
+    eventStatus = eventStatus,
+    eventType = eventType,
+    firstName = prisonerLookup[it.prisonerNumber]?.firstName!!,
+    lastName = prisonerLookup[it.prisonerNumber]?.lastName!!,
+    locationId = it.internalLocationId,
+    offenderNo = it.prisonerNumber,
+    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
+    endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
+  )
+}
+
+/**
+ * Maps List<AppointmentInstance> to List<ScheduledEvent>
+ */
+fun List<AppointmentInstance>.toScheduledEvent(
+  eventType: String,
+  eventTypeDesc: String,
+  eventClass: String,
+  eventStatus: String,
+  eventSource: String,
+) = map {
+  ScheduledEvent(
+    bookingId = it.bookingId,
+    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
+    endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
+    eventType = eventType,
+    eventTypeDesc = eventTypeDesc,
+    eventClass = eventClass,
+    eventId = it.appointmentInstanceId,
+    eventStatus = eventStatus,
+    eventDate = it.appointmentDate,
+    eventSource = eventSource,
+    eventSubType = it.category.code,
+    eventSubTypeDesc = it.category.description,
+    agencyId = it.prisonCode,
+  )
+}
