@@ -24,4 +24,11 @@ class PrisonApiTypesTest {
 
     assertThat(classificationField.returnType.isMarkedNullable).isTrue
   }
+
+  @Test
+  fun `lockDate field on generated User Detail DTO type should be nullable`() {
+    val field = UserDetail::class.declaredMembers.first { it.name == "lockDate" }
+
+    assertThat(field.returnType.isMarkedNullable).isTrue
+  }
 }

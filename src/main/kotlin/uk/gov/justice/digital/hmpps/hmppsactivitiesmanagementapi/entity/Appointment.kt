@@ -14,6 +14,12 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -64,6 +70,12 @@ data class Appointment(
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
+  fun internalLocationIds() = listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
+
+  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+
+  fun usernames() = listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()
+
   fun toModel() = AppointmentModel(
     id = appointmentId,
     category = category.toModel(),
@@ -80,6 +92,33 @@ data class Appointment(
     updatedBy = updatedBy,
     occurrences = occurrences.toModel(),
   )
+
+  fun toDetails(locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+    AppointmentDetails(
+      appointmentId,
+      category.toSummary(),
+      prisonCode,
+      if (inCell) {
+        null
+      } else {
+        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      },
+      inCell,
+      startDate,
+      startTime,
+      endTime,
+      comment,
+      created,
+      userMap.getOrDefault(createdBy, null).toSummary(createdBy),
+      updated,
+      if (updatedBy == null) {
+        null
+      } else {
+        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+      },
+      occurrences().toSummary(prisonCode, locationMap, userMap, comment),
+      prisoners.toSummary(),
+    )
 }
 
 fun List<Appointment>.toModel() = map { it.toModel() }

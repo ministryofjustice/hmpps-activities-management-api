@@ -1,9 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import java.time.LocalDate
@@ -12,6 +18,9 @@ import java.time.LocalTime
 
 fun appointmentCategoryModel() =
   AppointmentCategory(1, null, "TEST", "Test Category", true, 2)
+
+fun appointmentCategorySummary() =
+  AppointmentCategorySummary(1, "TEST", "Test Category")
 
 fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
   Appointment(
@@ -89,3 +98,38 @@ fun appointmentCreateRequest(
     comment,
     prisonerNumbers,
   )
+
+fun appointmentDetails() = AppointmentDetails(
+  1,
+  appointmentCategorySummary(),
+  "TPR",
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+  false,
+  LocalDate.now(),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  "Appointment level comment",
+  LocalDateTime.now(),
+  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  LocalDateTime.now(),
+  UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  occurrences = listOf(
+    AppointmentOccurrenceSummary(
+      1,
+      AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+      false,
+      LocalDate.now(),
+      LocalTime.of(9, 0),
+      LocalTime.of(10, 30),
+      "Appointment occurrence level comment",
+      isEdited = false,
+      isCancelled = false,
+      LocalDateTime.now(),
+      UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+      1,
+    ),
+  ),
+  prisoners = listOf(
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+  ),
+)

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
@@ -243,4 +244,13 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
     getReferenceCode("EDU_LEVEL", educationLevelCode)
+
+  fun getUserDetailsList(usernames: List<String>): List<UserDetail> {
+    return prisonApiWebClient.post()
+      .uri("/api/users/list")
+      .bodyValue(usernames)
+      .retrieve()
+      .bodyToMono(typeReference<List<UserDetail>>())
+      .block() ?: emptyList()
+  }
 }

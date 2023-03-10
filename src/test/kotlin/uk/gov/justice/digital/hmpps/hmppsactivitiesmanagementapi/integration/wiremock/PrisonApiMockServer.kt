@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
@@ -302,7 +304,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun getLocationsForAppointments(prisonCode: String, locationId: Long) {
+  fun stubGetLocationsForAppointments(prisonCode: String, locationId: Long) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/locations?eventType=APP"))
         .willReturn(
@@ -321,6 +323,23 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(userCaseLoads(prisonCode)))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetUserDetailsList(usernames: List<String>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/users/list"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(usernames)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              mapper.writeValueAsString(
+                (usernames.indices).map { userDetail(it + 1L, usernames[it], "TEST${it + 1}", "USER${it + 1}") },
+              ),
+            )
             .withStatus(200),
         ),
     )
