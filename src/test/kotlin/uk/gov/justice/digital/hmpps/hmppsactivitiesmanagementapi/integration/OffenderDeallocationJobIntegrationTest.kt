@@ -69,7 +69,7 @@ class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.deallocateOffenders() {
     post()
       .uri("/job/deallocate-offenders")
-      .accept(MediaType.APPLICATION_JSON)
+      .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
     Thread.sleep(1000)
