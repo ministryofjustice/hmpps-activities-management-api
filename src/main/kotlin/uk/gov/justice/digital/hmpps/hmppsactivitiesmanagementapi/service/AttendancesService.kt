@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -59,7 +60,7 @@ class AttendancesService(
     scheduledInstanceRepository.findAllBySessionDate(date)
       .andAttendanceRequired()
       .forEach { instance ->
-        instance.forEachActiveAllocation(date) { allocation ->
+        instance.forEachActiveAllocation { allocation ->
           createAttendanceRecordIfNoPreExistingRecord(
             instance,
             allocation,
@@ -70,8 +71,8 @@ class AttendancesService(
 
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
-  private fun ScheduledInstance.forEachActiveAllocation(date: LocalDate, f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filter { it.isActive(date) }.forEach { f(it) }
+  private fun ScheduledInstance.forEachActiveAllocation(f: (allocation: Allocation) -> Unit) {
+    activitySchedule.allocations().filter { it.status(PrisonerStatus.ACTIVE) }.forEach { f(it) }
   }
 
   // TODO not applying pay rates.

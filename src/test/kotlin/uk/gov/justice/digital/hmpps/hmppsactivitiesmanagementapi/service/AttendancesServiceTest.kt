@@ -6,6 +6,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -33,7 +34,7 @@ class AttendancesServiceTest {
   private val tomorrow = today.plusDays(1)
 
   @Test
-  fun `attendance record is created when no pre-existing attendance record and attendance is required`() {
+  fun `attendance record is created when no pre-existing attendance record, attendance is required and allocation active`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
@@ -47,6 +48,18 @@ class AttendancesServiceTest {
         status = AttendanceStatus.SCHEDULED,
       ),
     )
+  }
+
+  @Test
+  fun `attendance record is not created when allocation is not active`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+    allocation.deallocate(today.atStartOfDay())
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+
+    service.createAttendanceRecordsFor(today)
+
+    verifyNoInteractions(attendanceRepository)
   }
 
   @Test
@@ -72,18 +85,6 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository, never()).save(any())
-  }
-
-  @Test
-  fun `attendance record is not created today if allocation is active from tomorrow`() {
-    allocation.starts(tomorrow)
-
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-
-    service.createAttendanceRecordsFor(today)
-
-    verify(attendanceRepository, never()).existsAttendanceByScheduledInstanceAndPrisonerNumber(any(), any())
     verify(attendanceRepository, never()).save(any())
   }
 

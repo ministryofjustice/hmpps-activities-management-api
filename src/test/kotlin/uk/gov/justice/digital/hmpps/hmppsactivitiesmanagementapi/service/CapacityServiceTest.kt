@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import java.time.LocalDateTime
 import java.util.Optional
 
 class CapacityServiceTest {
@@ -37,6 +38,21 @@ class CapacityServiceTest {
     assertThat(returned).isInstanceOf(CapacityAndAllocated::class.java)
     assertThat(returned.capacity).isEqualTo(1)
     assertThat(returned.allocated).isEqualTo(1)
+  }
+
+  @Test
+  fun `getActivityCategoryCapacityAndAllocated excludes deallocations from summary for known category ID`() {
+    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocate(LocalDateTime.now()) }
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", activityCategory()))
+      .thenReturn(listOf(activity))
+
+    val returned = service.getActivityCategoryCapacityAndAllocated("MDI", 1)
+
+    assertThat(returned).isInstanceOf(CapacityAndAllocated::class.java)
+    assertThat(returned.capacity).isEqualTo(1)
+    assertThat(returned.allocated).isEqualTo(0)
   }
 
   @Test

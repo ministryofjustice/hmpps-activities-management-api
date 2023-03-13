@@ -34,7 +34,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       }
 
       with(schedules().findByDescription("Maths PM")) {
-        assertThat(allocations()).hasSize(3)
+        assertThat(allocations()).hasSize(2)
         assertThat(instances()).hasSize(1)
         assertThat(instances().first().attendances).isEmpty()
       }
@@ -98,7 +98,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.createAttendanceRecords() {
     post()
       .uri("/job/create-attendance-records")
-      .accept(MediaType.APPLICATION_JSON)
+      .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
     Thread.sleep(1000)
