@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
@@ -23,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentService(
   private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val appointmentRepository: AppointmentRepository,
+  private val appointmentScheduleRepository: AppointmentScheduleRepository,
   private val locationService: LocationService,
   private val prisonApiUserClient: PrisonApiUserClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -44,6 +46,15 @@ class AppointmentService(
 
     failIfMissingPrisoners(request.prisonerNumbers, prisonerMap)
 
+    val schedule = request.repeat?.let {
+      appointmentScheduleRepository.saveAndFlush(
+        AppointmentSchedule(
+          repeatPeriod = AppointmentRepeatPeriod.valueOf(request.repeat.period!!.name),
+          repeatCount = request.repeat.count!!,
+        ),
+      )
+    }
+
     return AppointmentEntity(
       category = category,
       prisonCode = request.prisonCode,
@@ -52,17 +63,10 @@ class AppointmentService(
       startDate = request.startDate!!,
       startTime = request.startTime!!,
       endTime = request.endTime,
+      schedule = schedule,
       comment = request.comment,
       createdBy = principal.name,
     ).apply {
-      this.schedule = request.repeat?.let {
-        AppointmentSchedule(
-          appointment = this,
-          repeatPeriod = AppointmentRepeatPeriod.valueOf(request.repeat.period!!.name),
-          repeatCount = request.repeat.count!!,
-        )
-      }
-
       this.scheduleIterator().forEach {
         this.addOccurrence(
           AppointmentOccurrenceEntity(

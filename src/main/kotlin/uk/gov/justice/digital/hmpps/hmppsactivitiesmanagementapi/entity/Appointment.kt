@@ -51,6 +51,10 @@ data class Appointment(
 
   var endTime: LocalTime?,
 
+  @OneToOne
+  @JoinColumn(name = "appointment_schedule_id")
+  var schedule: AppointmentSchedule? = null,
+
   var comment: String,
 
   val created: LocalDateTime = LocalDateTime.now(),
@@ -62,9 +66,6 @@ data class Appointment(
   var updatedBy: String? = null,
 
   val deleted: Boolean = false,
-
-  @OneToOne
-  var schedule: AppointmentSchedule? = null,
 ) {
   fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
