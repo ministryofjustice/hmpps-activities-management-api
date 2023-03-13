@@ -64,7 +64,7 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.createScheduledInstances() {
     post()
       .uri("/job/create-scheduled-instances")
-      .accept(MediaType.APPLICATION_JSON)
+      .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
     Thread.sleep(1000)

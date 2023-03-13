@@ -16,7 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.OffenderDea
 // within the namespace without requiring authentication
 
 @RestController
-@RequestMapping("/job", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/job", produces = [MediaType.TEXT_PLAIN_VALUE])
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
   private val createAttendanceRecordsJob: CreateAttendanceRecordsJob,

@@ -98,7 +98,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.createAttendanceRecords() {
     post()
       .uri("/job/create-attendance-records")
-      .accept(MediaType.APPLICATION_JSON)
+      .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
     Thread.sleep(1000)
