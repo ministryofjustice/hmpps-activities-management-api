@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
@@ -39,7 +40,8 @@ class ActivityScheduleService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<InternalLocation> =
-    transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }.distinct()
+    transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }
+      .distinct()
 
   fun getActivitySchedulesByPrisonCode(
     prisonCode: String,
@@ -74,11 +76,9 @@ class ActivityScheduleService(
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
   fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true) =
-    LocalDate.now().let { today ->
-      repository.findOrThrowNotFound(scheduleId).allocations()
-        .filter { !activeOnly || it.isActive(today) }
-        .toModelAllocations()
-    }
+    repository.findOrThrowNotFound(scheduleId).allocations()
+      .filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
+      .toModelAllocations()
 
   fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
 
