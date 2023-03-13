@@ -98,17 +98,34 @@ internal fun activityCategory(code: String = "category code") =
     description = "category description",
   )
 
+internal fun attendanceReason(code: String = "reason code") =
+  AttendanceReason(
+    attendanceReasonId = 1,
+    code = code,
+    description = "reason description",
+    attended = false,
+    capturePay = true,
+    captureMoreDetail = true,
+    captureCaseNote = false,
+    captureIncentiveLevelWarning = false,
+    captureOtherText = false,
+    displayInAbsence = true,
+    displaySequence = 1,
+    notes = "reason notes",
+  )
+
 internal fun schedule() = activityEntity().schedules().first()
 
 internal fun attendanceReasons() = mapOf(
-  "ABS" to AttendanceReason(1, "ABS", "Absent"),
-  "ACCAB" to AttendanceReason(2, "ACCAB", "Acceptable absence"),
-  "ATT" to AttendanceReason(3, "ATT", "Attended"),
-  "CANC" to AttendanceReason(4, "CANC", "Cancelled"),
-  "NREQ" to AttendanceReason(5, "NREQ", "Not required"),
-  "SUS" to AttendanceReason(6, "SUS", "Suspend"),
-  "UNACAB" to AttendanceReason(7, "UNACAB", "Unacceptable absence"),
-  "REST" to AttendanceReason(8, "REST", "Rest day (no pay)"),
+  "SICK" to AttendanceReason(1, "SICK", "Sick", false, true, true, false, false, false, true, 1, "Maps to ACCAB in NOMIS"),
+  "REFUSED" to AttendanceReason(2, "REFUSED", "Refused to attend", false, false, false, true, true, false, true, 2, "Maps to UNACAB in NOMIS"),
+  "NREQ" to AttendanceReason(3, "NREQ", "Not required or excused", false, false, false, false, false, false, true, 3, "Maps to ACCAB in NOMIS"),
+  "REST" to AttendanceReason(4, "REST", "Rest day", false, true, false, false, false, false, true, 4, "Maps to ACCAB in NOMIS"),
+  "CLASH" to AttendanceReason(5, "CLASH", "Prisoner's schedule shows another activity", false, false, false, false, false, false, true, 5, "Maps to ACCAB in NOMIS"),
+  "OTHER" to AttendanceReason(6, "OTHER", "Other absence reason not listed", false, true, false, false, false, true, true, 6, "Maps to UNACAB in NOMIS"),
+  "SUSP" to AttendanceReason(7, "SUSP", "Suspended", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
+  "CANC" to AttendanceReason(8, "CANC", "Cancelled", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
+  "ATT" to AttendanceReason(9, "ATT", "Attended", true, false, false, false, false, false, false, null, "Maps to ATT in NOMIS"),
 )
 
 internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")

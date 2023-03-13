@@ -10,9 +10,18 @@ CREATE TABLE rollout_prison (
 CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
 
 CREATE TABLE attendance_reason (
-  attendance_reason_id bigserial   NOT NULL CONSTRAINT attendance_reason_pk PRIMARY KEY,
-  code                 varchar(10) NOT NULL UNIQUE,
-  description          varchar(60) NOT NULL
+  attendance_reason_id              bigserial   NOT NULL CONSTRAINT attendance_reason_pk PRIMARY KEY,
+  code                              varchar(10) NOT NULL UNIQUE,
+  description                       varchar(60) NOT NULL,
+  attended                          boolean     NOT NULL,
+  capture_pay                       boolean     NOT NULL,
+  capture_more_detail               boolean     NOT NULL,
+  capture_case_note                 boolean     NOT NULL,
+  capture_incentive_level_warning   boolean     NOT NULL,
+  capture_other_text                boolean     NOT NULL,
+  display_in_absence                boolean     NOT NULL,
+  display_sequence                  integer,
+  notes                             varchar(200)
 );
 
 CREATE INDEX idx_attendance_reason_code ON attendance_reason (code);
