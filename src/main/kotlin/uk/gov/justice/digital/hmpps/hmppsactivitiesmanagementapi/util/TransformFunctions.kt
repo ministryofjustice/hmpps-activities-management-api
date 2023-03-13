@@ -506,7 +506,7 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
   description = prison.description,
   active = prison.active,
   rolloutDate = prison.rolloutDate,
-  appointmentsDataSource = prison.appointmentsDataSource,
+  isAppointmentsEnabled = prison.isAppointmentsEnabled(),
 )
 
 fun transform(attendance: EntityAttendance): ModelAttendance =

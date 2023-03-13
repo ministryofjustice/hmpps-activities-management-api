@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
@@ -52,61 +51,25 @@ class AppointmentInstanceServiceTest {
   inner class GetScheduledEvents {
 
     @Test
-    fun `fetches data from the Prison API when the prison is not rolled out and the data source is set to PRISON_API`() {
+    fun `fetches data from the Prison API when isAppointmentsEnabled is false`() {
       val bookingId = 900001L
       val startDate = LocalDate.of(2022, 12, 14)
       val endDate = LocalDate.of(2022, 12, 15)
       val dateRange = LocalDateRange(startDate, endDate)
       val expectedScheduledEvents = scheduledEvents()
 
-      whenever(rolloutPrison.active).thenReturn(false)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
+      whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(false)
       whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
+      verify(prisonApiClient).getScheduledAppointments(bookingId, dateRange)
     }
 
     @Test
-    fun `fetches data from the Prison API when the prison is not rolled out and the data source is set to ACTIVITIES_SERVICE`() {
-      val bookingId = 900001L
-      val startDate = LocalDate.of(2022, 12, 14)
-      val endDate = LocalDate.of(2022, 12, 15)
-      val dateRange = LocalDateRange(startDate, endDate)
-      val expectedScheduledEvents = scheduledEvents()
-
-      whenever(rolloutPrison.active).thenReturn(false)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
-      whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
-
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
-
-      assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
-      verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
-    }
-
-    @Test
-    fun `fetches data from the Prison API when the prison is rolled out and the data source is set to PRISON_API`() {
-      val bookingId = 900001L
-      val startDate = LocalDate.of(2022, 12, 14)
-      val endDate = LocalDate.of(2022, 12, 15)
-      val dateRange = LocalDateRange(startDate, endDate)
-      val expectedScheduledEvents = scheduledEvents()
-
-      whenever(rolloutPrison.active).thenReturn(true)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
-      whenever(prisonApiClient.getScheduledAppointments(bookingId, dateRange)).thenReturn(Mono.just(expectedScheduledEvents))
-
-      val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
-
-      assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
-      verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
-    }
-
-    @Test
-    fun `fetches data from the Appointment Instance Repository when the prison is rolled out and the data source is set to ACTIVITIES_SERVICE`() {
+    fun `fetches data from the Appointment Instance Repository when when isAppointmentsEnabled is true`() {
       val bookingId = 456L
       val startDate = LocalDate.of(2022, 12, 14)
       val startTime = LocalTime.of(9, 0)
@@ -131,8 +94,7 @@ class AppointmentInstanceServiceTest {
         ),
       )
 
-      whenever(rolloutPrison.active).thenReturn(true)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
+      whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
         .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
 
@@ -140,6 +102,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualScheduledEvents).isEqualTo(expectedScheduledEvents)
       verify(prisonApiClient, never()).getScheduledAppointments(any(), any())
+      verify(appointmentInstanceRepository).findByBookingIdAndDateRange(bookingId, startDate, endDate)
     }
   }
 
@@ -148,7 +111,7 @@ class AppointmentInstanceServiceTest {
   inner class GetPrisonerSchedules {
 
     @Test
-    fun `fetches data from the Prison API when the prison is not rolled out and the data source is set to PRISON_API`() {
+    fun `fetches data from the Prison API when isAppointmentsEnabled is false`() {
       val prisonCode = "PBI"
       val prisonerNumbers = setOf("P123", "P456")
       val startDate = LocalDate.of(2022, 12, 14)
@@ -156,56 +119,18 @@ class AppointmentInstanceServiceTest {
 
       val expectedPrisonerSchedules = prisonerSchedules()
 
-      whenever(rolloutPrison.active).thenReturn(false)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
+      whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(false)
       whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
 
       val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
+      verify(prisonApiClient).getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)
     }
 
     @Test
-    fun `fetches data from the Prison API when the prison is not rolled out and the data source is set to ACTIVITIES_SERVICE`() {
-      val prisonCode = "PBI"
-      val prisonerNumbers = setOf("P123", "P456")
-      val startDate = LocalDate.of(2022, 12, 14)
-      val timeSlot = TimeSlot.AM
-
-      val expectedPrisonerSchedules = prisonerSchedules()
-
-      whenever(rolloutPrison.active).thenReturn(false)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
-      whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
-
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
-
-      assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
-      verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
-    }
-
-    @Test
-    fun `fetches data from the Prison API when the prison is rolled out and the data source is set to PRISON_API`() {
-      val prisonCode = "PBI"
-      val prisonerNumbers = setOf("P123", "P456")
-      val startDate = LocalDate.of(2022, 12, 14)
-      val timeSlot = TimeSlot.AM
-
-      val expectedPrisonerSchedules = prisonerSchedules()
-
-      whenever(rolloutPrison.active).thenReturn(true)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.PRISON_API)
-      whenever(prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, startDate, timeSlot)).thenReturn(Mono.just(expectedPrisonerSchedules))
-
-      val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
-
-      assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
-      verify(appointmentInstanceRepository, never()).findByBookingIdAndDateRange(any(), any(), any())
-    }
-
-    @Test
-    fun `fetches data from the Appointment Instance Repository when the prison is rolled out and the data source is set to ACTIVITIES_SERVICE`() {
+    fun `fetches data from the Appointment Instance Repository when when isAppointmentsEnabled is true`() {
       val prisonCode = "PBI"
       val prisonerNumbers = setOf("P123")
       val startDate = LocalDate.of(2022, 12, 14)
@@ -234,8 +159,7 @@ class AppointmentInstanceServiceTest {
       whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, timeSlot)).thenReturn(LocalTimeRange(earliestTime, latestTime))
       whenever(locationService.getLocationsForAppointments(prisonCode)).thenReturn(locations())
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())).thenReturn(Mono.just(prisoners(prisonerNumber = prisonerNumbers.first())))
-      whenever(rolloutPrison.active).thenReturn(true)
-      whenever(rolloutPrison.appointmentsDataSource).thenReturn(AppointmentsDataSource.ACTIVITIES_SERVICE)
+      whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))
         .thenReturn(appointmentEntity(startDate = startDate, prisonerNumberToBookingIdMap = mapOf("P123" to 456)).occurrences().first().instances())
 
@@ -243,6 +167,7 @@ class AppointmentInstanceServiceTest {
 
       assertThat(actualPrisonerSchedules).isEqualTo(expectedPrisonerSchedules)
       verify(prisonApiClient, never()).getScheduledAppointmentsForPrisonerNumbers(any(), any(), any(), any())
+      verify(appointmentInstanceRepository).findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any())
     }
   }
 }
