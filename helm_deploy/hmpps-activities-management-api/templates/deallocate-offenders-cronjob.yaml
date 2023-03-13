@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-          - name: hmpps-activities-management-api
+          - name: deallocate-offenders-job
             image: ghcr.io/ministryofjustice/hmpps-devops-tools
             args:
               - /bin/sh
