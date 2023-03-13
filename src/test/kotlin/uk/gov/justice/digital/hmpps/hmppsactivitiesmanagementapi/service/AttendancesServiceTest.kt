@@ -34,7 +34,7 @@ class AttendancesServiceTest {
   private val tomorrow = today.plusDays(1)
 
   @Test
-  fun `attendance record is created when no pre-existing attendance record and attendance is required`() {
+  fun `attendance record is created when no pre-existing attendance record, attendance is required and allocation active`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
@@ -51,7 +51,7 @@ class AttendancesServiceTest {
   }
 
   @Test
-  fun `attendance record is not created when allocation is inactive `() {
+  fun `attendance record is not created when allocation is not active`() {
     instance.activitySchedule.activity.attendanceRequired = true
     allocation.deallocate(today.atStartOfDay())
 
@@ -85,18 +85,6 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository, never()).save(any())
-  }
-
-  @Test
-  fun `attendance record is not created today if allocation is active from tomorrow`() {
-    allocation.starts(tomorrow)
-
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-
-    service.createAttendanceRecordsFor(today)
-
-    verify(attendanceRepository, never()).existsAttendanceByScheduledInstanceAndPrisonerNumber(any(), any())
     verify(attendanceRepository, never()).save(any())
   }
 

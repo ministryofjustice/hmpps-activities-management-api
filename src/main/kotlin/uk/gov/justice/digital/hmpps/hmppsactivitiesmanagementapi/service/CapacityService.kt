@@ -4,12 +4,12 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import java.time.LocalDate
 
 @Service
 class CapacityService(
@@ -58,6 +58,6 @@ class CapacityService(
   }
 
   private fun ActivitySchedule.getAllocationsForToday(): List<Allocation> {
-    return this.getActiveAllocationsOnDate(LocalDate.now())
+    return this.allocations().filter { it.status(PrisonerStatus.ACTIVE) || it.status(PrisonerStatus.SUSPENDED) }
   }
 }

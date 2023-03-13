@@ -27,34 +27,6 @@ class ActivityScheduleTest {
   private val tomorrow = today.plusDays(1)
 
   @Test
-  fun `get allocations for date`() {
-    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true).apply {
-      allocatePrisoner(
-        prisonerNumber = "A1234AA".toPrisonerNumber(),
-        startDate = LocalDate.of(2022, 12, 1),
-        payBand = lowPayBand,
-        bookingId = 1,
-        allocatedBy = "FAKE USER",
-      )
-
-      allocatePrisoner(
-        prisonerNumber = "A1234AB".toPrisonerNumber(),
-        startDate = LocalDate.of(2022, 11, 10),
-        endDate = LocalDate.of(2022, 11, 30),
-        payBand = lowPayBand,
-        bookingId = 2,
-        allocatedBy = "FAKE USER",
-      )
-    }
-
-    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-10-01"))).isEmpty()
-    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-11-10"))[0].bookingId).isEqualTo(2)
-    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-11-30"))[0].bookingId).isEqualTo(2)
-    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2022-12-01"))[0].bookingId).isEqualTo(1)
-    assertThat(schedule.getActiveAllocationsOnDate(LocalDate.parse("2025-01-01"))[0].bookingId).isEqualTo(1)
-  }
-
-  @Test
   fun `converted to model lite`() {
     val expectedModel = ActivityScheduleLite(
       id = 1,

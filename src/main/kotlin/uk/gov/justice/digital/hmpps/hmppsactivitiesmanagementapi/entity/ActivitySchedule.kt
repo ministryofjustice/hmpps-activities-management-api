@@ -187,8 +187,6 @@ data class ActivitySchedule(
     slots.add(slot)
   }
 
-  fun getActiveAllocationsOnDate(date: LocalDate): List<Allocation> = this.allocations.filter { it.isActive(date) }
-
   fun allocatePrisoner(
     prisonerNumber: PrisonerNumber,
     payBand: PrisonPayBand,

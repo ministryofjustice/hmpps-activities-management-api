@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
@@ -65,8 +64,6 @@ data class Allocation(
   @Enumerated(EnumType.STRING)
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
     private set
-
-  fun isActive(date: LocalDate) = date.between(startDate, endDate) && status(PrisonerStatus.ENDED).not()
 
   private fun activitySummary() = activitySchedule.activity.summary
 
