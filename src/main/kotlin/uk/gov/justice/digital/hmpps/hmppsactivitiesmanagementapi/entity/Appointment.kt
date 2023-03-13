@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
@@ -34,7 +35,7 @@ data class Appointment(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = -1,
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "appointment_category_id", nullable = false)
   var category: AppointmentCategory,
 
@@ -61,7 +62,12 @@ data class Appointment(
   var updatedBy: String? = null,
 
   val deleted: Boolean = false,
+
+  @OneToOne
+  var schedule: AppointmentSchedule? = null,
 ) {
+  fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
+
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()

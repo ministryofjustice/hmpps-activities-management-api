@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
@@ -85,6 +86,7 @@ fun appointmentCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   comment: String = "Appointment level comment",
+  repeat: AppointmentRepeat? = null,
   prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
   AppointmentCreateRequest(
@@ -96,6 +98,7 @@ fun appointmentCreateRequest(
     startTime,
     endTime,
     comment,
+    repeat,
     prisonerNumbers,
   )
 
