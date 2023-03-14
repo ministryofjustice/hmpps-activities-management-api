@@ -69,8 +69,8 @@ class AppointmentServiceTest {
 
   @Test
   fun `getAppointmentById throws entity not found exception for unknown appointment id`() {
-    assertThatThrownBy { service.getAppointmentById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment -1 not found")
+    assertThatThrownBy { service.getAppointmentById(0) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Appointment 0 not found")
   }
 
   @Test
@@ -262,14 +262,14 @@ class AppointmentServiceTest {
         assertThat(size).isEqualTo(1)
         assertThat(occurrences().first().allocations().toModel()).containsAll(
           listOf(
-            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "A12345BC", bookingId = 1),
-            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "B23456CE", bookingId = 2),
+            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
+            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
           ),
         )
         assertThat(occurrences().first().instances().toModel()).containsAll(
           listOf(
             AppointmentInstance(
-              id = -1,
+              id = 0,
               category = AppointmentCategory(
                 id = 1,
                 parent = null,
@@ -284,7 +284,7 @@ class AppointmentServiceTest {
               comment = null, attended = null, cancelled = false,
             ),
             AppointmentInstance(
-              id = -1,
+              id = 0,
               category = AppointmentCategory(
                 id = 1,
                 parent = null,

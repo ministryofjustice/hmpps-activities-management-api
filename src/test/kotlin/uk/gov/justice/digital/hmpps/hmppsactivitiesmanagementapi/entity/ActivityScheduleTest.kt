@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -17,6 +18,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
@@ -172,7 +174,7 @@ class ActivityScheduleTest {
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FRED")
-      assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
   }
 
@@ -197,7 +199,7 @@ class ActivityScheduleTest {
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FREDDIE")
-      assertThat(allocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(payBand).isEqualTo(lowPayBand)
     }
   }

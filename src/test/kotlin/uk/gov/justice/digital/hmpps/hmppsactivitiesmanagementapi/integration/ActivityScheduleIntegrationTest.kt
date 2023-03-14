@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -20,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerAllocatedInformation
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
@@ -121,7 +123,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.prisoner.allocated")
       assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
-      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
     }
   }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class OffenderDeallocationServiceTest {
 
@@ -46,7 +48,7 @@ class OffenderDeallocationServiceTest {
 
     with(allocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
-      assertThat(deallocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(deallocatedReason).isNotNull
       assertThat(deallocatedBy).isNotNull
     }
@@ -75,7 +77,7 @@ class OffenderDeallocationServiceTest {
 
     with(allocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
-      assertThat(deallocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(deallocatedReason).isNotNull
       assertThat(deallocatedBy).isNotNull
     }
