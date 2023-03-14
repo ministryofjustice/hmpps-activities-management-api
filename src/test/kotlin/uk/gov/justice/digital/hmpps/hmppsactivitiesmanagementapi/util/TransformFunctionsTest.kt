@@ -75,6 +75,8 @@ class TransformFunctionsTest {
                   id = 1,
                   prisonerNumber = "A11111A",
                   status = "WAITING",
+                  issuePayment = false,
+                  incentiveLevelWarningIssued = false,
                 ),
               ),
             ),

@@ -41,8 +41,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT", null, null, null, null),
-          AttendanceUpdateRequest(2, "SICK", null, null, null, null),
+          AttendanceUpdateRequest(1, "ATT", null, null, null, null, null),
+          AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -67,8 +67,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT", null, null, null, null),
-          AttendanceUpdateRequest(2, "SICK", null, null, null, null),
+          AttendanceUpdateRequest(1, "ATT", null, null, null, null, null),
+          AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)

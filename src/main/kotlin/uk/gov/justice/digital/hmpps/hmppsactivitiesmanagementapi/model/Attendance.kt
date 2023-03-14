@@ -39,4 +39,16 @@ data class Attendance(
   val bonusAmount: Int? = null,
 
   val pieces: Int? = null,
+
+  @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
+  val issuePayment: Boolean?,
+
+  @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
+  val incentiveLevelWarningIssued: Boolean?,
+
+  @Schema(
+    description = "Free text to allow other reasons for non attendance against the attendance",
+    example = "Prisoner has a valid reason to miss the activity.",
+  )
+  var otherAbsenceReason: String? = null,
 )

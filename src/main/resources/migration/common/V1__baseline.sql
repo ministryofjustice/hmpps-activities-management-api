@@ -202,7 +202,7 @@ CREATE TABLE attendance (
   scheduled_instance_id             bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
   prisoner_number                   varchar(7) NOT NULL,
   attendance_reason_id              bigint REFERENCES attendance_reason (attendance_reason_id),
-  comment                           varchar(200),
+  comment                           varchar(240),
   recorded_time                     timestamp,
   recorded_by                       varchar(100),
   status                            varchar(20), -- WAITING, COMPLETED, LOCKED
@@ -211,7 +211,8 @@ CREATE TABLE attendance (
   pieces                            integer,
   issue_payment                     bool,
   case_note_id                      bigint,
-  incentive_level_warning_issued    bool
+  incentive_level_warning_issued    bool,
+  other_absence_reason              varchar(240)
 );
 
 CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_instance_id);

@@ -11,7 +11,7 @@ data class AttendanceUpdateRequest(
   @Schema(description = "The reason codes- SICK, REFUSED, NREQ, REST, CLASH, OTHER, SUSP, CANC, ATT", example = "ATT")
   val attendanceReason: String,
 
-  @Schema(description = "Comments could be more detail for SICK or the absence reason for OTHER", example = "Prisoner has COVID-19")
+  @Schema(description = "Comments such as more detail for SICK", example = "Prisoner has COVID-19")
   val comment: String?,
 
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
@@ -22,4 +22,7 @@ data class AttendanceUpdateRequest(
 
   @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
   val incentiveLevelWarningIssued: Boolean?,
+
+  @Schema(description = "The absence reason for OTHER", example = "Prisoner has another reason for missing the activity")
+  val otherAbsenceReason: String?,
 )

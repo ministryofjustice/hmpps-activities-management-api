@@ -96,7 +96,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATT", null, null, null, null)))
+    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATT", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)

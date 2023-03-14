@@ -536,6 +536,8 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     payAmount = attendance.payAmount,
     bonusAmount = attendance.bonusAmount,
     pieces = attendance.pieces,
+    issuePayment = attendance.issuePayment,
+    incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
