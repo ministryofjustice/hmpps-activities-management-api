@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
-import jakarta.validation.constraints.Size
 
 @Schema(
   description =
@@ -22,7 +22,7 @@ data class AppointmentRepeat(
   )
   val period: AppointmentRepeatPeriod?,
   @field:NotNull(message = "Repeat count must be supplied")
-  @field:Size(min = 1, message = "Repeat count must be {min} or greater")
+  @field:Min(value = 1, message = "Repeat count must be {value} or greater")
   @Schema(
     description =
     """

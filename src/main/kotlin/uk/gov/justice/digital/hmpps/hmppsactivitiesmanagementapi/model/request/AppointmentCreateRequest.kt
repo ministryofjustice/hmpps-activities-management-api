@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
@@ -89,6 +90,7 @@ data class AppointmentCreateRequest(
   )
   val comment: String = "",
 
+  @field:Valid
   @Schema(
     description =
     """

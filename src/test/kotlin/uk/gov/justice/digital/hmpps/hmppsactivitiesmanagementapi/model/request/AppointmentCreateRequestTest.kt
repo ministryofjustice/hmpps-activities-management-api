@@ -6,6 +6,8 @@ import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -82,6 +84,24 @@ class AppointmentCreateRequestTest {
   fun `at least one prisoner number must be supplied`() {
     val request = appointmentCreateRequest(prisonerNumbers = listOf())
     assertSingleValidationError(validator.validate(request), "prisonerNumbers", "At least one prisoner number must be supplied")
+  }
+
+  @Test
+  fun `repeat period must be supplied`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = null, count = 6))
+    assertSingleValidationError(validator.validate(request), "repeat.period", "Repeat period must be supplied")
+  }
+
+  @Test
+  fun `repeat count must be supplied`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentRepeatPeriod.FORTNIGHTLY, count = null))
+    assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
+  }
+
+  @Test
+  fun `repeat count must be greater than 0`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentRepeatPeriod.MONTHLY, count = 0))
+    assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentCreateRequest>>, propertyName: String, message: String) {
