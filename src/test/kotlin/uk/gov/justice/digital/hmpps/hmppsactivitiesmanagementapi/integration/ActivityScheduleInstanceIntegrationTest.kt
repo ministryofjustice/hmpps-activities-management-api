@@ -96,9 +96,31 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   inner class UncancelScheduledInstance {
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-11.sql")
+    @Sql("classpath:test_data/seed-activity-id-13.sql")
     fun `success`() {
-      // webTestClient.uncancelScheduledInstance()
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isNoContent
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-14.sql")
+    fun `scheduled instance is not cancelled`() {
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isBadRequest
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-15.sql")
+    fun `scheduled instance is in the past`() {
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isBadRequest
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-15.sql")
+    fun `scheduled instance does not exist`() {
+      val response = webTestClient.uncancelScheduledInstance(2, "CAN1234", "Mr Cancel")
+      response.expectStatus().isNotFound
     }
   }
 
