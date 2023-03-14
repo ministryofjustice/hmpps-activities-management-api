@@ -15,7 +15,7 @@ import java.time.LocalDate
 data class AppointmentSchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentScheduleId: Long = -1,
+  val appointmentScheduleId: Long = 0,
 
   @OneToOne(mappedBy = "schedule")
   val appointment: Appointment,
