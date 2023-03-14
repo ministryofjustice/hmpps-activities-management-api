@@ -21,7 +21,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `success`() {
-      val scheduledInstance = webTestClient.getScheduledInstancesById(1)
+      val scheduledInstance = webTestClient.getScheduledInstanceById(1)
 
       assertThat(scheduledInstance?.id).isEqualTo(1L)
       assertThat(scheduledInstance?.startTime.toString()).isEqualTo("10:00")
@@ -100,6 +100,19 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     fun `success`() {
       val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
       response.expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(1)) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+
+        with(attendances.first()) {
+          assertThat(attendanceReason).isNull()
+          assertThat(status).isEqualTo("WAIT")
+          assertThat(comment).isNull()
+          assertThat(recordedBy).isNull()
+          assertThat(recordedTime).isNull()
+        }
+      }
     }
 
     @Test
@@ -131,7 +144,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .headers(setAuthorisation(roles = listOf()))
     .exchange()
 
-  private fun WebTestClient.getScheduledInstancesById(id: Long) = get()
+  private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
     .uri("/scheduled-instances/$id")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf()))

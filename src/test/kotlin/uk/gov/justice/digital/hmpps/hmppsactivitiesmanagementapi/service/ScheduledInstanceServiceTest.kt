@@ -107,8 +107,6 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `success`() {
-      val oldRecordedTime = LocalDateTime.now()
-
       val scheduledInstance = ScheduledInstanceFixture.instance(
         id = 1,
         locationId = 2,
@@ -125,7 +123,7 @@ class ScheduledInstanceServiceTest {
         status = AttendanceStatus.CANCELLED,
         comment = "Some Comment",
         recordedBy = "Old User",
-        recordedTime = oldRecordedTime,
+        recordedTime = LocalDateTime.now(),
       )
       whenever(repository.findById(1)).thenReturn(
         Optional.of(scheduledInstance.copy(attendances = mutableListOf(attendance))),
@@ -144,8 +142,8 @@ class ScheduledInstanceServiceTest {
           assertThat(attendanceReason).isNull()
           assertThat(status).isEqualTo(AttendanceStatus.WAIT)
           assertThat(comment).isNull()
-          assertThat(recordedBy).isEqualTo("ABC123")
-          assertThat(recordedTime).isAfter(oldRecordedTime)
+          assertThat(recordedBy).isNull()
+          assertThat(recordedTime).isNull()
         }
       }
     }

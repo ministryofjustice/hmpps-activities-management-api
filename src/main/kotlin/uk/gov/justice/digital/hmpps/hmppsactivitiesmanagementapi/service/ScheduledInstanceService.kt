@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 class ScheduledInstanceService(private val repository: ScheduledInstanceRepository) {
@@ -50,8 +49,8 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
         attendanceReason = null,
         status = AttendanceStatus.WAIT,
         comment = null,
-        recordedBy = username,
-        recordedTime = LocalDateTime.now(),
+        recordedBy = null,
+        recordedTime = null,
         payAmount = null,
       )
     }.toMutableList()
