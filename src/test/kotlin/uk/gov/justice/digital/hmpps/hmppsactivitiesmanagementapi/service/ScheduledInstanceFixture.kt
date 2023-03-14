@@ -22,6 +22,10 @@ object ScheduledInstanceFixture {
     endTime: LocalTime = LocalTime.of(13, 0, 0),
     prisonCode: String = "MDI",
     locationId: Int,
+    cancelled: Boolean = false,
+    cancelledBy: String? = null,
+    cancelledReason: String? = null,
+
   ) = ScheduledInstance(
     scheduledInstanceId = id,
     ActivitySchedule(
@@ -59,6 +63,8 @@ object ScheduledInstanceFixture {
     sessionDate = date,
     startTime = startTime,
     endTime = endTime,
-    cancelled = false,
+    cancelled = cancelled,
+    cancelledBy = cancelledBy,
+    cancelledReason = cancelledReason,
   )
 }

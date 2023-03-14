@@ -1,20 +1,25 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 
@@ -49,17 +54,32 @@ class ScheduledInstanceController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
         description = "The scheduled instance was not found.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )
@@ -88,21 +108,93 @@ class ScheduledInstanceController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
         description = "The scheduled instance was not found.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )
   fun getAttendancesByScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
   ): List<Attendance> = attendancesService.findAttendancesByScheduledInstance(instanceId)
+
+  @PutMapping(value = ["/{instanceId}/uncancel"])
+  @ResponseBody
+  @Operation(
+    summary = "Un-cancels a scheduled instance.",
+    description = "Un-cancels a previously cancelled scheduled instance.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "The scheduled instance was successfully un cancelled.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The scheduled instance is not cancelled or it is in the past",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun uncancelScheduledInstance(
+    @PathVariable("instanceId") instanceId: Long,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The uncancel request with the user details",
+      required = true,
+    )
+    request: UncancelScheduledInstanceRequest,
+  ) {
+    scheduledInstanceService.uncancelScheduledInstance(instanceId, request.username)
+  }
 }

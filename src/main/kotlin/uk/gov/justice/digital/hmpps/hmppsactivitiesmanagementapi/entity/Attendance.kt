@@ -55,4 +55,5 @@ enum class AttendanceStatus {
   CANCELLED,
   COMPLETED,
   SCHEDULED,
+  WAIT,
 }
