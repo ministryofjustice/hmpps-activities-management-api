@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentScheduleRepository
 import java.lang.IllegalArgumentException
 import java.security.Principal
 import java.time.LocalDate
@@ -41,7 +40,6 @@ import java.util.Optional
 class AppointmentServiceTest {
   private val appointmentCategoryRepository: AppointmentCategoryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
-  private val appointmentScheduleRepository: AppointmentScheduleRepository = mock()
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -52,7 +50,6 @@ class AppointmentServiceTest {
   private val service = AppointmentService(
     appointmentCategoryRepository,
     appointmentRepository,
-    appointmentScheduleRepository,
     locationService,
     prisonApiUserClient,
     prisonerSearchApiClient,

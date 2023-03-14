@@ -33,7 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentId: Long = -1,
+  val appointmentId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "appointment_category_id", nullable = false)
@@ -51,7 +51,7 @@ data class Appointment(
 
   var endTime: LocalTime?,
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "appointment_schedule_id")
   var schedule: AppointmentSchedule? = null,
 
