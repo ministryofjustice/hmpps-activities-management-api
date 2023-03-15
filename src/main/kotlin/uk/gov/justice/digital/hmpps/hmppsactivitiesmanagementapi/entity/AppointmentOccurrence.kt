@@ -14,6 +14,9 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
@@ -70,7 +73,9 @@ data class AppointmentOccurrence(
 
   fun addInstance(instance: AppointmentInstance) = instances.add(instance)
 
-  fun prisonerCount() = allocations.count()
+  fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
+
+  fun prisonerCount() = prisonerNumbers().count()
 
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
@@ -102,6 +107,36 @@ data class AppointmentOccurrence(
       updated = updated,
       updatedBy?.let { userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
+    )
+
+  fun toDetails(categorySummary: AppointmentCategorySummary, prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+    AppointmentOccurrenceDetails(
+      appointmentOccurrenceId,
+      appointment.appointmentId,
+      sequenceNumber,
+      categorySummary,
+      prisonCode,
+      if (inCell) {
+        null
+      } else {
+        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      },
+      inCell,
+      startDate,
+      startTime,
+      endTime,
+      comment ?: appointment.comment,
+      false,
+      false,
+      appointment.created,
+      userMap.getOrDefault(appointment.createdBy, null).toSummary(appointment.createdBy),
+      updated,
+      if (updatedBy == null) {
+        null
+      } else {
+        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+      },
+      prisoners.toSummary(),
     )
 }
 
