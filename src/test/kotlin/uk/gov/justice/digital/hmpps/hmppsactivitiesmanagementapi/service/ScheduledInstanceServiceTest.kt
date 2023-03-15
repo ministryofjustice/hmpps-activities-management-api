@@ -12,7 +12,6 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -130,7 +129,7 @@ class ScheduledInstanceServiceTest {
 
       )
 
-      service.uncancelScheduledInstance(1, "ABC123")
+      service.uncancelScheduledInstance(1)
       verify(repository).save(updatedFixtureCaptor.capture())
 
       with(updatedFixtureCaptor.value) {
@@ -153,7 +152,7 @@ class ScheduledInstanceServiceTest {
       whenever(repository.findById(1)).thenReturn(Optional.empty())
 
       val exception = assertThrows<EntityNotFoundException> {
-        service.uncancelScheduledInstance(1, "ABC123")
+        service.uncancelScheduledInstance(1)
       }
 
       assertThat(exception.message).isEqualTo("No scheduled instance with ID [1] exists")
@@ -174,7 +173,7 @@ class ScheduledInstanceServiceTest {
       )
 
       val exception = assertThrows<IllegalArgumentException> {
-        service.uncancelScheduledInstance(1, "ABC123")
+        service.uncancelScheduledInstance(1)
       }
 
       assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is in the past")
@@ -193,7 +192,7 @@ class ScheduledInstanceServiceTest {
       )
 
       val exception = assertThrows<IllegalArgumentException> {
-        service.uncancelScheduledInstance(1, "ABC123")
+        service.uncancelScheduledInstance(1)
       }
 
       assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is not cancelled")

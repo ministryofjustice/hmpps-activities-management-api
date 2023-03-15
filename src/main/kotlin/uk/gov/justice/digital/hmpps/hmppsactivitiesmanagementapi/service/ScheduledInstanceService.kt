@@ -34,7 +34,7 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
     }
   }
 
-  fun uncancelScheduledInstance(id: Long, username: String) {
+  fun uncancelScheduledInstance(id: Long) {
     val scheduledInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("No scheduled instance with ID [$id] exists") }
     if (scheduledInstance.sessionDate.isBefore(LocalDate.now())) {

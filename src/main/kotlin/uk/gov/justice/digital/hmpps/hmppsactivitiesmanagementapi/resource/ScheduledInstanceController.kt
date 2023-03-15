@@ -198,6 +198,6 @@ class ScheduledInstanceController(
     )
     request: UncancelScheduledInstanceRequest,
   ) {
-    scheduledInstanceService.uncancelScheduledInstance(instanceId, request.username)
+    scheduledInstanceService.uncancelScheduledInstance(instanceId)
   }
 }
