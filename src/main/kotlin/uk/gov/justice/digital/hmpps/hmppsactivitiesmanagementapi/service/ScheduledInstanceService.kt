@@ -30,4 +30,10 @@ class ScheduledInstanceService(private val repository: ScheduledInstanceReposito
       activities
     }
   }
+
+  fun uncancelScheduledInstance(id: Long) {
+    val scheduledInstance = repository.findOrThrowNotFound(id)
+    scheduledInstance.uncancel()
+    repository.save(scheduledInstance)
+  }
 }

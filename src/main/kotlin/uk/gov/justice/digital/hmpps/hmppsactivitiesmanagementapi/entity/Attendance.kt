@@ -31,9 +31,9 @@ data class Attendance(
 
   var comment: String? = null,
 
-  val recordedTime: LocalDateTime? = null,
+  var recordedTime: LocalDateTime? = null,
 
-  val recordedBy: String? = null,
+  var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
   var status: AttendanceStatus = AttendanceStatus.SCHEDULED,
@@ -45,6 +45,15 @@ data class Attendance(
   var pieces: Int? = null,
 ) {
 
+  fun waiting() {
+    attendanceReason = null
+    status = AttendanceStatus.WAIT
+    comment = null
+    recordedBy = null
+    recordedTime = null
+    payAmount = null
+  }
+
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(attendanceId = $attendanceId )"
@@ -55,4 +64,5 @@ enum class AttendanceStatus {
   CANCELLED,
   COMPLETED,
   SCHEDULED,
+  WAIT,
 }
