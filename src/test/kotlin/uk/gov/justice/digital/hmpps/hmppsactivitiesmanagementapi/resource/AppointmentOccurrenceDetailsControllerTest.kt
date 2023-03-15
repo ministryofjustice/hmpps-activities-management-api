@@ -40,14 +40,14 @@ class AppointmentOccurrenceDetailsControllerTest : ControllerTestBase<Appointmen
 
   @Test
   fun `404 response when get appointment occurrence details by invalid id`() {
-    whenever(appointmentOccurrenceDetailsService.getAppointmentOccurrenceDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment occurrence -1 not found"))
+    whenever(appointmentOccurrenceDetailsService.getAppointmentOccurrenceDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment Occurrence -1 not found"))
 
     val response = mockMvc.getAppointmentOccurrenceDetailsById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment occurrence -1 not found")
+    assertThat(response.contentAsString).contains("Appointment Occurrence -1 not found")
 
     verify(appointmentOccurrenceDetailsService).getAppointmentOccurrenceDetailsById(-1)
   }
