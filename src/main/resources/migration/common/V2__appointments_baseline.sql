@@ -12,6 +12,14 @@ CREATE INDEX idx_appointment_category_code ON appointment_category (code);
 CREATE INDEX idx_appointment_category_description ON appointment_category (description);
 CREATE INDEX idx_appointment_category_display_order ON appointment_category (display_order);
 
+CREATE TABLE appointment_schedule (
+    appointment_schedule_id bigserial   NOT NULL CONSTRAINT appointment_schedule_pk PRIMARY KEY,
+    repeat_period           varchar(20) NOT NULL,
+    repeat_count            integer     NOT NULL
+);
+
+CREATE INDEX idx_appointment_schedule_repeat_period ON appointment_schedule (repeat_period);
+
 CREATE TABLE appointment (
     appointment_id          bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
     appointment_category_id bigint          NOT NULL REFERENCES appointment_category (appointment_category_id),
@@ -21,6 +29,7 @@ CREATE TABLE appointment (
     start_date              date            NOT NULL,
     start_time              time            NOT NULL,
     end_time                time,
+    appointment_schedule_id bigint          REFERENCES appointment_schedule (appointment_schedule_id),
     comment                 text            NOT NULL DEFAULT '',
     created                 timestamp       NOT NULL,
     created_by              varchar(100)    NOT NULL,
@@ -35,22 +44,7 @@ CREATE INDEX idx_appointment_internal_location_id ON appointment (internal_locat
 CREATE INDEX idx_appointment_start_date ON appointment (start_date);
 CREATE INDEX idx_appointment_start_time ON appointment (start_time);
 CREATE INDEX idx_appointment_end_time ON appointment (end_time);
-
-CREATE TABLE appointment_schedule (
-    appointment_schedule_id bigserial   NOT NULL CONSTRAINT appointment_schedule_id PRIMARY KEY,
-    appointment_id          bigint      NOT NULL REFERENCES appointment (appointment_id),
-    end_date                date        NOT NULL,
-    monday_flag             bool        NOT NULL DEFAULT false,
-    tuesday_flag            bool        NOT NULL DEFAULT false,
-    wednesday_flag          bool        NOT NULL DEFAULT false,
-    thursday_flag           bool        NOT NULL DEFAULT false,
-    friday_flag             bool        NOT NULL DEFAULT false,
-    saturday_flag           bool        NOT NULL DEFAULT false,
-    sunday_flag             bool        NOT NULL DEFAULT false
-);
-
-CREATE INDEX idx_appointment_schedule_appointment_id ON appointment_schedule (appointment_id);
-CREATE INDEX idx_appointment_schedule_end_date ON appointment_schedule (end_date);
+CREATE INDEX idx_appointment_schedule_id ON appointment (appointment_schedule_id);
 
 CREATE TABLE appointment_occurrence (
      appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,

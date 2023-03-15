@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import java.time.LocalDate
 
 class AppointmentTest {
   @Test
@@ -179,5 +180,25 @@ class AppointmentTest {
     with(entity.toDetails(locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
     }
+  }
+
+  @Test
+  fun `null schedule returns default iterator`() {
+    val today = LocalDate.now()
+    val entity = appointmentEntity(startDate = today).apply { schedule = null }
+    assertThat(entity.scheduleIterator().asSequence().toList()).containsExactly(
+      today,
+    )
+  }
+
+  @Test
+  fun `schedule values populates iterator`() {
+    val today = LocalDate.now()
+    val entity = appointmentEntity(startDate = today, repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3)
+    assertThat(entity.scheduleIterator().asSequence().toList()).containsExactly(
+      today,
+      today.plusWeeks(1),
+      today.plusWeeks(2),
+    )
   }
 }

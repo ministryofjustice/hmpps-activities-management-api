@@ -4,6 +4,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -15,6 +17,7 @@ internal fun appointmentEntity(
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
+  repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = 1,
@@ -32,9 +35,13 @@ internal fun appointmentEntity(
   updatedBy = updatedBy,
   deleted = false,
 ).apply {
-  for (i in 1..numberOfOccurrences) {
-    val occurrenceStartDate = this.startDate.plusDays(i - 1L)
-    this.addOccurrence(appointmentOccurrenceEntity(this, occurrenceStartDate, prisonerNumberToBookingIdMap))
+  this.schedule = AppointmentSchedule(
+    appointment = this,
+    repeatPeriod = repeatPeriod ?: AppointmentRepeatPeriod.DAILY,
+    repeatCount = numberOfOccurrences,
+  )
+  this.scheduleIterator().forEach {
+    this.addOccurrence(appointmentOccurrenceEntity(this, it, prisonerNumberToBookingIdMap))
   }
 }
 

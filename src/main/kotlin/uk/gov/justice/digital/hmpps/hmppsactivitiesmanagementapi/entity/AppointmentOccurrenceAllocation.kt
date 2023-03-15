@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 data class AppointmentOccurrenceAllocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentOccurrenceAllocationId: Long = -1,
+  val appointmentOccurrenceAllocationId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "appointment_occurrence_id", nullable = false)

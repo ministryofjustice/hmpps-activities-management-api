@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 data class AppointmentCategory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentCategoryId: Long = -1,
+  val appointmentCategoryId: Long = 0,
 
   val code: String,
 

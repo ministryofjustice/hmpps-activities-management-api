@@ -10,6 +10,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -150,6 +152,28 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     assertSingleAppointmentTwoPrisoner(appointment, request)
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+  }
+
+  @Test
+  fun `create individual repeat appointment success`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
+
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+      ),
+    )
+
+    val appointment = webTestClient.createAppointment(request)!!
+
+    with(appointment) {
+      with(occurrences) {
+        assertThat(size).isEqualTo(3)
+      }
+    }
   }
 
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
