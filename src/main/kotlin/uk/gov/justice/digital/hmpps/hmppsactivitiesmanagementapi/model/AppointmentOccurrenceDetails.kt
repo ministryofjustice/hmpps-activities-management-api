@@ -9,11 +9,12 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Summarises a specific appointment occurrence. Will contain copies of the parent appointment's properties unless they
-  have been changed on this appointment occurrence.
+  Details of a specific appointment occurrence. Will contain copies of the parent appointment's properties unless they
+  have been changed on this appointment occurrence. Contains only properties needed to make additional API calls
+  and to display.
   """,
 )
-data class AppointmentOccurrenceSummary(
+data class AppointmentOccurrenceDetails(
   @Schema(
     description = "The internally generated identifier for this appointment occurrence",
     example = "123456",
@@ -21,10 +22,34 @@ data class AppointmentOccurrenceSummary(
   val id: Long,
 
   @Schema(
+    description = "The internally generated identifier for the parent appointment",
+    example = "12345",
+  )
+  val appointmentId: Long,
+
+  @Schema(
     description = "The sequence number of this appointment occurrence within the recurring appointment series",
     example = "3",
   )
   val sequenceNumber: Int,
+
+  @Schema(
+    description =
+    """
+    The summary of the parent appointment's category
+    """,
+  )
+  val category: AppointmentCategorySummary,
+
+  @Schema(
+    description =
+    """
+    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
+    example = "SKI",
+  )
+  val prisonCode: String,
 
   @Schema(
     description =
@@ -96,6 +121,20 @@ data class AppointmentOccurrenceSummary(
   val isCancelled: Boolean,
 
   @Schema(
+    description = "The date and time the parent appointment was created. Will not change",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val created: LocalDateTime,
+
+  @Schema(
+    description =
+    """
+    The summary of the user that created the parent appointment
+    """,
+  )
+  val createdBy: UserSummary,
+
+  @Schema(
     description =
     """
     The date and time this appointment occurrence was last edited.
@@ -118,9 +157,9 @@ data class AppointmentOccurrenceSummary(
   @Schema(
     description =
     """
-    The number of prisoners allocated to this appointment occurrence
+    Summary of the prisoner or prisoners allocated to this appointment occurrence. Prisoners are allocated at the
+    occurrence level to allow for per occurrence allocation changes.
     """,
-    example = "3",
   )
-  val prisonerCount: Int,
+  val prisoners: List<PrisonerSummary> = emptyList(),
 )

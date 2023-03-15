@@ -80,16 +80,6 @@ data class AppointmentCreateRequest(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
-  @Schema(
-    description =
-    """
-    Notes relating to the appointment.
-    The default value if no notes are specified at the occurrence or instance levels
-    """,
-    example = "This appointment will help adjusting to life outside of prison",
-  )
-  val comment: String = "",
-
   @field:Valid
   @Schema(
     description =
@@ -99,6 +89,16 @@ data class AppointmentCreateRequest(
     """,
   )
   val repeat: AppointmentRepeat? = null,
+
+  @Schema(
+    description =
+    """
+    Notes relating to the appointment.
+    The default value if no notes are specified at the occurrence or instance levels
+    """,
+    example = "This appointment will help adjusting to life outside of prison",
+  )
+  val comment: String = "",
 
   @field:NotEmpty(message = "At least one prisoner number must be supplied")
   @Schema(

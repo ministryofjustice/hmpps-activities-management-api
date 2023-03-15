@@ -35,20 +35,24 @@ internal fun appointmentEntity(
   updatedBy = updatedBy,
   deleted = false,
 ).apply {
-  this.schedule = AppointmentSchedule(
-    appointment = this,
-    repeatPeriod = repeatPeriod ?: AppointmentRepeatPeriod.DAILY,
-    repeatCount = numberOfOccurrences,
-  )
-  this.scheduleIterator().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, it, prisonerNumberToBookingIdMap))
+  repeatPeriod?.let {
+    this.schedule = AppointmentSchedule(
+      appointment = this,
+      repeatPeriod = it,
+      repeatCount = numberOfOccurrences,
+    )
+  }
+
+  this.scheduleIterator().withIndex().forEach {
+    this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1, it.value, prisonerNumberToBookingIdMap))
   }
 }
 
-private fun appointmentOccurrenceEntity(appointment: Appointment, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+private fun appointmentOccurrenceEntity(appointment: Appointment, sequenceNumber: Int, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = 1,
     appointment = appointment,
+    sequenceNumber = sequenceNumber,
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
     startDate = startDate,

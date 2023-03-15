@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
@@ -71,6 +72,7 @@ data class Appointment(
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 
   fun occurrences() = occurrences.toList()
@@ -79,7 +81,7 @@ data class Appointment(
 
   fun internalLocationIds() = listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
 
-  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.prisonerNumbers() }.flatten().distinct()
 
   fun usernames() = listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()
 
@@ -114,6 +116,7 @@ data class Appointment(
       startDate,
       startTime,
       endTime,
+      schedule?.toRepeat(),
       comment,
       created,
       userMap.getOrDefault(createdBy, null).toSummary(createdBy),
