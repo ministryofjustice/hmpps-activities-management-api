@@ -1,7 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations
@@ -67,7 +68,7 @@ class AppointmentDetailsServiceTest {
         ),
       ),
     )
-    Assertions.assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
+    assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
       AppointmentDetails(
         entity.appointmentId,
         AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
@@ -107,7 +108,7 @@ class AppointmentDetailsServiceTest {
 
   @Test
   fun `getAppointmentDetailsById throws entity not found exception for unknown appointment id`() {
-    Assertions.assertThatThrownBy { service.getAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment -1 not found")
   }
 }

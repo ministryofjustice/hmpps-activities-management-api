@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -174,7 +174,7 @@ class ActivityScheduleTest {
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FRED")
-      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
   }
 
@@ -199,7 +199,7 @@ class ActivityScheduleTest {
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FREDDIE")
-      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(payBand).isEqualTo(lowPayBand)
     }
   }

@@ -329,10 +329,6 @@ class AppointmentServiceTest {
 
     service.createAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
-      with(occurrences()) {
-        assertThat(size).isEqualTo(3)
-      }
-    }
+    assertThat(appointmentEntityCaptor.value.occurrences()).hasSize(3)
   }
 }
