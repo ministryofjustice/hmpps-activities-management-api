@@ -63,13 +63,14 @@ class AppointmentService(
         )
       }
 
-      this.scheduleIterator().forEach {
+      this.scheduleIterator().withIndex().forEach {
         this.addOccurrence(
           AppointmentOccurrenceEntity(
             appointment = this,
+            sequenceNumber = it.index + 1,
             internalLocationId = this.internalLocationId,
             inCell = this.inCell,
-            startDate = it,
+            startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
           ).apply {

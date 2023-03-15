@@ -78,6 +78,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(get(0)) {
           assertThat(id).isEqualTo(1)
+          assertThat(sequenceNumber).isEqualTo(1)
           assertThat(internalLocation).isEqualTo(AppointmentLocationSummary(123, "TPR", "Test Appointment Location"))
           assertThat(inCell).isEqualTo(false)
           assertThat(startDate).isEqualTo(LocalDate.now())

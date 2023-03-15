@@ -115,6 +115,7 @@ class AppointmentTest {
         occurrences = listOf(
           AppointmentOccurrenceSummary(
             occurrenceEntity.appointmentOccurrenceId,
+            occurrenceEntity.sequenceNumber,
             AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
             occurrenceEntity.inCell,
             occurrenceEntity.startDate,

@@ -33,6 +33,8 @@ data class AppointmentOccurrence(
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointment: Appointment,
 
+  val sequenceNumber: Int,
+
   var internalLocationId: Long?,
 
   var inCell: Boolean,
@@ -88,6 +90,7 @@ data class AppointmentOccurrence(
   fun toSummary(prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, appointmentComment: String) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
+      sequenceNumber,
       if (inCell) null else locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode),
       inCell,
       startDate,

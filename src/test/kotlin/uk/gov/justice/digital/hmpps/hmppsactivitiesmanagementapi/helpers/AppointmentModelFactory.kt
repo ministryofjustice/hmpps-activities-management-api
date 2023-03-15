@@ -119,6 +119,7 @@ fun appointmentDetails() = AppointmentDetails(
   occurrences = listOf(
     AppointmentOccurrenceSummary(
       1,
+      1,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
       false,
       LocalDate.now(),

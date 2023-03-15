@@ -24,7 +24,7 @@ data class AppointmentOccurrenceSummary(
     description = "The sequence number of this appointment occurrence within the recurring appointment series",
     example = "3",
   )
-  val number: Int,
+  val sequenceNumber: Int,
 
   @Schema(
     description =

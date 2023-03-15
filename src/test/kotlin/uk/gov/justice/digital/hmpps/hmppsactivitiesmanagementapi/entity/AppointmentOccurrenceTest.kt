@@ -41,6 +41,7 @@ class AppointmentOccurrenceTest {
     assertThat(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")).isEqualTo(
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
+        1,
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
         false,
         LocalDate.now(),
@@ -65,6 +66,7 @@ class AppointmentOccurrenceTest {
       listOf(
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
+          1,
           AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
           entity.inCell,
           entity.startDate,

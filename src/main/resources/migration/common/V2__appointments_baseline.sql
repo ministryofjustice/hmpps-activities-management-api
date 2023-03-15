@@ -49,6 +49,7 @@ CREATE INDEX idx_appointment_schedule_id ON appointment (appointment_schedule_id
 CREATE TABLE appointment_occurrence (
      appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,
      appointment_id             bigint          NOT NULL REFERENCES appointment (appointment_id),
+     sequence_number            integer         NOT NULL,
      internal_location_id       bigint,
      in_cell                    boolean         NOT NULL DEFAULT false,
      start_date                 date            NOT NULL,
