@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import java.time.LocalDateTime
@@ -22,11 +22,11 @@ class AttendanceTest {
     attendance.waiting()
 
     with(attendance) {
-      Assertions.assertThat(attendanceReason).isNull()
-      Assertions.assertThat(status).isEqualTo(AttendanceStatus.WAIT)
-      Assertions.assertThat(comment).isNull()
-      Assertions.assertThat(recordedBy).isNull()
-      Assertions.assertThat(recordedTime).isNull()
+      assertThat(attendanceReason).isNull()
+      assertThat(status).isEqualTo(AttendanceStatus.WAIT)
+      assertThat(comment).isNull()
+      assertThat(recordedBy).isNull()
+      assertThat(recordedTime).isNull()
     }
   }
 }
