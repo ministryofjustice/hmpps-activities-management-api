@@ -3,9 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class ScheduledInstanceTest {
 
@@ -43,22 +44,12 @@ class ScheduledInstanceTest {
 
   @Test
   fun `instance state is set correctly when uncancelled`() {
-    val attendance = Attendance(
-      scheduledInstance = instance,
-      prisonerNumber = "P000111",
-      attendanceReason = AttendanceReason(1, "Some Reason", "Some Desc"),
-      status = AttendanceStatus.CANCELLED,
-      comment = "Some Comment",
-      recordedBy = "Old User",
-      recordedTime = LocalDateTime.now(),
-    )
-
     val cancelledInstance = instance.copy(
       scheduledInstanceId = 1,
       cancelled = true,
       cancelledBy = "DEF981",
       cancelledReason = "Meeting Cancelled",
-      attendances = mutableListOf(attendance),
+      attendances = mutableListOf(mock()),
     )
 
     cancelledInstance.uncancel()
@@ -68,13 +59,7 @@ class ScheduledInstanceTest {
       assertThat(cancelledBy).isNull()
       assertThat(cancelledReason).isNull()
 
-      with(attendances.first()) {
-        assertThat(attendanceReason).isNull()
-        assertThat(status).isEqualTo(AttendanceStatus.WAIT)
-        assertThat(comment).isNull()
-        assertThat(recordedBy).isNull()
-        assertThat(recordedTime).isNull()
-      }
+      verify(attendances.first()).waiting()
     }
   }
 
