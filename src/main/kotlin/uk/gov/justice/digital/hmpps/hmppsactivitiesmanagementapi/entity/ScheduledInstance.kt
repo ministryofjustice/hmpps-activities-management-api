@@ -50,6 +50,34 @@ data class ScheduledInstance(
 
   var comment: String? = null,
 ) {
+
+  fun uncancel() {
+    if (sessionDate.isBefore(LocalDate.now())) {
+      throw IllegalArgumentException("Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past")
+    }
+
+    if (!cancelled) {
+      throw IllegalArgumentException("Cannot uncancel scheduled instance [$scheduledInstanceId] because it is not cancelled")
+    }
+
+    val uncancelledAttendences = attendances.map {
+      it.copy(
+        attendanceReason = null,
+        status = AttendanceStatus.WAIT,
+        comment = null,
+        recordedBy = null,
+        recordedTime = null,
+        payAmount = null,
+      )
+    }.toMutableList()
+
+    cancelled = false
+    cancelledBy = null
+    cancelledReason = null
+    attendances.clear()
+    attendances.addAll(uncancelledAttendences)
+  }
+
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId,

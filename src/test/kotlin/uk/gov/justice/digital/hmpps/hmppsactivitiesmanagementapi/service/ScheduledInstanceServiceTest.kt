@@ -16,14 +16,10 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -106,45 +102,15 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `success`() {
-      val scheduledInstance = ScheduledInstanceFixture.instance(
-        id = 1,
-        locationId = 2,
-        cancelled = true,
-        cancelledBy = "DEF981",
-        cancelledReason = "Meeting Cancelled",
-        date = LocalDate.now(),
-      )
-
-      val attendance = Attendance(
-        scheduledInstance = scheduledInstance,
-        prisonerNumber = "P000111",
-        attendanceReason = AttendanceReason(1, "Some Reason", "Some Desc"),
-        status = AttendanceStatus.CANCELLED,
-        comment = "Some Comment",
-        recordedBy = "Old User",
-        recordedTime = LocalDateTime.now(),
-      )
+      val instance = mock<ScheduledInstance>()
       whenever(repository.findById(1)).thenReturn(
-        Optional.of(scheduledInstance.copy(attendances = mutableListOf(attendance))),
-
+        Optional.of(instance),
       )
 
       service.uncancelScheduledInstance(1)
-      verify(repository).save(updatedFixtureCaptor.capture())
 
-      with(updatedFixtureCaptor.value) {
-        assertThat(cancelled).isFalse
-        assertThat(cancelledBy).isNull()
-        assertThat(cancelledReason).isNull()
-
-        with(attendances.first()) {
-          assertThat(attendanceReason).isNull()
-          assertThat(status).isEqualTo(AttendanceStatus.WAIT)
-          assertThat(comment).isNull()
-          assertThat(recordedBy).isNull()
-          assertThat(recordedTime).isNull()
-        }
-      }
+      verify(instance).uncancel()
+      verify(repository).save(instance)
     }
 
     @Test
@@ -155,47 +121,7 @@ class ScheduledInstanceServiceTest {
         service.uncancelScheduledInstance(1)
       }
 
-      assertThat(exception.message).isEqualTo("No scheduled instance with ID [1] exists")
-    }
-
-    @Test
-    fun `scheduled event is in the past`() {
-      whenever(repository.findById(1)).thenReturn(
-        Optional.of(
-          ScheduledInstanceFixture.instance(
-            id = 1,
-            locationId = 2,
-            cancelled = true,
-            cancelledBy = "DEF981",
-            cancelledReason = "Meeting Cancelled",
-          ),
-        ),
-      )
-
-      val exception = assertThrows<IllegalArgumentException> {
-        service.uncancelScheduledInstance(1)
-      }
-
-      assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is in the past")
-    }
-
-    @Test
-    fun `scheduled event is not cancelled`() {
-      whenever(repository.findById(1)).thenReturn(
-        Optional.of(
-          ScheduledInstanceFixture.instance(
-            id = 1,
-            locationId = 2,
-            date = LocalDate.now(),
-          ),
-        ),
-      )
-
-      val exception = assertThrows<IllegalArgumentException> {
-        service.uncancelScheduledInstance(1)
-      }
-
-      assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is not cancelled")
+      assertThat(exception.message).isEqualTo("Scheduled Instance 1 not found")
     }
   }
 }
