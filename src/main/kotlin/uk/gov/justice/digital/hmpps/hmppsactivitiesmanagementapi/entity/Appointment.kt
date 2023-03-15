@@ -81,7 +81,7 @@ data class Appointment(
 
   fun internalLocationIds() = listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
 
-  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.prisonerNumbers() }.flatten().distinct()
 
   fun usernames() = listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()
 

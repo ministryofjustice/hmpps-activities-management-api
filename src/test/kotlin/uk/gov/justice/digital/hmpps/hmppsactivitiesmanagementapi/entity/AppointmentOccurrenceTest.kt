@@ -28,6 +28,21 @@ class AppointmentOccurrenceTest {
   }
 
   @Test
+  fun `prisoner numbers concatenates allocations`() {
+    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789)).occurrences().first()
+    assertThat(entity.prisonerNumbers()).containsExactly("A1234BC", "B2345CD")
+  }
+
+  @Test
+  fun `prisoner numbers removes duplicates`() {
+    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456), numberOfOccurrences = 2)
+    val occurrence = entity.occurrences().first()
+    entity.occurrences().map { it.allocations() }.flatten().forEach { occurrence.addAllocation(it) }
+    assertThat(occurrence.allocations().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
+    assertThat(entity.prisonerNumbers()).containsExactly("A1234BC")
+  }
+
+  @Test
   fun `prisoner count counts prisoners`() {
     val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789)).occurrences().first()
     assertThat(entity.prisonerCount()).isEqualTo(2)
