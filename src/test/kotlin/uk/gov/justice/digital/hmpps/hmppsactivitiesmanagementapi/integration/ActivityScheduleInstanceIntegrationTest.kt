@@ -20,12 +20,12 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   inner class GetScheduledInstancesById {
     @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
-    fun `success`() {
-      val scheduledInstance = webTestClient.getScheduledInstanceById(1)
+    fun `get schedule by its id`() {
+      val scheduledInstance = webTestClient.getScheduledInstanceById(1)!!
 
-      assertThat(scheduledInstance?.id).isEqualTo(1L)
-      assertThat(scheduledInstance?.startTime.toString()).isEqualTo("10:00")
-      assertThat(scheduledInstance?.endTime.toString()).isEqualTo("11:00")
+      assertThat(scheduledInstance.id).isEqualTo(1L)
+      assertThat(scheduledInstance.startTime.toString()).isEqualTo("10:00")
+      assertThat(scheduledInstance.endTime.toString()).isEqualTo("11:00")
     }
   }
 
@@ -97,11 +97,11 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-13.sql")
-    fun `success`() {
+    fun `scheduled instance is cancelled`() {
       val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
       response.expectStatus().isNoContent
 
-      with(webTestClient.getScheduledInstanceById(1)) {
+      with(webTestClient.getScheduledInstanceById(1)!!) {
         assertThat(cancelled).isFalse
         assertThat(cancelledBy).isNull()
 

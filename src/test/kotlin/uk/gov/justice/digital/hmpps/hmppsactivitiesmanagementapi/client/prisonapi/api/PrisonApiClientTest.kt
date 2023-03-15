@@ -299,4 +299,18 @@ class PrisonApiClientTest {
       ),
     )
   }
+
+  @Test
+  fun `getExternalTransfersOnDate - success`() {
+    val prisonCode = "MDI"
+    val prisonerNumbers = setOf("B4793VX")
+    val date = LocalDate.now()
+
+    prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
+
+    val externalTransfers = prisonApiClient.getExternalTransfersOnDate(prisonCode, prisonerNumbers, date).block()!!
+
+    assertThat(externalTransfers).hasSize(1)
+    assertThat(externalTransfers.first().offenderNo).isEqualTo("B4793VX")
+  }
 }
