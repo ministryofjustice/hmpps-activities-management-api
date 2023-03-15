@@ -86,6 +86,17 @@ data class AppointmentDetails(
   val comment: String,
 
   @Schema(
+    description =
+    """
+    Indicates that this appointment was originally created as a recurring series of appointment occurrences via
+    supplying repeat options on the appointment create request. Note that this does not mean there is always more than
+    one occurrence as a repeat count of one is valid.
+    """,
+    example = "false",
+  )
+  val isRecurring: Boolean,
+
+  @Schema(
     description = "The date and time this appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

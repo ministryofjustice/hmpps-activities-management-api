@@ -108,6 +108,7 @@ class AppointmentTest {
         entity.startTime,
         entity.endTime,
         entity.comment,
+        false,
         entity.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,

@@ -117,6 +117,7 @@ data class Appointment(
       startTime,
       endTime,
       comment,
+      schedule != null,
       created,
       userMap.getOrDefault(createdBy, null).toSummary(createdBy),
       updated,

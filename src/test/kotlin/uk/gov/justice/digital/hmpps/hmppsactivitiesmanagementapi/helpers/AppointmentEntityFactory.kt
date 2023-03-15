@@ -35,11 +35,14 @@ internal fun appointmentEntity(
   updatedBy = updatedBy,
   deleted = false,
 ).apply {
-  this.schedule = AppointmentSchedule(
-    appointment = this,
-    repeatPeriod = repeatPeriod ?: AppointmentRepeatPeriod.DAILY,
-    repeatCount = numberOfOccurrences,
-  )
+  repeatPeriod?.let {
+    this.schedule = AppointmentSchedule(
+      appointment = this,
+      repeatPeriod = it,
+      repeatCount = numberOfOccurrences,
+    )
+  }
+
   this.scheduleIterator().withIndex().forEach {
     this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1, it.value, prisonerNumberToBookingIdMap))
   }

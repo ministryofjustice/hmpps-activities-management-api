@@ -112,6 +112,7 @@ fun appointmentDetails() = AppointmentDetails(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment level comment",
+  false,
   LocalDateTime.now(),
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   LocalDateTime.now(),
