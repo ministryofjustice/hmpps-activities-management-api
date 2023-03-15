@@ -186,6 +186,16 @@ class ScheduledInstanceController(
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not Found, the scheduled instance does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   fun uncancelScheduledInstance(
