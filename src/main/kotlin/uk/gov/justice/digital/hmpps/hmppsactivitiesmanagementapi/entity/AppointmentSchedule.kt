@@ -8,7 +8,9 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 @Entity
 @Table(name = "appointment_schedule")
@@ -25,6 +27,11 @@ data class AppointmentSchedule(
 
   var repeatCount: Int,
 ) {
+  fun toRepeat() = AppointmentRepeat(
+    AppointmentRepeatPeriodModel.valueOf(repeatPeriod.toString()),
+    repeatCount,
+  )
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false

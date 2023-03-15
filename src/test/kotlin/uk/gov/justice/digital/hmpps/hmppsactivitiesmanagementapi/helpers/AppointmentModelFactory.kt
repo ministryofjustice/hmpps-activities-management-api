@@ -97,8 +97,8 @@ fun appointmentCreateRequest(
     startDate,
     startTime,
     endTime,
-    comment,
     repeat,
+    comment,
     prisonerNumbers,
   )
 
@@ -111,8 +111,8 @@ fun appointmentDetails() = AppointmentDetails(
   LocalDate.now(),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
+  null,
   "Appointment level comment",
-  false,
   LocalDateTime.now(),
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   LocalDateTime.now(),
