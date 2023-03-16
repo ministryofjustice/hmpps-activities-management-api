@@ -39,14 +39,13 @@ class AttendancesService(
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
-      it.apply {
-        attendanceReason =
-          attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason.uppercase().trim()]
-        status = AttendanceStatus.COMPLETED
-        comment = attendanceUpdatesById[it.attendanceId]!!.comment
-        issuePayment = attendanceUpdatesById[it.attendanceId]!!.issuePayment
-        incentiveLevelWarningIssued = attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued
-      }
+      it.mark(
+          attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason.uppercase().trim()],
+          AttendanceStatus.COMPLETED,
+          attendanceUpdatesById[it.attendanceId]!!.comment,
+          attendanceUpdatesById[it.attendanceId]!!.issuePayment,
+          attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
+        )
     }
 
     attendanceRepository.saveAll(updatedAttendances)

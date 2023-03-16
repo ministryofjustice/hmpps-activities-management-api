@@ -76,6 +76,16 @@ data class Attendance(
     recordedBy = scheduledInstance.cancelledBy
   }
 
+  fun mark(reason: AttendanceReason?, newStatus: AttendanceStatus, newComment: String?, newIssuePayment: Boolean?,
+           newIncentiveLevelWarningIssued: Boolean?): Attendance {
+    attendanceReason = reason
+    status = newStatus
+    comment = newComment
+    issuePayment = newIssuePayment
+    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    return this
+  }
+
   private fun getPay(incentiveCode: String): ActivityPay? {
     val currentAllocation = scheduledInstance.activitySchedule.allocations()
       .filter { it.isAllocated() }
@@ -85,6 +95,7 @@ data class Attendance(
       .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
       .find { it.incentiveNomisCode == incentiveCode }
   }
+
 }
 
 enum class AttendanceStatus {
