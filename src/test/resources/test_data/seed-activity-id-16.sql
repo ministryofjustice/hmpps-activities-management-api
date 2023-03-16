@@ -37,8 +37,17 @@ values (4, 2, 'A11111A', 10001, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (5, 2, 'A22222A', 10002, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, now(), '10:00:00', '11:00:00', true, now(), 'Old Canceller', 'Nobody Available', null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (1, 1, now()::date, '10:00:00', '11:00:00', false, null, null, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (2, 2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (3, 2, now()::date, '14:00:00', '15:00:00', true, now(), 'USER1', 'Location unavailable', null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, posted, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (1, 1, 'A22222A', 1, 'Attendance Comment', null, now(), 'Old Recorder', 'WAIT', 150, null, null);
+values (1, 1, 'A11111A', null, null, false, null, null, 'WAIT', null, null, null);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (2, 1, 'A22222A', null, null, null, null, 'WAIT', null, null, null);

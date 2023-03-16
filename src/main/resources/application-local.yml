@@ -24,8 +24,8 @@ spring:
 
 system:
   client:
-    id: activities-management-admin-2
-    secret: M>pBIdS3LtQn$jzi*b)sIfc:V)=owmbzVz;lAO3mM:U*3+%Qwbv(SnSLLm1E
+    id: activities-management-admin-1
+    secret: secret
 
 # Container-provider local auth server
 hmpps:

@@ -104,13 +104,7 @@ class ScheduledEventService(
         dateRange.endInclusive,
       )
 
-    return if (slot != null) {
-      activities.filter {
-        TimeSlot.slot(it.startTime!!) == slot
-      }
-    } else {
-      activities
-    }
+    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
   }
 
   /**
@@ -183,25 +177,28 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ) =
-    ifTrue(!rolloutPrison.active) {
+    if (!rolloutPrison.active) {
       prisonApiClient.getScheduledActivitiesForPrisonerNumbers(
         prisonCode,
         prisonerNumbers,
         date,
         timeSlot,
       )
+    } else {
+      Mono.just(emptyList())
     }
 
   private fun fetchPrisonApiExternalTransfersIfDateIsToday(
     date: LocalDate,
     prisonCode: String,
     prisonerNumbers: Set<String>,
-  ) = ifTrue(date == LocalDate.now()) {
-    prisonApiClient.getExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
-      .map { transfers -> transfers.map { transfer -> transfer.redacted() } }
-  }
-
-  private fun <T> ifTrue(condition: Boolean, f: () -> Mono<List<T>>) = if (condition) f() else Mono.just(emptyList())
+  ) =
+    if (date == LocalDate.now()) {
+      prisonApiClient.getExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
+        .map { transfers -> transfers.map { transfer -> transfer.redacted() } }
+    } else {
+      Mono.just(emptyList())
+    }
 
   private fun PrisonerSchedule.redacted() = this.copy(
     comment = null,
@@ -221,12 +218,6 @@ class ScheduledEventService(
     val activities = prisonerScheduledActivityRepository
       .getScheduledActivitiesForPrisonerListAndDate(prisonCode, prisonerNumbers, date)
 
-    return if (slot != null) {
-      activities.filter {
-        TimeSlot.slot(it.startTime!!) == slot
-      }
-    } else {
-      activities
-    }
+    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
   }
 }
