@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -77,6 +79,16 @@ data class AppointmentCreateRequest(
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
+
+  @field:Valid
+  @Schema(
+    description =
+    """
+    Describes how an appointment will repeat. The period or frequency of those occurrences and how many occurrences there
+    will be in total in the series. Will create a single appointment occurrence if not supplied.
+    """,
+  )
+  val repeat: AppointmentRepeat? = null,
 
   @Schema(
     description =

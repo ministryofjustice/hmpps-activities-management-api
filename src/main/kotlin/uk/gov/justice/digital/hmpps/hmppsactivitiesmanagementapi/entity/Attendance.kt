@@ -31,9 +31,9 @@ data class Attendance(
 
   var comment: String? = null,
 
-  val recordedTime: LocalDateTime? = null,
+  var recordedTime: LocalDateTime? = null,
 
-  val recordedBy: String? = null,
+  var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
   var status: AttendanceStatus = AttendanceStatus.WAITING,
@@ -52,6 +52,15 @@ data class Attendance(
 
   var otherAbsenceReason: String? = null,
 ) {
+
+  fun waiting() {
+    attendanceReason = null
+    status = AttendanceStatus.WAIT
+    comment = null
+    recordedBy = null
+    recordedTime = null
+    payAmount = null
+  }
 
   @Override
   override fun toString(): String {

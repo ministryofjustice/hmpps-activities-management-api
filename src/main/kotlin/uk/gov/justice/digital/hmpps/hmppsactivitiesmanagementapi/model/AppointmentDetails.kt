@@ -79,6 +79,16 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
+    Describes how an appointment was specified to repeat if at all. The period or frequency of the occurrences and how
+    many occurrences there are in total in the series. Note that the presence of this property does not mean there is
+    always more than one occurrence as a repeat count of one is valid.
+    """,
+  )
+  val repeat: AppointmentRepeat?,
+
+  @Schema(
+    description =
+    """
     Notes relating to the appointment
     """,
     example = "This appointment will help adjusting to life outside of prison",

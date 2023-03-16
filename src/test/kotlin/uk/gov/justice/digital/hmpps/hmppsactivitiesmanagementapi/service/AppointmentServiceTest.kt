@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -36,6 +38,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 class AppointmentServiceTest {
   private val appointmentCategoryRepository: AppointmentCategoryRepository = mock()
@@ -69,8 +72,8 @@ class AppointmentServiceTest {
 
   @Test
   fun `getAppointmentById throws entity not found exception for unknown appointment id`() {
-    assertThatThrownBy { service.getAppointmentById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment -1 not found")
+    assertThatThrownBy { service.getAppointmentById(0) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Appointment 0 not found")
   }
 
   @Test
@@ -262,14 +265,14 @@ class AppointmentServiceTest {
         assertThat(size).isEqualTo(1)
         assertThat(occurrences().first().allocations().toModel()).containsAll(
           listOf(
-            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "A12345BC", bookingId = 1),
-            AppointmentOccurrenceAllocation(id = -1, prisonerNumber = "B23456CE", bookingId = 2),
+            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
+            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
           ),
         )
         assertThat(occurrences().first().instances().toModel()).containsAll(
           listOf(
             AppointmentInstance(
-              id = -1,
+              id = 0,
               category = AppointmentCategory(
                 id = 1,
                 parent = null,
@@ -284,7 +287,7 @@ class AppointmentServiceTest {
               comment = null, attended = null, cancelled = false,
             ),
             AppointmentInstance(
-              id = -1,
+              id = 0,
               category = AppointmentCategory(
                 id = 1,
                 parent = null,
@@ -301,6 +304,34 @@ class AppointmentServiceTest {
           ),
         )
       }
+    }
+  }
+
+  @Test
+  fun `createAppointment individual repeat appointment success`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.WEEKLY, 3))
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
+      .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+          ),
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3))
+
+    service.createAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value.occurrences()) {
+      assertThat(size).isEqualTo(3)
+      assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
     }
   }
 }

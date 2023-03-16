@@ -4,6 +4,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -15,6 +17,7 @@ internal fun appointmentEntity(
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
+  repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = 1,
@@ -32,16 +35,24 @@ internal fun appointmentEntity(
   updatedBy = updatedBy,
   deleted = false,
 ).apply {
-  for (i in 1..numberOfOccurrences) {
-    val occurrenceStartDate = this.startDate.plusDays(i - 1L)
-    this.addOccurrence(appointmentOccurrenceEntity(this, occurrenceStartDate, prisonerNumberToBookingIdMap))
+  repeatPeriod?.let {
+    this.schedule = AppointmentSchedule(
+      appointment = this,
+      repeatPeriod = it,
+      repeatCount = numberOfOccurrences,
+    )
+  }
+
+  this.scheduleIterator().withIndex().forEach {
+    this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1, it.value, prisonerNumberToBookingIdMap))
   }
 }
 
-private fun appointmentOccurrenceEntity(appointment: Appointment, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+private fun appointmentOccurrenceEntity(appointment: Appointment, sequenceNumber: Int, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = 1,
     appointment = appointment,
+    sequenceNumber = sequenceNumber,
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
     startDate = startDate,
