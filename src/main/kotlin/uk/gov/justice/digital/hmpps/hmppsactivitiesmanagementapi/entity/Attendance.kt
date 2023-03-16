@@ -76,8 +76,13 @@ data class Attendance(
     recordedBy = scheduledInstance.cancelledBy
   }
 
-  fun mark(reason: AttendanceReason?, newStatus: AttendanceStatus, newComment: String?, newIssuePayment: Boolean?,
-           newIncentiveLevelWarningIssued: Boolean?): Attendance {
+  fun mark(
+    reason: AttendanceReason?,
+    newStatus: AttendanceStatus,
+    newComment: String?,
+    newIssuePayment: Boolean?,
+    newIncentiveLevelWarningIssued: Boolean?,
+  ): Attendance {
     attendanceReason = reason
     status = newStatus
     comment = newComment
@@ -95,7 +100,6 @@ data class Attendance(
       .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
       .find { it.incentiveNomisCode == incentiveCode }
   }
-
 }
 
 enum class AttendanceStatus {

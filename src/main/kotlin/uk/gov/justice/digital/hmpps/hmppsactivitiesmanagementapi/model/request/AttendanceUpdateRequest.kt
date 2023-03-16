@@ -1,15 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotEmpty
 
 @Schema(description = "Request object for updating an attendance record")
 data class AttendanceUpdateRequest(
 
+  @field:NotEmpty(message = "Attendance ID must be supplied")
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
-  val id: Long,
+  val id: Long?,
 
+  @field:NotEmpty(message = "Attendance reason must be supplied")
   @Schema(description = "The reason codes- SICK, REFUSED, NREQ, REST, CLASH, OTHER, SUSP, CANC, ATT", example = "ATT")
-  val attendanceReason: String,
+  val attendanceReason: String?,
 
   @Schema(description = "Comments such as more detail for SICK", example = "Prisoner has COVID-19")
   val comment: String?,
