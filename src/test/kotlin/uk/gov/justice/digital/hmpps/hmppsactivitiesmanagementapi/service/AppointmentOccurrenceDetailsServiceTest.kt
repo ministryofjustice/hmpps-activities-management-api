@@ -15,22 +15,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import java.util.*
 
-class AppointmentDetailsServiceTest {
-  private val appointmentRepository: AppointmentRepository = mock()
+class AppointmentOccurrenceDetailsServiceTest {
+  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
-  private val service = AppointmentDetailsService(
-    appointmentRepository,
+  private val service = AppointmentOccurrenceDetailsService(
+    appointmentOccurrenceRepository,
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
@@ -42,13 +41,13 @@ class AppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {
-    val entity = appointmentEntity()
-    val occurrenceEntity = entity.occurrences().first()
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
-    whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode, entity.internalLocationIds())!!)
+  fun `getAppointmentOccurrenceDetailsById returns mapped appointment details for known appointment id`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
+    whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode, listOf(entity.internalLocationId))!!)
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
-    whenever(prisonApiClient.getUserDetailsList(entity.usernames())).thenReturn(
+    whenever(prisonApiClient.getUserDetailsList(appointment.usernames())).thenReturn(
       listOf(
         userDetail(1, "CREATE.USER", "CREATE", "USER"),
         userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
@@ -68,39 +67,25 @@ class AppointmentDetailsServiceTest {
         ),
       ),
     )
-    assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
-      AppointmentDetails(
-        entity.appointmentId,
-        AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
-        entity.prisonCode,
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+    assertThat(service.getAppointmentOccurrenceDetailsById(1)).isEqualTo(
+      AppointmentOccurrenceDetails(
+        entity.appointmentOccurrenceId,
+        appointment.appointmentId,
+        entity.sequenceNumber,
+        AppointmentCategorySummary(appointment.category.appointmentCategoryId, appointment.category.code, appointment.category.description),
+        appointment.prisonCode,
+        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location"),
         entity.inCell,
         entity.startDate,
         entity.startTime,
         entity.endTime,
-        null,
-        entity.comment,
-        entity.created,
+        entity.comment ?: appointment.comment,
+        false,
+        false,
+        appointment.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        occurrences = listOf(
-          AppointmentOccurrenceSummary(
-            occurrenceEntity.appointmentOccurrenceId,
-            1,
-            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
-            occurrenceEntity.inCell,
-            occurrenceEntity.startDate,
-            occurrenceEntity.startTime,
-            occurrenceEntity.endTime,
-            "Appointment occurrence level comment",
-            isEdited = false,
-            isCancelled = false,
-            occurrenceEntity.updated,
-            UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-            1,
-          ),
-        ),
         prisoners = listOf(
           PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
         ),
@@ -109,8 +94,8 @@ class AppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getAppointmentDetailsById throws entity not found exception for unknown appointment id`() {
-    assertThatThrownBy { service.getAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment -1 not found")
+  fun `getAppointmentOccurrenceDetailsById throws entity not found exception for unknown appointment id`() {
+    assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Appointment Occurrence -1 not found")
   }
 }

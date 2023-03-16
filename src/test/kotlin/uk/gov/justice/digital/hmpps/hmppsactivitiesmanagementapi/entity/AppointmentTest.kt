@@ -10,9 +10,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 class AppointmentTest {
   @Test
@@ -106,6 +109,7 @@ class AppointmentTest {
         entity.startDate,
         entity.startTime,
         entity.endTime,
+        null,
         entity.comment,
         entity.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
@@ -114,6 +118,7 @@ class AppointmentTest {
         occurrences = listOf(
           AppointmentOccurrenceSummary(
             occurrenceEntity.appointmentOccurrenceId,
+            occurrenceEntity.sequenceNumber,
             AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
             occurrenceEntity.inCell,
             occurrenceEntity.startDate,
@@ -179,5 +184,47 @@ class AppointmentTest {
     with(entity.toDetails(locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
     }
+  }
+
+  @Test
+  fun `entity to details mapping schedule to repeat`() {
+    val entity = appointmentEntity(updatedBy = null, repeatPeriod = AppointmentRepeatPeriod.FORTNIGHTLY, numberOfOccurrences = 2)
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails(locationMap, userMap, prisoners)) {
+      assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
+    }
+  }
+
+  @Test
+  fun `null schedule returns default iterator`() {
+    val today = LocalDate.now()
+    val entity = appointmentEntity(startDate = today).apply { schedule = null }
+    assertThat(entity.scheduleIterator().asSequence().toList()).containsExactly(
+      today,
+    )
+  }
+
+  @Test
+  fun `schedule values populates iterator`() {
+    val today = LocalDate.now()
+    val entity = appointmentEntity(startDate = today, repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3)
+    assertThat(entity.scheduleIterator().asSequence().toList()).containsExactly(
+      today,
+      today.plusWeeks(1),
+      today.plusWeeks(2),
+    )
   }
 }

@@ -73,7 +73,7 @@ class TransformFunctionsTest {
               attendances = listOf(
                 ModelAttendance(
                   id = 1,
-                  prisonerNumber = "A11111A",
+                  prisonerNumber = "A1234AA",
                   status = "SCHEDULED",
                 ),
               ),

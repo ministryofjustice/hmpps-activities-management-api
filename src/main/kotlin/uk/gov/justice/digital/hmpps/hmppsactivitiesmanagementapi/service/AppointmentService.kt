@@ -5,6 +5,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -53,40 +55,51 @@ class AppointmentService(
       comment = request.comment,
       createdBy = principal.name,
     ).apply {
-      this.addOccurrence(
-        AppointmentOccurrenceEntity(
+      this.schedule = request.repeat?.let {
+        AppointmentSchedule(
           appointment = this,
-          internalLocationId = this.internalLocationId,
-          inCell = this.inCell,
-          startDate = this.startDate,
-          startTime = this.startTime,
-          endTime = this.endTime,
-        ).apply {
-          prisonerMap.values.forEach { prisoner ->
-            this.addAllocation(
-              AppointmentOccurrenceAllocationEntity(
-                appointmentOccurrence = this,
-                prisonerNumber = prisoner.prisonerNumber,
-                bookingId = prisoner.bookingId!!.toLong(),
-              ),
-            )
-            this.addInstance(
-              AppointmentInstanceEntity(
-                appointmentOccurrence = this,
-                prisonerNumber = prisoner.prisonerNumber,
-                bookingId = prisoner.bookingId.toLong(),
-                appointmentDate = this.startDate,
-                category = category,
-                endTime = this.endTime,
-                inCell = this.inCell,
-                internalLocationId = this.internalLocationId,
-                prisonCode = request.prisonCode,
-                startTime = this.startTime,
-              ),
-            )
-          }
-        },
-      )
+          repeatPeriod = AppointmentRepeatPeriod.valueOf(request.repeat.period!!.name),
+          repeatCount = request.repeat.count!!,
+        )
+      }
+
+      this.scheduleIterator().withIndex().forEach {
+        this.addOccurrence(
+          AppointmentOccurrenceEntity(
+            appointment = this,
+            sequenceNumber = it.index + 1,
+            internalLocationId = this.internalLocationId,
+            inCell = this.inCell,
+            startDate = it.value,
+            startTime = this.startTime,
+            endTime = this.endTime,
+          ).apply {
+            prisonerMap.values.forEach { prisoner ->
+              this.addAllocation(
+                AppointmentOccurrenceAllocationEntity(
+                  appointmentOccurrence = this,
+                  prisonerNumber = prisoner.prisonerNumber,
+                  bookingId = prisoner.bookingId!!.toLong(),
+                ),
+              )
+              this.addInstance(
+                AppointmentInstanceEntity(
+                  appointmentOccurrence = this,
+                  prisonerNumber = prisoner.prisonerNumber,
+                  bookingId = prisoner.bookingId.toLong(),
+                  appointmentDate = this.startDate,
+                  category = category,
+                  endTime = this.endTime,
+                  inCell = this.inCell,
+                  internalLocationId = this.internalLocationId,
+                  prisonCode = request.prisonCode,
+                  startTime = this.startTime,
+                ),
+              )
+            }
+          },
+        )
+      }
     }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
   }
 

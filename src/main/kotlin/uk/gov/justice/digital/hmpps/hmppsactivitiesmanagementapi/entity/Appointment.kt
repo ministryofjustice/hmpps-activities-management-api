@@ -7,8 +7,10 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
@@ -32,9 +34,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentId: Long = -1,
+  val appointmentId: Long = 0,
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "appointment_category_id", nullable = false)
   var category: AppointmentCategory,
 
@@ -50,6 +52,10 @@ data class Appointment(
 
   var endTime: LocalTime?,
 
+  @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @JoinColumn(name = "appointment_schedule_id")
+  var schedule: AppointmentSchedule? = null,
+
   var comment: String,
 
   val created: LocalDateTime = LocalDateTime.now(),
@@ -62,8 +68,11 @@ data class Appointment(
 
   val deleted: Boolean = false,
 ) {
+  fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
+
   @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 
   fun occurrences() = occurrences.toList()
@@ -72,7 +81,7 @@ data class Appointment(
 
   fun internalLocationIds() = listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
 
-  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.allocations().map { allocation -> allocation.prisonerNumber } }.flatten().distinct()
+  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.prisonerNumbers() }.flatten().distinct()
 
   fun usernames() = listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()
 
@@ -107,6 +116,7 @@ data class Appointment(
       startDate,
       startTime,
       endTime,
+      schedule?.toRepeat(),
       comment,
       created,
       userMap.getOrDefault(createdBy, null).toSummary(createdBy),

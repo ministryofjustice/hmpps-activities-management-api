@@ -1,90 +1,249 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-1.sql")
-  fun `get scheduled instance by ID`() {
-    val scheduledInstance = webTestClient
-      .get()
-      .uri("/scheduled-instances/1")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivityScheduleInstance::class.java)
-      .returnResult().responseBody
+  @Nested
+  @DisplayName("getScheduledInstancesById")
+  inner class GetScheduledInstancesById {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `success`() {
+      val scheduledInstance = webTestClient.getScheduledInstanceById(1)
 
-    assertThat(scheduledInstance?.id).isEqualTo(1L)
-    assertThat(scheduledInstance?.startTime.toString()).isEqualTo("10:00")
-    assertThat(scheduledInstance?.endTime.toString()).isEqualTo("11:00")
+      assertThat(scheduledInstance?.id).isEqualTo(1L)
+      assertThat(scheduledInstance?.startTime.toString()).isEqualTo("10:00")
+      assertThat(scheduledInstance?.endTime.toString()).isEqualTo("11:00")
+    }
   }
 
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-3.sql")
-  fun `getActivityScheduleInstances - returns all 20 rows without the time slot`() {
-    val startDate = LocalDate.of(2022, 10, 1)
-    val endDate = LocalDate.of(2022, 11, 5)
+  @Nested
+  @DisplayName("getActivityScheduleInstances")
+  inner class GetActivityScheduleInstances {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `returns all 20 rows without the time slot`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
 
-    val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
 
-    assertThat(scheduledInstances).hasSize(20)
+      assertThat(scheduledInstances).hasSize(20)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `returns 10 rows with the time slot filter`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      val scheduledInstances =
+        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+
+      assertThat(scheduledInstances).hasSize(10)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `date range precludes 4 rows from the sample of 20`() {
+      val startDate = LocalDate.of(2022, 10, 2)
+      val endDate = LocalDate.of(2022, 11, 4)
+
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
+
+      assertThat(scheduledInstances).hasSize(16)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-10.sql")
+    fun `returns instance when no allocations`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      val scheduledInstances =
+        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+
+      assertThat(scheduledInstances).hasSize(1)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-10.sql")
+    fun `returns no instance when match on time slot`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      val scheduledInstances =
+        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.PM)
+
+      assertThat(scheduledInstances).isEmpty()
+    }
   }
 
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-3.sql")
-  fun `getActivityScheduleInstances - returns 10 rows with the time slot filter`() {
-    val startDate = LocalDate.of(2022, 10, 1)
-    val endDate = LocalDate.of(2022, 11, 5)
+  @Nested
+  @DisplayName("uncancelScheduledInstance")
+  inner class UncancelScheduledInstance {
 
-    val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-13.sql")
+    fun `success`() {
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isNoContent
 
-    assertThat(scheduledInstances).hasSize(10)
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+
+        with(attendances.first()) {
+          assertThat(attendanceReason).isNull()
+          assertThat(status).isEqualTo("WAIT")
+          assertThat(comment).isNull()
+          assertThat(recordedBy).isNull()
+          assertThat(recordedTime).isNull()
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-14.sql")
+    fun `scheduled instance is not cancelled`() {
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isBadRequest
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-15.sql")
+    fun `scheduled instance is in the past`() {
+      val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
+      response.expectStatus().isBadRequest
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-15.sql")
+    fun `scheduled instance does not exist`() {
+      val response = webTestClient.uncancelScheduledInstance(2, "CAN1234", "Mr Cancel")
+      response.expectStatus().isNotFound
+    }
   }
 
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-3.sql")
-  fun `getActivityScheduleInstances - date range precludes 4 rows from the sample of 20`() {
-    val startDate = LocalDate.of(2022, 10, 2)
-    val endDate = LocalDate.of(2022, 11, 4)
+  @Nested
+  @DisplayName("cancelScheduledInstance")
+  inner class CancelScheduledInstance {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun success() {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A11111A", "A22222A"),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = "A11111A",
+            bookingId = 456,
+            prisonId = "TPR",
+            currentIncentive = CurrentIncentive(
+              level = IncentiveLevel(
+                description = "Basic",
+                code = "BAS",
+              ),
+              dateTime = LocalDate.now().toString(),
+              nextReviewDate = LocalDate.now(),
+            ),
+          ),
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = "A22222A",
+            bookingId = 456,
+            prisonId = "TPR",
+            currentIncentive = CurrentIncentive(
+              level = IncentiveLevel(
+                description = "Basic",
+                code = "BAS",
+              ),
+              dateTime = LocalDate.now().toString(),
+              nextReviewDate = LocalDate.now(),
+            ),
+          ),
+        ),
+      )
 
-    val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
+      webTestClient.cancelScheduledInstance(1, "Location unavailable", "USER1")
 
-    assertThat(scheduledInstances).hasSize(16)
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("USER1")
+
+        with(attendances.first()) {
+          assertThat(attendanceReason!!.code).isEqualTo("CANC")
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Location unavailable")
+          assertThat(recordedBy).isEqualTo("USER1")
+          assertThat(recordedTime).isNotNull
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `404 - scheduled instance not found`() {
+      val response = webTestClient.cancelScheduledInstance(4, "Location unavailable", "USER1")
+      response.expectStatus().isNotFound
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `400 - scheduled instance in past`() {
+      val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
+      response
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has ended")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `400 - scheduled instance has been canceled`() {
+      val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
+      response
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has already been cancelled")
+    }
   }
 
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-10.sql")
-  fun `getActivityScheduleInstances - returns instance when no allocations`() {
-    val startDate = LocalDate.of(2022, 10, 1)
-    val endDate = LocalDate.of(2022, 11, 5)
+  private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
+    .uri("/scheduled-instances/$id")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf()))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(ActivityScheduleInstance::class.java)
+    .returnResult().responseBody
 
-    val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+  private fun WebTestClient.uncancelScheduledInstance(id: Long, username: String, displayName: String) = put()
+    .uri("/scheduled-instances/$id/uncancel")
+    .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf()))
+    .exchange()
 
-    assertThat(scheduledInstances).hasSize(1)
-  }
-
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-10.sql")
-  fun `getActivityScheduleInstances - returns no instance when match on time slot`() {
-    val startDate = LocalDate.of(2022, 10, 1)
-    val endDate = LocalDate.of(2022, 11, 5)
-
-    val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.PM)
-
-    assertThat(scheduledInstances).isEmpty()
-  }
+  private fun WebTestClient.cancelScheduledInstance(id: Long, reason: String, username: String, comment: String? = null) = put()
+    .uri("/scheduled-instances/$id/cancel")
+    .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf()))
+    .exchange()
 
   private fun WebTestClient.getScheduledInstancesBy(
     prisonCode: String,

@@ -31,9 +31,9 @@ data class Attendance(
 
   var comment: String? = null,
 
-  val recordedTime: LocalDateTime? = null,
+  var recordedTime: LocalDateTime? = null,
 
-  val recordedBy: String? = null,
+  var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
   var status: AttendanceStatus = AttendanceStatus.SCHEDULED,
@@ -45,9 +45,37 @@ data class Attendance(
   var pieces: Int? = null,
 ) {
 
+  fun waiting() {
+    attendanceReason = null
+    status = AttendanceStatus.WAIT
+    comment = null
+    recordedBy = null
+    recordedTime = null
+    payAmount = null
+  }
+
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(attendanceId = $attendanceId )"
+  }
+
+  fun cancel(reason: AttendanceReason, payIncentiveCode: String?) {
+    status = AttendanceStatus.COMPLETED
+    payAmount = if (payIncentiveCode != null) getPay(payIncentiveCode)?.rate ?: 0 else 0
+    attendanceReason = reason
+    comment = scheduledInstance.cancelledReason
+    recordedTime = scheduledInstance.cancelledTime
+    recordedBy = scheduledInstance.cancelledBy
+  }
+
+  private fun getPay(incentiveCode: String): ActivityPay? {
+    val currentAllocation = scheduledInstance.activitySchedule.allocations()
+      .filter { it.isAllocated() }
+      .find { it.prisonerNumber == prisonerNumber }
+
+    return scheduledInstance.activitySchedule.activity.activityPay()
+      .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
+      .find { it.incentiveNomisCode == incentiveCode }
   }
 }
 
@@ -55,4 +83,5 @@ enum class AttendanceStatus {
   CANCELLED,
   COMPLETED,
   SCHEDULED,
+  WAIT,
 }

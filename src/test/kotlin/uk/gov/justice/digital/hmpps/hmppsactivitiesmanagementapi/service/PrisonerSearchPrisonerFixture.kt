@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import java.time.LocalDate
 
@@ -24,6 +26,11 @@ object PrisonerSearchPrisonerFixture {
     middleNames: String = "James",
     prisonId: String? = "MDI",
     cellLocation: String? = "1-2-3",
+    currentIncentive: CurrentIncentive? = CurrentIncentive(
+      level = IncentiveLevel("Basic", "BAS"),
+      dateTime = "2020-07-20T10:36:53",
+      nextReviewDate = LocalDate.of(2021, 7, 20),
+    ),
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -45,5 +52,6 @@ object PrisonerSearchPrisonerFixture {
       middleNames = middleNames,
       prisonId = prisonId,
       cellLocation = cellLocation,
+      currentIncentive = currentIncentive,
     )
 }

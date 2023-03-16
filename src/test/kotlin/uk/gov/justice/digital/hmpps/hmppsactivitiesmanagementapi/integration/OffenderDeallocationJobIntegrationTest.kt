@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
 
@@ -61,7 +63,7 @@ class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
     assertThat(status(PrisonerStatus.ENDED))
     assertThat(deallocatedBy).isEqualTo("SYSTEM")
     assertThat(deallocatedReason).isEqualTo("Allocation end date reached")
-    assertThat(deallocatedTime).isEqualToIgnoringSeconds(LocalDateTime.now())
+    assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
   }
 
   private fun List<Allocation>.prisoner(number: String) = first { it.prisonerNumber == number }

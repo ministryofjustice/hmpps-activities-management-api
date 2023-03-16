@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.core.type.TypeReference
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Schedul
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 class ActivityIntegrationTest : IntegrationTestBase() {
 
@@ -571,7 +573,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isEqualToIgnoringSeconds(LocalDateTime.now())
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
   }
