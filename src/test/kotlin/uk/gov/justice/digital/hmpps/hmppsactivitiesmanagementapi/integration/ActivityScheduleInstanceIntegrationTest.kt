@@ -7,10 +7,14 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
@@ -137,12 +141,85 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.uncancelScheduledInstance(id: Long, username: String, displayName: String) = put()
-    .uri("/scheduled-instances/$id/uncancel")
-    .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf()))
-    .exchange()
+  @Nested
+  @DisplayName("cancelScheduledInstance")
+  inner class CancelScheduledInstance {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun success() {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A11111A", "A22222A"),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = "A11111A",
+            bookingId = 456,
+            prisonId = "TPR",
+            currentIncentive = CurrentIncentive(
+              level = IncentiveLevel(
+                description = "Basic",
+                code = "BAS",
+              ),
+              dateTime = LocalDate.now().toString(),
+              nextReviewDate = LocalDate.now(),
+            ),
+          ),
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = "A22222A",
+            bookingId = 456,
+            prisonId = "TPR",
+            currentIncentive = CurrentIncentive(
+              level = IncentiveLevel(
+                description = "Basic",
+                code = "BAS",
+              ),
+              dateTime = LocalDate.now().toString(),
+              nextReviewDate = LocalDate.now(),
+            ),
+          ),
+        ),
+      )
+
+      webTestClient.cancelScheduledInstance(1, "Location unavailable", "USER1")
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("USER1")
+
+        with(attendances.first()) {
+          assertThat(attendanceReason!!.code).isEqualTo("CANC")
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Location unavailable")
+          assertThat(recordedBy).isEqualTo("USER1")
+          assertThat(recordedTime).isNotNull
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `404 - scheduled instance not found`() {
+      val response = webTestClient.cancelScheduledInstance(4, "Location unavailable", "USER1")
+      response.expectStatus().isNotFound
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `400 - scheduled instance in past`() {
+      val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
+      response
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has ended")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-16.sql")
+    fun `400 - scheduled instance has been canceled`() {
+      val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
+      response
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has already been cancelled")
+    }
+  }
 
   private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
     .uri("/scheduled-instances/$id")
@@ -153,6 +230,20 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
+
+  private fun WebTestClient.uncancelScheduledInstance(id: Long, username: String, displayName: String) = put()
+    .uri("/scheduled-instances/$id/uncancel")
+    .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf()))
+    .exchange()
+
+  private fun WebTestClient.cancelScheduledInstance(id: Long, reason: String, username: String, comment: String? = null) = put()
+    .uri("/scheduled-instances/$id/cancel")
+    .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf()))
+    .exchange()
 
   private fun WebTestClient.getScheduledInstancesBy(
     prisonCode: String,

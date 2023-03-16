@@ -58,6 +58,25 @@ data class Attendance(
   override fun toString(): String {
     return this::class.simpleName + "(attendanceId = $attendanceId )"
   }
+
+  fun cancel(reason: AttendanceReason, payIncentiveCode: String?) {
+    status = AttendanceStatus.COMPLETED
+    payAmount = if (payIncentiveCode != null) getPay(payIncentiveCode)?.rate ?: 0 else 0
+    attendanceReason = reason
+    comment = scheduledInstance.cancelledReason
+    recordedTime = scheduledInstance.cancelledTime
+    recordedBy = scheduledInstance.cancelledBy
+  }
+
+  private fun getPay(incentiveCode: String): ActivityPay? {
+    val currentAllocation = scheduledInstance.activitySchedule.allocations()
+      .filter { it.isAllocated() }
+      .find { it.prisonerNumber == prisonerNumber }
+
+    return scheduledInstance.activitySchedule.activity.activityPay()
+      .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
+      .find { it.incentiveNomisCode == incentiveCode }
+  }
 }
 
 enum class AttendanceStatus {
