@@ -46,8 +46,8 @@ values (2, 2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, nul
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (3, 2, now()::date, '14:00:00', '15:00:00', true, now(), 'USER1', 'Location unavailable', null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, posted, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (1, 1, 'A11111A', null, null, false, null, null, 'WAIT', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (2, 1, 'A22222A', null, null, null, null, 'WAIT', null, null, null);
+values (2, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
