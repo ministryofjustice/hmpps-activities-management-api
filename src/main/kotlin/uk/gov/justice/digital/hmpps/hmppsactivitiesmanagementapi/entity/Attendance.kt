@@ -36,7 +36,7 @@ data class Attendance(
   var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
-  var status: AttendanceStatus = AttendanceStatus.SCHEDULED,
+  var status: AttendanceStatus = AttendanceStatus.WAIT,
 
   var payAmount: Int? = null,
 
@@ -82,6 +82,5 @@ data class Attendance(
 enum class AttendanceStatus {
   CANCELLED,
   COMPLETED,
-  SCHEDULED,
   WAIT,
 }

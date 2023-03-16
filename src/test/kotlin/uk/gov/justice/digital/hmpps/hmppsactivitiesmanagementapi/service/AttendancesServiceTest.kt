@@ -48,7 +48,7 @@ class AttendancesServiceTest {
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
-        status = AttendanceStatus.SCHEDULED,
+        status = AttendanceStatus.WAIT,
       ),
     )
   }
@@ -93,7 +93,7 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.SCHEDULED)
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAIT)
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })

@@ -23,4 +23,4 @@ insert into scheduled_instance(activity_schedule_id, session_date, start_time, e
 values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (1, 1, 'A11111A', null, null, null, null, 'SCHEDULED', null, null, null);
+values (1, 1, 'A11111A', null, null, null, null, 'WAIT', null, null, null);

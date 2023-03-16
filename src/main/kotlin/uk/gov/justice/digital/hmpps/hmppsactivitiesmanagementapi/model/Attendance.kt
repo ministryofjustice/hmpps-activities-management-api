@@ -32,7 +32,7 @@ data class Attendance(
   @Schema(description = "The person who updated the attendance", example = "A.JONES")
   val recordedBy: String? = null,
 
-  @Schema(description = "SCHEDULED, COMPLETED, CANCELLED.", example = "SCHEDULED")
+  @Schema(description = "WAIT, COMPLETED, CANCELLED.", example = "WAIT")
   val status: String,
 
   @Schema(description = "The amount in pence to pay the prisoner for the activity", example = "100")
