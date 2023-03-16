@@ -2,11 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 
 @Schema(description = "Request object for updating an attendance record")
 data class AttendanceUpdateRequest(
 
-  @field:NotEmpty(message = "Attendance ID must be supplied")
+  @field:NotNull(message = "Attendance ID must be supplied")
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long?,
 
