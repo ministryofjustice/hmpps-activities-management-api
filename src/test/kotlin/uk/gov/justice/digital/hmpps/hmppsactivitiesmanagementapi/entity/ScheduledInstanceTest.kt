@@ -1,16 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ScheduledInstanceTest {
 
   private val instance = activityEntity().schedules().first().instances().first()
+  val today: LocalDateTime = LocalDateTime.now()
 
   @Test
   fun `instance is not cancelled`() {
@@ -87,5 +91,56 @@ class ScheduledInstanceTest {
     }
 
     assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is not cancelled")
+  }
+
+  @Test
+  fun `can cancel scheduled instance`() {
+    val cancelableInstance = instance.copy()
+    cancelableInstance.cancelSession(
+      reason = "Staff unavailable",
+      by = "USER1",
+      cancelComment = "Resume tomorrow",
+    ) {
+      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+    }
+    with(cancelableInstance) {
+      assertThat(cancelledReason).isEqualTo("Staff unavailable")
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledTime).isNotNull
+      assertThat(comment).isEqualTo("Resume tomorrow")
+
+      with(attendances.first()) {
+        assertThat(attendanceReason).isEqualTo(attendanceReason)
+      }
+    }
+  }
+
+  @Test
+  fun `cannot cancel scheduled instance that's already cancelled`() {
+    assertThatThrownBy {
+      instance.copy(cancelled = true).cancelSession(
+        reason = "Staff unavailable",
+        by = "USER1",
+        cancelComment = "Resume tomorrow",
+      ) {
+        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The schedule instance has already been cancelled")
+  }
+
+  @Test
+  fun `cannot cancel a past scheduled instance`() {
+    assertThatThrownBy {
+      instance.copy(sessionDate = today.minusDays(7).toLocalDate()).cancelSession(
+        reason = "Staff unavailable",
+        by = "USER1",
+        cancelComment = "Resume tomorrow",
+      ) {
+        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The schedule instance has ended")
   }
 }

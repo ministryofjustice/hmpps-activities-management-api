@@ -78,6 +78,8 @@ data class Allocation(
     deallocatedTime = dateTime
   }
 
+  fun isAllocated() = deallocatedTime == null
+
   fun status(status: PrisonerStatus) = prisonerStatus == status
 
   fun toModel() =
