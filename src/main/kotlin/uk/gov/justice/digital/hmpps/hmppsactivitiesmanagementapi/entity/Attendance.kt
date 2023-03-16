@@ -55,7 +55,7 @@ data class Attendance(
 
   fun waiting() {
     attendanceReason = null
-    status = AttendanceStatus.WAIT
+    status = AttendanceStatus.WAITING
     comment = null
     recordedBy = null
     recordedTime = null
@@ -71,5 +71,6 @@ data class Attendance(
 enum class AttendanceStatus {
   WAITING,
   COMPLETED,
+  CANCELLED,
   LOCKED,
 }

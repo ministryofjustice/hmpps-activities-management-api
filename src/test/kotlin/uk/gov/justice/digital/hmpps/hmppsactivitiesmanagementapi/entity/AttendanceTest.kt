@@ -12,7 +12,8 @@ class AttendanceTest {
     val attendance = Attendance(
       scheduledInstance = mock(),
       prisonerNumber = "P000111",
-      attendanceReason = AttendanceReason(1, "Some Reason", "Some Desc"),
+      attendanceReason = AttendanceReason(1, "Some Reason", "Some Desc",
+        false, true, true, false, false, false, true, 1, "some note"),
       status = AttendanceStatus.CANCELLED,
       comment = "Some Comment",
       recordedBy = "Old User",
@@ -23,7 +24,7 @@ class AttendanceTest {
 
     with(attendance) {
       assertThat(attendanceReason).isNull()
-      assertThat(status).isEqualTo(AttendanceStatus.WAIT)
+      assertThat(status).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
       assertThat(recordedTime).isNull()

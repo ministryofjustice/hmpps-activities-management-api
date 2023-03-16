@@ -107,7 +107,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
         with(attendances.first()) {
           assertThat(attendanceReason).isNull()
-          assertThat(status).isEqualTo("WAIT")
+          assertThat(status).isEqualTo("WAITING")
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
           assertThat(recordedTime).isNull()
