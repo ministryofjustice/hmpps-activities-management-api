@@ -94,6 +94,7 @@ class AttendancesServiceTest {
   @Test
   fun `mark attendance record`() {
     assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
