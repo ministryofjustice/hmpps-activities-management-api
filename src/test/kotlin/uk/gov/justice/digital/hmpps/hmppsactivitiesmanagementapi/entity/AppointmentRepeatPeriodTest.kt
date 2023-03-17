@@ -6,8 +6,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 class AppointmentRepeatPeriodTest {
-  val monday: LocalDate = LocalDate.of(2023, 3, 13)
-  val friday: LocalDate = LocalDate.of(2023, 3, 17)
+  private val monday: LocalDate = LocalDate.of(2023, 3, 13)
+  private val friday: LocalDate = LocalDate.of(2023, 3, 17)
 
   @Test
   fun `weekday next date increments by one day`() {
@@ -45,7 +45,7 @@ class AppointmentRepeatPeriodTest {
   }
 
   @Test
-  fun `monthly next date increments by two weeks`() {
+  fun `monthly next date increments by one month`() {
     val nextDate = AppointmentRepeatPeriod.MONTHLY.nextDate(monday)
     assertThat(nextDate.dayOfMonth).isEqualTo(13)
     assertThat(nextDate.dayOfWeek).isEqualTo(DayOfWeek.THURSDAY)
