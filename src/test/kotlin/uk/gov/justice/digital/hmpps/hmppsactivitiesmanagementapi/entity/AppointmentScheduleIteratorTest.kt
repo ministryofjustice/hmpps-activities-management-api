@@ -48,8 +48,8 @@ class AppointmentScheduleIteratorTest {
 
   @Test
   fun `weekday repeat period for two weeks starting on sunday`() {
-    val sundayFeb26nd2023 = LocalDate.of(2023, 2, 26)
-    val iterator = AppointmentScheduleIterator(sundayFeb26nd2023, AppointmentRepeatPeriod.WEEKDAY, 10)
+    val sundayFeb26th2023 = LocalDate.of(2023, 2, 26)
+    val iterator = AppointmentScheduleIterator(sundayFeb26th2023, AppointmentRepeatPeriod.WEEKDAY, 10)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
