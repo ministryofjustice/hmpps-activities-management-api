@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class AppointmentScheduleTest {
+class AppointmentScheduleIteratorTest {
   @Test
   fun `weekday repeat period for two weeks over month end`() {
     val wednesdayFeb22nd2023 = LocalDate.of(2023, 2, 22)
