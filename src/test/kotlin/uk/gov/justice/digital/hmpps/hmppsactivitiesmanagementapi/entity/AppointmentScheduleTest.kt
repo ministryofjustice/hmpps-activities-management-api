@@ -136,7 +136,7 @@ class AppointmentScheduleTest {
       "Thu 15 September",
       "Sat 15 October",
       "Tue 15 November",
-      "Thu 15 December"
+      "Thu 15 December",
     )
   }
 
@@ -158,7 +158,7 @@ class AppointmentScheduleTest {
       "Fri 30 September",
       "Mon 31 October",
       "Wed 30 November",
-      "Sat 31 December"
+      "Sat 31 December",
     )
   }
 
@@ -180,7 +180,7 @@ class AppointmentScheduleTest {
       "Mon 30 September",
       "Thu 31 October",
       "Sat 30 November",
-      "Tue 31 December"
+      "Tue 31 December",
     )
   }
 
@@ -202,7 +202,7 @@ class AppointmentScheduleTest {
       "Fri 30 September",
       "Sun 30 October",
       "Wed 30 November",
-      "Fri 30 December"
+      "Fri 30 December",
     )
   }
 }

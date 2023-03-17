@@ -41,7 +41,7 @@ enum class AppointmentRepeatPeriod {
   },
   FORTNIGHTLY {
     override fun occurrenceDate(startDate: LocalDate, sequenceNumber: Int): LocalDate {
-      return startDate.plusWeeks( sequenceNumber * 2L - 2L)
+      return startDate.plusWeeks(sequenceNumber * 2L - 2L)
     }
   },
   MONTHLY {
