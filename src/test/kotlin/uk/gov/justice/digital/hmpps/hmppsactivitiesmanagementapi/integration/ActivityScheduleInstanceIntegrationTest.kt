@@ -111,7 +111,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
         with(attendances.first()) {
           assertThat(attendanceReason).isNull()
-          assertThat(status).isEqualTo("WAIT")
+          assertThat(status).isEqualTo("WAITING")
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
           assertThat(recordedTime).isNull()
@@ -186,7 +186,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
         assertThat(cancelledBy).isEqualTo("USER1")
 
         with(attendances.first()) {
-          assertThat(attendanceReason!!.code).isEqualTo("CANC")
+          assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
           assertThat(status).isEqualTo("COMPLETED")
           assertThat(comment).isEqualTo("Location unavailable")
           assertThat(recordedBy).isEqualTo("USER1")

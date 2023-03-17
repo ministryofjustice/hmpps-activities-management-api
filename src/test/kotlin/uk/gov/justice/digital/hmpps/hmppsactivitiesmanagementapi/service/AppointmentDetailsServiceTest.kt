@@ -3,9 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -35,11 +33,6 @@ class AppointmentDetailsServiceTest {
     prisonerSearchApiClient,
     prisonApiClient,
   )
-
-  @BeforeEach
-  fun setUp() {
-    MockitoAnnotations.openMocks(this)
-  }
 
   @Test
   fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {

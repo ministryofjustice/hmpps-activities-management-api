@@ -74,7 +74,9 @@ class TransformFunctionsTest {
                 ModelAttendance(
                   id = 1,
                   prisonerNumber = "A1234AA",
-                  status = "WAIT",
+                  status = "WAITING",
+                  issuePayment = null,
+                  incentiveLevelWarningIssued = null,
                 ),
               ),
             ),

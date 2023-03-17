@@ -177,7 +177,7 @@ class ScheduledInstanceServiceTest {
 
       whenever(repository.findById(1)).thenReturn(Optional.of(instance))
 
-      whenever(attendanceReasonRepository.findByCode("CANC")).thenReturn(attendanceReasons()["CANC"])
+      whenever(attendanceReasonRepository.findByCode("CANCELLED")).thenReturn(attendanceReasons()["CANCELLED"])
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1234AB"))).thenReturn(
         Mono.just(
@@ -205,7 +205,7 @@ class ScheduledInstanceServiceTest {
       with(instance.attendances.find { it.prisonerNumber == "A1234AA" }!!) {
         assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(payAmount).isEqualTo(30)
-        assertThat(attendanceReason?.code).isEqualTo("CANC")
+        assertThat(attendanceReason?.code).isEqualTo("CANCELLED")
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
         assertThat(recordedTime).isNotNull
@@ -214,7 +214,7 @@ class ScheduledInstanceServiceTest {
       with(instance.attendances.find { it.prisonerNumber == "A1234AB" }!!) {
         assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(payAmount).isEqualTo(50)
-        assertThat(attendanceReason?.code).isEqualTo("CANC")
+        assertThat(attendanceReason?.code).isEqualTo("CANCELLED")
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
         assertThat(recordedTime).isNotNull

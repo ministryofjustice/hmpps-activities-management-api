@@ -19,8 +19,21 @@ class AttendanceTest {
     val attendance = Attendance(
       scheduledInstance = mock(),
       prisonerNumber = "P000111",
-      attendanceReason = AttendanceReason(1, "Some Reason", "Some Desc"),
-      status = AttendanceStatus.CANCELLED,
+      attendanceReason = AttendanceReason(
+        1,
+        "Some Reason",
+        "Some Desc",
+        false,
+        true,
+        true,
+        false,
+        false,
+        false,
+        true,
+        1,
+        "some note",
+      ),
+      status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
       recordedTime = LocalDateTime.now(),
@@ -30,7 +43,7 @@ class AttendanceTest {
 
     with(attendance) {
       assertThat(attendanceReason).isNull()
-      assertThat(status).isEqualTo(AttendanceStatus.WAIT)
+      assertThat(status).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
       assertThat(recordedTime).isNull()
@@ -39,7 +52,7 @@ class AttendanceTest {
 
   @Test
   fun `can cancel attendance`() {
-    val attendanceReason = attendanceReasons()["CANC"]!!
+    val attendanceReason = attendanceReasons()["CANCELLED"]!!
     val canceledInstance = instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
     val attendanceWithCanceledInstance = attendance.copy(scheduledInstance = canceledInstance)
 
