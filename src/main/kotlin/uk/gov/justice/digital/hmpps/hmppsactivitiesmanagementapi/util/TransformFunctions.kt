@@ -133,6 +133,7 @@ fun transformToPrisonerScheduledEvents(
   courtHearings: PrisonApiCourtHearings?,
   visits: List<PrisonApiScheduledEvent>?,
   activities: List<PrisonApiScheduledEvent>?,
+  externalTransfers: List<PrisonApiPrisonerSchedule>?,
 ): ModelPrisonerScheduledEvents =
   ModelPrisonerScheduledEvents(
     prisonCode,
@@ -164,6 +165,12 @@ fun transformToPrisonerScheduledEvents(
       EventType.ACTIVITY.name,
       EventType.ACTIVITY.defaultPriority,
       eventPriorities[EventType.ACTIVITY],
+    ),
+    externalTransfers?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.EXTERNAL_TRANSFER.name,
+      EventType.EXTERNAL_TRANSFER.defaultPriority,
+      eventPriorities[EventType.EXTERNAL_TRANSFER],
     ),
   )
 
