@@ -22,9 +22,6 @@ data class Attendance(
   )
   var comment: String? = null,
 
-  // TODO this is unused and has been removed from the entity, left here for now to avoid breaking consumers.
-  val posted: Boolean = false,
-
   @Schema(description = "The date and time the attendance was updated", example = "2023-09-10T09:30:00")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val recordedTime: LocalDateTime? = null,
@@ -32,7 +29,7 @@ data class Attendance(
   @Schema(description = "The person who updated the attendance", example = "A.JONES")
   val recordedBy: String? = null,
 
-  @Schema(description = "WAIT, COMPLETED, CANCELLED.", example = "WAIT")
+  @Schema(description = "WAITING, COMPLETED, LOCKED.", example = "WAITING")
   val status: String,
 
   @Schema(description = "The amount in pence to pay the prisoner for the activity", example = "100")
@@ -42,4 +39,16 @@ data class Attendance(
   val bonusAmount: Int? = null,
 
   val pieces: Int? = null,
+
+  @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
+  val issuePayment: Boolean?,
+
+  @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
+  val incentiveLevelWarningIssued: Boolean?,
+
+  @Schema(
+    description = "Free text to allow other reasons for non attendance against the attendance",
+    example = "Prisoner has a valid reason to miss the activity.",
+  )
+  var otherAbsenceReason: String? = null,
 )

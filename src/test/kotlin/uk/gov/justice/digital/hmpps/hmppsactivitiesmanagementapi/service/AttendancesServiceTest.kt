@@ -48,7 +48,7 @@ class AttendancesServiceTest {
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
-        status = AttendanceStatus.WAIT,
+        status = AttendanceStatus.WAITING,
       ),
     )
   }
@@ -93,17 +93,18 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAIT)
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATT")))
+    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATT"])
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
   }
 
   private fun Allocation.starts(date: LocalDate) {

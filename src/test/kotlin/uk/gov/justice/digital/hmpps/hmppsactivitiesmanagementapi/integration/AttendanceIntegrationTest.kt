@@ -41,8 +41,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS"),
+          AttendanceUpdateRequest(1, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -51,8 +51,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isNoContent
 
     val markedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(2) }
-    assertThat(markedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo("ATT")
-    assertThat(markedAttendances.prisonerAttendanceReason("A22222A").code).isEqualTo("ABS")
+    assertThat(markedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo("ATTENDED")
+    assertThat(markedAttendances.prisonerAttendanceReason("A22222A").code).isEqualTo("SICK")
   }
 
   @Sql(
@@ -67,8 +67,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, "ATT"),
-          AttendanceUpdateRequest(2, "ABS"),
+          AttendanceUpdateRequest(1, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)

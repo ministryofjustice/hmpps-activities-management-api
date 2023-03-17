@@ -101,7 +101,7 @@ class ScheduledInstanceTest {
       by = "USER1",
       cancelComment = "Resume tomorrow",
     ) {
-      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!, "BAS") }
     }
     with(cancelableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")

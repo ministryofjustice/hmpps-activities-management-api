@@ -10,9 +10,18 @@ CREATE TABLE rollout_prison (
 CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
 
 CREATE TABLE attendance_reason (
-  attendance_reason_id bigserial   NOT NULL CONSTRAINT attendance_reason_pk PRIMARY KEY,
-  code                 varchar(10) NOT NULL UNIQUE,
-  description          varchar(60) NOT NULL
+  attendance_reason_id              bigserial   NOT NULL CONSTRAINT attendance_reason_pk PRIMARY KEY,
+  code                              varchar(20) NOT NULL UNIQUE,
+  description                       varchar(60) NOT NULL,
+  attended                          boolean     NOT NULL,
+  capture_pay                       boolean     NOT NULL,
+  capture_more_detail               boolean     NOT NULL,
+  capture_case_note                 boolean     NOT NULL,
+  capture_incentive_level_warning   boolean     NOT NULL,
+  capture_other_text                boolean     NOT NULL,
+  display_in_absence                boolean     NOT NULL,
+  display_sequence                  integer,
+  notes                             varchar(200)
 );
 
 CREATE INDEX idx_attendance_reason_code ON attendance_reason (code);
@@ -189,18 +198,21 @@ CREATE INDEX idx_scheduled_instance_end_time ON scheduled_instance (end_time);
 CREATE UNIQUE INDEX idx_scheduled_instance_schedule_id_date_times ON scheduled_instance (activity_schedule_id, session_date, start_time, end_time);
 
 CREATE TABLE attendance (
-  attendance_id         bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
-  scheduled_instance_id bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
-  prisoner_number       varchar(7) NOT NULL,
-  attendance_reason_id  bigint REFERENCES attendance_reason (attendance_reason_id),
-  comment               varchar(200),
-  posted                boolean,
-  recorded_time         timestamp,
-  recorded_by           varchar(100),
-  status                varchar(20), -- SCH, CANC, COMP, PAID?
-  pay_amount            integer,
-  bonus_amount          integer,
-  pieces                integer
+  attendance_id                     bigserial  NOT NULL CONSTRAINT attendance_pk PRIMARY KEY,
+  scheduled_instance_id             bigint     NOT NULL REFERENCES scheduled_instance (scheduled_instance_id),
+  prisoner_number                   varchar(7) NOT NULL,
+  attendance_reason_id              bigint REFERENCES attendance_reason (attendance_reason_id),
+  comment                           varchar(240),
+  recorded_time                     timestamp,
+  recorded_by                       varchar(100),
+  status                            varchar(20), -- WAITING, COMPLETED, LOCKED
+  pay_amount                        integer,
+  bonus_amount                      integer,
+  pieces                            integer,
+  issue_payment                     bool,
+  case_note_id                      bigint,
+  incentive_level_warning_issued    bool,
+  other_absence_reason              varchar(240)
 );
 
 CREATE INDEX idx_attendance_scheduled_instance_id ON attendance (scheduled_instance_id);

@@ -36,18 +36,26 @@ data class Attendance(
   var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
-  var status: AttendanceStatus = AttendanceStatus.WAIT,
+  var status: AttendanceStatus = AttendanceStatus.WAITING,
 
   var payAmount: Int? = null,
 
   var bonusAmount: Int? = null,
 
   var pieces: Int? = null,
+
+  var issuePayment: Boolean? = null,
+
+  var caseNoteId: Long? = null,
+
+  var incentiveLevelWarningIssued: Boolean? = null,
+
+  var otherAbsenceReason: String? = null,
 ) {
 
   fun waiting() {
     attendanceReason = null
-    status = AttendanceStatus.WAIT
+    status = AttendanceStatus.WAITING
     comment = null
     recordedBy = null
     recordedTime = null
@@ -68,6 +76,21 @@ data class Attendance(
     recordedBy = scheduledInstance.cancelledBy
   }
 
+  fun mark(
+    reason: AttendanceReason?,
+    newStatus: AttendanceStatus,
+    newComment: String?,
+    newIssuePayment: Boolean?,
+    newIncentiveLevelWarningIssued: Boolean?,
+  ): Attendance {
+    attendanceReason = reason
+    status = newStatus
+    comment = newComment
+    issuePayment = newIssuePayment
+    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    return this
+  }
+
   private fun getPay(incentiveCode: String): ActivityPay? {
     val currentAllocation = scheduledInstance.activitySchedule.allocations()
       .filter { it.isAllocated() }
@@ -80,7 +103,7 @@ data class Attendance(
 }
 
 enum class AttendanceStatus {
-  CANCELLED,
+  WAITING,
   COMPLETED,
-  WAIT,
+  LOCKED,
 }
