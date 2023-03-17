@@ -17,6 +17,8 @@ class AttendanceTest : ModelTest() {
       prisonerNumber = "1234",
       recordedTime = originalRecordedTime,
       status = "Y",
+      issuePayment = false,
+      incentiveLevelWarningIssued = false,
     )
 
     val json = objectMapper.writeValueAsString(attendance)

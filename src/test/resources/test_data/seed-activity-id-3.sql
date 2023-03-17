@@ -118,152 +118,152 @@ values (15, 8, 'B11111A', 20001, 3, '2022-11-21', null, '2022-10-10 10:00:00', '
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (16, 8, 'B22222A', 20002, 3, '2022-11-22', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (2, 1, '2022-10-02', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (2, 1, '2022-10-02', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (3, 1, '2022-10-03', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (3, 1, '2022-10-03', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (4, 1, '2022-10-04', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (4, 1, '2022-10-04', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (5, 1, '2022-10-05', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (5, 1, '2022-10-05', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (6, 2, '2022-10-01', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (6, 2, '2022-10-01', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (7, 2, '2022-10-02', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (7, 2, '2022-10-02', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (8, 2, '2022-10-03', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (8, 2, '2022-10-03', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (9, 2, '2022-10-04', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (9, 2, '2022-10-04', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (10, 2, '2022-10-05', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (10, 2, '2022-10-05', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (11, 3, '2022-11-01', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (11, 3, '2022-11-01', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (12, 3, '2022-11-02', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (12, 3, '2022-11-02', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (13, 3, '2022-11-03', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (13, 3, '2022-11-03', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (14, 3, '2022-11-04', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (14, 3, '2022-11-04', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (15, 3, '2022-11-05', '10:01:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (15, 3, '2022-11-05', '10:01:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (16, 4, '2022-11-01', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (16, 4, '2022-11-01', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (17, 4, '2022-11-02', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (17, 4, '2022-11-02', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (18, 4, '2022-11-03', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (18, 4, '2022-11-03', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (19, 4, '2022-11-04', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (19, 4, '2022-11-04', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (20, 4, '2022-11-05', '14:01:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (20, 4, '2022-11-05', '14:01:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (21, 5, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (21, 5, '2022-10-10', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (22, 5, '2022-10-11', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (22, 5, '2022-10-11', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (23, 5, '2022-10-12', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (23, 5, '2022-10-12', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (24, 5, '2022-10-13', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (24, 5, '2022-10-13', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (25, 5, '2022-10-14', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (25, 5, '2022-10-14', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (26, 6, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (26, 6, '2022-10-10', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (27, 6, '2022-10-11', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (27, 6, '2022-10-11', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (28, 6, '2022-10-12', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (28, 6, '2022-10-12', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (29, 6, '2022-10-13', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (29, 6, '2022-10-13', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (30, 6, '2022-10-14', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (30, 6, '2022-10-14', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (31, 7, '2022-10-21', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (31, 7, '2022-10-21', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (32, 7, '2022-10-22', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (32, 7, '2022-10-22', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (33, 7, '2022-10-23', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (33, 7, '2022-10-23', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (34, 7, '2022-10-24', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (34, 7, '2022-10-24', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (35, 7, '2022-10-25', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (35, 7, '2022-10-25', '10:00:00', '11:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (36, 8, '2022-10-21', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (36, 8, '2022-10-21', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (37, 8, '2022-10-22', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (37, 8, '2022-10-22', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (38, 8, '2022-10-23', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (38, 8, '2022-10-23', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (39, 8, '2022-10-24', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (39, 8, '2022-10-24', '14:00:00', '15:00:00', false, null, null);
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (40, 8, '2022-11-25', '14:00:00', '15:00:00', false, null, null, null, null);
-
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (1, 1, 'A11111A', 3, null, null, null, 'WAIT', null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
+values (40, 8, '2022-11-25', '14:00:00', '15:00:00', false, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (2, 1, 'A22222A', 3, null, null, null, 'WAIT', null, null, null);
+values (1, 1, 'A11111A', 3, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (3, 2, 'A11111A', 1, null, null, null, 'WAIT', null, null, null);
+values (2, 1, 'A22222A', 3, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (4, 2, 'A22222A', 3, null, null, null, 'WAIT', null, null, null);
+values (3, 2, 'A11111A', 1, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (5, 3, 'A11111A', 3, null, null, null, 'WAIT', null, null, null);
+values (4, 2, 'A22222A', 3, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (6, 3, 'A22222A', 1, null, null, null, 'WAIT', null, null, null);
+values (5, 3, 'A11111A', 3, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (7, 4, 'A11111A', 4, null, null, null, 'WAIT', null, null, null);
+values (6, 3, 'A22222A', 1, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (8, 4, 'A22222A', 4, null, null, null, 'WAIT', null, null, null);
+values (7, 4, 'A11111A', 4, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (9, 5, 'A11111A', 3, null, null, null, 'WAIT', null, null, null);
+values (8, 4, 'A22222A', 4, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (10, 5, 'A22222A', 3, null, null, null, 'WAIT', null, null, null);
+values (9, 5, 'A11111A', 3, null, null, null, 'WAITING', null, null, null);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (10, 5, 'A22222A', 3, null, null, null, 'WAITING', null, null, null);

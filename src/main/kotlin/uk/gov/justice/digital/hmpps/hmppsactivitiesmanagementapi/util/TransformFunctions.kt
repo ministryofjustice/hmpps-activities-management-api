@@ -518,6 +518,15 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
         id = it.attendanceReasonId,
         code = it.code,
         description = it.description,
+        attended = it.attended,
+        capturePay = it.capturePay,
+        captureMoreDetail = it.captureMoreDetail,
+        captureCaseNote = it.captureCaseNote,
+        captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
+        captureOtherText = it.captureOtherText,
+        displayInAbsence = it.displayInAbsence,
+        displaySequence = it.displaySequence,
+        notes = it.notes,
       )
     },
     comment = attendance.comment,
@@ -527,6 +536,8 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     payAmount = attendance.payAmount,
     bonusAmount = attendance.bonusAmount,
     pieces = attendance.pieces,
+    issuePayment = attendance.issuePayment,
+    incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
