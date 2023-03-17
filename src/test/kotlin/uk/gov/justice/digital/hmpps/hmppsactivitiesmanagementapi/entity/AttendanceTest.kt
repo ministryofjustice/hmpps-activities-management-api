@@ -33,7 +33,7 @@ class AttendanceTest {
         1,
         "some note",
       ),
-      status = AttendanceStatus.CANCELLED,
+      status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
       recordedTime = LocalDateTime.now(),
@@ -52,7 +52,7 @@ class AttendanceTest {
 
   @Test
   fun `can cancel attendance`() {
-    val attendanceReason = attendanceReasons()["CANC"]!!
+    val attendanceReason = attendanceReasons()["CANCELLED"]!!
     val canceledInstance = instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
     val attendanceWithCanceledInstance = attendance.copy(scheduledInstance = canceledInstance)
 

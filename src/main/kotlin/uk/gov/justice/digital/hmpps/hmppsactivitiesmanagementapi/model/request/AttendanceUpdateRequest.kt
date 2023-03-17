@@ -12,7 +12,7 @@ data class AttendanceUpdateRequest(
   val id: Long?,
 
   @field:NotEmpty(message = "Attendance reason must be supplied")
-  @Schema(description = "The reason codes- SICK, REFUSED, NREQ, REST, CLASH, OTHER, SUSP, CANC, ATT", example = "ATT")
+  @Schema(description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED", example = "ATTENDED")
   val attendanceReason: String?,
 
   @Schema(description = "Comments such as more detail for SICK", example = "Prisoner has COVID-19")

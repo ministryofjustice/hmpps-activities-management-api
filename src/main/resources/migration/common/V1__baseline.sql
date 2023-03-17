@@ -11,7 +11,7 @@ CREATE INDEX idx_rollout_prison_code ON rollout_prison (code);
 
 CREATE TABLE attendance_reason (
   attendance_reason_id              bigserial   NOT NULL CONSTRAINT attendance_reason_pk PRIMARY KEY,
-  code                              varchar(10) NOT NULL UNIQUE,
+  code                              varchar(20) NOT NULL UNIQUE,
   description                       varchar(60) NOT NULL,
   attended                          boolean     NOT NULL,
   capture_pay                       boolean     NOT NULL,

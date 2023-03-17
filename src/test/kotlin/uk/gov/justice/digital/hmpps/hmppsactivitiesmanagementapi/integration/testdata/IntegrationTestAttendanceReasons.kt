@@ -35,7 +35,7 @@ val refusedReason =
 val notRequiredReason =
   AttendanceReason(
     id = 3,
-    code = "NREQ",
+    code = "NOT_REQUIRED",
     description = "Not required or excused",
     attended = false,
     capturePay = false,
@@ -95,7 +95,7 @@ val otherReason =
 val suspendedReason =
   AttendanceReason(
     id = 7,
-    code = "SUSP",
+    code = "SUSPENDED",
     description = "Suspended",
     attended = false,
     capturePay = false,
@@ -110,7 +110,7 @@ val suspendedReason =
 val cancelledReason =
   AttendanceReason(
     id = 8,
-    code = "CANC",
+    code = "CANCELLED",
     description = "Cancelled",
     attended = false,
     capturePay = false,
@@ -125,7 +125,7 @@ val cancelledReason =
 val attendedReason =
   AttendanceReason(
     id = 9,
-    code = "ATT",
+    code = "ATTENDED",
     description = "Attended",
     attended = true,
     capturePay = false,

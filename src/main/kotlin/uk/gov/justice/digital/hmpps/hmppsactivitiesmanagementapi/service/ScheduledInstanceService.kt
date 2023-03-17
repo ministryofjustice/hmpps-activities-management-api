@@ -52,7 +52,7 @@ class ScheduledInstanceService(
       by = scheduleInstanceCancelRequest.username,
       cancelComment = scheduleInstanceCancelRequest.comment,
     ) { attendanceList ->
-      val attendanceReason = attendanceReasonRepository.findByCode("CANC")
+      val attendanceReason = attendanceReasonRepository.findByCode("CANCELLED")
       val prisonerNumbers = scheduledInstance.attendances.map { it.prisonerNumber }
       val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()?.associateBy { it.prisonerNumber }
 

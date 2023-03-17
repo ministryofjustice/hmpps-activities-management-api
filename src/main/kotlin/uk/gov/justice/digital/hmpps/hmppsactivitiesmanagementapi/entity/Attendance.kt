@@ -105,6 +105,5 @@ data class Attendance(
 enum class AttendanceStatus {
   WAITING,
   COMPLETED,
-  CANCELLED,
   LOCKED,
 }
