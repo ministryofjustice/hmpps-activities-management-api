@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
@@ -48,6 +49,18 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
+  suspend fun getScheduledActivitiesAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/bookings/{bookingId}/activities")
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .build(bookingId)
+      }
+      .retrieve()
+      .awaitBody()
+
   fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -59,6 +72,19 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+  }
+
+  suspend fun getScheduledAppointmentsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/bookings/{bookingId}/appointments")
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .build(bookingId)
+      }
+      .retrieve()
+      .awaitBody()
   }
 
   fun getScheduledAppointmentsForPrisonerNumbers(
@@ -93,6 +119,18 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<CourtHearings>())
   }
 
+  suspend fun getScheduledCourtHearingsAsync(bookingId: Long, dateRange: LocalDateRange): CourtHearings =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/bookings/{bookingId}/court-hearings")
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .build(bookingId)
+      }
+      .retrieve()
+      .awaitBody()
+
   fun getScheduledCourtEventsForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -112,6 +150,24 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
+  suspend fun getScheduledCourtEventsForPrisonerNumbersAsync(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?,
+  ): List<PrisonerSchedule> =
+    prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/courtEvents")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+
   fun getScheduledVisits(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -124,6 +180,18 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
+
+  suspend fun getScheduledVisitsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/bookings/{bookingId}/visits")
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .build(bookingId)
+      }
+      .retrieve()
+      .awaitBody()
 
   fun getScheduledVisitsForPrisonerNumbers(
     prisonCode: String,
@@ -144,6 +212,24 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
+  suspend fun getScheduledVisitsForPrisonerNumbersAsync(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?,
+  ): List<PrisonerSchedule> =
+    prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/visits")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+
   fun getScheduledActivitiesForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -162,6 +248,24 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
 
+  suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate?,
+    timeSlot: TimeSlot?,
+  ): List<PrisonerSchedule> =
+    prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/activities")
+          .maybeQueryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+
   fun getExternalTransfersOnDate(
     agencyId: String,
     prisonerNumbers: Set<String>,
@@ -178,26 +282,21 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
 
-  /*
-  Will possibly re-introduce this method if we ever need to get ALL activities in a prison from NOMIS.
-  At present, we only get these for either a prisoner, or a list of prisoners.
-
-  fun getScheduledActivitiesForDateRange(
-    prisonCode: String,
-    dateRange: LocalDateRange,
-  ): Mono<List<PrisonerSchedule>> {
-    return prisonApiWebClient.get()
+  suspend fun getExternalTransfersOnDateAsync(
+    agencyId: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate,
+  ): List<PrisonerSchedule> =
+    prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/api/schedules/{prisonCode}/activities-by-date-range")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(prisonCode)
+          .path("/api/schedules/{agencyId}/externalTransfers")
+          .queryParam("date", date)
+          .build(agencyId)
       }
+      .bodyValue(prisonerNumbers)
       .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
-  }
-   */
+      .awaitBody()
 
   fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
     return prisonApiWebClient.get()

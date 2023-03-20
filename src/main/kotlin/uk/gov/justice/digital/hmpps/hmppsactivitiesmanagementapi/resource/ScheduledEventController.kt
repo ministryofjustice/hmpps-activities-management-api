@@ -77,7 +77,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       ),
     ],
   )
-  fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
+  suspend fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
@@ -157,7 +157,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       ),
     ],
   )
-  fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
+  suspend fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
