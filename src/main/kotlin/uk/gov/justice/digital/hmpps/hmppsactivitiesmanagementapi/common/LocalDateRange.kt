@@ -13,6 +13,8 @@ data class LocalDateRange(
 
   infix fun step(days: Long) = LocalDateRange(start, endInclusive, days)
 
+  fun includes(date: LocalDate) = date.between(start, endInclusive)
+
   companion object {
     val EMPTY: LocalDateRange = LocalDateRange(LocalDate.ofEpochDay(1), LocalDate.ofEpochDay(0))
   }
