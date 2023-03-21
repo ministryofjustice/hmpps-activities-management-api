@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
+import kotlinx.coroutines.runBlocking
 
 class PrisonApiClientTest {
 
@@ -48,15 +49,17 @@ class PrisonApiClientTest {
     val prisonerNumber = "G4793VF"
 
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber).block()!!
 
+    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber).block()!!
     assertThat(prisonerDetails.bookingId).isEqualTo(1200993)
   }
 
   @Test
   fun `getPrisonerDetails - not found`() {
     val prisonerNumber = "AAAAA"
+
     prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
+
     assertThatThrownBy { prisonApiClient.getPrisonerDetails(prisonerNumber).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/offenderNo/AAAAA?fullInfo=true")
@@ -66,7 +69,9 @@ class PrisonApiClientTest {
   fun `getScheduledAppointments by booking id - success`() {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
     prisonApiMockServer.stubGetScheduledAppointments(bookingId, dateRange.start, dateRange.endInclusive)
+
     val scheduledAppointments = prisonApiClient.getScheduledAppointments(bookingId, dateRange).block()!!
     assertThat(scheduledAppointments).hasSize(1)
     assertThat(scheduledAppointments.first().bookingId).isEqualTo(10001L)
@@ -78,6 +83,7 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
+
     assertThatThrownBy { prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/appointments?fromDate=2022-10-01&toDate=2022-11-05")
@@ -88,18 +94,22 @@ class PrisonApiClientTest {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("G4793VF")
     val date = LocalDate.of(2022, 12, 14)
+
     prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
+
     val scheduledAppointments = prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(scheduledAppointments).hasSize(2)
     assertThat(scheduledAppointments.first().offenderNo).isEqualTo("A5193DY")
   }
 
   @Test
-  fun `getScheduledActivities - success`() {
+  fun `getScheduledActivities - success`(): Unit = runBlocking {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
     prisonApiMockServer.stubGetScheduledActivities(bookingId, dateRange.start, dateRange.endInclusive)
-    val scheduledActivities = prisonApiClient.getScheduledActivities(bookingId, dateRange).block()!!
+
+    val scheduledActivities = prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
     assertThat(scheduledActivities).hasSize(2)
     assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
   }
@@ -110,21 +120,25 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, dateRange.start, dateRange.endInclusive)
-    assertThatThrownBy { prisonApiClient.getScheduledActivities(bookingId, dateRange).block() }
-      .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?fromDate=2022-10-01&toDate=2022-11-05")
+
+    assertThatThrownBy {
+      runBlocking {
+        prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
+      }
+    }
+    .isInstanceOf(WebClientResponseException::class.java)
+    .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
-  fun `getScheduledActivitiesForPrisonerNumbers - success`() {
+  fun `getScheduledActivitiesForPrisonerNumbers - success`(): Unit = runBlocking {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("G4793VF", "A5193DY")
     val date = LocalDate.of(2022, 12, 14)
 
     prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
 
-    val activities = prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
-
+    val activities = prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(activities).hasSize(2)
     assertThat(activities.first().offenderNo).isIn("G4793VF", "A5193DY")
   }
@@ -135,10 +149,12 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
-    val courtHearings = prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block()!!
 
-    assertThat(courtHearings.hearings).hasSize(4)
-    assertThat(courtHearings.hearings?.first()?.id).isEqualTo(1L)
+    runBlocking {
+      val courtHearings = prisonApiClient.getScheduledCourtHearingsAsync(bookingId, dateRange)
+      assertThat(courtHearings.hearings).hasSize(4)
+      assertThat(courtHearings.hearings?.first()?.id).isEqualTo(1L)
+    }
   }
 
   @Test
@@ -147,28 +163,38 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
-    assertThatThrownBy { prisonApiClient.getScheduledCourtHearings(bookingId, dateRange).block() }
+
+    assertThatThrownBy {
+      runBlocking {
+        prisonApiClient.getScheduledCourtHearingsAsync(bookingId, dateRange)
+      }
+    }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/court-hearings?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
-  fun `getCourtEventsForPrisonerNumbers - success`() {
+  fun `getCourtEventsForPrisonerNumbers - success`(): Unit = runBlocking {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("G4793VF")
     val date = LocalDate.of(2022, 12, 14)
+
     prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-    val courtEvents = prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+
+    val courtEvents =
+      prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(courtEvents).hasSize(2)
     assertThat(courtEvents.first().offenderNo).isEqualTo("G4793VF")
   }
 
   @Test
-  fun `getScheduledVisits for booking id - success`() {
+  fun `getScheduledVisits for booking id - success`(): Unit = runBlocking {
     val bookingId = 10002L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
     prisonApiMockServer.stubGetScheduledVisits(bookingId, dateRange.start, dateRange.endInclusive)
-    val scheduledVisits = prisonApiClient.getScheduledVisits(bookingId, dateRange).block()!!
+
+    val scheduledVisits = prisonApiClient.getScheduledVisitsAsync(bookingId, dateRange)
     assertThat(scheduledVisits).hasSize(1)
     assertThat(scheduledVisits.first().bookingId).isEqualTo(10002L)
   }
@@ -179,18 +205,25 @@ class PrisonApiClientTest {
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
 
     prisonApiMockServer.stubGetScheduledVisitsNotFound(bookingId, dateRange.start, dateRange.endInclusive)
-    assertThatThrownBy { prisonApiClient.getScheduledVisits(bookingId, dateRange).block() }
+
+    assertThatThrownBy {
+      runBlocking {
+        prisonApiClient.getScheduledVisitsAsync(bookingId, dateRange)
+      }
+    }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/visits?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
-  fun `getScheduledVisitsForPrisonerNumbers - success`() {
+  fun `getScheduledVisitsForPrisonerNumbers - success`(): Unit = runBlocking {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("A5193DY")
     val date = LocalDate.of(2022, 12, 14)
+
     prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
-    val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+
+    val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(visits).hasSize(2)
     assertThat(visits.first().offenderNo).isEqualTo("A5193DY")
   }
@@ -301,16 +334,16 @@ class PrisonApiClientTest {
   }
 
   @Test
-  fun `getExternalTransfersOnDate - success`() {
+  fun `getExternalTransfersOnDate - success`(): Unit = runBlocking {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("B4793VX")
     val date = LocalDate.now()
 
     prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
 
-    val externalTransfers = prisonApiClient.getExternalTransfersOnDate(prisonCode, prisonerNumbers, date).block()!!
-
+    val externalTransfers = prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
     assertThat(externalTransfers).hasSize(1)
     assertThat(externalTransfers.first().offenderNo).isEqualTo("B4793VX")
+
   }
 }
