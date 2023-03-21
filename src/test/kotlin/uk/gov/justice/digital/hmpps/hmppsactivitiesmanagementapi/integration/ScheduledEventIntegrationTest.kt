@@ -51,11 +51,11 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings).hasSize(4)
         assertThat(courtHearings!![0].priority).isEqualTo(1)
         assertThat(visits).hasSize(1)
-        assertThat(visits!![0].priority).isEqualTo(2)
+        assertThat(visits!![0].priority).isEqualTo(3)
         assertThat(appointments).hasSize(1)
-        assertThat(appointments!![0].priority).isEqualTo(4)
+        assertThat(appointments!![0].priority).isEqualTo(5)
         assertThat(activities).hasSize(6)
-        assertThat(activities!![0].priority).isEqualTo(5)
+        assertThat(activities!![0].priority).isEqualTo(6)
       }
     }
 
@@ -81,11 +81,11 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings).hasSize(4)
         assertThat(courtHearings!![0].priority).isEqualTo(1)
         assertThat(visits).hasSize(1)
-        assertThat(visits!![0].priority).isEqualTo(2)
+        assertThat(visits!![0].priority).isEqualTo(3)
         assertThat(appointments).hasSize(1)
-        assertThat(appointments!![0].priority).isEqualTo(4)
+        assertThat(appointments!![0].priority).isEqualTo(5)
         assertThat(activities).hasSize(2)
-        assertThat(activities!![0].priority).isEqualTo(5)
+        assertThat(activities!![0].priority).isEqualTo(6)
       }
     }
 
@@ -358,7 +358,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           assertThat(event).isEqualTo("Geography")
           assertThat(eventDesc).isEqualTo("Geography AM")
           assertThat(details).isEqualTo("Geography: Geography AM")
-          assertThat(priority).isEqualTo(5)
+          assertThat(priority).isEqualTo(6)
         }
       }
     }

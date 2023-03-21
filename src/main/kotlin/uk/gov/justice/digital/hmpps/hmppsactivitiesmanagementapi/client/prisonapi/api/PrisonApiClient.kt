@@ -149,8 +149,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonerNumbers: Set<String>,
     date: LocalDate?,
     timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> {
-    return prisonApiWebClient.post()
+  ): Mono<List<PrisonerSchedule>> =
+    prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/schedules/{prisonCode}/activities")
@@ -161,7 +161,22 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-  }
+
+  fun getExternalTransfersOnDate(
+    agencyId: String,
+    prisonerNumbers: Set<String>,
+    date: LocalDate,
+  ): Mono<List<PrisonerSchedule>> =
+    prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{agencyId}/externalTransfers")
+          .queryParam("date", date)
+          .build(agencyId)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
 
   /*
   Will possibly re-introduce this method if we ever need to get ALL activities in a prison from NOMIS.

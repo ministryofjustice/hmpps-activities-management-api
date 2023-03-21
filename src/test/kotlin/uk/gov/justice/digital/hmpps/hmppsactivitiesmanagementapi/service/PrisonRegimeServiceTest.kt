@@ -34,10 +34,11 @@ class PrisonRegimeServiceTest {
     assertThat(service.getEventPrioritiesForPrison("PVI")).containsExactlyInAnyOrderEntriesOf(
       mapOf(
         EventType.COURT_HEARING to listOf(Priority(1)),
-        EventType.VISIT to listOf(Priority(2)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
-        EventType.APPOINTMENT to listOf(Priority(4)),
-        EventType.ACTIVITY to listOf(Priority(5)),
+        EventType.EXTERNAL_TRANSFER to listOf(Priority(2)),
+        EventType.VISIT to listOf(Priority(3)),
+        EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
+        EventType.APPOINTMENT to listOf(Priority(5)),
+        EventType.ACTIVITY to listOf(Priority(6)),
       ),
     )
 
@@ -53,6 +54,7 @@ class PrisonRegimeServiceTest {
         priority(EventType.VISIT, 3),
         priority(EventType.ADJUDICATION_HEARING, 4),
         priority(EventType.COURT_HEARING, 5),
+        priority(EventType.EXTERNAL_TRANSFER, 6),
       ),
     )
 
@@ -63,6 +65,7 @@ class PrisonRegimeServiceTest {
         EventType.VISIT to listOf(Priority(3)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
         EventType.COURT_HEARING to listOf(Priority(5)),
+        EventType.EXTERNAL_TRANSFER to listOf(Priority(6)),
       ),
     )
 
@@ -78,6 +81,7 @@ class PrisonRegimeServiceTest {
         priority(EventType.VISIT, 2),
         priority(EventType.ADJUDICATION_HEARING, 3),
         priority(EventType.COURT_HEARING, 4),
+        priority(EventType.EXTERNAL_TRANSFER, 4),
       ),
     )
 
@@ -88,6 +92,7 @@ class PrisonRegimeServiceTest {
         EventType.VISIT to listOf(Priority(2)),
         EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
         EventType.COURT_HEARING to listOf(Priority(4)),
+        EventType.EXTERNAL_TRANSFER to listOf(Priority(4)),
       ),
     )
 

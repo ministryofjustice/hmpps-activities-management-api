@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import java.time.LocalDate
 
 object PrisonApiPrisonerScheduleFixture {
 
@@ -19,7 +21,8 @@ object PrisonApiPrisonerScheduleFixture {
     eventLocation: String? = "Leeds Crown Court",
     eventStatus: String = "EXP",
     comment: String? = null,
-    startTime: String = "2022-12-14T10:00:00",
+    date: LocalDate,
+    startTime: String = date.atStartOfDay().toIsoDateTime(),
   ) = PrisonerSchedule(
     offenderNo = offenderNo,
     bookingId = bookingId,
@@ -52,8 +55,9 @@ object PrisonApiPrisonerScheduleFixture {
     eventLocation: String? = "INTERVIEW ROOM",
     eventStatus: String? = "SCH",
     comment: String? = "Dont be late",
-    startTime: String = "2022-12-14T17:00:00",
-    endTime: String = "2022-12-14T18:00:00",
+    date: LocalDate,
+    startTime: String = date.atStartOfDay().toIsoDateTime(),
+    endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
   ) = PrisonerSchedule(
     offenderNo = offenderNo,
     bookingId = bookingId,
@@ -87,7 +91,8 @@ object PrisonApiPrisonerScheduleFixture {
     eventLocation: String? = "INTERVIEW ROOM",
     eventStatus: String? = "EXP",
     comment: String? = null,
-    startTime: String = "2022-12-14T14:30:00",
+    date: LocalDate,
+    startTime: String = date.atStartOfDay().toIsoDateTime(),
   ) = PrisonerSchedule(
     offenderNo = offenderNo,
     bookingId = bookingId,
@@ -119,7 +124,8 @@ object PrisonApiPrisonerScheduleFixture {
     eventLocation: String? = "Workshop 1",
     eventStatus: String? = "EXP",
     comment: String? = null,
-    startTime: String = "2022-12-14T14:30:00",
+    date: LocalDate,
+    startTime: String = date.atStartOfDay().toIsoDateTime(),
   ) = PrisonerSchedule(
     offenderNo = offenderNo,
     locationId = locationId,
@@ -134,5 +140,37 @@ object PrisonApiPrisonerScheduleFixture {
     eventStatus = eventStatus,
     comment = comment,
     startTime = startTime,
+  )
+
+  fun transferInstance(
+    offenderNo: String = "G4793VF",
+    bookingId: Long? = 900001,
+    eventId: Long? = 1,
+    firstName: String = "TIM",
+    lastName: String = "HARRISON",
+    cellLocation: String? = "2-1-001",
+    event: String = "TRANSFER",
+    eventType: String? = "TRANSFER",
+    eventDescription: String = "Governor",
+    eventStatus: String? = "SCH",
+    date: LocalDate,
+    startTime: String = date.atStartOfDay().toIsoDateTime(),
+    endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
+  ) = PrisonerSchedule(
+    offenderNo = offenderNo,
+    bookingId = bookingId,
+    locationId = null,
+    eventId = eventId,
+    firstName = firstName,
+    lastName = lastName,
+    cellLocation = cellLocation,
+    event = event,
+    eventType = eventType,
+    eventDescription = eventDescription,
+    eventLocation = "Should not be included",
+    eventStatus = eventStatus,
+    comment = "Should not be included",
+    startTime = startTime,
+    endTime = endTime,
   )
 }

@@ -16,7 +16,7 @@
     "date": "2022-12-14",
     "startTime": "14:30",
     "endTime": "15:00",
-    "priority": 4
+    "priority": 5
   },
   {
     "prisonCode": "MDI",
@@ -35,6 +35,6 @@
     "date": "2022-12-14",
     "startTime": "17:00",
     "endTime": "18:00",
-    "priority": 4
+    "priority": 5
   }
 ]

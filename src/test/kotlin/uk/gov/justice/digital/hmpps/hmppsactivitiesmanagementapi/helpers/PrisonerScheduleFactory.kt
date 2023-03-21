@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 private val startDate = LocalDate.of(2022, 12, 21)
 private val startTime = LocalTime.of(10, 0)
@@ -23,7 +23,7 @@ fun prisonerSchedules() = listOf(
     lastName = "Smith",
     locationId = 123,
     offenderNo = "456",
-    startTime = LocalDateTime.of(startDate, startTime).format(DateTimeFormatter.ISO_DATE_TIME),
-    endTime = LocalDateTime.of(startDate, endTime).format(DateTimeFormatter.ISO_DATE_TIME),
+    startTime = LocalDateTime.of(startDate, startTime).toIsoDateTime(),
+    endTime = LocalDateTime.of(startDate, endTime).toIsoDateTime(),
   ),
 )
