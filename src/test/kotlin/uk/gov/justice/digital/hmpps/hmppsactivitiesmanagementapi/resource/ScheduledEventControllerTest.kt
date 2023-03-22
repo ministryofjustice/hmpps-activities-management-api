@@ -38,7 +38,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
-      )
+      ),
     ).thenReturn(result)
 
     val response =
@@ -400,10 +400,10 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     date: LocalDate,
     timeSlot: String,
   ) = post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        prisonerNumbers,
-      )
-    }
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      prisonerNumbers,
+    )
+  }
 }
