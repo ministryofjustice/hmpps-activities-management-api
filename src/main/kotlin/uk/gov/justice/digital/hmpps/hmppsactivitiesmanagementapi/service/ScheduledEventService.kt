@@ -1,6 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
@@ -19,9 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiScheduledEventToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
 @Service
@@ -146,8 +146,7 @@ class ScheduledEventService(
     val activities = async {
       if (prisonRolledOut.active) {
         emptyList()
-      }
-      else {
+      } else {
         prisonApiClient.getScheduledActivitiesAsync(prisoner.first, dateRange)
       }
     }
@@ -161,7 +160,7 @@ class ScheduledEventService(
       courtHearings.await(),
       visits.await(),
       activities.await(),
-      transfers.await()
+      transfers.await(),
     )
   }
 

@@ -1,18 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -29,9 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
 import java.time.LocalTime
-import kotlinx.coroutines.runBlocking
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.verifyBlocking
 
 class ScheduledEventServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
@@ -88,12 +88,38 @@ class ScheduledEventServiceTest {
     val transferEvents = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = date))
 
     prisonApiClient.stub {
-      on { runBlocking { getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot) }} doReturn scheduledVisits
-      on { runBlocking { getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot) }} doReturn courtEvents
-      on { runBlocking { getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date) }} doReturn transferEvents
+      on {
+        runBlocking {
+          getScheduledVisitsForPrisonerNumbersAsync(
+            prisonCode,
+            prisonerNumbers,
+            date,
+            timeSlot,
+          )
+        }
+      } doReturn scheduledVisits
+      on {
+        runBlocking {
+          getScheduledCourtEventsForPrisonerNumbersAsync(
+            prisonCode,
+            prisonerNumbers,
+            date,
+            timeSlot,
+          )
+        }
+      } doReturn courtEvents
+      on { runBlocking { getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date) } } doReturn transferEvents
     }
 
-    whenever(appointmentInstanceService.getPrisonerSchedules(eq(prisonCode), eq(prisonerNumbers), any(), eq(date), eq(timeSlot)))
+    whenever(
+      appointmentInstanceService.getPrisonerSchedules(
+        eq(prisonCode),
+        eq(prisonerNumbers),
+        any(),
+        eq(date),
+        eq(timeSlot),
+      ),
+    )
       .thenReturn(scheduledAppointments)
   }
 
@@ -106,7 +132,6 @@ class ScheduledEventServiceTest {
     withPrisonerDetailsException: Boolean = false,
     prisonOverride: String = prisonCode,
   ) {
-
     val scheduledAppointments = if (!withAppointmentSubType.isNullOrEmpty()) {
       listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = withAppointmentSubType))
     } else {
@@ -118,7 +143,7 @@ class ScheduledEventServiceTest {
 
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
-        on { prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)) } doThrow  RuntimeException("Error")
+        on { prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)) } doThrow RuntimeException("Error")
       }
     } else {
       val prisonerDetails = Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonId = prisonOverride)))
@@ -138,9 +163,9 @@ class ScheduledEventServiceTest {
     val transferEventsToday = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = LocalDate.now()))
 
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) }} doReturn scheduledVisits
-      on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) }} doReturn courtHearings
-      on { runBlocking { prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, setOf(prisonerNumber), LocalDate.now()) }} doReturn transferEventsToday
+      on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) } } doReturn scheduledVisits
+      on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) } } doReturn courtHearings
+      on { runBlocking { prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, setOf(prisonerNumber), LocalDate.now()) } } doReturn transferEventsToday
     }
   }
 
@@ -194,15 +219,15 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     whenever(
       prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
         prisonCode,
         prisonerNumbers,
-        today
-      )
+        today,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance(sessionDate = today)))
 
@@ -321,18 +346,17 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     whenever(
       prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
         prisonCode,
         prisonerNumbers,
-        tomorrow
-      )
+        tomorrow,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance(sessionDate = tomorrow)))
-
 
     val scheduledEvents = service.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, tomorrow, timeSlot)
 
@@ -430,7 +454,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Uses the default event priorities for all types of event
@@ -443,11 +467,10 @@ class ScheduledEventServiceTest {
         prisonCode,
         prisonerNumber,
         startDate,
-        endDate
-      )
+        endDate,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance()))
-
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -576,7 +599,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Uses the default event priorities for all types of event
@@ -589,11 +612,10 @@ class ScheduledEventServiceTest {
         prisonCode,
         prisonerNumber,
         startDate,
-        endDate
-      )
+        endDate,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance()))
-
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -702,7 +724,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Mocked activities from the database view
@@ -711,8 +733,8 @@ class ScheduledEventServiceTest {
         prisonCode,
         prisonerNumber,
         startDate,
-        endDate
-      )
+        endDate,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance()))
 
@@ -735,7 +757,6 @@ class ScheduledEventServiceTest {
         EventType.COURT_HEARING to listOf(Priority(24)),
       ),
     )
-
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -769,7 +790,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Mocked activities from the database view
@@ -778,8 +799,8 @@ class ScheduledEventServiceTest {
         prisonCode,
         prisonerNumber,
         startDate,
-        endDate
-      )
+        endDate,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance()))
 
@@ -834,7 +855,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = true,
       rolloutDate = LocalDate.of(2022, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
@@ -861,11 +882,10 @@ class ScheduledEventServiceTest {
         prisonCode,
         prisonerNumber,
         startDate,
-        endDate
-      )
+        endDate,
+      ),
     )
       .thenReturn(listOf(activityFromDbInstance(activityCategory = "LEI")))
-
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -899,7 +919,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Mock response for activities from Prison API for this prisoner
@@ -963,7 +983,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Mock response for activities from Prison API for this prisoner
@@ -1029,7 +1049,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     assertThatThrownBy {
@@ -1058,7 +1078,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     assertThatThrownBy {
@@ -1087,7 +1107,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     assertThatThrownBy {
@@ -1114,12 +1134,12 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Simulate activities error from prison API
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledActivitiesAsync(900001, dateRange) }} doThrow  RuntimeException("Error")
+      on { runBlocking { prisonApiClient.getScheduledActivitiesAsync(900001, dateRange) } } doThrow RuntimeException("Error")
     }
 
     assertThatThrownBy {
@@ -1142,19 +1162,24 @@ class ScheduledEventServiceTest {
     val dateRange = LocalDateRange(startDate, endDate)
 
     setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
-    setupRolledOutPrisonMock(prisonCode, active = false, rolloutDate = LocalDate.of(2023, 12, 22), AppointmentsDataSource.PRISON_API)
+    setupRolledOutPrisonMock(
+      prisonCode,
+      active = false,
+      rolloutDate = LocalDate.of(2023, 12, 22),
+      AppointmentsDataSource.PRISON_API,
+    )
 
     // Simulate visits error from prison API
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) }} doThrow  RuntimeException("Error")
+      on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) } } doThrow RuntimeException("Error")
     }
 
     assertThatThrownBy {
-        service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
-          prisonCode,
-          prisonerNumber,
-          dateRange,
-        )
+      service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+        prisonCode,
+        prisonerNumber,
+        dateRange,
+      )
     }
       .isInstanceOf(Exception::class.java)
       .hasMessage("Error")
@@ -1173,7 +1198,7 @@ class ScheduledEventServiceTest {
       prisonCode,
       active = false,
       rolloutDate = LocalDate.of(2023, 12, 22),
-      AppointmentsDataSource.PRISON_API
+      AppointmentsDataSource.PRISON_API,
     )
 
     // Simulate court hearings error from prison API
