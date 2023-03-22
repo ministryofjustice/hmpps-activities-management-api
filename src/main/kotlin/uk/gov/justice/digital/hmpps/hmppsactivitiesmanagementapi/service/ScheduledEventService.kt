@@ -69,13 +69,13 @@ class ScheduledEventService(
             setOf(prisonerNumber),
             dateRange.start,
             dateRange.endInclusive,
-            schedules.appointments.prisonApiScheduledEventToScheduledEvents(  // Can create a separate transform if required
+            schedules.appointments.prisonApiScheduledEventToScheduledEvents(
               prisonerNumber,
               EventType.APPOINTMENT.name,
               EventType.APPOINTMENT.defaultPriority,
               eventPriorities[EventType.APPOINTMENT],
             ),
-            schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(  // Can create a separate transform if required
+            schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(
               bookingId,
               prisonCode,
               prisonerNumber,
@@ -83,19 +83,19 @@ class ScheduledEventService(
               EventType.COURT_HEARING.defaultPriority,
               eventPriorities[EventType.COURT_HEARING],
             ),
-            schedules.visits.prisonApiScheduledEventToScheduledEvents(  // Can create a separate transform if required
+            schedules.visits.prisonApiScheduledEventToScheduledEvents(
               prisonerNumber,
               EventType.VISIT.name,
               EventType.VISIT.defaultPriority,
               eventPriorities[EventType.VISIT],
             ),
-            schedules.activities.prisonApiScheduledEventToScheduledEvents(  // Can create a separate transform if required
+            schedules.activities.prisonApiScheduledEventToScheduledEvents(
               prisonerNumber,
               EventType.ACTIVITY.name,
               EventType.ACTIVITY.defaultPriority,
               eventPriorities[EventType.ACTIVITY],
             ),
-            schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(  // Can create a separate transform if required
+            schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(
               prisonCode,
               EventType.EXTERNAL_TRANSFER.name,
               EventType.EXTERNAL_TRANSFER.defaultPriority,
@@ -144,10 +144,12 @@ class ScheduledEventService(
     }
 
     val activities = async {
-      if (prisonRolledOut.active) emptyList() else prisonApiClient.getScheduledActivitiesAsync(
-        prisoner.first,
-        dateRange
-      )
+      if (prisonRolledOut.active) {
+        emptyList()
+      }
+      else {
+        prisonApiClient.getScheduledActivitiesAsync(prisoner.first, dateRange)
+      }
     }
 
     val transfers = async {
@@ -274,7 +276,6 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
-
     val appointments = async {
       appointmentInstanceService.getPrisonerSchedules(
         rolloutPrison.code,
@@ -351,11 +352,11 @@ class ScheduledEventService(
     prisonCode: String,
     prisonerNumbers: Set<String>,
   ) = if (date == LocalDate.now()) {
-      prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
-        .map { transfers -> transfers.redacted() }
-    } else {
-      emptyList()
-    }
+    prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
+      .map { transfers -> transfers.redacted() }
+  } else {
+    emptyList()
+  }
 
   private fun PrisonerSchedule.redacted() = this.copy(
     comment = null,

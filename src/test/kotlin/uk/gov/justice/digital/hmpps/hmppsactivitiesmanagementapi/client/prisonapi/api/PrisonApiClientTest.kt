@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -14,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
 
 class PrisonApiClientTest {
 
@@ -126,8 +126,8 @@ class PrisonApiClientTest {
         prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
       }
     }
-    .isInstanceOf(WebClientResponseException::class.java)
-    .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?fromDate=2022-10-01&toDate=2022-11-05")
+      .isInstanceOf(WebClientResponseException::class.java)
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/0/activities?fromDate=2022-10-01&toDate=2022-11-05")
   }
 
   @Test
@@ -344,6 +344,5 @@ class PrisonApiClientTest {
     val externalTransfers = prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
     assertThat(externalTransfers).hasSize(1)
     assertThat(externalTransfers.first().offenderNo).isEqualTo("B4793VX")
-
   }
 }
