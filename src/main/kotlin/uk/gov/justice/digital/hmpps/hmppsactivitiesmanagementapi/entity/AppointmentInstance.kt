@@ -6,7 +6,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalTime
@@ -23,9 +22,7 @@ data class AppointmentInstance(
   @JoinColumn(name = "appointment_occurrence_id", nullable = false)
   val appointmentOccurrence: AppointmentOccurrence,
 
-  @OneToOne
-  @JoinColumn(name = "appointment_category_id", nullable = false)
-  var category: AppointmentCategory,
+  var categoryCode: String,
 
   val prisonCode: String,
 
@@ -51,7 +48,7 @@ data class AppointmentInstance(
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,
-    category = category.toModel(),
+    categoryCode = categoryCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
     inCell = inCell,

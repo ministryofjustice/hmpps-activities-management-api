@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -21,13 +20,10 @@ data class AppointmentInstance(
   val id: Long,
 
   @Schema(
-    description =
-    """
-    The lowest level category of the appointment.
-    A subcategory for new appointments and a legacy category (active = false) for migrated appointments
-    """,
+    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
+    example = "CHAP",
   )
-  val category: AppointmentCategory,
+  val categoryCode: String,
 
   @Schema(
     description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
