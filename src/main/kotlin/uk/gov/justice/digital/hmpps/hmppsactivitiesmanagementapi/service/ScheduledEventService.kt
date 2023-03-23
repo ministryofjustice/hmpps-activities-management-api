@@ -1,9 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -14,9 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiCourtHearingsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonerScheduleToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiScheduledEventToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformToPrisonerScheduledEvents
 import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
 @Service
 class ScheduledEventService(
@@ -27,86 +35,146 @@ class ScheduledEventService(
   private val prisonRegimeService: PrisonRegimeService,
   private val appointmentInstanceService: AppointmentInstanceService,
 ) {
+
   /**
    *  Get scheduled events for a prison, a single prisoner, between two dates and with an optional time slot.
-   *  Court hearings, appointments, visits and external transfers are from Prison API
-   *  Activities are from the Activities database if rolled out is true, else from Prison API.
+   *  Court hearings, visits and external transfers are from Prison API
+   *  Appointments are from the SAA DB if "prisonRollout.appointmentsDataSource" == 'ACTIVITIES' else from Prison API.
+   *  Activities are from the SAA DB if "prisonRollout.active" is true else from Prison API.
    */
   fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
     prisonCode: String,
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
-  ) = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.firstOrNull()
-    .also {
-      if (it == null) {
-        throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
+  ) = runBlocking {
+    prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)).firstOrNull()
+      .also { prisoner ->
+        if (prisoner == null) {
+          throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
+        }
+        if (prisoner.prisonId != prisonCode || prisoner.bookingId == null) {
+          throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
+        }
       }
-      if (it.prisonId != prisonCode || it.bookingId == null) {
-        throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
-      }
-    }
-    ?.let { prisonerDetail ->
-      val bookingId = prisonerDetail.bookingId!!.toLong()
-      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
-        ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
-      val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-      getSinglePrisonerEventCalls(bookingId to prisonerNumber, prisonRolledOut, dateRange)
-        .map { t ->
-          transformToPrisonerScheduledEvents(
-            bookingId,
-            prisonCode,
-            prisonerNumber,
-            dateRange,
-            eventPriorities,
-            t.t1, // Appointments
-            t.t2, // Court hearings
-            t.t3, // Visits
-            t.t4, // Activities,
-            t.t5, // External transfers
-          )
-        }.block()
-        ?.apply {
-          if (prisonRolledOut.active) {
-            activities = transformPrisonerScheduledActivityToScheduledEvents(
+      ?.let { prisonerDetail ->
+        val bookingId = prisonerDetail.bookingId!!.toLong()
+        val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
+          ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
+        val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+        getSinglePrisonerEventCalls(bookingId to prisonerNumber, prisonRolledOut, dateRange)
+          .let { schedules ->
+            PrisonerScheduledEvents(
               prisonCode,
-              EventType.ACTIVITY.defaultPriority,
-              eventPriorities[EventType.ACTIVITY],
-              getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
+              setOf(prisonerNumber),
+              dateRange.start,
+              dateRange.endInclusive,
+              schedules.appointments.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.APPOINTMENT.name,
+                EventType.APPOINTMENT.defaultPriority,
+                eventPriorities[EventType.APPOINTMENT],
+              ),
+              schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(
+                bookingId,
+                prisonCode,
+                prisonerNumber,
+                EventType.COURT_HEARING.name,
+                EventType.COURT_HEARING.defaultPriority,
+                eventPriorities[EventType.COURT_HEARING],
+              ),
+              schedules.visits.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.VISIT.name,
+                EventType.VISIT.defaultPriority,
+                eventPriorities[EventType.VISIT],
+              ),
+              schedules.activities.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.ACTIVITY.name,
+                EventType.ACTIVITY.defaultPriority,
+                eventPriorities[EventType.ACTIVITY],
+              ),
+              schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(
+                prisonCode,
+                EventType.EXTERNAL_TRANSFER.name,
+                EventType.EXTERNAL_TRANSFER.defaultPriority,
+                eventPriorities[EventType.EXTERNAL_TRANSFER],
+              ),
             )
           }
-        }
-    }
+          .apply {
+            if (prisonRolledOut.active) {
+              activities = transformPrisonerScheduledActivityToScheduledEvents(
+                prisonCode,
+                EventType.ACTIVITY.defaultPriority,
+                eventPriorities[EventType.ACTIVITY],
+                getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
+              )
+            }
+          }
+      }
+  }
 
-  private fun getSinglePrisonerEventCalls(
+  private data class SinglePrisonerSchedules(
+    val appointments: List<PrisonApiScheduledEvent>,
+    val courtHearings: CourtHearings,
+    val visits: List<PrisonApiScheduledEvent>,
+    val activities: List<PrisonApiScheduledEvent>,
+    val transfers: List<PrisonerSchedule>,
+  )
+
+  /**
+   * Makes async calls to prison API to gather the events which appear on prisoner schedules.
+   */
+  private suspend fun getSinglePrisonerEventCalls(
     prisoner: Pair<Long, String>,
     prisonRolledOut: RolloutPrison,
     dateRange: LocalDateRange,
-  ) =
-    Mono.zip(
-      Mono.just(appointmentInstanceService.getScheduledEvents(prisonRolledOut, prisoner.first, dateRange)),
-      prisonApiClient.getScheduledCourtHearings(prisoner.first, dateRange),
-      prisonApiClient.getScheduledVisits(prisoner.first, dateRange),
-      if (!prisonRolledOut.active) {
-        prisonApiClient.getScheduledActivities(prisoner.first, dateRange)
-      } else {
-        Mono.just(emptyList())
-      },
-      fetchPrisonApiExternalTransfersIfRangeIncludesToday(prisonRolledOut, prisoner.second, dateRange),
-    )
+  ): SinglePrisonerSchedules = coroutineScope {
+    val appointments = async {
+      appointmentInstanceService.getScheduledEvents(prisonRolledOut, prisoner.first, dateRange)
+    }
 
-  private fun fetchPrisonApiExternalTransfersIfRangeIncludesToday(
+    val courtHearings = async {
+      prisonApiClient.getScheduledCourtHearingsAsync(prisoner.first, dateRange)
+    }
+
+    val visits = async {
+      prisonApiClient.getScheduledVisitsAsync(prisoner.first, dateRange)
+    }
+
+    val activities = async {
+      if (prisonRolledOut.active) {
+        emptyList()
+      } else {
+        prisonApiClient.getScheduledActivitiesAsync(prisoner.first, dateRange)
+      }
+    }
+
+    val transfers = async {
+      fetchPrisonApiExternalTransfersIfRangeIncludesToday(prisonRolledOut, prisoner.second, dateRange)
+    }
+
+    SinglePrisonerSchedules(
+      appointments.await(),
+      courtHearings.await(),
+      visits.await(),
+      activities.await(),
+      transfers.await(),
+    )
+  }
+
+  private suspend fun fetchPrisonApiExternalTransfersIfRangeIncludesToday(
     rolloutPrison: RolloutPrison,
     prisonerNumber: String,
     dateRange: LocalDateRange,
-  ) =
-    LocalDate.now().takeIf { dateRange.includes(it) }?.let { today ->
-      fetchPrisonApiExternalTransfersIfDateIsToday(
-        today,
-        rolloutPrison.code,
-        setOf(prisonerNumber),
-      )
-    } ?: Mono.just(emptyList())
+  ): List<PrisonerSchedule> = LocalDate.now()
+    .takeIf { dateRange.includes(it) }
+    ?.let { today ->
+      fetchPrisonApiExternalTransfersIfDateIsToday(today, rolloutPrison.code, setOf(prisonerNumber))
+    }
+    ?: emptyList()
 
   private fun getSinglePrisonerScheduledActivities(
     prisonCode: String,
@@ -127,33 +195,67 @@ class ScheduledEventService(
 
   /**
    * Get the scheduled events for a list of prisoner numbers, for one date and time slot
-   * Court hearings, appointments, visits and external transfers are from Prison API
-   * Activities are from the Activities database if rolled out is true, else from Prison API.
+   * Court hearings, visits and external transfers are from Prison API
+   * Appointments are from the SAA DB if prisonRollout appointmentsDataSource == 'ACTIVITIES', else from Prison API.
+   * Activities are from the SAA DB if prisonRollout active is true, else from Prison API.
    */
   fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-  ): PrisonerScheduledEvents? {
-    val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
+  ): PrisonerScheduledEvents? = runBlocking {
+    // Await completion - not async - will always return priorities (defaults set)
+    val eventPriorities = withContext(Dispatchers.IO) {
+      prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+    }
+
+    // Await completion - not async
+    val prisonRolledOut = withContext(Dispatchers.IO) {
+      rolloutPrisonRepository.findByCode(prisonCode)
+    }
       ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
-    return getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot)
-      .map { t ->
-        transformToPrisonerScheduledEvents(
+
+    getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot)
+      .let { schedules ->
+        PrisonerScheduledEvents(
           prisonCode,
           prisonerNumbers,
           date,
-          eventPriorities,
-          t.t1, // Appointments
-          t.t2, // Court hearings
-          t.t3, // Visits
-          t.t4, // Activities,
-          t.t5, // External transfers
+          date,
+          schedules.appointments.prisonApiPrisonerScheduleToScheduledEvents(
+            prisonCode,
+            EventType.APPOINTMENT.name,
+            EventType.APPOINTMENT.defaultPriority,
+            eventPriorities[EventType.APPOINTMENT],
+          ),
+          schedules.courtEvents.prisonApiPrisonerScheduleToScheduledEvents(
+            prisonCode,
+            EventType.COURT_HEARING.name,
+            EventType.COURT_HEARING.defaultPriority,
+            eventPriorities[EventType.COURT_HEARING],
+          ),
+          schedules.visits.prisonApiPrisonerScheduleToScheduledEvents(
+            prisonCode,
+            EventType.VISIT.name,
+            EventType.VISIT.defaultPriority,
+            eventPriorities[EventType.VISIT],
+          ),
+          schedules.activities.prisonApiPrisonerScheduleToScheduledEvents(
+            prisonCode,
+            EventType.ACTIVITY.name,
+            EventType.ACTIVITY.defaultPriority,
+            eventPriorities[EventType.ACTIVITY],
+          ),
+          schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(
+            prisonCode,
+            EventType.EXTERNAL_TRANSFER.name,
+            EventType.EXTERNAL_TRANSFER.defaultPriority,
+            eventPriorities[EventType.EXTERNAL_TRANSFER],
+          ),
         )
-      }.block()
-      ?.apply {
+      }
+      .apply {
         if (prisonRolledOut.active) {
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
@@ -165,56 +267,101 @@ class ScheduledEventService(
       }
   }
 
-  private fun getMultiplePrisonerEventCalls(
+  private data class MultiPrisonerSchedules(
+    val appointments: List<PrisonerSchedule>,
+    val courtEvents: List<PrisonerSchedule>,
+    val visits: List<PrisonerSchedule>,
+    val activities: List<PrisonerSchedule>,
+    val transfers: List<PrisonerSchedule>,
+  )
+
+  private suspend fun getMultiplePrisonerEventCalls(
     rolloutPrison: RolloutPrison,
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot?,
-  ) =
-    Mono.zip(
-      Mono.just(
-        appointmentInstanceService.getPrisonerSchedules(
-          rolloutPrison.code,
-          prisonerNumbers,
-          rolloutPrison,
-          date,
-          timeSlot,
-        ),
-      ),
-      prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(rolloutPrison.code, prisonerNumbers, date, timeSlot),
-      prisonApiClient.getScheduledVisitsForPrisonerNumbers(rolloutPrison.code, prisonerNumbers, date, timeSlot),
-      fetchPrisonApiActivitiesIfPrisonNotRolledOut(rolloutPrison, prisonerNumbers, date, timeSlot),
-      fetchPrisonApiExternalTransfersIfDateIsToday(date, rolloutPrison.code, prisonerNumbers),
-    )
+  ): MultiPrisonerSchedules = coroutineScope {
+    val appointments = async {
+      appointmentInstanceService.getPrisonerSchedules(
+        rolloutPrison.code,
+        prisonerNumbers,
+        rolloutPrison,
+        date,
+        timeSlot,
+      )
+    }
 
-  private fun fetchPrisonApiActivitiesIfPrisonNotRolledOut(
+    val courtEvents = async {
+      prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(
+        rolloutPrison.code,
+        prisonerNumbers,
+        date,
+        timeSlot,
+      )
+    }
+
+    val visits = async {
+      prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(
+        rolloutPrison.code,
+        prisonerNumbers,
+        date,
+        timeSlot,
+      )
+    }
+
+    val activities = async {
+      fetchPrisonApiActivitiesIfPrisonNotRolledOut(
+        rolloutPrison,
+        prisonerNumbers,
+        date,
+        timeSlot,
+      )
+    }
+
+    val transfers = async {
+      fetchPrisonApiExternalTransfersIfDateIsToday(
+        date,
+        rolloutPrison.code,
+        prisonerNumbers,
+      )
+    }
+
+    MultiPrisonerSchedules(
+      appointments.await(),
+      courtEvents.await(),
+      visits.await(),
+      activities.await(),
+      transfers.await(),
+    )
+  }
+
+  private suspend fun fetchPrisonApiActivitiesIfPrisonNotRolledOut(
     rolloutPrison: RolloutPrison,
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot?,
   ) =
     if (!rolloutPrison.active) {
-      prisonApiClient.getScheduledActivitiesForPrisonerNumbers(
+      prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(
         rolloutPrison.code,
         prisonerNumbers,
         date,
         timeSlot,
       )
     } else {
-      Mono.just(emptyList())
+      emptyList()
     }
 
-  private fun fetchPrisonApiExternalTransfersIfDateIsToday(
+  private suspend fun fetchPrisonApiExternalTransfersIfDateIsToday(
     date: LocalDate,
     prisonCode: String,
     prisonerNumbers: Set<String>,
-  ) =
-    if (date == LocalDate.now()) {
-      prisonApiClient.getExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
-        .map { transfers -> transfers.map { transfer -> transfer.redacted() } }
-    } else {
-      Mono.just(emptyList())
-    }
+  ) = if (date == LocalDate.now()) {
+    prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
+      .map { transfers -> transfers.redacted() }
+  } else {
+    emptyList()
+  }
 
   private fun PrisonerSchedule.redacted() = this.copy(
     comment = null,
@@ -231,9 +378,7 @@ class ScheduledEventService(
     date: LocalDate,
     slot: TimeSlot?,
   ): List<PrisonerScheduledActivity> {
-    val activities = prisonerScheduledActivityRepository
-      .getScheduledActivitiesForPrisonerListAndDate(prisonCode, prisonerNumbers, date)
-
+    val activities = prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(prisonCode, prisonerNumbers, date)
     return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
   }
 }
