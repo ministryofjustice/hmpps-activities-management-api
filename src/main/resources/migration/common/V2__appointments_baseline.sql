@@ -65,23 +65,31 @@ CREATE INDEX idx_appointment_occurrence_allocation_prisoner_number ON appointmen
 CREATE INDEX idx_appointment_occurrence_allocation_booking_id ON appointment_occurrence_allocation (booking_id);
 
 CREATE TABLE appointment_instance (
-    appointment_instance_id     bigserial   NOT NULL CONSTRAINT appointment_instance_pk PRIMARY KEY,
-    appointment_occurrence_id   bigint      NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
-    category_code               varchar(12) NOT NULL,
-    prison_code                 varchar(6)  NOT NULL,
-    internal_location_id        bigint,
-    in_cell                     boolean     NOT NULL DEFAULT false,
-    prisoner_number             varchar(10) NOT NULL,
-    booking_id                  bigint      NOT NULL,
-    appointment_date            date        NOT NULL,
-    start_time                  time        NOT NULL,
-    end_time                    time,
-    comment                     text,
-    attended                    boolean,
-    cancelled                   boolean     NOT NULL DEFAULT false
+    appointment_instance_id                 bigserial       NOT NULL CONSTRAINT appointment_instance_pk PRIMARY KEY,
+    appointment_id                          bigint          NOT NULL REFERENCES appointment (appointment_id),
+    appointment_occurrence_id               bigint          NOT NULL REFERENCES appointment_occurrence (appointment_occurrence_id),
+    appointment_occurrence_allocation_id    bigserial       NOT NULL REFERENCES appointment_occurrence_allocation (appointment_occurrence_allocation_id),
+    category_code                           varchar(12)     NOT NULL,
+    prison_code                             varchar(6)      NOT NULL,
+    internal_location_id                    bigint,
+    in_cell                                 boolean         NOT NULL DEFAULT false,
+    prisoner_number                         varchar(10)     NOT NULL,
+    booking_id                              bigint          NOT NULL,
+    appointment_date                        date            NOT NULL,
+    start_time                              time            NOT NULL,
+    end_time                                time,
+    comment                                 text,
+    attended                                boolean,
+    cancelled                               boolean         NOT NULL DEFAULT false,
+    created                                 timestamp       NOT NULL,
+    created_by                              varchar(100)    NOT NULL,
+    updated                                 timestamp,
+    updated_by                              varchar(100)
 );
 
+CREATE INDEX idx_appointment_instance_appointment_id ON appointment_instance (appointment_id);
 CREATE INDEX idx_appointment_instance_appointment_occurrence_id ON appointment_instance (appointment_occurrence_id);
+CREATE INDEX idx_appointment_instance_appointment_occurrence_allocation_id ON appointment_instance (appointment_occurrence_allocation_id);
 CREATE INDEX idx_appointment_instance_category_code ON appointment_instance (category_code);
 CREATE INDEX idx_appointment_instance_prison_code ON appointment_instance (prison_code);
 CREATE INDEX idx_appointment_instance_internal_location_id ON appointment_instance (internal_location_id);
