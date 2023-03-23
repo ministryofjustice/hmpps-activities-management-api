@@ -6,7 +6,9 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -14,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCas
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class PrisonApiMockServer : WireMockServer(8999) {
 
@@ -401,6 +404,39 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
+  fun stubAdjudicationHearing(
+    prisonCode: String,
+    fromDate: LocalDate,
+    toDate: LocalDate,
+    prisonerNumbers: List<String>,
+    timeSlot: TimeSlot? = null,
+  ) {
+    stubFor(
+      WireMock.post(
+        WireMock.urlEqualTo(
+          "/api/offenders/$prisonCode/adjudication-hearings?fromDate=$fromDate&toDate=$toDate${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
+        ),
+      )
+        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              mapper.writeValueAsString(
+                prisonerNumbers.mapIndexed { hearingId, offenderNo ->
+                  adjudicationHearing(
+                    prisonCode = prisonCode,
+                    offenderNo = offenderNo,
+                    hearingId = hearingId.plus(1).toLong(),
+                  )
+                },
+              ),
+            )
+            .withStatus(200),
+        ),
+    )
+  }
+
   private fun prisonerTransfer(
     offenderNo: String = "G4793VF",
     bookingId: Long? = 1,
@@ -432,5 +468,26 @@ class PrisonApiMockServer : WireMockServer(8999) {
       comment = "Should not be included",
       startTime = startTime,
       endTime = endTime,
+    )
+
+  private fun adjudicationHearing(
+    prisonCode: String,
+    offenderNo: String,
+    hearingId: Long,
+    hearingType: String = "SCH",
+    startTime: LocalDateTime = LocalDate.now().atStartOfDay(),
+    internalLocationId: Long = 1,
+    internalLocationDescription: String = "Adjudication room",
+    eventStatus: String = "SCH",
+  ) =
+    OffenderAdjudicationHearing(
+      agencyId = prisonCode,
+      offenderNo = offenderNo,
+      hearingId = hearingId,
+      hearingType = hearingType,
+      startTime = startTime.toIsoDateTime(),
+      internalLocationId = internalLocationId,
+      internalLocationDescription = internalLocationDescription,
+      eventStatus = eventStatus,
     )
 }

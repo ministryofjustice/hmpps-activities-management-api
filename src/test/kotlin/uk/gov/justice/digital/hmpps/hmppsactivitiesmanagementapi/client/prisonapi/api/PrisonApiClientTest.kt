@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -99,7 +100,8 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
 
-    val scheduledAppointments = prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+    val scheduledAppointments =
+      prisonApiClient.getScheduledAppointmentsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(scheduledAppointments).hasSize(2)
     assertThat(scheduledAppointments.first().offenderNo).isEqualTo("A5193DY")
   }
@@ -148,7 +150,8 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
 
-    val activities = prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
+    val activities =
+      prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(activities).hasSize(2)
     assertThat(activities.first().offenderNo).isIn("G4793VF", "A5193DY")
   }
@@ -161,7 +164,8 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
 
-    val activities = prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+    val activities =
+      prisonApiClient.getScheduledActivitiesForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(activities).hasSize(2)
     assertThat(activities.first().offenderNo).isIn("G4793VF", "A5193DY")
   }
@@ -224,7 +228,8 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
 
-    val courtEvents = prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
+    val courtEvents =
+      prisonApiClient.getScheduledCourtEventsForPrisonerNumbers(prisonCode, prisonerNumbers, date, null).block()!!
     assertThat(courtEvents).hasSize(2)
     assertThat(courtEvents.first().offenderNo).isEqualTo("G4793VF")
   }
@@ -446,5 +451,26 @@ class PrisonApiClientTest {
         appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
       ),
     )
+  }
+
+  @Test
+  fun `getOffenderAdjudications - success`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = listOf("B4793VX")
+    val fromDate = LocalDate.now()
+    val toDate = fromDate.plusDays(1)
+
+    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate, toDate, prisonerNumbers.toList(), TimeSlot.AM)
+
+    val adjudications =
+      prisonApiClient.getOffenderAdjudications(prisonCode, fromDate, toDate, TimeSlot.AM, prisonerNumbers.toSet())
+
+    assertThat(adjudications).hasSize(1)
+
+    with(adjudications.first()) {
+      assertThat(agencyId).isEqualTo("MDI")
+      assertThat(offenderNo).isEqualTo("B4793VX")
+      assertThat(hearingId).isEqualTo(1)
+    }
   }
 }
