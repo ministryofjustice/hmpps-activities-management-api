@@ -38,7 +38,7 @@ class AppointmentOccurrenceDetailsServiceTest {
     val appointment = appointmentEntity()
     val entity = appointment.occurrences().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
-    whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode, listOf(entity.internalLocationId))!!)
+    whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
     whenever(prisonApiClient.getUserDetailsList(appointment.usernames())).thenReturn(
       listOf(

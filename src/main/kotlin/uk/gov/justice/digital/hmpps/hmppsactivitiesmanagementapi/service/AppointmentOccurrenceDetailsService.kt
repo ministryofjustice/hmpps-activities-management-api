@@ -21,7 +21,7 @@ class AppointmentOccurrenceDetailsService(
 
     val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
 
-    val locationMap = appointmentOccurrence.internalLocationId?.let { locationService.getLocationsForAppointmentsMap(appointment.prisonCode, listOf(it)) } ?: emptyMap()
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 

@@ -20,7 +20,7 @@ class AppointmentDetailsService(
 
     val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode, appointment.internalLocationIds())!!
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 

@@ -30,6 +30,7 @@ private const val EVENT_TYPE_DESC = "Appointment"
 class AppointmentInstanceService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
@@ -46,7 +47,7 @@ class AppointmentInstanceService(
     return if (rolloutPrison.isAppointmentsEnabled()) {
       log.info("Fetching scheduled events from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
-        .toScheduledEvent(EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
+        .toScheduledEvent(referenceCodeService.getAppointmentCategoryReferenceCodesMap(), EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
     } else {
       log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
@@ -69,8 +70,9 @@ class AppointmentInstanceService(
       val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
       val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
 
-      val locationMap = locationService.getLocationsForAppointments(prisonCode)!!
-        .associateBy { it.locationId }
+      val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
+
+      val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
       val prisonersWithAppointments = appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(
         prisonCode,
@@ -87,7 +89,7 @@ class AppointmentInstanceService(
         emptyMap()
       }
 
-      prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
+      prisonersWithAppointments.toPrisonerSchedule(referenceCodeMap, prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
     } else {
       log.info(
         "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +
