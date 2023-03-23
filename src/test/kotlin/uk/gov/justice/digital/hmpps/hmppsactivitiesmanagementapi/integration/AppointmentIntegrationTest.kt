@@ -115,9 +115,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment single appointment single prisoner success`() {
-    val request = appointmentCreateRequest()
+    val request = appointmentCreateRequest(categoryCode = "AC1")
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -134,9 +135,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment single appointment two prisoner success`() {
-    val request = appointmentCreateRequest(prisonerNumbers = listOf("A12345BC", "B23456CE"))
+    val request = appointmentCreateRequest(categoryCode = "AC1", prisonerNumbers = listOf("A12345BC", "B23456CE"))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -154,9 +156,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create individual repeat appointment success`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
+    val request = appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,

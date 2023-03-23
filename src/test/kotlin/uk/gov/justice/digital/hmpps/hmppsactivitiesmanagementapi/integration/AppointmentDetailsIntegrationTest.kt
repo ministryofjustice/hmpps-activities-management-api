@@ -51,7 +51,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get single appointment details`() {
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
