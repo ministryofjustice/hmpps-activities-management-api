@@ -9,8 +9,7 @@ fun locations(
   locationId: Long = 123L,
   locationType: String = "Some Type",
 ) = mapOf(
-  locationId to
-  Location(
+  locationId to Location(
     agencyId = agencyId,
     description = description,
     locationId = locationId,

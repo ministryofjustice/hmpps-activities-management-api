@@ -19,8 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerSchedules
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.scheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -96,6 +100,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
         .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
+      whenever(referenceCodeService.getAppointmentCategoryReferenceCodesMap()).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
