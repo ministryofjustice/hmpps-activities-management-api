@@ -17,16 +17,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-fun appointmentCategoryModel() =
-  AppointmentCategory(1, null, "TEST", "Test Category", true, 2)
-
 fun appointmentCategorySummary() =
-  AppointmentCategorySummary(1, "TEST", "Test Category")
+  AppointmentCategorySummary("TEST", "Test Category")
 
 fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
   Appointment(
     1,
-    appointmentCategoryModel(),
+    "TEST",
     "TPR",
     123,
     false,
@@ -63,7 +60,7 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
 fun appointmentInstanceModel() =
   AppointmentInstance(
     1,
-    appointmentCategoryModel(),
+    "TEST",
     "TPR",
     123,
     false,
@@ -78,7 +75,7 @@ fun appointmentInstanceModel() =
   )
 
 fun appointmentCreateRequest(
-  categoryId: Long? = 1,
+  categoryCode: String? = "TEST",
   prisonCode: String? = "TPR",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
@@ -90,7 +87,7 @@ fun appointmentCreateRequest(
   prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
   AppointmentCreateRequest(
-    categoryId,
+    categoryCode,
     prisonCode,
     internalLocationId,
     inCell,

@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -39,8 +39,8 @@ import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 class AppointmentServiceTest {
-  private val appointmentCategoryRepository: AppointmentCategoryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -49,8 +49,8 @@ class AppointmentServiceTest {
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
 
   private val service = AppointmentService(
-    appointmentCategoryRepository,
     appointmentRepository,
+    referenceCodeService,
     locationService,
     prisonApiUserClient,
     prisonerSearchApiClient,
@@ -88,29 +88,15 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when requested category id is not found`() {
+  fun `createAppointment throws illegal argument exception when requested category code is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.empty())
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap()).thenReturn(emptyMap())
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment Category ${request.categoryCode} not found")
-
-    verify(appointmentRepository, never()).saveAndFlush(any())
-  }
-
-  @Test
-  fun `createAppointment throws illegal argument exception when requested category id is inactive`() {
-    val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-
-    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity(active = false)))
-
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment Category ${request.categoryCode} is not active")
+      .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
@@ -121,8 +107,9 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!)).thenReturn(listOf())
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!)).thenReturn(emptyMap())
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
@@ -136,8 +123,10 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!)).thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
@@ -152,9 +141,10 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
-      .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), prisonId = "DIFFERENT"))))
 
@@ -171,9 +161,10 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
-      .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         Mono.just(
@@ -187,7 +178,7 @@ class AppointmentServiceTest {
     service.createAppointment(request, principal)
 
     with(appointmentEntityCaptor.value) {
-      assertThat(category.appointmentCategoryId).isEqualTo(request.categoryCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -203,7 +194,7 @@ class AppointmentServiceTest {
       with(occurrences()) {
         assertThat(size).isEqualTo(1)
         with(occurrences().first()) {
-          assertThat(category.appointmentCategoryId).isEqualTo(request.categoryCode)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -242,9 +233,10 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
-      .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         Mono.just(
@@ -271,14 +263,7 @@ class AppointmentServiceTest {
           listOf(
             AppointmentInstance(
               id = 0,
-              category = AppointmentCategory(
-                id = 1,
-                parent = null,
-                code = "TEST",
-                description = "Test Category",
-                active = true,
-                displayOrder = 2,
-              ),
+              categoryCode = "TEST",
               prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
               bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
               startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
@@ -286,14 +271,7 @@ class AppointmentServiceTest {
             ),
             AppointmentInstance(
               id = 0,
-              category = AppointmentCategory(
-                id = 1,
-                parent = null,
-                code = "TEST",
-                description = "Test Category",
-                active = true,
-                displayOrder = 2,
-              ),
+              categoryCode = "TEST",
               prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
               bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
               startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
@@ -312,9 +290,10 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
-    whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
-      .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         Mono.just(

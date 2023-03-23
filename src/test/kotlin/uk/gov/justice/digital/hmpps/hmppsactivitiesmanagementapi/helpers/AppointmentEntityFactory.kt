@@ -21,7 +21,7 @@ internal fun appointmentEntity(
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = 1,
-  category = appointmentCategoryEntity(),
+  categoryCode = "TEST",
   prisonCode = "TPR",
   internalLocationId = if (inCell) null else internalLocationId,
   inCell = inCell,
@@ -85,7 +85,7 @@ private fun appointmentInstanceEntity(
   AppointmentInstance(
     appointmentInstanceId = 1,
     appointmentOccurrence = appointmentOccurrence,
-    category = appointmentCategoryEntity(),
+    categoryCode = "TEST",
     prisonCode = appointmentOccurrence.appointment.prisonCode,
     internalLocationId = appointmentOccurrence.appointment.internalLocationId,
     inCell = appointmentOccurrence.appointment.inCell,

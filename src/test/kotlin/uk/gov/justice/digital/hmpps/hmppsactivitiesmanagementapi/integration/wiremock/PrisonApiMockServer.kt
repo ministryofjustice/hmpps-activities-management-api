@@ -8,6 +8,7 @@ import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -355,6 +356,26 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(prisonerNumbers.map { prisonerTransfer(offenderNo = it, date = date) }))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetAppointmentScheduleReasons() {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/scheduleReasons?eventType=APP"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              mapper.writeValueAsString(
+                listOf(
+                  appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
+                  appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
+                  appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
+                ),
+              ),
+            )
             .withStatus(200),
         ),
     )

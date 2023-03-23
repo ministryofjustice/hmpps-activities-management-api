@@ -8,7 +8,8 @@ fun locations(
   userDescription: String = "User Description",
   locationId: Long = 123L,
   locationType: String = "Some Type",
-) = listOf(
+) = mapOf(
+  locationId to
   Location(
     agencyId = agencyId,
     description = description,

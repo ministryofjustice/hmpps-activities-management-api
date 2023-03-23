@@ -24,13 +24,7 @@ class AppointmentTest : ModelTest() {
 
     val appointment = Appointment(
       id = 1,
-      category = AppointmentCategory(
-        id = 11,
-        code = "C11",
-        description = "Blah",
-        active = true,
-        displayOrder = 1,
-      ),
+      categoryCode = "C11",
       prisonCode = "PVI",
       internalLocationId = null,
       comment = "Blah",

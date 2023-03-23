@@ -19,11 +19,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerSchedules
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.scheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,12 +32,14 @@ class AppointmentInstanceServiceTest {
   private val rolloutPrison: RolloutPrison = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val locationService: LocationService = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentInstanceService = AppointmentInstanceService(
     prisonApiClient,
     prisonerSearchApiClient,
+    referenceCodeService,
     locationService,
     appointmentInstanceRepository,
     prisonRegimeService,
@@ -157,7 +156,8 @@ class AppointmentInstanceServiceTest {
       )
 
       whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, timeSlot)).thenReturn(LocalTimeRange(earliestTime, latestTime))
-      whenever(locationService.getLocationsForAppointments(prisonCode)).thenReturn(locations())
+      whenever(referenceCodeService.getAppointmentCategoryReferenceCodesMap()).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
+      whenever(locationService.getLocationsForAppointmentsMap(prisonCode)).thenReturn(locations())
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())).thenReturn(Mono.just(prisoners(prisonerNumber = prisonerNumbers.first())))
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))

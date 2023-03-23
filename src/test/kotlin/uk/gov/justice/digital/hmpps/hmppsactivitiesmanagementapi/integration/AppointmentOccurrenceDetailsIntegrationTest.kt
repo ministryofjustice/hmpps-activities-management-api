@@ -51,6 +51,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get single appointment details`() {
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -64,7 +65,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       assertThat(id).isEqualTo(1)
       assertThat(appointmentId).isEqualTo(1)
       assertThat(sequenceNumber).isEqualTo(1)
-      assertThat(category).isEqualTo(AppointmentCategorySummary(3, "AC1", "Appointment Category 1"))
+      assertThat(category).isEqualTo(AppointmentCategorySummary("AC1", "Appointment Category 1"))
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocation).isEqualTo(AppointmentLocationSummary(123, "TPR", "Test Appointment Location"))
       assertThat(inCell).isEqualTo(false)

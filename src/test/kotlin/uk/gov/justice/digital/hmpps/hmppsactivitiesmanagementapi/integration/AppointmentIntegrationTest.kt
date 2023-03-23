@@ -39,8 +39,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointment = webTestClient.getAppointmentById(1)
 
     with(appointment!!) {
-      assertThat(category.code).isEqualTo("AC1")
-      assertThat(category.description).isEqualTo("Appointment Category 1")
+      assertThat(categoryCode).isEqualTo("AC1")
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isEqualTo(false)
@@ -178,7 +177,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -195,7 +194,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryCode)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -231,7 +230,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -248,7 +247,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryCode)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -279,14 +278,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               listOf(
                 AppointmentInstance(
                   id = -1,
-                  category = AppointmentCategory(
-                    id = 1,
-                    parent = null,
-                    code = "TEST",
-                    description = "Test Category",
-                    active = true,
-                    displayOrder = 2,
-                  ),
+                  categoryCode = "TEST",
                   prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
                   bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
                   startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
@@ -294,14 +286,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
                 ),
                 AppointmentInstance(
                   id = -1,
-                  category = AppointmentCategory(
-                    id = 1,
-                    parent = null,
-                    code = "TEST",
-                    description = "Test Category",
-                    active = true,
-                    displayOrder = 2,
-                  ),
+                  categoryCode = "TEST",
                   prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
                   bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
                   startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
