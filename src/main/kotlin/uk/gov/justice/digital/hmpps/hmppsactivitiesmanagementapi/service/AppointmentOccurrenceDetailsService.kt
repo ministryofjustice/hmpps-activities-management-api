@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 @Service
 class AppointmentOccurrenceDetailsService(
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
+  private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
@@ -18,12 +19,14 @@ class AppointmentOccurrenceDetailsService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
+    val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
+
     val locationMap = appointmentOccurrence.internalLocationId?.let { locationService.getLocationsForAppointmentsMap(appointment.prisonCode, listOf(it)) } ?: emptyMap()
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 
     val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointmentOccurrence.prisonerNumbers()).block()!!
 
-    return appointmentOccurrence.toDetails(appointment.category.toSummary(), appointment.prisonCode, locationMap, userMap, prisoners)
+    return appointmentOccurrence.toDetails(referenceCodeMap, appointment.prisonCode, locationMap, userMap, prisoners)
   }
 }

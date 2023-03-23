@@ -4,13 +4,10 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
@@ -21,8 +18,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Service
 class AppointmentService(
-  private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val appointmentRepository: AppointmentRepository,
+  private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonApiUserClient: PrisonApiUserClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -33,8 +30,7 @@ class AppointmentService(
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
     failIfPrisonCodeNotInUserCaseLoad(request.prisonCode!!)
 
-    val category = appointmentCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-    failIfCategoryIsNotActive(category)
+    failIfCategoryNotFound(request.categoryCode!!)
 
     failIfLocationNotFound(request)
 
@@ -45,7 +41,7 @@ class AppointmentService(
     failIfMissingPrisoners(request.prisonerNumbers, prisonerMap)
 
     return AppointmentEntity(
-      category = category,
+      categoryCode = request.categoryCode,
       prisonCode = request.prisonCode,
       internalLocationId = if (request.inCell) null else request.internalLocationId,
       inCell = request.inCell,
@@ -88,7 +84,7 @@ class AppointmentService(
                   prisonerNumber = prisoner.prisonerNumber,
                   bookingId = prisoner.bookingId.toLong(),
                   appointmentDate = this.startDate,
-                  category = category,
+                  categoryCode = request.categoryCode,
                   endTime = this.endTime,
                   inCell = this.inCell,
                   internalLocationId = this.internalLocationId,
@@ -109,8 +105,10 @@ class AppointmentService(
       ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
   }
 
-  private fun failIfCategoryIsNotActive(category: AppointmentCategory) {
-    if (!category.active) throw IllegalArgumentException("Appointment Category ${category.appointmentCategoryId} is not active")
+  private fun failIfCategoryNotFound(categoryCode: String) {
+    referenceCodeService.getAppointmentScheduleReasons()
+      .firstOrNull { referenceCode -> referenceCode.code == categoryCode }
+      ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
   }
 
   private fun failIfLocationNotFound(request: AppointmentCreateRequest) {

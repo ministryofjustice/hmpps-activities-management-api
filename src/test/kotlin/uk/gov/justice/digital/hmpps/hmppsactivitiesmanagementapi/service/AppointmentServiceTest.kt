@@ -28,7 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCas
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.lang.IllegalArgumentException
 import java.security.Principal
@@ -94,10 +93,10 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.empty())
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.empty())
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment Category ${request.categoryId} not found")
+      .hasMessage("Appointment Category ${request.categoryCode} not found")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
@@ -108,10 +107,10 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity(active = false)))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity(active = false)))
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment Category ${request.categoryId} is not active")
+      .hasMessage("Appointment Category ${request.categoryCode} is not active")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
@@ -122,7 +121,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!)).thenReturn(listOf())
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
@@ -137,7 +136,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!)).thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
@@ -153,7 +152,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
       .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -172,7 +171,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
       .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -188,7 +187,7 @@ class AppointmentServiceTest {
     service.createAppointment(request, principal)
 
     with(appointmentEntityCaptor.value) {
-      assertThat(category.appointmentCategoryId).isEqualTo(request.categoryId)
+      assertThat(category.appointmentCategoryId).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -204,7 +203,7 @@ class AppointmentServiceTest {
       with(occurrences()) {
         assertThat(size).isEqualTo(1)
         with(occurrences().first()) {
-          assertThat(category.appointmentCategoryId).isEqualTo(request.categoryId)
+          assertThat(category.appointmentCategoryId).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -243,7 +242,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
       .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -313,7 +312,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(appointmentCategoryRepository.findById(request.categoryId!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
+    whenever(appointmentCategoryRepository.findById(request.categoryCode!!)).thenReturn(Optional.of(appointmentCategoryEntity()))
     whenever(locationService.getLocationsForAppointments(request.prisonCode!!))
       .thenReturn(listOf(appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))

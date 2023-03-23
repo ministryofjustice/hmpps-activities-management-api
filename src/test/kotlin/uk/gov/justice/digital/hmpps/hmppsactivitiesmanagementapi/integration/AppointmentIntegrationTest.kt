@@ -178,7 +178,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryId)
+      assertThat(category.id).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -195,7 +195,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryId)
+          assertThat(category.id).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -231,7 +231,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryId)
+      assertThat(category.id).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -248,7 +248,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryId)
+          assertThat(category.id).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)

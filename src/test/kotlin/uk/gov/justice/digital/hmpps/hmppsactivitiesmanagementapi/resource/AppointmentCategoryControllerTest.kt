@@ -10,7 +10,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryEntities
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 
 @WebMvcTest(controllers = [AppointmentCategoryController::class])
 @ContextConfiguration(classes = [AppointmentCategoryController::class])
