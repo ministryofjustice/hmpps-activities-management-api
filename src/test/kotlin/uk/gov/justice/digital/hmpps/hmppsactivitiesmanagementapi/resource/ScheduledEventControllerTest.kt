@@ -31,6 +31,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 200 response with events`() {
     val prisonerNumbers = setOf("G4793VF")
     val result = PrisonerScheduledEventsFixture.instance()
+
     whenever(
       scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(
         "MDI",
@@ -65,6 +66,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - Error response when service throws exception`() {
     val prisonerNumbers = setOf("G4793VF")
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+
     whenever(
       scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(
         "MDI",
@@ -74,16 +76,15 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       ),
     ).thenThrow(RuntimeException("Error"))
 
-    val response =
-      mockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
-        "MDI",
-        prisonerNumbers,
-        LocalDate.of(2022, 10, 1),
-        TimeSlot.AM.name,
-      )
-        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { is5xxServerError() } }
-        .andReturn().response
+    val response = mockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+      "MDI",
+      prisonerNumbers,
+      LocalDate.of(2022, 10, 1),
+      TimeSlot.AM.name,
+    )
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
+      .andExpect { status { is5xxServerError() } }
+      .andReturn().response
 
     assertThat(response.contentAsString + "\n").isEqualTo(result)
 
@@ -208,7 +209,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       startDate,
       endDate,
     )
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
@@ -241,7 +242,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       startDate,
       endDate,
     )
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
       .andExpect { status { is5xxServerError() } }
       .andReturn().response
 
@@ -391,20 +392,18 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
-  ) =
-    get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+  ) = get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
 
   private fun MockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: String,
-  ) =
-    post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        prisonerNumbers,
-      )
-    }
+  ) = post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      prisonerNumbers,
+    )
+  }
 }
