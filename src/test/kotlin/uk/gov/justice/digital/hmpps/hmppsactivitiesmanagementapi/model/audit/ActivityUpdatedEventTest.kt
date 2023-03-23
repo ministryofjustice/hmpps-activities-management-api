@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class ActivityUpdatedEventTest {
+class ActivityUpdatedEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
-    val event = ActivityUpdatedEvent(1, "Some Activity", "PBI", "C", LocalDate.now(), LocalDateTime.now(), "Bob")
+    val event = ActivityUpdatedEvent(1, "Some Activity", "PBI", "C", LocalDate.now(), LocalDateTime.now())
     assertThat(event.type()).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
   }
 
@@ -24,7 +24,6 @@ class ActivityUpdatedEventTest {
       "C",
       startDate,
       createdAt,
-      "Bob",
     )
     val expectedToString = "An activity called 'Some Activity' with category C and starting on 2023-03-23 " +
       "at prison PBI was updated. Event created on 2023-03-22 at 09:00:03 by Bob."

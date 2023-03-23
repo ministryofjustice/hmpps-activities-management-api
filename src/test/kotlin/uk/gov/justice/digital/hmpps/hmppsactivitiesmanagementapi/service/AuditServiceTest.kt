@@ -2,12 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.api.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.model.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BonusPaymentMadeForActivityAttendanceEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityTestUtils
 import java.time.LocalDate
@@ -20,7 +23,17 @@ class AuditServiceTest {
 
   private val hmppsAuditApiClient = mock<HmppsAuditApiClient>()
 
-  private val auditService = AuditService(hmppsAuditApiClient)
+  private val auditService = AuditService(hmppsAuditApiClient, true)
+
+  @Test
+  fun `should not log hmpps auditable event if feature is disabled`() {
+    val event = mock<AuditableEvent>()
+    val auditService = AuditService(hmppsAuditApiClient, false)
+
+    auditService.logEvent(event)
+
+    verify(hmppsAuditApiClient, never()).createEvent(any())
+  }
 
   @Test
   fun `should log hmpps auditable event correctly`() {
@@ -38,7 +51,6 @@ class AuditServiceTest {
       LocalTime.of(10, 0),
       LocalTime.of(11, 0),
       LocalDateTime.of(2023, 1, 2, 13, 43, 56),
-      username,
     )
 
     auditService.logEvent(event)

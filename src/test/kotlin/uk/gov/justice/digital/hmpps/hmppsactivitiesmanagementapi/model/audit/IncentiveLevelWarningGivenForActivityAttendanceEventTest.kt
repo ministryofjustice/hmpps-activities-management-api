@@ -6,7 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class IncentiveLevelWarningGivenForActivityAttendanceEventTest {
+class IncentiveLevelWarningGivenForActivityAttendanceEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
@@ -21,7 +21,6 @@ class IncentiveLevelWarningGivenForActivityAttendanceEventTest {
       LocalTime.now(),
       LocalTime.now(),
       LocalDateTime.now(),
-      "Bob",
     )
     assertThat(event.type()).isEqualTo(AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE)
   }
@@ -43,7 +42,6 @@ class IncentiveLevelWarningGivenForActivityAttendanceEventTest {
       startTime,
       endTime,
       createdAt,
-      "Bob",
     )
     val expectedToString = "An incentive level warning was given to prisoner A123456 Jones, Terry for activity 'Some Activity'(1) " +
       "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."

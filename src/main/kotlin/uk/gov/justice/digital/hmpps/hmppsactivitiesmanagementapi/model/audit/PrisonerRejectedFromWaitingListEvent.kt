@@ -9,9 +9,8 @@ class PrisonerRejectedFromWaitingListEvent(
   val prisonerFirstName: String,
   val prisonerLastName: String,
   createdAt: LocalDateTime,
-  createdBy: String,
 
-) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+) : AuditableEvent(createdAt), HmppsAuditable {
 
   override fun type() = AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST
 

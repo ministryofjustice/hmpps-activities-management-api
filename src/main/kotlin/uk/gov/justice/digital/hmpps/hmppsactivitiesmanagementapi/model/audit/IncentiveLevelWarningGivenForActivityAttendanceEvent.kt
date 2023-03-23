@@ -15,9 +15,8 @@ class IncentiveLevelWarningGivenForActivityAttendanceEvent(
   val startTime: LocalTime,
   val endTime: LocalTime,
   createdAt: LocalDateTime,
-  createdBy: String,
 
-) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+) : AuditableEvent(createdAt), HmppsAuditable {
 
   override fun type() = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE
 

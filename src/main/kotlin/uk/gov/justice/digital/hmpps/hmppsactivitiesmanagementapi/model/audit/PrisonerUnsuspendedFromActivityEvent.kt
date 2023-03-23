@@ -15,9 +15,8 @@ class PrisonerUnsuspendedFromActivityEvent(
   val startTime: LocalTime,
   val endTime: LocalTime,
   createdAt: LocalDateTime,
-  createdBy: String,
 
-) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+) : AuditableEvent(createdAt), HmppsAuditable {
 
   override fun type() = AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY
 

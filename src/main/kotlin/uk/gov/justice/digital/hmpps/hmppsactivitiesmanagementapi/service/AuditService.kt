@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.api.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.model.HmppsAuditEvent
@@ -12,6 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Hmp
 @Service
 class AuditService(
   private val hmppsAuditApiClient: HmppsAuditApiClient,
+  @Value("\${feature.audit.service.enabled:false}")
+  private val featureEnabled: Boolean,
 ) {
 
   private val objectMapper = jacksonObjectMapper()
@@ -19,7 +22,7 @@ class AuditService(
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
   fun logEvent(event: AuditableEvent) {
-    if (event is HmppsAuditable) {
+    if (featureEnabled && event is HmppsAuditable) {
       hmppsAuditApiClient.createEvent(
         HmppsAuditEvent(
           what = event.type().name,

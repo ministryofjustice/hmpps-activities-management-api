@@ -6,7 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class PrisonerAllocatedEventTest {
+class PrisonerAllocatedEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
@@ -21,7 +21,7 @@ class PrisonerAllocatedEventTest {
       LocalTime.now(),
       LocalTime.now(),
       LocalDateTime.now(),
-      "Bob",
+
     )
     assertThat(event.type()).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
   }
@@ -43,7 +43,7 @@ class PrisonerAllocatedEventTest {
       startTime,
       endTime,
       createdAt,
-      "Bob",
+
     )
     val expectedToString = "Prisoner A123456 Jones, Terry was allocated to activity 'Some Activity'(1) " +
       "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."

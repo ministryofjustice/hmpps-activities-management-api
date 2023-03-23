@@ -10,9 +10,8 @@ class ActivityUpdatedEvent(
   val categoryCode: String,
   val startDate: LocalDate,
   createdAt: LocalDateTime,
-  createdBy: String,
 
-) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+) : AuditableEvent(createdAt), HmppsAuditable {
 
   override fun type() = AuditEventType.ACTIVITY_UPDATED
 

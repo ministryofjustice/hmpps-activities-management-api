@@ -4,7 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
-class PrisonerAcceptedFromWaitingListEventTest {
+class PrisonerAcceptedFromWaitingListEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
@@ -15,7 +15,7 @@ class PrisonerAcceptedFromWaitingListEventTest {
       "Terry",
       "Jones",
       LocalDateTime.now(),
-      "Bob",
+
     )
     assertThat(event.type()).isEqualTo(AuditEventType.PRISONER_ACCEPTED_FROM_WAITING_LIST)
   }
@@ -30,7 +30,7 @@ class PrisonerAcceptedFromWaitingListEventTest {
       "Terry",
       "Jones",
       createdAt,
-      "Bob",
+
     )
     val expectedToString = "Prisoner A123456 Jones, Terry was accepted onto activity 'Some Activity'(1) from the " +
       "waiting list. Event created on 2023-03-22 at 09:00:03 by Bob."
