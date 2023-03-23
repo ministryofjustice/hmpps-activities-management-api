@@ -9,5 +9,5 @@ data class HmppsAuditEvent(
 ) {
   val who = SecurityUtils.getUserNameForLoggedInUser()
   val `when`: LocalDateTime = LocalDateTime.now()
-  val service = "activities-api"
+  val service = "hmpps-activities-management-api"
 }

@@ -1,24 +1,27 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
-import net.minidev.json.JSONObject
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.model.HmppsAuditEvent
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 class IncentiveLevelWarningGivenForActivityAttendanceEvent(
-  private val activityId: Long,
-  private val prisonerNumber: String,
-  private val scheduleId: Long,
+  val activityId: Long,
+  val activityName: String,
+  val prisonerNumber: String,
+  val prisonerFirstName: String,
+  val prisonerLastName: String,
+  val scheduleId: Long,
+  val date: LocalDate,
+  val startTime: LocalTime,
+  val endTime: LocalTime,
+  createdAt: LocalDateTime,
+  createdBy: String,
 
-) : HmppsAuditable {
-  override fun toAuditEvent(): HmppsAuditEvent {
-    return HmppsAuditEvent(
-      what = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE.name,
-      details = JSONObject(
-        mapOf(
-          "activityId" to activityId,
-          "prisonerNumber" to prisonerNumber,
-          "scheduleId" to scheduleId,
-        ),
-      ).toString(),
-    )
-  }
+) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+
+  override fun type() = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE
+
+  override fun toString() = "An incentive level warning was given to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
+    "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
+    "${super.toString()}"
 }

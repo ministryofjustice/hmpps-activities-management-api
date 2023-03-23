@@ -1,24 +1,27 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
-import net.minidev.json.JSONObject
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.model.HmppsAuditEvent
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 class PrisonerSuspendedFromActivityEvent(
-  private val activityId: Long,
-  private val prisonerNumber: String,
-  private val scheduleId: Long,
+  val activityId: Long,
+  val activityName: String,
+  val prisonerNumber: String,
+  val prisonerFirstName: String,
+  val prisonerLastName: String,
+  val scheduleId: Long,
+  val date: LocalDate,
+  val startTime: LocalTime,
+  val endTime: LocalTime,
+  createdAt: LocalDateTime,
+  createdBy: String,
 
-) : HmppsAuditable {
-  override fun toAuditEvent(): HmppsAuditEvent {
-    return HmppsAuditEvent(
-      what = AuditEventType.PRISONER_SUSPENDED_FROM_ACTIVITY.name,
-      details = JSONObject(
-        mapOf(
-          "activityId" to activityId,
-          "prisonerNumber" to prisonerNumber,
-          "scheduleId" to scheduleId,
-        ),
-      ).toString(),
-    )
-  }
+) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+
+  override fun type() = AuditEventType.PRISONER_SUSPENDED_FROM_ACTIVITY
+
+  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was suspended from " +
+    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
+    "${super.toString()}"
 }

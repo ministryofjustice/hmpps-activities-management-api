@@ -1,22 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
-import net.minidev.json.JSONObject
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.audit.model.HmppsAuditEvent
+import java.time.LocalDateTime
 
 class PrisonerRejectedFromWaitingListEvent(
-  private val activityId: Long,
-  private val prisonerNumber: String,
+  val activityId: Long,
+  val activityName: String,
+  val prisonerNumber: String,
+  val prisonerFirstName: String,
+  val prisonerLastName: String,
+  createdAt: LocalDateTime,
+  createdBy: String,
 
-) : HmppsAuditable {
-  override fun toAuditEvent(): HmppsAuditEvent {
-    return HmppsAuditEvent(
-      what = AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST.name,
-      details = JSONObject(
-        mapOf(
-          "activityId" to activityId,
-          "prisonerNumber" to prisonerNumber,
-        ),
-      ).toString(),
-    )
-  }
+) : AuditableEvent(createdAt, createdBy), HmppsAuditable {
+
+  override fun type() = AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST
+
+  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was rejected from the waiting list for " +
+    "activity '$activityName'($activityId). ${super.toString()}"
 }
