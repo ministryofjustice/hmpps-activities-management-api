@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-@Schema(description = "Describes a prisoners scheduled events")
+@Schema(description = "Describes a prisons scheduled events")
 data class PrisonerScheduledEvents(
 
   @Schema(description = "The prison code for these scheduled events", example = "MDI")
@@ -22,14 +22,17 @@ data class PrisonerScheduledEvents(
   val endDate: LocalDate?,
 
   @Schema(description = "A list of scheduled appointments for this prisoner in this date range")
-  var appointments: List<ScheduledEvent>? = null,
+  val appointments: List<ScheduledEvent>? = null,
 
   @Schema(description = "A list of (active) scheduled court hearings for this prisoner in this date range")
-  var courtHearings: List<ScheduledEvent>? = null,
+  val courtHearings: List<ScheduledEvent>? = null,
 
   @Schema(description = "A list of scheduled visits for this prisoner in this date range")
-  var visits: List<ScheduledEvent>? = null,
+  val visits: List<ScheduledEvent>? = null,
 
   @Schema(description = "A list of scheduled activities for this prisoner in this date range")
   var activities: List<ScheduledEvent>? = null,
+
+  @Schema(description = "A list of external transfers for this prisoner in this date range")
+  val externalTransfers: List<ScheduledEvent>? = null,
 )

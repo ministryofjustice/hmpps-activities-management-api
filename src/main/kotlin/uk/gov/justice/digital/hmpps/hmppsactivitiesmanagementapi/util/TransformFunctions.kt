@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -19,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -133,6 +133,7 @@ fun transformToPrisonerScheduledEvents(
   courtHearings: PrisonApiCourtHearings?,
   visits: List<PrisonApiScheduledEvent>?,
   activities: List<PrisonApiScheduledEvent>?,
+  externalTransfers: List<PrisonApiPrisonerSchedule>?,
 ): ModelPrisonerScheduledEvents =
   ModelPrisonerScheduledEvents(
     prisonCode,
@@ -165,6 +166,12 @@ fun transformToPrisonerScheduledEvents(
       EventType.ACTIVITY.defaultPriority,
       eventPriorities[EventType.ACTIVITY],
     ),
+    externalTransfers?.prisonApiPrisonerScheduleToScheduledEvents(
+      prisonCode,
+      EventType.EXTERNAL_TRANSFER.name,
+      EventType.EXTERNAL_TRANSFER.defaultPriority,
+      eventPriorities[EventType.EXTERNAL_TRANSFER],
+    ),
   )
 
 fun transformToPrisonerScheduledEvents(
@@ -176,6 +183,7 @@ fun transformToPrisonerScheduledEvents(
   courtEvents: List<PrisonApiPrisonerSchedule>?,
   visits: List<PrisonApiPrisonerSchedule>?,
   activities: List<PrisonApiPrisonerSchedule>?,
+  externalTransfers: List<PrisonApiPrisonerSchedule>?,
 ): ModelPrisonerScheduledEvents =
   ModelPrisonerScheduledEvents(
     prisonCode,
@@ -206,45 +214,11 @@ fun transformToPrisonerScheduledEvents(
       EventType.ACTIVITY.defaultPriority,
       eventPriorities[EventType.ACTIVITY],
     ),
-  )
-
-fun transformToPrisonerScheduledEvents(
-  prisonCode: String,
-  dateRange: LocalDateRange,
-  eventPriorities: Map<EventType, List<Priority>>,
-  appointments: List<PrisonApiPrisonerSchedule>?,
-  courtEvents: List<PrisonApiPrisonerSchedule>?,
-  visits: List<PrisonApiPrisonerSchedule>?,
-  activities: List<PrisonApiPrisonerSchedule>?,
-): ModelPrisonerScheduledEvents =
-  ModelPrisonerScheduledEvents(
-    prisonCode,
-    emptySet(),
-    dateRange.start,
-    dateRange.endInclusive,
-    appointments?.prisonApiPrisonerScheduleToScheduledEvents(
+    externalTransfers?.prisonApiPrisonerScheduleToScheduledEvents(
       prisonCode,
-      EventType.APPOINTMENT.name,
-      EventType.APPOINTMENT.defaultPriority,
-      eventPriorities[EventType.APPOINTMENT],
-    ),
-    courtEvents?.prisonApiPrisonerScheduleToScheduledEvents(
-      prisonCode,
-      EventType.COURT_HEARING.name,
-      EventType.COURT_HEARING.defaultPriority,
-      eventPriorities[EventType.COURT_HEARING],
-    ),
-    visits?.prisonApiPrisonerScheduleToScheduledEvents(
-      prisonCode,
-      EventType.VISIT.name,
-      EventType.VISIT.defaultPriority,
-      eventPriorities[EventType.VISIT],
-    ),
-    activities?.prisonApiPrisonerScheduleToScheduledEvents(
-      prisonCode,
-      EventType.ACTIVITY.name,
-      EventType.ACTIVITY.defaultPriority,
-      eventPriorities[EventType.ACTIVITY],
+      EventType.EXTERNAL_TRANSFER.name,
+      EventType.EXTERNAL_TRANSFER.defaultPriority,
+      eventPriorities[EventType.EXTERNAL_TRANSFER],
     ),
   )
 
@@ -585,8 +559,10 @@ fun List<AppointmentInstance>.toPrisonerSchedule(
     lastName = prisonerLookup[it.prisonerNumber]?.lastName!!,
     locationId = it.internalLocationId,
     offenderNo = it.prisonerNumber,
-    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
-    endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
+    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),
+    endTime = it.endTime?.let { _ ->
+      LocalDateTime.of(it.appointmentDate, it.endTime).toIsoDateTime()
+    },
   )
 }
 
@@ -602,8 +578,10 @@ fun List<AppointmentInstance>.toScheduledEvent(
 ) = map {
   ScheduledEvent(
     bookingId = it.bookingId,
-    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).format(DateTimeFormatter.ISO_DATE_TIME),
-    endTime = it.endTime?.let { _ -> LocalDateTime.of(it.appointmentDate, it.endTime).format(DateTimeFormatter.ISO_DATE_TIME) },
+    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),
+    endTime = it.endTime?.let { _ ->
+      LocalDateTime.of(it.appointmentDate, it.endTime).toIsoDateTime()
+    },
     eventType = eventType,
     eventTypeDesc = eventTypeDesc,
     eventClass = eventClass,
