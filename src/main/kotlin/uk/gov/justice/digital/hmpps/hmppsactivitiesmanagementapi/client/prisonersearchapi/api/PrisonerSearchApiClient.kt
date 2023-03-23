@@ -19,7 +19,6 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
       .bodyToMono(typeReference<List<Prisoner>>())
   }
 
-  // Not used (yet)
   suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> =
     prisonerSearchApiWebClient.post()
       .uri("/prisoner-search/prisoner-numbers")

@@ -17,7 +17,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -143,12 +142,12 @@ class ScheduledEventServiceTest {
 
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
-        on { prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)) } doThrow RuntimeException("Error")
+        on { runBlocking { prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)) } } doThrow RuntimeException("Error")
       }
     } else {
-      val prisonerDetails = Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonId = prisonOverride)))
+      val prisonerDetails = listOf(PrisonerSearchPrisonerFixture.instance(prisonId = prisonOverride))
       prisonerSearchApiClient.stub {
-        on { prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)) } doReturn prisonerDetails
+        on { runBlocking { prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)) } } doReturn prisonerDetails
       }
     }
 

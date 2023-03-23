@@ -36,6 +36,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<InmateDetail>())
   }
 
+  // TODO: Replaced by async version below
   fun getScheduledActivities(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -74,6 +75,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
+  // TODO: Alter appointment switch to use async version
   suspend fun getScheduledAppointmentsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -106,6 +108,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
+  // TODO: Replaced by async version below
   fun getScheduledCourtHearings(bookingId: Long, dateRange: LocalDateRange): Mono<CourtHearings> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -131,6 +134,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  // TODO: Replaced by async version below
   fun getScheduledCourtEventsForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -168,6 +172,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  // TODO: Replaced by async version below
   fun getScheduledVisits(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -193,6 +198,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  // TODO: Replaced by async version below
   fun getScheduledVisitsForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -230,6 +236,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  // TODO: Replaced by async version below
   fun getScheduledActivitiesForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -266,6 +273,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  // TODO: Replaced by async version below
   fun getExternalTransfersOnDate(
     agencyId: String,
     prisonerNumbers: Set<String>,

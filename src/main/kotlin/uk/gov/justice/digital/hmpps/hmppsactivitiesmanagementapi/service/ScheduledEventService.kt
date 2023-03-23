@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
@@ -45,75 +47,74 @@ class ScheduledEventService(
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
-  ) = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.firstOrNull()
-    .also { prisoner ->
-      if (prisoner == null) {
-        throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
-      }
-      if (prisoner.prisonId != prisonCode || prisoner.bookingId == null) {
-        throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
-      }
-    }
-    ?.let { prisonerDetail ->
-      val bookingId = prisonerDetail.bookingId!!.toLong()
-      val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
-        ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
-      val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-
-      runBlocking {
-        getSinglePrisonerEventCalls(bookingId to prisonerNumber, prisonRolledOut, dateRange)
-      }
-        .let { schedules ->
-          PrisonerScheduledEvents(
-            prisonCode,
-            setOf(prisonerNumber),
-            dateRange.start,
-            dateRange.endInclusive,
-            schedules.appointments.prisonApiScheduledEventToScheduledEvents(
-              prisonerNumber,
-              EventType.APPOINTMENT.name,
-              EventType.APPOINTMENT.defaultPriority,
-              eventPriorities[EventType.APPOINTMENT],
-            ),
-            schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(
-              bookingId,
-              prisonCode,
-              prisonerNumber,
-              EventType.COURT_HEARING.name,
-              EventType.COURT_HEARING.defaultPriority,
-              eventPriorities[EventType.COURT_HEARING],
-            ),
-            schedules.visits.prisonApiScheduledEventToScheduledEvents(
-              prisonerNumber,
-              EventType.VISIT.name,
-              EventType.VISIT.defaultPriority,
-              eventPriorities[EventType.VISIT],
-            ),
-            schedules.activities.prisonApiScheduledEventToScheduledEvents(
-              prisonerNumber,
-              EventType.ACTIVITY.name,
-              EventType.ACTIVITY.defaultPriority,
-              eventPriorities[EventType.ACTIVITY],
-            ),
-            schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(
-              prisonCode,
-              EventType.EXTERNAL_TRANSFER.name,
-              EventType.EXTERNAL_TRANSFER.defaultPriority,
-              eventPriorities[EventType.EXTERNAL_TRANSFER],
-            ),
-          )
+  ) = runBlocking {
+    prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)).firstOrNull()
+      .also { prisoner ->
+        if (prisoner == null) {
+          throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
         }
-        .apply {
-          if (prisonRolledOut.active) {
-            activities = transformPrisonerScheduledActivityToScheduledEvents(
+        if (prisoner.prisonId != prisonCode || prisoner.bookingId == null) {
+          throw EntityNotFoundException("Prisoner '$prisonerNumber' not found in prison '$prisonCode'")
+        }
+      }
+      ?.let { prisonerDetail ->
+        val bookingId = prisonerDetail.bookingId!!.toLong()
+        val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
+          ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
+        val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+        getSinglePrisonerEventCalls(bookingId to prisonerNumber, prisonRolledOut, dateRange)
+          .let { schedules ->
+            PrisonerScheduledEvents(
               prisonCode,
-              EventType.ACTIVITY.defaultPriority,
-              eventPriorities[EventType.ACTIVITY],
-              getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
+              setOf(prisonerNumber),
+              dateRange.start,
+              dateRange.endInclusive,
+              schedules.appointments.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.APPOINTMENT.name,
+                EventType.APPOINTMENT.defaultPriority,
+                eventPriorities[EventType.APPOINTMENT],
+              ),
+              schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(
+                bookingId,
+                prisonCode,
+                prisonerNumber,
+                EventType.COURT_HEARING.name,
+                EventType.COURT_HEARING.defaultPriority,
+                eventPriorities[EventType.COURT_HEARING],
+              ),
+              schedules.visits.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.VISIT.name,
+                EventType.VISIT.defaultPriority,
+                eventPriorities[EventType.VISIT],
+              ),
+              schedules.activities.prisonApiScheduledEventToScheduledEvents(
+                prisonerNumber,
+                EventType.ACTIVITY.name,
+                EventType.ACTIVITY.defaultPriority,
+                eventPriorities[EventType.ACTIVITY],
+              ),
+              schedules.transfers.prisonApiPrisonerScheduleToScheduledEvents(
+                prisonCode,
+                EventType.EXTERNAL_TRANSFER.name,
+                EventType.EXTERNAL_TRANSFER.defaultPriority,
+                eventPriorities[EventType.EXTERNAL_TRANSFER],
+              ),
             )
           }
-        }
-    }
+          .apply {
+            if (prisonRolledOut.active) {
+              activities = transformPrisonerScheduledActivityToScheduledEvents(
+                prisonCode,
+                EventType.ACTIVITY.defaultPriority,
+                eventPriorities[EventType.ACTIVITY],
+                getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
+              )
+            }
+          }
+      }
+  }
 
   private data class SinglePrisonerSchedules(
     val appointments: List<PrisonApiScheduledEvent>,
@@ -203,14 +204,19 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-  ): PrisonerScheduledEvents? {
-    val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
+  ): PrisonerScheduledEvents? = runBlocking {
+    // Await completion - not async - will always return priorities (defaults set)
+    val eventPriorities = withContext(Dispatchers.IO) {
+      prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+    }
+
+    // Await completion - not async
+    val prisonRolledOut = withContext(Dispatchers.IO) {
+      rolloutPrisonRepository.findByCode(prisonCode)
+    }
       ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
 
-    return runBlocking {
-      getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot)
-    }
+    getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot)
       .let { schedules ->
         PrisonerScheduledEvents(
           prisonCode,
