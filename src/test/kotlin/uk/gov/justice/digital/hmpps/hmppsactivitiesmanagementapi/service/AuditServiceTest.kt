@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -23,12 +26,16 @@ class AuditServiceTest {
 
   private val hmppsAuditApiClient = mock<HmppsAuditApiClient>()
 
-  private val auditService = AuditService(hmppsAuditApiClient, true)
+  private val objectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
+    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+
+  private val auditService = AuditService(hmppsAuditApiClient, objectMapper, true)
 
   @Test
   fun `should not log hmpps auditable event if feature is disabled`() {
     val event = mock<AuditableEvent>()
-    val auditService = AuditService(hmppsAuditApiClient, false)
+    val auditService = AuditService(hmppsAuditApiClient, objectMapper, false)
 
     auditService.logEvent(event)
 
