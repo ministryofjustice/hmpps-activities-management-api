@@ -21,16 +21,22 @@ data class AppointmentInstance(
   val id: Long,
 
   @Schema(
-    description = "The internally generated identifier for the parent appointment occurrence",
-    example = "123456",
+    description = "The internally generated identifier for the parent appointment",
+    example = "1234",
   )
-  val AppointmentOccurrenceId: Long,
+  val appointmentId: Long,
 
   @Schema(
     description = "The internally generated identifier for the parent appointment occurrence",
+    example = "12345",
+  )
+  val appointmentOccurrenceId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment occurrence allocation",
     example = "123456",
   )
-  val AppointmentOccurrenceId: Long,
+  val appointmentOccurrenceAllocationId: Long,
 
   @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
@@ -48,7 +54,7 @@ data class AppointmentInstance(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
-    Should be null if in cell = true
+    Will be null if in cell = true
     """,
     example = "123",
   )
@@ -106,12 +112,6 @@ data class AppointmentInstance(
     example = "This appointment will help prisoner A1234BC adjust to life outside of prison",
   )
   val comment: String?,
-
-  @Schema(
-    description = "Indicates that the parent appointment occurrence was cancelled",
-    example = "false",
-  )
-  val cancelled: Boolean,
 
   @Schema(
     description = "The date and time this appointment instance was created. Will not change",

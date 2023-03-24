@@ -40,7 +40,7 @@ data class Appointment(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
-    Should be null if in cell = true
+    Will be null if in cell = true
     """,
     example = "123",
   )
