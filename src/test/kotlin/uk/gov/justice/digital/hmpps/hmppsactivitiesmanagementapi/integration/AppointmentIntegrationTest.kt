@@ -3,6 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -14,6 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -21,6 +28,10 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AppointmentIntegrationTest : IntegrationTestBase() {
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
   @Sql(
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
@@ -129,9 +140,19 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
 
     assertSingleAppointmentSinglePrisoner(appointment, request)
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceCreatedInformation(allocationIds[0]))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
   }
 
   @Test
@@ -149,9 +170,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
 
     assertSingleAppointmentTwoPrisoner(appointment, request)
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceCreatedInformation(allocationIds[0]),
+      AppointmentInstanceCreatedInformation(allocationIds[1]),
+    )
   }
 
   @Test
@@ -168,12 +198,22 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
 
     with(appointment) {
       with(occurrences) {
         assertThat(size).isEqualTo(3)
       }
     }
+
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceCreatedInformation(allocationIds[0]),
+      AppointmentInstanceCreatedInformation(allocationIds[1]),
+      AppointmentInstanceCreatedInformation(allocationIds[2]),
+    )
   }
 
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
