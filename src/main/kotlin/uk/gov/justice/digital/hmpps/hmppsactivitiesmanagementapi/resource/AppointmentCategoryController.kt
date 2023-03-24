@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 
 @RestController
@@ -40,5 +41,5 @@ class AppointmentCategoryController(private val referenceCodeService: ReferenceC
   @GetMapping
   @ResponseBody
   fun getAppointmentCategories(): List<AppointmentCategorySummary> =
-    referenceCodeService.getAppointmentScheduleReasons().toAppointmentCategorySummary()
+    referenceCodeService.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT).toAppointmentCategorySummary()
 }

@@ -100,7 +100,7 @@ class AppointmentInstanceServiceTest {
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
         .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
-      whenever(referenceCodeService.getAppointmentCategoryReferenceCodesMap()).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
 
@@ -161,7 +161,7 @@ class AppointmentInstanceServiceTest {
       )
 
       whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, timeSlot)).thenReturn(LocalTimeRange(earliestTime, latestTime))
-      whenever(referenceCodeService.getAppointmentCategoryReferenceCodesMap()).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
       whenever(locationService.getLocationsForAppointmentsMap(prisonCode)).thenReturn(locations())
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())).thenReturn(Mono.just(prisoners(prisonerNumber = prisonerNumbers.first())))
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)

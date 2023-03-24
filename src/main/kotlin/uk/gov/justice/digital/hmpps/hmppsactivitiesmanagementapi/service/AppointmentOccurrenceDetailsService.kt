@@ -19,7 +19,7 @@ class AppointmentOccurrenceDetailsService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
-    val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 

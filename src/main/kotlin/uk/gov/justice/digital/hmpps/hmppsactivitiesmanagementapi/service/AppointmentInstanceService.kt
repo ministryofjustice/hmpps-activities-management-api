@@ -47,7 +47,7 @@ class AppointmentInstanceService(
     return if (rolloutPrison.isAppointmentsEnabled()) {
       log.info("Fetching scheduled events from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
-        .toScheduledEvent(referenceCodeService.getAppointmentCategoryReferenceCodesMap(), EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
+        .toScheduledEvent(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY), EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
     } else {
       log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
@@ -70,7 +70,7 @@ class AppointmentInstanceService(
       val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
       val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
 
-      val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
+      val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
       val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 

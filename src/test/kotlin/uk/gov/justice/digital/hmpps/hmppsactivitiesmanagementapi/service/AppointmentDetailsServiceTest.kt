@@ -42,7 +42,7 @@ class AppointmentDetailsServiceTest {
     val entity = appointmentEntity()
     val occurrenceEntity = entity.occurrences().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
-    whenever(referenceCodeService.getAppointmentCategoryReferenceCodesMap())
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))

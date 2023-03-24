@@ -417,7 +417,7 @@ fun List<AppointmentInstance>.toPrisonerSchedule(
   eventType: String,
   eventStatus: String,
 ) = map {
-  val category = referenceCodeMap.getOrDefault(it.categoryCode, null).toAppointmentCategorySummary(it.categoryCode)
+  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
   PrisonerSchedule(
     cellLocation = prisonerLookup[it.prisonerNumber]?.cellLocation!!,
     comment = it.comment,
@@ -448,7 +448,7 @@ fun List<AppointmentInstance>.toScheduledEvent(
   eventStatus: String,
   eventSource: String,
 ) = map {
-  val category = referenceCodeMap.getOrDefault(it.categoryCode, null).toAppointmentCategorySummary(it.categoryCode)
+  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
   ScheduledEvent(
     bookingId = it.bookingId,
     startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),

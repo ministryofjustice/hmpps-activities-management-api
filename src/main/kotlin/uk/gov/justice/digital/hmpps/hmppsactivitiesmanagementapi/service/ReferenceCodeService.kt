@@ -8,21 +8,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 class ReferenceCodeService(
   private val prisonApiClient: PrisonApiClient,
 ) {
-  fun getReferenceCodes(domain: String): List<ReferenceCode> =
-    prisonApiClient.getReferenceCodes(domain)
+  fun getReferenceCodes(domain: ReferenceCodeDomain): List<ReferenceCode> =
+    prisonApiClient.getReferenceCodes(domain.value)
 
-  fun getAppointmentCategoryReferenceCodes(): List<ReferenceCode> =
-    getReferenceCodes("INT_SCH_RSN")
+  fun getReferenceCodesMap(domain: ReferenceCodeDomain): Map<String, ReferenceCode> =
+    getReferenceCodes(domain).associateBy { it.code }
 
-  fun getAppointmentCategoryReferenceCodesMap(): Map<String, ReferenceCode> =
-    getAppointmentCategoryReferenceCodes().associateBy { it.code }
+  fun getScheduleReasons(eventType: ScheduleReasonEventType): List<ReferenceCode> =
+    prisonApiClient.getScheduleReasons(eventType.value)
 
-  fun getScheduleReasons(eventType: String): List<ReferenceCode> =
-    prisonApiClient.getScheduleReasons(eventType)
+  fun getScheduleReasonsMap(eventType: ScheduleReasonEventType): Map<String, ReferenceCode> =
+    getScheduleReasons(eventType).associateBy { it.code }
+}
 
-  fun getAppointmentScheduleReasons(): List<ReferenceCode> =
-    getScheduleReasons("APP")
+enum class ReferenceCodeDomain(val value: String) {
+  APPOINTMENT_CATEGORY("INT_SCH_RSN"),
+}
 
-  fun getAppointmentScheduleReasonsMap(): Map<String, ReferenceCode> =
-    getAppointmentScheduleReasons().associateBy { it.code }
+enum class ScheduleReasonEventType(val value: String) {
+  APPOINTMENT("APP"),
 }

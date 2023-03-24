@@ -18,7 +18,7 @@ class AppointmentDetailsService(
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
 
-    val referenceCodeMap = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 

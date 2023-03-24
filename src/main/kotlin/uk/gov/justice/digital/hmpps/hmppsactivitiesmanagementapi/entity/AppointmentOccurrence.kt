@@ -97,7 +97,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
-      if (inCell) null else locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode),
+      if (inCell) null else locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode),
       inCell,
       startDate,
       startTime,
@@ -106,7 +106,7 @@ data class AppointmentOccurrence(
       isEdited = false,
       isCancelled = false,
       updated = updated,
-      updatedBy?.let { userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!) },
+      updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
     )
 
@@ -115,12 +115,12 @@ data class AppointmentOccurrence(
       appointmentOccurrenceId,
       appointment.appointmentId,
       sequenceNumber,
-      referenceCodeMap.getOrDefault(appointment.categoryCode, null).toAppointmentCategorySummary(appointment.categoryCode),
+      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       prisonCode,
       if (inCell) {
         null
       } else {
-        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
       },
       inCell,
       startDate,
@@ -130,12 +130,12 @@ data class AppointmentOccurrence(
       false,
       false,
       appointment.created,
-      userMap.getOrDefault(appointment.createdBy, null).toSummary(appointment.createdBy),
+      userMap[appointment.createdBy].toSummary(appointment.createdBy),
       updated,
       if (updatedBy == null) {
         null
       } else {
-        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+        userMap[updatedBy].toSummary(updatedBy!!)
       },
       prisoners.toSummary(),
     )

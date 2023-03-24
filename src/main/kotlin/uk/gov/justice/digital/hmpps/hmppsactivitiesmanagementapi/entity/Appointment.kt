@@ -104,12 +104,12 @@ data class Appointment(
   fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
     AppointmentDetails(
       appointmentId,
-      referenceCodeMap.getOrDefault(categoryCode, null).toAppointmentCategorySummary(categoryCode),
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       prisonCode,
       if (inCell) {
         null
       } else {
-        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
       },
       inCell,
       startDate,
@@ -118,12 +118,12 @@ data class Appointment(
       schedule?.toRepeat(),
       comment,
       created,
-      userMap.getOrDefault(createdBy, null).toSummary(createdBy),
+      userMap[createdBy].toSummary(createdBy),
       updated,
       if (updatedBy == null) {
         null
       } else {
-        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+        userMap[updatedBy].toSummary(updatedBy!!)
       },
       occurrences().toSummary(prisonCode, locationMap, userMap, comment),
       prisoners.toSummary(),

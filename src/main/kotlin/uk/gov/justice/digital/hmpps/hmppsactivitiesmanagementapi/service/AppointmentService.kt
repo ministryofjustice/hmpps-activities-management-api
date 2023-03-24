@@ -106,15 +106,13 @@ class AppointmentService(
   }
 
   private fun failIfCategoryNotFound(categoryCode: String) {
-    referenceCodeService.getAppointmentScheduleReasonsMap()
-      .getOrDefault(categoryCode, null)
+    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
       ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
   }
 
   private fun failIfLocationNotFound(request: AppointmentCreateRequest) {
     if (!request.inCell) {
-      locationService.getLocationsForAppointmentsMap(request.prisonCode!!)
-        .getOrDefault(request.internalLocationId, null)
+      locationService.getLocationsForAppointmentsMap(request.prisonCode!!)[request.internalLocationId]
         ?: throw IllegalArgumentException("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
     }
   }

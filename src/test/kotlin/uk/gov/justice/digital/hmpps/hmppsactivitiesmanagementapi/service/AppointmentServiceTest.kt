@@ -93,7 +93,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap()).thenReturn(emptyMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
 
     assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
@@ -107,7 +107,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!)).thenReturn(emptyMap())
 
@@ -123,7 +123,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
@@ -141,7 +141,7 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
@@ -161,7 +161,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
@@ -233,7 +233,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
@@ -290,7 +290,7 @@ class AppointmentServiceTest {
     whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
-    whenever(referenceCodeService.getAppointmentScheduleReasonsMap())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))

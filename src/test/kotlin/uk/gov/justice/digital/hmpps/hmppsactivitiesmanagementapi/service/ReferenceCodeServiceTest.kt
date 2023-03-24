@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -23,9 +23,9 @@ class ReferenceCodeServiceTest {
         ),
       )
 
-    val locations = referenceCodeService.getReferenceCodes("INT_SCH_RSN")
+    val locations = referenceCodeService.getReferenceCodes(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    Assertions.assertThat(locations).containsExactly(
+    assertThat(locations).containsExactly(
       appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
       appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
       appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
@@ -33,7 +33,7 @@ class ReferenceCodeServiceTest {
   }
 
   @Test
-  fun `getAppointmentCategoryReferenceCodes returns INT_SCH_RSN reference codes`() {
+  fun `getReferenceCodesMap for a domain returns mapped reference codes`() {
     whenever(prisonApiClient.getReferenceCodes("INT_SCH_RSN"))
       .thenReturn(
         listOf(
@@ -43,29 +43,9 @@ class ReferenceCodeServiceTest {
         ),
       )
 
-    val locations = referenceCodeService.getAppointmentCategoryReferenceCodes()
+    val locations = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    Assertions.assertThat(locations).containsExactly(
-      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-    )
-  }
-
-  @Test
-  fun `getAppointmentCategoryReferenceCodes returns mapped INT_SCH_RSN reference codes`() {
-    whenever(prisonApiClient.getReferenceCodes("INT_SCH_RSN"))
-      .thenReturn(
-        listOf(
-          appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-          appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-          appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        ),
-      )
-
-    val locations = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
-
-    Assertions.assertThat(locations).isEqualTo(
+    assertThat(locations).isEqualTo(
       mapOf(
         "AC1" to appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
         "AC2" to appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
@@ -75,7 +55,7 @@ class ReferenceCodeServiceTest {
   }
 
   @Test
-  fun `getScheduleReasons for an event type domain returns reference codes`() {
+  fun `getScheduleReasons for an event type returns reference codes`() {
     whenever(prisonApiClient.getScheduleReasons("APP"))
       .thenReturn(
         listOf(
@@ -85,9 +65,9 @@ class ReferenceCodeServiceTest {
         ),
       )
 
-    val locations = referenceCodeService.getScheduleReasons("APP")
+    val locations = referenceCodeService.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT)
 
-    Assertions.assertThat(locations).containsExactly(
+    assertThat(locations).containsExactly(
       appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
       appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
       appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
@@ -95,7 +75,7 @@ class ReferenceCodeServiceTest {
   }
 
   @Test
-  fun `getScheduleReasons returns APP reference codes`() {
+  fun `getScheduleReasonsMap  for an event type returns mapped reference codes`() {
     whenever(prisonApiClient.getScheduleReasons("APP"))
       .thenReturn(
         listOf(
@@ -105,29 +85,9 @@ class ReferenceCodeServiceTest {
         ),
       )
 
-    val locations = referenceCodeService.getAppointmentScheduleReasons()
+    val locations = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
 
-    Assertions.assertThat(locations).containsExactly(
-      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-    )
-  }
-
-  @Test
-  fun `getScheduleReasons returns mapped APP reference codes`() {
-    whenever(prisonApiClient.getScheduleReasons("APP"))
-      .thenReturn(
-        listOf(
-          appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-          appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-          appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        ),
-      )
-
-    val locations = referenceCodeService.getAppointmentScheduleReasonsMap()
-
-    Assertions.assertThat(locations).isEqualTo(
+    assertThat(locations).isEqualTo(
       mapOf(
         "AC1" to appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
         "AC2" to appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
