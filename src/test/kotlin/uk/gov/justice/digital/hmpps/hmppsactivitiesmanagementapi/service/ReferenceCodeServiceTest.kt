@@ -4,10 +4,8 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 
 class ReferenceCodeServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
@@ -22,7 +20,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getReferenceCodes("INT_SCH_RSN")
@@ -42,7 +40,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getAppointmentCategoryReferenceCodes()
@@ -62,7 +60,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getAppointmentCategoryReferenceCodesMap()
@@ -72,7 +70,7 @@ class ReferenceCodeServiceTest {
         "AC1" to appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
         "AC2" to appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
         "AC3" to appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      )
+      ),
     )
   }
 
@@ -84,7 +82,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getScheduleReasons("APP")
@@ -104,7 +102,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getAppointmentScheduleReasons()
@@ -124,7 +122,7 @@ class ReferenceCodeServiceTest {
           appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
           appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
           appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-        )
+        ),
       )
 
     val locations = referenceCodeService.getAppointmentScheduleReasonsMap()
@@ -134,7 +132,7 @@ class ReferenceCodeServiceTest {
         "AC1" to appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
         "AC2" to appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
         "AC3" to appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      )
+      ),
     )
   }
 }
