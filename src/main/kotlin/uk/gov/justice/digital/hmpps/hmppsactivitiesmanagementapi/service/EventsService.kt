@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
 import java.time.LocalDateTime
 
@@ -29,6 +30,7 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
     when (outboundEvent) {
       ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(ScheduleCreatedInformation(identifier)))
       PRISONER_ALLOCATED -> publisher.send(PRISONER_ALLOCATED.event(PrisonerAllocatedInformation(identifier)))
+      APPOINTMENT_INSTANCE_CREATED -> publisher.send(APPOINTMENT_INSTANCE_CREATED.event(AppointmentInstanceCreatedInformation(identifier)))
     }
   }
 }
@@ -49,6 +51,14 @@ enum class OutboundEvent {
         additionalInformation = additionalInformation,
         description = "A prisoner has been allocated to an activity in the activities management service",
       )
+  },
+  APPOINTMENT_INSTANCE_CREATED {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = "appointments.appointment-instance.created",
+        additionalInformation = additionalInformation,
+        description = "A new appointment instance has been created in the activities management service",
+      )
   }, ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
@@ -67,6 +77,8 @@ data class OutboundHMPPSDomainEvent(
 data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
 
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
+
+data class AppointmentInstanceCreatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(
