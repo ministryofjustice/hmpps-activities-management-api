@@ -22,7 +22,7 @@ class IncentiveLevelWarningGivenForActivityAttendanceEventTest : AuditableEventT
       LocalTime.now(),
       LocalDateTime.now(),
     )
-    assertThat(event.type()).isEqualTo(AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE)
   }
 
   @Test

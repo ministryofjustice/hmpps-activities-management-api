@@ -16,11 +16,10 @@ class IncentiveLevelWarningGivenForActivityAttendanceEvent(
   val endTime: LocalTime,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE
-
-  override fun toString() = "An incentive level warning was given to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
-    "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
-    "${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE,
+  details = "An incentive level warning was given to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
+    "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+  createdAt = createdAt,
+),
+  HmppsAuditable

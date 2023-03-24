@@ -11,11 +11,10 @@ class ActivityCreatedEvent(
   val startDate: LocalDate,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.ACTIVITY_CREATED
-
-  override fun toString() =
-    "An activity called '$activityName' with category $categoryCode and starting on $startDate " +
-      "at prison $prisonCode. ${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.ACTIVITY_CREATED,
+  details = "An activity called '$activityName'($activityId) with category $categoryCode and starting on $startDate " +
+    "at prison $prisonCode",
+  createdAt = createdAt,
+),
+  HmppsAuditable

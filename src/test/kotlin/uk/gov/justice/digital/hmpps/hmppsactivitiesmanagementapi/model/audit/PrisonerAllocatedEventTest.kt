@@ -23,7 +23,7 @@ class PrisonerAllocatedEventTest : AuditableEventTestBase() {
       LocalDateTime.now(),
 
     )
-    assertThat(event.type()).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
   }
 
   @Test

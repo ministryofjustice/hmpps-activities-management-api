@@ -10,10 +10,10 @@ class PrisonerAcceptedFromWaitingListEvent(
   val prisonerLastName: String,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.PRISONER_ACCEPTED_FROM_WAITING_LIST
-
-  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was accepted onto " +
-    "activity '$activityName'($activityId) from the waiting list. ${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.PRISONER_ACCEPTED_FROM_WAITING_LIST,
+  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was accepted onto " +
+    "activity '$activityName'($activityId) from the waiting list",
+  createdAt = createdAt,
+),
+  HmppsAuditable

@@ -10,7 +10,7 @@ class ActivityCreatedEventTest : AuditableEventTestBase() {
   @Test
   fun `returns correct type`() {
     val event = ActivityCreatedEvent(1, "Some Activity", "PBI", "C", LocalDate.now(), LocalDateTime.now())
-    assertThat(event.type()).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
   }
 
   @Test
@@ -25,7 +25,7 @@ class ActivityCreatedEventTest : AuditableEventTestBase() {
       startDate,
       createdAt,
     )
-    val expectedToString = "An activity called 'Some Activity' with category C and starting on 2023-03-23 " +
+    val expectedToString = "An activity called 'Some Activity'(1) with category C and starting on 2023-03-23 " +
       "at prison PBI. Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }

@@ -16,12 +16,10 @@ class BonusPaymentMadeForActivityAttendanceEvent(
   val endTime: LocalTime,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE
-
-  override fun toString() =
-    "A bonus payment was made to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
-      "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
-      "${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE,
+  details = "A bonus payment was made to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
+    "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+  createdAt = createdAt,
+),
+  HmppsAuditable

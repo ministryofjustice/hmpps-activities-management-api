@@ -23,7 +23,7 @@ class PrisonerUnsuspendedFromActivityEventTest : AuditableEventTestBase() {
       LocalDateTime.now(),
 
     )
-    assertThat(event.type()).isEqualTo(AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY)
   }
 
   @Test

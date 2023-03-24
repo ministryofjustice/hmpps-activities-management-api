@@ -16,11 +16,10 @@ class PrisonerUnsuspendedFromActivityEvent(
   val endTime: LocalTime,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY
-
-  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was unsuspended from " +
-    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
-    "${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY,
+  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was unsuspended from " +
+    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+  createdAt = createdAt,
+),
+  HmppsAuditable

@@ -22,7 +22,7 @@ class BonusPaymentMadeForActivityAttendanceEventTest : AuditableEventTestBase() 
       LocalTime.now(),
       LocalDateTime.now(),
     )
-    assertThat(event.type()).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE)
   }
 
   @Test

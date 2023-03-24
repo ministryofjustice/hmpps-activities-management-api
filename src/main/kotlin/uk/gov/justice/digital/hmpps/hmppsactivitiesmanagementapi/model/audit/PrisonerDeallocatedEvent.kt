@@ -16,11 +16,10 @@ class PrisonerDeallocatedEvent(
   val endTime: LocalTime,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.PRISONER_DEALLOCATED
-
-  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was deallocated from " +
-    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
-    "${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.PRISONER_DEALLOCATED,
+  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was deallocated from " +
+    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+  createdAt = createdAt,
+),
+  HmppsAuditable

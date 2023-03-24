@@ -16,11 +16,10 @@ class PrisonerAllocatedEvent(
   val endTime: LocalTime,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(createdAt), HmppsAuditable {
-
-  override fun type() = AuditEventType.PRISONER_ALLOCATED
-
-  override fun toString() = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was allocated to " +
-    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId). " +
-    "${super.toString()}"
-}
+) : AuditableEvent(
+  auditEventType = AuditEventType.PRISONER_ALLOCATED,
+  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was allocated to " +
+    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+  createdAt = createdAt,
+),
+  HmppsAuditable

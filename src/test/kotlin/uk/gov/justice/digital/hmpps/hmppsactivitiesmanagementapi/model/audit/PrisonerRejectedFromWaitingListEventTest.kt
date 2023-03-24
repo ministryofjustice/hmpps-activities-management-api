@@ -17,7 +17,7 @@ class PrisonerRejectedFromWaitingListEventTest : AuditableEventTestBase() {
       LocalDateTime.now(),
 
     )
-    assertThat(event.type()).isEqualTo(AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST)
   }
 
   @Test
