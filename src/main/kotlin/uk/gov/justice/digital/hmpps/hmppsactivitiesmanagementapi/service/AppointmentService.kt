@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance as AppointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
@@ -76,20 +75,6 @@ class AppointmentService(
                   appointmentOccurrence = this,
                   prisonerNumber = prisoner.prisonerNumber,
                   bookingId = prisoner.bookingId!!.toLong(),
-                ),
-              )
-              this.addInstance(
-                AppointmentInstanceEntity(
-                  appointmentOccurrence = this,
-                  prisonerNumber = prisoner.prisonerNumber,
-                  bookingId = prisoner.bookingId.toLong(),
-                  appointmentDate = this.startDate,
-                  categoryCode = request.categoryCode,
-                  endTime = this.endTime,
-                  inCell = this.inCell,
-                  internalLocationId = this.internalLocationId,
-                  prisonCode = request.prisonCode,
-                  startTime = this.startTime,
                 ),
               )
             }

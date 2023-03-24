@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toScheduledEvent
 import java.time.LocalDate
@@ -38,6 +39,9 @@ class AppointmentInstanceService(
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
+  fun getAppointmentInstanceById(appointmentInstanceId: Long) =
+    appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
 
   fun getScheduledEvents(
     rolloutPrison: RolloutPrison,

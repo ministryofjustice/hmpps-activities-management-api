@@ -59,10 +59,10 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
     )
 
-    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(1)
+    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(2)
 
     with(appointmentOccurrenceDetails!!) {
-      assertThat(id).isEqualTo(1)
+      assertThat(id).isEqualTo(2)
       assertThat(appointmentId).isEqualTo(1)
       assertThat(sequenceNumber).isEqualTo(1)
       assertThat(category).isEqualTo(AppointmentCategorySummary("AC1", "Appointment Category 1"))

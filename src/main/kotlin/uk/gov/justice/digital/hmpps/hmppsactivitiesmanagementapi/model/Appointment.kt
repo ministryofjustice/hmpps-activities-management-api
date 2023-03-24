@@ -40,7 +40,7 @@ data class Appointment(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
-    Should be null if in cell = true
+    Will be null if in cell = true
     """,
     example = "123",
   )
@@ -116,7 +116,7 @@ data class Appointment(
     description =
     """
     The username of the user authenticated via HMPPS auth that edited the appointment.
-    Usually a NOMIS username. Will be null if the appointment has not been altered since it was created
+    Will be null if the appointment has not been altered since it was created
     """,
     example = "AAA01U",
   )

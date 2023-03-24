@@ -64,8 +64,6 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, sequenceNumber
     updatedBy = "UPDATE.USER",
   ).apply {
     prisonerNumberToBookingIdMap.map { this.addAllocation(appointmentOccurrenceAllocationEntity(this, it.key, it.value)) }
-  }.apply {
-    prisonerNumberToBookingIdMap.map { this.addInstance(appointmentInstanceEntity(this, startDate, it.key, it.value)) }
   }
 
 private fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
@@ -76,25 +74,32 @@ private fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoint
     bookingId = bookingId,
   )
 
-private fun appointmentInstanceEntity(
-  appointmentOccurrence: AppointmentOccurrence,
+internal fun appointmentInstanceEntity(
+  internalLocationId: Long = 123,
+  inCell: Boolean = false,
   appointmentDate: LocalDate = LocalDate.now(),
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 456,
+  createdBy: String = "CREATE.USER",
+  updatedBy: String? = "UPDATE.USER",
 ) =
   AppointmentInstance(
-    appointmentInstanceId = 1,
-    appointmentOccurrence = appointmentOccurrence,
+    appointmentInstanceId = 3,
+    appointmentId = 1,
+    appointmentOccurrenceId = 2,
+    appointmentOccurrenceAllocationId = 3,
     categoryCode = "TEST",
-    prisonCode = appointmentOccurrence.appointment.prisonCode,
-    internalLocationId = appointmentOccurrence.appointment.internalLocationId,
-    inCell = appointmentOccurrence.appointment.inCell,
+    prisonCode = "TPR",
+    internalLocationId = if (inCell) null else internalLocationId,
+    inCell = inCell,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     appointmentDate = appointmentDate,
-    startTime = appointmentOccurrence.appointment.startTime,
-    endTime = appointmentOccurrence.appointment.endTime,
+    startTime = LocalTime.of(9, 0),
+    endTime = LocalTime.of(10, 30),
     comment = "Appointment instance level comment",
-    attended = true,
-    cancelled = false,
+    created = LocalDateTime.now().minusDays(1),
+    createdBy = createdBy,
+    updated = LocalDateTime.now(),
+    updatedBy = updatedBy,
   )

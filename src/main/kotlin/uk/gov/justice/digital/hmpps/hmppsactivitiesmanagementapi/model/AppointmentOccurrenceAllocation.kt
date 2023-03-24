@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 data class AppointmentOccurrenceAllocation(
   @Schema(
-    description = "The internally generated identifier for this appointment allocation",
+    description = "The internally generated identifier for this appointment occurrence allocation",
     example = "123456",
   )
   val id: Long,

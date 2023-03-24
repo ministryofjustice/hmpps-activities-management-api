@@ -1,53 +1,58 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance as AppointmentInstanceModel
 
 @Entity
-@Table(name = "appointment_instance")
+@Table(name = "v_appointment_instance")
 data class AppointmentInstance(
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentInstanceId: Long = 0,
+  val appointmentInstanceId: Long,
 
-  @ManyToOne
-  @JoinColumn(name = "appointment_occurrence_id", nullable = false)
-  val appointmentOccurrence: AppointmentOccurrence,
+  val appointmentId: Long,
 
-  var categoryCode: String,
+  val appointmentOccurrenceId: Long,
+
+  val appointmentOccurrenceAllocationId: Long,
+
+  val categoryCode: String,
 
   val prisonCode: String,
 
-  var internalLocationId: Long?,
+  val internalLocationId: Long?,
 
-  var inCell: Boolean,
+  val inCell: Boolean,
 
   val prisonerNumber: String,
 
   val bookingId: Long,
 
-  var appointmentDate: LocalDate,
+  val appointmentDate: LocalDate,
 
-  var startTime: LocalTime,
+  val startTime: LocalTime,
 
-  var endTime: LocalTime?,
+  val endTime: LocalTime?,
 
-  var comment: String? = null,
+  val comment: String? = null,
 
-  var attended: Boolean? = null,
+  val created: LocalDateTime = LocalDateTime.now(),
 
-  var cancelled: Boolean = false,
+  val createdBy: String,
+
+  val updated: LocalDateTime? = null,
+
+  val updatedBy: String? = null,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,
+    appointmentId = appointmentId,
+    appointmentOccurrenceId = appointmentOccurrenceId,
+    appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
     categoryCode = categoryCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
@@ -58,8 +63,10 @@ data class AppointmentInstance(
     startTime = startTime,
     endTime = endTime,
     comment = comment,
-    attended = attended,
-    cancelled = cancelled,
+    created = created,
+    createdBy = createdBy,
+    updated = updated,
+    updatedBy = updatedBy,
   )
 }
 

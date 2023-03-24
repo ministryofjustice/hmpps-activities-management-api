@@ -54,25 +54,31 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
     updated,
     "UPDATE.USER",
     allocations = listOf(appointmentOccurrenceAllocationModel()),
-    instances = listOf(appointmentInstanceModel()),
   )
 
-fun appointmentInstanceModel() =
-  AppointmentInstance(
-    1,
-    "TEST",
-    "TPR",
-    123,
-    false,
-    "A1234BC",
-    456,
-    LocalDate.now(),
-    LocalTime.of(9, 0),
-    LocalTime.of(10, 30),
-    "Appointment instance level comment",
-    attended = true,
-    cancelled = false,
-  )
+fun appointmentInstanceModel(
+  created: LocalDateTime = LocalDateTime.now().minusDays(1),
+  updated: LocalDateTime? = LocalDateTime.now(),
+) = AppointmentInstance(
+  3,
+  1,
+  2,
+  3,
+  "TEST",
+  "TPR",
+  123,
+  false,
+  "A1234BC",
+  456,
+  LocalDate.now(),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  "Appointment instance level comment",
+  created = created,
+  "CREATE.USER",
+  updated = updated,
+  "UPDATE.USER",
+)
 
 fun appointmentCreateRequest(
   categoryCode: String? = "TEST",

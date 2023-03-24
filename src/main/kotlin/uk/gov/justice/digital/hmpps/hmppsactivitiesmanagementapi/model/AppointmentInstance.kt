@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -20,6 +21,24 @@ data class AppointmentInstance(
   val id: Long,
 
   @Schema(
+    description = "The internally generated identifier for the parent appointment",
+    example = "1234",
+  )
+  val appointmentId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment occurrence",
+    example = "12345",
+  )
+  val appointmentOccurrenceId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment occurrence allocation",
+    example = "123456",
+  )
+  val appointmentOccurrenceAllocationId: Long,
+
+  @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
     example = "CHAP",
   )
@@ -35,7 +54,7 @@ data class AppointmentInstance(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
-    Should be null if in cell = true
+    Will be null if in cell = true
     """,
     example = "123",
   )
@@ -95,17 +114,38 @@ data class AppointmentInstance(
   val comment: String?,
 
   @Schema(
-    description =
-    """
-    Simple attendance marking model. Expectation that this will be enhanced to support non attendance reasons in future
-    """,
-    example = "false",
+    description = "The date and time this appointment instance was created. Will not change",
   )
-  val attended: Boolean?,
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val created: LocalDateTime,
 
   @Schema(
-    description = "Indicates that the parent appointment occurrence was cancelled",
-    example = "false",
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that created the appointment instance.
+    Usually a NOMIS username
+    """,
+    example = "AAA01U",
   )
-  val cancelled: Boolean,
+  val createdBy: String,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment instance was last changed.
+    Will be null if the appointment instance has not been altered since it was created
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updated: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that edited the appointment instance.
+    Will be null if the appointment instance has not been altered since it was created
+    """,
+    example = "AAA01U",
+  )
+  val updatedBy: String?,
 )

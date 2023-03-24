@@ -8,7 +8,6 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
@@ -20,9 +19,6 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AppointmentIntegrationTest : IntegrationTestBase() {
-  @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql",
-  )
   @Test
   fun `get appointment authorisation required`() {
     webTestClient.get()
@@ -65,13 +61,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           with(allocations) {
-            assertThat(size).isEqualTo(1)
-            with(get(0)) {
-              assertThat(prisonerNumber).isEqualTo("A1234BC")
-              assertThat(bookingId).isEqualTo(456)
-            }
-          }
-          with(instances) {
             assertThat(size).isEqualTo(1)
             with(get(0)) {
               assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -217,14 +206,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               assertThat(bookingId).isEqualTo(1)
             }
           }
-          with(instances) {
-            assertThat(size).isEqualTo(1)
-            with(first()) {
-              assertThat(id).isGreaterThan(0)
-              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
-              assertThat(bookingId).isEqualTo(1)
-            }
-          }
         }
       }
     }
@@ -270,31 +251,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               listOf(
                 AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
                 AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
-              ),
-            ),
-          )
-          with(instances) {
-            assertThat(size).isEqualTo(2)
-          }
-          assertThat(
-            instances.containsAll(
-              listOf(
-                AppointmentInstance(
-                  id = -1,
-                  categoryCode = "TEST",
-                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
-                  bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
-                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false,
-                ),
-                AppointmentInstance(
-                  id = -1,
-                  categoryCode = "TEST",
-                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
-                  bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
-                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false,
-                ),
               ),
             ),
           )

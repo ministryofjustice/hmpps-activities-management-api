@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -20,7 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerSchedules
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
@@ -30,6 +32,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Optional
 
 class AppointmentInstanceServiceTest {
 
@@ -48,6 +51,24 @@ class AppointmentInstanceServiceTest {
     appointmentInstanceRepository,
     prisonRegimeService,
   )
+
+  @Nested
+  @DisplayName("getAppointmentInstanceById")
+  inner class GetAppointmentInstanceById {
+    @Test
+    fun `returns an appointment instance for known appointment instance id`() {
+      val entity = appointmentInstanceEntity()
+      whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(entity))
+      assertThat(appointmentInstanceService.getAppointmentInstanceById(1)).isEqualTo(entity.toModel())
+    }
+
+    @Test
+    fun `throws entity not found exception for unknown appointment instance id`() {
+      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0) }
+        .isInstanceOf(EntityNotFoundException::class.java)
+        .hasMessage("Appointment Instance 0 not found")
+    }
+  }
 
   @Nested
   @DisplayName("getScheduledEvents")
@@ -87,7 +108,7 @@ class AppointmentInstanceServiceTest {
           eventType = "APP",
           eventTypeDesc = "Appointment",
           eventClass = "INT_MOV",
-          eventId = 1,
+          eventId = 2,
           eventStatus = "SCH",
           eventDate = startDate,
           eventSource = "APP",
@@ -99,7 +120,7 @@ class AppointmentInstanceServiceTest {
 
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
-        .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
+        .thenReturn(listOf(appointmentInstanceEntity(appointmentDate = startDate)))
       whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
@@ -166,7 +187,7 @@ class AppointmentInstanceServiceTest {
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())).thenReturn(Mono.just(prisoners(prisonerNumber = prisonerNumbers.first())))
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))
-        .thenReturn(appointmentEntity(startDate = startDate, prisonerNumberToBookingIdMap = mapOf("P123" to 456)).occurrences().first().instances())
+        .thenReturn(listOf(appointmentInstanceEntity(appointmentDate = startDate, prisonerNumber = "P123", bookingId = 456)))
 
       val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
