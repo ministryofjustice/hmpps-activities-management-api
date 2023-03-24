@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -64,7 +64,7 @@ class AppointmentInstanceServiceTest {
 
     @Test
     fun `throws entity not found exception for unknown appointment instance id`() {
-      Assertions.assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0) }
+      assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0) }
         .isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Appointment Instance 0 not found")
     }
