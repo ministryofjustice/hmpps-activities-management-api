@@ -116,7 +116,7 @@ data class Appointment(
     description =
     """
     The username of the user authenticated via HMPPS auth that edited the appointment.
-    Usually a NOMIS username. Will be null if the appointment has not been altered since it was created
+    Will be null if the appointment has not been altered since it was created
     """,
     example = "AAA01U",
   )

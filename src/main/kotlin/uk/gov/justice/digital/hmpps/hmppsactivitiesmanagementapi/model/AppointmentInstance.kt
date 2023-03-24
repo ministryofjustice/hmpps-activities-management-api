@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -18,6 +19,18 @@ data class AppointmentInstance(
     example = "123456",
   )
   val id: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment occurrence",
+    example = "123456",
+  )
+  val AppointmentOccurrenceId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment occurrence",
+    example = "123456",
+  )
+  val AppointmentOccurrenceId: Long,
 
   @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
@@ -95,17 +108,44 @@ data class AppointmentInstance(
   val comment: String?,
 
   @Schema(
-    description =
-    """
-    Simple attendance marking model. Expectation that this will be enhanced to support non attendance reasons in future
-    """,
-    example = "false",
-  )
-  val attended: Boolean?,
-
-  @Schema(
     description = "Indicates that the parent appointment occurrence was cancelled",
     example = "false",
   )
   val cancelled: Boolean,
+
+  @Schema(
+    description = "The date and time this appointment instance was created. Will not change",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val created: LocalDateTime,
+
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that created the appointment instance.
+    Usually a NOMIS username
+    """,
+    example = "AAA01U",
+  )
+  val createdBy: String,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment instance was last changed.
+    Will be null if the appointment instance has not been altered since it was created
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updated: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that edited the appointment instance.
+    Will be null if the appointment instance has not been altered since it was created
+    """,
+    example = "AAA01U",
+  )
+  val updatedBy: String?,
 )
