@@ -19,9 +19,6 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AppointmentIntegrationTest : IntegrationTestBase() {
-  @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql",
-  )
   @Test
   fun `get appointment authorisation required`() {
     webTestClient.get()

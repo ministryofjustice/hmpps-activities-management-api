@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -30,6 +32,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Optional
 
 class AppointmentInstanceServiceTest {
 
@@ -48,6 +51,24 @@ class AppointmentInstanceServiceTest {
     appointmentInstanceRepository,
     prisonRegimeService,
   )
+
+  @Nested
+  @DisplayName("getAppointmentInstanceById")
+  inner class GetAppointmentInstanceById {
+    @Test
+    fun `returns an appointment instance for known appointment instance id`() {
+      val entity = appointmentInstanceEntity()
+      whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(entity))
+      assertThat(appointmentInstanceService.getAppointmentInstanceById(1)).isEqualTo(entity.toModel())
+    }
+
+    @Test
+    fun `throws entity not found exception for unknown appointment instance id`() {
+      Assertions.assertThatThrownBy { appointmentInstanceService.getAppointmentInstanceById(0) }
+        .isInstanceOf(EntityNotFoundException::class.java)
+        .hasMessage("Appointment Instance 0 not found")
+    }
+  }
 
   @Nested
   @DisplayName("getScheduledEvents")
