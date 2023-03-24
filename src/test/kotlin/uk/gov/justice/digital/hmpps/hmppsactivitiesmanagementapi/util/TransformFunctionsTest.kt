@@ -3,14 +3,17 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
@@ -171,6 +174,27 @@ class TransformFunctionsTest {
         rolloutDate = LocalDate.of(2022, 12, 22),
         isAppointmentsEnabled = false,
       ),
+    )
+  }
+
+  @Test
+  fun `reference code to appointment category summary returns unknown for null reference codes`() {
+    assertThat((null as ReferenceCode?).toAppointmentCategorySummary("MEDO")).isEqualTo(
+      AppointmentCategorySummary("MEDO", "UNKNOWN"),
+    )
+  }
+
+  @Test
+  fun `reference code to appointment category summary mapping`() {
+    assertThat(appointmentCategoryReferenceCode("MEDO", "Medical - Doctor").toAppointmentCategorySummary("MEDO")).isEqualTo(
+      AppointmentCategorySummary("MEDO", "Medical - Doctor"),
+    )
+  }
+
+  @Test
+  fun `reference code list to appointment category summary list mapping`() {
+    assertThat(listOf(appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")).toAppointmentCategorySummary()).isEqualTo(
+      listOf(AppointmentCategorySummary("MEDO", "Medical - Doctor")),
     )
   }
 

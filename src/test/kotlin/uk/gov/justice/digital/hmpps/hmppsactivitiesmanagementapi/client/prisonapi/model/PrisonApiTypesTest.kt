@@ -31,4 +31,11 @@ class PrisonApiTypesTest {
 
     assertThat(field.returnType.isMarkedNullable).isTrue
   }
+
+  @Test
+  fun `domain field on generated Reference Code DTO type should be nullable`() {
+    val field = ReferenceCode::class.declaredMembers.first { it.name == "domain" }
+
+    assertThat(field.returnType.isMarkedNullable).isTrue
+  }
 }
