@@ -458,7 +458,7 @@ fun List<AppointmentInstance>.toScheduledEvent(
     eventType = eventType,
     eventTypeDesc = eventTypeDesc,
     eventClass = eventClass,
-    eventId = it.appointmentInstanceId,
+    eventId = it.appointmentOccurrenceId,
     eventStatus = eventStatus,
     eventDate = it.appointmentDate,
     eventSource = eventSource,

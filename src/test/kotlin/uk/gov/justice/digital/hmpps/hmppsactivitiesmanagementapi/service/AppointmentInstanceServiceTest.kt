@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerSchedules
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
@@ -87,7 +87,7 @@ class AppointmentInstanceServiceTest {
           eventType = "APP",
           eventTypeDesc = "Appointment",
           eventClass = "INT_MOV",
-          eventId = 1,
+          eventId = 2,
           eventStatus = "SCH",
           eventDate = startDate,
           eventSource = "APP",
@@ -99,7 +99,7 @@ class AppointmentInstanceServiceTest {
 
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, startDate, endDate))
-        .thenReturn(appointmentEntity(startDate = startDate).occurrences().first().instances())
+        .thenReturn(listOf(appointmentInstanceEntity(appointmentDate = startDate)))
       whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
 
       val actualScheduledEvents = appointmentInstanceService.getScheduledEvents(rolloutPrison, bookingId, dateRange)
@@ -166,7 +166,7 @@ class AppointmentInstanceServiceTest {
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers.toList())).thenReturn(Mono.just(prisoners(prisonerNumber = prisonerNumbers.first())))
       whenever(rolloutPrison.isAppointmentsEnabled()).thenReturn(true)
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(eq(prisonCode), eq(prisonerNumbers), eq(startDate), any(), any()))
-        .thenReturn(appointmentEntity(startDate = startDate, prisonerNumberToBookingIdMap = mapOf("P123" to 456)).occurrences().first().instances())
+        .thenReturn(listOf(appointmentInstanceEntity(appointmentDate = startDate, prisonerNumber = "P123", bookingId = 456)))
 
       val actualPrisonerSchedules = appointmentInstanceService.getPrisonerSchedules(prisonCode, prisonerNumbers, rolloutPrison, startDate, timeSlot)
 
