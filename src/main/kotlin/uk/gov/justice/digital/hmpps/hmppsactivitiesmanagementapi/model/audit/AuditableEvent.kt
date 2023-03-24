@@ -8,9 +8,8 @@ import java.time.format.DateTimeFormatter
 open class AuditableEvent(
   @JsonIgnore
   val auditEventType: AuditEventType,
-  @JsonIgnore
-  val details: String,
   val createdAt: LocalDateTime,
+  private val details: String,
 ) {
 
   val createdBy = SecurityUtils.getUserNameForLoggedInUser()
