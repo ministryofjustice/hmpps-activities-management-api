@@ -12,8 +12,6 @@ class PrisonerRejectedFromWaitingListEventTest : AuditableEventTestBase() {
       1,
       "Some Activity",
       "PBI",
-      "Terry",
-      "Jones",
       LocalDateTime.now(),
 
     )
@@ -27,12 +25,10 @@ class PrisonerRejectedFromWaitingListEventTest : AuditableEventTestBase() {
       1,
       "Some Activity",
       "A123456",
-      "Terry",
-      "Jones",
       createdAt,
 
     )
-    val expectedToString = "Prisoner A123456 Jones, Terry was rejected from the waiting list for activity 'Some Activity'(1). " +
+    val expectedToString = "Prisoner A123456 was rejected from the waiting list for activity 'Some Activity'(1). " +
       "Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }

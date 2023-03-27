@@ -8,8 +8,6 @@ class PrisonerUnsuspendedFromActivityEvent(
   val activityId: Long,
   val activityName: String,
   val prisonerNumber: String,
-  val prisonerFirstName: String,
-  val prisonerLastName: String,
   val scheduleId: Long,
   val date: LocalDate,
   val startTime: LocalTime,
@@ -18,7 +16,7 @@ class PrisonerUnsuspendedFromActivityEvent(
 
 ) : AuditableEvent(
   auditEventType = AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY,
-  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was unsuspended from " +
+  details = "Prisoner $prisonerNumber was unsuspended from " +
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
   createdAt = createdAt,
 ),

@@ -8,8 +8,6 @@ class BonusPaymentMadeForActivityAttendanceEvent(
   val activityId: Long,
   val activityName: String,
   val prisonerNumber: String,
-  val prisonerFirstName: String,
-  val prisonerLastName: String,
   val scheduleId: Long,
   val date: LocalDate,
   val startTime: LocalTime,
@@ -18,7 +16,7 @@ class BonusPaymentMadeForActivityAttendanceEvent(
 
 ) : AuditableEvent(
   auditEventType = AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE,
-  details = "A bonus payment was made to prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName " +
+  details = "A bonus payment was made to prisoner $prisonerNumber " +
     "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
   createdAt = createdAt,
 ),

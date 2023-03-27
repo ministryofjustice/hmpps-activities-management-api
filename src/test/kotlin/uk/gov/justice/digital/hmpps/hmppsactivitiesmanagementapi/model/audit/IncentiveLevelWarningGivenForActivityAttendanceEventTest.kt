@@ -14,8 +14,6 @@ class IncentiveLevelWarningGivenForActivityAttendanceEventTest : AuditableEventT
       1,
       "Some Activity",
       "PBI",
-      "Terry",
-      "Jones",
       42,
       LocalDate.now(),
       LocalTime.now(),
@@ -35,15 +33,13 @@ class IncentiveLevelWarningGivenForActivityAttendanceEventTest : AuditableEventT
       1,
       "Some Activity",
       "A123456",
-      "Terry",
-      "Jones",
       42,
       startDate,
       startTime,
       endTime,
       createdAt,
     )
-    val expectedToString = "An incentive level warning was given to prisoner A123456 Jones, Terry for activity 'Some Activity'(1) " +
+    val expectedToString = "An incentive level warning was given to prisoner A123456 for activity 'Some Activity'(1) " +
       "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }

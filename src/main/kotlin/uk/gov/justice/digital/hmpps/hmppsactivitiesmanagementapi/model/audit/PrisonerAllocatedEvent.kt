@@ -8,8 +8,6 @@ class PrisonerAllocatedEvent(
   val activityId: Long,
   val activityName: String,
   val prisonerNumber: String,
-  val prisonerFirstName: String,
-  val prisonerLastName: String,
   val scheduleId: Long,
   val date: LocalDate,
   val startTime: LocalTime,
@@ -18,7 +16,7 @@ class PrisonerAllocatedEvent(
 
 ) : AuditableEvent(
   auditEventType = AuditEventType.PRISONER_ALLOCATED,
-  details = "Prisoner $prisonerNumber $prisonerLastName, $prisonerFirstName was allocated to " +
+  details = "Prisoner $prisonerNumber was allocated to " +
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
   createdAt = createdAt,
 ),

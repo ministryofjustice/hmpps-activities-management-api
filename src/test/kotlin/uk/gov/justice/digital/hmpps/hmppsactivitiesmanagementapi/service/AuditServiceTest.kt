@@ -49,8 +49,6 @@ class AuditServiceTest {
       1,
       "Some Activity",
       "P2",
-      "Terry",
-      "Jones",
       1,
       LocalDate.of(2023, 1, 2),
       LocalTime.of(10, 0),
@@ -64,7 +62,7 @@ class AuditServiceTest {
     with(hmppsEventCaptor.firstValue) {
       assertThat(who).isEqualTo(username)
       assertThat(what).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE.name)
-      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonerNumber":"P2","prisonerFirstName":"Terry","prisonerLastName":"Jones","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","createdBy":"Bob"}""")
+      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonerNumber":"P2","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","createdBy":"Bob"}""")
       assertThat(service).isEqualTo("hmpps-activities-management-api")
       assertThat(`when`).isNotNull
     }
