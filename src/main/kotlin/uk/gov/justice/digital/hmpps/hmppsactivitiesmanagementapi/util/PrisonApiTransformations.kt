@@ -1,14 +1,24 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
+
+/**
+ * Transform functions providing a thin layer to transform prison api types into their API model equivalents and vice-versa.
+ */
 
 fun List<PrisonerSchedule>.prisonApiAppointmentsToScheduledEvents(
   prisonCode: String,
@@ -123,7 +133,35 @@ fun OffenderAdjudicationHearing.toScheduledEvent(
   )
 }
 
-// TODO this does reflect the change in activity categories ...
+fun List<uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
+  prisonerNumber: String?,
+  eventType: String?,
+  defaultPriority: Int?,
+  priorities: List<Priority>?,
+) = map {
+  ScheduledEvent(
+    prisonCode = it.agencyId,
+    eventId = it.eventId,
+    bookingId = it.bookingId,
+    locationId = it.eventLocationId,
+    location = it.eventLocation,
+    eventClass = it.eventClass,
+    eventStatus = it.eventStatus,
+    eventType = eventType ?: it.eventType,
+    eventTypeDesc = it.eventTypeDesc,
+    event = it.eventSubType,
+    eventDesc = it.eventSubTypeDesc,
+    details = it.eventSourceDesc,
+    prisonerNumber = prisonerNumber,
+    date = it.eventDate,
+    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
+    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
+    priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
+      ?: defaultPriority,
+  )
+}
+
+// TODO this does NOT reflect the change in activity categories ...
 
 private fun getPriority(category: String?, priorities: List<Priority>): Int? =
   priorities.fold(listOf<Priority>()) { acc, next ->
@@ -144,3 +182,26 @@ private fun getPriority(category: String?, priorities: List<Priority>): Int? =
       }
     }
   }.firstOrNull()?.priority
+
+fun ReferenceCode?.toAppointmentCategorySummary(code: String) =
+  if (this == null) {
+    AppointmentCategorySummary(code, "UNKNOWN")
+  } else {
+    AppointmentCategorySummary(this.code, this.description)
+  }
+
+fun List<ReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
+
+fun Location?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
+  if (this == null) {
+    AppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
+  } else {
+    AppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+  }
+
+fun UserDetail?.toSummary(username: String) =
+  if (this == null) {
+    UserSummary(-1, username, "UNKNOWN", "UNKNOWN")
+  } else {
+    UserSummary(this.staffId, this.username, this.firstName, this.lastName)
+  }
