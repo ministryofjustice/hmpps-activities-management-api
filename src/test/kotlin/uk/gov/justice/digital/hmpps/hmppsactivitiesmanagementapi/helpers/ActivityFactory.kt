@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
@@ -293,4 +294,26 @@ internal fun attendanceEntity() =
     comment = "Some Comment",
     recordedBy = "Old User",
     recordedTime = LocalDateTime.now(),
-  )
+  ).apply {
+    this.attendanceHistory.add(
+      AttendanceHistory(
+        attendance = this,
+        attendanceHistoryId = 1,
+        attendanceReason = AttendanceReason(
+          1,
+          "Previous Reason",
+          "Previous Desc",
+          false,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          1,
+          "some note",
+        ),
+        comment = "previous comment",
+      ),
+    )
+  }
