@@ -11,12 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 )
 data class AppointmentCategorySummary(
   @Schema(
-    description = "The internally generated identifier for this appointment category",
-    example = "51",
-  )
-  val id: Long,
-
-  @Schema(
     description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
     example = "CHAP",
   )

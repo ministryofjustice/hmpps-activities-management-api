@@ -1,15 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
-import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
-import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import java.time.LocalDate
 import java.time.LocalTime
+import org.springframework.stereotype.Repository as RepositoryAnnotation
 
-@Repository
-interface AppointmentInstanceRepository : JpaRepository<AppointmentInstance, Long> {
-
+@RepositoryAnnotation
+interface AppointmentInstanceRepository : ReadOnlyRepository<AppointmentInstance, Long> {
   @Query(
     value =
     "FROM AppointmentInstance ai " +

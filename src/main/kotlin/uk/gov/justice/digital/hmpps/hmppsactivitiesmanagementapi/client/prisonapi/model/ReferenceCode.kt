@@ -19,8 +19,8 @@ import java.time.LocalDate
  */
 data class ReferenceCode(
 
-  @Schema(example = "TASK_TYPE", required = true, description = "Reference data item domain.")
-  @get:JsonProperty("domain", required = true) val domain: String,
+  @Schema(example = "TASK_TYPE", description = "Reference data item domain.")
+  @get:JsonProperty("domain") val domain: String? = null,
 
   @Schema(example = "MISC", required = true, description = "Reference data item code.")
   @get:JsonProperty("code", required = true) val code: String,

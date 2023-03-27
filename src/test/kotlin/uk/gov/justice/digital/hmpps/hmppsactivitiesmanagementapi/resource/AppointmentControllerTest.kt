@@ -70,7 +70,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Category id must be supplied"))
+            value(Matchers.containsString("Category code must be supplied"))
             value(Matchers.containsString("Prison code must be supplied"))
             value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
             value(Matchers.containsString("Start date must be supplied"))

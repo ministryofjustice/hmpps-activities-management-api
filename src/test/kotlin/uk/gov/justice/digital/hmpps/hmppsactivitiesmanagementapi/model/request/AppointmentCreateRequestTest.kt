@@ -21,9 +21,9 @@ class AppointmentCreateRequestTest {
   }
 
   @Test
-  fun `category id must be supplied`() {
-    val request = appointmentCreateRequest(categoryId = null)
-    assertSingleValidationError(validator.validate(request), "categoryId", "Category id must be supplied")
+  fun `category code must be supplied`() {
+    val request = appointmentCreateRequest(categoryCode = null)
+    assertSingleValidationError(validator.validate(request), "categoryCode", "Category code must be supplied")
   }
 
   @Test
