@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
@@ -139,7 +141,7 @@ class AppointmentOccurrenceTest {
   fun `entity to details mapping`() {
     val appointment = appointmentEntity()
     val entity = appointment.occurrences().first()
-    val categorySummary = appointment.category.toSummary()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
@@ -155,12 +157,12 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails(categorySummary, "TPR", locationMap, userMap, prisoners)).isEqualTo(
+    assertThat(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)).isEqualTo(
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
         1,
-        categorySummary,
+        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         "TPR",
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
         false,
@@ -187,7 +189,7 @@ class AppointmentOccurrenceTest {
     appointment.internalLocationId = 123
     val entity = appointment.occurrences().first()
     entity.internalLocationId = 123
-    val categorySummary = appointment.category.toSummary()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
@@ -203,7 +205,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(categorySummary, "TPR", locationMap, userMap, prisoners)) {
+    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -214,7 +216,7 @@ class AppointmentOccurrenceTest {
     val appointment = appointmentEntity(updatedBy = null)
     val entity = appointment.occurrences().first()
     entity.updatedBy = null
-    val categorySummary = appointment.category.toSummary()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
@@ -229,7 +231,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(categorySummary, "TPR", locationMap, userMap, prisoners)) {
+    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
     }
   }

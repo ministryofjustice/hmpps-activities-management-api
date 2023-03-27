@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -25,13 +24,7 @@ class AppointmentTest : ModelTest() {
 
     val appointment = Appointment(
       id = 1,
-      category = AppointmentCategory(
-        id = 11,
-        code = "C11",
-        description = "Blah",
-        active = true,
-        displayOrder = 1,
-      ),
+      categoryCode = "C11",
       prisonCode = "PVI",
       internalLocationId = null,
       comment = "Blah",

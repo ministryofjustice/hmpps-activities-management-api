@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.OrderBy
@@ -17,9 +16,11 @@ import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
@@ -29,16 +30,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment")
-@SQLDelete(sql = "UPDATE appointment SET deleted = true WHERE appointment_category_id = ?")
+@SQLDelete(sql = "UPDATE appointment SET deleted = true WHERE appointment_id = ?")
 @Where(clause = "deleted = false")
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = 0,
 
-  @ManyToOne
-  @JoinColumn(name = "appointment_category_id", nullable = false)
-  var category: AppointmentCategory,
+  var categoryCode: String,
 
   val prisonCode: String,
 
@@ -87,7 +86,7 @@ data class Appointment(
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
-    category = category.toModel(),
+    categoryCode = categoryCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
     inCell = inCell,
@@ -102,15 +101,15 @@ data class Appointment(
     occurrences = occurrences.toModel(),
   )
 
-  fun toDetails(locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+  fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
     AppointmentDetails(
       appointmentId,
-      category.toSummary(),
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       prisonCode,
       if (inCell) {
         null
       } else {
-        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
       },
       inCell,
       startDate,
@@ -119,12 +118,12 @@ data class Appointment(
       schedule?.toRepeat(),
       comment,
       created,
-      userMap.getOrDefault(createdBy, null).toSummary(createdBy),
+      userMap[createdBy].toSummary(createdBy),
       updated,
       if (updatedBy == null) {
         null
       } else {
-        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+        userMap[updatedBy].toSummary(updatedBy!!)
       },
       occurrences().toSummary(prisonCode, locationMap, userMap, comment),
       prisoners.toSummary(),

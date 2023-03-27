@@ -152,13 +152,13 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `getLocationsForAppointmentsMap returns matching locations`() {
+  fun `getLocationsForAppointmentsMap returns mapped locations`() {
     whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
       .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"), appointmentLocation(2, "TPR"))))
 
-    val locations = locationService.getLocationsForAppointmentsMap("TPR", listOf(2))
+    val locations = locationService.getLocationsForAppointmentsMap("TPR")
 
-    assertThat(locations).isEqualTo(mapOf(2L to appointmentLocation(2, "TPR")))
+    assertThat(locations).isEqualTo(mapOf(1L to appointmentLocation(1, "TPR"), 2L to appointmentLocation(2, "TPR")))
   }
 
   private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> {

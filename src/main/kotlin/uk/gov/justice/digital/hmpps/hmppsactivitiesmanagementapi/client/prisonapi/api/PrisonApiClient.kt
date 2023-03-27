@@ -364,6 +364,17 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<ReferenceCode>())
 
+  fun getReferenceCodes(domain: String): List<ReferenceCode> =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/reference-domains/domains/{domain}/codes")
+          .build(domain)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<ReferenceCode>>())
+      .block() ?: emptyList()
+
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
     getReferenceCode("EDU_LEVEL", educationLevelCode)
 
@@ -373,6 +384,19 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(usernames)
       .retrieve()
       .bodyToMono(typeReference<List<UserDetail>>())
+      .block() ?: emptyList()
+  }
+
+  fun getScheduleReasons(eventType: String): List<ReferenceCode> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/reference-domains/scheduleReasons")
+          .queryParam("eventType", eventType)
+          .build()
+      }
+      .retrieve()
+      .bodyToMono(typeReference<List<ReferenceCode>>())
       .block() ?: emptyList()
   }
 }

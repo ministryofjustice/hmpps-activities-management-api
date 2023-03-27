@@ -9,6 +9,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -23,12 +24,14 @@ import java.util.*
 
 class AppointmentDetailsServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
   private val service = AppointmentDetailsService(
     appointmentRepository,
+    referenceCodeService,
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
@@ -39,7 +42,9 @@ class AppointmentDetailsServiceTest {
     val entity = appointmentEntity()
     val occurrenceEntity = entity.occurrences().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
-    whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode, entity.internalLocationIds())!!)
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
     whenever(prisonApiClient.getUserDetailsList(entity.usernames())).thenReturn(
       listOf(
@@ -64,7 +69,7 @@ class AppointmentDetailsServiceTest {
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
       AppointmentDetails(
         entity.appointmentId,
-        AppointmentCategorySummary(entity.category.appointmentCategoryId, entity.category.code, entity.category.description),
+        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         entity.prisonCode,
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
         entity.inCell,

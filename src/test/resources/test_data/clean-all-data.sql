@@ -22,11 +22,9 @@ truncate table prison_pay_band restart identity;
 truncate table prison_regime restart identity;
 
 --Appointments
-truncate table appointment_instance;
 truncate table appointment_occurrence_allocation;
 truncate table appointment_occurrence;
 truncate table appointment_schedule;
-truncate table appointment_category;
 truncate table appointment;
 
 SET REFERENTIAL_INTEGRITY TRUE;

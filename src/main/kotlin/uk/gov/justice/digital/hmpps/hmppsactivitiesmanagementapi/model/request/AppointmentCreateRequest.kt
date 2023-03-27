@@ -21,12 +21,12 @@ import java.time.LocalTime
   """,
 )
 data class AppointmentCreateRequest(
-  @field:NotNull(message = "Category id must be supplied")
+  @field:NotEmpty(message = "Category code must be supplied")
   @Schema(
-    description = "The category id for this appointment. Must exist and be active",
-    example = "21",
+    description = "The NOMIS reference code for this appointment. Must exist and be active",
+    example = "CHAP",
   )
-  val categoryId: Long?,
+  val categoryCode: String?,
 
   @field:NotEmpty(message = "Prison code must be supplied")
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
