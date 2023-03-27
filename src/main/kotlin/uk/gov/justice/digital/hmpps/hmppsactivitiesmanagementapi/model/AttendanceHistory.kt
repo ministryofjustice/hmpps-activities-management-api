@@ -5,13 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "An attendance record for a prisoner, can be marked or unmarked")
-data class Attendance(
+data class AttendanceHistory(
 
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long,
-
-  @Schema(description = "The prison number this attendance record is for", example = "A1234AA")
-  val prisonerNumber: String,
 
   @Schema(description = "The reason for attending or not")
   val attendanceReason: AttendanceReason? = null,
@@ -29,17 +26,6 @@ data class Attendance(
   @Schema(description = "The person who updated the attendance", example = "A.JONES")
   val recordedBy: String? = null,
 
-  @Schema(description = "WAITING, COMPLETED, LOCKED.", example = "WAITING")
-  val status: String,
-
-  @Schema(description = "The amount in pence to pay the prisoner for the activity", example = "100")
-  val payAmount: Int? = null,
-
-  @Schema(description = "The bonus amount in pence to pay the prisoner for the activity", example = "50")
-  val bonusAmount: Int? = null,
-
-  val pieces: Int? = null,
-
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
 
@@ -52,6 +38,4 @@ data class Attendance(
   )
   var otherAbsenceReason: String? = null,
 
-  @Schema(description = "The attendance history records for this attendance")
-  val attendanceHistory: List<AttendanceHistory> = emptyList(),
 )

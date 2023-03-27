@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory as EntityAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime as EntityPrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting as EntityPrisonerWaiting
@@ -43,6 +44,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
@@ -381,6 +383,32 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
+  )
+
+fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistory =
+  ModelAttendanceHistory(
+    id = attendanceHistory.attendanceHistoryId,
+    attendanceReason = attendanceHistory.attendanceReason?.let {
+      ModelAttendanceReason(
+        id = it.attendanceReasonId,
+        code = it.code,
+        description = it.description,
+        attended = it.attended,
+        capturePay = it.capturePay,
+        captureMoreDetail = it.captureMoreDetail,
+        captureCaseNote = it.captureCaseNote,
+        captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
+        captureOtherText = it.captureOtherText,
+        displayInAbsence = it.displayInAbsence,
+        displaySequence = it.displaySequence,
+        notes = it.notes,
+      )
+    },
+    comment = attendanceHistory.comment,
+    recordedTime = attendanceHistory.recordedTime,
+    recordedBy = attendanceHistory.recordedBy,
+    issuePayment = attendanceHistory.issuePayment,
+    incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
