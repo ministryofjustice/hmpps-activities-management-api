@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
@@ -409,16 +411,18 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
  *   @param locationLookup Map of locationId -> Location to facilitate data lookup
  */
 fun List<AppointmentInstance>.toPrisonerSchedule(
+  referenceCodeMap: Map<String, ReferenceCode>,
   prisonerLookup: Map<String, Prisoner>,
   locationLookup: Map<Long, Location>,
   eventType: String,
   eventStatus: String,
 ) = map {
+  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
   PrisonerSchedule(
     cellLocation = prisonerLookup[it.prisonerNumber]?.cellLocation!!,
     comment = it.comment,
-    event = it.category.code,
-    eventDescription = it.category.description,
+    event = category.code,
+    eventDescription = category.description,
     eventLocation = locationLookup[it.internalLocationId]?.userDescription,
     eventStatus = eventStatus,
     eventType = eventType,
@@ -437,12 +441,14 @@ fun List<AppointmentInstance>.toPrisonerSchedule(
  * Maps List<AppointmentInstance> to List<ScheduledEvent>
  */
 fun List<AppointmentInstance>.toScheduledEvent(
+  referenceCodeMap: Map<String, ReferenceCode>,
   eventType: String,
   eventTypeDesc: String,
   eventClass: String,
   eventStatus: String,
   eventSource: String,
 ) = map {
+  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
   ScheduledEvent(
     bookingId = it.bookingId,
     startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),
@@ -452,15 +458,24 @@ fun List<AppointmentInstance>.toScheduledEvent(
     eventType = eventType,
     eventTypeDesc = eventTypeDesc,
     eventClass = eventClass,
-    eventId = it.appointmentInstanceId,
+    eventId = it.appointmentOccurrenceId,
     eventStatus = eventStatus,
     eventDate = it.appointmentDate,
     eventSource = eventSource,
-    eventSubType = it.category.code,
-    eventSubTypeDesc = it.category.description,
+    eventSubType = category.code,
+    eventSubTypeDesc = category.description,
     agencyId = it.prisonCode,
   )
 }
+
+fun ReferenceCode?.toAppointmentCategorySummary(code: String) =
+  if (this == null) {
+    AppointmentCategorySummary(code, "UNKNOWN")
+  } else {
+    AppointmentCategorySummary(this.code, this.description)
+  }
+
+fun List<ReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
 
 fun Location?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
   if (this == null) {

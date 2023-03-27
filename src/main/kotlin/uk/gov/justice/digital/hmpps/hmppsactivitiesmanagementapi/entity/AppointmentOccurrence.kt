@@ -13,11 +13,12 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
@@ -61,17 +62,9 @@ data class AppointmentOccurrence(
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 
-  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  private val instances: MutableList<AppointmentInstance> = mutableListOf()
-
   fun allocations() = allocations.toList()
 
   fun addAllocation(allocation: AppointmentOccurrenceAllocation) = allocations.add(allocation)
-
-  fun instances() = instances.toList()
-
-  fun addInstance(instance: AppointmentInstance) = instances.add(instance)
 
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
@@ -89,14 +82,13 @@ data class AppointmentOccurrence(
     updated = updated,
     updatedBy = updatedBy,
     allocations = allocations.toModel(),
-    instances = instances.toModel(),
   )
 
   fun toSummary(prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, appointmentComment: String) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
-      if (inCell) null else locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode),
+      if (inCell) null else locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode),
       inCell,
       startDate,
       startTime,
@@ -105,21 +97,21 @@ data class AppointmentOccurrence(
       isEdited = false,
       isCancelled = false,
       updated = updated,
-      updatedBy?.let { userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!) },
+      updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
     )
 
-  fun toDetails(categorySummary: AppointmentCategorySummary, prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+  fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
       sequenceNumber,
-      categorySummary,
+      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       prisonCode,
       if (inCell) {
         null
       } else {
-        locationMap.getOrDefault(internalLocationId, null).toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
       },
       inCell,
       startDate,
@@ -129,12 +121,12 @@ data class AppointmentOccurrence(
       false,
       false,
       appointment.created,
-      userMap.getOrDefault(appointment.createdBy, null).toSummary(appointment.createdBy),
+      userMap[appointment.createdBy].toSummary(appointment.createdBy),
       updated,
       if (updatedBy == null) {
         null
       } else {
-        userMap.getOrDefault(updatedBy, null).toSummary(updatedBy!!)
+        userMap[updatedBy].toSummary(updatedBy!!)
       },
       prisoners.toSummary(),
     )

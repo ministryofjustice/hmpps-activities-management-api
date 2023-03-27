@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toScheduledEvent
 import java.time.LocalDate
@@ -30,6 +31,7 @@ private const val EVENT_TYPE_DESC = "Appointment"
 class AppointmentInstanceService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
@@ -37,6 +39,9 @@ class AppointmentInstanceService(
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
+  fun getAppointmentInstanceById(appointmentInstanceId: Long) =
+    appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
 
   fun getScheduledEvents(
     rolloutPrison: RolloutPrison,
@@ -46,7 +51,7 @@ class AppointmentInstanceService(
     return if (rolloutPrison.isAppointmentsEnabled()) {
       log.info("Fetching scheduled events from Appointment Instance Repository for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       appointmentInstanceRepository.findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
-        .toScheduledEvent(EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
+        .toScheduledEvent(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY), EVENT_TYPE, EVENT_TYPE_DESC, EVENT_CLASS, EVENT_STATUS, EVENT_SOURCE)
     } else {
       log.info("Fetching scheduled events from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Booking ID [$bookingId] and Date Range [$dateRange]")
       prisonApiClient.getScheduledAppointments(bookingId, dateRange).block() ?: emptyList()
@@ -69,8 +74,9 @@ class AppointmentInstanceService(
       val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
       val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
 
-      val locationMap = locationService.getLocationsForAppointments(prisonCode)!!
-        .associateBy { it.locationId }
+      val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+      val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
       val prisonersWithAppointments = appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(
         prisonCode,
@@ -87,7 +93,7 @@ class AppointmentInstanceService(
         emptyMap()
       }
 
-      prisonersWithAppointments.toPrisonerSchedule(prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
+      prisonersWithAppointments.toPrisonerSchedule(referenceCodeMap, prisonerMap, locationMap, EVENT_TYPE, EVENT_STATUS)
     } else {
       log.info(
         "Fetching prisoner schedules from Prison API for Rollout Prison [${rolloutPrison.rolloutPrisonId}], Prison Code [$prisonCode], " +

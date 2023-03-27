@@ -8,24 +8,25 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryEntities
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleReasonEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 
 @WebMvcTest(controllers = [AppointmentCategoryController::class])
 @ContextConfiguration(classes = [AppointmentCategoryController::class])
 class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategoryController>() {
 
   @MockBean
-  private lateinit var appointmentCategoryService: AppointmentCategoryService
+  private lateinit var referenceCodeService: ReferenceCodeService
 
-  override fun controller() = AppointmentCategoryController(appointmentCategoryService)
+  override fun controller() = AppointmentCategoryController(referenceCodeService)
 
   @Test
   fun `200 response when get all appointment categories`() {
-    val appointmentCategories = appointmentCategoryEntities().toModel()
+    val referenceCodes = listOf(appointmentCategoryReferenceCode())
 
-    whenever(appointmentCategoryService.getAll(false)).thenReturn(appointmentCategories)
+    whenever(referenceCodeService.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT)).thenReturn(referenceCodes)
 
     val response = mockMvc
       .get("/appointment-categories")
@@ -33,6 +34,6 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentCategories))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(referenceCodes.toAppointmentCategorySummary()))
   }
 }

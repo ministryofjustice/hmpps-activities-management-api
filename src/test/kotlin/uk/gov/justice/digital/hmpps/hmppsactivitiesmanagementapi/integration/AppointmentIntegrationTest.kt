@@ -8,12 +8,10 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -21,9 +19,6 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AppointmentIntegrationTest : IntegrationTestBase() {
-  @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql",
-  )
   @Test
   fun `get appointment authorisation required`() {
     webTestClient.get()
@@ -40,8 +35,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointment = webTestClient.getAppointmentById(1)
 
     with(appointment!!) {
-      assertThat(category.code).isEqualTo("AC1")
-      assertThat(category.description).isEqualTo("Appointment Category 1")
+      assertThat(categoryCode).isEqualTo("AC1")
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isEqualTo(false)
@@ -67,13 +61,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           with(allocations) {
-            assertThat(size).isEqualTo(1)
-            with(get(0)) {
-              assertThat(prisonerNumber).isEqualTo("A1234BC")
-              assertThat(bookingId).isEqualTo(456)
-            }
-          }
-          with(instances) {
             assertThat(size).isEqualTo(1)
             with(get(0)) {
               assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -117,9 +104,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment single appointment single prisoner success`() {
-    val request = appointmentCreateRequest()
+    val request = appointmentCreateRequest(categoryCode = "AC1")
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -136,9 +124,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment single appointment two prisoner success`() {
-    val request = appointmentCreateRequest(prisonerNumbers = listOf("A12345BC", "B23456CE"))
+    val request = appointmentCreateRequest(categoryCode = "AC1", prisonerNumbers = listOf("A12345BC", "B23456CE"))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -156,9 +145,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create individual repeat appointment success`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
+    val request = appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -179,7 +169,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryId)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -196,7 +186,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryId)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -216,14 +206,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               assertThat(bookingId).isEqualTo(1)
             }
           }
-          with(instances) {
-            assertThat(size).isEqualTo(1)
-            with(first()) {
-              assertThat(id).isGreaterThan(0)
-              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
-              assertThat(bookingId).isEqualTo(1)
-            }
-          }
         }
       }
     }
@@ -232,7 +214,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
     with(appointment) {
       assertThat(id).isGreaterThan(0)
-      assertThat(category.id).isEqualTo(request.categoryId)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
@@ -249,7 +231,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(size).isEqualTo(1)
         with(occurrences.first()) {
           assertThat(id).isGreaterThan(0)
-          assertThat(category.id).isEqualTo(request.categoryId)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isEqualTo(request.inCell)
@@ -269,45 +251,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               listOf(
                 AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
                 AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
-              ),
-            ),
-          )
-          with(instances) {
-            assertThat(size).isEqualTo(2)
-          }
-          assertThat(
-            instances.containsAll(
-              listOf(
-                AppointmentInstance(
-                  id = -1,
-                  category = AppointmentCategory(
-                    id = 1,
-                    parent = null,
-                    code = "TEST",
-                    description = "Test Category",
-                    active = true,
-                    displayOrder = 2,
-                  ),
-                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "A12345BC",
-                  bookingId = 1, appointmentDate = LocalDate.now().plusDays(1),
-                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false,
-                ),
-                AppointmentInstance(
-                  id = -1,
-                  category = AppointmentCategory(
-                    id = 1,
-                    parent = null,
-                    code = "TEST",
-                    description = "Test Category",
-                    active = true,
-                    displayOrder = 2,
-                  ),
-                  prisonCode = "TPR", internalLocationId = 123, inCell = false, prisonerNumber = "B23456CE",
-                  bookingId = 2, appointmentDate = LocalDate.now().plusDays(1),
-                  startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 30),
-                  comment = null, attended = null, cancelled = false,
-                ),
               ),
             ),
           )

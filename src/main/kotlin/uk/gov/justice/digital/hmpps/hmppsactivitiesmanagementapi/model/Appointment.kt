@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -26,21 +25,13 @@ data class Appointment(
   val id: Long,
 
   @Schema(
-    description =
-    """
-    The lowest level category of the appointment.
-    A subcategory for new appointments and a legacy category (active = false) for migrated appointments.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
-    """,
+    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
+    example = "CHAP",
   )
-  val category: AppointmentCategory,
+  val categoryCode: String,
 
   @Schema(
-    description =
-    """
-    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
-    """,
+    description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
     example = "SKI",
   )
   val prisonCode: String,
@@ -49,7 +40,7 @@ data class Appointment(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
-    Should be null if in cell = true
+    Will be null if in cell = true
     """,
     example = "123",
   )
@@ -125,7 +116,7 @@ data class Appointment(
     description =
     """
     The username of the user authenticated via HMPPS auth that edited the appointment.
-    Usually a NOMIS username. Will be null if the appointment has not been altered since it was created
+    Will be null if the appointment has not been altered since it was created
     """,
     example = "AAA01U",
   )

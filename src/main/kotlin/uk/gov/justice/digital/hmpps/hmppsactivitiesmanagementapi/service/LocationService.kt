@@ -29,19 +29,18 @@ class LocationService(
     return LocationPrefixDto(locationPrefix)
   }
 
-  fun getLocationsForAppointments(agencyId: String): List<Location>? =
+  fun getLocationsForAppointments(agencyId: String): List<Location> =
     prisonApiClient
-      .getLocationsForTypeUnrestricted(agencyId, "APP").block()
+      .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
 
-  fun getLocationsForAppointmentsMap(agencyId: String, locationIds: List<Long?>) =
+  fun getLocationsForAppointmentsMap(agencyId: String) =
     getLocationsForAppointments(agencyId)
-      ?.filter { locationIds.contains(it.locationId) }
-      ?.associateBy { it.locationId }
+      .associateBy { it.locationId }
 
   fun getVideoLinkRoomsForPrison(agencyId: String): List<LocationIdAndDescription>? =
     getLocationsForAppointments(agencyId)
-      ?.filter { it.locationType == "VIDE" }
-      ?.map { LocationIdAndDescription(it.locationId, it.userDescription ?: it.description) }
+      .filter { it.locationType == "VIDE" }
+      .map { LocationIdAndDescription(it.locationId, it.userDescription ?: it.description) }
 
   fun getCellLocationsForGroup(agencyId: String, groupName: String): List<Location>? =
     prisonApiClient.getLocationsForType(agencyId, "CELL").block()
