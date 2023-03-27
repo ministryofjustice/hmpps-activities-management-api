@@ -1,12 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import jakarta.persistence.EntityNotFoundException
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 
@@ -40,4 +46,37 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       ),
     )
   }
+
+  @Test
+  fun `200 response when get attendance by ID found`() {
+    val attendance = attendanceEntity().toModel()
+
+    whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
+
+    val response = mockMvc.getAttendanceById("1")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    Assertions.assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendance))
+
+    verify(attendancesService).getAttendanceById(1)
+  }
+
+  @Test
+  fun `404 response when get attendance by ID not found`() {
+    whenever(attendancesService.getAttendanceById(2)).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getAttendanceById("2")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    Assertions.assertThat(response.contentAsString).contains("Not found")
+
+    verify(attendancesService).getAttendanceById(2)
+  }
+
+  private fun MockMvc.getAttendanceById(attendanceId: String) =
+    get("/attendances/$attendanceId")
 }
