@@ -8,6 +8,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
@@ -44,6 +45,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
 
       val scheduledEvents = webTestClient.getByPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
 
@@ -52,6 +54,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings!![0].priority).isEqualTo(1)
         assertThat(visits).hasSize(1)
         assertThat(visits!![0].priority).isEqualTo(3)
+        assertThat(adjudications).hasSize(1)
+        assertThat(adjudications!![0].priority).isEqualTo(4)
         assertThat(appointments).hasSize(1)
         assertThat(appointments!![0].priority).isEqualTo(5)
         assertThat(activities).hasSize(6)
@@ -74,6 +78,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
 
       val scheduledEvents = webTestClient.getByPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
 
@@ -82,6 +87,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings!![0].priority).isEqualTo(1)
         assertThat(visits).hasSize(1)
         assertThat(visits!![0].priority).isEqualTo(3)
+        assertThat(adjudications).hasSize(1)
+        assertThat(adjudications!![0].priority).isEqualTo(4)
         assertThat(appointments).hasSize(1)
         assertThat(appointments!![0].priority).isEqualTo(5)
         assertThat(activities).hasSize(2)
@@ -330,15 +337,16 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `POST - prison rolled-out - 200 success with activities from the DB`() {
       val prisonCode = "MDI"
-      val prisonerNumbers = setOf("A11111A", "A22222A")
+      val prisonerNumbers = listOf("A11111A", "A22222A")
       val date = LocalDate.of(2022, 10, 1)
 
       // Ignores query parameters - matches on url path only
       prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
 
-      val scheduledEvents = webTestClient.postByPrisonersAndDate(prisonCode, prisonerNumbers, date)
+      val scheduledEvents = webTestClient.postByPrisonersAndDate(prisonCode, prisonerNumbers.toSet(), date)
 
       // Get the prison API stubbed data to compare results against
       val appointmentsResults = readAppointmentsStubbedResults()
@@ -352,6 +360,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings).isEqualTo(courtHearingsResults)
         assertThat(visits).isEqualTo(visitsResults)
         assertThat(activities).hasSize(1)
+        assertThat(adjudications).hasSize(2)
         with(activities!![0]) {
           assertThat(prisonerNumber).isEqualTo("A11111A")
           assertThat(eventType).isEqualTo("PRISON_ACT")
@@ -367,7 +376,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `POST - prison not rolled-out - 200 success with activities from prison API`() {
       val prisonCode = "MDI"
-      val prisonerNumbers = setOf("G4793VF", "A5193DY")
+      val prisonerNumbers = listOf("G4793VF", "A5193DY")
       val date = LocalDate.of(2022, 10, 1)
 
       // Ignores query parameters - matches on url path only
@@ -375,12 +384,14 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
 
-      val scheduledEvents = webTestClient.postByPrisonersAndDate(prisonCode, prisonerNumbers, date)
+      val scheduledEvents = webTestClient.postByPrisonersAndDate(prisonCode, prisonerNumbers.toSet(), date)
 
       with(scheduledEvents!!) {
         assertThat(appointments).hasSize(2)
         assertThat(activities).hasSize(2)
+        assertThat(adjudications).hasSize(2)
       }
     }
   }

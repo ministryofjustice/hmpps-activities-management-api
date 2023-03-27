@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -460,10 +461,14 @@ class PrisonApiClientTest {
     val fromDate = LocalDate.now()
     val toDate = fromDate.plusDays(1)
 
-    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate, toDate, prisonerNumbers.toList(), TimeSlot.AM)
+    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate.rangeTo(toDate), prisonerNumbers.toList(), TimeSlot.AM)
 
-    val adjudications =
-      prisonApiClient.getOffenderAdjudications(prisonCode, fromDate, toDate, TimeSlot.AM, prisonerNumbers.toSet())
+    val adjudications = prisonApiClient.getOffenderAdjudications(
+      prisonCode,
+      fromDate.rangeTo(toDate),
+      prisonerNumbers.toSet(),
+      TimeSlot.AM,
+    )
 
     assertThat(adjudications).hasSize(1)
 

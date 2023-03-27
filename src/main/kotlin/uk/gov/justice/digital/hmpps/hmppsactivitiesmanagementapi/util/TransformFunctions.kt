@@ -19,8 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSumma
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
@@ -249,64 +247,6 @@ fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
-      ?: defaultPriority,
-  )
-}
-
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
-  prisonCode: String,
-  eventType: String?,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-) = map {
-  ModelScheduledEvent(
-    prisonCode = prisonCode,
-    eventId = it.eventId,
-    bookingId = it.bookingId,
-    locationId = it.locationId,
-    location = it.eventLocation ?: "External", // Don't show the real court location
-    eventClass = it.event,
-    eventStatus = it.eventStatus,
-    eventType = eventType ?: it.eventType,
-    eventTypeDesc = eventType ?: it.eventType,
-    event = it.event,
-    eventDesc = it.eventDescription,
-    details = it.comment ?: it.eventDescription,
-    prisonerNumber = it.offenderNo,
-    date = LocalDateTime.parse(it.startTime).toLocalDate(),
-    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
-    priority = priorities?.let { pList -> getPriority(it.eventType, pList) }
-      ?: defaultPriority,
-  )
-}
-
-fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
-  bookingId: Long,
-  prisonCode: String?,
-  prisonerNumber: String?,
-  eventType: String?,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-) = this.hearings?.map {
-  ModelScheduledEvent(
-    prisonCode = prisonCode,
-    eventId = it.id,
-    bookingId = bookingId,
-    locationId = null,
-    location = it.location?.description,
-    eventClass = null,
-    eventStatus = null,
-    eventType = eventType,
-    eventTypeDesc = null,
-    event = null,
-    eventDesc = null,
-    details = null,
-    prisonerNumber = prisonerNumber,
-    date = LocalDateTime.parse(it.dateTime).toLocalDate(),
-    startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
-    endTime = null,
-    priority = priorities?.let { pList -> getPriority(null, pList) }
       ?: defaultPriority,
   )
 }

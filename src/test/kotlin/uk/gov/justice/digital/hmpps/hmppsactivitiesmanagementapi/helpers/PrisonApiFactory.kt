@@ -2,8 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 fun userDetail(
   id: Long = 1,
@@ -20,10 +25,24 @@ fun userDetail(
 )
 
 fun userCaseLoads(prisonCode: String) =
-  listOf(CaseLoad(caseLoadId = prisonCode, description = "Prison Description", type = CaseLoad.Type.INST, currentlyActive = true))
+  listOf(
+    CaseLoad(
+      caseLoadId = prisonCode,
+      description = "Prison Description",
+      type = CaseLoad.Type.INST,
+      currentlyActive = true,
+    ),
+  )
 
 fun appointmentLocation(locationId: Long, prisonCode: String) =
-  Location(locationId = locationId, locationType = "APP", description = "Test Appointment Location", locationUsage = "APP", agencyId = prisonCode, currentOccupancy = 2)
+  Location(
+    locationId = locationId,
+    locationType = "APP",
+    description = "Test Appointment Location",
+    locationUsage = "APP",
+    agencyId = prisonCode,
+    currentOccupancy = 2,
+  )
 
 fun appointmentCategoryReferenceCode(code: String = "TEST", description: String = "Test Category") =
   ReferenceCode(
@@ -31,4 +50,58 @@ fun appointmentCategoryReferenceCode(code: String = "TEST", description: String 
     code = code,
     description = description,
     activeFlag = "Y",
+  )
+
+fun prisonerTransfer(
+  offenderNo: String = "G4793VF",
+  bookingId: Long? = 1,
+  eventId: Long? = 1,
+  firstName: String = "FRED",
+  lastName: String = "BLOGGS",
+  cellLocation: String? = "2-1-001",
+  event: String = "TRANSFER",
+  eventType: String? = "TRANSFER",
+  eventDescription: String = "Governor",
+  eventStatus: String? = "SCH",
+  date: LocalDate,
+  startTime: String = date.atStartOfDay().toIsoDateTime(),
+  endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
+) =
+  PrisonerSchedule(
+    offenderNo = offenderNo,
+    bookingId = bookingId,
+    locationId = null,
+    eventId = eventId,
+    firstName = firstName,
+    lastName = lastName,
+    cellLocation = cellLocation,
+    event = event,
+    eventType = eventType,
+    eventDescription = eventDescription,
+    eventLocation = "Should not be included",
+    eventStatus = eventStatus,
+    comment = "Should not be included",
+    startTime = startTime,
+    endTime = endTime,
+  )
+
+fun adjudicationHearing(
+  prisonCode: String = moorlandPrisonCode,
+  offenderNo: String = "1234567890",
+  hearingId: Long = -1,
+  hearingType: String = "SCH",
+  startTime: LocalDateTime = LocalDate.now().atStartOfDay(),
+  internalLocationId: Long = -2,
+  internalLocationDescription: String = "Adjudication room",
+  eventStatus: String = "SCH",
+) =
+  OffenderAdjudicationHearing(
+    agencyId = prisonCode,
+    offenderNo = offenderNo,
+    hearingId = hearingId,
+    hearingType = hearingType,
+    startTime = startTime.toIsoDateTime(),
+    internalLocationId = internalLocationId,
+    internalLocationDescription = internalLocationDescription,
+    eventStatus = eventStatus,
   )

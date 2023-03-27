@@ -339,17 +339,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
   suspend fun getOffenderAdjudications(
     agencyId: String,
-    fromDate: LocalDate,
-    toDate: LocalDate,
-    timeSlot: TimeSlot?,
+    dateRange: LocalDateRange,
     prisonerNumbers: Set<String>,
+    timeSlot: TimeSlot? = null,
   ): List<OffenderAdjudicationHearing> =
     prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/offenders/{agencyId}/adjudication-hearings")
-          .queryParam("fromDate", fromDate)
-          .queryParam("toDate", toDate)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
           .maybeQueryParam("timeSlot", timeSlot)
           .build(agencyId)
       }
