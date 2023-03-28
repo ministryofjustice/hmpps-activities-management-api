@@ -80,6 +80,8 @@ class TransformFunctionsTest {
                   status = "WAITING",
                   issuePayment = null,
                   incentiveLevelWarningIssued = null,
+                  recordedTime = LocalDate.now().atStartOfDay(),
+                  recordedBy = "Joe Bloggs",
                 ),
               ),
             ),

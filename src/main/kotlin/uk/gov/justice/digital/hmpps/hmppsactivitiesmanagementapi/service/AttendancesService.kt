@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.security.Principal
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
@@ -38,7 +39,7 @@ class AttendancesService(
   // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
   // TODO also there is no validation checking.
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
-  fun mark(attendances: List<AttendanceUpdateRequest>) {
+  fun mark(principal: Principal, attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
 
@@ -48,6 +49,7 @@ class AttendancesService(
         it,
       )
       it.mark(
+        principal,
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason!!.uppercase().trim()],
         AttendanceStatus.COMPLETED,
         attendanceUpdatesById[it.attendanceId]!!.comment,
@@ -116,15 +118,14 @@ class AttendancesService(
           attendance = attendance,
           attendanceReason = attendance.attendanceReason,
           comment = attendance.comment,
-          recordedTime = attendance.recordedTime,
-          recordedBy = attendance.recordedBy,
+          recordedTime = attendance.recordedTime!!,
+          recordedBy = attendance.recordedBy!!,
           issuePayment = attendance.issuePayment,
           caseNoteId = attendance.caseNoteId,
           incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
           otherAbsenceReason = attendance.otherAbsenceReason,
         ),
       )
-
     }
   }
 }

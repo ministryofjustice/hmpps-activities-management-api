@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import java.security.Principal
 
 @RestController
 @RequestMapping("/attendances", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -103,6 +104,9 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
-  fun markAttendances(@RequestBody attendances: List<AttendanceUpdateRequest>): ResponseEntity<Any> =
-    attendancesService.mark(attendances).let { ResponseEntity.noContent().build() }
+  fun markAttendances(
+    principal: Principal,
+    @RequestBody attendances: List<AttendanceUpdateRequest>,
+  ): ResponseEntity<Any> =
+    attendancesService.mark(principal, attendances).let { ResponseEntity.noContent().build() }
 }

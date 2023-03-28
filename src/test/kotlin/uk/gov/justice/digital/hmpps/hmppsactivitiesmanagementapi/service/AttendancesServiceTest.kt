@@ -16,10 +16,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.completedAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import java.security.Principal
 import java.time.LocalDate
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -28,17 +31,20 @@ class AttendancesServiceTest {
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
+  private val attendanceHistoryRepository: AttendanceHistoryRepository = mock()
   private val service =
     AttendancesService(
       scheduledInstanceRepository,
       attendanceRepository,
       attendanceReasonRepository,
+      attendanceHistoryRepository,
     )
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
   private val allocation = activitySchedule.allocations().first()
   private val instance = activitySchedule.instances().first()
   private val attendance = instance.attendances.first()
+  private val attendanceHistory = attendance.history().first()
   private val today = LocalDate.now()
 
   @Test
@@ -98,6 +104,8 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record`() {
+    val mockPrincipal: Principal = mock()
+
     assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
 
     assertThat(attendance.attendanceReason).isNull()
@@ -105,7 +113,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark(listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATTENDED", null, null, null, null, null)))
+    service.mark(mockPrincipal, listOf(AttendanceUpdateRequest(attendance.attendanceId, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
@@ -132,5 +140,15 @@ class AttendancesServiceTest {
     Assertions.assertThatThrownBy { service.getAttendanceById(-1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Attendance -1 not found")
+  }
+
+  @Test
+  fun `create history`() {
+    whenever(attendanceHistoryRepository.save(attendanceHistory)).thenReturn(attendanceHistory)
+    service.createHistory(completedAttendance())
+    assertThat(attendanceHistory.attendanceReason?.code).isEqualTo("ATTENDED")
+    assertThat(attendanceHistory.comment).isEqualTo("previous comment")
+    assertThat(attendanceHistory.recordedBy).isEqualTo("Joe Bloggs")
+    assertThat(attendanceHistory.recordedTime).isEqualTo(LocalDate.now().atStartOfDay())
   }
 }

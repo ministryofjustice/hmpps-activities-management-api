@@ -16,6 +16,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.security.Principal
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
@@ -95,6 +96,7 @@ data class Attendance(
   }
 
   fun mark(
+    principal: Principal,
     reason: AttendanceReason?,
     newStatus: AttendanceStatus,
     newComment: String?,
@@ -106,6 +108,8 @@ data class Attendance(
     comment = newComment
     issuePayment = newIssuePayment
     incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    recordedBy = principal.name
+    recordedTime = LocalDateTime.now()
     return this
   }
 
