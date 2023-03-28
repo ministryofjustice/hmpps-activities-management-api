@@ -67,6 +67,10 @@ data class Attendance(
 
   fun history() = attendanceHistory.toList()
 
+  fun addHistory(history: AttendanceHistory) {
+    attendanceHistory.add(history)
+  }
+
   fun waiting() {
     attendanceReason = null
     status = AttendanceStatus.WAITING

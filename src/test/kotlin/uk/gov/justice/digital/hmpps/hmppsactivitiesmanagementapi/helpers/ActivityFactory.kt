@@ -196,7 +196,7 @@ internal fun activitySchedule(
             scheduledInstance = this,
             prisonerNumber = "A1234AA",
           ).apply {
-            this.attendanceHistory.add(
+            this.addHistory(
               AttendanceHistory(
                 attendance = this,
                 attendanceHistoryId = 1,
