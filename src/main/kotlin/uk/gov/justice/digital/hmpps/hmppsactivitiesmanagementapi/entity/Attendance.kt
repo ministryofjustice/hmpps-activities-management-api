@@ -63,7 +63,7 @@ data class Attendance(
 ) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+  private val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun history() = attendanceHistory.toList()
 
