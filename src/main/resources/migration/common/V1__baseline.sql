@@ -366,3 +366,18 @@ CREATE INDEX idx_activity_minimum_education_level_activity_id ON activity_minimu
 
 CREATE UNIQUE INDEX idx_activity_minimum_edu_level_activity_edu_code
     ON activity_minimum_education_level (activity_id, education_level_code);
+
+CREATE TABLE attendance_history (
+                            attendance_history_id             bigserial  NOT NULL CONSTRAINT attendance_history_pk PRIMARY KEY,
+                            attendance_id                     bigint     NOT NULL REFERENCES attendance (attendance_id),
+                            attendance_reason_id              bigint REFERENCES attendance_reason (attendance_reason_id),
+                            comment                           varchar(240),
+                            recorded_time                     timestamp,
+                            recorded_by                       varchar(100),
+                            issue_payment                     bool,
+                            case_note_id                      bigint,
+                            incentive_level_warning_issued    bool,
+                            other_absence_reason              varchar(240)
+);
+
+CREATE INDEX idx_attendance_history_attendance_id ON attendance_history (attendance_id);
