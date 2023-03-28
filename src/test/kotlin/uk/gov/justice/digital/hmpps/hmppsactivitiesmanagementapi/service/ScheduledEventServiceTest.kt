@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ADJUDICATION_HEARING_DURATION_TWO_HOURS
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -348,14 +349,14 @@ class ScheduledEventServiceTest {
           eventClass = null,
           eventStatus = "SCH",
           eventType = EventType.ADJUDICATION_HEARING.name,
-          eventTypeDesc = null,
+          eventTypeDesc = "Governor's Hearing Adult",
           event = null,
           eventDesc = null,
           details = null,
           prisonerNumber = "G4793VF",
           date = LocalDate.now(),
           startTime = LocalDate.now().atStartOfDay().toLocalTime(),
-          endTime = null,
+          endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
           priority = EventType.ADJUDICATION_HEARING.defaultPriority,
         ),
         ScheduledEvent(
@@ -367,14 +368,14 @@ class ScheduledEventServiceTest {
           eventClass = null,
           eventStatus = "SCH",
           eventType = EventType.ADJUDICATION_HEARING.name,
-          eventTypeDesc = null,
+          eventTypeDesc = "Governor's Hearing Adult",
           event = null,
           eventDesc = null,
           details = null,
           prisonerNumber = "G1234GK",
           date = LocalDate.now(),
           startTime = LocalDate.now().atStartOfDay().toLocalTime(),
-          endTime = null,
+          endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
           priority = EventType.ADJUDICATION_HEARING.defaultPriority,
         ),
       )

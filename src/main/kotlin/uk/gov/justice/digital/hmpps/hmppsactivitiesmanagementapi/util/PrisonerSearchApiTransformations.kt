@@ -1,14 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner as PrisonerSearchApiPrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary as ModelPrisonerSummary
 
 /**
  * Transform functions providing a thin layer to transform prisoner search api types into their API model equivalents and vice-versa.
  */
 
-fun Prisoner.toSummary() =
-  PrisonerSummary(
+fun PrisonerSearchApiPrisoner.toSummary() =
+  ModelPrisonerSummary(
     prisonerNumber,
     bookingId?.toLong() ?: -1,
     firstName,
@@ -17,4 +17,4 @@ fun Prisoner.toSummary() =
     cellLocation ?: "UNKNOWN",
   )
 
-fun List<Prisoner>.toSummary() = map { it.toSummary() }
+fun List<PrisonerSearchApiPrisoner>.toSummary() = map { it.toSummary() }

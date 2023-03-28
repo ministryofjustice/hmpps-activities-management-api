@@ -1,56 +1,58 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location as PrisonApiLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode as PrisonApiReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail as PrisonApiUserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary as ModelUserSummary
 
 /**
  * Transform functions providing a thin layer to transform prison api types into their API model equivalents and vice-versa.
  */
 
-fun List<PrisonerSchedule>.prisonApiAppointmentsToScheduledEvents(
+const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
+
+fun List<PrisonApiPrisonerSchedule>.prisonApiAppointmentsToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.APPOINTMENT, priorities)
 
-fun List<PrisonerSchedule>.prisonApiCourtEventsToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.prisonApiCourtEventsToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.COURT_HEARING, priorities)
 
-fun List<PrisonerSchedule>.prisonApiVisitsToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.prisonApiVisitsToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.VISIT, priorities)
 
-fun List<PrisonerSchedule>.prisonApiActivitiesToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.prisonApiActivitiesToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.ACTIVITY, priorities)
 
-fun List<PrisonerSchedule>.prisonApiTransfersToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.prisonApiTransfersToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.EXTERNAL_TRANSFER, priorities)
 
-private fun List<PrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
+private fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
   prisonCode: String,
   eventType: EventType?,
   priorities: List<Priority>?,
 ) = map {
-  ScheduledEvent(
+  ModelScheduleEvent(
     prisonCode = prisonCode,
     eventId = it.eventId,
     bookingId = it.bookingId,
@@ -72,7 +74,7 @@ private fun List<PrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
   )
 }
 
-fun CourtHearings.prisonApiCourtHearingsToScheduledEvents(
+fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   bookingId: Long,
   prisonCode: String?,
   prisonerNumber: String?,
@@ -80,7 +82,7 @@ fun CourtHearings.prisonApiCourtHearingsToScheduledEvents(
   defaultPriority: Int?,
   priorities: List<Priority>?,
 ) = this.hearings?.map {
-  ScheduledEvent(
+  ModelScheduleEvent(
     prisonCode = prisonCode,
     eventId = it.id,
     bookingId = bookingId,
@@ -102,17 +104,17 @@ fun CourtHearings.prisonApiCourtHearingsToScheduledEvents(
   )
 }
 
-fun List<OffenderAdjudicationHearing>.prisonApiOffenderAdjudicationsToScheduledEvents(
+fun List<PrisonApiOffenderAdjudicationHearing>.prisonApiOffenderAdjudicationsToScheduledEvents(
   prisonCode: String,
   priorities: List<Priority>?,
 ): List<ModelScheduleEvent> =
   map { it.toScheduledEvent(prisonCode, priorities) }
 
-fun OffenderAdjudicationHearing.toScheduledEvent(
+fun PrisonApiOffenderAdjudicationHearing.toScheduledEvent(
   prisonCode: String,
   priorities: List<Priority>?,
 ) = let {
-  ScheduledEvent(
+  ModelScheduleEvent(
     prisonCode = prisonCode,
     eventId = it.hearingId,
     bookingId = null,
@@ -121,25 +123,25 @@ fun OffenderAdjudicationHearing.toScheduledEvent(
     eventClass = null,
     eventStatus = it.eventStatus,
     eventType = EventType.ADJUDICATION_HEARING.name,
-    eventTypeDesc = null,
+    eventTypeDesc = it.hearingType,
     event = null,
     eventDesc = null,
     details = null,
     prisonerNumber = it.offenderNo,
     date = LocalDateTime.parse(it.startTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = null, // TODO consider defaulting a fixed number of hours as adjudications have no concept of end time.
+    endTime = LocalDateTime.parse(it.startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
     priority = priorities?.let { pList -> getPriority(null, pList) } ?: EventType.ADJUDICATION_HEARING.defaultPriority,
   )
 }
 
-fun List<uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
+fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
   prisonerNumber: String?,
   eventType: String?,
   defaultPriority: Int?,
   priorities: List<Priority>?,
 ) = map {
-  ScheduledEvent(
+  ModelScheduleEvent(
     prisonCode = it.agencyId,
     eventId = it.eventId,
     bookingId = it.bookingId,
@@ -183,25 +185,25 @@ private fun getPriority(category: String?, priorities: List<Priority>): Int? =
     }
   }.firstOrNull()?.priority
 
-fun ReferenceCode?.toAppointmentCategorySummary(code: String) =
+fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) =
   if (this == null) {
-    AppointmentCategorySummary(code, "UNKNOWN")
+    ModelAppointmentCategorySummary(code, "UNKNOWN")
   } else {
-    AppointmentCategorySummary(this.code, this.description)
+    ModelAppointmentCategorySummary(this.code, this.description)
   }
 
-fun List<ReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
+fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
 
-fun Location?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
+fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
   if (this == null) {
-    AppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
+    ModelAppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
   } else {
-    AppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+    ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
   }
 
-fun UserDetail?.toSummary(username: String) =
+fun PrisonApiUserDetail?.toSummary(username: String) =
   if (this == null) {
-    UserSummary(-1, username, "UNKNOWN", "UNKNOWN")
+    ModelUserSummary(-1, username, "UNKNOWN", "UNKNOWN")
   } else {
-    UserSummary(this.staffId, this.username, this.firstName, this.lastName)
+    ModelUserSummary(this.staffId, this.username, this.firstName, this.lastName)
   }

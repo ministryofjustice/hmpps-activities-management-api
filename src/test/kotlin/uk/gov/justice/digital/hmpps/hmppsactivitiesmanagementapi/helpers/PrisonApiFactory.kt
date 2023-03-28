@@ -89,7 +89,7 @@ fun adjudicationHearing(
   prisonCode: String = moorlandPrisonCode,
   offenderNo: String = "1234567890",
   hearingId: Long = -1,
-  hearingType: String = "SCH",
+  hearingType: String = "Governor's Hearing Adult",
   startTime: LocalDateTime = LocalDate.now().atStartOfDay(),
   internalLocationId: Long = -2,
   internalLocationDescription: String = "Adjudication room",

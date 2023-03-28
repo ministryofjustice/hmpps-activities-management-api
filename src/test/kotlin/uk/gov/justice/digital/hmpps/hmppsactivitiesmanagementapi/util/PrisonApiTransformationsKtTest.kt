@@ -24,14 +24,14 @@ class PrisonApiTransformationsKtTest {
         eventClass = null,
         eventStatus = "SCH",
         eventType = EventType.ADJUDICATION_HEARING.name,
-        eventTypeDesc = null,
+        eventTypeDesc = "Governor's Hearing Adult",
         event = null,
         eventDesc = null,
         details = null,
         prisonerNumber = "1234567890",
         date = LocalDate.now(),
         startTime = LocalDate.now().atStartOfDay().toLocalTime(),
-        endTime = null, // TODO consider defaulting a fixed number of hours as adjudications have no concept of end time.
+        endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
         priority = EventType.ADJUDICATION_HEARING.defaultPriority,
       ),
     )
