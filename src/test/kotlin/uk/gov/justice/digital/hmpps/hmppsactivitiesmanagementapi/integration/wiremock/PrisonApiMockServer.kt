@@ -412,7 +412,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
     stubFor(
       WireMock.post(
         WireMock.urlEqualTo(
-          "/api/offenders/$prisonCode/adjudication-hearings?fromDate=${dateRange.start}&toDate=${dateRange.endInclusive}${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
+          "/api/offenders/adjudication-hearings?agencyId=$prisonCode&fromDate=${dateRange.start}&toDate=${dateRange.endInclusive}${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
         ),
       )
         .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))

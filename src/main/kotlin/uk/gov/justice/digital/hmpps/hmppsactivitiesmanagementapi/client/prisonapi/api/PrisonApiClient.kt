@@ -346,7 +346,8 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/api/offenders/{agencyId}/adjudication-hearings")
+          .path("/api/offenders/adjudication-hearings")
+          .queryParam("agencyId", agencyId)
           .queryParam("fromDate", dateRange.start)
           .queryParam("toDate", dateRange.endInclusive)
           .maybeQueryParam("timeSlot", timeSlot)
