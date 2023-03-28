@@ -27,9 +27,9 @@ data class AttendanceHistory(
 
   var comment: String? = null,
 
-  var recordedTime: LocalDateTime? = null,
+  var recordedTime: LocalDateTime,
 
-  var recordedBy: String? = null,
+  var recordedBy: String,
 
   var issuePayment: Boolean? = null,
 

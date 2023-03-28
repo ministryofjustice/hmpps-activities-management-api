@@ -60,10 +60,16 @@ data class Attendance(
 
   var otherAbsenceReason: String? = null,
 
+) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf(),
-) {
+  private val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+
+  fun history() = attendanceHistory.toList()
+
+  fun addHistory(history: AttendanceHistory) {
+    attendanceHistory.add(history)
+  }
 
   fun waiting() {
     attendanceReason = null

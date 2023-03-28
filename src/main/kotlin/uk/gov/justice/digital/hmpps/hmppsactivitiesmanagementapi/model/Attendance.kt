@@ -50,7 +50,7 @@ data class Attendance(
     description = "Free text to allow other reasons for non attendance against the attendance",
     example = "Prisoner has a valid reason to miss the activity.",
   )
-  var otherAbsenceReason: String? = null,
+  val otherAbsenceReason: String? = null,
 
   @Schema(description = "The attendance history records for this attendance")
   val attendanceHistory: List<AttendanceHistory> = emptyList(),
