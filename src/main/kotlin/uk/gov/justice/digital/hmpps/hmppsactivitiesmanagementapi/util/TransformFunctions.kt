@@ -1,27 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
-import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -225,92 +209,6 @@ private fun getPriority(category: String?, priorities: List<Priority>): Int? =
     }
   }.firstOrNull()?.priority
 
-fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
-  prisonerNumber: String?,
-  eventType: String?,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-) = map {
-  ModelScheduledEvent(
-    prisonCode = it.agencyId,
-    eventId = it.eventId,
-    bookingId = it.bookingId,
-    locationId = it.eventLocationId,
-    location = it.eventLocation,
-    eventClass = it.eventClass,
-    eventStatus = it.eventStatus,
-    eventType = eventType ?: it.eventType,
-    eventTypeDesc = it.eventTypeDesc,
-    event = it.eventSubType,
-    eventDesc = it.eventSubTypeDesc,
-    details = it.eventSourceDesc,
-    prisonerNumber = prisonerNumber,
-    date = it.eventDate,
-    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
-    priority = priorities?.let { pList -> getPriority(it.eventSubType, pList) }
-      ?: defaultPriority,
-  )
-}
-
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
-  prisonCode: String,
-  eventType: String?,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-) = map {
-  ModelScheduledEvent(
-    prisonCode = prisonCode,
-    eventId = it.eventId,
-    bookingId = it.bookingId,
-    locationId = it.locationId,
-    location = it.eventLocation ?: "External", // Don't show the real court location
-    eventClass = it.event,
-    eventStatus = it.eventStatus,
-    eventType = eventType ?: it.eventType,
-    eventTypeDesc = eventType ?: it.eventType,
-    event = it.event,
-    eventDesc = it.eventDescription,
-    details = it.comment ?: it.eventDescription,
-    prisonerNumber = it.offenderNo,
-    date = LocalDateTime.parse(it.startTime).toLocalDate(),
-    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
-    priority = priorities?.let { pList -> getPriority(it.eventType, pList) }
-      ?: defaultPriority,
-  )
-}
-
-fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
-  bookingId: Long,
-  prisonCode: String?,
-  prisonerNumber: String?,
-  eventType: String?,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
-) = this.hearings?.map {
-  ModelScheduledEvent(
-    prisonCode = prisonCode,
-    eventId = it.id,
-    bookingId = bookingId,
-    locationId = null,
-    location = it.location?.description,
-    eventClass = null,
-    eventStatus = null,
-    eventType = eventType,
-    eventTypeDesc = null,
-    event = null,
-    eventDesc = null,
-    details = null,
-    prisonerNumber = prisonerNumber,
-    date = LocalDateTime.parse(it.dateTime).toLocalDate(),
-    startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
-    endTime = null,
-    priority = priorities?.let { pList -> getPriority(null, pList) }
-      ?: defaultPriority,
-  )
-}
-
 fun List<EntityAllocation>.toModelAllocations() = map { it.toModel() }
 
 fun List<EntityAllocation>.toModelPrisonerAllocations() =
@@ -403,102 +301,3 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
 )
-
-/**
- * Maps a List<AppointmentInstance> to a List<PrisonerSchedule>
- *
- *   @param prisonerLookup Map of prisonerNumber -> Prisoner to facilitate data lookup
- *   @param locationLookup Map of locationId -> Location to facilitate data lookup
- */
-fun List<AppointmentInstance>.toPrisonerSchedule(
-  referenceCodeMap: Map<String, ReferenceCode>,
-  prisonerLookup: Map<String, Prisoner>,
-  locationLookup: Map<Long, Location>,
-  eventType: String,
-  eventStatus: String,
-) = map {
-  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
-  PrisonerSchedule(
-    cellLocation = prisonerLookup[it.prisonerNumber]?.cellLocation!!,
-    comment = it.comment,
-    event = category.code,
-    eventDescription = category.description,
-    eventLocation = locationLookup[it.internalLocationId]?.userDescription,
-    eventStatus = eventStatus,
-    eventType = eventType,
-    firstName = prisonerLookup[it.prisonerNumber]?.firstName!!,
-    lastName = prisonerLookup[it.prisonerNumber]?.lastName!!,
-    locationId = it.internalLocationId,
-    offenderNo = it.prisonerNumber,
-    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),
-    endTime = it.endTime?.let { _ ->
-      LocalDateTime.of(it.appointmentDate, it.endTime).toIsoDateTime()
-    },
-  )
-}
-
-/**
- * Maps List<AppointmentInstance> to List<ScheduledEvent>
- */
-fun List<AppointmentInstance>.toScheduledEvent(
-  referenceCodeMap: Map<String, ReferenceCode>,
-  eventType: String,
-  eventTypeDesc: String,
-  eventClass: String,
-  eventStatus: String,
-  eventSource: String,
-) = map {
-  val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
-  ScheduledEvent(
-    bookingId = it.bookingId,
-    startTime = LocalDateTime.of(it.appointmentDate, it.startTime).toIsoDateTime(),
-    endTime = it.endTime?.let { _ ->
-      LocalDateTime.of(it.appointmentDate, it.endTime).toIsoDateTime()
-    },
-    eventType = eventType,
-    eventTypeDesc = eventTypeDesc,
-    eventClass = eventClass,
-    eventId = it.appointmentOccurrenceId,
-    eventStatus = eventStatus,
-    eventDate = it.appointmentDate,
-    eventSource = eventSource,
-    eventSubType = category.code,
-    eventSubTypeDesc = category.description,
-    agencyId = it.prisonCode,
-  )
-}
-
-fun ReferenceCode?.toAppointmentCategorySummary(code: String) =
-  if (this == null) {
-    AppointmentCategorySummary(code, "UNKNOWN")
-  } else {
-    AppointmentCategorySummary(this.code, this.description)
-  }
-
-fun List<ReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
-
-fun Location?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
-  if (this == null) {
-    AppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
-  } else {
-    AppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
-  }
-
-fun UserDetail?.toSummary(username: String) =
-  if (this == null) {
-    UserSummary(-1, username, "UNKNOWN", "UNKNOWN")
-  } else {
-    UserSummary(this.staffId, this.username, this.firstName, this.lastName)
-  }
-
-fun Prisoner.toSummary() =
-  PrisonerSummary(
-    prisonerNumber,
-    bookingId?.toLong() ?: -1,
-    firstName,
-    lastName,
-    prisonId ?: "UNKNOWN",
-    cellLocation ?: "UNKNOWN",
-  )
-
-fun List<Prisoner>.toSummary() = map { it.toSummary() }

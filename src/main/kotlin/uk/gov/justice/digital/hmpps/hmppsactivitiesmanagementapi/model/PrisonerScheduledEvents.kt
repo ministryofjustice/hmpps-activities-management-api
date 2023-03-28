@@ -35,4 +35,7 @@ data class PrisonerScheduledEvents(
 
   @Schema(description = "A list of external transfers for this prisoner in this date range")
   val externalTransfers: List<ScheduledEvent>? = null,
+
+  @Schema(description = "A list of adjudications for this prisoner in this date range")
+  val adjudications: List<ScheduledEvent>? = null,
 )

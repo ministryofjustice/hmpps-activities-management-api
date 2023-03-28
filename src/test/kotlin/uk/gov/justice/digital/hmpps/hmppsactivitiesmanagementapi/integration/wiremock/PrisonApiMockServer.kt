@@ -6,10 +6,12 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import wiremock.com.fasterxml.jackson.databind.ObjectMapper
@@ -401,36 +403,35 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  private fun prisonerTransfer(
-    offenderNo: String = "G4793VF",
-    bookingId: Long? = 1,
-    eventId: Long? = 1,
-    firstName: String = "FRED",
-    lastName: String = "BLOGGS",
-    cellLocation: String? = "2-1-001",
-    event: String = "TRANSFER",
-    eventType: String? = "TRANSFER",
-    eventDescription: String = "Governor",
-    eventStatus: String? = "SCH",
-    date: LocalDate,
-    startTime: String = date.atStartOfDay().toIsoDateTime(),
-    endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
-  ) =
-    PrisonerSchedule(
-      offenderNo = offenderNo,
-      bookingId = bookingId,
-      locationId = null,
-      eventId = eventId,
-      firstName = firstName,
-      lastName = lastName,
-      cellLocation = cellLocation,
-      event = event,
-      eventType = eventType,
-      eventDescription = eventDescription,
-      eventLocation = "Should not be included",
-      eventStatus = eventStatus,
-      comment = "Should not be included",
-      startTime = startTime,
-      endTime = endTime,
+  fun stubAdjudicationHearing(
+    prisonCode: String,
+    dateRange: LocalDateRange,
+    prisonerNumbers: List<String>,
+    timeSlot: TimeSlot? = null,
+  ) {
+    stubFor(
+      WireMock.post(
+        WireMock.urlEqualTo(
+          "/api/offenders/$prisonCode/adjudication-hearings?fromDate=${dateRange.start}&toDate=${dateRange.endInclusive}${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
+        ),
+      )
+        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              mapper.writeValueAsString(
+                prisonerNumbers.mapIndexed { hearingId, offenderNo ->
+                  adjudicationHearing(
+                    prisonCode = prisonCode,
+                    offenderNo = offenderNo,
+                    hearingId = hearingId.plus(1).toLong(),
+                  )
+                },
+              ),
+            )
+            .withStatus(200),
+        ),
     )
+  }
 }
