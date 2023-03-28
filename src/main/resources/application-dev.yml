@@ -3,4 +3,4 @@
 #
 spring:
   flyway:
-    locations: classpath:/migration/common,classpath:/migration/data
+    locations: classpath:/migration/baseline,classpath:/migration/changes,classpath:/reference_data/common,classpath:/reference_data/dev
