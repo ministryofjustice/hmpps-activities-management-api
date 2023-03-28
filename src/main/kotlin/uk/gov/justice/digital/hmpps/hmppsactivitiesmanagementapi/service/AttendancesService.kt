@@ -5,10 +5,12 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
@@ -22,6 +24,7 @@ class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val attendanceHistoryRepository: AttendanceHistoryRepository,
 ) {
 
   companion object {
@@ -40,6 +43,10 @@ class AttendancesService(
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
+      // For previously marked attendance records, we need to create a history record before updating the attendance
+      this.createHistory(
+        it,
+      )
       it.mark(
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason!!.uppercase().trim()],
         AttendanceStatus.COMPLETED,
@@ -99,4 +106,25 @@ class AttendancesService(
 
   fun getAttendanceById(id: Long): ModelAttendance =
     attendanceRepository.findOrThrowNotFound(id).toModel()
+
+  fun createHistory(
+    attendance: Attendance,
+  ) {
+    if (attendance.status != AttendanceStatus.WAITING) {
+      attendanceHistoryRepository.save(
+        AttendanceHistory(
+          attendance = attendance,
+          attendanceReason = attendance.attendanceReason,
+          comment = attendance.comment,
+          recordedTime = attendance.recordedTime,
+          recordedBy = attendance.recordedBy,
+          issuePayment = attendance.issuePayment,
+          caseNoteId = attendance.caseNoteId,
+          incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
+          otherAbsenceReason = attendance.otherAbsenceReason,
+        ),
+      )
+
+    }
+  }
 }
