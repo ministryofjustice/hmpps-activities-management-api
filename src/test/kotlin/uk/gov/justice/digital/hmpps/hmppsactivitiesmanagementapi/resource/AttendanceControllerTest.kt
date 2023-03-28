@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -12,7 +12,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 
@@ -49,7 +49,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Test
   fun `200 response when get attendance by ID found`() {
-    val attendance = attendanceEntity().toModel()
+    val attendance = attendance().toModel()
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 
@@ -58,7 +58,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    Assertions.assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendance))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendance))
 
     verify(attendancesService).getAttendanceById(1)
   }
@@ -72,7 +72,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    Assertions.assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not found")
 
     verify(attendancesService).getAttendanceById(2)
   }

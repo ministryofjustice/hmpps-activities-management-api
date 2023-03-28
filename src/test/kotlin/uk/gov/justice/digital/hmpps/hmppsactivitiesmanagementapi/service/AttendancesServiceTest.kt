@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -120,7 +120,7 @@ class AttendancesServiceTest {
   fun `success`() {
     whenever(attendanceRepository.findById(1)).thenReturn(
       Optional.of(
-        attendanceEntity(),
+        attendance(),
       ),
     )
     assertThat(service.getAttendanceById(1)).isInstanceOf(ModelAttendance::class.java)

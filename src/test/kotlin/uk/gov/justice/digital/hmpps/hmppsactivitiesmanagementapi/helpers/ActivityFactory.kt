@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
@@ -12,7 +11,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
@@ -197,7 +195,31 @@ internal fun activitySchedule(
             attendanceId = 1,
             scheduledInstance = this,
             prisonerNumber = "A1234AA",
-          ),
+          ).apply {
+            this.attendanceHistory.add(
+              AttendanceHistory(
+                attendance = this,
+                attendanceHistoryId = 1,
+                attendanceReason = AttendanceReason(
+                  1,
+                  "Previous Reason",
+                  "Previous Desc",
+                  false,
+                  true,
+                  true,
+                  false,
+                  false,
+                  false,
+                  true,
+                  1,
+                  "some note",
+                ),
+                comment = "previous comment",
+                recordedBy = "Joe Bloggs",
+                recordedTime = LocalDateTime.now(),
+              ),
+            )
+          },
         )
       }
     }
@@ -271,49 +293,4 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
   ),
 )
 
-internal fun attendanceEntity() =
-  Attendance(
-    attendanceId = 1,
-    scheduledInstance = mock(),
-    prisonerNumber = "P000111",
-    attendanceReason = AttendanceReason(
-      1,
-      "Some Reason",
-      "Some Desc",
-      false,
-      true,
-      true,
-      false,
-      false,
-      false,
-      true,
-      1,
-      "some note",
-    ),
-    status = AttendanceStatus.COMPLETED,
-    comment = "Some Comment",
-    recordedBy = "Old User",
-    recordedTime = LocalDateTime.now(),
-  ).apply {
-    this.attendanceHistory.add(
-      AttendanceHistory(
-        attendance = this,
-        attendanceHistoryId = 1,
-        attendanceReason = AttendanceReason(
-          1,
-          "Previous Reason",
-          "Previous Desc",
-          false,
-          true,
-          true,
-          false,
-          false,
-          false,
-          true,
-          1,
-          "some note",
-        ),
-        comment = "previous comment",
-      ),
-    )
-  }
+internal fun attendance() = schedule().instances().first().attendances.first()
