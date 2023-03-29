@@ -10,6 +10,9 @@ data class Attendance(
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long,
 
+  @Schema(description = "The ID for scheduled instance for this attendance", example = "123456")
+  val scheduleInstanceId: Long,
+
   @Schema(description = "The prison number this attendance record is for", example = "A1234AA")
   val prisonerNumber: String,
 

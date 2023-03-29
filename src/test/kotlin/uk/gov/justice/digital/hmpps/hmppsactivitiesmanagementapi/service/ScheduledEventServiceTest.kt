@@ -21,14 +21,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ADJUDICATION_HEARING_DURATION_TWO_HOURS
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -81,10 +85,11 @@ class ScheduledEventServiceTest {
     date: LocalDate,
     timeSlot: TimeSlot?,
   ) {
-    val scheduledAppointments = listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance(date = date))
-    val scheduledVisits = listOf(PrisonApiPrisonerScheduleFixture.visitInstance(date = date))
+    val appointments = listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance(date = date))
+    val visits = listOf(PrisonApiPrisonerScheduleFixture.visitInstance(date = date))
     val courtEvents = listOf(PrisonApiPrisonerScheduleFixture.courtInstance(date = date))
     val transferEvents = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = date))
+    val adjudications = prisonerNumbers.map { adjudicationHearing(prisonCode, it) }
 
     prisonApiClient.stub {
       on {
@@ -96,7 +101,7 @@ class ScheduledEventServiceTest {
             timeSlot,
           )
         }
-      } doReturn scheduledVisits
+      } doReturn visits
       on {
         runBlocking {
           getScheduledCourtEventsForPrisonerNumbersAsync(
@@ -108,6 +113,7 @@ class ScheduledEventServiceTest {
         }
       } doReturn courtEvents
       on { runBlocking { getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date) } } doReturn transferEvents
+      on { runBlocking { prisonApiClient.getOffenderAdjudications(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers, timeSlot) } } doReturn adjudications
     }
 
     whenever(
@@ -119,7 +125,7 @@ class ScheduledEventServiceTest {
         eq(timeSlot),
       ),
     )
-      .thenReturn(scheduledAppointments)
+      .thenReturn(appointments)
   }
 
   private fun setupSinglePrisonerApiMocks(
@@ -139,6 +145,7 @@ class ScheduledEventServiceTest {
 
     val scheduledVisits = listOf(PrisonApiScheduledEventFixture.visitInstance())
     val courtHearings = PrisonApiCourtHearingsFixture.instance()
+    val adjudications = listOf(adjudicationHearing(prisonCode, prisonerNumber))
 
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
@@ -165,6 +172,7 @@ class ScheduledEventServiceTest {
       on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) } } doReturn scheduledVisits
       on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) } } doReturn courtHearings
       on { runBlocking { prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, setOf(prisonerNumber), LocalDate.now()) } } doReturn transferEventsToday
+      on { runBlocking { prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber)) } } doReturn adjudications
     }
   }
 
@@ -207,7 +215,7 @@ class ScheduledEventServiceTest {
   )
 
   @Test
-  fun `get scheduled events for today includes transfers - multiple prisoners - rolled out prison - success`() {
+  fun `get scheduled events for today - multiple prisoners - rolled out prison - success`() {
     val prisonCode = "MDI"
     val prisonerNumbers = setOf("G4793VF", "G1234GK")
     val today = LocalDate.now()
@@ -328,6 +336,47 @@ class ScheduledEventServiceTest {
           details = "",
           date = LocalDate.now(),
           priority = EventType.EXTERNAL_TRANSFER.defaultPriority,
+        ),
+      )
+
+      assertThat(adjudications).containsExactlyInAnyOrder(
+        ScheduledEvent(
+          prisonCode = moorlandPrisonCode,
+          eventId = -1,
+          bookingId = null,
+          locationId = -2,
+          location = "Adjudication room",
+          eventClass = null,
+          eventStatus = "SCH",
+          eventType = EventType.ADJUDICATION_HEARING.name,
+          eventTypeDesc = "Governor's Hearing Adult",
+          event = null,
+          eventDesc = null,
+          details = null,
+          prisonerNumber = "G4793VF",
+          date = LocalDate.now(),
+          startTime = LocalDate.now().atStartOfDay().toLocalTime(),
+          endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+          priority = EventType.ADJUDICATION_HEARING.defaultPriority,
+        ),
+        ScheduledEvent(
+          prisonCode = moorlandPrisonCode,
+          eventId = -1,
+          bookingId = null,
+          locationId = -2,
+          location = "Adjudication room",
+          eventClass = null,
+          eventStatus = "SCH",
+          eventType = EventType.ADJUDICATION_HEARING.name,
+          eventTypeDesc = "Governor's Hearing Adult",
+          event = null,
+          eventDesc = null,
+          details = null,
+          prisonerNumber = "G1234GK",
+          date = LocalDate.now(),
+          startTime = LocalDate.now().atStartOfDay().toLocalTime(),
+          endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+          priority = EventType.ADJUDICATION_HEARING.defaultPriority,
         ),
       )
     }

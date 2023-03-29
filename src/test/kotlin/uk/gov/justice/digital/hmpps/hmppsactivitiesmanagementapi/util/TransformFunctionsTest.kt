@@ -76,6 +76,7 @@ class TransformFunctionsTest {
               attendances = listOf(
                 ModelAttendance(
                   id = 1,
+                  scheduleInstanceId = -1,
                   prisonerNumber = "A1234AA",
                   status = "WAITING",
                   issuePayment = null,

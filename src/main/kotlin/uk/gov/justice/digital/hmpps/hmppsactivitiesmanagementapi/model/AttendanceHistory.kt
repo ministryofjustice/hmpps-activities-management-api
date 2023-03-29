@@ -21,10 +21,10 @@ data class AttendanceHistory(
 
   @Schema(description = "The date and time the attendance was updated", example = "2023-09-10T09:30:00")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val recordedTime: LocalDateTime? = null,
+  val recordedTime: LocalDateTime,
 
   @Schema(description = "The person who updated the attendance", example = "A.JONES")
-  val recordedBy: String? = null,
+  val recordedBy: String,
 
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,

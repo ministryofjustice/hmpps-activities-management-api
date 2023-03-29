@@ -125,6 +125,7 @@ data class Attendance(
 
   fun toModel() = ModelAttendance(
     id = this.attendanceId,
+    scheduleInstanceId = this.scheduledInstance.scheduledInstanceId,
     prisonerNumber = this.prisonerNumber,
     attendanceReason = this.attendanceReason?.let {
       ModelAttendanceReason(

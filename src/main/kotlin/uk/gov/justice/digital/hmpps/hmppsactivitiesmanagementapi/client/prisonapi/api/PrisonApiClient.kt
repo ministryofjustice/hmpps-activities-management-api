@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
@@ -108,7 +109,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduledCourtHearingsAsync(bookingId, dateRange)",
+    ),
+  )
   fun getScheduledCourtHearings(bookingId: Long, dateRange: LocalDateRange): Mono<CourtHearings> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -134,7 +140,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
+    ),
+  )
   fun getScheduledCourtEventsForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -172,7 +183,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduledVisitsAsync(bookingId, dateRange)",
+    ),
+  )
   fun getScheduledVisits(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -198,7 +214,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
+    ),
+  )
   fun getScheduledVisitsForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -236,7 +257,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
+    ),
+  )
   fun getScheduledActivitiesForPrisonerNumbers(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -273,7 +299,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  // TODO: Replaced by async version below
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getExternalTransfersOnDateAsync(agencyId, prisonerNumbers, date)",
+    ),
+  )
   fun getExternalTransfersOnDate(
     agencyId: String,
     prisonerNumbers: Set<String>,
@@ -300,6 +331,26 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
         uriBuilder
           .path("/api/schedules/{agencyId}/externalTransfers")
           .queryParam("date", date)
+          .build(agencyId)
+      }
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+
+  suspend fun getOffenderAdjudications(
+    agencyId: String,
+    dateRange: LocalDateRange,
+    prisonerNumbers: Set<String>,
+    timeSlot: TimeSlot? = null,
+  ): List<OffenderAdjudicationHearing> =
+    prisonApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/offenders/adjudication-hearings")
+          .queryParam("agencyId", agencyId)
+          .queryParam("fromDate", dateRange.start)
+          .queryParam("toDate", dateRange.endInclusive)
+          .maybeQueryParam("timeSlot", timeSlot)
           .build(agencyId)
       }
       .bodyValue(prisonerNumbers)
