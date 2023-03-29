@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.1-beta-3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.3-beta"
   kotlin("plugin.spring") version "1.8.10"
   kotlin("plugin.jpa") version "1.8.10"
   jacoco
@@ -33,21 +33,21 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.10.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
-  runtimeOnly("org.postgresql:postgresql:42.5.4")
+  runtimeOnly("org.postgresql:postgresql:42.6.0")
 
   // Test dependencies
   testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
-  testImplementation("org.mockito:mockito-inline:5.1.1")
+  testImplementation("org.mockito:mockito-inline:5.2.0")
 }
 
 java {
