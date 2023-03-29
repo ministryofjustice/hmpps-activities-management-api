@@ -60,5 +60,5 @@ data class ScheduledEvent(
   val endTime: LocalTime?,
 
   @Schema(description = "The event priority")
-  val priority: Int?,
+  val priority: Int,
 )

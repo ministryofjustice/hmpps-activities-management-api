@@ -65,7 +65,12 @@ class ScheduledEventServiceTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(prisonCode: String, active: Boolean, rolloutDate: LocalDate, dataSource: AppointmentsDataSource) {
+  private fun setupRolledOutPrisonMock(
+    prisonCode: String,
+    active: Boolean,
+    rolloutDate: LocalDate,
+    dataSource: AppointmentsDataSource,
+  ) {
     whenever(rolloutPrisonRepository.findByCode(prisonCode))
       .thenReturn(
         RolloutPrison(
@@ -113,7 +118,16 @@ class ScheduledEventServiceTest {
         }
       } doReturn courtEvents
       on { runBlocking { getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date) } } doReturn transferEvents
-      on { runBlocking { prisonApiClient.getOffenderAdjudications(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers, timeSlot) } } doReturn adjudications
+      on {
+        runBlocking {
+          prisonApiClient.getOffenderAdjudications(
+            prisonCode,
+            date.rangeTo(date.plusDays(1)),
+            prisonerNumbers,
+            timeSlot,
+          )
+        }
+      } doReturn adjudications
     }
 
     whenever(
@@ -149,7 +163,9 @@ class ScheduledEventServiceTest {
 
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
-        on { runBlocking { prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)) } } doThrow RuntimeException("Error")
+        on { runBlocking { prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)) } } doThrow RuntimeException(
+          "Error",
+        )
       }
     } else {
       val prisonerDetails = listOf(PrisonerSearchPrisonerFixture.instance(prisonId = prisonOverride))
@@ -171,8 +187,24 @@ class ScheduledEventServiceTest {
     prisonApiClient.stub {
       on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) } } doReturn scheduledVisits
       on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) } } doReturn courtHearings
-      on { runBlocking { prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, setOf(prisonerNumber), LocalDate.now()) } } doReturn transferEventsToday
-      on { runBlocking { prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber)) } } doReturn adjudications
+      on {
+        runBlocking {
+          prisonApiClient.getExternalTransfersOnDateAsync(
+            prisonCode,
+            setOf(prisonerNumber),
+            LocalDate.now(),
+          )
+        }
+      } doReturn transferEventsToday
+      on {
+        runBlocking {
+          prisonApiClient.getOffenderAdjudications(
+            prisonCode,
+            dateRange,
+            setOf(prisonerNumber),
+          )
+        }
+      } doReturn adjudications
     }
   }
 
@@ -237,6 +269,9 @@ class ScheduledEventServiceTest {
       ),
     )
       .thenReturn(listOf(activityFromDbInstance(sessionDate = today)))
+
+    whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+      .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
     val scheduledEvents =
       service.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, today, timeSlot)
@@ -406,7 +441,11 @@ class ScheduledEventServiceTest {
     )
       .thenReturn(listOf(activityFromDbInstance(sessionDate = tomorrow)))
 
-    val scheduledEvents = service.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, tomorrow, timeSlot)
+    whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+      .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+
+    val scheduledEvents =
+      service.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, tomorrow, timeSlot)
 
     // Should not be called - this is a rolled-out prison
     verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -507,7 +546,7 @@ class ScheduledEventServiceTest {
 
     // Uses the default event priorities for all types of event
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-      .thenReturn(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
+      .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
     // Activities from the database view
     whenever(
@@ -652,7 +691,7 @@ class ScheduledEventServiceTest {
 
     // Uses the default event priorities for all types of event
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-      .thenReturn(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
+      .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
     // Activities from the database view
     whenever(
@@ -788,21 +827,23 @@ class ScheduledEventServiceTest {
 
     // Set specific priorities for ACTIVITIES for this test
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
-      mapOf(
-        EventType.ACTIVITY to listOf(
-          Priority(1, EventCategory.EDUCATION),
-          Priority(2, EventCategory.SERVICES),
-          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
-          Priority(4, EventCategory.INDUCTION),
-          Priority(5, EventCategory.INDUSTRIES),
-          Priority(6, EventCategory.INTERVENTIONS),
-          Priority(7, EventCategory.LEISURE_SOCIAL),
-          Priority(8), // Will default to this because event category doesn't match
+      EventPriorities(
+        mapOf(
+          EventType.ACTIVITY to listOf(
+            Priority(1, EventCategory.EDUCATION),
+            Priority(2, EventCategory.SERVICES),
+            Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+            Priority(4, EventCategory.INDUCTION),
+            Priority(5, EventCategory.INDUSTRIES),
+            Priority(6, EventCategory.INTERVENTIONS),
+            Priority(7, EventCategory.LEISURE_SOCIAL),
+            Priority(8), // Will default to this because event category doesn't match
+          ),
+          EventType.APPOINTMENT to listOf(Priority(21)),
+          EventType.VISIT to listOf(Priority(22)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(23)),
+          EventType.COURT_HEARING to listOf(Priority(24)),
         ),
-        EventType.APPOINTMENT to listOf(Priority(21)),
-        EventType.VISIT to listOf(Priority(22)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(23)),
-        EventType.COURT_HEARING to listOf(Priority(24)),
       ),
     )
 
@@ -854,20 +895,22 @@ class ScheduledEventServiceTest {
 
     // Specific priorities for ACTIVITY types for the test
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
-      mapOf(
-        EventType.ACTIVITY to listOf(
-          Priority(1, EventCategory.EDUCATION),
-          Priority(2, EventCategory.SERVICES),
-          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
-          Priority(4, EventCategory.INDUCTION),
-          Priority(5, EventCategory.INDUSTRIES),
-          Priority(6, EventCategory.INTERVENTIONS),
-          Priority(7, EventCategory.LEISURE_SOCIAL),
+      EventPriorities(
+        mapOf(
+          EventType.ACTIVITY to listOf(
+            Priority(1, EventCategory.EDUCATION),
+            Priority(2, EventCategory.SERVICES),
+            Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+            Priority(4, EventCategory.INDUCTION),
+            Priority(5, EventCategory.INDUSTRIES),
+            Priority(6, EventCategory.INTERVENTIONS),
+            Priority(7, EventCategory.LEISURE_SOCIAL),
+          ),
+          EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
+          EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+          EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
         ),
-        EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
-        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
-        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
       ),
     )
 
@@ -907,20 +950,22 @@ class ScheduledEventServiceTest {
     )
 
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
-      mapOf(
-        EventType.ACTIVITY to listOf(
-          Priority(1, EventCategory.EDUCATION),
-          Priority(2, EventCategory.SERVICES),
-          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
-          Priority(4, EventCategory.INDUCTION),
-          Priority(5, EventCategory.INDUSTRIES),
-          Priority(6, EventCategory.INTERVENTIONS),
-          Priority(7, EventCategory.LEISURE_SOCIAL),
+      EventPriorities(
+        mapOf(
+          EventType.ACTIVITY to listOf(
+            Priority(1, EventCategory.EDUCATION),
+            Priority(2, EventCategory.SERVICES),
+            Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+            Priority(4, EventCategory.INDUCTION),
+            Priority(5, EventCategory.INDUSTRIES),
+            Priority(6, EventCategory.INTERVENTIONS),
+            Priority(7, EventCategory.LEISURE_SOCIAL),
+          ),
+          EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
+          EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+          EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
         ),
-        EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
-        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
-        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
       ),
     )
 
@@ -977,7 +1022,7 @@ class ScheduledEventServiceTest {
     }
 
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-      .thenReturn(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
+      .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -1041,22 +1086,24 @@ class ScheduledEventServiceTest {
     }
 
     whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
-      mapOf(
-        EventType.ACTIVITY to listOf(
-          Priority(99),
+      EventPriorities(
+        mapOf(
+          EventType.ACTIVITY to listOf(
+            Priority(99),
+          ),
+          EventType.APPOINTMENT to listOf(
+            Priority(1, EventCategory.EDUCATION),
+            Priority(2, EventCategory.SERVICES),
+            Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+            Priority(4, EventCategory.INDUCTION),
+            Priority(5, EventCategory.INDUSTRIES),
+            Priority(6, EventCategory.INTERVENTIONS),
+            Priority(7, EventCategory.LEISURE_SOCIAL),
+          ),
+          EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
+          EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
         ),
-        EventType.APPOINTMENT to listOf(
-          Priority(1, EventCategory.EDUCATION),
-          Priority(2, EventCategory.SERVICES),
-          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
-          Priority(4, EventCategory.INDUCTION),
-          Priority(5, EventCategory.INDUSTRIES),
-          Priority(6, EventCategory.INTERVENTIONS),
-          Priority(7, EventCategory.LEISURE_SOCIAL),
-        ),
-        EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
-        EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
       ),
     )
 
@@ -1187,7 +1234,14 @@ class ScheduledEventServiceTest {
 
     // Simulate activities error from prison API
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledActivitiesAsync(900001, dateRange) } } doThrow RuntimeException("Error")
+      on {
+        runBlocking {
+          prisonApiClient.getScheduledActivitiesAsync(
+            900001,
+            dateRange,
+          )
+        }
+      } doThrow RuntimeException("Error")
     }
 
     assertThatThrownBy {
@@ -1219,7 +1273,14 @@ class ScheduledEventServiceTest {
 
     // Simulate visits error from prison API
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledVisitsAsync(900001, dateRange) } } doThrow RuntimeException("Error")
+      on {
+        runBlocking {
+          prisonApiClient.getScheduledVisitsAsync(
+            900001,
+            dateRange,
+          )
+        }
+      } doThrow RuntimeException("Error")
     }
 
     assertThatThrownBy {
@@ -1251,7 +1312,9 @@ class ScheduledEventServiceTest {
 
     // Simulate court hearings error from prison API
     prisonApiClient.stub {
-      on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) } } doThrow RuntimeException("Error")
+      on { runBlocking { prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange) } } doThrow RuntimeException(
+        "Error",
+      )
     }
 
     assertThatThrownBy {

@@ -30,6 +30,7 @@ class PrisonRegimeService(
       .groupBy { it.eventType }
       .mapValues { it.value.map { ep -> Priority(ep.priority, ep.eventCategory) } }
       .ifEmpty { defaultPriorities() }
+      .let { EventPriorities(it) }
 
   private fun defaultPriorities() =
     EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
@@ -75,3 +76,29 @@ class PrisonRegimeService(
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)
+
+data class EventPriorities(val priorities: Map<EventType, List<Priority>>) {
+
+  fun getOrDefault(eventType: EventType, category: EventCategory): Int = getOrDefault(eventType, category.name)
+
+  // TODO these need updating to reflect our category changes ...
+  fun getOrDefault(eventType: EventType, category: String? = null): Int =
+    priorities[eventType]?.fold(listOf<Priority>()) { acc, next ->
+      if (next.eventCategory == null && acc.isEmpty()) {
+        listOf(next)
+      } else {
+        when (next.eventCategory) {
+          EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
+          EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
+          EventCategory.INDUCTION -> if (category?.startsWith("INDUC") == true) listOf(next) else acc
+          EventCategory.INDUSTRIES -> if (category?.startsWith("INDUS") == true) listOf(next) else acc
+          EventCategory.INTERVENTIONS -> if (category?.startsWith("INTERV") == true) listOf(next) else acc
+          EventCategory.LEISURE_SOCIAL -> if (category?.startsWith("LEI") == true) listOf(next) else acc
+          EventCategory.SERVICES -> if (category?.startsWith("SERV") == true) listOf(next) else acc
+          else -> {
+            acc
+          }
+        }
+      }
+    }?.firstOrNull()?.priority ?: eventType.defaultPriority
+}

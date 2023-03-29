@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -42,7 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspensio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 /**
- * Transform functions providing a thin layer to transform entities into their API model equivalents and vice-versa.
+ * Transform functions providing a thin layer to transform Activity entities into their API model equivalents and vice-versa.
  */
 fun transform(activity: EntityActivity) =
   ModelActivity(
@@ -73,16 +73,14 @@ fun transform(activity: EntityActivity) =
 
 fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
+  priorities: EventPriorities,
   activitiesForPrisoners: List<PrisonerScheduledActivity>,
 ): List<ModelScheduledEvent> =
-  activitiesForPrisoners.toModelScheduledEvents(prisonCode, defaultPriority, priorities)
+  activitiesForPrisoners.toModelScheduledEvents(prisonCode, priorities)
 
 fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
   prisonCode: String,
-  defaultPriority: Int?,
-  priorities: List<Priority>?,
+  priorities: EventPriorities,
 ): List<ModelScheduledEvent> =
   map {
     ModelScheduledEvent(
@@ -102,7 +100,7 @@ fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
       date = it.sessionDate,
       startTime = it.startTime!!,
       endTime = it.endTime,
-      priority = priorities?.let { pList -> getPriority(it.activityCategory, pList) } ?: defaultPriority,
+      priority = priorities.getOrDefault(EventType.ACTIVITY, it.activityCategory),
     )
   }
 
@@ -190,26 +188,6 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     attendances = it.attendances.map { attendance -> transform(attendance) },
   )
 }
-
-private fun getPriority(category: String?, priorities: List<Priority>): Int? =
-  priorities.fold(listOf<Priority>()) { acc, next ->
-    if (next.eventCategory == null && acc.isEmpty()) {
-      listOf(next)
-    } else {
-      when (next.eventCategory) {
-        EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
-        EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
-        EventCategory.INDUCTION -> if (category == "IND" || category == "INDUC") listOf(next) else acc
-        EventCategory.INDUSTRIES -> if (category == "LACO") listOf(next) else acc
-        EventCategory.INTERVENTIONS -> if (category == "INTERV") listOf(next) else acc
-        EventCategory.LEISURE_SOCIAL -> if (category == "LEI") listOf(next) else acc
-        EventCategory.SERVICES -> if (category == "SERV") listOf(next) else acc
-        else -> {
-          acc
-        }
-      }
-    }
-  }.firstOrNull()?.priority
 
 fun List<EntityAllocation>.toModelAllocations() = map { it.toModel() }
 
