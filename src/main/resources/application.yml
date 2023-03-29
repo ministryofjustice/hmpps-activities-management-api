@@ -61,7 +61,7 @@ spring:
       validationTimeout: 500
 
   flyway:
-    locations: classpath:/migration/common
+    locations: classpath:/migration,classpath:/reference_data/common,classpath:/reference_data/prod
 
 server:
   port: 8080
