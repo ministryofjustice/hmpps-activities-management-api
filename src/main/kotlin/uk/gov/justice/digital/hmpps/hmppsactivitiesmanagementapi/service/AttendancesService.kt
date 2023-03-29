@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
 class AttendancesService(
@@ -95,4 +96,7 @@ class AttendancesService(
       ),
     )
   }
+
+  fun getAttendanceById(id: Long): ModelAttendance =
+    attendanceRepository.findOrThrowNotFound(id).toModel()
 }

@@ -1,16 +1,24 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 
 @Entity
 @Table(name = "attendance")
@@ -51,7 +59,17 @@ data class Attendance(
   var incentiveLevelWarningIssued: Boolean? = null,
 
   var otherAbsenceReason: String? = null,
+
 ) {
+  @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+
+  fun history() = attendanceHistory.toList()
+
+  fun addHistory(history: AttendanceHistory) {
+    attendanceHistory.add(history)
+  }
 
   fun waiting() {
     attendanceReason = null
@@ -100,6 +118,38 @@ data class Attendance(
       .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
       .find { it.incentiveNomisCode == incentiveCode }
   }
+
+  fun toModel() = ModelAttendance(
+    id = this.attendanceId,
+    scheduleInstanceId = this.scheduledInstance.scheduledInstanceId,
+    prisonerNumber = this.prisonerNumber,
+    attendanceReason = this.attendanceReason?.let {
+      ModelAttendanceReason(
+        id = it.attendanceReasonId,
+        code = it.code,
+        description = it.description,
+        attended = it.attended,
+        capturePay = it.capturePay,
+        captureMoreDetail = it.captureMoreDetail,
+        captureCaseNote = it.captureCaseNote,
+        captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
+        captureOtherText = it.captureOtherText,
+        displayInAbsence = it.displayInAbsence,
+        displaySequence = it.displaySequence,
+        notes = it.notes,
+      )
+    },
+    comment = this.comment,
+    recordedTime = this.recordedTime,
+    recordedBy = this.recordedBy,
+    status = this.status.name,
+    payAmount = this.payAmount,
+    bonusAmount = this.bonusAmount,
+    pieces = this.pieces,
+    issuePayment = this.issuePayment,
+    incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
+    attendanceHistory = this.attendanceHistory.map { attendanceHistory -> transform(attendanceHistory) },
+  )
 }
 
 enum class AttendanceStatus {

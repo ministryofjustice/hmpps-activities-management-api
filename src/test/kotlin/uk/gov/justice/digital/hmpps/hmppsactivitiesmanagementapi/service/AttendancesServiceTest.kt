@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -12,12 +14,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import java.time.LocalDate
+import java.util.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 class AttendancesServiceTest {
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
@@ -109,5 +114,23 @@ class AttendancesServiceTest {
 
   private fun Allocation.starts(date: LocalDate) {
     startDate = date
+  }
+
+  @Test
+  fun `success`() {
+    whenever(attendanceRepository.findById(1)).thenReturn(
+      Optional.of(
+        attendance(),
+      ),
+    )
+    assertThat(service.getAttendanceById(1)).isInstanceOf(ModelAttendance::class.java)
+  }
+
+  @Test
+  fun `not found`() {
+    whenever(attendanceRepository.findById(1)).thenReturn(Optional.empty())
+    Assertions.assertThatThrownBy { service.getAttendanceById(-1) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Attendance -1 not found")
   }
 }

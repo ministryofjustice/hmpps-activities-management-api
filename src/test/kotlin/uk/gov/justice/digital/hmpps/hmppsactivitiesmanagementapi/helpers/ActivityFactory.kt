@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
@@ -194,7 +195,31 @@ internal fun activitySchedule(
             attendanceId = 1,
             scheduledInstance = this,
             prisonerNumber = "A1234AA",
-          ),
+          ).apply {
+            this.addHistory(
+              AttendanceHistory(
+                attendance = this,
+                attendanceHistoryId = 1,
+                attendanceReason = AttendanceReason(
+                  1,
+                  "Previous Reason",
+                  "Previous Desc",
+                  false,
+                  true,
+                  true,
+                  false,
+                  false,
+                  false,
+                  true,
+                  1,
+                  "some note",
+                ),
+                comment = "previous comment",
+                recordedBy = "Joe Bloggs",
+                recordedTime = LocalDateTime.now(),
+              ),
+            )
+          },
         )
       }
     }
@@ -267,3 +292,5 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     nomisPayBand = 2,
   ),
 )
+
+internal fun attendance() = schedule().instances().first().attendances.first()
