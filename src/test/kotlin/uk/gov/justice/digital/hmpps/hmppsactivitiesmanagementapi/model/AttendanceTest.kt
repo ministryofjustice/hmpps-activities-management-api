@@ -14,6 +14,7 @@ class AttendanceTest : ModelTest() {
 
     val attendance = Attendance(
       id = 1,
+      scheduleInstanceId = 1,
       prisonerNumber = "1234",
       recordedTime = originalRecordedTime,
       status = "Y",

@@ -357,6 +357,7 @@ fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
 fun transform(attendance: EntityAttendance): ModelAttendance =
   ModelAttendance(
     id = attendance.attendanceId,
+    scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
     prisonerNumber = attendance.prisonerNumber,
     attendanceReason = attendance.attendanceReason?.let {
       ModelAttendanceReason(
