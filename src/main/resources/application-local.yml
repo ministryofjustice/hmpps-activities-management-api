@@ -6,7 +6,7 @@
 # Most values are inherited from - application.yml - except the following:
 spring:
   flyway:
-    locations: classpath:/migration/baseline,classpath:/migration/changes,classpath:/reference_data/common,classpath:/reference_data/dev
+    locations: classpath:/migration,classpath:/reference_data/common,classpath:/reference_data/dev
 
   datasource:
     url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
