@@ -13,7 +13,7 @@ class PrisonApiTransformationsKtTest {
   @Test
   fun `transform offender adjudications to scheduled events`() {
     assertThat(
-      listOf(adjudicationHearing()).prisonApiOffenderAdjudicationsToScheduledEvents(moorlandPrisonCode, emptyList()),
+      listOf(adjudicationHearing()).prisonApiPrisonOffenderAdjudicationsToScheduledEvents(moorlandPrisonCode, 99),
     ).containsExactly(
       ScheduledEvent(
         prisonCode = moorlandPrisonCode,
@@ -32,7 +32,7 @@ class PrisonApiTransformationsKtTest {
         date = LocalDate.now(),
         startTime = LocalDate.now().atStartOfDay().toLocalTime(),
         endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
-        priority = EventType.ADJUDICATION_HEARING.defaultPriority,
+        priority = 99,
       ),
     )
   }

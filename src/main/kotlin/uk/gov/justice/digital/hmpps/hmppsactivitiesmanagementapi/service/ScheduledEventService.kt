@@ -23,11 +23,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiActivitiesToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiAppointmentsToScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiCourtEventsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiCourtHearingsToScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiOffenderAdjudicationsToScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiScheduledEventToScheduledEvents
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiTransfersToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonActivitiesToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonAppointmentsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonCourtEventsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonOffenderAdjudicationsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonTransfersToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiPrisonVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.prisonApiVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
@@ -78,39 +80,31 @@ class ScheduledEventService(
               setOf(prisonerNumber),
               dateRange.start,
               dateRange.endInclusive,
-              schedules.appointments.prisonApiScheduledEventToScheduledEvents(
+              schedules.appointments.prisonApiAppointmentsToScheduledEvents(
                 prisonerNumber,
-                EventType.APPOINTMENT.name,
-                EventType.APPOINTMENT.defaultPriority,
-                eventPriorities[EventType.APPOINTMENT],
+                eventPriorities.getOrDefault(EventType.APPOINTMENT),
               ),
               schedules.courtHearings.prisonApiCourtHearingsToScheduledEvents(
                 bookingId,
                 prisonCode,
                 prisonerNumber,
-                EventType.COURT_HEARING.name,
-                EventType.COURT_HEARING.defaultPriority,
-                eventPriorities[EventType.COURT_HEARING],
+                eventPriorities.getOrDefault(EventType.COURT_HEARING),
               ),
-              schedules.visits.prisonApiScheduledEventToScheduledEvents(
+              schedules.visits.prisonApiVisitsToScheduledEvents(
                 prisonerNumber,
-                EventType.VISIT.name,
-                EventType.VISIT.defaultPriority,
-                eventPriorities[EventType.VISIT],
+                eventPriorities.getOrDefault(EventType.VISIT),
               ),
-              schedules.activities.prisonApiScheduledEventToScheduledEvents(
+              schedules.activities.prisonApiActivitiesToScheduledEvents(
                 prisonerNumber,
-                EventType.ACTIVITY.name,
-                EventType.ACTIVITY.defaultPriority,
-                eventPriorities[EventType.ACTIVITY],
+                eventPriorities.getOrDefault(EventType.ACTIVITY),
               ),
-              schedules.transfers.prisonApiTransfersToScheduledEvents(
+              schedules.transfers.prisonApiPrisonTransfersToScheduledEvents(
                 prisonCode,
-                eventPriorities[EventType.EXTERNAL_TRANSFER],
+                eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
               ),
-              schedules.adjudications.prisonApiOffenderAdjudicationsToScheduledEvents(
+              schedules.adjudications.prisonApiPrisonOffenderAdjudicationsToScheduledEvents(
                 prisonCode,
-                eventPriorities[EventType.ADJUDICATION_HEARING],
+                eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
               ),
             )
           }
@@ -118,8 +112,7 @@ class ScheduledEventService(
             if (prisonRolledOut.active) {
               activities = transformPrisonerScheduledActivityToScheduledEvents(
                 prisonCode,
-                EventType.ACTIVITY.defaultPriority,
-                eventPriorities[EventType.ACTIVITY],
+                eventPriorities,
                 getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
               )
             }
@@ -239,29 +232,29 @@ class ScheduledEventService(
           prisonerNumbers,
           date,
           date,
-          schedules.appointments.prisonApiAppointmentsToScheduledEvents(
+          schedules.appointments.prisonApiPrisonAppointmentsToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.APPOINTMENT],
+            eventPriorities.getOrDefault(EventType.APPOINTMENT),
           ),
-          schedules.courtEvents.prisonApiCourtEventsToScheduledEvents(
+          schedules.courtEvents.prisonApiPrisonCourtEventsToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.COURT_HEARING],
+            eventPriorities.getOrDefault(EventType.COURT_HEARING),
           ),
-          schedules.visits.prisonApiVisitsToScheduledEvents(
+          schedules.visits.prisonApiPrisonVisitsToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.VISIT],
+            eventPriorities.getOrDefault(EventType.VISIT),
           ),
-          schedules.activities.prisonApiActivitiesToScheduledEvents(
+          schedules.activities.prisonApiPrisonActivitiesToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.ACTIVITY],
+            eventPriorities.getOrDefault(EventType.ACTIVITY),
           ),
-          schedules.transfers.prisonApiTransfersToScheduledEvents(
+          schedules.transfers.prisonApiPrisonTransfersToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.EXTERNAL_TRANSFER],
+            eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
           ),
-          schedules.adjudications.prisonApiOffenderAdjudicationsToScheduledEvents(
+          schedules.adjudications.prisonApiPrisonOffenderAdjudicationsToScheduledEvents(
             prisonCode,
-            eventPriorities[EventType.ADJUDICATION_HEARING],
+            eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
           ),
         )
       }
@@ -269,8 +262,7 @@ class ScheduledEventService(
         if (prisonRolledOut.active) {
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
-            EventType.ACTIVITY.defaultPriority,
-            eventPriorities[EventType.ACTIVITY],
+            eventPriorities,
             getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot),
           )
         }
