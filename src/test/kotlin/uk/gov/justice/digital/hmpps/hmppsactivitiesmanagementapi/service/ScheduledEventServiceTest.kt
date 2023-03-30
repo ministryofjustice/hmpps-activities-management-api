@@ -831,12 +831,12 @@ class ScheduledEventServiceTest {
         mapOf(
           EventType.ACTIVITY to listOf(
             Priority(1, EventCategory.EDUCATION),
-            Priority(2, EventCategory.SERVICES),
+            Priority(2, EventCategory.PRISON_JOBS),
             Priority(3, EventCategory.GYM_SPORTS_FITNESS),
             Priority(4, EventCategory.INDUCTION),
             Priority(5, EventCategory.INDUSTRIES),
             Priority(6, EventCategory.INTERVENTIONS),
-            Priority(7, EventCategory.LEISURE_SOCIAL),
+            Priority(7, EventCategory.OTHER),
             Priority(8), // Will default to this because event category doesn't match
           ),
           EventType.APPOINTMENT to listOf(Priority(21)),
@@ -899,12 +899,12 @@ class ScheduledEventServiceTest {
         mapOf(
           EventType.ACTIVITY to listOf(
             Priority(1, EventCategory.EDUCATION),
-            Priority(2, EventCategory.SERVICES),
+            Priority(2, EventCategory.OTHER),
             Priority(3, EventCategory.GYM_SPORTS_FITNESS),
             Priority(4, EventCategory.INDUCTION),
             Priority(5, EventCategory.INDUSTRIES),
             Priority(6, EventCategory.INTERVENTIONS),
-            Priority(7, EventCategory.LEISURE_SOCIAL),
+            Priority(7, EventCategory.PRISON_JOBS),
           ),
           EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
           EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
@@ -954,22 +954,24 @@ class ScheduledEventServiceTest {
         mapOf(
           EventType.ACTIVITY to listOf(
             Priority(1, EventCategory.EDUCATION),
-            Priority(2, EventCategory.SERVICES),
+            Priority(2, EventCategory.FAITH_SPIRITUALITY),
             Priority(3, EventCategory.GYM_SPORTS_FITNESS),
             Priority(4, EventCategory.INDUCTION),
             Priority(5, EventCategory.INDUSTRIES),
             Priority(6, EventCategory.INTERVENTIONS),
-            Priority(7, EventCategory.LEISURE_SOCIAL),
+            Priority(7, EventCategory.NOT_IN_WORK),
+            Priority(8, EventCategory.PRISON_JOBS),
+            Priority(9, EventCategory.OTHER),
           ),
-          EventType.APPOINTMENT to listOf(Priority(9, EventCategory.EDUCATION)),
-          EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
-          EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
-          EventType.COURT_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
+          EventType.APPOINTMENT to listOf(Priority(10, EventCategory.EDUCATION)),
+          EventType.VISIT to listOf(Priority(11, EventCategory.EDUCATION)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(12, EventCategory.EDUCATION)),
+          EventType.COURT_HEARING to listOf(Priority(13, EventCategory.EDUCATION)),
         ),
       ),
     )
 
-    // Mocked activities from the database view - with category set to LEISURE
+    // Mocked activities from the database view - with category set to NOT IN WORK
     whenever(
       prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
         prisonCode,
@@ -978,7 +980,7 @@ class ScheduledEventServiceTest {
         endDate,
       ),
     )
-      .thenReturn(listOf(activityFromDbInstance(activityCategory = "LEI")))
+      .thenReturn(listOf(activityFromDbInstance(activityCategory = "NOT")))
 
     val result = service.getScheduledEventsByPrisonAndPrisonerAndDateRange(
       prisonCode,
@@ -991,10 +993,11 @@ class ScheduledEventServiceTest {
     verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
 
     with(result!!) {
+      assertThat(activities!![0].priority).isEqualTo(7) // EventCategory.NOT_IN_WORK
+      assertThat(adjudications!![0].priority).isEqualTo(4) // EventType.ADJUDICATION_HEARING default
       assertThat(appointments!![0].priority).isEqualTo(5) // EventType.APPOINTMENT default
-      assertThat(activities!![0].priority).isEqualTo(7) // EventType.LEISURE_SOCIAL
-      assertThat(visits!![0].priority).isEqualTo(3) // EventType.VISIT default
       assertThat(courtHearings!![0].priority).isEqualTo(1) // EventType.COURT_HEARING default
+      assertThat(visits!![0].priority).isEqualTo(3) // EventType.VISIT default
     }
   }
 
@@ -1093,12 +1096,12 @@ class ScheduledEventServiceTest {
           ),
           EventType.APPOINTMENT to listOf(
             Priority(1, EventCategory.EDUCATION),
-            Priority(2, EventCategory.SERVICES),
+            Priority(2, EventCategory.NOT_IN_WORK),
             Priority(3, EventCategory.GYM_SPORTS_FITNESS),
             Priority(4, EventCategory.INDUCTION),
             Priority(5, EventCategory.INDUSTRIES),
             Priority(6, EventCategory.INTERVENTIONS),
-            Priority(7, EventCategory.LEISURE_SOCIAL),
+            Priority(7, EventCategory.OTHER),
           ),
           EventType.VISIT to listOf(Priority(10, EventCategory.EDUCATION)),
           EventType.ADJUDICATION_HEARING to listOf(Priority(11, EventCategory.EDUCATION)),
