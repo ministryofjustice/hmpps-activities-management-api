@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -22,4 +23,18 @@ class PrisonerSuspendedFromActivityEvent(
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
   createdAt = createdAt,
 ),
-  HmppsAuditable
+  HmppsAuditable,
+  LocalAuditable {
+  override fun toLocalAuditRecord(): LocalAuditRecord = LocalAuditRecord(
+
+    username = createdBy,
+    auditType = auditType,
+    detailType = auditEventType,
+    recordedTime = createdAt,
+    prisonCode = prisonCode,
+    prisonerNumber = prisonerNumber,
+    activityId = activityId,
+    activityScheduleId = scheduleId,
+    message = toString(),
+  )
+}

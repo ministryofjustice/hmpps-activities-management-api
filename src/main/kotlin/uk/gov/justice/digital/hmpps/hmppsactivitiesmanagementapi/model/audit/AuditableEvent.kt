@@ -1,16 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 open class AuditableEvent(
 
-  @JsonIgnore val auditType: AuditType,
-  @JsonIgnore val auditEventType: AuditEventType,
+  val auditType: AuditType,
+  val auditEventType: AuditEventType,
   val createdAt: LocalDateTime,
-  @JsonIgnore val details: String,
+  private val details: String,
 ) {
 
   val createdBy = SecurityUtils.getUserNameForLoggedInUser()

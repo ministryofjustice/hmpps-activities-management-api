@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.HmppsAuditable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.LocalAuditable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AuditRecordSearchFilters
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
@@ -50,6 +51,7 @@ class AuditService(
 
     val results = auditRepository.searchRecords(
       prisonCode = filters.prisonCode,
+      prisonerNumber = filters.prisonerNumber,
       username = filters.username,
       auditType = filters.auditType,
       auditEventType = filters.auditEventType,
@@ -76,6 +78,10 @@ class AuditService(
             details = objectMapper.writeValueAsString(event),
           ),
         )
+      }
+
+      if (event is LocalAuditable) {
+        auditRepository.save(event.toLocalAuditRecord())
       }
     } else {
       log.info("Not auditing event of type ${event.javaClass.simpleName} as the feature is disabled")

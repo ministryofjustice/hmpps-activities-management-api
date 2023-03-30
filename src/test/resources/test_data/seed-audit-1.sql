@@ -1,2 +1,0 @@
-insert into local_audit (local_audit_id, username, audit_type, detail_type, recorded_time, prison_code, prisoner_number, activity_id, activity_schedule_id, message)
-values (1, 'Bob', 'ACTIVITY','ACTIVITY_CREATED', now(),'PVI', 'A123456',1,1,'An activity has been created');

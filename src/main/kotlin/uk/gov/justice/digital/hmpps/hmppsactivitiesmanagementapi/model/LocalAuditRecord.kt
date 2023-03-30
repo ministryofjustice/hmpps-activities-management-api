@@ -18,11 +18,11 @@ data class LocalAuditRecord(
 
   val prisonCode: String,
 
-  val prisonerNumber: String,
+  val prisonerNumber: String? = null,
 
-  val activityId: Long?,
+  val activityId: Long? = null,
 
-  val activityScheduleId: Long?,
+  val activityScheduleId: Long? = null,
 
   val message: String,
 )

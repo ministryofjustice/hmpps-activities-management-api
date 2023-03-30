@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 data class AuditRecordSearchFilters(
   val prisonCode: String? = null,
+  val prisonerNumber: String? = null,
   val username: String? = null,
   val auditType: AuditType? = null,
   val auditEventType: AuditEventType? = null,

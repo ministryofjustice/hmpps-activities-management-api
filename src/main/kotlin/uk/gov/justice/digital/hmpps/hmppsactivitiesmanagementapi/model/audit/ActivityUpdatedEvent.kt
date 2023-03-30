@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -18,4 +19,16 @@ class ActivityUpdatedEvent(
     "at prison $prisonCode was updated",
   createdAt = createdAt,
 ),
-  HmppsAuditable
+  HmppsAuditable,
+  LocalAuditable {
+  override fun toLocalAuditRecord(): LocalAuditRecord = LocalAuditRecord(
+
+    username = createdBy,
+    auditType = auditType,
+    detailType = auditEventType,
+    recordedTime = createdAt,
+    prisonCode = prisonCode,
+    activityId = activityId,
+    message = toString(),
+  )
+}

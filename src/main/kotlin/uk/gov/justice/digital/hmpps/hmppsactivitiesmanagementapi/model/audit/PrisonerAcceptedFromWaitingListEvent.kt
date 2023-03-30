@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDateTime
 
 class PrisonerAcceptedFromWaitingListEvent(
@@ -16,4 +17,17 @@ class PrisonerAcceptedFromWaitingListEvent(
     "activity '$activityName'($activityId) from the waiting list",
   createdAt = createdAt,
 ),
-  HmppsAuditable
+  HmppsAuditable,
+  LocalAuditable {
+  override fun toLocalAuditRecord(): LocalAuditRecord = LocalAuditRecord(
+
+    username = createdBy,
+    auditType = auditType,
+    detailType = auditEventType,
+    recordedTime = createdAt,
+    prisonCode = prisonCode,
+    prisonerNumber = prisonerNumber,
+    activityId = activityId,
+    message = toString(),
+  )
+}
