@@ -7,6 +7,7 @@ import java.time.LocalTime
 class PrisonerUnsuspendedFromActivityEvent(
   val activityId: Long,
   val activityName: String,
+  val prisonCode: String,
   val prisonerNumber: String,
   val scheduleId: Long,
   val date: LocalDate,
@@ -15,6 +16,7 @@ class PrisonerUnsuspendedFromActivityEvent(
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_UNSUSPENDED_FROM_ACTIVITY,
   details = "Prisoner $prisonerNumber was unsuspended from " +
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",

@@ -5,10 +5,12 @@ import java.time.LocalDateTime
 class PrisonerAcceptedFromWaitingListEvent(
   val activityId: Long,
   val activityName: String,
+  val prisonCode: String,
   val prisonerNumber: String,
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_ACCEPTED_FROM_WAITING_LIST,
   details = "Prisoner $prisonerNumber was accepted onto " +
     "activity '$activityName'($activityId) from the waiting list",

@@ -14,6 +14,7 @@ class BonusPaymentMadeForActivityAttendanceEventTest : AuditableEventTestBase() 
       1,
       "Some Activity",
       "PBI",
+      "AA12346",
       42,
       LocalDate.now(),
       LocalTime.now(),
@@ -32,14 +33,15 @@ class BonusPaymentMadeForActivityAttendanceEventTest : AuditableEventTestBase() 
     val event = BonusPaymentMadeForActivityAttendanceEvent(
       1,
       "Some Activity",
-      "A123456",
+      "PBI",
+      "AA12346",
       42,
       startDate,
       startTime,
       endTime,
       createdAt,
     )
-    val expectedToString = "A bonus payment was made to prisoner A123456 for activity 'Some Activity'(1) " +
+    val expectedToString = "A bonus payment was made to prisoner AA12346 for activity 'Some Activity'(1) " +
       "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }

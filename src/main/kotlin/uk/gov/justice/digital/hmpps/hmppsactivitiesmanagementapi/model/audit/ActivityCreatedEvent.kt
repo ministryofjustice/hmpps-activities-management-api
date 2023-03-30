@@ -12,6 +12,7 @@ class ActivityCreatedEvent(
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.ACTIVITY,
   auditEventType = AuditEventType.ACTIVITY_CREATED,
   details = "An activity called '$activityName'($activityId) with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode",

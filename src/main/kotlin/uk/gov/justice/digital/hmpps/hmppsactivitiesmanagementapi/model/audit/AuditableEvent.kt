@@ -6,10 +6,11 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 open class AuditableEvent(
-  @JsonIgnore
-  val auditEventType: AuditEventType,
+
+  @JsonIgnore val auditType: AuditType,
+  @JsonIgnore val auditEventType: AuditEventType,
   val createdAt: LocalDateTime,
-  private val details: String,
+  @JsonIgnore val details: String,
 ) {
 
   val createdBy = SecurityUtils.getUserNameForLoggedInUser()

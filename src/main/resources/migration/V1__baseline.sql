@@ -381,3 +381,16 @@ CREATE TABLE attendance_history (
 );
 
 CREATE INDEX idx_attendance_history_attendance_id ON attendance_history (attendance_id);
+
+CREATE TABLE local_audit (
+   local_audit_id INTEGER NOT NULL PRIMARY KEY,
+   username VARCHAR(100) NOT NULL,
+   audit_type CHAR(10) NOT NULL,
+   detail_type CHAR(20) NOT NULL,
+   recorded_time TIMESTAMP NOT NULL,
+   prison_code VARCHAR(7) NOT NULL,
+   prisoner_number CHAR(7) NOT NULL,
+   activity_id INTEGER,
+   activity_schedule_id INTEGER,
+   message VARCHAR(300)
+)

@@ -13,6 +13,7 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BonusPaymentMadeForActivityAttendanceEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityTestUtils
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -24,16 +25,18 @@ class AuditServiceTest {
 
   private val hmppsAuditApiClient = mock<HmppsAuditApiClient>()
 
+  private val auditRepository = mock<AuditRepository>()
+
   private val objectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-  private val auditService = AuditService(hmppsAuditApiClient, objectMapper, true)
+  private val auditService = AuditService(hmppsAuditApiClient, auditRepository, objectMapper, true)
 
   @Test
   fun `should not log hmpps auditable event if feature is disabled`() {
     val event = mock<AuditableEvent>()
-    val auditService = AuditService(hmppsAuditApiClient, objectMapper, false)
+    val auditService = AuditService(hmppsAuditApiClient, auditRepository, objectMapper, false)
 
     auditService.logEvent(event)
 
@@ -48,7 +51,8 @@ class AuditServiceTest {
     val event = BonusPaymentMadeForActivityAttendanceEvent(
       1,
       "Some Activity",
-      "P2",
+      "PBI",
+      "AA12346",
       1,
       LocalDate.of(2023, 1, 2),
       LocalTime.of(10, 0),
@@ -62,7 +66,7 @@ class AuditServiceTest {
     with(hmppsEventCaptor.firstValue) {
       assertThat(who).isEqualTo(username)
       assertThat(what).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE.name)
-      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonerNumber":"P2","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","createdBy":"Bob"}""")
+      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","createdBy":"Bob"}""")
       assertThat(service).isEqualTo("hmpps-activities-management-api")
       assertThat(`when`).isNotNull
     }

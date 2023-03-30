@@ -12,6 +12,7 @@ class ActivityUpdatedEvent(
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.ACTIVITY,
   auditEventType = AuditEventType.ACTIVITY_UPDATED,
   details = "An activity called '$activityName'($activityId) with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was updated",

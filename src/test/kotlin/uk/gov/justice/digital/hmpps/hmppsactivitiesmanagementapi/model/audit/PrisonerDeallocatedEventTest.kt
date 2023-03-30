@@ -14,6 +14,7 @@ class PrisonerDeallocatedEventTest : AuditableEventTestBase() {
       1,
       "Some Activity",
       "PBI",
+      "AA12346",
       42,
       LocalDate.now(),
       LocalTime.now(),
@@ -33,7 +34,8 @@ class PrisonerDeallocatedEventTest : AuditableEventTestBase() {
     val event = PrisonerDeallocatedEvent(
       1,
       "Some Activity",
-      "A123456",
+      "PBI",
+      "AA12346",
       42,
       startDate,
       startTime,
@@ -41,7 +43,7 @@ class PrisonerDeallocatedEventTest : AuditableEventTestBase() {
       createdAt,
 
     )
-    val expectedToString = "Prisoner A123456 was deallocated from activity 'Some Activity'(1) " +
+    val expectedToString = "Prisoner AA12346 was deallocated from activity 'Some Activity'(1) " +
       "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }

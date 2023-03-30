@@ -7,6 +7,7 @@ import java.time.LocalTime
 class PrisonerDeallocatedEvent(
   val activityId: Long,
   val activityName: String,
+  val prisonCode: String,
   val prisonerNumber: String,
   val scheduleId: Long,
   val date: LocalDate,
@@ -15,6 +16,7 @@ class PrisonerDeallocatedEvent(
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_DEALLOCATED,
   details = "Prisoner $prisonerNumber was deallocated from " +
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",

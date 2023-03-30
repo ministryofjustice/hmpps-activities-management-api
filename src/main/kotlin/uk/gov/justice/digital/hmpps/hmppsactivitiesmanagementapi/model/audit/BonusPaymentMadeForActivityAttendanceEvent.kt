@@ -7,6 +7,7 @@ import java.time.LocalTime
 class BonusPaymentMadeForActivityAttendanceEvent(
   val activityId: Long,
   val activityName: String,
+  val prisonCode: String,
   val prisonerNumber: String,
   val scheduleId: Long,
   val date: LocalDate,
@@ -15,6 +16,7 @@ class BonusPaymentMadeForActivityAttendanceEvent(
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
+  auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE,
   details = "A bonus payment was made to prisoner $prisonerNumber " +
     "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
