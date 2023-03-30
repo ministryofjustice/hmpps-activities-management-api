@@ -131,13 +131,13 @@ class PrisonRegimeServiceTest {
     whenever(eventPriorityRepository.findByPrisonCode("MDI")).thenReturn(
       listOf(
         priority(EventType.ACTIVITY, 1).copy(eventCategory = EventCategory.EDUCATION),
-        priority(EventType.ACTIVITY, 2).copy(eventCategory = EventCategory.SERVICES),
+        priority(EventType.ACTIVITY, 2).copy(eventCategory = EventCategory.PRISON_JOBS),
         priority(EventType.ACTIVITY, 3).copy(eventCategory = EventCategory.GYM_SPORTS_FITNESS),
         priority(EventType.ACTIVITY, 4).copy(eventCategory = EventCategory.INDUCTION),
         priority(EventType.ACTIVITY, 5).copy(eventCategory = EventCategory.INDUSTRIES),
         priority(EventType.ACTIVITY, 6).copy(eventCategory = EventCategory.INTERVENTIONS),
         priority(EventType.APPOINTMENT, 7),
-        priority(EventType.ACTIVITY, 8).copy(eventCategory = EventCategory.LEISURE_SOCIAL),
+        priority(EventType.ACTIVITY, 8).copy(eventCategory = EventCategory.OTHER),
         priority(EventType.VISIT, 9),
         priority(EventType.ADJUDICATION_HEARING, 10),
         priority(EventType.COURT_HEARING, 11),
@@ -149,12 +149,12 @@ class PrisonRegimeServiceTest {
         mapOf(
           EventType.ACTIVITY to listOf(
             Priority(1, EventCategory.EDUCATION),
-            Priority(2, EventCategory.SERVICES),
+            Priority(2, EventCategory.PRISON_JOBS),
             Priority(3, EventCategory.GYM_SPORTS_FITNESS),
             Priority(4, EventCategory.INDUCTION),
             Priority(5, EventCategory.INDUSTRIES),
             Priority(6, EventCategory.INTERVENTIONS),
-            Priority(8, EventCategory.LEISURE_SOCIAL),
+            Priority(8, EventCategory.OTHER),
           ),
           EventType.APPOINTMENT to listOf(Priority(7)),
           EventType.VISIT to listOf(Priority(9)),
@@ -164,13 +164,13 @@ class PrisonRegimeServiceTest {
       )
 
       assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.EDUCATION)).isEqualTo(1)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.SERVICES)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.PRISON_JOBS)).isEqualTo(2)
       assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.GYM_SPORTS_FITNESS)).isEqualTo(3)
       assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUCTION)).isEqualTo(4)
       assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUSTRIES)).isEqualTo(5)
       assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INTERVENTIONS)).isEqualTo(6)
       assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(7)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.LEISURE_SOCIAL)).isEqualTo(8)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.OTHER)).isEqualTo(8)
       assertThat(getOrDefault(EventType.VISIT)).isEqualTo(9)
       assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(10)
       assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(11)
