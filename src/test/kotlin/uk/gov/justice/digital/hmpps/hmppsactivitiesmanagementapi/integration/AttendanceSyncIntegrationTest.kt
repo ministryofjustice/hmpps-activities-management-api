@@ -47,7 +47,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `should return unauthorised`() {
-    webTestClient.    get()
+    webTestClient.get()
       .uri("/synchronisation/attendance/1")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -59,7 +59,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `should return forbidden if no role`() {
-    webTestClient.    get()
+    webTestClient.get()
       .uri("/synchronisation/attendance/1")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
@@ -72,7 +72,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `should return forbidden if wrong role`() {
-    webTestClient.    get()
+    webTestClient.get()
       .uri("/synchronisation/attendance/1")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("INVALID_ROLE")))

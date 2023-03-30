@@ -65,6 +65,7 @@ class SynchronisationController(private val synchronisationService: Synchronisat
     ],
   )
   fun getAttendanceSync(
-    @Schema(description = "Attendance id", required = true) @PathVariable attendanceId: Long) =
-      synchronisationService.getAttendanceSync(attendanceId)
+    @Schema(description = "Attendance id", required = true) @PathVariable attendanceId: Long,
+  ) =
+    synchronisationService.getAttendanceSync(attendanceId)
 }
