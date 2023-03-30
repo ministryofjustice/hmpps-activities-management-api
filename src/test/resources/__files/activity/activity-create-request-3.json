@@ -26,5 +26,15 @@
       "educationLevelCode": "0",
       "educationLevelDescription": "Reading Measure 1.0"
     }
-  ]
+],
+  "startDate": "2023-03-31",
+  "locationId": 26962,
+  "capacity": 20,
+  "slots": [
+    {
+      "timeSlot": "AM",
+      "monday": true
+    }
+  ],
+  "runsOnBankHoliday": false
 }
