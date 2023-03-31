@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 
 @Entity
-@EntityListeners(AttendanceEntityListener::class)
 @Table(name = "attendance")
 data class Attendance(
   @Id
@@ -53,12 +52,31 @@ data class Attendance(
 ) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+  private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun history() = attendanceHistory.toList()
 
   fun addHistory(history: AttendanceHistory) {
     attendanceHistory.add(history)
+  }
+
+  @PreUpdate
+  fun onUpdate() {
+    if (status != AttendanceStatus.WAITING) {
+      this.addHistory(
+        AttendanceHistory(
+          attendance = this,
+          attendanceReason = attendanceReason,
+          comment = comment,
+          recordedTime = recordedTime!!,
+          recordedBy = recordedBy!!,
+          issuePayment = issuePayment,
+          caseNoteId = caseNoteId,
+          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+          otherAbsenceReason = otherAbsenceReason,
+        )
+      )
+    }
   }
 
   fun waiting() {
@@ -85,7 +103,7 @@ data class Attendance(
   }
 
   fun mark(
-    principal: Principal,
+    principalName: String,
     reason: AttendanceReason?,
     newStatus: AttendanceStatus,
     newComment: String?,
@@ -97,7 +115,7 @@ data class Attendance(
     comment = newComment
     issuePayment = newIssuePayment
     incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
-    recordedBy = principal.name
+    recordedBy = principalName
     recordedTime = LocalDateTime.now()
     return this
   }

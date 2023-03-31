@@ -44,7 +44,7 @@ class AttendancesService(
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
       it.mark(
-        principal,
+        principal.name,
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason!!.uppercase().trim()],
         attendanceUpdatesById[it.attendanceId]?.status ?: AttendanceStatus.COMPLETED,
         attendanceUpdatesById[it.attendanceId]!!.comment,
