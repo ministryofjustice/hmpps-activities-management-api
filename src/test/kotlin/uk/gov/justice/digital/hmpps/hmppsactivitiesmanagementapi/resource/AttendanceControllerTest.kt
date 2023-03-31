@@ -45,7 +45,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       .andExpect { status { isNoContent() } }
 
     verify(attendancesService).mark(
-      mockPrincipal,
+      "",
       listOf(
         AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
         AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),

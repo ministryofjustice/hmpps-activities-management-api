@@ -108,5 +108,5 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     principal: Principal,
     @RequestBody attendances: List<AttendanceUpdateRequest>,
   ): ResponseEntity<Any> =
-    attendancesService.mark(principal, attendances).let { ResponseEntity.noContent().build() }
+    attendancesService.mark(principal.name ?: "", attendances).let { ResponseEntity.noContent().build() }
 }
