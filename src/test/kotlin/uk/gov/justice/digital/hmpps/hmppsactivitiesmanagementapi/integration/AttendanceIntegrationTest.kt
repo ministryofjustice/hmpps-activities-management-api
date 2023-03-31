@@ -90,7 +90,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-17.sql",
+    "classpath:test_data/seed-activity-id-18.sql",
   )
   @Test
   fun `marked attendance is updated to produce history record`() {
