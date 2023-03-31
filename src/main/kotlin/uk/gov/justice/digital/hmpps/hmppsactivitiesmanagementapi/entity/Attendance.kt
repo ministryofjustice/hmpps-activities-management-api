@@ -63,7 +63,7 @@ data class Attendance(
 ) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private val attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+  private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun history() = attendanceHistory.toList()
 
@@ -95,17 +95,35 @@ data class Attendance(
   }
 
   fun mark(
+    principalName: String,
     reason: AttendanceReason?,
     newStatus: AttendanceStatus,
     newComment: String?,
     newIssuePayment: Boolean?,
     newIncentiveLevelWarningIssued: Boolean?,
   ): Attendance {
+    if (status != AttendanceStatus.WAITING) {
+      this.addHistory(
+        AttendanceHistory(
+          attendance = this,
+          attendanceReason = attendanceReason,
+          comment = comment,
+          recordedTime = recordedTime!!,
+          recordedBy = recordedBy!!,
+          issuePayment = issuePayment,
+          caseNoteId = caseNoteId,
+          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+          otherAbsenceReason = otherAbsenceReason,
+        ),
+      )
+    }
     attendanceReason = reason
     status = newStatus
     comment = newComment
     issuePayment = newIssuePayment
     incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    recordedBy = principalName
+    recordedTime = LocalDateTime.now()
     return this
   }
 
