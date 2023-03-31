@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.3-beta"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.3-beta-2"
   kotlin("plugin.spring") version "1.8.10"
   kotlin("plugin.jpa") version "1.8.10"
   jacoco
@@ -32,8 +32,8 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.0-beta-13")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
-  // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4")
+  // OpenAPI - please keep this at version 2.0.2 for now as there is a breaking change to the @Schema required flag in 2.0.3
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.10.0")

@@ -31,16 +31,25 @@ class PrisonRegimeServiceTest {
   fun `default priorities are returned when no priorities for prison`() {
     whenever(eventPriorityRepository.findByPrisonCode("PVI")).thenReturn(emptyList())
 
-    assertThat(service.getEventPrioritiesForPrison("PVI")).containsExactlyInAnyOrderEntriesOf(
-      mapOf(
-        EventType.COURT_HEARING to listOf(Priority(1)),
-        EventType.EXTERNAL_TRANSFER to listOf(Priority(2)),
-        EventType.VISIT to listOf(Priority(3)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
-        EventType.APPOINTMENT to listOf(Priority(5)),
-        EventType.ACTIVITY to listOf(Priority(6)),
-      ),
-    )
+    with(service.getEventPrioritiesForPrison("PVI")) {
+      assertThat(priorities).containsExactlyInAnyOrderEntriesOf(
+        mapOf(
+          EventType.COURT_HEARING to listOf(Priority(1)),
+          EventType.EXTERNAL_TRANSFER to listOf(Priority(2)),
+          EventType.VISIT to listOf(Priority(3)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
+          EventType.APPOINTMENT to listOf(Priority(5)),
+          EventType.ACTIVITY to listOf(Priority(6)),
+        ),
+      )
+
+      assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(1)
+      assertThat(getOrDefault(EventType.EXTERNAL_TRANSFER)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.VISIT)).isEqualTo(3)
+      assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(4)
+      assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(5)
+      assertThat(getOrDefault(EventType.ACTIVITY)).isEqualTo(6)
+    }
 
     verify(eventPriorityRepository).findByPrisonCode("PVI")
   }
@@ -58,16 +67,25 @@ class PrisonRegimeServiceTest {
       ),
     )
 
-    assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
-      mapOf(
-        EventType.ACTIVITY to listOf(Priority(1)),
-        EventType.APPOINTMENT to listOf(Priority(2)),
-        EventType.VISIT to listOf(Priority(3)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
-        EventType.COURT_HEARING to listOf(Priority(5)),
-        EventType.EXTERNAL_TRANSFER to listOf(Priority(6)),
-      ),
-    )
+    with(service.getEventPrioritiesForPrison("MDI")) {
+      assertThat(priorities).containsExactlyInAnyOrderEntriesOf(
+        mapOf(
+          EventType.ACTIVITY to listOf(Priority(1)),
+          EventType.APPOINTMENT to listOf(Priority(2)),
+          EventType.VISIT to listOf(Priority(3)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(4)),
+          EventType.COURT_HEARING to listOf(Priority(5)),
+          EventType.EXTERNAL_TRANSFER to listOf(Priority(6)),
+        ),
+      )
+
+      assertThat(getOrDefault(EventType.ACTIVITY)).isEqualTo(1)
+      assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.VISIT)).isEqualTo(3)
+      assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(4)
+      assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(5)
+      assertThat(getOrDefault(EventType.EXTERNAL_TRANSFER)).isEqualTo(6)
+    }
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
   }
@@ -85,16 +103,25 @@ class PrisonRegimeServiceTest {
       ),
     )
 
-    assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
-      mapOf(
-        EventType.ACTIVITY to listOf(Priority(1)),
-        EventType.APPOINTMENT to listOf(Priority(2)),
-        EventType.VISIT to listOf(Priority(2)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
-        EventType.COURT_HEARING to listOf(Priority(4)),
-        EventType.EXTERNAL_TRANSFER to listOf(Priority(4)),
-      ),
-    )
+    with(service.getEventPrioritiesForPrison("MDI")) {
+      assertThat(priorities).containsExactlyInAnyOrderEntriesOf(
+        mapOf(
+          EventType.ACTIVITY to listOf(Priority(1)),
+          EventType.APPOINTMENT to listOf(Priority(2)),
+          EventType.VISIT to listOf(Priority(2)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(3)),
+          EventType.COURT_HEARING to listOf(Priority(4)),
+          EventType.EXTERNAL_TRANSFER to listOf(Priority(4)),
+        ),
+      )
+
+      assertThat(getOrDefault(EventType.ACTIVITY)).isEqualTo(1)
+      assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.VISIT)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(3)
+      assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(4)
+      assertThat(getOrDefault(EventType.EXTERNAL_TRANSFER)).isEqualTo(4)
+    }
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
   }
@@ -104,36 +131,50 @@ class PrisonRegimeServiceTest {
     whenever(eventPriorityRepository.findByPrisonCode("MDI")).thenReturn(
       listOf(
         priority(EventType.ACTIVITY, 1).copy(eventCategory = EventCategory.EDUCATION),
-        priority(EventType.ACTIVITY, 2).copy(eventCategory = EventCategory.SERVICES),
+        priority(EventType.ACTIVITY, 2).copy(eventCategory = EventCategory.PRISON_JOBS),
         priority(EventType.ACTIVITY, 3).copy(eventCategory = EventCategory.GYM_SPORTS_FITNESS),
         priority(EventType.ACTIVITY, 4).copy(eventCategory = EventCategory.INDUCTION),
         priority(EventType.ACTIVITY, 5).copy(eventCategory = EventCategory.INDUSTRIES),
         priority(EventType.ACTIVITY, 6).copy(eventCategory = EventCategory.INTERVENTIONS),
         priority(EventType.APPOINTMENT, 7),
-        priority(EventType.ACTIVITY, 8).copy(eventCategory = EventCategory.LEISURE_SOCIAL),
+        priority(EventType.ACTIVITY, 8).copy(eventCategory = EventCategory.OTHER),
         priority(EventType.VISIT, 9),
         priority(EventType.ADJUDICATION_HEARING, 10),
         priority(EventType.COURT_HEARING, 11),
       ),
     )
 
-    assertThat(service.getEventPrioritiesForPrison("MDI")).containsExactlyInAnyOrderEntriesOf(
-      mapOf(
-        EventType.ACTIVITY to listOf(
-          Priority(1, EventCategory.EDUCATION),
-          Priority(2, EventCategory.SERVICES),
-          Priority(3, EventCategory.GYM_SPORTS_FITNESS),
-          Priority(4, EventCategory.INDUCTION),
-          Priority(5, EventCategory.INDUSTRIES),
-          Priority(6, EventCategory.INTERVENTIONS),
-          Priority(8, EventCategory.LEISURE_SOCIAL),
+    with(service.getEventPrioritiesForPrison("MDI")) {
+      assertThat(priorities).containsExactlyInAnyOrderEntriesOf(
+        mapOf(
+          EventType.ACTIVITY to listOf(
+            Priority(1, EventCategory.EDUCATION),
+            Priority(2, EventCategory.PRISON_JOBS),
+            Priority(3, EventCategory.GYM_SPORTS_FITNESS),
+            Priority(4, EventCategory.INDUCTION),
+            Priority(5, EventCategory.INDUSTRIES),
+            Priority(6, EventCategory.INTERVENTIONS),
+            Priority(8, EventCategory.OTHER),
+          ),
+          EventType.APPOINTMENT to listOf(Priority(7)),
+          EventType.VISIT to listOf(Priority(9)),
+          EventType.ADJUDICATION_HEARING to listOf(Priority(10)),
+          EventType.COURT_HEARING to listOf(Priority(11)),
         ),
-        EventType.APPOINTMENT to listOf(Priority(7)),
-        EventType.VISIT to listOf(Priority(9)),
-        EventType.ADJUDICATION_HEARING to listOf(Priority(10)),
-        EventType.COURT_HEARING to listOf(Priority(11)),
-      ),
-    )
+      )
+
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.EDUCATION)).isEqualTo(1)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.PRISON_JOBS)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.GYM_SPORTS_FITNESS)).isEqualTo(3)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUCTION)).isEqualTo(4)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUSTRIES)).isEqualTo(5)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INTERVENTIONS)).isEqualTo(6)
+      assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(7)
+      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.OTHER)).isEqualTo(8)
+      assertThat(getOrDefault(EventType.VISIT)).isEqualTo(9)
+      assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(10)
+      assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(11)
+    }
 
     verify(eventPriorityRepository).findByPrisonCode("MDI")
   }
