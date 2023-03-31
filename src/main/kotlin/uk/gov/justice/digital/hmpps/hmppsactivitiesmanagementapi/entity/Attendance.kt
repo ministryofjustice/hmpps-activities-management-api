@@ -4,7 +4,6 @@ import jakarta.persistence.*
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.security.Principal
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
@@ -60,25 +59,6 @@ data class Attendance(
     attendanceHistory.add(history)
   }
 
-  @PreUpdate
-  fun onUpdate() {
-    if (status != AttendanceStatus.WAITING) {
-      this.addHistory(
-        AttendanceHistory(
-          attendance = this,
-          attendanceReason = attendanceReason,
-          comment = comment,
-          recordedTime = recordedTime!!,
-          recordedBy = recordedBy!!,
-          issuePayment = issuePayment,
-          caseNoteId = caseNoteId,
-          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = otherAbsenceReason,
-        )
-      )
-    }
-  }
-
   fun waiting() {
     attendanceReason = null
     status = AttendanceStatus.WAITING
@@ -117,6 +97,21 @@ data class Attendance(
     incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
     recordedBy = principalName
     recordedTime = LocalDateTime.now()
+    if (status != AttendanceStatus.WAITING) {
+      this.addHistory(
+        AttendanceHistory(
+          attendance = this,
+          attendanceReason = attendanceReason,
+          comment = comment,
+          recordedTime = recordedTime!!,
+          recordedBy = recordedBy!!,
+          issuePayment = issuePayment,
+          caseNoteId = caseNoteId,
+          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+          otherAbsenceReason = otherAbsenceReason,
+        )
+      )
+    }
     return this
   }
 
