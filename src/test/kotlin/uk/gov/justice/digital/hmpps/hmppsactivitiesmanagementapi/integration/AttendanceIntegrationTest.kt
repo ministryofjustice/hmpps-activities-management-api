@@ -94,7 +94,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `marked attendance is updated to produce history record`() {
-    val markedAttendances = attendanceRepository.findAll().also { assertThat(it).hasSize(1) }
+    attendanceRepository.findAll().also { assertThat(it).hasSize(1) }
 
     webTestClient
       .put()
@@ -112,7 +112,6 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
     val updatedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(1) }
     assertThat(updatedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo("SICK")
     assertThat(updatedAttendances[0].history()).hasSize(1)
-
   }
 
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =
