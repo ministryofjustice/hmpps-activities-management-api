@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
@@ -195,14 +196,16 @@ internal fun activitySchedule(
             attendanceId = 1,
             scheduledInstance = this,
             prisonerNumber = "A1234AA",
+            recordedBy = "Joe Bloggs",
+            recordedTime = LocalDate.now().atStartOfDay(),
           ).apply {
             this.addHistory(
               AttendanceHistory(
                 attendance = this,
                 attendanceHistoryId = 1,
                 attendanceReason = AttendanceReason(
-                  1,
-                  "Previous Reason",
+                  9,
+                  "ATTENDED",
                   "Previous Desc",
                   false,
                   true,
@@ -216,7 +219,7 @@ internal fun activitySchedule(
                 ),
                 comment = "previous comment",
                 recordedBy = "Joe Bloggs",
-                recordedTime = LocalDateTime.now(),
+                recordedTime = LocalDate.now().atStartOfDay(),
               ),
             )
           },
@@ -291,6 +294,17 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     payBandDescription = "Pay band 3 $prisonCode description (highest)",
     nomisPayBand = 2,
   ),
+)
+
+fun completedAttendance() = Attendance(
+  attendanceId = 1,
+  scheduledInstance = activityEntity().schedules().first().instances().first(),
+  prisonerNumber = "A1234AA",
+  status = AttendanceStatus.COMPLETED,
+  attendanceReason = attendanceReasons()["ATTENDED"],
+  recordedBy = "Joe Bloggs",
+  recordedTime = LocalDate.now().atStartOfDay(),
+  comment = "previous comment",
 )
 
 internal fun attendance() = schedule().instances().first().attendances.first()

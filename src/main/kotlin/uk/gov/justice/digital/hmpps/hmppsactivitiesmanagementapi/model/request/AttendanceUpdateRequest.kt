@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 
 @Schema(description = "Request object for updating an attendance record")
 data class AttendanceUpdateRequest(
@@ -10,6 +11,10 @@ data class AttendanceUpdateRequest(
   @field:NotNull(message = "Attendance ID must be supplied")
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long?,
+
+  @field:NotEmpty(message = "Attendance status")
+  @Schema(description = "The status - WAITING, COMPLETED, LOCKED", example = "WAITING")
+  val status: AttendanceStatus,
 
   @field:NotEmpty(message = "Attendance reason must be supplied")
   @Schema(description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED", example = "ATTENDED")
