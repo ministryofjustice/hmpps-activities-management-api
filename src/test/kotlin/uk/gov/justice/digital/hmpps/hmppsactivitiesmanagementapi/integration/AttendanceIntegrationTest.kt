@@ -89,6 +89,32 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql(
+    "classpath:test_data/seed-activity-id-17.sql",
+  )
+  @Test
+  fun `marked attendance is updated to produce history record`() {
+    val markedAttendances = attendanceRepository.findAll().also { assertThat(it).hasSize(1) }
+
+    webTestClient
+      .put()
+      .uri("/attendances")
+      .bodyValue(
+        listOf(
+          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null),
+        ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .exchange()
+      .expectStatus().isNoContent
+
+    val updatedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(1) }
+    assertThat(updatedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo("SICK")
+    assertThat(updatedAttendances[0].history()).hasSize(1)
+
+  }
+
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =
     get()
       .uri("/scheduled-instances/$instanceId/attendances")
