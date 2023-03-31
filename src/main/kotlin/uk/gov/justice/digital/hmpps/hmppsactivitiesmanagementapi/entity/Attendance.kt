@@ -102,13 +102,6 @@ data class Attendance(
     newIssuePayment: Boolean?,
     newIncentiveLevelWarningIssued: Boolean?,
   ): Attendance {
-    attendanceReason = reason
-    status = newStatus
-    comment = newComment
-    issuePayment = newIssuePayment
-    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
-    recordedBy = principalName
-    recordedTime = LocalDateTime.now()
     if (status != AttendanceStatus.WAITING) {
       this.addHistory(
         AttendanceHistory(
@@ -124,6 +117,13 @@ data class Attendance(
         ),
       )
     }
+    attendanceReason = reason
+    status = newStatus
+    comment = newComment
+    issuePayment = newIssuePayment
+    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    recordedBy = principalName
+    recordedTime = LocalDateTime.now()
     return this
   }
 
