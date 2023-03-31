@@ -13,6 +13,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -36,8 +37,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
         listOf(
-          AttendanceUpdateRequest(1, "ATTENDED", null, null, null, null, null),
-          AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
+          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
         ),
       )
     }
@@ -46,8 +47,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).mark(
       mockPrincipal,
       listOf(
-        AttendanceUpdateRequest(1, "ATTENDED", null, null, null, null, null),
-        AttendanceUpdateRequest(2, "SICK", null, null, null, null, null),
+        AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+        AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
       ),
     )
   }

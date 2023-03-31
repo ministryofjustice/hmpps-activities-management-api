@@ -25,7 +25,6 @@ class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
-  private val attendanceHistoryRepository: AttendanceHistoryRepository,
 ) {
 
   companion object {
@@ -44,14 +43,10 @@ class AttendancesService(
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
-      // For previously marked attendance records, we need to create a history record before updating the attendance
-      this.createHistory(
-        it,
-      )
       it.mark(
         principal,
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason!!.uppercase().trim()],
-        AttendanceStatus.COMPLETED,
+        attendanceUpdatesById[it.attendanceId]?.status ?: AttendanceStatus.COMPLETED,
         attendanceUpdatesById[it.attendanceId]!!.comment,
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
@@ -108,24 +103,4 @@ class AttendancesService(
 
   fun getAttendanceById(id: Long): ModelAttendance =
     attendanceRepository.findOrThrowNotFound(id).toModel()
-
-  fun createHistory(
-    attendance: Attendance,
-  ) {
-    if (attendance.status != AttendanceStatus.WAITING) {
-      attendanceHistoryRepository.save(
-        AttendanceHistory(
-          attendance = attendance,
-          attendanceReason = attendance.attendanceReason,
-          comment = attendance.comment,
-          recordedTime = attendance.recordedTime!!,
-          recordedBy = attendance.recordedBy!!,
-          issuePayment = attendance.issuePayment,
-          caseNoteId = attendance.caseNoteId,
-          incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
-          otherAbsenceReason = attendance.otherAbsenceReason,
-        ),
-      )
-    }
-  }
 }
