@@ -202,11 +202,8 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, request: ActivityCreateRequest): Location {
-    val location = prisonApiClient.getLocation(request.locationId!!).block()!!
-    failIfPrisonsDiffer(activity, location)
-    return location
-  }
+  private fun getLocationForSchedule(activity: Activity, request: ActivityCreateRequest) =
+    prisonApiClient.getLocation(request.locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
 
   private fun failIfPrisonsDiffer(activity: Activity, location: Location) {
     if (activity.prisonCode != location.agencyId) {
