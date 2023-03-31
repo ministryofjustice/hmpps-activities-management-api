@@ -8,7 +8,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
@@ -29,9 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityT
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityScheduleCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
@@ -45,9 +41,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
-
-  @Autowired
-  private lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   @Test
   fun `createActivity - is successful`() {
@@ -71,6 +64,15 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
       assertThat(createdBy).isEqualTo("test-client")
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
   }
 
@@ -499,98 +501,19 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     firstOrNull { it.description.uppercase() == description.uppercase() }
       ?: throw RuntimeException("Activity schedule $description not found.")
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-9.sql",
-  )
-  @Test
-  fun `schedule an activity`() {
-    val today = LocalDate.now()
-    val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
-      description = "Integration test schedule",
-      startDate = today,
-      locationId = 1,
-      capacity = 10,
-      slots = listOf(
-        Slot(
-          "AM",
-          monday = true,
-          tuesday = true,
-          wednesday = true,
-          thursday = true,
-          friday = true,
-          saturday = true,
-          sunday = true,
-        ),
-      ),
-    )
-
-    prisonApiMockServer.stubGetLocation(
-      locationId = 1,
-      location = Location(
-        locationId = 1,
-        locationType = "CELL",
-        description = "House_block_7-1-002",
-        agencyId = "MDI",
-        currentOccupancy = 1,
-        locationPrefix = "LEI-House-block-7-1-002",
-        operationalCapacity = 2,
-        userDescription = "user description",
-        internalLocationCode = "internal location code",
-      ),
-    )
-
-    val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
-
-    with(schedule) {
-      assertThat(capacity).isEqualTo(10)
-      assertThat(startDate).isEqualTo(today)
-      assertThat(description).isEqualTo("Integration test schedule")
-      assertThat(slots).hasSize(1)
-      assertThat(internalLocation).isEqualTo(
-        InternalLocation(
-          id = 1,
-          code = "internal location code",
-          description = "House_block_7-1-002",
-        ),
-      )
-    }
-
-    with(schedule.slots.first()) {
-      assertThat(id).isNotNull
-      assertThat(daysOfWeek).containsExactly("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
-    }
-
-    val scheduleFromDB = activityScheduleRepository.findById(schedule.id)
-    val scheduleInstances = scheduleFromDB.get().instances()
-    assertThat(scheduleInstances).hasSize(13)
-    assertThat(scheduleInstances.first().startTime).isEqualTo(LocalTime.of(9, 0))
-    assertThat(scheduleInstances.first().endTime).isEqualTo(LocalTime.of(12, 0))
-
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
-    }
-  }
-
-  @Sql(
-    "classpath:test_data/seed-activity-id-9.sql",
-  )
   @Test
   fun `the activity should be persisted even if the subsequent event notification fails`() {
-    val today = LocalDate.now()
-    val activityScheduleCreateRequest = ActivityScheduleCreateRequest(
-      description = "Integration test schedule",
-      startDate = today,
-      locationId = 1,
-      capacity = 10,
-      slots = listOf(Slot("AM", monday = true)),
+    prisonApiMockServer.stubGetEducationLevel(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
     )
+
+    val today = LocalDate.now()
+    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
+      object : TypeReference<ActivityCreateRequest>() {},
+    ).copy(startDate = today)
 
     prisonApiMockServer.stubGetLocation(
       locationId = 1,
@@ -608,42 +531,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
-    val schedule = webTestClient.createActivitySchedule(9, activityScheduleCreateRequest)!!
+    val activity = webTestClient.createActivity(createActivityRequest)!!
 
-    with(schedule) {
-      assertThat(capacity).isEqualTo(10)
+    with(activity) {
+      assertThat(summary).isEqualTo("IT level 1")
       assertThat(startDate).isEqualTo(today)
-      assertThat(description).isEqualTo("Integration test schedule")
-      assertThat(slots).hasSize(1)
-      assertThat(internalLocation).isEqualTo(
-        InternalLocation(
-          id = 1,
-          code = "internal location code",
-          description = "House_block_7-1-002",
-        ),
-      )
-    }
-
-    with(schedule.slots.first()) {
-      assertThat(id).isNotNull
-      assertThat(daysOfWeek).containsExactly("Mon")
-      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
+      assertThat(description).isEqualTo("A basic IT course")
     }
   }
-
-  private fun WebTestClient.createActivitySchedule(
-    activityId: Long,
-    activityScheduleCreateRequest: ActivityScheduleCreateRequest,
-  ) =
-    post()
-      .uri("/activities/$activityId/schedules")
-      .bodyValue(activityScheduleCreateRequest)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivityScheduleLite::class.java)
-      .returnResult().responseBody
 }
