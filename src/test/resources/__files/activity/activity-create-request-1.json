@@ -2,7 +2,7 @@
   "prisonCode": "MDI",
   "attendanceRequired": false,
   "summary": "IT level 1",
-  "description": "A basic IT course suitable for introduction to the subject",
+  "description": "A basic IT course",
   "categoryId": 1,
   "tierId": 1,
   "eligibilityRuleIds": [1],
@@ -32,5 +32,15 @@
       "educationLevelCode": "1",
       "educationLevelDescription": "Reading Measure 1.0"
     }
-  ]
+  ],
+  "startDate": "2023-03-31",
+  "locationId": 1,
+  "capacity": 20,
+  "slots": [
+    {
+      "timeSlot": "AM",
+      "monday": true
+    }
+  ],
+  "runsOnBankHoliday": false
 }

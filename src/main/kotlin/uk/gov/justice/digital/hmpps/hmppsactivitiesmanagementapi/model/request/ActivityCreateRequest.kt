@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import java.time.LocalDate
@@ -81,4 +82,53 @@ data class ActivityCreateRequest(
   @field:Valid
   @Schema(description = "The list of minimum education levels that apply to this activity")
   val minimumEducationLevel: List<ActivityMinimumEducationLevelCreateRequest> = emptyList(),
+
+  @Schema(description = "The optional NOMIS internal location id for this schedule", example = "98877667")
+  val locationId: Long?,
+
+  @field:Positive(message = "The capacity must be a positive integer")
+  @Schema(
+    description = "The maximum number of prisoners allowed for a scheduled instance of this schedule",
+    example = "10",
+  )
+  val capacity: Int?,
+
+  @field:NotEmpty(message = "The activity schedule must have one or more unique slots")
+  @Schema(description = "The days and times an activity schedule can take place")
+  val slots: List<Slot>?,
+
+  @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
+  val runsOnBankHoliday: Boolean = false,
+)
+
+@Schema(
+  description = """
+    Describes time slot and day (or days) the scheduled activity would run. At least one day must be specified.
+    
+    e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
+  """,
+)
+
+data class Slot(
+
+  @field:NotNull(message = "The time slot must supplied")
+  @Schema(
+    description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
+    example = "AM",
+  )
+  val timeSlot: String?,
+
+  val monday: Boolean = false,
+
+  val tuesday: Boolean = false,
+
+  val wednesday: Boolean = false,
+
+  val thursday: Boolean = false,
+
+  val friday: Boolean = false,
+
+  val saturday: Boolean = false,
+
+  val sunday: Boolean = false,
 )
