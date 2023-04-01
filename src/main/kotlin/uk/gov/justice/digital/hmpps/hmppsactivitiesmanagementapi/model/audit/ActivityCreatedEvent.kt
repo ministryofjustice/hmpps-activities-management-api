@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditModelUtils.generateHmppsAuditJson
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -16,7 +17,7 @@ class ActivityCreatedEvent(
   auditType = AuditType.ACTIVITY,
   auditEventType = AuditEventType.ACTIVITY_CREATED,
   details = "An activity called '$activityName'($activityId) with category $categoryCode and starting on $startDate " +
-    "at prison $prisonCode",
+    "at prison $prisonCode was created",
   createdAt = createdAt,
 ),
   HmppsAuditable,
@@ -30,5 +31,13 @@ class ActivityCreatedEvent(
     prisonCode = prisonCode,
     activityId = activityId,
     message = toString(),
+  )
+
+  override fun toJson(): String = generateHmppsAuditJson(
+    activityId = activityId,
+    activityName = activityName,
+    prisonCode = prisonCode,
+    createdAt = createdAt,
+    createdBy = createdBy,
   )
 }

@@ -48,6 +48,9 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:2.37.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.37.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:2.37.0")
 }
 
 java {

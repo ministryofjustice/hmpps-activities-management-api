@@ -35,12 +35,12 @@ class AuditServiceTest {
     .registerModule(JavaTimeModule())
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-  private val auditService = AuditService(hmppsAuditApiClient, auditRepository, objectMapper, true)
+  private val auditService = AuditService(hmppsAuditApiClient, auditRepository, true)
 
   @Test
   fun `should not log hmpps auditable event if feature is disabled`() {
     val event = mock<AuditableEvent>()
-    val auditService = AuditService(hmppsAuditApiClient, auditRepository, objectMapper, false)
+    val auditService = AuditService(hmppsAuditApiClient, auditRepository, false)
 
     auditService.logEvent(event)
 
@@ -70,7 +70,7 @@ class AuditServiceTest {
     with(hmppsEventCaptor.firstValue) {
       assertThat(who).isEqualTo(username)
       assertThat(what).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE.name)
-      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","auditType":"PRISONER","auditEventType":"BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE","createdBy":"Bob"}""")
+      assertThat(details).isEqualTo("""{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","scheduleId":1,"date":"2023-01-02","startTime":"10:00:00","endTime":"11:00:00","createdAt":"2023-01-02T13:43:56","createdBy":"Bob"}""")
       assertThat(service).isEqualTo("hmpps-activities-management-api")
       assertThat(`when`).isNotNull
     }

@@ -27,7 +27,6 @@ import java.time.LocalDateTime
 class AuditService(
   private val hmppsAuditApiClient: HmppsAuditApiClient,
   private val auditRepository: AuditRepository,
-  private val objectMapper: ObjectMapper,
   @Value("\${feature.audit.service.enabled:false}")
   private val featureEnabled: Boolean,
 ) {
@@ -75,7 +74,7 @@ class AuditService(
         hmppsAuditApiClient.createEvent(
           HmppsAuditEvent(
             what = event.auditEventType.name,
-            details = objectMapper.writeValueAsString(event),
+            details = event.toJson(),
           ),
         )
       }

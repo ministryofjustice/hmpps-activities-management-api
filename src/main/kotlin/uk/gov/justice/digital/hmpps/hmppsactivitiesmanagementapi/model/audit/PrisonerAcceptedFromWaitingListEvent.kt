@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditModelUtils.generateHmppsAuditJson
 import java.time.LocalDateTime
 
 class PrisonerAcceptedFromWaitingListEvent(
@@ -29,5 +30,14 @@ class PrisonerAcceptedFromWaitingListEvent(
     prisonerNumber = prisonerNumber,
     activityId = activityId,
     message = toString(),
+  )
+
+  override fun toJson(): String = generateHmppsAuditJson(
+    activityId = activityId,
+    activityName = activityName,
+    prisonerNumber = prisonerNumber,
+    prisonCode = prisonCode,
+    createdAt = createdAt,
+    createdBy = createdBy,
   )
 }

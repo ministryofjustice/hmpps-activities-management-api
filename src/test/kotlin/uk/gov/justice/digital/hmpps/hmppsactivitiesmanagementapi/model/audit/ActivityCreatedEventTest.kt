@@ -26,7 +26,7 @@ class ActivityCreatedEventTest : AuditableEventTestBase() {
       createdAt,
     )
     val expectedToString = "An activity called 'Some Activity'(1) with category C and starting on 2023-03-23 " +
-      "at prison PBI. Event created on 2023-03-22 at 09:00:03 by Bob."
+      "at prison PBI was created. Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }
 }

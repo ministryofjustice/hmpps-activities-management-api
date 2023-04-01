@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditModelUtils.generateHmppsAuditJson
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -36,5 +37,18 @@ class BonusPaymentMadeForActivityAttendanceEvent(
     activityId = activityId,
     activityScheduleId = scheduleId,
     message = toString(),
+  )
+
+  override fun toJson(): String = generateHmppsAuditJson(
+    activityId = activityId,
+    activityName = activityName,
+    prisonerNumber = prisonerNumber,
+    prisonCode = prisonCode,
+    scheduleId = scheduleId,
+    date = date,
+    startTime = startTime,
+    endTime = endTime,
+    createdAt = createdAt,
+    createdBy = createdBy,
   )
 }
