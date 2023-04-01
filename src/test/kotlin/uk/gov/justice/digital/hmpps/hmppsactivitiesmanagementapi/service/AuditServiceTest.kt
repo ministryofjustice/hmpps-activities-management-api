@@ -1,9 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -13,7 +11,6 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BonusPaymentMadeForActivityAttendanceEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityTestUtils
@@ -23,6 +20,8 @@ import java.time.LocalTime
 
 class AuditServiceTest {
 
+  private val username = "Bob"
+
   private val hmppsEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   private val localAuditRecordCaptor = argumentCaptor<LocalAuditRecord>()
@@ -31,38 +30,38 @@ class AuditServiceTest {
 
   private val auditRepository = mock<AuditRepository>()
 
-  private val objectMapper = jacksonObjectMapper()
-    .registerModule(JavaTimeModule())
-    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+  private val auditService = AuditService(hmppsAuditApiClient, auditRepository, true, true)
 
-  private val auditService = AuditService(hmppsAuditApiClient, auditRepository, true)
+  @BeforeEach
+  fun setup() {
+    SecurityTestUtils.setLoggedInUser(username)
+  }
 
   @Test
   fun `should not log hmpps auditable event if feature is disabled`() {
-    val event = mock<AuditableEvent>()
-    val auditService = AuditService(hmppsAuditApiClient, auditRepository, false)
+    val event = createEvent()
+    val auditService = AuditService(hmppsAuditApiClient, auditRepository, false, true)
 
     auditService.logEvent(event)
 
     verify(hmppsAuditApiClient, never()).createEvent(any())
+    verify(auditRepository).save(any())
+  }
+
+  @Test
+  fun `should not log local auditable event if feature is disabled`() {
+    val event = createEvent()
+    val auditService = AuditService(hmppsAuditApiClient, auditRepository, true, false)
+
+    auditService.logEvent(event)
+
+    verify(hmppsAuditApiClient).createEvent(any())
+    verify(auditRepository, never()).save(any())
   }
 
   @Test
   fun `should log event correctly`() {
-    val username = "Bob"
-    SecurityTestUtils.setLoggedInUser(username)
-
-    val event = BonusPaymentMadeForActivityAttendanceEvent(
-      1,
-      "Some Activity",
-      "PBI",
-      "AA12346",
-      1,
-      LocalDate.of(2023, 1, 2),
-      LocalTime.of(10, 0),
-      LocalTime.of(11, 0),
-      LocalDateTime.of(2023, 1, 2, 13, 43, 56),
-    )
+    val event = createEvent()
 
     auditService.logEvent(event)
 
@@ -87,4 +86,16 @@ class AuditServiceTest {
       assertThat(message).isEqualTo("A bonus payment was made to prisoner AA12346 for activity 'Some Activity'(1) scheduled on 2023-01-02 between 10:00 and 11:00 (scheduleId = 1). Event created on 2023-01-02 at 13:43:56 by Bob.")
     }
   }
+
+  private fun createEvent() = BonusPaymentMadeForActivityAttendanceEvent(
+    1,
+    "Some Activity",
+    "PBI",
+    "AA12346",
+    1,
+    LocalDate.of(2023, 1, 2),
+    LocalTime.of(10, 0),
+    LocalTime.of(11, 0),
+    LocalDateTime.of(2023, 1, 2, 13, 43, 56),
+  )
 }

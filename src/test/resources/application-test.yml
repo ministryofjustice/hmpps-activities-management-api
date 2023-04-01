@@ -55,4 +55,5 @@ bank-holiday:
 feature:
   audit:
     service:
-      enabled: true
+      hmpps:
+        enabled: true

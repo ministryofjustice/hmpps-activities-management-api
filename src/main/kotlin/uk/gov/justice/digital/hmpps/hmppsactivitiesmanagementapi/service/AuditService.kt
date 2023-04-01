@@ -27,8 +27,10 @@ import java.time.LocalDateTime
 class AuditService(
   private val hmppsAuditApiClient: HmppsAuditApiClient,
   private val auditRepository: AuditRepository,
-  @Value("\${feature.audit.service.enabled:false}")
-  private val featureEnabled: Boolean,
+  @Value("\${feature.audit.service.hmpps.enabled:false}")
+  private val hmppsAuditingEnabled: Boolean,
+  @Value("\${feature.audit.service.local.enabled:true}")
+  private val localAuditingEnabled: Boolean,
 ) {
 
   companion object {
@@ -36,7 +38,7 @@ class AuditService(
   }
 
   init {
-    log.info("Audit enabled = $featureEnabled")
+    log.info("Audit enabled = $hmppsAuditingEnabled")
   }
 
   fun searchEvents(
@@ -69,21 +71,25 @@ class AuditService(
   }
 
   fun logEvent(event: AuditableEvent) {
-    if (featureEnabled) {
-      if (event is HmppsAuditable) {
+    if (event is HmppsAuditable) {
+      if (hmppsAuditingEnabled) {
         hmppsAuditApiClient.createEvent(
           HmppsAuditEvent(
             what = event.auditEventType.name,
             details = event.toJson(),
           ),
         )
+      } else {
+        log.info("Not sending event of type ${event.javaClass.simpleName} to HMPPS as the feature is disabled")
       }
+    }
 
-      if (event is LocalAuditable) {
+    if (event is LocalAuditable) {
+      if (localAuditingEnabled) {
         auditRepository.save(event.toLocalAuditRecord())
+      } else {
+        log.info("Not auditing event of type ${event.javaClass.simpleName} locally as the feature is disabled")
       }
-    } else {
-      log.info("Not auditing event of type ${event.javaClass.simpleName} as the feature is disabled")
     }
   }
 
