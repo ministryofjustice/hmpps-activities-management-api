@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDateTime
 
 class PrisonerAcceptedFromWaitingListEventTest : AuditableEventTestBase() {
@@ -25,6 +26,24 @@ class PrisonerAcceptedFromWaitingListEventTest : AuditableEventTestBase() {
     val event = createEvent()
     val expectedJson = """{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","createdAt":"2023-03-22T09:00:03","createdBy":"Bob"}"""
     assertThat(event.toJson()).isEqualTo(expectedJson)
+  }
+
+  @Test
+  fun `returns the correct LocalAuditRecord representation`() {
+    val event = createEvent()
+    val expectedLocalAuditRecord = LocalAuditRecord(
+      username = "Bob",
+      auditType = AuditType.PRISONER,
+      detailType = AuditEventType.PRISONER_ACCEPTED_FROM_WAITING_LIST,
+      recordedTime = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
+      prisonCode = "PBI",
+      prisonerNumber = "AA12346",
+      activityId = 1,
+      message = "Prisoner AA12346 was accepted onto activity 'Some Activity'(1) from the " +
+        "waiting list. Event created on 2023-03-22 at 09:00:03 by Bob.",
+    )
+
+    assertThat(event.toLocalAuditRecord()).isEqualTo(expectedLocalAuditRecord)
   }
 
   private fun createEvent(): PrisonerAcceptedFromWaitingListEvent {
