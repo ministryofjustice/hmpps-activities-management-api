@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
 import java.time.LocalDateTime
@@ -33,6 +34,7 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
       PRISONER_ALLOCATED -> publisher.send(PRISONER_ALLOCATED.event(PrisonerAllocatedInformation(identifier)))
       APPOINTMENT_INSTANCE_CREATED -> publisher.send(APPOINTMENT_INSTANCE_CREATED.event(AppointmentInstanceCreatedInformation(identifier)))
       APPOINTMENT_INSTANCE_UPDATED -> publisher.send(APPOINTMENT_INSTANCE_UPDATED.event(AppointmentInstanceUpdatedInformation(identifier)))
+      APPOINTMENT_INSTANCE_DELETED -> publisher.send(APPOINTMENT_INSTANCE_DELETED.event(AppointmentInstanceDeletedInformation(identifier)))
     }
   }
 }
@@ -69,6 +71,14 @@ enum class OutboundEvent {
         additionalInformation = additionalInformation,
         description = "An appointment instance has been updated in the activities management service",
       )
+  },
+  APPOINTMENT_INSTANCE_DELETED {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = "appointments.appointment-instance.deleted",
+        additionalInformation = additionalInformation,
+        description = "An appointment instance has been deleted in the activities management service",
+      )
   }, ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
@@ -91,6 +101,8 @@ data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInfo
 data class AppointmentInstanceCreatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 data class AppointmentInstanceUpdatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
+
+data class AppointmentInstanceDeletedInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(

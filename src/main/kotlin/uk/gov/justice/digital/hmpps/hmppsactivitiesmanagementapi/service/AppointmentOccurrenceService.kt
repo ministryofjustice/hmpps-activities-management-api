@@ -35,6 +35,7 @@ class AppointmentOccurrenceService(
     val now = LocalDateTime.now()
 
     val updatedIds = mutableListOf<Long>()
+    val deletedIds = mutableListOf<Long>()
 
     // Category updates are applied at the appointment level
     request.categoryCode?.apply {
@@ -91,7 +92,10 @@ class AppointmentOccurrenceService(
 
         occurrence.allocations()
           .filter { allocation -> !prisonerMap.containsKey(allocation.prisonerNumber) }
-          .forEach { allocation -> occurrence.removeAllocation(allocation) }
+          .forEach { allocation ->
+            occurrence.removeAllocation(allocation)
+            deletedIds.add(allocation.appointmentOccurrenceAllocationId)
+          }
 
         val prisonerAllocationMap = occurrence.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
@@ -118,6 +122,17 @@ class AppointmentOccurrenceService(
       }.onFailure {
         log.error(
           "Failed to send appointment instance creation event for appointment instance id $it",
+          it,
+        )
+      }
+    }
+
+    deletedIds.sortedBy { it }.forEach {
+      runCatching {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
+      }.onFailure {
+        log.error(
+          "Failed to send appointment instance deleted event for appointment instance id $it",
           it,
         )
       }
