@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
@@ -217,8 +218,11 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment single appointment two prisoners success`() {
-    val request = appointmentCreateRequest(prisonerNumbers = listOf("A12345BC", "B23456CE"))
+  fun `createAppointment group appointment two prisoners success`() {
+    val request = appointmentCreateRequest(
+      appointmentType = AppointmentType.GROUP,
+      prisonerNumbers = listOf("A12345BC", "B23456CE"),
+    )
     val principal: Principal = mock()
     whenever(principal.name).thenReturn("TEST.USER")
 

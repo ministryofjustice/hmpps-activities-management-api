@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
@@ -72,6 +73,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+      assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)
       assertThat(comment).isEqualTo("Appointment occurrence level comment")
       assertThat(isEdited).isEqualTo(false)
       assertThat(isCancelled).isEqualTo(false)

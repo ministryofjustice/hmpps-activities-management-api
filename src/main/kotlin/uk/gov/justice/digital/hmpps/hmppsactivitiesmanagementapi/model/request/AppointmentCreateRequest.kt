@@ -8,6 +8,7 @@ import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -79,6 +80,13 @@ data class AppointmentCreateRequest(
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
+
+  @field:NotNull(message = "Appointment type must be supplied")
+  @Schema(
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
+  )
+  val appointmentType: AppointmentType?,
 
   @field:Valid
   @Schema(
