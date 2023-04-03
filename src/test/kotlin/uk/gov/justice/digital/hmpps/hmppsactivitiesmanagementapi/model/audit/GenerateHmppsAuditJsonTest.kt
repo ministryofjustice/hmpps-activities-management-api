@@ -6,11 +6,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class AuditModelUtilsTest {
+class GenerateHmppsAuditJsonTest {
 
   @Test
   fun `creates empty json object if no fields supplied`() {
-    assertThat(AuditModelUtils.generateHmppsAuditJson()).isEqualTo("{}")
+    assertThat(generateHmppsAuditJson()).isEqualTo("{}")
   }
 
   @Test
@@ -27,7 +27,7 @@ class AuditModelUtilsTest {
     val createdBy = "Bob"
 
     assertThat(
-      AuditModelUtils.generateHmppsAuditJson(
+      generateHmppsAuditJson(
         activityId = activityId,
         activityName = activityName,
         prisonCode = prisonCode,

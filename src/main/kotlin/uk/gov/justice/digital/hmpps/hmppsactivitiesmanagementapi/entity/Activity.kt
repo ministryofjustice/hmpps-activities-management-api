@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 
 @Entity
 @Table(name = "activity")
-@EntityListeners(ActivityEntityListener::class)
+@EntityListeners(AuditableListener::class)
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

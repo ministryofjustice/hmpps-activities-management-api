@@ -37,6 +37,8 @@ generic-service:
     SCHEDULE_AHEAD_DAYS_ONLINE: 14
     JMS_LISTENER_MODE: "ON"
     FEATURE_EVENTS_SNS_ENABLED: false
+    FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: false
+    FEATURE_AUDIT_SERVICE_LOCAL_ENABLED: true
 
   # Pre-existing kubernetes secrets to load as environment variables in the deployment.
   # namespace_secrets:
