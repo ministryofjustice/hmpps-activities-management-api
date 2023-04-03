@@ -30,7 +30,7 @@ class AppointmentOccurrenceAllocationEntityListener {
       outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
     }.onFailure {
       log.error(
-        "Failed to send appointment instance creation event for activity schedule ${entity.appointmentOccurrenceAllocationId}",
+        "Failed to send appointment instance creation event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
         it,
       )
     }

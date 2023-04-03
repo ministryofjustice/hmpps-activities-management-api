@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -20,12 +22,19 @@ class AppointmentOccurrenceService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val outboundEventsService: OutboundEventsService,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   fun updateAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentModel {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
     val now = LocalDateTime.now()
+
+    val updatedIds = mutableListOf<Long>()
 
     // Category updates are applied at the appointment level
     request.categoryCode?.apply {
@@ -33,12 +42,14 @@ class AppointmentOccurrenceService(
       appointment.categoryCode = this
       appointment.updated = now
       appointment.updatedBy = principal.name
+
+      updatedIds.addAll(appointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } })
     }
 
     val occurrencesToUpdate =
       when (request.applyTo) {
         ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-          appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) }
+          appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) },
         )
         ApplyTo.ALL_FUTURE_OCCURRENCES -> appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > now }
         else -> listOf(appointmentOccurrence)
@@ -95,9 +106,24 @@ class AppointmentOccurrenceService(
           )
         }
       }
+
+      occurrence.allocations().forEach { if (!updatedIds.contains(it.appointmentOccurrenceAllocationId)) updatedIds.add(it.appointmentOccurrenceAllocationId) }
     }
 
-    return appointmentRepository.saveAndFlush(appointment).toModel()
+    val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
+
+    updatedIds.sortedBy { it }.forEach {
+      runCatching {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it)
+      }.onFailure {
+        log.error(
+          "Failed to send appointment instance creation event for appointment instance id $it",
+          it,
+        )
+      }
+    }
+
+    return updatedAppointment.toModel()
   }
 
   private fun failIfCategoryNotFound(categoryCode: String) {
