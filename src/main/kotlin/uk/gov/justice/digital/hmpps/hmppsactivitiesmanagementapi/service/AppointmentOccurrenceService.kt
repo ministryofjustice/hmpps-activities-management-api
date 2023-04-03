@@ -35,15 +35,15 @@ class AppointmentOccurrenceService(
     val now = LocalDateTime.now()
 
     val updatedIds = mutableListOf<Long>()
-    val deletedIds = mutableListOf<Long>()
 
     // Category updates are applied at the appointment level
     request.categoryCode?.apply {
       failIfCategoryNotFound(this)
       appointment.categoryCode = this
+
+      // Mark appointment as updated and add associated ids for event publishing
       appointment.updated = now
       appointment.updatedBy = principal.name
-
       updatedIds.addAll(appointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } })
     }
 
@@ -63,8 +63,10 @@ class AppointmentOccurrenceService(
     }
 
     occurrencesToUpdate.forEach { occurrence ->
+      // Mark occurrence as updated and add associated ids for event publishing
       occurrence.updated = now
       occurrence.updatedBy = principal.name
+      occurrence.allocations().forEach { if (!updatedIds.contains(it.appointmentOccurrenceAllocationId)) updatedIds.add(it.appointmentOccurrenceAllocationId) }
 
       if (request.inCell == true) {
         occurrence.internalLocationId = null
@@ -94,7 +96,8 @@ class AppointmentOccurrenceService(
           .filter { allocation -> !prisonerMap.containsKey(allocation.prisonerNumber) }
           .forEach { allocation ->
             occurrence.removeAllocation(allocation)
-            deletedIds.add(allocation.appointmentOccurrenceAllocationId)
+            // Remove id from updated list as it has been removed
+            updatedIds.remove(allocation.appointmentOccurrenceAllocationId)
           }
 
         val prisonerAllocationMap = occurrence.allocations().associateBy { allocation -> allocation.prisonerNumber }
@@ -110,8 +113,6 @@ class AppointmentOccurrenceService(
           )
         }
       }
-
-      occurrence.allocations().forEach { if (!updatedIds.contains(it.appointmentOccurrenceAllocationId)) updatedIds.add(it.appointmentOccurrenceAllocationId) }
     }
 
     val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
@@ -121,18 +122,7 @@ class AppointmentOccurrenceService(
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it)
       }.onFailure {
         log.error(
-          "Failed to send appointment instance creation event for appointment instance id $it",
-          it,
-        )
-      }
-    }
-
-    deletedIds.sortedBy { it }.forEach {
-      runCatching {
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
-      }.onFailure {
-        log.error(
-          "Failed to send appointment instance deleted event for appointment instance id $it",
+          "Failed to send appointment instance updated event for appointment instance id $it",
           it,
         )
       }
