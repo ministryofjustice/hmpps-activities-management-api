@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -24,81 +25,76 @@ class AppointmentOccurrenceService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
-    val updated = LocalDateTime.now()
-    val updatedBy = principal.name
+    val now = LocalDateTime.now()
 
+    // Category updates are applied at the appointment level
     request.categoryCode?.apply {
       failIfCategoryNotFound(this)
       appointment.categoryCode = this
-      appointment.updated = updated
-      appointment.updatedBy = updatedBy
+      appointment.updated = now
+      appointment.updatedBy = principal.name
     }
 
-    if (request.inCell == true) {
-      appointmentOccurrence.internalLocationId = null
-      appointmentOccurrence.inCell = true
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
-    } else {
-      request.internalLocationId?.apply {
-        failIfLocationNotFound(this, appointment.prisonCode)
-        appointmentOccurrence.internalLocationId = this
-        appointmentOccurrence.inCell = false
-        appointmentOccurrence.updated = updated
-        appointmentOccurrence.updatedBy = updatedBy
-      }
-    }
-
-    request.startDate?.apply {
-      appointmentOccurrence.startDate = this
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
-    }
-
-    request.startTime?.apply {
-      appointmentOccurrence.startTime = this
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
-    }
-
-    request.endTime?.apply {
-      appointmentOccurrence.endTime = this
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
-    }
-
-    request.comment?.apply {
-      appointmentOccurrence.comment = this
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
-    }
-
-    request.prisonerNumbers?.apply {
-      val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(this).block()!!
-        .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
-        .associateBy { it.prisonerNumber }
-
-      failIfMissingPrisoners(this, prisonerMap)
-
-      appointmentOccurrence.allocations()
-        .filter { !prisonerMap.containsKey(it.prisonerNumber) }
-        .forEach { appointmentOccurrence.removeAllocation(it) }
-
-      val prisonerAllocationMap = appointmentOccurrence.allocations().associateBy { it.prisonerNumber }
-      val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
-
-      newPrisoners.forEach {
-        appointmentOccurrence.addAllocation(
-          AppointmentOccurrenceAllocation(
-            appointmentOccurrence = appointmentOccurrence,
-            prisonerNumber = it.prisonerNumber,
-            bookingId = it.bookingId!!.toLong(),
-          ),
+    val occurrencesToUpdate =
+      when (request.applyTo) {
+        ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
+          appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) }
         )
+        ApplyTo.ALL_FUTURE_OCCURRENCES -> appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > now }
+        else -> listOf(appointmentOccurrence)
       }
 
-      appointmentOccurrence.updated = updated
-      appointmentOccurrence.updatedBy = updatedBy
+    // Changing the start date of a repeat appointment changes the start date of all affected appointments based on the original schedule using the new start date
+    request.startDate?.apply {
+      val scheduleIterator = appointment.scheduleIterator().apply { startDate = request.startDate }
+      occurrencesToUpdate.sortedBy { it.sequenceNumber }.forEach { it.startDate = scheduleIterator.next() }
+    }
+
+    occurrencesToUpdate.forEach { occurrence ->
+      occurrence.updated = now
+      occurrence.updatedBy = principal.name
+
+      if (request.inCell == true) {
+        occurrence.internalLocationId = null
+        occurrence.inCell = true
+      } else {
+        request.internalLocationId?.apply {
+          failIfLocationNotFound(this, appointment.prisonCode)
+          occurrence.internalLocationId = this
+          occurrence.inCell = false
+        }
+      }
+
+      request.startTime?.apply { occurrence.startTime = this }
+
+      request.endTime?.apply { occurrence.endTime = this }
+
+      request.comment?.apply { occurrence.comment = this }
+
+      request.prisonerNumbers?.apply {
+        val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(this).block()!!
+          .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
+          .associateBy { prisoner -> prisoner.prisonerNumber }
+
+        failIfMissingPrisoners(this, prisonerMap)
+
+        occurrence.allocations()
+          .filter { allocation -> !prisonerMap.containsKey(allocation.prisonerNumber) }
+          .forEach { allocation -> occurrence.removeAllocation(allocation) }
+
+        val prisonerAllocationMap = occurrence.allocations().associateBy { allocation -> allocation.prisonerNumber }
+        val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
+
+        newPrisoners.forEach { prisoner ->
+          occurrence.addAllocation(
+            AppointmentOccurrenceAllocation(
+              appointmentOccurrence = occurrence,
+              prisonerNumber = prisoner.prisonerNumber,
+              bookingId = prisoner.bookingId!!.toLong(),
+            ),
+          )
+        }
+      }
     }
 
     return appointmentRepository.saveAndFlush(appointment).toModel()
