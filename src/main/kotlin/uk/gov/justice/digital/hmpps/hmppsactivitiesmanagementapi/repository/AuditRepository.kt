@@ -21,8 +21,8 @@ interface AuditRepository : JpaRepository<LocalAuditRecord, Long> {
     AND (:username IS NULL OR ar.username = :username)
      AND (:auditType IS NULL OR ar.auditType = :auditType)
      AND (:auditEventType IS NULL OR ar.detailType = :auditEventType)
-     AND (:startTime IS NULL OR ar.recordedTime >= :startTime)
-     AND (:endTime IS NULL OR ar.recordedTime <= :endTime)
+     AND (cast(:startTime as timestamp) IS NULL OR ar.recordedTime >= :startTime)
+     AND (cast(:endTime as timestamp) IS NULL OR ar.recordedTime <= :endTime)
      AND (:activityId IS NULL OR ar.activityId = :activityId)
      AND (:scheduleId IS NULL OR ar.activityScheduleId = :scheduleId)
     """,
