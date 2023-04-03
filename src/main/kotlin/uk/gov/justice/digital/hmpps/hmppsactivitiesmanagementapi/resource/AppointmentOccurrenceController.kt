@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
+import java.security.Principal
 
 @RestController
 @RequestMapping("/appointment-occurrences", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -89,5 +90,6 @@ class AppointmentOccurrenceController(
       required = true,
     )
     request: AppointmentOccurrenceUpdateRequest,
-  ): Appointment = appointmentOccurrenceService.updateAppointmentOccurrence(appointmentOccurrenceId, request)
+    principal: Principal,
+  ): Appointment = appointmentOccurrenceService.updateAppointmentOccurrence(appointmentOccurrenceId, request, principal)
 }

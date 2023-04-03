@@ -8,8 +8,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
   @Query(
-    value = "FROM AppointmentOccurrence ao " +
-      "JOIN Appointment a on ao.appointment.appointmentId = a.appointmentId " +
+    value = "FROM Appointment a " +
+      "JOIN  AppointmentOccurrence ao on a.appointmentId = ao.appointment.appointmentId " +
       "WHERE ao.appointmentOccurrenceId = :appointmentOccurrenceId",
   )
   fun findByAppointmentOccurrenceId(appointmentOccurrenceId: Long): Appointment?

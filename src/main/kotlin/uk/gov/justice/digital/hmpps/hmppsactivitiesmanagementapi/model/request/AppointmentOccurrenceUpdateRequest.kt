@@ -25,7 +25,7 @@ data class AppointmentOccurrenceUpdateRequest(
     """,
     example = "GYMW",
   )
-  val categoryCode: String?,
+  val categoryCode: String? = null,
 
   @Schema(
     description =
@@ -36,7 +36,7 @@ data class AppointmentOccurrenceUpdateRequest(
     """,
     example = "123",
   )
-  val internalLocationId: Long?,
+  val internalLocationId: Long? = null,
 
   @Schema(
     description =
@@ -46,7 +46,7 @@ data class AppointmentOccurrenceUpdateRequest(
     """,
     example = "false",
   )
-  val inCell: Boolean?,
+  val inCell: Boolean? = null,
 
   @field:FutureOrPresent(message = "Start date must not be in the past")
   @Schema(
@@ -57,33 +57,33 @@ data class AppointmentOccurrenceUpdateRequest(
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate?,
+  val startDate: LocalDate? = null,
 
   @Schema(
     description = "The updated starting time of the appointment occurrence",
     example = "09:00",
   )
   @JsonFormat(pattern = "HH:mm")
-  val startTime: LocalTime?,
+  val startTime: LocalTime? = null,
 
   @Schema(
     description = "The updated end time of the appointment occurrence",
     example = "10:30",
   )
   @JsonFormat(pattern = "HH:mm")
-  val endTime: LocalTime?,
+  val endTime: LocalTime? = null,
 
   @Schema(
     description = "Updated notes relating to the appointment occurrence",
     example = "This appointment occurrence has been rescheduled due to staff availability",
   )
-  val comment: String?,
+  val comment: String? = null,
 
   @Schema(
     description = "The replacement prisoner or prisoners to allocate to the appointment occurrence",
     example = "[\"A1234BC\"]",
   )
-  val prisonerNumbers: List<String>?,
+  val prisonerNumbers: List<String>? = null,
 
   @Schema(
     description =
@@ -92,18 +92,21 @@ data class AppointmentOccurrenceUpdateRequest(
     Defaults to THIS_OCCURRENCE meaning the update will be applied to the appointment occurrence specified by the
     supplied id only.
     """,
-    example = "10:30",
+    example = "THIS_OCCURRENCE",
   )
   val applyTo: ApplyTo = ApplyTo.THIS_OCCURRENCE,
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell == true || internalLocationId != null
+  private fun isInternalLocationId() = inCell != false || internalLocationId != null
 
   @AssertTrue(message = "Start time must be in the future")
   private fun isStartTime() = startDate == null || startTime == null || startDate < LocalDate.now() || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
+
+  @AssertTrue(message = "Cannot remove all allocated prisoners")
+  private fun isPrisonerNumbers() = prisonerNumbers == null || prisonerNumbers.isNotEmpty()
 }
 
 enum class ApplyTo {
