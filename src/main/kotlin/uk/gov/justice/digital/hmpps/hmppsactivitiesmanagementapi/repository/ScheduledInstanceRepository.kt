@@ -26,4 +26,48 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
     startDate: LocalDate,
     endDate: LocalDate,
   ): List<ScheduledInstance>
+
+  @Query(
+    """
+    select coalesce(min(previoussi.scheduled_instance_id),0) as previous_scheduled_instance_id
+      from scheduled_instance previoussi 
+      where concat(session_date, start_time ) = 
+        (select max(concat(session_date, start_time))
+         from scheduled_instance si2
+         where si2.activity_schedule_id = previoussi.activity_schedule_id
+         and concat(si2.session_date, si2.start_time) < (select concat(currentsi.session_date, currentsi.start_time)
+                                  from scheduled_instance currentsi
+                                  where currentsi.scheduled_instance_id = :scheduledInstanceId)
+         and previoussi.activity_schedule_id = (select activity_schedule_id
+                                  from scheduled_instance currentsi
+                                  where currentsi.scheduled_instance_id = :scheduledInstanceId)
+        )
+    """,
+    nativeQuery = true,
+  )
+  fun getPreviousScheduledInstance(
+    scheduledInstanceId: Long,
+  ): Long
+
+  @Query(
+    """
+    select coalesce(min(nextsi.scheduled_instance_id),0) as next_scheduled_instance_id
+    from scheduled_instance nextsi 
+    where concat(session_date, start_time ) = 
+      (select min(concat(session_date, start_time))
+       from scheduled_instance si2
+       where si2.activity_schedule_id = nextsi.activity_schedule_id
+       and concat(si2.session_date, si2.start_time) > (select concat(currentsi.session_date, currentsi.start_time)
+                                from scheduled_instance currentsi
+                                where currentsi.scheduled_instance_id = :scheduledInstanceId)
+       and nextsi.activity_schedule_id = (select activity_schedule_id
+                                from scheduled_instance currentsi
+                                where currentsi.scheduled_instance_id = :scheduledInstanceId)
+      )
+    """,
+    nativeQuery = true,
+  )
+  fun getNextScheduledInstance(
+    scheduledInstanceId: Long,
+  ): Long
 }

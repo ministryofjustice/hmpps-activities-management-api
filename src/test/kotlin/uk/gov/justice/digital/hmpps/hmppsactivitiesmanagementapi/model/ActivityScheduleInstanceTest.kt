@@ -29,6 +29,8 @@ class ActivityScheduleInstanceTest : ModelTest() {
       cancelled = true,
       cancelledTime = originalCancelledTime,
       cancelledReason = "Staff unavailable",
+      previousScheduledInstanceId = 0,
+      nextScheduledInstanceId = 0,
       attendances = emptyList(),
       activitySchedule = ActivityScheduleLite(
         id = 1,

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -30,9 +32,11 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   override fun controller() = ScheduledInstanceController(scheduledInstanceService, attendancesService)
 
+  private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
+
   @Test
   fun `200 response when get instance by ID found`() {
-    val instance = activityEntity().schedules().first().instances().first().toModel()
+    val instance = activityEntity().schedules().first().instances().first().toModel(scheduledInstanceRepository)
 
     whenever(scheduledInstanceService.getActivityScheduleInstanceById(1)).thenReturn(instance)
 

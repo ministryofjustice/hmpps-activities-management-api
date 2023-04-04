@@ -18,7 +18,7 @@ class ScheduledInstanceService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
   fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance =
-    repository.findOrThrowNotFound(id).toModel()
+    repository.findOrThrowNotFound(id).toModel(repository)
 
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
@@ -29,7 +29,7 @@ class ScheduledInstanceService(
       prisonCode,
       dateRange.start,
       dateRange.endInclusive,
-    ).toModel()
+    ).toModel(repository)
 
     return if (slot != null) {
       activities.filter { TimeSlot.slot(it.startTime) == slot }

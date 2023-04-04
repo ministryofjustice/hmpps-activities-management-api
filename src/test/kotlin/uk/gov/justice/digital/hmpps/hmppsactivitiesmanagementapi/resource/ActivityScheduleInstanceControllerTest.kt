@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
@@ -26,9 +28,11 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
 
   override fun controller() = ActivityScheduleInstanceController(scheduledInstanceService)
 
+  private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
+
   @Test
   fun `getActivityScheduledInstancesByDateRange - 200 response with scheduled instances`() {
-    val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel()
+    val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel(scheduledInstanceRepository)
     val startDate = LocalDate.of(2022, 10, 1)
     val endDate = LocalDate.of(2022, 11, 5)
 
