@@ -6,6 +6,9 @@ import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent
 
+/**
+ * A centralised reusable component for determining whether an application feature is enabled or not.
+ */
 @Component
 class FeatureSwitches(private val environment: Environment) {
 
