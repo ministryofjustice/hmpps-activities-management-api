@@ -14,7 +14,6 @@ generic-service:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SPRING_PROFILES_ACTIVE: dev
     SCHEDULE_AHEAD_DAYS: 14
-    FEATURE_AUDIT_SERVICE_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
