@@ -57,3 +57,12 @@ feature:
     service:
       hmpps:
         enabled: true
+  event:
+    activities:
+      activity-schedule:
+        created: true
+      prisoner:
+        allocated: true
+    appointments:
+      appointment-instance:
+        created: true
