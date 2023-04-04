@@ -30,36 +30,41 @@ class OutboundEventsService(private val publisher: EventsPublisher) {
     when (outboundEvent) {
       ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(ScheduleCreatedInformation(identifier)))
       PRISONER_ALLOCATED -> publisher.send(PRISONER_ALLOCATED.event(PrisonerAllocatedInformation(identifier)))
-      APPOINTMENT_INSTANCE_CREATED -> publisher.send(APPOINTMENT_INSTANCE_CREATED.event(AppointmentInstanceCreatedInformation(identifier)))
+      APPOINTMENT_INSTANCE_CREATED -> publisher.send(
+        APPOINTMENT_INSTANCE_CREATED.event(
+          AppointmentInstanceCreatedInformation(identifier),
+        ),
+      )
     }
   }
 }
 
-enum class OutboundEvent {
-  ACTIVITY_SCHEDULE_CREATED {
+enum class OutboundEvent(val eventType: String) {
+  ACTIVITY_SCHEDULE_CREATED("activities.activity-schedule.created") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(
-        eventType = "activities.activity-schedule.created",
+        eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A new activity schedule has been created in the activities management service",
       )
   },
-  PRISONER_ALLOCATED {
+  PRISONER_ALLOCATED("activities.prisoner.allocated") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(
-        eventType = "activities.prisoner.allocated",
+        eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A prisoner has been allocated to an activity in the activities management service",
       )
   },
-  APPOINTMENT_INSTANCE_CREATED {
+  APPOINTMENT_INSTANCE_CREATED("appointments.appointment-instance.created") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(
-        eventType = "appointments.appointment-instance.created",
+        eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A new appointment instance has been created in the activities management service",
       )
-  }, ;
+  },
+  ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
 }
