@@ -49,9 +49,12 @@ class ScheduledEventService(
 
   /**
    *  Get scheduled events for a prison, a single prisoner, between two dates and with an optional time slot.
-   *  Court hearings, visits and external transfers are from Prison API
+   *  Court hearings, visits, adjudications and external transfers are from Prison API
    *  Appointments are from the SAA DB if "prisonRollout.appointmentsDataSource" == 'ACTIVITIES' else from Prison API.
    *  Activities are from the SAA DB if "prisonRollout.active" is true else from Prison API.
+   *  Activities from the SAA DB will be eventClass == ACTIVITY, and eventClass == INT_MOV if from prison API.
+   *  Appointments from the SAA DB will be eventClass == APP, and eventClass == INT_MOV if from prison API.
+   *
    */
   fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
     prisonCode: String,
@@ -204,9 +207,11 @@ class ScheduledEventService(
 
   /**
    * Get the scheduled events for a list of prisoner numbers, for one date and time slot
-   * Court hearings, visits and external transfers are from Prison API
+   * Court hearings, visits, adjudications and external transfers are from Prison API
    * Appointments are from the SAA DB if prisonRollout appointmentsDataSource == 'ACTIVITIES', else from Prison API.
    * Activities are from the SAA DB if prisonRollout active is true, else from Prison API.
+   * Activities from the SAA DB will be eventClass == ACTIVITY, and eventClass == INT_MOV if from prison API.
+   * Appointments from the SAA DB will be eventClass == APP, and eventClass == INT_MOV if from prison API.
    */
   fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
     prisonCode: String,

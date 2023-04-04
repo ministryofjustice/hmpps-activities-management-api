@@ -71,6 +71,17 @@ fun transform(activity: EntityActivity) =
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
   )
 
+/*
+* Important:
+* Activities sourced from the SAA database have a different eventClass than those sourced from prison API.
+* The eventClass from NOMIS (via prison API) is "INT_MOV"
+* The eventClass from the SAA DB is "ACTIVITY"
+* Both sources set an eventType of 'PRISON_ACT'.
+* This is used by consumers to recognise that the eventId is a reference to the scheduledInstanceId.
+*/
+private const val EVENT_CLASS = "ACTIVITY"
+private const val EVENT_TYPE = "PRISON_ACT"
+
 fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
@@ -89,9 +100,9 @@ fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
       bookingId = it.bookingId.toLong(), // Change allocation to include bookingId
       locationId = it.internalLocationId?.toLong(),
       location = it.internalLocationDescription,
-      eventClass = "INT_MOV",
+      eventClass = EVENT_CLASS,
       eventStatus = null, // Can determine from attendance later
-      eventType = "PRISON_ACT",
+      eventType = EVENT_TYPE,
       eventTypeDesc = it.activityCategory,
       event = it.activitySummary,
       eventDesc = it.scheduleDescription,

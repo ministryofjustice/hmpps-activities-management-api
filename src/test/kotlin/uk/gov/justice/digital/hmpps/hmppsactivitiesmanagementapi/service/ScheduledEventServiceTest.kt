@@ -338,7 +338,7 @@ class ScheduledEventServiceTest {
         assertThat(it.bookingId).isEqualTo(900001)
         assertThat(it.eventId).isEqualTo(1L)
         assertThat(it.eventStatus).isNull()
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
+        assertThat(it.eventClass).isEqualTo("ACTIVITY") // ACTIVITY not INT_MOV
         assertThat(it.eventType).isEqualTo("PRISON_ACT")
         assertThat(it.eventTypeDesc).isEqualTo("Education")
         assertThat(it.locationId).isEqualTo(1)
@@ -509,7 +509,7 @@ class ScheduledEventServiceTest {
         assertThat(it.bookingId).isEqualTo(900001)
         assertThat(it.eventId).isEqualTo(1L)
         assertThat(it.eventStatus).isNull()
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
+        assertThat(it.eventClass).isEqualTo("ACTIVITY") // ACTIVITY not INT_MOV
         assertThat(it.eventType).isEqualTo("PRISON_ACT")
         assertThat(it.eventTypeDesc).isEqualTo("Education")
         assertThat(it.locationId).isEqualTo(1)
@@ -638,7 +638,7 @@ class ScheduledEventServiceTest {
         assertThat(it.prisonerNumber).isIn(prisonerNumbers)
         assertThat(it.bookingId).isEqualTo(900001)
         assertThat(it.eventId).isEqualTo(1L)
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
+        assertThat(it.eventClass).isEqualTo("ACTIVITY") // ACTIVITY not INT_MOV
         assertThat(it.eventType).isEqualTo("PRISON_ACT")
         assertThat(it.event).isEqualTo("English level 1")
         assertThat(it.eventDesc).isEqualTo("HB1 AM")
@@ -783,7 +783,7 @@ class ScheduledEventServiceTest {
         assertThat(it.prisonerNumber).isIn(prisonerNumbers)
         assertThat(it.bookingId).isEqualTo(900001)
         assertThat(it.eventId).isEqualTo(1L)
-        assertThat(it.eventClass).isEqualTo("INT_MOV")
+        assertThat(it.eventClass).isEqualTo("ACTIVITY") // ACTIVITY not INT_MOV
         assertThat(it.eventType).isEqualTo("PRISON_ACT")
         assertThat(it.event).isEqualTo("English level 1")
         assertThat(it.eventDesc).isEqualTo("HB1 AM")
@@ -1051,6 +1051,7 @@ class ScheduledEventServiceTest {
       assertThat(activities).hasSize(1)
       assertThat(activities!![0].prisonerNumber).isEqualTo("A1111AA")
       assertThat(activities!![0].priority).isEqualTo(6)
+      assertThat(activities!![0].eventClass).isEqualTo("INT_MOV")
       assertThat(visits).isNotNull
       assertThat(visits).hasSize(1)
       assertThat(visits!![0].prisonerNumber).isEqualTo("A1111AA")
