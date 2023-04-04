@@ -36,6 +36,8 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Test
   fun `200 response when get instance by ID found`() {
+    whenever(scheduledInstanceRepository.getPreviousScheduledInstance(1)).thenReturn(0L)
+    whenever(scheduledInstanceRepository.getNextScheduledInstance(1)).thenReturn(2L)
     val instance = activityEntity().schedules().first().instances().first().toModel(scheduledInstanceRepository)
 
     whenever(scheduledInstanceService.getActivityScheduleInstanceById(1)).thenReturn(instance)
