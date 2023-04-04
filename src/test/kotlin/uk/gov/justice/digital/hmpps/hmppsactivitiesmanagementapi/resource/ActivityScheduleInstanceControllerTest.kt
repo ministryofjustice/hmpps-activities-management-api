@@ -32,6 +32,21 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
 
   @Test
   fun `getActivityScheduledInstancesByDateRange - 200 response with scheduled instances`() {
+    whenever(scheduledInstanceRepository.getPreviousScheduledInstance(1)).thenReturn(
+      ScheduledInstanceFixture.instance(
+        id = 0,
+        locationId = 22,
+        date = LocalDate.of(2022, 10, 1),
+      ),
+    )
+    whenever(scheduledInstanceRepository.getNextScheduledInstance(1)).thenReturn(
+      ScheduledInstanceFixture.instance(
+        id = 2,
+        locationId = 22,
+        date = LocalDate.of(2022, 10, 1),
+      ),
+    )
+
     val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel(scheduledInstanceRepository)
     val startDate = LocalDate.of(2022, 10, 1)
     val endDate = LocalDate.of(2022, 11, 5)

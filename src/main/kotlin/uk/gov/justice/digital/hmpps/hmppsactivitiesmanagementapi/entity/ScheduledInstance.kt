@@ -77,8 +77,10 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
-    previousScheduledInstanceId = repository.getPreviousScheduledInstance(this.scheduledInstanceId),
-    nextScheduledInstanceId = repository.getNextScheduledInstance(this.scheduledInstanceId),
+    previousScheduledInstanceId = repository.getPreviousScheduledInstance(this.scheduledInstanceId)?.scheduledInstanceId,
+    previousScheduledInstanceDate = repository.getPreviousScheduledInstance(this.scheduledInstanceId)?.sessionDate,
+    nextScheduledInstanceId = repository.getNextScheduledInstance(this.scheduledInstanceId)?.scheduledInstanceId,
+    nextScheduledInstanceDate = repository.getNextScheduledInstance(this.scheduledInstanceId)?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance) },
   )
 

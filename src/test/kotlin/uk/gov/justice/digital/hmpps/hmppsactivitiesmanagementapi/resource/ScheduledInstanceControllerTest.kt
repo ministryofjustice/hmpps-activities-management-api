@@ -17,8 +17,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [ScheduledInstanceController::class])
 @ContextConfiguration(classes = [ScheduledInstanceController::class])
@@ -36,8 +38,13 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Test
   fun `200 response when get instance by ID found`() {
-    whenever(scheduledInstanceRepository.getPreviousScheduledInstance(1)).thenReturn(0L)
-    whenever(scheduledInstanceRepository.getNextScheduledInstance(1)).thenReturn(2L)
+    whenever(scheduledInstanceRepository.getPreviousScheduledInstance(-1)).thenReturn(
+      activityEntity().schedules().first().instances().first(),
+    )
+    whenever(scheduledInstanceRepository.getNextScheduledInstance(-1)).thenReturn(
+      activityEntity().schedules().first().instances().first(),
+    )
+
     val instance = activityEntity().schedules().first().instances().first().toModel(scheduledInstanceRepository)
 
     whenever(scheduledInstanceService.getActivityScheduleInstanceById(1)).thenReturn(instance)

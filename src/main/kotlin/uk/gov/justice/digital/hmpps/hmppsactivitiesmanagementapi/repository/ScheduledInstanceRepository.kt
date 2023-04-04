@@ -29,9 +29,9 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
 
   @Query(
     """
-    select coalesce(min(previoussi.scheduled_instance_id),0) as previous_scheduled_instance_id
+    select *
       from scheduled_instance previoussi 
-      where concat(session_date, start_time ) = 
+      where concat(session_date, start_time) = 
         (select max(concat(session_date, start_time))
          from scheduled_instance si2
          where si2.activity_schedule_id = previoussi.activity_schedule_id
@@ -47,13 +47,13 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   )
   fun getPreviousScheduledInstance(
     scheduledInstanceId: Long,
-  ): Long
+  ): ScheduledInstance?
 
   @Query(
     """
-    select coalesce(min(nextsi.scheduled_instance_id),0) as next_scheduled_instance_id
+    select *
     from scheduled_instance nextsi 
-    where concat(session_date, start_time ) = 
+    where concat(session_date, start_time) = 
       (select min(concat(session_date, start_time))
        from scheduled_instance si2
        where si2.activity_schedule_id = nextsi.activity_schedule_id
@@ -69,5 +69,5 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   )
   fun getNextScheduledInstance(
     scheduledInstanceId: Long,
-  ): Long
+  ): ScheduledInstance?
 }
