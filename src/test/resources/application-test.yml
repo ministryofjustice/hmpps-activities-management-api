@@ -51,9 +51,3 @@ prisoner-search:
 bank-holiday:
   api:
     url: http://localhost:8333
-
-feature:
-  audit:
-    service:
-      hmpps:
-        enabled: true

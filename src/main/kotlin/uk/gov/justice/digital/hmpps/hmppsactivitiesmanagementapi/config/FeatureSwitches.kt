@@ -34,5 +34,7 @@ class FeatureSwitches(private val environment: Environment) {
 }
 
 enum class Feature(val label: String) {
+  HMPPS_AUDIT_ENABLED("feature.audit.service.hmpps.enabled"),
+  LOCAL_AUDIT_ENABLED("feature.audit.service.local.enabled"),
   OUTBOUND_EVENTS_ENABLED("feature.events.sns.enabled"),
 }
