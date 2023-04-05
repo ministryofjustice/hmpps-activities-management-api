@@ -511,13 +511,15 @@ class ActivityScheduleTest {
     scheduleWithInstances.addInstance(today, scheduleWithInstances.slots().first())
     scheduleWithInstances.addInstance(today.plusDays(1L), scheduleWithInstances.slots().first())
     scheduleWithInstances.addInstance(today.plusDays(2L), scheduleWithInstances.slots().first())
+    scheduleWithInstances.addInstance(today.plusDays(3L), scheduleWithInstances.slots().first())
 
-    assertThat(scheduleWithInstances.instances()).hasSize(3)
 
-    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().first())?.toModel()?.previousScheduledInstanceDate).isNull()
-    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().first())?.toModel()?.nextScheduledInstanceDate).isNotNull()
+    assertThat(scheduleWithInstances.instances()).hasSize(4)
 
-    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().last())?.toModel()?.previousScheduledInstanceDate).isNotNull()
-    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().last())?.toModel()?.nextScheduledInstanceDate).isNull()
+    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().first())?.toModel()?.date).isNull()
+    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().first())?.toModel()?.date).isEqualTo(today.plusDays(1L))
+
+    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().last())?.toModel()?.date).isEqualTo(today.plusDays(2L))
+    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().last())?.toModel()?.date).isNull()
   }
 }
