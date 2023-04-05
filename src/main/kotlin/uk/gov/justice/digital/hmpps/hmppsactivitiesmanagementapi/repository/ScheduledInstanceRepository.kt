@@ -29,20 +29,21 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
 
   @Query(
     """
-    select previoussi
-      from scheduledInstance previoussi 
-      where concat(sessionDate, startTime) = 
-        (select max(concat(sessionDate, startTime))
-         from scheduledInstance si2
-         where si2.activityScheduleId = previoussi.activityScheduleId
-         and concat(si2.sessionDate, si2.startTime) < (select concat(currentsi.sessionDate, currentsi.startTime)
-                                  from scheduledInstance currentsi
-                                  where currentsi.scheduledInstanceId = :scheduledInstanceId)
-         and previoussi.activityScheduleId = (select activityScheduleId
-                                  from scheduledInstance currentsi
-                                  where currentsi.scheduledInstanceId = :scheduledInstanceId)
+    select *
+      from scheduled_instance previoussi 
+      where concat(session_date, start_time) = 
+        (select max(concat(session_date, start_time))
+         from scheduled_instance si2
+         where si2.activity_schedule_id = previoussi.activity_schedule_id
+         and concat(si2.session_date, si2.start_time) < (select concat(currentsi.session_date, currentsi.start_time)
+                                  from scheduled_instance currentsi
+                                  where currentsi.scheduled_instance_id = :scheduledInstanceId)
+         and previoussi.activity_schedule_id = (select activity_schedule_id
+                                  from scheduled_instance currentsi
+                                  where currentsi.scheduled_instance_id = :scheduledInstanceId)
         )
     """,
+    nativeQuery = true,
   )
   fun getPreviousScheduledInstance(
     scheduledInstanceId: Long,
