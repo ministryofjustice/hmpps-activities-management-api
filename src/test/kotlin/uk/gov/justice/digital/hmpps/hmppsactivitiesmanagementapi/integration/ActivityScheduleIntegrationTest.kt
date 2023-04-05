@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -15,9 +16,14 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerAllocatedInformation
 import java.time.LocalDateTime
@@ -27,7 +33,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
+
+  @MockBean
+  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
+
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
+
+  @Autowired
+  private lateinit var auditRepository: AuditRepository
 
   @Autowired
   private lateinit var repository: ActivityScheduleRepository
@@ -98,6 +112,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql(
     "classpath:test_data/seed-activity-id-7.sql",
+    "classpath:test_data/clear-local-audit.sql",
   )
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
@@ -125,6 +140,24 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      println(details)
+      assertThat(what).isEqualTo("PRISONER_ALLOCATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"MDI\",\"prisonerNumber\":\"G4793VF\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.PRISONER)
+      assertThat(detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("Prisoner G4793VF was allocated to activity 'Maths'(1) and schedule Maths AM(1)")
     }
   }
 

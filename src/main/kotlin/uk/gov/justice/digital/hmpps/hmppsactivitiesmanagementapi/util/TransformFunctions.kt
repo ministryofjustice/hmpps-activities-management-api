@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -317,4 +318,15 @@ fun EntityActivity.toActivityCreatedEvent() = ActivityCreatedEvent(
   categoryCode = activityCategory.name,
   startDate = startDate,
   createdAt = createdTime,
+)
+
+fun EntityAllocation.toPrisonerAllocatedEvent() = PrisonerAllocatedEvent(
+
+  activityId = activitySchedule.activity.activityId,
+  activityName = activitySchedule.activity.summary,
+  prisonCode = activitySchedule.activity.prisonCode,
+  prisonerNumber = prisonerNumber,
+  scheduleId = activitySchedule.activityScheduleId,
+  scheduleDescription = activitySchedule.description,
+  createdAt = allocatedTime,
 )

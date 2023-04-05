@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toPrisonerAllocatedEvent
 
 @Component
 class AuditableListener {
@@ -21,12 +22,30 @@ class AuditableListener {
   }
 
   @PostPersist
-  fun onCreate(activity: Activity) {
+  fun onCreate(entity: Any) {
+    when (entity) {
+      is Activity -> audit(entity)
+      is Allocation -> audit(entity)
+    }
+  }
+
+  private fun audit(activity: Activity) {
     runCatching {
       auditing.logEvent(activity.toActivityCreatedEvent())
     }.onFailure {
       log.error(
         "Failed to audit activity creation event for activity id ${activity.activityId}",
+        it,
+      )
+    }
+  }
+
+  private fun audit(allocation: Allocation) {
+    runCatching {
+      auditing.logEvent(allocation.toPrisonerAllocatedEvent())
+    }.onFailure {
+      log.error(
+        "Failed to audit prisoner allocation event for allocation id ${allocation.allocationId}",
         it,
       )
     }

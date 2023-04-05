@@ -1,9 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 class PrisonerAllocatedEvent(
   val activityId: Long,
@@ -11,16 +9,14 @@ class PrisonerAllocatedEvent(
   val prisonCode: String,
   val prisonerNumber: String,
   val scheduleId: Long,
-  val date: LocalDate,
-  val startTime: LocalTime,
-  val endTime: LocalTime,
+  val scheduleDescription: String,
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(
   auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_ALLOCATED,
   details = "Prisoner $prisonerNumber was allocated to " +
-    "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
+    "activity '$activityName'($activityId) and schedule $scheduleDescription($scheduleId)",
   createdAt = createdAt,
 ),
   HmppsAuditable,
@@ -44,9 +40,6 @@ class PrisonerAllocatedEvent(
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,
     scheduleId = scheduleId,
-    date = date,
-    startTime = startTime,
-    endTime = endTime,
     createdAt = createdAt,
     createdBy = createdBy,
   )
