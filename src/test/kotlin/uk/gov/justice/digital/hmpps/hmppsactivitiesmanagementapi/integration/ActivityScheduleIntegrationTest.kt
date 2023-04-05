@@ -33,6 +33,8 @@ import java.time.temporal.ChronoUnit
 @TestPropertySource(
   properties = [
     "feature.event.activities.prisoner.allocated=true",
+    "feature.audit.service.hmpps.enabled=true",
+    "feature.audit.service.local.enabled=true",
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
