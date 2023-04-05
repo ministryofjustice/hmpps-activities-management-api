@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -12,6 +11,8 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.HmppsAuditable
@@ -27,11 +28,10 @@ import java.time.LocalDateTime
 class AuditService(
   private val hmppsAuditApiClient: HmppsAuditApiClient,
   private val auditRepository: AuditRepository,
-  @Value("\${feature.audit.service.hmpps.enabled:false}")
-  private val hmppsAuditingEnabled: Boolean,
-  @Value("\${feature.audit.service.local.enabled:true}")
-  private val localAuditingEnabled: Boolean,
+  featureSwitches: FeatureSwitches,
 ) {
+  private val hmppsAuditingEnabled = featureSwitches.isEnabled(Feature.HMPPS_AUDIT_ENABLED)
+  private val localAuditingEnabled = featureSwitches.isEnabled(Feature.LOCAL_AUDIT_ENABLED)
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
