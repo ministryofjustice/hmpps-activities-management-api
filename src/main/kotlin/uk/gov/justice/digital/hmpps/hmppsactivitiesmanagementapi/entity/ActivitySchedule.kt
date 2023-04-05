@@ -76,7 +76,7 @@ data class ActivitySchedule(
     orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
-  private var instances: MutableList<ScheduledInstance> = mutableListOf()
+  private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
   @OneToMany(
     mappedBy = "activitySchedule",
