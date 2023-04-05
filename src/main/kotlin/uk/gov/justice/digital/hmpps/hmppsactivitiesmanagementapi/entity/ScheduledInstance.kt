@@ -13,7 +13,6 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -67,7 +66,7 @@ data class ScheduledInstance(
     attendances.forEach(Attendance::waiting)
   }
 
-  fun toModel(repository: ScheduledInstanceRepository) = ModelScheduledInstance(
+  fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId,
     date = this.sessionDate,
@@ -77,10 +76,10 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
-    previousScheduledInstanceId = repository.getPreviousScheduledInstance(this.scheduledInstanceId)?.scheduledInstanceId,
-    previousScheduledInstanceDate = repository.getPreviousScheduledInstance(this.scheduledInstanceId)?.sessionDate,
-    nextScheduledInstanceId = repository.getNextScheduledInstance(this.scheduledInstanceId)?.scheduledInstanceId,
-    nextScheduledInstanceDate = repository.getNextScheduledInstance(this.scheduledInstanceId)?.sessionDate,
+    previousScheduledInstanceId = this.activitySchedule.previous(this)?.scheduledInstanceId,
+    previousScheduledInstanceDate = this.activitySchedule.previous(this)?.sessionDate,
+    nextScheduledInstanceId = this.activitySchedule.next(this)?.scheduledInstanceId,
+    nextScheduledInstanceDate = this.activitySchedule.next(this)?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance) },
   )
 
@@ -105,4 +104,4 @@ data class ScheduledInstance(
   }
 }
 
-fun List<ScheduledInstance>.toModel(repository: ScheduledInstanceRepository) = map { it.toModel(repository) }
+fun List<ScheduledInstance>.toModel() = map { it.toModel() }

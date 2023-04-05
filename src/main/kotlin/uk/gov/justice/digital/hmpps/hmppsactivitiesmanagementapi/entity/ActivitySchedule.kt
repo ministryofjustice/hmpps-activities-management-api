@@ -76,7 +76,7 @@ data class ActivitySchedule(
     orphanRemoval = true,
   )
   @Fetch(FetchMode.SUBSELECT)
-  private val instances: MutableList<ScheduledInstance> = mutableListOf()
+  private var instances: MutableList<ScheduledInstance> = mutableListOf()
 
   @OneToMany(
     mappedBy = "activitySchedule",
@@ -241,6 +241,32 @@ data class ActivitySchedule(
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
+  }
+
+  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? {
+    var previousInstance: ScheduledInstance? = null
+    var sortedInstances = scheduledInstance.activitySchedule.instances.sortedWith(compareBy({ it.sessionDate }, { it.startTime }))
+    sortedInstances.forEach { instance ->
+      if (instance.scheduledInstanceId === scheduledInstance.scheduledInstanceId) {
+        return previousInstance
+      }
+      previousInstance = instance
+    }
+    return null
+  }
+
+  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? {
+    var instanceMatched = false
+    var sortedInstances = scheduledInstance.activitySchedule.instances.sortedWith(compareBy({ it.sessionDate }, { it.startTime }))
+    sortedInstances.forEach { instance ->
+      if (instanceMatched) {
+        return instance
+      }
+      if (instance.scheduledInstanceId === scheduledInstance.scheduledInstanceId) {
+        instanceMatched = true
+      }
+    }
+    return null
   }
 }
 

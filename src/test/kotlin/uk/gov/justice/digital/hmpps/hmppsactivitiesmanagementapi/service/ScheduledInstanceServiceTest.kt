@@ -60,18 +60,6 @@ class ScheduledInstanceServiceTest {
           ),
         ),
       )
-      whenever(repository.getPreviousScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 0,
-          locationId = 22,
-        ),
-      )
-      whenever(repository.getNextScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 2,
-          locationId = 22,
-        ),
-      )
       assertThat(service.getActivityScheduleInstanceById(1)).isInstanceOf(ActivityScheduleInstance::class.java)
     }
 
@@ -94,19 +82,6 @@ class ScheduledInstanceServiceTest {
       val endDate = LocalDate.of(2022, 11, 5)
       val dateRange = LocalDateRange(startDate, endDate)
 
-      whenever(repository.getPreviousScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 0,
-          locationId = 22,
-        ),
-      )
-      whenever(repository.getNextScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 2,
-          locationId = 22,
-        ),
-      )
-
       whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
         .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
@@ -122,18 +97,6 @@ class ScheduledInstanceServiceTest {
       val endDate = LocalDate.of(2022, 11, 5)
       val dateRange = LocalDateRange(startDate, endDate)
 
-      whenever(repository.getPreviousScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 0,
-          locationId = 22,
-        ),
-      )
-      whenever(repository.getNextScheduledInstance(1)).thenReturn(
-        ScheduledInstanceFixture.instance(
-          id = 2,
-          locationId = 22,
-        ),
-      )
       whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
         .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
