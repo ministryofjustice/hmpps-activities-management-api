@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -15,10 +15,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityTestUtils
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
+@ExtendWith(FakeSecurityContext::class)
 class AuditableEntityListenerTest(@Autowired private val listener: AuditableListener) {
 
   @MockBean
@@ -28,11 +29,6 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableList
 
   private val activityCreatedCaptor = argumentCaptor<ActivityCreatedEvent>()
   private val prisonerAllocatedCaptor = argumentCaptor<PrisonerAllocatedEvent>()
-
-  @BeforeEach
-  fun setup() {
-    SecurityTestUtils.setLoggedInUser("Bob")
-  }
 
   @Test
   fun `activity created event raised on creation`() {
