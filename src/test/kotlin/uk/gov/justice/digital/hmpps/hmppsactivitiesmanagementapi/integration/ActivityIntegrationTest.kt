@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.core.type.TypeReference
+import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -8,8 +9,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -27,8 +30,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleCreatedInformation
 import java.time.LocalDate
@@ -36,13 +44,28 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
+@TestPropertySource(
+  properties = [
+    "feature.event.activities.activity-schedule.created=true",
+  ],
+)
 class ActivityIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
+
+  @MockBean
+  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
+
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
+  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
+
+  @Autowired
+  private lateinit var auditRepository: AuditRepository
+
   @Test
+  @Sql("classpath:test_data/clear-local-audit.sql")
   fun `createActivity - is successful`() {
     prisonApiMockServer.stubGetEducationLevel(
       "EDU_LEVEL",
@@ -74,12 +97,27 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_CREATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on 2023-03-31 at prison MDI was created")
+    }
   }
 
   @Test
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - failed duplicate prison code - summary`() {
     val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
       this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
@@ -502,6 +540,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Test
+  @Sql("classpath:test_data/clear-local-audit.sql")
   fun `the activity should be persisted even if the subsequent event notification fails`() {
     prisonApiMockServer.stubGetEducationLevel(
       "EDU_LEVEL",
