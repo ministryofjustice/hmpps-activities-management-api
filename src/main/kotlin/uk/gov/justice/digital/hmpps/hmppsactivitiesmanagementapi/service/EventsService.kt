@@ -38,9 +38,17 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
           APPOINTMENT_INSTANCE_CREATED.event(
             AppointmentInstanceCreatedInformation(identifier),
           ),
-        ),
-	APPOINTMENT_INSTANCE_UPDATED -> publisher.send(APPOINTMENT_INSTANCE_UPDATED.event(AppointmentInstanceUpdatedInformation(identifier)))
-      	APPOINTMENT_INSTANCE_DELETED -> publisher.send(APPOINTMENT_INSTANCE_DELETED.event(AppointmentInstanceDeletedInformation(identifier)))
+        )
+        APPOINTMENT_INSTANCE_UPDATED -> publisher.send(
+          APPOINTMENT_INSTANCE_UPDATED.event(
+            AppointmentInstanceUpdatedInformation(identifier),
+          ),
+        )
+        APPOINTMENT_INSTANCE_DELETED -> publisher.send(
+          APPOINTMENT_INSTANCE_DELETED.event(
+            AppointmentInstanceDeletedInformation(identifier),
+          ),
+        )
       }
     } else {
       log.info("Ignoring publishing of event type $outboundEvent")
