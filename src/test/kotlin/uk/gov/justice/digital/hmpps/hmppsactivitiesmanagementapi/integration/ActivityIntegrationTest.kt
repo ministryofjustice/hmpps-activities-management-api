@@ -47,6 +47,8 @@ import java.time.temporal.ChronoUnit
 @TestPropertySource(
   properties = [
     "feature.event.activities.activity-schedule.created=true",
+    "feature.audit.service.hmpps.enabled=true",
+    "feature.audit.service.local.enabled=true",
   ],
 )
 class ActivityIntegrationTest : IntegrationTestBase() {
