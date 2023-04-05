@@ -243,31 +243,15 @@ data class ActivitySchedule(
     return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
   }
 
-  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? {
-    var previousInstance: ScheduledInstance? = null
-    var sortedInstances = scheduledInstance.activitySchedule.instances.sortedWith(compareBy({ it.sessionDate }, { it.startTime }))
-    sortedInstances.forEach { instance ->
-      if (instance.scheduledInstanceId === scheduledInstance.scheduledInstanceId) {
-        return previousInstance
-      }
-      previousInstance = instance
-    }
-    return null
-  }
+  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? =
+    instances()
+      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) - 1) }
 
-  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? {
-    var instanceMatched = false
-    var sortedInstances = scheduledInstance.activitySchedule.instances.sortedWith(compareBy({ it.sessionDate }, { it.startTime }))
-    sortedInstances.forEach { instance ->
-      if (instanceMatched) {
-        return instance
-      }
-      if (instance.scheduledInstanceId === scheduledInstance.scheduledInstanceId) {
-        instanceMatched = true
-      }
-    }
-    return null
-  }
+  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? =
+    instances()
+      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
