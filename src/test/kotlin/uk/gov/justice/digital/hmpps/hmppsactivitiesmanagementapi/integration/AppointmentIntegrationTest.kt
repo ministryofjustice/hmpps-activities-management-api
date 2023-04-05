@@ -8,6 +8,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -26,6 +27,11 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
+@TestPropertySource(
+  properties = [
+    "feature.event.appointments.appointment-instance.created=true",
+  ],
+)
 class AppointmentIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
