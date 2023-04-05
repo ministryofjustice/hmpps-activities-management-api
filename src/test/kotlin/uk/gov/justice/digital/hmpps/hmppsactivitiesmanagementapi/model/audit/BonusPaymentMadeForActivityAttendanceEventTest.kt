@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -10,37 +11,59 @@ class BonusPaymentMadeForActivityAttendanceEventTest : AuditableEventTestBase() 
 
   @Test
   fun `returns correct type`() {
-    val event = BonusPaymentMadeForActivityAttendanceEvent(
-      1,
-      "Some Activity",
-      "PBI",
-      42,
-      LocalDate.now(),
-      LocalTime.now(),
-      LocalTime.now(),
-      LocalDateTime.now(),
-    )
+    val event = createEvent()
     assertThat(event.auditEventType).isEqualTo(AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE)
   }
 
   @Test
   fun `returns correct string representation`() {
+    val event = createEvent()
+    val expectedToString = "A bonus payment was made to prisoner AA12346 for activity 'Some Activity'(1) " +
+      "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."
+    assertThat(event.toString()).isEqualTo(expectedToString)
+  }
+
+  @Test
+  fun `returns the correct json representation`() {
+    val event = createEvent()
+    val expectedJson = """{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","scheduleId":42,"date":"2023-03-23","startTime":"09:00:00","endTime":"10:00:00","createdAt":"2023-03-22T09:00:03","createdBy":"Bob"}"""
+    assertThat(event.toJson()).isEqualTo(expectedJson)
+  }
+
+  @Test
+  fun `returns the correct LocalAuditRecord representation`() {
+    val event = createEvent()
+    val expectedLocalAuditRecord = LocalAuditRecord(
+      username = "Bob",
+      auditType = AuditType.PRISONER,
+      detailType = AuditEventType.BONUS_PAYMENT_MADE_FOR_ACTIVITY_ATTENDANCE,
+      recordedTime = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
+      prisonCode = "PBI",
+      prisonerNumber = "AA12346",
+      activityId = 1,
+      activityScheduleId = 42,
+      message = "A bonus payment was made to prisoner AA12346 for activity 'Some Activity'(1) " +
+        "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob.",
+    )
+
+    assertThat(event.toLocalAuditRecord()).isEqualTo(expectedLocalAuditRecord)
+  }
+
+  private fun createEvent(): BonusPaymentMadeForActivityAttendanceEvent {
     val startDate = LocalDate.of(2023, 3, 23)
     val startTime = LocalTime.of(9, 0)
     val endTime = LocalTime.of(10, 0)
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
-    val event = BonusPaymentMadeForActivityAttendanceEvent(
+    return BonusPaymentMadeForActivityAttendanceEvent(
       1,
       "Some Activity",
-      "A123456",
+      "PBI",
+      "AA12346",
       42,
       startDate,
       startTime,
       endTime,
       createdAt,
     )
-    val expectedToString = "A bonus payment was made to prisoner A123456 for activity 'Some Activity'(1) " +
-      "scheduled on 2023-03-23 between 09:00 and 10:00 (scheduleId = 42). Event created on 2023-03-22 at 09:00:03 by Bob."
-    assertThat(event.toString()).isEqualTo(expectedToString)
   }
 }
