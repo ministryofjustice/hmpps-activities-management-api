@@ -242,6 +242,16 @@ data class ActivitySchedule(
   override fun toString(): String {
     return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
   }
+
+  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? =
+    instances()
+      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) - 1) }
+
+  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? =
+    instances()
+      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }

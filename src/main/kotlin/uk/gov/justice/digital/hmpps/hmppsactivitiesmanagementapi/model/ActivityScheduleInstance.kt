@@ -37,6 +37,20 @@ data class ActivityScheduleInstance(
   @Schema(description = "The reason this scheduled instance was cancelled", example = "Staff unavailable")
   val cancelledReason: String? = null,
 
+  @Schema(description = "The id for the previous scheduled instance", example = "123456")
+  val previousScheduledInstanceId: Long? = null,
+
+  @Schema(description = "The date for the previous scheduled instance", example = "2022-09-30")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val previousScheduledInstanceDate: LocalDate? = null,
+
+  @Schema(description = "The id for the next scheduled instance", example = "123456")
+  val nextScheduledInstanceId: Long? = null,
+
+  @Schema(description = "The date for the next scheduled instance", example = "2022-09-30")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val nextScheduledInstanceDate: LocalDate? = null,
+
   @Schema(description = "The list of attendees")
   val attendances: List<Attendance>,
 

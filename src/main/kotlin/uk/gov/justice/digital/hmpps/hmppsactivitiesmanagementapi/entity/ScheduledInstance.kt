@@ -76,6 +76,10 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
+    previousScheduledInstanceId = this.activitySchedule.previous(this)?.scheduledInstanceId,
+    previousScheduledInstanceDate = this.activitySchedule.previous(this)?.sessionDate,
+    nextScheduledInstanceId = this.activitySchedule.next(this)?.scheduledInstanceId,
+    nextScheduledInstanceDate = this.activitySchedule.next(this)?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance) },
   )
 
