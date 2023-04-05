@@ -489,4 +489,35 @@ class ActivityScheduleTest {
 
     assertThat(scheduleWithSlot.instances()).isEmpty()
   }
+
+  @Test
+  fun `can retrieve previous and next instances where available`() {
+    val scheduleWithInstances = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = today,
+      internalLocationId = 1,
+      internalLocationCode = "Loc Code",
+      internalLocationDescription = "Loc Code Desc",
+    ).apply {
+      addSlot(
+        startTime = today.atStartOfDay().toLocalTime(),
+        endTime = today.atStartOfDay().toLocalTime().plusHours(1),
+        setOf(DayOfWeek.MONDAY),
+      )
+    }
+
+    scheduleWithInstances.addInstance(today, scheduleWithInstances.slots().first())
+    scheduleWithInstances.addInstance(today.plusDays(1L), scheduleWithInstances.slots().first())
+    scheduleWithInstances.addInstance(today.plusDays(2L), scheduleWithInstances.slots().first())
+
+    assertThat(scheduleWithInstances.instances()).hasSize(3)
+
+    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().first())?.toModel()?.previousScheduledInstanceDate).isNull()
+    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().first())?.toModel()?.nextScheduledInstanceDate).isNotNull()
+
+    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().last())?.toModel()?.previousScheduledInstanceDate).isNotNull()
+    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().last())?.toModel()?.nextScheduledInstanceDate).isNull()
+  }
 }
