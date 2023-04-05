@@ -513,7 +513,6 @@ class ActivityScheduleTest {
     scheduleWithInstances.addInstance(today.plusDays(2L), scheduleWithInstances.slots().first())
     scheduleWithInstances.addInstance(today.plusDays(3L), scheduleWithInstances.slots().first())
 
-
     assertThat(scheduleWithInstances.instances()).hasSize(4)
 
     assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().first())?.toModel()?.date).isNull()
