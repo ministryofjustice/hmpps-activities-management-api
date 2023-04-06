@@ -60,4 +60,38 @@ class AllocationTest {
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '-1' is already deallocated.")
   }
+
+  @Test
+  fun `check can suspend an active allocation`() {
+    val allocation = allocation().also { assertThat(it.status(PrisonerStatus.ACTIVE)) }
+
+    allocation.suspend(today.atStartOfDay(), "Temporarily released from prison")
+
+    with(allocation) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
+      assertThat(suspendedBy).isEqualTo("SYSTEM")
+      assertThat(suspendedTime).isEqualTo(today.atStartOfDay())
+      assertThat(suspendedReason).isEqualTo("Temporarily released from prison")
+    }
+  }
+
+  @Test
+  fun `check cannot suspend an already inactive allocation`() {
+    val allocation = allocation().apply { deallocate(LocalDateTime.now()) }.also { assertThat(it.status(PrisonerStatus.ENDED)) }
+
+    assertThatThrownBy { allocation.suspend(today.atStartOfDay(), "Temporarily released from prison") }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("You can only suspend active allocations")
+  }
+
+  @Test
+  fun `check cannot supend same allocation`() {
+    val allocation = allocation().also { assertThat(it.status(PrisonerStatus.ACTIVE)) }
+
+    allocation.suspend(today.atStartOfDay(), "Temporarily released from prison")
+
+    assertThatThrownBy { allocation.suspend(today.atStartOfDay(), "Temporarily released from prison") }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("You can only suspend active allocations")
+  }
 }

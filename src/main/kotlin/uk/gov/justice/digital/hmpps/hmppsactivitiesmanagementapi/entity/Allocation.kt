@@ -98,6 +98,22 @@ data class Allocation(
       isUnemployment = activitySchedule.activity.isUnemployment(),
     )
 
+  fun suspend(dateTime: LocalDateTime, reason: String) =
+    this.apply {
+      failIfAllocationIsNotActive()
+
+      prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
+      suspendedTime = dateTime
+      suspendedReason = reason
+      suspendedBy = "SYSTEM"
+    }
+
+  private fun failIfAllocationIsNotActive() {
+    if (status(PrisonerStatus.ACTIVE).not()) {
+      throw IllegalStateException("You can only suspend active allocations")
+    }
+  }
+
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(allocationId = $allocationId )"
@@ -105,5 +121,5 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, SUSPENDED, ENDED
+  ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
 }
