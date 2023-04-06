@@ -41,5 +41,8 @@ insert into scheduled_instance(activity_schedule_id, session_date, start_time, e
 values (1, now(), '10:00:00', '11:00:00', true, now(), 'Old Canceller', 'Nobody Available', null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
-values (1, 1, 'A22222A', 1, 'Attendance Comment', now(), 'Old Recorder', 'WAITING', 150, 50, null, false);
+values (1, 1, 'A22222A', 1, 'Attendance Comment', now(), 'Old Recorder', 'COMPLETED', 150, 50, null, false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (2, 1, 'A11111A', null, null, now(), 'Old Recorder', 'WAITING', null, null, null, null);
 
