@@ -8,16 +8,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 import org.mockito.AdditionalAnswers.returnsFirstArg
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
-import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -26,7 +30,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Optional
 
 class AppointmentOccurrenceServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -63,6 +67,9 @@ class AppointmentOccurrenceServiceTest {
     fun `updateAppointmentOccurrence throws entity not found exception for unknown appointment occurrence id`() {
       assertThatThrownBy { service.updateAppointmentOccurrence(-1, AppointmentOccurrenceUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Appointment Occurrence -1 not found")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -75,6 +82,7 @@ class AppointmentOccurrenceServiceTest {
         .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -87,6 +95,7 @@ class AppointmentOccurrenceServiceTest {
         .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointment.prisonCode}'")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -99,6 +108,7 @@ class AppointmentOccurrenceServiceTest {
         .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -113,6 +123,18 @@ class AppointmentOccurrenceServiceTest {
         .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update prisoner list throws illegal argument exception when adding prisoner to individual appointment`() {
+      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("A1234BC", "BC2345D"))
+
+      assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot allocate more than one prisoner to an individual appointment occurrence")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
     }
   }
 
@@ -122,6 +144,7 @@ class AppointmentOccurrenceServiceTest {
     private val principal: Principal = mock()
     private val appointment = appointmentEntity(updatedBy = null)
     private val appointmentOccurrence = appointment.occurrences().first()
+    private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
 
     @BeforeEach
     fun setUp() {
@@ -150,6 +173,9 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -173,6 +199,9 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -193,6 +222,9 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -211,6 +243,9 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -229,6 +264,9 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -247,6 +285,95 @@ class AppointmentOccurrenceServiceTest {
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update comment success`() {
+      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment occurrence level comment")
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(response.occurrences.single()) {
+          assertThat(comment).isEqualTo(request.comment)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+      }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update prisoner with no changes success`() {
+      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = appointmentOccurrence.prisonerNumbers())
+
+      var index = 0
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            request.prisonerNumbers!!.map {
+              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
+            },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.single()) {
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+          with(allocations.single()) {
+            assertThat(prisonerNumber).isEqualTo("A1234BC")
+            assertThat(bookingId).isEqualTo(456)
+          }
+        }
+      }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update prisoner success`() {
+      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("BC2345D"))
+
+      var index = 1L
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            request.prisonerNumbers!!.map {
+              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = index++, prisonId = appointment.prisonCode)
+            },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.single()) {
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+          with(allocations.single()) {
+            assertThat(prisonerNumber).isEqualTo("BC2345D")
+            assertThat(bookingId).isEqualTo(1)
+          }
+        }
+      }
+
+      verifyNoInteractions(outboundEventsService)
     }
   }
 }

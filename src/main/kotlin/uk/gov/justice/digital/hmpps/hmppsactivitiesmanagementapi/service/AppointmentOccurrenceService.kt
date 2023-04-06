@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
@@ -86,6 +87,10 @@ class AppointmentOccurrenceService(
       request.comment?.apply { occurrence.comment = this }
 
       request.prisonerNumbers?.apply {
+        if (request.prisonerNumbers.size > 1 && appointment.appointmentType == AppointmentType.INDIVIDUAL) {
+          throw IllegalArgumentException("Cannot allocate more than one prisoner to an individual appointment occurrence")
+        }
+
         val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(this).block()!!
           .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
           .associateBy { prisoner -> prisoner.prisonerNumber }

@@ -14,7 +14,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
-import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
@@ -55,7 +54,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
       startDate = LocalDate.now().minusDays(1),
       startTime = LocalTime.of(10, 30),
       endTime = LocalTime.of(10, 0),
-      prisonerNumbers = emptyList()
+      prisonerNumbers = emptyList(),
     )
     val mockPrincipal: Principal = mock()
 
@@ -88,10 +87,10 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     whenever(appointmentOccurrenceService.updateAppointmentOccurrence(1, request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response = mockMvc.updateAppointmentOccurrence(1, request, mockPrincipal)
-        .andDo { print() }
-        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { isAccepted() } }
-        .andReturn().response
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isAccepted() } }
+      .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
