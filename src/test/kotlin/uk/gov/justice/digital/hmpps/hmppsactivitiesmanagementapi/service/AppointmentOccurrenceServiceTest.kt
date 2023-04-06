@@ -19,9 +19,11 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -53,7 +55,7 @@ class AppointmentOccurrenceServiceTest {
   @DisplayName("update appointment occurrence validation")
   inner class UpdateAppointmentOccurrenceValidation {
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(updatedBy = null)
+    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
     private val appointmentOccurrence = appointment.occurrences().first()
 
     @BeforeEach
@@ -67,6 +69,24 @@ class AppointmentOccurrenceServiceTest {
     fun `updateAppointmentOccurrence throws entity not found exception for unknown appointment occurrence id`() {
       assertThatThrownBy { service.updateAppointmentOccurrence(-1, AppointmentOccurrenceUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Appointment Occurrence -1 not found")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update category code throws illegal argument exception when appointment occurrence is in the past`() {
+      val request = AppointmentOccurrenceUpdateRequest()
+
+      val appointment = appointmentEntity(appointmentId = 2, startDate = LocalDate.now(), startTime = LocalTime.now().minusMinutes(1), endTime = LocalTime.now().plusHours(1))
+      val appointmentOccurrence = appointment.occurrences().first()
+
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot update a past appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
       verifyNoInteractions(outboundEventsService)
@@ -142,7 +162,7 @@ class AppointmentOccurrenceServiceTest {
   @DisplayName("update individual appointment")
   inner class UpdateIndividualAppointment {
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(updatedBy = null)
+    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
     private val appointmentOccurrence = appointment.occurrences().first()
     private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
 
@@ -234,7 +254,7 @@ class AppointmentOccurrenceServiceTest {
       val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
       with(response) {
-        assertThat(startDate).isEqualTo(LocalDate.now())
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(response.occurrences.single()) {
@@ -374,6 +394,165 @@ class AppointmentOccurrenceServiceTest {
       }
 
       verifyNoInteractions(outboundEventsService)
+    }
+  }
+
+  @Nested
+  @DisplayName("update group repeat appointment")
+  inner class UpdateGroupRepeatAppointment {
+    private val principal: Principal = mock()
+    private val appointment = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      updatedBy = null,
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 4,
+    )
+    private val appointmentOccurrence = appointment.occurrences()[2]
+
+    @BeforeEach
+    fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
+      appointment.occurrences().forEach {
+        whenever(appointmentOccurrenceRepository.findById(it.appointmentOccurrenceId)).thenReturn(
+          Optional.of(it),
+        )
+      }
+
+      whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
+    }
+
+    @Test
+    fun `update appointment category code success`() {
+      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
+
+      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
+        with(response.occurrences) {
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update internal location id apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(response.occurrences.subList(0, 1)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(response.occurrences[2]) {
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isFalse
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(response.occurrences[3]) {
+          assertThat(internalLocationId).isEqualTo(123)
+          assertThat(inCell).isFalse
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update internal location id apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(response.occurrences.subList(0, 1)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(response.occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update internal location id apply to all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(response.occurrences[0]) {
+          assertThat(internalLocationId).isEqualTo(123)
+          assertThat(inCell).isFalse
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+        with(response.occurrences.subList(1, response.occurrences.size)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
     }
   }
 }

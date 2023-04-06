@@ -16,6 +16,8 @@ internal fun appointmentEntity(
   internalLocationId: Long = 123,
   inCell: Boolean = false,
   startDate: LocalDate = LocalDate.now(),
+  startTime: LocalTime = LocalTime.of(9, 0),
+  endTime: LocalTime = LocalTime.of(10, 30),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   appointmentType: AppointmentType? = null,
@@ -29,8 +31,8 @@ internal fun appointmentEntity(
   internalLocationId = if (inCell) null else internalLocationId,
   inCell = inCell,
   startDate = startDate,
-  startTime = LocalTime.of(9, 0),
-  endTime = LocalTime.of(10, 30),
+  startTime = startTime,
+  endTime = endTime,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   comment = "Appointment level comment",
   created = LocalDateTime.now().minusDays(1),
@@ -48,11 +50,11 @@ internal fun appointmentEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1L, it.index + 1, it.value, prisonerNumberToBookingIdMap))
+    this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1L, it.index + 1, it.value, updatedBy, prisonerNumberToBookingIdMap))
   }
 }
 
-private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now(), prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointment = appointment,
@@ -64,11 +66,11 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOcc
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
     cancelled = false,
-    updated = LocalDateTime.now(),
-    updatedBy = "UPDATE.USER",
+    updated = if (updatedBy == null) null else LocalDateTime.now(),
+    updatedBy = updatedBy,
   ).apply {
     prisonerNumberToBookingIdMap.map {
-      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * appointmentOccurrenceId + this.allocations().size
+      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * (appointmentOccurrenceId - 1) + this.allocations().size
       this.addAllocation(appointmentOccurrenceAllocationEntity(this, appointmentOccurrenceAllocationId, it.key, it.value))
     }
   }

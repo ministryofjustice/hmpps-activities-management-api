@@ -35,6 +35,10 @@ class AppointmentOccurrenceService(
 
     val now = LocalDateTime.now()
 
+    if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
+      throw IllegalArgumentException("Cannot update a past appointment occurrence")
+    }
+
     val updatedIds = mutableListOf<Long>()
 
     // Category updates are applied at the appointment level
@@ -42,10 +46,16 @@ class AppointmentOccurrenceService(
       failIfCategoryNotFound(this)
       appointment.categoryCode = this
 
-      // Mark appointment as updated and add associated ids for event publishing
+      // Mark appointment and occurrences as updated and add associated ids for event publishing
       appointment.updated = now
       appointment.updatedBy = principal.name
-      updatedIds.addAll(appointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } })
+      appointment.occurrences().forEach { occurrence ->
+        occurrence.updated = now
+        occurrence.updatedBy = principal.name
+        occurrence.allocations().forEach { allocation ->
+          updatedIds.add(allocation.appointmentOccurrenceAllocationId)
+        }
+      }
     }
 
     val occurrencesToUpdate =
