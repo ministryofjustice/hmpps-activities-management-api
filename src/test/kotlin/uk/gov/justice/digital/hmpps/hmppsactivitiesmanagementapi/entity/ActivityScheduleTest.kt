@@ -508,17 +508,26 @@ class ActivityScheduleTest {
       )
     }
 
-    scheduleWithInstances.addInstance(today, scheduleWithInstances.slots().first())
-    scheduleWithInstances.addInstance(today.plusDays(1L), scheduleWithInstances.slots().first())
-    scheduleWithInstances.addInstance(today.plusDays(2L), scheduleWithInstances.slots().first())
-    scheduleWithInstances.addInstance(today.plusDays(3L), scheduleWithInstances.slots().first())
+    // Adding out of order is intentional for verifying previous and next functionality
+    val secondInstance = scheduleWithInstances.addInstance(today.plusDays(1L), scheduleWithInstances.slots().first())
+    val fourthInstance = scheduleWithInstances.addInstance(today.plusDays(3L), scheduleWithInstances.slots().first())
+    val thirdInstance = scheduleWithInstances.addInstance(today.plusDays(2L), scheduleWithInstances.slots().first())
+    val firstInstance = scheduleWithInstances.addInstance(today, scheduleWithInstances.slots().first())
 
     assertThat(scheduleWithInstances.instances()).hasSize(4)
 
-    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().first())?.toModel()?.date).isNull()
-    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().first())?.toModel()?.date).isEqualTo(today.plusDays(1L))
+    with(scheduleWithInstances) {
+      assertThat(previous(firstInstance)).isNull()
+      assertThat(next(firstInstance)).isEqualTo(secondInstance)
 
-    assertThat(scheduleWithInstances.previous(scheduleWithInstances.instances().last())?.toModel()?.date).isEqualTo(today.plusDays(2L))
-    assertThat(scheduleWithInstances.next(scheduleWithInstances.instances().last())?.toModel()?.date).isNull()
+      assertThat(previous(secondInstance)).isEqualTo(firstInstance)
+      assertThat(next(secondInstance)).isEqualTo(thirdInstance)
+
+      assertThat(previous(thirdInstance)).isEqualTo(secondInstance)
+      assertThat(next(thirdInstance)).isEqualTo(fourthInstance)
+
+      assertThat(previous(fourthInstance)).isEqualTo(thirdInstance)
+      assertThat(next(fourthInstance)).isNull()
+    }
   }
 }
