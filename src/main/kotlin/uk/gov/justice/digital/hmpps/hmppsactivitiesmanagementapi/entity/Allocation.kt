@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 
 @Entity
 @Table(name = "allocation")
-@EntityListeners(AllocationEntityListener::class)
+@EntityListeners(AllocationEntityListener::class, AuditableListener::class)
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
