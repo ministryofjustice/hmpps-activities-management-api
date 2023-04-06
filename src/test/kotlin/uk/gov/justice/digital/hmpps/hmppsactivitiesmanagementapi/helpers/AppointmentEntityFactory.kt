@@ -35,7 +35,7 @@ internal fun appointmentEntity(
   comment = "Appointment level comment",
   created = LocalDateTime.now().minusDays(1),
   createdBy = createdBy,
-  updated = LocalDateTime.now(),
+  updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
   deleted = false,
 ).apply {
