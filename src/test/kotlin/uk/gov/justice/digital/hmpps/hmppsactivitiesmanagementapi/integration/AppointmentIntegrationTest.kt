@@ -11,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
@@ -150,8 +151,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `create appointment single appointment two prisoner success`() {
-    val request = appointmentCreateRequest(categoryCode = "AC1", prisonerNumbers = listOf("A12345BC", "B23456CE"))
+  fun `create appointment group appointment two prisoner success`() {
+    val request = appointmentCreateRequest(
+      categoryCode = "AC1",
+      appointmentType = AppointmentType.GROUP,
+      prisonerNumbers = listOf("A12345BC", "B23456CE"),
+    )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -222,6 +227,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)
       assertThat(comment).isEqualTo(request.comment)
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("test-client")
@@ -267,6 +273,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(appointmentType).isEqualTo(AppointmentType.GROUP)
       assertThat(comment).isEqualTo(request.comment)
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("test-client")

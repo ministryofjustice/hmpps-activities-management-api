@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -31,6 +32,7 @@ class AppointmentTest : ModelTest() {
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
+      appointmentType = AppointmentType.INDIVIDUAL,
       created = originalCreatedTime,
       createdBy = "A. Jones",
       inCell = true,

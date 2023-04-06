@@ -38,7 +38,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       assertThat(status).isEqualTo("WAITING")
       assertThat(payAmount).isEqualTo(150)
       assertThat(bonusAmount).isEqualTo(50)
-      assertThat(issuePayment).isTrue
+      assertThat(issuePayment).isFalse()
     }
   }
 

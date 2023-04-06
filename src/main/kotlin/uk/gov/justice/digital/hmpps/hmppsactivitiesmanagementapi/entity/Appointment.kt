@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -66,6 +68,9 @@ data class Appointment(
   var updatedBy: String? = null,
 
   val deleted: Boolean = false,
+
+  @Enumerated(EnumType.STRING)
+  val appointmentType: AppointmentType,
 ) {
   fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
@@ -93,6 +98,7 @@ data class Appointment(
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
+    appointmentType = appointmentType,
     comment = comment,
     created = created,
     createdBy = createdBy,
@@ -116,6 +122,7 @@ data class Appointment(
       startTime,
       endTime,
       schedule?.toRepeat(),
+      appointmentType,
       comment,
       created,
       userMap[createdBy].toSummary(createdBy),
@@ -131,3 +138,8 @@ data class Appointment(
 }
 
 fun List<Appointment>.toModel() = map { it.toModel() }
+
+enum class AppointmentType {
+  INDIVIDUAL,
+  GROUP,
+}

@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -16,6 +17,7 @@ internal fun appointmentEntity(
   startDate: LocalDate = LocalDate.now(),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
+  appointmentType: AppointmentType? = null,
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
   repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
@@ -28,6 +30,7 @@ internal fun appointmentEntity(
   startDate = startDate,
   startTime = LocalTime.of(9, 0),
   endTime = LocalTime.of(10, 30),
+  appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   comment = "Appointment level comment",
   created = LocalDateTime.now().minusDays(1),
   createdBy = createdBy,

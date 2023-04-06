@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -30,6 +31,7 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     LocalDate.now(),
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
+    AppointmentType.INDIVIDUAL,
     "Appointment level comment",
     created,
     "CREATE.USER",
@@ -88,6 +90,7 @@ fun appointmentCreateRequest(
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
+  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   comment: String = "Appointment level comment",
   repeat: AppointmentRepeat? = null,
   prisonerNumbers: List<String> = listOf("A1234BC"),
@@ -100,6 +103,7 @@ fun appointmentCreateRequest(
     startDate,
     startTime,
     endTime,
+    appointmentType,
     repeat,
     comment,
     prisonerNumbers,
@@ -115,6 +119,7 @@ fun appointmentDetails() = AppointmentDetails(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   null,
+  AppointmentType.INDIVIDUAL,
   "Appointment level comment",
   LocalDateTime.now(),
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
@@ -153,6 +158,7 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   LocalDate.now(),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
+  AppointmentType.INDIVIDUAL,
   "Appointment level comment",
   false,
   false,

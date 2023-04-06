@@ -64,7 +64,10 @@ data class AppointmentOccurrence(
 
   fun allocations() = allocations.toList()
 
-  fun addAllocation(allocation: AppointmentOccurrenceAllocation) = allocations.add(allocation)
+  fun addAllocation(allocation: AppointmentOccurrenceAllocation) {
+    failIfIndividualAppointmentAlreadyAllocated()
+    allocations.add(allocation)
+  }
 
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
@@ -117,6 +120,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
+      appointment.appointmentType,
       comment ?: appointment.comment,
       false,
       false,
@@ -130,6 +134,12 @@ data class AppointmentOccurrence(
       },
       prisoners.toSummary(),
     )
+
+  private fun failIfIndividualAppointmentAlreadyAllocated() {
+    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations.isNotEmpty()) {
+      throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
+    }
+  }
 }
 
 fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
