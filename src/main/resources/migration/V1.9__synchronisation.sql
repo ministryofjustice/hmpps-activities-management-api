@@ -12,7 +12,7 @@ CREATE OR REPLACE VIEW v_attendance_sync AS
            a.status,
            a.pay_amount,
            a.bonus_amount,
-           ar.capture_pay as issue_payment
+           a.issue_payment
     from attendance a
     join scheduled_instance si on a.scheduled_instance_id = si.scheduled_instance_id
     join allocation a2 on si.activity_schedule_id = a2.activity_schedule_id and a.prisoner_number = a2.prisoner_number
