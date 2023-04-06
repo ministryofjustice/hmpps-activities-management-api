@@ -12,7 +12,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-17.sql",
   )
   @Test
-  fun `should return attendance sync`() {
+  fun `should return attendance sync for a completed attendance`() {
     val attendanceSync =
       webTestClient.get()
         .uri("/synchronisation/attendance/1")
@@ -35,10 +35,44 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
       assertThat(bookingId).isEqualTo(10002)
       assertThat(attendanceReasonCode).isEqualTo("SICK")
       assertThat(comment).isEqualTo("Attendance Comment")
-      assertThat(status).isEqualTo("WAITING")
+      assertThat(status).isEqualTo("COMPLETED")
       assertThat(payAmount).isEqualTo(150)
       assertThat(bonusAmount).isEqualTo(50)
       assertThat(issuePayment).isFalse()
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-17.sql",
+  )
+  @Test
+  fun `should return attendance sync for a waiting attendance`() {
+    val attendanceSync =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/2")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync) {
+      assertThat(attendanceId).isEqualTo(2)
+      assertThat(scheduledInstanceId).isEqualTo(1)
+      assertThat(activityScheduleId).isEqualTo(1)
+      assertThat(sessionDate).isEqualTo(LocalDate.now())
+      assertThat(sessionStartTime).isEqualTo("10:00")
+      assertThat(sessionEndTime).isEqualTo("11:00")
+      assertThat(prisonerNumber).isEqualTo("A11111A")
+      assertThat(bookingId).isEqualTo(10001)
+      assertThat(attendanceReasonCode).isNull()
+      assertThat(comment).isNull()
+      assertThat(status).isEqualTo("WAITING")
+      assertThat(payAmount).isNull()
+      assertThat(bonusAmount).isNull()
+      assertThat(issuePayment).isNull()
     }
   }
 
