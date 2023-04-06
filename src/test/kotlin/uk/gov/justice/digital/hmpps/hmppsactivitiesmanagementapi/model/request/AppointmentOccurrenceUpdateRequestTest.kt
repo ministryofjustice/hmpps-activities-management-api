@@ -48,6 +48,12 @@ class AppointmentOccurrenceUpdateRequestTest {
     assertSingleValidationError(validator.validate(request), "prisonerNumbers", "Cannot remove all allocated prisoners")
   }
 
+  @Test
+  fun `cannot update start date for all future occurrences`() {
+    val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    assertSingleValidationError(validator.validate(request), "applyTo", "Cannot update start date for all future occurrences")
+  }
+
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentOccurrenceUpdateRequest>>, propertyName: String, message: String) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)

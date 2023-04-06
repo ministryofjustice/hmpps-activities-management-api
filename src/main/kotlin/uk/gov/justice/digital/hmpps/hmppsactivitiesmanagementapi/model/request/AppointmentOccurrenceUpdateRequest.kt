@@ -107,6 +107,9 @@ data class AppointmentOccurrenceUpdateRequest(
 
   @AssertTrue(message = "Cannot remove all allocated prisoners")
   private fun isPrisonerNumbers() = prisonerNumbers == null || prisonerNumbers.isNotEmpty()
+
+  @AssertTrue(message = "Cannot update start date for all future occurrences")
+  private fun isApplyTo() = startDate == null || applyTo != ApplyTo.ALL_FUTURE_OCCURRENCES
 }
 
 enum class ApplyTo {

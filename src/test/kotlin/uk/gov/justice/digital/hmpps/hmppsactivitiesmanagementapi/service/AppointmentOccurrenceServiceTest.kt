@@ -188,7 +188,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
         assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
@@ -212,7 +212,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
@@ -235,7 +235,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(internalLocationId).isNull()
           assertThat(inCell).isTrue
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
@@ -249,7 +249,7 @@ class AppointmentOccurrenceServiceTest {
 
     @Test
     fun `update start date success`() {
-      val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusWeeks(1))
+      val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(3))
 
       val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
@@ -257,7 +257,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
@@ -278,7 +278,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
@@ -299,7 +299,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
@@ -320,7 +320,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.single()) {
+        with(occurrences.single()) {
           assertThat(comment).isEqualTo(request.comment)
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
@@ -435,7 +435,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
         assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(response.occurrences) {
+        with(occurrences) {
           assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
@@ -461,19 +461,19 @@ class AppointmentOccurrenceServiceTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.subList(0, 1)) {
+        with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
           assertThat(map { it.updated }.distinct().single()).isNull()
           assertThat(map { it.updatedBy }.distinct().single()).isNull()
         }
-        with(response.occurrences[2]) {
+        with(occurrences[2]) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
-        with(response.occurrences[3]) {
+        with(occurrences[3]) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isFalse
           assertThat(updated).isNull()
@@ -501,13 +501,13 @@ class AppointmentOccurrenceServiceTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences.subList(0, 1)) {
+        with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
           assertThat(map { it.updated }.distinct().single()).isNull()
           assertThat(map { it.updatedBy }.distinct().single()).isNull()
         }
-        with(response.occurrences.subList(2, response.occurrences.size)) {
+        with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
           assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
@@ -535,15 +535,447 @@ class AppointmentOccurrenceServiceTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(response.occurrences[0]) {
+        with(occurrences[0]) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isFalse
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
         }
-        with(response.occurrences.subList(1, response.occurrences.size)) {
+        with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update in cell = true apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(inCell = true, applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences[2]) {
+          assertThat(internalLocationId).isNull()
+          assertThat(inCell).isTrue
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(occurrences[3]) {
+          assertThat(internalLocationId).isEqualTo(123)
+          assertThat(inCell).isFalse
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update in cell = true apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(inCell = true, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isNull()
+          assertThat(map { it.inCell }.distinct().single()).isTrue
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update in cell = true apply to all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(inCell = true, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences[0]) {
+          assertThat(internalLocationId).isEqualTo(123)
+          assertThat(inCell).isFalse
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+        with(occurrences.subList(1, response.occurrences.size)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isNull()
+          assertThat(map { it.inCell }.distinct().single()).isTrue
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update start date apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1).plusWeeks(2), applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        assertThat(response.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(response.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+        assertThat(response.occurrences[2].startDate).isEqualTo(request.startDate)
+        assertThat(response.occurrences[3].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(3))
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences[2]) {
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(occurrences[3]) {
+          assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(3))
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update start date apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1).plusWeeks(2), applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        assertThat(response.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(response.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+        assertThat(response.occurrences[2].startDate).isEqualTo(request.startDate)
+        assertThat(response.occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update start time apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(13, 30), applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences[2]) {
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(occurrences[3]) {
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update start time apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(13, 30), applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update start time apply to all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(13, 30), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences[0]) {
+          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+        with(occurrences.subList(1, response.occurrences.size)) {
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update end time apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(15, 0), applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences[2]) {
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(occurrences[3]) {
+          assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update end time apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(15, 0), applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update end time apply to all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(15, 0), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences[0]) {
+          assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+        with(occurrences.subList(1, response.occurrences.size)) {
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update comment apply to this occurrence success`() {
+      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment occurrence level comment", applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences[2]) {
+          assertThat(comment).isEqualTo("Updated appointment occurrence level comment")
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+        }
+        with(occurrences[3]) {
+          assertThat(comment).isEqualTo("Appointment occurrence level comment")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update comment apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment occurrence level comment", applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
+        }
+        with(occurrences.subList(2, response.occurrences.size)) {
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+        }
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update comment apply to all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment occurrence level comment", applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
+        with(occurrences[0]) {
+          assertThat(comment).isEqualTo("Appointment occurrence level comment")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+        }
+        with(occurrences.subList(1, response.occurrences.size)) {
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
           assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }

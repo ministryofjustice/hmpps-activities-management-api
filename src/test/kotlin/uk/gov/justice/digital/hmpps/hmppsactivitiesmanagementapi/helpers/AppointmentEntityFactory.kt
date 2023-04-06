@@ -70,7 +70,7 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOcc
     updatedBy = updatedBy,
   ).apply {
     prisonerNumberToBookingIdMap.map {
-      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * (appointmentOccurrenceId - 1) + this.allocations().size
+      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * (appointmentOccurrenceId - 1) + this.allocations().size + 1
       this.addAllocation(appointmentOccurrenceAllocationEntity(this, appointmentOccurrenceAllocationId, it.key, it.value))
     }
   }
