@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -40,7 +41,11 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `prisoner numbers removes duplicates`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456), numberOfOccurrences = 2)
+    val entity = appointmentEntity(
+      appointmentType = AppointmentType.GROUP,
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456),
+      numberOfOccurrences = 2,
+    )
     val occurrence = entity.occurrences().first()
     entity.occurrences().map { it.allocations() }.flatten().forEach { occurrence.addAllocation(it) }
     assertThat(occurrence.allocations().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
@@ -169,6 +174,7 @@ class AppointmentOccurrenceTest {
         LocalDate.now(),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
+        AppointmentType.INDIVIDUAL,
         "Appointment occurrence level comment",
         isEdited = false,
         isCancelled = false,
@@ -233,6 +239,18 @@ class AppointmentOccurrenceTest {
     )
     with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
+    }
+  }
+
+  @Test
+  fun `cannot allocate multiple prisoners to individual appointment`() {
+    assertThrows<IllegalArgumentException>(
+      "Cannot allocate multiple prisoners to an individual appointment",
+    ) {
+      appointmentEntity(
+        appointmentType = AppointmentType.INDIVIDUAL,
+        prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789),
+      )
     }
   }
 }

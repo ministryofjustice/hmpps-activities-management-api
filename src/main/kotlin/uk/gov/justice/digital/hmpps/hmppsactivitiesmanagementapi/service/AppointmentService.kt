@@ -49,6 +49,7 @@ class AppointmentService(
       endTime = request.endTime,
       comment = request.comment,
       createdBy = principal.name,
+      appointmentType = request.appointmentType!!,
     ).apply {
       this.schedule = request.repeat?.let {
         AppointmentSchedule(
