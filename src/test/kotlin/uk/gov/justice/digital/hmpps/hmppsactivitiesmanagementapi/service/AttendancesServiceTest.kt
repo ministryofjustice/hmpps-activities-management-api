@@ -61,7 +61,7 @@ class AttendancesServiceTest {
   @Test
   fun `attendance record is not created when allocation is not active`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    allocation.deallocate(today.atStartOfDay())
+    allocation.deallocate(today.atStartOfDay(), "reason")
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
