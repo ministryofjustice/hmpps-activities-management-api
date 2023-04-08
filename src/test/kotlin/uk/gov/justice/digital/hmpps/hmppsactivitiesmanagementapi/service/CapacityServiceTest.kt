@@ -42,7 +42,7 @@ class CapacityServiceTest {
 
   @Test
   fun `getActivityCategoryCapacityAndAllocated excludes deallocations from summary for known category ID`() {
-    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocate(LocalDateTime.now()) }
+    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocate(LocalDateTime.now(), "reason") }
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", activityCategory()))

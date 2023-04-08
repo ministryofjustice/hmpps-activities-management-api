@@ -69,14 +69,15 @@ data class Allocation(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun deallocate(dateTime: LocalDateTime) {
-    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+  fun deallocate(dateTime: LocalDateTime, reason: String) =
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-    prisonerStatus = PrisonerStatus.ENDED
-    deallocatedReason = "Allocation end date reached"
-    deallocatedBy = "SYSTEM"
-    deallocatedTime = dateTime
-  }
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = reason
+      deallocatedBy = "SYSTEM"
+      deallocatedTime = dateTime
+    }
 
   fun isAllocated() = deallocatedTime == null
 
