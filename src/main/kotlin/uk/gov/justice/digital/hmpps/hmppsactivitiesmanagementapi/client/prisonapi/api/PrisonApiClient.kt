@@ -37,20 +37,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<InmateDetail>())
   }
 
-  // TODO: Replaced by async version below
-  fun getScheduledActivities(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
-    return prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/activities")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-  }
-
   suspend fun getScheduledActivitiesAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -63,25 +49,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduleAppointmentsAsync(bookingId, dateRange",
-    ),
-  )
-  fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
-    return prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/appointments")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-  }
-
   suspend fun getScheduledAppointmentsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -93,31 +60,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .awaitBody()
-  }
-
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduleAppointmentsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
-    ),
-  )
-  fun getScheduledAppointmentsForPrisonerNumbers(
-    prisonCode: String,
-    prisonerNumbers: Set<String>,
-    date: LocalDate?,
-    timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> {
-    return prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/schedules/{prisonCode}/appointments")
-          .maybeQueryParam("date", date)
-          .maybeQueryParam("timeSlot", timeSlot)
-          .build(prisonCode)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
   }
 
   suspend fun getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -139,25 +81,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .awaitBody()
   }
 
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduledCourtHearingsAsync(bookingId, dateRange)",
-    ),
-  )
-  fun getScheduledCourtHearings(bookingId: Long, dateRange: LocalDateRange): Mono<CourtHearings> {
-    return prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/court-hearings")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<CourtHearings>())
-  }
-
   suspend fun getScheduledCourtHearingsAsync(bookingId: Long, dateRange: LocalDateRange): CourtHearings =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -169,31 +92,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .awaitBody()
-
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
-    ),
-  )
-  fun getScheduledCourtEventsForPrisonerNumbers(
-    prisonCode: String,
-    prisonerNumbers: Set<String>,
-    date: LocalDate?,
-    timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> {
-    return prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/schedules/{prisonCode}/courtEvents")
-          .maybeQueryParam("date", date)
-          .maybeQueryParam("timeSlot", timeSlot)
-          .build(prisonCode)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
-  }
 
   suspend fun getScheduledCourtEventsForPrisonerNumbersAsync(
     prisonCode: String,
@@ -213,25 +111,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduledVisitsAsync(bookingId, dateRange)",
-    ),
-  )
-  fun getScheduledVisits(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
-    return prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/visits")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-  }
-
   suspend fun getScheduledVisitsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -243,31 +122,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .awaitBody()
-
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
-    ),
-  )
-  fun getScheduledVisitsForPrisonerNumbers(
-    prisonCode: String,
-    prisonerNumbers: Set<String>,
-    date: LocalDate?,
-    timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> {
-    return prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/schedules/{prisonCode}/visits")
-          .maybeQueryParam("date", date)
-          .maybeQueryParam("timeSlot", timeSlot)
-          .build(prisonCode)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
-  }
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
     prisonCode: String,
@@ -287,30 +141,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, timeSlot)",
-    ),
-  )
-  fun getScheduledActivitiesForPrisonerNumbers(
-    prisonCode: String,
-    prisonerNumbers: Set<String>,
-    date: LocalDate?,
-    timeSlot: TimeSlot?,
-  ): Mono<List<PrisonerSchedule>> =
-    prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/schedules/{prisonCode}/activities")
-          .maybeQueryParam("date", date)
-          .maybeQueryParam("timeSlot", timeSlot)
-          .build(prisonCode)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
-
   suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -328,28 +158,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
-
-  @Deprecated(
-    message = "Replaced by coroutine version",
-    replaceWith = ReplaceWith(
-      expression = "getExternalTransfersOnDateAsync(agencyId, prisonerNumbers, date)",
-    ),
-  )
-  fun getExternalTransfersOnDate(
-    agencyId: String,
-    prisonerNumbers: Set<String>,
-    date: LocalDate,
-  ): Mono<List<PrisonerSchedule>> =
-    prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/schedules/{agencyId}/externalTransfers")
-          .queryParam("date", date)
-          .build(agencyId)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .bodyToMono(typeReference<List<PrisonerSchedule>>())
 
   suspend fun getExternalTransfersOnDateAsync(
     agencyId: String,
