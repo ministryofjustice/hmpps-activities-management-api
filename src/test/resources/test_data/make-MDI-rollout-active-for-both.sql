@@ -1,0 +1,1 @@
+update rollout_prison set active = true, appointments_data_source = 'ACTIVITIES_SERVICE' where code = 'MDI';

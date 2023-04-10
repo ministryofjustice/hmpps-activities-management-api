@@ -63,6 +63,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
+  @Deprecated(
+    message = "Replaced by coroutine version",
+    replaceWith = ReplaceWith(
+      expression = "getScheduleAppointmentsAsync(bookingId, dateRange",
+    ),
+  )
   fun getScheduledAppointments(bookingId: Long, dateRange: LocalDateRange): Mono<List<PrisonApiScheduledEvent>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -76,7 +82,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
   }
 
-  // TODO: Alter appointment switch to use async version
   suspend fun getScheduledAppointmentsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -376,7 +381,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .queryParam("fromDate", dateRange.start)
           .queryParam("toDate", dateRange.endInclusive)
           .maybeQueryParam("timeSlot", timeSlot)
-          .build(agencyId)
+          .build()
       }
       .bodyValue(prisonerNumbers)
       .retrieve()

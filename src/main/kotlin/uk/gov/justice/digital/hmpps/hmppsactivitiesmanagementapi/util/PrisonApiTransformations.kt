@@ -141,7 +141,7 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
     suspended = false,
     date = LocalDateTime.parse(it.startTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = LocalDateTime.parse(it.startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+    endTime = it.startTime?.let { startTime -> LocalDateTime.parse(startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS) },
     priority = priority,
   )
 }
