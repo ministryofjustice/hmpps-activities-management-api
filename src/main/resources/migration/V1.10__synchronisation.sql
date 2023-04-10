@@ -16,4 +16,4 @@ CREATE OR REPLACE VIEW v_attendance_sync AS
     from attendance a
     join scheduled_instance si on a.scheduled_instance_id = si.scheduled_instance_id
     join allocation a2 on si.activity_schedule_id = a2.activity_schedule_id and a.prisoner_number = a2.prisoner_number
-    join attendance_reason ar on a.attendance_reason_id = ar.attendance_reason_id;
+    left join attendance_reason ar on a.attendance_reason_id = ar.attendance_reason_id;

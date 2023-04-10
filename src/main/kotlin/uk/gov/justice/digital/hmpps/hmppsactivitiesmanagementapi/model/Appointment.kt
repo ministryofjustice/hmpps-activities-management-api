@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -75,6 +76,12 @@ data class Appointment(
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
+
+  @Schema(
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
+  )
+  val appointmentType: AppointmentType,
 
   @Schema(
     description =

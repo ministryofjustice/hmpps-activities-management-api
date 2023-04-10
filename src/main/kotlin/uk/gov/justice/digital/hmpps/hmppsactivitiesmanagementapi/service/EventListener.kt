@@ -2,17 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 
-// TODO this is temporary measure whilst we are in Alpha phase to reduce amount of code needed to run locally e.g. localstack.
-@ConditionalOnProperty(name = ["JMS_LISTENER_MODE"], havingValue = "ON")
+@Profile("!test && !local")
 @Service
 class EventListener(
   private val mapper: ObjectMapper,
   private val inboundEventsService: InboundEventsService,
 ) {
-
   @SqsListener("activities", factory = "hmppsQueueContainerFactoryProxy")
   fun incoming(jsonMessage: String?) {
     val (message) = mapper.readValue(jsonMessage, HMPPSMessage::class.java)

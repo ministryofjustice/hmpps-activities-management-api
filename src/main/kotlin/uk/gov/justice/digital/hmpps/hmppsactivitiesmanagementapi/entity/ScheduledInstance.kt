@@ -76,8 +76,16 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
+    previousScheduledInstanceId = this.previous()?.scheduledInstanceId,
+    previousScheduledInstanceDate = this.previous()?.sessionDate,
+    nextScheduledInstanceId = this.next()?.scheduledInstanceId,
+    nextScheduledInstanceDate = this.next()?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance) },
   )
+
+  private fun previous() = activitySchedule.previous(this)
+
+  private fun next() = activitySchedule.next(this)
 
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
 

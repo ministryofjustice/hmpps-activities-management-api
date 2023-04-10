@@ -3,9 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import java.time.LocalDateTime
 
 @Service
@@ -21,20 +23,23 @@ class InboundEventsService {
 }
 
 @Service
-class OutboundEventsService(private val publisher: EventsPublisher) {
+class OutboundEventsService(private val publisher: EventsPublisher, private val featureSwitches: FeatureSwitches) {
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   fun send(outboundEvent: OutboundEvent, identifier: Long) {
-    when (outboundEvent) {
-      ACTIVITY_SCHEDULE_CREATED -> publisher.send(ACTIVITY_SCHEDULE_CREATED.event(ScheduleCreatedInformation(identifier)))
-      PRISONER_ALLOCATED -> publisher.send(PRISONER_ALLOCATED.event(PrisonerAllocatedInformation(identifier)))
-      APPOINTMENT_INSTANCE_CREATED -> publisher.send(
-        APPOINTMENT_INSTANCE_CREATED.event(
-          AppointmentInstanceCreatedInformation(identifier),
-        ),
-      )
+    if (featureSwitches.isEnabled(outboundEvent)) {
+      when (outboundEvent) {
+        ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
+        PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
+        PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
+        APPOINTMENT_INSTANCE_CREATED -> publisher.send(
+          outboundEvent.event(AppointmentInstanceCreatedInformation(identifier)),
+        )
+      }
+    } else {
+      log.info("Ignoring publishing of event type $outboundEvent")
     }
   }
 }
@@ -54,6 +59,14 @@ enum class OutboundEvent(val eventType: String) {
         eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A prisoner has been allocated to an activity in the activities management service",
+      )
+  },
+  PRISONER_ALLOCATION_AMENDED("activities.prisoner.allocation.amended") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "A prisoner allocation has been amended in the activities management service",
       )
   },
   APPOINTMENT_INSTANCE_CREATED("appointments.appointment-instance.created") {

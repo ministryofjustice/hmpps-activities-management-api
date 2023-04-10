@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 
 @Entity
 @Table(name = "allocation")
-@EntityListeners(AllocationEntityListener::class)
+@EntityListeners(AllocationEntityListener::class, AuditableListener::class)
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,14 +69,15 @@ data class Allocation(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun deallocate(dateTime: LocalDateTime) {
-    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+  fun deallocate(dateTime: LocalDateTime, reason: String) =
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-    prisonerStatus = PrisonerStatus.ENDED
-    deallocatedReason = "Allocation end date reached"
-    deallocatedBy = "SYSTEM"
-    deallocatedTime = dateTime
-  }
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = reason
+      deallocatedBy = "SYSTEM"
+      deallocatedTime = dateTime
+    }
 
   fun isAllocated() = deallocatedTime == null
 
@@ -98,6 +99,22 @@ data class Allocation(
       isUnemployment = activitySchedule.activity.isUnemployment(),
     )
 
+  fun suspend(dateTime: LocalDateTime, reason: String) =
+    this.apply {
+      failIfAllocationIsNotActive()
+
+      prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
+      suspendedTime = dateTime
+      suspendedReason = reason
+      suspendedBy = "SYSTEM"
+    }
+
+  private fun failIfAllocationIsNotActive() {
+    if (status(PrisonerStatus.ACTIVE).not()) {
+      throw IllegalStateException("You can only suspend active allocations")
+    }
+  }
+
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(allocationId = $allocationId )"
@@ -105,5 +122,5 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, SUSPENDED, ENDED
+  ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
 }

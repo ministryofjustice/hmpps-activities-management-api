@@ -6,6 +6,9 @@ import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent
 
+/**
+ * A centralised reusable component for determining whether an application feature is enabled or not.
+ */
 @Component
 class FeatureSwitches(private val environment: Environment) {
 
@@ -31,5 +34,7 @@ class FeatureSwitches(private val environment: Environment) {
 }
 
 enum class Feature(val label: String) {
+  HMPPS_AUDIT_ENABLED("feature.audit.service.hmpps.enabled"),
+  LOCAL_AUDIT_ENABLED("feature.audit.service.local.enabled"),
   OUTBOUND_EVENTS_ENABLED("feature.events.sns.enabled"),
 }

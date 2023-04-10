@@ -7,7 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -353,13 +352,4 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
-)
-
-fun EntityActivity.toActivityCreatedEvent() = ActivityCreatedEvent(
-  activityId = activityId,
-  activityName = summary,
-  prisonCode = prisonCode,
-  categoryCode = activityCategory.name,
-  startDate = startDate,
-  createdAt = createdTime,
 )

@@ -8,6 +8,7 @@ CREATE INDEX idx_appointment_schedule_repeat_period ON appointment_schedule (rep
 
 CREATE TABLE appointment (
     appointment_id          bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
+    appointment_type        varchar(10)     NOT NULL,
     category_code           varchar(12)     NOT NULL,
     prison_code             varchar(6)      NOT NULL,
     internal_location_id    bigint,
