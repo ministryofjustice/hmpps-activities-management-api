@@ -218,7 +218,7 @@ class AppointmentOccurrenceService(
     updated: LocalDateTime,
     updatedBy: String,
     updatedIds: MutableList<Long>,
-    ) {
+  ) {
     this.updated = updated
     this.updatedBy = updatedBy
     this.allocations().forEach {
