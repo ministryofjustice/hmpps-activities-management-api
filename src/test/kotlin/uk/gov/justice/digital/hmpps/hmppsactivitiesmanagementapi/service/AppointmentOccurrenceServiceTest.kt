@@ -60,6 +60,7 @@ class AppointmentOccurrenceServiceTest {
 
     @BeforeEach
     fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
@@ -134,7 +135,6 @@ class AppointmentOccurrenceServiceTest {
     @Test
     fun `update prisoner list throws illegal argument exception when prisoner is not a resident of requested prison code`() {
       val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("DIFFERENT_PRISON"))
-      val principal: Principal = mock()
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
         .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
