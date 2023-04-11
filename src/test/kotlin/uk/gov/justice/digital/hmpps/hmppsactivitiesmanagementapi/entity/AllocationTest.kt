@@ -44,7 +44,7 @@ class AllocationTest {
     assertThat(allocation.deallocatedBy).isNull()
     assertThat(allocation.deallocatedTime).isNull()
 
-    allocation.deallocate(dateTime)
+    allocation.deallocate(dateTime, "Allocation end date reached")
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo("Allocation end date reached")
@@ -54,9 +54,9 @@ class AllocationTest {
 
   @Test
   fun `check cannot deallocate if allocation already ended`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now()) }
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
 
-    assertThatThrownBy { allocation.deallocate(LocalDateTime.now()) }
+    assertThatThrownBy { allocation.deallocate(LocalDateTime.now(), "reason") }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '-1' is already deallocated.")
   }
@@ -77,7 +77,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot suspend an already inactive allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now()) }.also { assertThat(it.status(PrisonerStatus.ENDED)) }
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }.also { assertThat(it.status(PrisonerStatus.ENDED)) }
 
     assertThatThrownBy { allocation.suspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)

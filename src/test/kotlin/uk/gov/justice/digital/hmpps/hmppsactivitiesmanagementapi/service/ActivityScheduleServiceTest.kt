@@ -41,7 +41,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `ended allocations for a given schedule are not returned`() {
     val schedule = schedule().apply {
-      allocations().first().apply { deallocate(LocalDateTime.now()) }
+      allocations().first().apply { deallocate(LocalDateTime.now(), "reason") }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
