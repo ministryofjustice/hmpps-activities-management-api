@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove
+import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,7 +32,19 @@ class AppointmentOccurrenceAllocationEntityListener {
       outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
     }.onFailure {
       log.error(
-        "Failed to send appointment instance creation event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
+        "Failed to send appointment instance created event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
+        it,
+      )
+    }
+  }
+
+  @PostUpdate
+  fun onUpdate(entity: AppointmentOccurrenceAllocation) {
+    runCatching {
+      outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentOccurrenceAllocationId)
+    }.onFailure {
+      log.error(
+        "Failed to send appointment instance updated event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
         it,
       )
     }
@@ -43,7 +56,7 @@ class AppointmentOccurrenceAllocationEntityListener {
       outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentOccurrenceAllocationId)
     }.onFailure {
       log.error(
-        "Failed to send appointment instance deletion event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
+        "Failed to send appointment instance deleted event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",
         it,
       )
     }
