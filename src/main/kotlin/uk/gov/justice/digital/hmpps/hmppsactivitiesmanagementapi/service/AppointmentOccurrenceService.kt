@@ -192,11 +192,15 @@ class AppointmentOccurrenceService(
 
         failIfMissingPrisoners(this, prisonerMap)
 
+        it.markAsUpdated(updated, updatedBy, updatedIds)
+
         it.allocations()
           .filter { allocation -> !prisonerMap.containsKey(allocation.prisonerNumber) }
-          .forEach { allocation -> it.removeAllocation(allocation) }
-
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+          .forEach { allocation ->
+            it.removeAllocation(allocation)
+            // Remove id from updated list as it has been removed
+            updatedIds.remove(allocation.appointmentOccurrenceAllocationId)
+          }
 
         val prisonerAllocationMap = it.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
