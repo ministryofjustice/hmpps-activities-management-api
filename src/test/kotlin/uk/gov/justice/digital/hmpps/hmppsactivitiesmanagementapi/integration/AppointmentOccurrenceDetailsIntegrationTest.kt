@@ -70,7 +70,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocation).isEqualTo(AppointmentLocationSummary(123, "TPR", "Test Appointment Location"))
       assertThat(inCell).isEqualTo(false)
-      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
       assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)

@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -13,6 +14,8 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceDeletedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceUpdatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
@@ -74,7 +77,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers!!,
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers!!.first(), bookingId = 456, prisonId = "TPR"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR"),
       ),
     )
 
@@ -114,6 +117,121 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(AppointmentInstanceUpdatedInformation(allocationIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
+  )
+  @Test
+  fun `update group repeat appointment this and all future occurrences`() {
+    val request = AppointmentOccurrenceUpdateRequest(
+      categoryCode = "AC2",
+      internalLocationId = 456,
+      startDate = LocalDate.now().plusDays(3),
+      startTime = LocalTime.of(13, 30),
+      endTime = LocalTime.of(15, 0),
+      comment = "Updated appointment occurrence level comment",
+      prisonerNumbers = listOf("B2345CD", "C3456DE"),
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+    )
+
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers!!,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", bookingId = 457, prisonId = "TPR"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 458, prisonId = "TPR"),
+      ),
+    )
+
+    val appointment = webTestClient.updateAppointmentOccurrence(12, request)!!
+
+    with(appointment) {
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(internalLocationId).isEqualTo(123)
+      assertThat(inCell).isFalse
+      assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+      assertThat(comment).isEqualTo("Appointment level comment")
+      assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(appointment.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+      assertThat(appointment.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+      assertThat(appointment.occurrences[2].startDate).isEqualTo(request.startDate)
+      assertThat(appointment.occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
+      with(occurrences.subList(0, 2)) {
+        assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+        assertThat(map { it.inCell }.distinct().single()).isFalse
+        assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
+        assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+        assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
+        assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
+        assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(456)
+        assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+        assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
+      }
+      with(occurrences.subList(2, appointment.occurrences.size)) {
+        assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
+        assertThat(map { it.inCell }.distinct().single()).isFalse
+        assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
+        assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
+        assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
+        assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+        assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
+        assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
+        assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
+      }
+    }
+
+    verify(eventsPublisher, times(10)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
+      assertThat(size).isEqualTo(2)
+      assertThat(map { it.additionalInformation }).containsAll(
+        appointment.occurrences.subList(2, appointment.occurrences.size).flatMap {
+          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+            .map { allocation -> AppointmentInstanceCreatedInformation(allocation.id) }
+        },
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(map { it.description }.distinct().single()).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+      assertThat(size).isEqualTo(6)
+      assertThat(map { it.additionalInformation }).contains(
+        AppointmentInstanceUpdatedInformation(20),
+        AppointmentInstanceUpdatedInformation(21),
+        AppointmentInstanceUpdatedInformation(22),
+        AppointmentInstanceUpdatedInformation(23),
+        AppointmentInstanceUpdatedInformation(25),
+        AppointmentInstanceUpdatedInformation(27),
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+      assertThat(size).isEqualTo(2)
+      assertThat(map { it.additionalInformation }).contains(
+        AppointmentInstanceDeletedInformation(24),
+        AppointmentInstanceDeletedInformation(26),
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
   }
 

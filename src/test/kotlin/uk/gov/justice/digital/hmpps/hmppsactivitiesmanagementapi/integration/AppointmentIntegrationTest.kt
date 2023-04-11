@@ -57,7 +57,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isEqualTo(false)
-      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
       assertThat(comment).isEqualTo("Appointment level comment")
@@ -71,7 +71,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         with(get(0)) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isEqualTo(false)
-          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
           assertThat(comment).isEqualTo("Appointment occurrence level comment")
