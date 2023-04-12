@@ -22,7 +22,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
-import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 @Service
 class AuditService(
@@ -127,6 +129,6 @@ data class HmppsAuditEvent(
   val details: String,
 ) {
   val who = SecurityUtils.getUserNameForLoggedInUser()
-  val `when`: LocalDateTime = LocalDateTime.now()
+  val `when`: String = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault()).format(ZonedDateTime.now())
   val service = "hmpps-activities-management-api"
 }
