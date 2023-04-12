@@ -15,6 +15,7 @@ generic-service:
     SPRING_PROFILES_ACTIVE: dev
     SCHEDULE_AHEAD_DAYS: 14
     FEATURE_EVENTS_SNS_ENABLED: true
+    FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
