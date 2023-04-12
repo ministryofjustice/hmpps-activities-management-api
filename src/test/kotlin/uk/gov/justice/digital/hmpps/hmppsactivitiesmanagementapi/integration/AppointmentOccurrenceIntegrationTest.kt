@@ -158,10 +158,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(comment).isEqualTo("Appointment level comment")
       assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(updatedBy).isEqualTo("test-client")
-      assertThat(appointment.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
-      assertThat(appointment.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
-      assertThat(appointment.occurrences[2].startDate).isEqualTo(request.startDate)
-      assertThat(appointment.occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
+      assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+      assertThat(occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+      assertThat(occurrences[2].startDate).isEqualTo(request.startDate)
+      assertThat(occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
       with(occurrences.subList(0, 2)) {
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
         assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -175,7 +175,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
         assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
       }
-      with(occurrences.subList(2, appointment.occurrences.size)) {
+      with(occurrences.subList(2, occurrences.size)) {
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)

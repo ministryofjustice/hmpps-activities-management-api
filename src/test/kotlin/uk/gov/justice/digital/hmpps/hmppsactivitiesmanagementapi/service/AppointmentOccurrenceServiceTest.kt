@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -384,6 +385,121 @@ class AppointmentOccurrenceServiceTest {
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+          with(allocations.single()) {
+            assertThat(prisonerNumber).isEqualTo("B2345CD")
+            assertThat(bookingId).isEqualTo(1)
+          }
+        }
+      }
+
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update all properties success`() {
+      val request = AppointmentOccurrenceUpdateRequest(
+        categoryCode = "NEW",
+        internalLocationId = 456,
+        startDate = LocalDate.now().plusDays(3),
+        startTime = LocalTime.of(13, 30),
+        endTime = LocalTime.of(15, 0),
+        comment = "Updated appointment occurrence level comment",
+        prisonerNumbers = appointmentOccurrence.prisonerNumbers(),
+      )
+
+      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+      var index = 0
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            request.prisonerNumbers!!.map {
+              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
+            },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
+        with(occurrences.single()) {
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isFalse
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isEqualTo(request.comment)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+          with(allocations.single()) {
+            assertThat(prisonerNumber).isEqualTo("A1234BC")
+            assertThat(bookingId).isEqualTo(456)
+          }
+        }
+      }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update all properties and change prisoner success`() {
+      val request = AppointmentOccurrenceUpdateRequest(
+        categoryCode = "NEW",
+        internalLocationId = 456,
+        startDate = LocalDate.now().plusDays(3),
+        startTime = LocalTime.of(13, 30),
+        endTime = LocalTime.of(15, 0),
+        comment = "Updated appointment occurrence level comment",
+        prisonerNumbers = listOf("B2345CD"),
+      )
+
+      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+      var index = 1L
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            request.prisonerNumbers!!.map {
+              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = index++, prisonId = appointment.prisonCode)
+            },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
+        with(occurrences.single()) {
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isFalse
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
           with(allocations.single()) {
@@ -1162,6 +1278,84 @@ class AppointmentOccurrenceServiceTest {
       appointment.occurrences().subList(1, response.occurrences.size).map { it.allocations()[0] }.forEach {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update all properties apply to this and all future occurrences success`() {
+      val request = AppointmentOccurrenceUpdateRequest(
+        categoryCode = "NEW",
+        internalLocationId = 456,
+        startDate = LocalDate.now().plusDays(3),
+        startTime = LocalTime.of(13, 30),
+        endTime = LocalTime.of(15, 0),
+        comment = "Updated appointment occurrence level comment",
+        prisonerNumbers = listOf("B2345CD", "C3456DE"),
+        applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+      )
+
+      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+      var index = 0
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            request.prisonerNumbers!!.map {
+              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 457L + index++, prisonId = appointment.prisonCode)
+            },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
+        assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+        assertThat(occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+        assertThat(occurrences[2].startDate).isEqualTo(request.startDate)
+        assertThat(occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
+        with(occurrences.subList(0, 2)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+          assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
+          assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(456)
+          assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+          assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
+        }
+        with(occurrences.subList(2, occurrences.size)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
+          assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
+          assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+          assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+          assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
+          assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
+          assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
+        }
+      }
+
+      appointment.occurrences().subList(0, 2).flatMap { it.allocations() }
+        .union(appointment.occurrences().subList(2, response.occurrences.size).map { it.allocations()[0] }).forEach {
+          verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+        }
       verifyNoMoreInteractions(outboundEventsService)
     }
   }
