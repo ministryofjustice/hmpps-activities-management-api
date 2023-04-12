@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceCreatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -144,7 +144,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceCreatedInformation(allocationIds[0]))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds[0]))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
     }
@@ -179,8 +179,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceCreatedInformation(allocationIds[0]),
-      AppointmentInstanceCreatedInformation(allocationIds[1]),
+      AppointmentInstanceInformation(allocationIds[0]),
+      AppointmentInstanceInformation(allocationIds[1]),
     )
   }
 
@@ -211,9 +211,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceCreatedInformation(allocationIds[0]),
-      AppointmentInstanceCreatedInformation(allocationIds[1]),
-      AppointmentInstanceCreatedInformation(allocationIds[2]),
+      AppointmentInstanceInformation(allocationIds[0]),
+      AppointmentInstanceInformation(allocationIds[1]),
+      AppointmentInstanceInformation(allocationIds[2]),
     )
   }
 

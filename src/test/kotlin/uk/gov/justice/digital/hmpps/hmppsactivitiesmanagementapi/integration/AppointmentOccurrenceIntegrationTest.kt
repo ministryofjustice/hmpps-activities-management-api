@@ -14,9 +14,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceCreatedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceDeletedInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceUpdatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -114,7 +112,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceUpdatedInformation(allocationIds.first()))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
     }
@@ -197,7 +195,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(map { it.additionalInformation }).containsAll(
         appointment.occurrences.subList(2, appointment.occurrences.size).flatMap {
           it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
-            .map { allocation -> AppointmentInstanceCreatedInformation(allocation.id) }
+            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
         },
       )
       forEach {
@@ -209,12 +207,12 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
       assertThat(size).isEqualTo(6)
       assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceUpdatedInformation(20),
-        AppointmentInstanceUpdatedInformation(21),
-        AppointmentInstanceUpdatedInformation(22),
-        AppointmentInstanceUpdatedInformation(23),
-        AppointmentInstanceUpdatedInformation(25),
-        AppointmentInstanceUpdatedInformation(27),
+        AppointmentInstanceInformation(20),
+        AppointmentInstanceInformation(21),
+        AppointmentInstanceInformation(22),
+        AppointmentInstanceInformation(23),
+        AppointmentInstanceInformation(25),
+        AppointmentInstanceInformation(27),
       )
       forEach {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -225,8 +223,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
       assertThat(size).isEqualTo(2)
       assertThat(map { it.additionalInformation }).contains(
-        AppointmentInstanceDeletedInformation(24),
-        AppointmentInstanceDeletedInformation(26),
+        AppointmentInstanceInformation(24),
+        AppointmentInstanceInformation(26),
       )
       forEach {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

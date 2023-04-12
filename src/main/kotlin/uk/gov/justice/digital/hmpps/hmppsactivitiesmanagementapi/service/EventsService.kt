@@ -36,19 +36,9 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
-        APPOINTMENT_INSTANCE_CREATED -> publisher.send(
-          outboundEvent.event(AppointmentInstanceCreatedInformation(identifier)),
-        )
-        APPOINTMENT_INSTANCE_UPDATED -> publisher.send(
-          APPOINTMENT_INSTANCE_UPDATED.event(
-            AppointmentInstanceUpdatedInformation(identifier),
-          ),
-        )
-        APPOINTMENT_INSTANCE_DELETED -> publisher.send(
-          APPOINTMENT_INSTANCE_DELETED.event(
-            AppointmentInstanceDeletedInformation(identifier),
-          ),
-        )
+        APPOINTMENT_INSTANCE_CREATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
       }
     } else {
       log.info("Ignoring publishing of event type $outboundEvent")
@@ -124,11 +114,7 @@ data class ScheduleCreatedInformation(val activityScheduleId: Long) : Additional
 
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 
-data class AppointmentInstanceCreatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
-
-data class AppointmentInstanceUpdatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
-
-data class AppointmentInstanceDeletedInformation(val appointmentInstanceId: Long) : AdditionalInformation
+data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(
