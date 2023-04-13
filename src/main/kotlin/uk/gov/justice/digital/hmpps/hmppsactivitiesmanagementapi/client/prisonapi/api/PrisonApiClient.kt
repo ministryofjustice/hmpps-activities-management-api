@@ -7,6 +7,7 @@ import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
@@ -37,7 +38,10 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyToMono(typeReference<InmateDetail>())
   }
 
-  suspend fun getScheduledActivitiesAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
+  suspend fun getScheduledActivitiesAsync(
+    bookingId: Long,
+    dateRange: LocalDateRange,
+  ): List<PrisonApiScheduledEvent> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -49,7 +53,10 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  suspend fun getScheduledAppointmentsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> {
+  suspend fun getScheduledAppointmentsAsync(
+    bookingId: Long,
+    dateRange: LocalDateRange,
+  ): List<PrisonApiScheduledEvent> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -81,7 +88,10 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .awaitBody()
   }
 
-  suspend fun getScheduledCourtHearingsAsync(bookingId: Long, dateRange: LocalDateRange): CourtHearings =
+  suspend fun getScheduledCourtHearingsAsync(
+    bookingId: Long,
+    dateRange: LocalDateRange,
+  ): CourtHearings =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -111,7 +121,10 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
 
-  suspend fun getScheduledVisitsAsync(bookingId: Long, dateRange: LocalDateRange): List<PrisonApiScheduledEvent> =
+  suspend fun getScheduledVisitsAsync(
+    bookingId: Long,
+    dateRange: LocalDateRange,
+  ): List<PrisonApiScheduledEvent> =
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -207,7 +220,10 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   }
 
   // Does not check that the invoker has the selected agency in their caseload.
-  fun getLocationsForTypeUnrestricted(agencyId: String, locationType: String): Mono<List<Location>> {
+  fun getLocationsForTypeUnrestricted(
+    agencyId: String,
+    locationType: String,
+  ): Mono<List<Location>> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -287,5 +303,26 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<List<ReferenceCode>>())
       .block() ?: emptyList()
+  }
+
+  fun getEducationLevels(
+    prisonerNumbers: List<String>,
+    excludeInFlightCertifications: Boolean = true,
+  ): List<Education> {
+    val educations = prisonApiWebClient
+      .post()
+      .uri("/api/education/prisoners")
+      .bodyValue(prisonerNumbers)
+      .retrieve()
+      .bodyToMono(typeReference<List<Education>>())
+      .block() ?: emptyList()
+
+    return educations
+      .filter {
+        it.studyArea != null &&
+          it.educationLevel != null &&
+          (!excludeInFlightCertifications || it.endDate?.isBefore(LocalDate.now()) == true)
+      }
+      .distinctBy { it.educationLevel + it.studyArea + it.bookingId }
   }
 }
