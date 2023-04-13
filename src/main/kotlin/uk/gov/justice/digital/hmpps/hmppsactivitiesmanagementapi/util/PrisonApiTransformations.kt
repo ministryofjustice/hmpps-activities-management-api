@@ -14,56 +14,59 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary as ModelUserSummary
 
-/**
- * Transform functions providing a thin layer to transform prison api types into their API model equivalents and vice-versa.
- */
-
 const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
 
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonAppointmentsToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.multiplePrisonerAppointmentsToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.APPOINTMENT, priority)
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.APPOINTMENT, priority)
 
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonCourtEventsToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.multiplePrisonerCourtEventsToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.COURT_HEARING, priority)
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.COURT_HEARING, priority)
 
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonVisitsToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.multiplePrisonerVisitsToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.VISIT, priority)
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.VISIT, priority)
 
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonActivitiesToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.multiplePrisonerActivitiesToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.ACTIVITY, priority)
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.ACTIVITY, priority)
 
-fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonTransfersToScheduledEvents(
+fun List<PrisonApiPrisonerSchedule>.multiplePrisonerTransfersToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonApiPrisonerScheduleToScheduledEvents(prisonCode, EventType.EXTERNAL_TRANSFER, priority)
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.EXTERNAL_TRANSFER, priority)
 
-private fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduledEvents(
+private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
   prisonCode: String,
   eventType: EventType,
   priority: Int,
 ) = map {
   ModelScheduleEvent(
     prisonCode = prisonCode,
+    eventSource = "NOMIS",
+    eventType = eventType.name,
     eventId = it.eventId,
     bookingId = it.bookingId,
-    locationId = it.locationId,
-    location = it.eventLocation ?: "External", // Don't show the real court location
-    eventClass = it.event,
-    eventStatus = it.eventStatus,
-    eventType = eventType.name,
-    eventTypeDesc = eventType.name,
-    event = it.event,
-    eventDesc = it.eventDescription,
-    details = it.comment ?: it.eventDescription,
     prisonerNumber = it.offenderNo,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    scheduledInstanceId = null,
+    internalLocationId = it.locationId,
+    internalLocationCode = null,
+    internalLocationDescription = it.eventLocation ?: "External",
+    cancelled = it.eventStatus == "CANC",
+    suspended = false,
+    inCell = false,
+    summary = it.eventDescription,
+    categoryCode = it.event,
+    categoryDescription = null,
+    comments = it.comment,
     date = LocalDateTime.parse(it.startTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
@@ -71,7 +74,11 @@ private fun List<PrisonApiPrisonerSchedule>.prisonApiPrisonerScheduleToScheduled
   )
 }
 
-fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
+ /*
+ Takes a list of Prison API CourtHearings for a single person from NOMIS.
+ Produces a list of SAA ScheduledEvents for court hearings.
+ */
+fun PrisonApiCourtHearings.nomisCourtHearingsToScheduledEvents(
   bookingId: Long,
   prisonCode: String?,
   prisonerNumber: String?,
@@ -79,17 +86,23 @@ fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
 ) = this.hearings?.map {
   ModelScheduleEvent(
     prisonCode = prisonCode,
+    eventSource = "NOMIS",
+    eventType = EventType.COURT_HEARING.name,
     eventId = it.id,
     bookingId = bookingId,
-    locationId = null,
-    location = it.location?.description,
-    eventClass = null,
-    eventStatus = null,
-    eventType = EventType.COURT_HEARING.name,
-    eventTypeDesc = null,
-    event = null,
-    eventDesc = null,
-    details = null,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    scheduledInstanceId = null,
+    internalLocationId = null,
+    internalLocationCode = null,
+    internalLocationDescription = it.location?.description,
+    cancelled = false,
+    inCell = false,
+    categoryCode = null,
+    categoryDescription = null,
+    summary = "Court hearing",
+    comments = null,
     prisonerNumber = prisonerNumber,
     date = LocalDateTime.parse(it.dateTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
@@ -98,64 +111,138 @@ fun PrisonApiCourtHearings.prisonApiCourtHearingsToScheduledEvents(
   )
 }
 
-fun List<PrisonApiOffenderAdjudicationHearing>.prisonApiPrisonOffenderAdjudicationsToScheduledEvents(
+/*
+ Takes a list of NOMIS OffenderAdjudicationHearing events (single or multiple people).
+ Produces a list of SAA ScheduledEvents for adjudication hearings
+ */
+fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEvents(
   prisonCode: String,
   priority: Int,
-): List<ModelScheduleEvent> =
-  map { it.toScheduledEvent(prisonCode, priority) }
-
-fun PrisonApiOffenderAdjudicationHearing.toScheduledEvent(
-  prisonCode: String,
-  priority: Int,
-) = let {
+): List<ModelScheduleEvent> = map {
   ModelScheduleEvent(
     prisonCode = prisonCode,
-    eventId = it.hearingId,
-    bookingId = null,
-    locationId = it.internalLocationId,
-    location = it.internalLocationDescription,
-    eventClass = null,
-    eventStatus = it.eventStatus,
+    eventSource = "NOMIS",
+    oicHearingId = it.hearingId,
     eventType = EventType.ADJUDICATION_HEARING.name,
-    eventTypeDesc = it.hearingType,
-    event = null,
-    eventDesc = null,
-    details = null,
+    bookingId = null,
     prisonerNumber = it.offenderNo,
+    internalLocationId = it.internalLocationId,
+    internalLocationCode = null,
+    internalLocationDescription = it.internalLocationDescription,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    scheduledInstanceId = null,
+    eventId = null,
+    summary = it.hearingType,
+    comments = null,
+    categoryCode = null,
+    categoryDescription = it.hearingType,
+    cancelled = it.eventStatus == "CANC",
+    suspended = false,
     date = LocalDateTime.parse(it.startTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = LocalDateTime.parse(it.startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+    endTime = it.startTime?.let { startTime -> LocalDateTime.parse(startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS) },
     priority = priority,
   )
 }
 
-fun List<PrisonApiScheduledEvent>.prisonApiAppointmentsToScheduledEvents(prisonerNumber: String?, priority: Int) =
-  prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.APPOINTMENT, priority)
-
-fun List<PrisonApiScheduledEvent>.prisonApiVisitsToScheduledEvents(prisonerNumber: String?, priority: Int) =
-  prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.VISIT, priority)
-
-fun List<PrisonApiScheduledEvent>.prisonApiActivitiesToScheduledEvents(prisonerNumber: String?, priority: Int) =
-  prisonApiScheduledEventToScheduledEvents(prisonerNumber, EventType.ACTIVITY, priority)
-
-fun List<PrisonApiScheduledEvent>.prisonApiScheduledEventToScheduledEvents(
+/*
+ Takes a list of NOMIS appointment events for a single person.
+ Produces a list of SAA ScheduledEvents for appointments.
+ */
+fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
   prisonerNumber: String?,
-  eventType: EventType,
   priority: Int,
 ) = map {
   ModelScheduleEvent(
     prisonCode = it.agencyId,
+    eventSource = "NOMIS",
+    eventType = EventType.APPOINTMENT.name,
     eventId = it.eventId,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    scheduledInstanceId = null,
     bookingId = it.bookingId,
-    locationId = it.eventLocationId,
-    location = it.eventLocation,
-    eventClass = it.eventClass,
-    eventStatus = it.eventStatus,
-    eventType = eventType.name,
-    eventTypeDesc = it.eventTypeDesc,
-    event = it.eventSubType,
-    eventDesc = it.eventSubTypeDesc,
-    details = it.eventSourceDesc,
+    internalLocationId = it.eventLocationId,
+    internalLocationCode = it.eventLocation,
+    internalLocationDescription = it.eventLocation,
+    cancelled = it.eventStatus == "CANC",
+    inCell = false,
+    categoryCode = it.eventSubType,
+    categoryDescription = it.eventSubTypeDesc,
+    summary = "Appointment ${it.eventSubTypeDesc}",
+    comments = it.outcomeComment,
+    prisonerNumber = prisonerNumber,
+    date = it.eventDate,
+    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
+    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
+    priority = priority,
+  )
+}
+
+/*
+ Takes a list of NOMIS visit events for one person.
+ Produces a list of SAA scheduled events for visits.
+ */
+fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
+  prisonerNumber: String?,
+  priority: Int,
+) = map {
+  ModelScheduleEvent(
+    prisonCode = it.agencyId,
+    eventSource = "NOMIS",
+    eventType = EventType.VISIT.name,
+    eventId = it.eventId,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    scheduledInstanceId = null,
+    bookingId = it.bookingId,
+    internalLocationId = it.eventLocationId,
+    internalLocationCode = it.eventLocation,
+    internalLocationDescription = it.eventLocation,
+    cancelled = it.eventStatus == "CANC",
+    inCell = false,
+    categoryCode = it.eventSubType,
+    categoryDescription = it.eventSubTypeDesc,
+    summary = "Visit ${it.eventSubTypeDesc}",
+    comments = it.outcomeComment,
+    prisonerNumber = prisonerNumber,
+    date = it.eventDate,
+    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
+    endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
+    priority = priority,
+  )
+}
+
+/*
+ Takes a list of NOMIS activity events for a single person.
+ Produces a list of SAA scheduled events for activities.
+ */
+fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
+  prisonerNumber: String?,
+  priority: Int,
+) = map {
+  ModelScheduleEvent(
+    prisonCode = it.agencyId,
+    eventSource = "NOMIS",
+    eventType = EventType.ACTIVITY.name,
+    eventId = it.eventId,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    scheduledInstanceId = null,
+    bookingId = it.bookingId,
+    internalLocationId = it.eventLocationId,
+    internalLocationCode = it.eventLocation,
+    internalLocationDescription = it.eventLocation,
+    cancelled = it.eventStatus == "CANC",
+    inCell = false,
+    categoryCode = it.eventSubType,
+    categoryDescription = it.eventSubTypeDesc,
+    summary = it.eventSubTypeDesc,
+    comments = it.outcomeComment,
     prisonerNumber = prisonerNumber,
     date = it.eventDate,
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),

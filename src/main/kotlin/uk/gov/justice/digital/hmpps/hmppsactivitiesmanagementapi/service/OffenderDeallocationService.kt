@@ -70,7 +70,7 @@ class OffenderDeallocationService(
   }
 
   fun List<Allocation>.deallocate(dateTime: LocalDateTime) {
-    this.forEach { it.deallocate(dateTime) }
+    this.forEach { it.deallocate(dateTime, "Allocation end date reached") }
   }
 
   private fun List<ActivitySchedule>.associateSchedulesWithAllocationsEnding(date: LocalDate) =

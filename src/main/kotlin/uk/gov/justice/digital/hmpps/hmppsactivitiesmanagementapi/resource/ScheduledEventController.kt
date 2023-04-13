@@ -21,12 +21,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import java.time.LocalDate
 
 @RestController
 @RequestMapping("/scheduled-events")
-class ScheduledEventController(private val scheduledEventService: ScheduledEventService) {
+class ScheduledEventController(
+  private val scheduledEventService: ScheduledEventService,
+  private val referenceCodeService: ReferenceCodeService,
+  private val locationService: LocationService,
+) {
 
   @GetMapping(
     value = ["/prison/{prisonCode}"],
@@ -37,10 +44,10 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
     summary = "Get a list of scheduled events for a prison, prisoner, date range (max 3 months) and optional time slot.",
     description = """
       Returns scheduled events for the prison, prisoner, date range (max 3 months) and optional time slot.
-      Court hearings, appointments and visits always come from NOMIS (via prison API).
-      Activities come from either NOMIS or the new Activities database, depending on whether the prison is
-      marked as rolled-out in the activities database.
-      (Intended usage: Prisoner calendar)
+      Court hearings, adjudication hearings, transfers and visits come from NOMIS (via prison API).
+      Activities and appointments come from either NOMIS or the local database depending on whether the prison is
+      marked as active for appointments and/or activities.
+      (Intended usage: Prisoner calendar / schedule)
     """,
   )
   @ApiResponses(
@@ -77,7 +84,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       ),
     ],
   )
-  fun getScheduledEventsByPrisonAndPrisonerAndDateRange(
+  fun getScheduledEventsForSinglePrisoner(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
@@ -104,7 +111,14 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
-    return scheduledEventService.getScheduledEventsByPrisonAndPrisonerAndDateRange(prisonCode, prisonerNumber, dateRange, timeSlot)
+    return scheduledEventService.getScheduledEventsForSinglePrisoner(
+      prisonCode,
+      prisonerNumber,
+      dateRange,
+      timeSlot,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap(prisonCode),
+    )
   }
 
   @PostMapping(
@@ -117,9 +131,9 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
     summary = "Get a list of scheduled events for a prison and list of prisoner numbers for a date and time slot",
     description = """
       Returns scheduled events for the prison, prisoner numbers, single date and an optional time slot.
-      Court hearings, appointments and visits always come from NOMIS (via prison API).
-      Activities come from either NOMIS or the new activities database, depending on whether the prison is
-      marked as rolled-out in the activities database.
+      Court hearings, adjudication hearings, transfers and visits come from NOMIS (via prison API).
+      Activities and appointments come from either NOMIS or the local database depending on whether the prison is
+      marked as rolled-out for activities and/or appointments.
       (Intended usage: Unlock list)
     """,
   )
@@ -157,7 +171,7 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
       ),
     ],
   )
-  fun getScheduledEventsByPrisonAndPrisonersAndDateRange(
+  fun getScheduledEventsForMultiplePrisoners(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
@@ -175,6 +189,13 @@ class ScheduledEventController(private val scheduledEventService: ScheduledEvent
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>,
   ): PrisonerScheduledEvents? {
-    return scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(prisonCode, prisonerNumbers, date, timeSlot)
+    return scheduledEventService.getScheduledEventsForMultiplePrisoners(
+      prisonCode,
+      prisonerNumbers,
+      date,
+      timeSlot,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap(prisonCode),
+    )
   }
 }

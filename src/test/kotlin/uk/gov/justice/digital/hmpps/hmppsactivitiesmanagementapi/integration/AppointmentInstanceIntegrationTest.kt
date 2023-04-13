@@ -38,7 +38,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
       assertThat(inCell).isEqualTo(false)
       assertThat(prisonerNumber).isEqualTo("A1234BC")
       assertThat(bookingId).isEqualTo(456)
-      assertThat(appointmentDate).isEqualTo(LocalDate.now())
+      assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
       assertThat(comment).isEqualTo("Appointment occurrence level comment")

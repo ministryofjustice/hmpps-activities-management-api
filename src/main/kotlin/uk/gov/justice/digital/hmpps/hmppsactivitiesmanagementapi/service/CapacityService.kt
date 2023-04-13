@@ -58,6 +58,6 @@ class CapacityService(
   }
 
   private fun ActivitySchedule.getAllocationsForToday(): List<Allocation> {
-    return this.allocations().filter { it.status(PrisonerStatus.ACTIVE) || it.status(PrisonerStatus.SUSPENDED) }
+    return this.allocations().filterNot { it.status(PrisonerStatus.ENDED) }
   }
 }

@@ -69,6 +69,8 @@ data class AppointmentOccurrence(
     allocations.add(allocation)
   }
 
+  fun removeAllocation(allocation: AppointmentOccurrenceAllocation) = allocations.remove(allocation)
+
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
   fun prisonerCount() = prisonerNumbers().count()

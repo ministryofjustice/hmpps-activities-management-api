@@ -12,9 +12,9 @@ class RolloutPrisonTest {
   }
 
   @Test
-  fun `isAppointmentsEnabled returns false when active is false and appointmentsDataSource is ACTIVITIES_SERVICE`() {
+  fun `isAppointmentsEnabled returns true when active is false and appointmentsDataSource is ACTIVITIES_SERVICE`() {
     val rolloutPrison = RolloutPrison(1, "PBI", "Some Desc", false, null, AppointmentsDataSource.ACTIVITIES_SERVICE)
-    assertThat(rolloutPrison.isAppointmentsEnabled()).isFalse
+    assertThat(rolloutPrison.isAppointmentsEnabled()).isTrue
   }
 
   @Test

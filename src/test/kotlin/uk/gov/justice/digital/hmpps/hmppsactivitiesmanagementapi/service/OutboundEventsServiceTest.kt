@@ -69,7 +69,7 @@ class OutboundEventsServiceTest {
 
     verify(
       expectedEventType = "appointments.appointment-instance.created",
-      expectedAdditionalInformation = AppointmentInstanceCreatedInformation(1),
+      expectedAdditionalInformation = AppointmentInstanceInformation(1),
       expectedDescription = "A new appointment instance has been created in the activities management service",
     )
   }
