@@ -127,9 +127,7 @@ data class Attendance(
       pieces = null
       caseNoteId = null
       otherAbsenceReason = null
-    }
-    else
-    {
+    } else {
       attendanceReason = reason
       comment = newComment
       issuePayment = newIssuePayment
