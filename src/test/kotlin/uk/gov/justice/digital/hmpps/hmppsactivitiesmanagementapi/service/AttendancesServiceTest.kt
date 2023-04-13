@@ -12,6 +12,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
@@ -110,6 +111,37 @@ class AttendancesServiceTest {
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
+  }
+
+  @Test
+  fun `remove attendance`() {
+    attendance.status = AttendanceStatus.COMPLETED
+    attendance.attendanceReason = AttendanceReason(
+      9,
+      "ATTENDED",
+      "Attended",
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      1,
+      "some note",
+    )
+    attendance.issuePayment = true
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, AttendanceStatus.WAITING, null, null, null, null, null, null)))
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.attendanceReason).isNull()
+    assertThat(attendance.issuePayment).isNull()
+    assertThat(attendance.payAmount).isNull()
   }
 
   private fun Allocation.starts(date: LocalDate) {

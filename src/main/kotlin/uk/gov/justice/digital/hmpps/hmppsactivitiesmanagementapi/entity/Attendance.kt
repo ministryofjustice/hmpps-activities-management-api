@@ -117,11 +117,25 @@ data class Attendance(
         ),
       )
     }
-    attendanceReason = reason
+    if (newStatus == AttendanceStatus.WAITING) {
+      attendanceReason = null
+      comment = null
+      issuePayment = null
+      incentiveLevelWarningIssued = null
+      payAmount = null
+      bonusAmount = null
+      pieces = null
+      caseNoteId = null
+      otherAbsenceReason = null
+    }
+    else
+    {
+      attendanceReason = reason
+      comment = newComment
+      issuePayment = newIssuePayment
+      incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    }
     status = newStatus
-    comment = newComment
-    issuePayment = newIssuePayment
-    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
     recordedBy = principalName
     recordedTime = LocalDateTime.now()
     return this
