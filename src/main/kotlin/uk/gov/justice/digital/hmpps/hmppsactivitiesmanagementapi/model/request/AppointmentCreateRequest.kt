@@ -123,4 +123,7 @@ data class AppointmentCreateRequest(
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
+
+  @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
+  private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2
 }

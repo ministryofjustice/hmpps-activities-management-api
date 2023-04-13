@@ -5,6 +5,7 @@ import jakarta.validation.Validation
 import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
@@ -84,6 +85,12 @@ class AppointmentCreateRequestTest {
   fun `at least one prisoner number must be supplied`() {
     val request = appointmentCreateRequest(prisonerNumbers = listOf())
     assertSingleValidationError(validator.validate(request), "prisonerNumbers", "At least one prisoner number must be supplied")
+  }
+
+  @Test
+  fun `cannot allocate more than one prisoner to an individual appointment`() {
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.INDIVIDUAL, prisonerNumbers = listOf("A1234BC", "BC2345D"))
+    assertSingleValidationError(validator.validate(request), "prisonerNumbers", "Cannot allocate more than one prisoner to an individual appointment")
   }
 
   @Test
