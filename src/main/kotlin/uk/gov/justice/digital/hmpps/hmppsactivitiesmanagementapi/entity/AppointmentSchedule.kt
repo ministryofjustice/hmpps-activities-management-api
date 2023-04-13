@@ -54,7 +54,7 @@ data class AppointmentSchedule(
 }
 
 class AppointmentScheduleIterator(
-  val startDate: LocalDate,
+  var startDate: LocalDate,
   private val repeatPeriod: AppointmentRepeatPeriod,
   private val repeatCount: Int,
 ) : Iterator<LocalDate> {

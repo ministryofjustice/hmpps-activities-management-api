@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import java.time.LocalDateTime
@@ -34,9 +36,9 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
-        APPOINTMENT_INSTANCE_CREATED -> publisher.send(
-          outboundEvent.event(AppointmentInstanceCreatedInformation(identifier)),
-        )
+        APPOINTMENT_INSTANCE_CREATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
       }
     } else {
       log.info("Ignoring publishing of event type $outboundEvent")
@@ -77,6 +79,22 @@ enum class OutboundEvent(val eventType: String) {
         description = "A new appointment instance has been created in the activities management service",
       )
   },
+  APPOINTMENT_INSTANCE_UPDATED("appointments.appointment-instance.updated") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "An appointment instance has been updated in the activities management service",
+      )
+  },
+  APPOINTMENT_INSTANCE_DELETED("appointments.appointment-instance.deleted") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "An appointment instance has been deleted in the activities management service",
+      )
+  },
   ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent
@@ -96,7 +114,7 @@ data class ScheduleCreatedInformation(val activityScheduleId: Long) : Additional
 
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 
-data class AppointmentInstanceCreatedInformation(val appointmentInstanceId: Long) : AdditionalInformation
+data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
 data class InboundHMPPSDomainEvent(
