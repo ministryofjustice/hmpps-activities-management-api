@@ -151,7 +151,7 @@ object PrisonApiPrisonerScheduleFixture {
     cellLocation: String? = "2-1-001",
     event: String = "TRANSFER",
     eventType: String? = "TRANSFER",
-    eventDescription: String = "Governor",
+    eventDescription: String = "Transfer",
     eventStatus: String? = "SCH",
     date: LocalDate,
     startTime: String = date.atStartOfDay().toIsoDateTime(),

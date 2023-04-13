@@ -426,6 +426,11 @@ class PrisonApiMockServer : WireMockServer(8999) {
                     prisonCode = prisonCode,
                     offenderNo = offenderNo,
                     hearingId = hearingId.plus(1).toLong(),
+                    hearingType = "Governors Hearing Adult",
+                    startTime = dateRange.start.atTime(10, 30, 0),
+                    eventStatus = "SCH",
+                    internalLocationId = 1L,
+                    internalLocationDescription = "Governors office",
                   )
                 },
               ),

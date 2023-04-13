@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.core.StringStartsWith
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -14,7 +15,12 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import java.time.LocalDate
 
@@ -25,24 +31,41 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   @MockBean
   private lateinit var scheduledEventService: ScheduledEventService
 
-  override fun controller() = ScheduledEventController(scheduledEventService)
+  @MockBean
+  private lateinit var referenceCodeService: ReferenceCodeService
+
+  @MockBean
+  private lateinit var locationService: LocationService
+
+  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, locationService)
+
+  @BeforeEach
+  fun setupMocks() {
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf("" to appointmentCategoryReferenceCode("")))
+
+    whenever(locationService.getLocationsForAppointmentsMap("MDI"))
+      .thenReturn(mapOf(101L to appointmentLocation(101, "MDI")))
+  }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 200 response with events`() {
-    val prisonerNumbers = setOf("G4793VF")
+  fun `getScheduledEventsForMultiplePrisoners - 200 response with events`() {
+    val prisonerNumbers = setOf("G1234GG")
     val result = PrisonerScheduledEventsFixture.instance()
 
     whenever(
-      scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+      scheduledEventService.getScheduledEventsForMultiplePrisoners(
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
     val response =
-      mockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+      mockMvc.getScheduledEventsForMultiplePrisoners(
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
@@ -54,29 +77,33 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
 
-    verify(scheduledEventService).getScheduledEventsByPrisonAndPrisonersAndDateRange(
+    verify(scheduledEventService).getScheduledEventsForMultiplePrisoners(
       "MDI",
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - Error response when service throws exception`() {
-    val prisonerNumbers = setOf("G4793VF")
+  fun `getScheduledEventsForMultiplePrisoners - Error response when service throws exception`() {
+    val prisonerNumbers = setOf("G1234GG")
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
 
     whenever(
-      scheduledEventService.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+      scheduledEventService.getScheduledEventsForMultiplePrisoners(
         "MDI",
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenThrow(RuntimeException("Error"))
 
-    val response = mockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+    val response = mockMvc.getScheduledEventsForMultiplePrisoners(
       "MDI",
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
@@ -88,17 +115,19 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
     assertThat(response.contentAsString + "\n").isEqualTo(result)
 
-    verify(scheduledEventService).getScheduledEventsByPrisonAndPrisonersAndDateRange(
+    verify(scheduledEventService).getScheduledEventsForMultiplePrisoners(
       "MDI",
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when no date provided`() {
-    val prisonerNumbers = setOf("G4793VF")
+  fun `getScheduledEventsForMultiplePrisoners - 400 response when no date provided`() {
+    val prisonerNumbers = setOf("G1234GG")
 
     mockMvc.post("/scheduled-events/prison/MDI") {
       accept = MediaType.APPLICATION_JSON
@@ -122,7 +151,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when no prisoner numbers are provided`() {
+  fun `getScheduledEventsForMultiplePrisoners - 400 response when no prisoner numbers are provided`() {
     mockMvc.post("/scheduled-events/prison/MDI?date=2022-12-14") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -142,8 +171,8 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when date incorrect format`() {
-    val prisonerNumbers = setOf("G4793VF")
+  fun `getScheduledEventsForMultiplePrisoners - 400 response when date incorrect format`() {
+    val prisonerNumbers = setOf("G1234GG")
     mockMvc.post("/scheduled-events/prison/MDI?date=20/12/2022") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -166,8 +195,8 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonersAndDateRange - 400 response when time slot is an incorrect format`() {
-    val prisonerNumbers = setOf("G4793VF")
+  fun `getScheduledEventsForMultiplePrisoners - 400 response when time slot is an incorrect format`() {
+    val prisonerNumbers = setOf("G1234GG")
     mockMvc.post("/scheduled-events/prison/MDI?date=2022-12-01&timeSlot=AF") {
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -190,22 +219,25 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 200 response with events`() {
+  fun `getScheduledEventsForSinglePrisoner - 200 response with events`() {
     val result = PrisonerScheduledEventsFixture.instance()
     val startDate = LocalDate.of(2022, 10, 1)
     val endDate = LocalDate.of(2022, 11, 5)
 
     whenever(
-      scheduledEventService.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+      scheduledEventService.getScheduledEventsForSinglePrisoner(
         "MDI",
-        "A11111A",
+        "G1234GG",
         LocalDateRange(startDate, endDate),
+        null,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
-    val response = mockMvc.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+    val response = mockMvc.getScheduledEventsForSinglePrisoner(
       "MDI",
-      "A11111A",
+      "G1234GG",
       startDate,
       endDate,
     )
@@ -215,30 +247,36 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
 
-    verify(scheduledEventService).getScheduledEventsByPrisonAndPrisonerAndDateRange(
+    verify(scheduledEventService).getScheduledEventsForSinglePrisoner(
       "MDI",
-      "A11111A",
+      "G1234GG",
       LocalDateRange(startDate, endDate),
+      null,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - Error response when service throws exception`() {
+  fun `getScheduledEventsForSinglePrisoner - Error response when service throws exception`() {
     val result = this::class.java.getResource("/__files/error-500.json")?.readText()
     val startDate = LocalDate.of(2022, 10, 1)
     val endDate = LocalDate.of(2022, 11, 5)
 
     whenever(
-      scheduledEventService.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+      scheduledEventService.getScheduledEventsForSinglePrisoner(
         "MDI",
-        "A11111A",
+        "G1234GG",
         LocalDateRange(startDate, endDate),
+        null,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenThrow(RuntimeException("Error"))
 
-    val response = mockMvc.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+    val response = mockMvc.getScheduledEventsForSinglePrisoner(
       "MDI",
-      "A11111A",
+      "G1234GG",
       startDate,
       endDate,
     )
@@ -248,29 +286,35 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
 
     assertThat(response.contentAsString + "\n").isEqualTo(result)
 
-    verify(scheduledEventService).getScheduledEventsByPrisonAndPrisonerAndDateRange(
+    verify(scheduledEventService).getScheduledEventsForSinglePrisoner(
       "MDI",
-      "A11111A",
+      "G1234GG",
       LocalDateRange(startDate, endDate),
+      null,
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 200 response when date range equals 3 months`() {
+  fun `getScheduledEventsForSinglePrisoner - 200 response when date range equals 3 months`() {
     val result = PrisonerScheduledEventsFixture.instance()
     val startDate = LocalDate.of(2022, 11, 1)
     val endDate = LocalDate.of(2023, 2, 1)
 
     whenever(
-      scheduledEventService.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+      scheduledEventService.getScheduledEventsForSinglePrisoner(
         "MDI",
-        "A11111A",
+        "G1234GG",
         LocalDateRange(startDate, endDate),
+        null,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("startDate", "2022-11-01")
       param("endDate", "2023-02-01")
     }
@@ -286,9 +330,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when end date missing`() {
+  fun `getScheduledEventsForSinglePrisoner - 400 response when end date missing`() {
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("startDate", "2022-10-01")
     }
       .andDo { print() }
@@ -306,9 +350,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when start date missing`() {
+  fun `getScheduledEventsForSinglePrisoner - 400 response when start date missing`() {
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("endDate", "2022-10-01")
     }
       .andDo { print() }
@@ -326,9 +370,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when start date incorrect format`() {
+  fun `getScheduledEventsForSinglePrisoner - 400 response when start date incorrect format`() {
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("startDate", "01/10/2022")
     }
       .andDo { print() }
@@ -346,9 +390,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when end date incorrect format`() {
+  fun `getScheduledEventsForSinglePrisoner - 400 response when end date incorrect format`() {
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("startDate", "2022-10-01")
       param("endDate", "01/10/2022")
     }
@@ -367,9 +411,9 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsByPrisonAndPrisonerAndDateRange - 400 response when date range exceeds 3 months`() {
+  fun `getScheduledEventsForSinglePrisoner - 400 response when date range exceeds 3 months`() {
     mockMvc.get("/scheduled-events/prison/MDI") {
-      param("prisonerNumber", "A11111A")
+      param("prisonerNumber", "G1234GG")
       param("startDate", "2022-11-01")
       param("endDate", "2023-02-02")
     }
@@ -387,14 +431,14 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       }
   }
 
-  private fun MockMvc.getScheduledEventsByPrisonAndPrisonerAndDateRange(
+  private fun MockMvc.getScheduledEventsForSinglePrisoner(
     prisonCode: String,
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
   ) = get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
 
-  private fun MockMvc.getScheduledEventsByPrisonAndPrisonersAndDateRange(
+  private fun MockMvc.getScheduledEventsForMultiplePrisoners(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,

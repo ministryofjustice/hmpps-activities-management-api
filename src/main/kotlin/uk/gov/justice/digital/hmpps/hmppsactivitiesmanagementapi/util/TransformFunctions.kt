@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -41,9 +44,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
-/**
- * Transform functions providing a thin layer to transform Activity entities into their API model equivalents and vice-versa.
- */
 fun transform(activity: EntityActivity) =
   ModelActivity(
     id = activity.activityId,
@@ -71,38 +71,83 @@ fun transform(activity: EntityActivity) =
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
   )
 
+/*
+ Transforms a list of activities (view-based) from the local database into a list of
+ scheduled events to be returned to API clients.
+ */
 fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
   activitiesForPrisoners: List<PrisonerScheduledActivity>,
-): List<ModelScheduledEvent> =
-  activitiesForPrisoners.toModelScheduledEvents(prisonCode, priorities)
+) = activitiesForPrisoners.map {
+  ModelScheduledEvent(
+    prisonCode = prisonCode,
+    eventSource = "SAA",
+    eventType = EventType.ACTIVITY.name,
+    scheduledInstanceId = it.scheduledInstanceId,
+    bookingId = it.bookingId.toLong(), // TODO: Add bookingId to allocation and retrieve in the view
+    internalLocationId = it.internalLocationId?.toLong(),
+    internalLocationCode = it.internalLocationCode,
+    internalLocationDescription = it.internalLocationDescription,
+    eventId = null,
+    appointmentInstanceId = null,
+    appointmentOccurrenceId = null,
+    oicHearingId = null,
+    cancelled = it.cancelled,
+    suspended = it.suspended,
+    categoryCode = it.activityCategory,
+    categoryDescription = it.activityCategory,
+    summary = it.scheduleDescription,
+    comments = it.activitySummary,
+    prisonerNumber = it.prisonerNumber,
+    inCell = false, // TODO: Add the inCell flag to the view
+    outsidePrison = false, // TODO: Add the outside prison flag to the view
+    date = it.sessionDate,
+    startTime = it.startTime!!,
+    endTime = it.endTime,
+    priority = priorities.getOrDefault(EventType.ACTIVITY, it.activityCategory),
+  )
+}
 
-fun List<PrisonerScheduledActivity>.toModelScheduledEvents(
+/*
+ Transforms a list of appointment instances from the local database into a list of
+ scheduled events to be returned to API clients.
+ */
+fun transformAppointmentInstanceToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
-): List<ModelScheduledEvent> =
-  map {
-    ModelScheduledEvent(
-      prisonCode = prisonCode,
-      eventId = it.scheduledInstanceId,
-      bookingId = it.bookingId.toLong(), // Change allocation to include bookingId
-      locationId = it.internalLocationId?.toLong(),
-      location = it.internalLocationDescription,
-      eventClass = "INT_MOV",
-      eventStatus = null, // Can determine from attendance later
-      eventType = "PRISON_ACT",
-      eventTypeDesc = it.activityCategory,
-      event = it.activitySummary,
-      eventDesc = it.scheduleDescription,
-      details = it.activitySummary + ": " + it.scheduleDescription,
-      prisonerNumber = it.prisonerNumber,
-      date = it.sessionDate,
-      startTime = it.startTime!!,
-      endTime = it.endTime,
-      priority = priorities.getOrDefault(EventType.ACTIVITY, it.activityCategory),
-    )
-  }
+  referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
+  locationsForAppointmentsMap: Map<Long, Location>,
+  appointments: List<AppointmentInstance>,
+) = appointments.map {
+  ModelScheduledEvent(
+    prisonCode = prisonCode,
+    eventSource = "SAA",
+    eventType = EventType.APPOINTMENT.name,
+    scheduledInstanceId = null,
+    bookingId = it.bookingId,
+    internalLocationId = it.internalLocationId,
+    internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "Unknown",
+    internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.description ?: "Unknown",
+    eventId = null,
+    appointmentInstanceId = it.appointmentInstanceId,
+    appointmentOccurrenceId = it.appointmentOccurrenceId,
+    oicHearingId = null,
+    cancelled = false, // TODO: How do we know if an appointment instance is cancelled?
+    suspended = false,
+    categoryCode = it.categoryCode,
+    categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode]?.description ?: "Unknown",
+    summary = "Appointment",
+    comments = it.comment,
+    prisonerNumber = it.prisonerNumber,
+    inCell = it.inCell,
+    outsidePrison = false,
+    date = it.appointmentDate,
+    startTime = it.startTime,
+    endTime = it.endTime,
+    priority = priorities.getOrDefault(EventType.APPOINTMENT),
+  )
+}
 
 fun EntityActivityCategory.toModelActivityCategory() =
   ModelActivityCategory(

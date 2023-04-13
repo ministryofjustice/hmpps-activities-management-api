@@ -1,0 +1,24 @@
+[
+  {
+    "locationId": 607011,
+    "locationType": "APP",
+    "description": "Location One",
+    "agencyId": "MDI",
+    "currentOccupancy": 0,
+    "locationPrefix": "MDI-ONE",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": "MDI-1-ONE"
+  },
+  {
+    "locationId": 607031,
+    "locationType": "APP",
+    "description": "Location Two",
+    "agencyId": "MDI",
+    "currentOccupancy": 0,
+    "locationPrefix": "MDI-TWO",
+    "operationalCapacity": 0,
+    "userDescription": "",
+    "internalLocationCode": "MDI-1-TWO"
+  }
+]
