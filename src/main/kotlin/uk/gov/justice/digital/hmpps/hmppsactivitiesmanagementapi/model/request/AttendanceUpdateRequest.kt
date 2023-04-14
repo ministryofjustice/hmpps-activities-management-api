@@ -16,7 +16,6 @@ data class AttendanceUpdateRequest(
   @Schema(description = "The status - WAITING, COMPLETED, LOCKED", example = "WAITING")
   val status: AttendanceStatus,
 
-  @field:NotEmpty(message = "Attendance reason must be supplied")
   @Schema(description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED", example = "ATTENDED")
   val attendanceReason: String?,
 
