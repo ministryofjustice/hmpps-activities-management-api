@@ -42,6 +42,7 @@ fun appointmentLocation(locationId: Long, prisonCode: String) =
     locationUsage = "APP",
     agencyId = prisonCode,
     currentOccupancy = 2,
+    userDescription = "Test Appointment Location",
   )
 
 fun appointmentCategoryReferenceCode(code: String = "TEST", description: String = "Test Category") =

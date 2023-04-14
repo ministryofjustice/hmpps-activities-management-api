@@ -128,7 +128,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     bookingId = it.bookingId,
     internalLocationId = it.internalLocationId,
     internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "Unknown",
-    internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.description ?: "Unknown",
+    internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "Unknown",
     eventId = null,
     appointmentInstanceId = it.appointmentInstanceId,
     appointmentOccurrenceId = it.appointmentOccurrenceId,
