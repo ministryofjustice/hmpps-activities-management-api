@@ -498,7 +498,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Test
     @Sql("classpath:test_data/make-MDI-rollout-active-for-both.sql")
     @Sql("classpath:test_data/seed-activity-for-events.sql")
-    @Sql("classpath:test_data/seed-appointment-single-id-4.sql")
+    @Sql("classpath:test_data/seed-appointment-group-id-4.sql")
     fun `POST - multiple prisoners - activities and appointments active - 200 success`() {
       val prisonCode = "MDI"
       val prisonerNumbers = listOf("G4793VF", "A5193DY")

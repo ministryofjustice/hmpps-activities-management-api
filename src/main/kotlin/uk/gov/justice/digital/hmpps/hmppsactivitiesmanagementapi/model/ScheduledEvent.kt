@@ -14,7 +14,7 @@ data class ScheduledEvent(
   @Schema(description = "The source of this event - valid values are NOMIS or SAA (scheduling activities and appointments)", example = "NOMIS")
   val eventSource: String?,
 
-  @Schema(description = "The event type (APPOINTMENT, ACTIVITY, COURT, TRANSFER, ADJUDICATION, VISIT)", example = "APPOINTMENT")
+  @Schema(description = "The event type (APPOINTMENT, ACTIVITY, COURT_HEARING, EXTERNAL_TRANSFER, ADJUDICATION_HEARING, VISIT)", example = "APPOINTMENT")
   val eventType: String?,
 
   @Schema(description = "For activities from SAA the ID for the activity scheduled instance, or null when from NOMIS", example = "9999")
@@ -41,7 +41,7 @@ data class ScheduledEvent(
   @Schema(description = "The NOMIS location code for this event", example = "MDI-HB1-EDUCATION-RM1")
   val internalLocationCode: String?,
 
-  @Schema(description = "The NOMIS location description for this event", example = "Room One")
+  @Schema(description = "The NOMIS location description for this event", example = "Education Room One")
   val internalLocationDescription: String?,
 
   @Schema(description = "Event category code (e.g appointment category code, activity category code)", example = "GOVE")
