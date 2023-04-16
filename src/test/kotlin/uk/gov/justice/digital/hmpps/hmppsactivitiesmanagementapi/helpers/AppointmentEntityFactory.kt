@@ -65,7 +65,6 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOcc
     startTime = appointment.startTime,
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
-    cancelled = false,
     updated = if (updatedBy == null) null else LocalDateTime.now(),
     updatedBy = updatedBy,
   ).apply {

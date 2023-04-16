@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
@@ -51,7 +52,13 @@ data class AppointmentOccurrence(
 
   var comment: String? = null,
 
-  var cancelled: Boolean = false,
+  var cancelled: LocalDateTime? = null,
+
+  @OneToOne
+  @JoinColumn(name = "cancellation_reason_id")
+  var cancellationReason: AppointmentCancellationReason? = null,
+
+  var cancelledBy: String? = null,
 
   var updated: LocalDateTime? = null,
 
@@ -84,6 +91,8 @@ data class AppointmentOccurrence(
     endTime = endTime,
     comment = comment,
     cancelled = cancelled,
+    cancellationReason = cancellationReason?.description,
+    cancelledBy = cancelledBy,
     updated = updated,
     updatedBy = updatedBy,
     allocations = allocations.toModel(),
@@ -100,7 +109,7 @@ data class AppointmentOccurrence(
       endTime,
       comment ?: appointmentComment,
       isEdited = false,
-      isCancelled = false,
+      isCancelled = cancellationReason != null,
       updated = updated,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),

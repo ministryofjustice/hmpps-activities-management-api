@@ -33,6 +33,12 @@ CREATE INDEX idx_appointment_start_time ON appointment (start_time);
 CREATE INDEX idx_appointment_end_time ON appointment (end_time);
 CREATE INDEX idx_appointment_schedule_id ON appointment (appointment_schedule_id);
 
+CREATE TABLE appointment_cancellation_reason (
+     appointment_cancellation_reason_id bigserial NOT NULL CONSTRAINT appointment_cancellation_reason_pk PRIMARY KEY,
+     description varchar(50) NOT NULL,
+     is_delete boolean NOT NULL
+);
+
 CREATE TABLE appointment_occurrence (
      appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,
      appointment_id             bigint          NOT NULL REFERENCES appointment (appointment_id),
@@ -43,7 +49,9 @@ CREATE TABLE appointment_occurrence (
      start_time                 time            NOT NULL,
      end_time                   time,
      comment                    text,
-     cancelled                  boolean         NOT NULL DEFAULT false,
+     cancelled                  timestamp,
+     cancellation_reason_id     bigint          REFERENCES appointment_cancellation_reason (appointment_cancellation_reason_id),
+     cancelled_by               varchar(100),
      updated                    timestamp,
      updated_by                 varchar(100)
 );

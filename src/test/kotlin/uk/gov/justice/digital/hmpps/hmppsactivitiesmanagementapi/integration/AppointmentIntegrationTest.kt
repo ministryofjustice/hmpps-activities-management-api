@@ -75,7 +75,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
           assertThat(comment).isEqualTo("Appointment occurrence level comment")
-          assertThat(cancelled).isEqualTo(false)
+          assertThat(cancelled).isNull()
+          assertThat(cancellationReason).isNull()
+          assertThat(cancelledBy).isNull()
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           with(allocations) {

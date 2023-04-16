@@ -78,12 +78,32 @@ data class AppointmentOccurrence(
   @Schema(
     description =
     """
-    Supports cancelling of this appointment occurrence. This is different from (soft) deleting the parent appointment
-    and can be used to highlight where an appointment has been cancelled on unlock lists and similar
+    The time at which this appointment occurrence was cancelled (if applicable).
     """,
-    example = "false",
+    example = "2023-01-02T10:45:31",
   )
-  val cancelled: Boolean,
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  var cancelled: LocalDateTime? = null,
+
+  @Schema(
+    description =
+    """
+    The reason why this appointment occurrence was cancelled (if applicable).
+    """,
+    example = "Created in error",
+  )
+  val cancellationReason: String? = null,
+
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that cancelled this appointment instance (if applicable).
+    Usually a NOMIS username. Will be null if the appointment occurrence has not been altered independently from the
+    parent appointment since it was created
+    """,
+    example = "AAA01U",
+  )
+  val cancelledBy: String? = null,
 
   @Schema(
     description =
@@ -118,4 +138,7 @@ data class AppointmentOccurrence(
     """,
   )
   val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
-)
+) {
+
+  fun isCancelled() = cancelled != null
+}

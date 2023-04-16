@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.security.Principal
@@ -38,6 +39,7 @@ import java.util.Optional
 class AppointmentOccurrenceServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -46,6 +48,7 @@ class AppointmentOccurrenceServiceTest {
   private val service = AppointmentOccurrenceService(
     appointmentRepository,
     appointmentOccurrenceRepository,
+    appointmentCancellationReasonRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,

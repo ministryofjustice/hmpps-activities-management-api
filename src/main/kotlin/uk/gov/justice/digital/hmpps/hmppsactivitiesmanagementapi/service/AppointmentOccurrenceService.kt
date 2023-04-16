@@ -10,7 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -22,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentOccurrenceService(
   private val appointmentRepository: AppointmentRepository,
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -41,14 +44,7 @@ class AppointmentOccurrenceService(
       throw IllegalArgumentException("Cannot update a past appointment occurrence")
     }
 
-    val occurrencesToUpdate =
-      when (request.applyTo) {
-        ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-          appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) },
-        )
-        ApplyTo.ALL_FUTURE_OCCURRENCES -> appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > now }
-        else -> listOf(appointmentOccurrence)
-      }
+    val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
 
     val updatedIds = mutableListOf<Long>()
 
@@ -73,6 +69,20 @@ class AppointmentOccurrenceService(
     }
 
     return updatedAppointment.toModel()
+  }
+
+  fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal) {
+    val now = LocalDateTime.now()
+    val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
+    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+    val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
+
+    occurrencesToUpdate.forEach {
+      it.cancellationReason = cancellationReason
+      it.cancelled = now
+      it.cancelledBy = principal.name
+    }
+    appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
   }
 
   private fun applyCategoryCodeUpdate(
@@ -247,4 +257,13 @@ class AppointmentOccurrenceService(
       if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
     }
   }
+
+  private fun determineOccurrencesToApplyTo(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, currentTime: LocalDateTime) =
+    when (applyTo) {
+      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
+        appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) },
+      )
+      ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
+      else -> listOf(appointmentOccurrence)
+    }
 }
