@@ -12,6 +12,8 @@ spring:
     date-format: "yyyy-MM-dd HH:mm:ss"
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+    mapper:
+      ACCEPT_CASE_INSENSITIVE_ENUMS: true
 
   profiles:
     group:

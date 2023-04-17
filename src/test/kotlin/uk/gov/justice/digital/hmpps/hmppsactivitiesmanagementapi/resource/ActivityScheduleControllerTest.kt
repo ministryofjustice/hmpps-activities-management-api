@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -32,9 +33,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   private lateinit var activityScheduleService: ActivityScheduleService
 
   @MockBean
+  private lateinit var candidatesService: CandidatesService
+
+  @MockBean
   private lateinit var capacityService: CapacityService
 
-  override fun controller() = ActivityScheduleController(activityScheduleService, capacityService)
+  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, capacityService)
 
   @Test
   fun `200 response when get schedule capacity`() {

@@ -5,11 +5,19 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
 
 @Service
 class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient) {
+
+  fun getAllPrisonersInPrison(prisonCode: String) = prisonerSearchApiWebClient
+    .get()
+    .uri("/prisoner-search/prison/$prisonCode?size=2000")
+    .header("Content-Type", "application/json")
+    .retrieve()
+    .bodyToMono(typeReference<PagedPrisoner>())
 
   fun findByPrisonerNumbers(prisonerNumbers: List<String>): Mono<List<Prisoner>> {
     return prisonerSearchApiWebClient.post()

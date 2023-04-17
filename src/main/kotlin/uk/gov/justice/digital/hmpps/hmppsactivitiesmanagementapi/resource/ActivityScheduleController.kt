@@ -8,6 +8,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,8 +28,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
 
@@ -34,6 +41,7 @@ import java.security.Principal
 @RequestMapping("/schedules", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ActivityScheduleController(
   private val scheduleService: ActivityScheduleService,
+  private val candidatesService: CandidatesService,
   private val capacityService: CapacityService,
 ) {
 
@@ -216,17 +224,32 @@ class ActivityScheduleController(
       ApiResponse(
         responseCode = "400",
         description = "Bad request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -251,6 +274,89 @@ class ActivityScheduleController(
     )
     @Valid
     prisonerAllocationRequest: PrisonerAllocationRequest,
-  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
-    .let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> =
+    scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
+      .let { ResponseEntity.noContent().build() }
+
+  @GetMapping(value = ["/{scheduleId}/candidates"])
+  @Operation(
+    summary = "Get the suitable candidates for an activity",
+    description = "Returns a paginated view of the list of candidates suitable for a given activity schedule." +
+      " Filterable by employment status, workplace risk assessment, and incentive level." +
+      " Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "A paginated list of candidates was returned.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity schedule for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun candidates(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(
+      value = "suitableIncentiveLevel",
+      required = false,
+    ) suitableIncentiveLevel: List<String>?,
+    @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevel: List<String>?,
+    @RequestParam(value = "suitableForEmployed", required = false) suitableForEmployed: Boolean?,
+    @RequestParam(value = "search", required = false) search: String?,
+    @ParameterObject @PageableDefault
+    pageable: Pageable,
+  ): Page<ActivityCandidate> {
+    val candidates = candidatesService.getActivityCandidates(
+      scheduleId,
+      suitableIncentiveLevel,
+      suitableRiskLevel,
+      suitableForEmployed,
+      search,
+    )
+
+    val start = pageable.offset.toInt()
+    val end = (start + pageable.pageSize).coerceAtMost(candidates.size)
+
+    return PageImpl(candidates.subList(start, end), pageable, candidates.size.toLong())
+  }
 }
