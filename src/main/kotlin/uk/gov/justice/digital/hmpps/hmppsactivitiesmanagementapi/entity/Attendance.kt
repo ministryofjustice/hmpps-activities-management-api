@@ -184,7 +184,7 @@ data class Attendance(
       .sortedWith(compareBy { this.recordedTime })
       .reversed()
       .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
-    )
+  )
 }
 
 enum class AttendanceStatus {
