@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
@@ -22,10 +23,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 
 @Entity
 @Table(name = "attendance")
+@EntityListeners(AttendanceEntityListener::class)
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceId: Long = -1,
+  val attendanceId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "scheduled_instance_id", nullable = false)
