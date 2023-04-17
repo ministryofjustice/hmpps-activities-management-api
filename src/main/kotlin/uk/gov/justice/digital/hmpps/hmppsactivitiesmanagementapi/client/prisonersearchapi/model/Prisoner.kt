@@ -395,7 +395,8 @@ data class Prisoner(
     @JsonProperty("Moustache Only") moustacheOnly("Moustache Only"),
     @JsonProperty("Not Applicable (Female Offender)") notApplicableLeftParenthesisFemaleOffenderRightParenthesis("Not Applicable (Female Offender)"),
     @JsonProperty("No Facial Hair") noFacialHair("No Facial Hair"),
-    @JsonProperty("Sideburns") sideburns("Sideburns")
+    @JsonProperty("Sideburns") sideburns("Sideburns"),
+    @JsonProperty("Not asked") notAsked("Not Asked"),
   }
 
   /**
