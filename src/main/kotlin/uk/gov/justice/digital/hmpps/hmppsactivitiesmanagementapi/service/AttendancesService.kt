@@ -46,6 +46,7 @@ class AttendancesService(
         attendanceUpdatesById[it.attendanceId]?.status ?: AttendanceStatus.COMPLETED,
         attendanceUpdatesById[it.attendanceId]!!.comment,
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
+        attendanceUpdatesById[it.attendanceId]!!.payAmount,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
       )
     }

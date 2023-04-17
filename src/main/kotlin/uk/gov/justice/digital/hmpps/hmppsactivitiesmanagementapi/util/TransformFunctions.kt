@@ -305,6 +305,9 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
+    attendanceHistory = attendance.history()
+      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory) }
+      .reversed(),
   )
 
 fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistory =

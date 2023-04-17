@@ -100,6 +100,7 @@ data class Attendance(
     newStatus: AttendanceStatus,
     newComment: String?,
     newIssuePayment: Boolean?,
+    newPayAmount: Int?,
     newIncentiveLevelWarningIssued: Boolean?,
   ): Attendance {
     if (status != AttendanceStatus.WAITING) {
@@ -131,6 +132,7 @@ data class Attendance(
       attendanceReason = reason
       comment = newComment
       issuePayment = newIssuePayment
+      payAmount = newPayAmount
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
     }
     status = newStatus
@@ -178,7 +180,9 @@ data class Attendance(
     pieces = this.pieces,
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
-    attendanceHistory = this.attendanceHistory.map { attendanceHistory -> transform(attendanceHistory) },
+    attendanceHistory = this.attendanceHistory
+      .map { attendanceHistory -> transform(attendanceHistory) }
+      .reversed(),
   )
 }
 
