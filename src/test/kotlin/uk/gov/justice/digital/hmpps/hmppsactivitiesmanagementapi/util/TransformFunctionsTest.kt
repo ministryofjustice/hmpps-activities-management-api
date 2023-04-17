@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
@@ -83,6 +85,30 @@ class TransformFunctionsTest {
                   incentiveLevelWarningIssued = null,
                   recordedTime = LocalDate.now().atStartOfDay(),
                   recordedBy = "Joe Bloggs",
+                  attendanceHistory = listOf(
+                    ModelAttendanceHistory(
+                      id = 1,
+                      attendanceReason = ModelAttendanceReason(
+                        9,
+                        "ATTENDED",
+                        "Previous Desc",
+                        false,
+                        true,
+                        true,
+                        false,
+                        false,
+                        false,
+                        true,
+                        1,
+                        "some note",
+                      ),
+                      issuePayment = null,
+                      incentiveLevelWarningIssued = null,
+                      comment = "previous comment",
+                      recordedBy = "Joe Bloggs",
+                      recordedTime = LocalDate.now().atStartOfDay(),
+                    ),
+                  ),
                 ),
               ),
             ),
