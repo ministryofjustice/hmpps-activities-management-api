@@ -181,9 +181,10 @@ data class Attendance(
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
     attendanceHistory = this.attendanceHistory
-      .map { attendanceHistory -> transform(attendanceHistory) }
-      .reversed(),
-  )
+      .sortedWith(compareBy { this.recordedTime })
+      .reversed()
+      .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
+    )
 }
 
 enum class AttendanceStatus {
