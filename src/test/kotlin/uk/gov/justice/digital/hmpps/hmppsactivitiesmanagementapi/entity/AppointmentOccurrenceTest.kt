@@ -169,6 +169,7 @@ class AppointmentOccurrenceTest {
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
+        AppointmentType.INDIVIDUAL,
         1,
         AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         "TPR",
@@ -178,8 +179,8 @@ class AppointmentOccurrenceTest {
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
         null,
-        AppointmentType.INDIVIDUAL,
         "Appointment occurrence level comment",
+        isRepeat = false,
         isEdited = false,
         isCancelled = false,
         created = appointment.created,

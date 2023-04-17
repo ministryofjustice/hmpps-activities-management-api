@@ -114,6 +114,7 @@ fun appointmentCreateRequest(
 
 fun appointmentDetails() = AppointmentDetails(
   1,
+  AppointmentType.INDIVIDUAL,
   appointmentCategorySummary(),
   "TPR",
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
@@ -122,7 +123,6 @@ fun appointmentDetails() = AppointmentDetails(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   null,
-  AppointmentType.INDIVIDUAL,
   "Appointment level comment",
   LocalDateTime.now(),
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
@@ -153,6 +153,7 @@ fun appointmentDetails() = AppointmentDetails(
 fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   1,
   2,
+  AppointmentType.INDIVIDUAL,
   3,
   appointmentCategorySummary(),
   "TPR",
@@ -162,8 +163,8 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   null,
-  AppointmentType.INDIVIDUAL,
   "Appointment level comment",
+  false,
   false,
   false,
   LocalDateTime.now(),

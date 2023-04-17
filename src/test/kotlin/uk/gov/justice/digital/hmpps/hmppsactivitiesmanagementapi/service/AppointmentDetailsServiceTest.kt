@@ -70,6 +70,7 @@ class AppointmentDetailsServiceTest {
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
       AppointmentDetails(
         entity.appointmentId,
+        AppointmentType.INDIVIDUAL,
         AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         entity.prisonCode,
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
@@ -78,7 +79,6 @@ class AppointmentDetailsServiceTest {
         entity.startTime,
         entity.endTime,
         null,
-        AppointmentType.INDIVIDUAL,
         entity.comment,
         entity.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),

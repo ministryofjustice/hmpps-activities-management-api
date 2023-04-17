@@ -113,6 +113,7 @@ data class Appointment(
   fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
     AppointmentDetails(
       appointmentId,
+      appointmentType,
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       prisonCode,
       if (inCell) {
@@ -125,7 +126,6 @@ data class Appointment(
       startTime,
       endTime,
       schedule?.toRepeat(),
-      appointmentType,
       comment,
       created,
       userMap[createdBy].toSummary(createdBy),

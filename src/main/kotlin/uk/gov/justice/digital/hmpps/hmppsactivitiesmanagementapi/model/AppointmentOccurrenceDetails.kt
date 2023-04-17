@@ -29,6 +29,12 @@ data class AppointmentOccurrenceDetails(
   val appointmentId: Long,
 
   @Schema(
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
+  )
+  val appointmentType: AppointmentType,
+
+  @Schema(
     description = "The sequence number of this appointment occurrence within the recurring appointment series",
     example = "3",
   )
@@ -103,12 +109,6 @@ data class AppointmentOccurrenceDetails(
   val repeat: AppointmentRepeat?,
 
   @Schema(
-    description = "The appointment type (INDIVIDUAL or GROUP)",
-    example = "INDIVIDUAL",
-  )
-  val appointmentType: AppointmentType,
-
-  @Schema(
     description =
     """
     Notes relating to this appointment occurrence. Can be different to the parent appointment if this occurrence has
@@ -117,6 +117,11 @@ data class AppointmentOccurrenceDetails(
     example = "This appointment occurrence has been rescheduled due to staff availability",
   )
   val comment: String,
+
+  @Schema(
+    description = "Flag to indicate that the parent appointment was originally specified to repeat",
+  )
+  val isRepeat: Boolean,
 
   @Schema(
     description =
