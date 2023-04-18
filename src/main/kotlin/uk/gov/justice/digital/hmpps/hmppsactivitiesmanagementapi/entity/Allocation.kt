@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val allocationId: Long = -1,
+  val allocationId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
@@ -81,7 +81,7 @@ data class Allocation(
 
   fun isAllocated() = deallocatedTime == null
 
-  fun status(status: PrisonerStatus) = prisonerStatus == status
+  fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
   fun toModel() =
     ModelAllocation(
@@ -99,9 +99,9 @@ data class Allocation(
       isUnemployment = activitySchedule.activity.isUnemployment(),
     )
 
-  fun suspend(dateTime: LocalDateTime, reason: String) =
+  fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {
-      failIfAllocationIsNotActive()
+      failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
 
       prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
       suspendedTime = dateTime
@@ -109,9 +109,29 @@ data class Allocation(
       suspendedBy = "SYSTEM"
     }
 
-  private fun failIfAllocationIsNotActive() {
-    if (status(PrisonerStatus.ACTIVE).not()) {
-      throw IllegalStateException("You can only suspend active allocations")
+  fun userSuspend(dateTime: LocalDateTime, reason: String, byWhom: String) =
+    this.apply {
+      failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
+
+      prisonerStatus = PrisonerStatus.SUSPENDED
+      suspendedTime = dateTime
+      suspendedReason = reason
+      suspendedBy = byWhom
+    }
+
+  fun reactivateAutoSuspensions() =
+    this.apply {
+      failWithMessageIfAllocationsIsNot("You can only reactivate auto-suspended allocations", PrisonerStatus.AUTO_SUSPENDED)
+
+      prisonerStatus = PrisonerStatus.ACTIVE
+      suspendedTime = null
+      suspendedReason = null
+      suspendedBy = null
+    }
+
+  private fun failWithMessageIfAllocationsIsNot(failureMessage: String, vararg statuses: PrisonerStatus) {
+    if (status(*statuses).not()) {
+      throw IllegalStateException(failureMessage)
     }
   }
 
