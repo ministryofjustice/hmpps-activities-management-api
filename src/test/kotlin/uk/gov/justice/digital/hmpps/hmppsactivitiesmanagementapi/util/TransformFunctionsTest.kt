@@ -116,7 +116,7 @@ class TransformFunctionsTest {
           internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
           allocations = listOf(
             Allocation(
-              id = -1,
+              id = 0,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
               prisonPayBand = PrisonPayBand(
