@@ -180,7 +180,7 @@ class AppointmentOccurrenceTest {
         LocalTime.of(10, 30),
         null,
         "Appointment occurrence level comment",
-        isRepeat = false,
+        repeat = null,
         isEdited = false,
         isCancelled = false,
         created = appointment.created,

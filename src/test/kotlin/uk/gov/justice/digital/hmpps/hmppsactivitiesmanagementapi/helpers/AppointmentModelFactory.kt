@@ -164,7 +164,7 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   LocalTime.of(10, 30),
   null,
   "Appointment level comment",
-  false,
+  null,
   false,
   false,
   LocalDateTime.now(),

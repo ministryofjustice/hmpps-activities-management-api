@@ -125,7 +125,7 @@ data class AppointmentOccurrence(
       endTime,
       appointment.schedule?.toRepeat(),
       comment ?: appointment.comment,
-      appointment.schedule != null,
+      appointment.schedule?.toRepeat(),
       false,
       false,
       appointment.created,
