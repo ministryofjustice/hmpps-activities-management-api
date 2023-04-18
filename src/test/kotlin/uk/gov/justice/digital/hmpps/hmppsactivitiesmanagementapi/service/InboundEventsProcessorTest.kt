@@ -16,10 +16,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class OffenderReleasedFromPrisonServiceTest {
+class InboundEventsProcessorTest {
 
   private val repository: AllocationRepository = mock()
-  private val service = OffenderEventsOfInterestService(repository)
+  private val service = InboundEventsProcessor(repository)
 
   @Test
   fun `active allocations are auto-suspended on temporary release of prisoner`() {
@@ -38,7 +38,7 @@ class OffenderReleasedFromPrisonServiceTest {
       previouslyActiveAllocations,
     )
 
-    service.temporarilyReleaseOffender(moorlandPrisonCode, "123456")
+    service.process(InboundEvent.OFFENDER_TEMPORARILY_RELEASED, moorlandPrisonCode, "123456")
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -61,7 +61,7 @@ class OffenderReleasedFromPrisonServiceTest {
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
 
-    service.temporarilyReleaseOffender(moorlandPrisonCode, "123456")
+    service.process(InboundEvent.OFFENDER_TEMPORARILY_RELEASED, moorlandPrisonCode, "123456")
 
     assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
     assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue()
@@ -85,7 +85,7 @@ class OffenderReleasedFromPrisonServiceTest {
       previouslyActiveAllocations,
     )
 
-    service.permanentlyReleaseOffender(moorlandPrisonCode, "123456")
+    service.process(InboundEvent.OFFENDER_RELEASED, moorlandPrisonCode, "123456")
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -104,14 +104,14 @@ class OffenderReleasedFromPrisonServiceTest {
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
       .also { it.deallocate(yesterday, "reason") }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
-      .also { it.suspend(LocalDateTime.now(), "reason") }
+      .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
 
     val allocations = listOf(previouslyEndedAllocation, previouslySuspendedAllocation, previouslyActiveAllocation)
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
 
-    service.permanentlyReleaseOffender(moorlandPrisonCode, "123456")
+    service.process(InboundEvent.OFFENDER_RELEASED, moorlandPrisonCode, "123456")
 
     with(previouslyEndedAllocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
@@ -120,5 +120,38 @@ class OffenderReleasedFromPrisonServiceTest {
 
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
+  }
+
+  @Test
+  fun `only auto-suspended allocations are reactivated on receipt of prisoner`() {
+    val now = LocalDateTime.now()
+
+    val autoSuspendedOne =
+      allocation().copy(allocationId = 1, prisonerNumber = "123456").autoSuspend(now, "Auto reason")
+    val autoSuspendedTwo =
+      allocation().copy(allocationId = 2, prisonerNumber = "123456").autoSuspend(now, "Auto Reason")
+    val userSuspended =
+      allocation().copy(allocationId = 3, prisonerNumber = "123456").userSuspend(now, "User reason", "username")
+    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocate(now, "Deallocate reason")
+
+    val allocations = listOf(autoSuspendedOne, autoSuspendedTwo, userSuspended, ended)
+
+    assertThat(autoSuspendedOne.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
+    assertThat(autoSuspendedTwo.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
+    assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
+    assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
+
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
+      allocations,
+    )
+
+    service.process(InboundEvent.OFFENDER_RECEIVED, moorlandPrisonCode, "123456")
+
+    assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
+    assertThat(autoSuspendedTwo.status(PrisonerStatus.ACTIVE)).isTrue
+    assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
+    assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
+
+    verify(repository).saveAllAndFlush(any<List<Allocation>>())
   }
 }

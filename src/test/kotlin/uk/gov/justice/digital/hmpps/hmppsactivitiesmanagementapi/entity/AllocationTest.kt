@@ -58,14 +58,14 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.deallocate(LocalDateTime.now(), "reason") }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("Allocation with ID '-1' is already deallocated.")
+      .hasMessage("Allocation with ID '0' is already deallocated.")
   }
 
   @Test
-  fun `check can suspend an active allocation`() {
-    val allocation = allocation().also { assertThat(it.status(PrisonerStatus.ACTIVE)) }
+  fun `check can auto-suspend an active allocation`() {
+    val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
-    allocation.suspend(today.atStartOfDay(), "Temporarily released from prison")
+    allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison")
 
     with(allocation) {
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
@@ -76,22 +76,69 @@ class AllocationTest {
   }
 
   @Test
-  fun `check cannot suspend an already inactive allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }.also { assertThat(it.status(PrisonerStatus.ENDED)) }
+  fun `check cannot auto-suspend an ended allocation`() {
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
-    assertThatThrownBy { allocation.suspend(today.atStartOfDay(), "Temporarily released from prison") }
+    assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("You can only suspend active allocations")
   }
 
   @Test
-  fun `check cannot supend same allocation`() {
-    val allocation = allocation().also { assertThat(it.status(PrisonerStatus.ACTIVE)) }
+  fun `check cannot auto-suspend same allocation`() {
+    val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
-    allocation.suspend(today.atStartOfDay(), "Temporarily released from prison")
+    allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison")
 
-    assertThatThrownBy { allocation.suspend(today.atStartOfDay(), "Temporarily released from prison") }
+    assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("You can only suspend active allocations")
+  }
+
+  @Test
+  fun `check can unsuspend an auto-suspended allocation`() {
+    val allocation = allocation()
+      .apply { autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED) }
+
+    allocation.reactivateAutoSuspensions()
+
+    with(allocation) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      assertThat(suspendedBy).isNull()
+      assertThat(suspendedTime).isNull()
+      assertThat(suspendedReason).isNull()
+    }
+  }
+
+  @Test
+  fun `check cannot unsuspend a manual user suspended allocation`() {
+    val allocation = allocation()
+      .apply { userSuspend(today.atStartOfDay(), "User suspension", "A user") }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED) }
+
+    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("You can only reactivate auto-suspended allocations")
+  }
+
+  @Test
+  fun `check cannot unsuspend an active allocation`() {
+    val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("You can only reactivate auto-suspended allocations")
+  }
+
+  @Test
+  fun `check cannot unsuspend an ended allocation`() {
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
+
+    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("You can only reactivate auto-suspended allocations")
   }
 }
