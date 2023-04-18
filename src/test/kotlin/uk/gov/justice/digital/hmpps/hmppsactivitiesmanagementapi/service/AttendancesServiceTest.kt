@@ -106,7 +106,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
@@ -135,7 +135,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, AttendanceStatus.WAITING, null, null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, AttendanceStatus.WAITING, null, null, null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
     assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)

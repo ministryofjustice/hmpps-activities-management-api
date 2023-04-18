@@ -78,6 +78,7 @@ class AppointmentOccurrenceDetailsServiceTest {
         entity.startDate,
         entity.startTime,
         entity.endTime,
+        null,
         AppointmentType.INDIVIDUAL,
         entity.comment ?: appointment.comment,
         false,

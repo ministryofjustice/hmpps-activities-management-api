@@ -29,6 +29,7 @@ class AppointmentTest : ModelTest() {
       prisonCode = "PVI",
       internalLocationId = null,
       comment = "Blah",
+      appointmentDescription = "Appointment description",
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,

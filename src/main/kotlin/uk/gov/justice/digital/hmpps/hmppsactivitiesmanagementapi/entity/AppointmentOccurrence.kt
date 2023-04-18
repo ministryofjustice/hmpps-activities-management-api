@@ -135,6 +135,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
+      appointment.schedule?.toRepeat(),
       appointment.appointmentType,
       comment ?: appointment.comment,
       false,

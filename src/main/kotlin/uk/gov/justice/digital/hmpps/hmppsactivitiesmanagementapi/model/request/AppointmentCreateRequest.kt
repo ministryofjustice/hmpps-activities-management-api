@@ -108,6 +108,16 @@ data class AppointmentCreateRequest(
   )
   val comment: String = "",
 
+  @field:Size(max = 40, message = "Appointment description should not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    Free text description for an appointment.  This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
+
   @field:NotEmpty(message = "At least one prisoner number must be supplied")
   @Schema(
     description = "The prisoner or prisoners to allocate to the created appointment or series of appointment occurrences",

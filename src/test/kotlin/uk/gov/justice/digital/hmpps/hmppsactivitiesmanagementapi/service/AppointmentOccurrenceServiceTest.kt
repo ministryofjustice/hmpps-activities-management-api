@@ -324,6 +324,7 @@ class AppointmentOccurrenceServiceTest {
 
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
@@ -438,6 +439,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
@@ -496,6 +498,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
@@ -1027,6 +1030,7 @@ class AppointmentOccurrenceServiceTest {
 
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences.subList(0, 2)) {
@@ -1060,6 +1064,7 @@ class AppointmentOccurrenceServiceTest {
 
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences.subList(0, 2)) {
@@ -1088,6 +1093,7 @@ class AppointmentOccurrenceServiceTest {
 
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences[0]) {
@@ -1323,6 +1329,7 @@ class AppointmentOccurrenceServiceTest {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
         assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))

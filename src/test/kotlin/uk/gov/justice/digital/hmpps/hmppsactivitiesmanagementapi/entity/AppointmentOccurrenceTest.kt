@@ -12,11 +12,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod as AppointmentRepeatPeriodEnity
 
 class AppointmentOccurrenceTest {
   @Test
@@ -174,6 +177,7 @@ class AppointmentOccurrenceTest {
         LocalDate.now(),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
+        null,
         AppointmentType.INDIVIDUAL,
         "Appointment occurrence level comment",
         isEdited = false,
@@ -239,6 +243,31 @@ class AppointmentOccurrenceTest {
     )
     with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
       assertThat(updatedBy).isNull()
+    }
+  }
+
+  @Test
+  fun `entity to details mapping repeat appointment`() {
+    val appointment = appointmentEntity(repeatPeriod = AppointmentRepeatPeriodEnity.WEEKLY, numberOfOccurrences = 4)
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
+      assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriod.WEEKLY, 4))
     }
   }
 

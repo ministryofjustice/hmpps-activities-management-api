@@ -18,6 +18,7 @@ CREATE TABLE appointment (
     end_time                time,
     appointment_schedule_id bigint          REFERENCES appointment_schedule (appointment_schedule_id),
     comment                 text            NOT NULL DEFAULT '',
+    appointment_description varchar(40),
     created                 timestamp       NOT NULL,
     created_by              varchar(100)    NOT NULL,
     updated                 timestamp,

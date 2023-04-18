@@ -92,6 +92,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
       assertThat(comment).isEqualTo("Appointment level comment")
+      assertThat(appointmentDescription).isEqualTo("Appointment description")
       assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(updatedBy).isEqualTo("test-client")
       with(occurrences.single()) {

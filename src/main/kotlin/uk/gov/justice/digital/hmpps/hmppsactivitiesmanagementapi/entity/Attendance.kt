@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
@@ -22,10 +23,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 
 @Entity
 @Table(name = "attendance")
+@EntityListeners(AttendanceEntityListener::class)
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceId: Long = -1,
+  val attendanceId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "scheduled_instance_id", nullable = false)
@@ -100,6 +102,7 @@ data class Attendance(
     newStatus: AttendanceStatus,
     newComment: String?,
     newIssuePayment: Boolean?,
+    newPayAmount: Int?,
     newIncentiveLevelWarningIssued: Boolean?,
   ): Attendance {
     if (status != AttendanceStatus.WAITING) {
@@ -131,6 +134,7 @@ data class Attendance(
       attendanceReason = reason
       comment = newComment
       issuePayment = newIssuePayment
+      payAmount = newPayAmount
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
     }
     status = newStatus
@@ -178,7 +182,10 @@ data class Attendance(
     pieces = this.pieces,
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
-    attendanceHistory = this.attendanceHistory.map { attendanceHistory -> transform(attendanceHistory) },
+    attendanceHistory = this.attendanceHistory
+      .sortedWith(compareBy { this.recordedTime })
+      .reversed()
+      .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
   )
 }
 

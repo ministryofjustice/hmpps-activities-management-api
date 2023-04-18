@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Outboun
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATION_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_CREATED
 import java.time.LocalDateTime
 
 @Service
@@ -37,6 +39,8 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
+        PRISONER_ATTENDANCE_CREATED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
+        PRISONER_ATTENDANCE_AMENDED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
         APPOINTMENT_INSTANCE_CREATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
@@ -65,12 +69,28 @@ enum class OutboundEvent(val eventType: String) {
         description = "A prisoner has been allocated to an activity in the activities management service",
       )
   },
-  PRISONER_ALLOCATION_AMENDED("activities.prisoner.allocation.amended") {
+  PRISONER_ALLOCATION_AMENDED("activities.prisoner.allocation-amended") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(
         eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A prisoner allocation has been amended in the activities management service",
+      )
+  },
+  PRISONER_ATTENDANCE_CREATED("activities.prisoner.attendance-created") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "A prisoner attendance has been created in the activities management service",
+      )
+  },
+  PRISONER_ATTENDANCE_AMENDED("activities.prisoner.attendance-amended") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "A prisoner attendance has been amended in the activities management service",
       )
   },
   APPOINTMENT_INSTANCE_CREATED("appointments.appointment-instance.created") {
@@ -121,9 +141,8 @@ data class OutboundHMPPSDomainEvent(
 )
 
 data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
-
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
-
+data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
 data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
 
 // TODO format of inbound messages to be worked out when we start to consume them ...
