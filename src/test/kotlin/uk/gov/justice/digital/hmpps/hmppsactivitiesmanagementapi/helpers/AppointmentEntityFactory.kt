@@ -108,6 +108,7 @@ internal fun appointmentInstanceEntity(
     comment = "Appointment instance level comment",
     created = LocalDateTime.now().minusDays(1),
     createdBy = createdBy,
+    cancelled = false,
     updated = LocalDateTime.now(),
     updatedBy = updatedBy,
   )

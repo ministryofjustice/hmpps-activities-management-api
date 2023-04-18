@@ -88,11 +88,11 @@ data class AppointmentOccurrence(
   @Schema(
     description =
     """
-    The reason why this appointment occurrence was cancelled (if applicable).
+    The ID of the reason why this appointment occurrence was cancelled (if applicable).
     """,
-    example = "Created in error",
+    example = "12345",
   )
-  val cancellationReason: String? = null,
+  val cancellationReasonId: Long? = null,
 
   @Schema(
     description =

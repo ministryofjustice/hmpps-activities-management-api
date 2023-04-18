@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
@@ -47,7 +46,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentOccurrence::class),
+            schema = Schema(implementation = Appointment::class),
           ),
         ],
       ),
@@ -113,7 +112,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentOccurrence::class),
+            schema = Schema(implementation = Appointment::class),
           ),
         ],
       ),

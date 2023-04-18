@@ -13,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
@@ -28,6 +29,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.created=true",
     "feature.event.appointments.appointment-instance.updated=true",
     "feature.event.appointments.appointment-instance.deleted=true",
+    "feature.event.appointments.appointment-instance.cancelled=true",
   ],
 )
 class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
@@ -115,6 +117,152 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
+  @Test
+  fun `cancel single appointment occurrence with a reason that does NOT trigger a soft delete`() {
+    val request = AppointmentOccurrenceCancelRequest(
+      applyTo = ApplyTo.THIS_OCCURRENCE,
+      cancellationReasonId = 2,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+
+    with(appointment) {
+      with(occurrences.single()) {
+        assertThat(cancellationReasonId).isEqualTo(2)
+        assertThat(cancelledBy).isEqualTo("test-client")
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.cancelled")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An appointment instance has been cancelled in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
+  @Test
+  fun `cancel single appointment occurrence with a reason that triggers a soft delete`() {
+    val request = AppointmentOccurrenceCancelRequest(
+      applyTo = ApplyTo.THIS_OCCURRENCE,
+      cancellationReasonId = 1,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+
+    with(appointment) {
+      with(occurrences.single()) {
+        assertThat(cancellationReasonId).isEqualTo(1)
+        assertThat(cancelledBy).isEqualTo("test-client")
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.deleted")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An appointment instance has been deleted in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
+  )
+  @Test
+  fun `cancel group repeat appointment this and all future occurrences with a reason that triggers a soft delete`() {
+    val request = AppointmentOccurrenceCancelRequest(
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+      cancellationReasonId = 1,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(12, request)!!
+
+    with(appointment) {
+      with(occurrences.subList(0, 2)) {
+        assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+      }
+      with(occurrences.subList(2, occurrences.size)) {
+        assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(1)
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("test-client")
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+    }
+
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues) {
+      assertThat(map { it.additionalInformation }).containsAll(
+        appointment.occurrences.subList(2, appointment.occurrences.size).flatMap {
+          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
+        },
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.deleted")
+      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been deleted in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
+  )
+  @Test
+  fun `cancel group repeat appointment this and all future occurrences with a reason that does NOT trigger a soft delete`() {
+    val request = AppointmentOccurrenceCancelRequest(
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+      cancellationReasonId = 2,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(12, request)!!
+
+    with(appointment) {
+      with(occurrences.subList(0, 2)) {
+        assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+      }
+      with(occurrences.subList(2, occurrences.size)) {
+        assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(2)
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("test-client")
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+    }
+
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues) {
+      assertThat(map { it.additionalInformation }).containsAll(
+        appointment.occurrences.subList(2, appointment.occurrences.size).flatMap {
+          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
+        },
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.cancelled")
+      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been cancelled in the activities management service")
     }
   }
 
@@ -239,6 +387,20 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   ) =
     patch()
       .uri("/appointment-occurrences/$id")
+      .bodyValue(request)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isAccepted
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Appointment::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.cancelAppointmentOccurrence(
+    id: Long,
+    request: AppointmentOccurrenceCancelRequest,
+  ) =
+    put()
+      .uri("/appointment-occurrences/$id/cancel")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

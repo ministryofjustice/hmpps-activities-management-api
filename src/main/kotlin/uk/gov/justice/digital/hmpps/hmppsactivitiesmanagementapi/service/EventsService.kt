@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
@@ -39,6 +40,7 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
         APPOINTMENT_INSTANCE_CREATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_CANCELLED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
       }
     } else {
       log.info("Ignoring publishing of event type $outboundEvent")
@@ -93,6 +95,14 @@ enum class OutboundEvent(val eventType: String) {
         eventType = eventType,
         additionalInformation = additionalInformation,
         description = "An appointment instance has been deleted in the activities management service",
+      )
+  },
+  APPOINTMENT_INSTANCE_CANCELLED("appointments.appointment-instance.cancelled") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "An appointment instance has been cancelled in the activities management service",
       )
   },
   ;

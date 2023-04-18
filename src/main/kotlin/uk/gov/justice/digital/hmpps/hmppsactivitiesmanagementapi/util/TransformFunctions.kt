@@ -133,7 +133,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     appointmentInstanceId = it.appointmentInstanceId,
     appointmentOccurrenceId = it.appointmentOccurrenceId,
     oicHearingId = null,
-    cancelled = false, // TODO: How do we know if an appointment instance is cancelled?
+    cancelled = it.cancelled,
     suspended = false,
     categoryCode = it.categoryCode,
     categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode]?.description ?: "Unknown",

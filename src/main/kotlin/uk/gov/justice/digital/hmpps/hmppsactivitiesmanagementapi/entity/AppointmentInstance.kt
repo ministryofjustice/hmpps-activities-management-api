@@ -44,6 +44,8 @@ data class AppointmentInstance(
 
   val createdBy: String,
 
+  val cancelled: Boolean,
+
   val updated: LocalDateTime? = null,
 
   val updatedBy: String? = null,

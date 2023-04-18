@@ -89,6 +89,7 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
         ao.start_time,
         ao.end_time,
         COALESCE(ao.comment, a.comment) AS comment,
+        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS cancelled,
         a.created,
         a.created_by,
         ao.updated,
@@ -96,3 +97,4 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
     FROM appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
         JOIN appointment a on a.appointment_id = ao.appointment_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id

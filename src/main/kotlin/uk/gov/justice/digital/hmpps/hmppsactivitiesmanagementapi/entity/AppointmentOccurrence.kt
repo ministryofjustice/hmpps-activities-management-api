@@ -82,6 +82,10 @@ data class AppointmentOccurrence(
 
   fun prisonerCount() = prisonerNumbers().count()
 
+  fun isCancelled() = cancellationReason?.isDelete == false
+
+  fun isDeleted() = cancellationReason?.isDelete == true
+
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     internalLocationId = internalLocationId,
@@ -91,7 +95,7 @@ data class AppointmentOccurrence(
     endTime = endTime,
     comment = comment,
     cancelled = cancelled,
-    cancellationReason = cancellationReason?.description,
+    cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
     updated = updated,
     updatedBy = updatedBy,
@@ -109,7 +113,7 @@ data class AppointmentOccurrence(
       endTime,
       comment ?: appointmentComment,
       isEdited = false,
-      isCancelled = cancellationReason != null,
+      isCancelled = isCancelled(),
       updated = updated,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
@@ -134,7 +138,7 @@ data class AppointmentOccurrence(
       appointment.appointmentType,
       comment ?: appointment.comment,
       false,
-      false,
+      isCancelled(),
       appointment.created,
       userMap[appointment.createdBy].toSummary(appointment.createdBy),
       updated,

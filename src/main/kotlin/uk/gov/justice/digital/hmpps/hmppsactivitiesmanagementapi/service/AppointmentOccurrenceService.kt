@@ -71,10 +71,15 @@ class AppointmentOccurrenceService(
     return updatedAppointment.toModel()
   }
 
-  fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal) {
-    val now = LocalDateTime.now()
+  fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+
+    val now = LocalDateTime.now()
+    if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
+      throw IllegalArgumentException("Cannot cancel a past appointment occurrence")
+    }
+
     val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
 
     occurrencesToUpdate.forEach {
@@ -82,7 +87,18 @@ class AppointmentOccurrenceService(
       it.cancelled = now
       it.cancelledBy = principal.name
     }
-    appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
+
+    var updatedAppointment = appointmentRepository.saveAndFlush(appointmentOccurrence.appointment).toModel()
+
+    occurrencesToUpdate.filter { it.isDeleted() }
+      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
+      .forEach { publishDeletion(it) }
+
+    occurrencesToUpdate.filter { it.isCancelled() }
+      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
+      .forEach { publishCancellation(it) }
+
+    return updatedAppointment
   }
 
   private fun applyCategoryCodeUpdate(
@@ -266,4 +282,22 @@ class AppointmentOccurrenceService(
       ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
       else -> listOf(appointmentOccurrence)
     }
+
+  private fun publishCancellation(appointmentOccurrenceAllocationId: Long) = runCatching {
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocationId)
+  }.onFailure {
+    log.error(
+      "Failed to send appointment instance cancelled event for appointment instance id $it",
+      it,
+    )
+  }
+
+  private fun publishDeletion(appointmentOccurrenceAllocationId: Long) = runCatching {
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, appointmentOccurrenceAllocationId)
+  }.onFailure {
+    log.error(
+      "Failed to send appointment instance deleted event for appointment instance id $it",
+      it,
+    )
+  }
 }
