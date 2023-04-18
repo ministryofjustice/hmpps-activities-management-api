@@ -34,6 +34,24 @@ class FeatureSwitchesTest {
     }
   }
 
+  @TestPropertySource(
+    properties = [
+      "feature.events.sns.enabled=true",
+      "feature.event.activities.prisoner.attendance-created=true",
+      "feature.event.activities.prisoner.attendance-amended=true",
+    ],
+  )
+  @Nested
+  @DisplayName("Attendance feature switches are enabled when set")
+  inner class AttendanceEventsEnabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
+    @Test
+    fun `features are enabled`() {
+      assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED)).isTrue
+      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ATTENDANCE_CREATED)).isTrue
+      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ATTENDANCE_AMENDED)).isTrue
+    }
+  }
+
   @Nested
   @DisplayName("Features are disabled by default")
   inner class DisabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {

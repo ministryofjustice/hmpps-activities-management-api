@@ -55,9 +55,35 @@ class OutboundEventsServiceTest {
     outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
 
     verify(
-      expectedEventType = "activities.prisoner.allocation.amended",
+      expectedEventType = "activities.prisoner.allocation-amended",
       expectedAdditionalInformation = PrisonerAllocatedInformation(1),
       expectedDescription = "A prisoner allocation has been amended in the activities management service",
+    )
+  }
+
+  @Test
+  fun `prisoner attendance created event with attendance id 1 is sent to the events publisher`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.PRISONER_ATTENDANCE_CREATED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+
+    verify(
+      expectedEventType = "activities.prisoner.attendance-created",
+      expectedAdditionalInformation = PrisonerAttendanceInformation(1),
+      expectedDescription = "A prisoner attendance has been created in the activities management service",
+    )
+  }
+
+  @Test
+  fun `prisoner attendance amended event with attendance id 1 is sent to the events publisher`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.PRISONER_ATTENDANCE_AMENDED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+
+    verify(
+      expectedEventType = "activities.prisoner.attendance-amended",
+      expectedAdditionalInformation = PrisonerAttendanceInformation(1),
+      expectedDescription = "A prisoner attendance has been amended in the activities management service",
     )
   }
 

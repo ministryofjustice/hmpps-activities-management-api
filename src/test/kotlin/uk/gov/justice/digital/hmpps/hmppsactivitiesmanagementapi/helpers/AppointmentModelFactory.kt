@@ -33,6 +33,7 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     LocalTime.of(10, 30),
     AppointmentType.INDIVIDUAL,
     "Appointment level comment",
+    "Appointment description",
     created,
     "CREATE.USER",
     updated,
@@ -92,6 +93,7 @@ fun appointmentCreateRequest(
   endTime: LocalTime? = LocalTime.of(14, 30),
   appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   comment: String = "Appointment level comment",
+  appointmentDescription: String? = "Appointment description",
   repeat: AppointmentRepeat? = null,
   prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
@@ -106,6 +108,7 @@ fun appointmentCreateRequest(
     appointmentType,
     repeat,
     comment,
+    appointmentDescription,
     prisonerNumbers,
   )
 
