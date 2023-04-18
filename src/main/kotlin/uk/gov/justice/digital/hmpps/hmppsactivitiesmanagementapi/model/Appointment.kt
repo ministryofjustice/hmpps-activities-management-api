@@ -94,6 +94,15 @@ data class Appointment(
   val comment: String,
 
   @Schema(
+    description =
+    """
+    Free text description for an appointment.  This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
+
+  @Schema(
     description = "The date and time this appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

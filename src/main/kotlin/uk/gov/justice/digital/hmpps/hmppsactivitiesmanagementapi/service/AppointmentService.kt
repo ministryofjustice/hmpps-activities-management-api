@@ -48,6 +48,7 @@ class AppointmentService(
       startTime = request.startTime!!,
       endTime = request.endTime,
       comment = request.comment,
+      appointmentDescription = request.appointmentDescription,
       createdBy = principal.name,
       appointmentType = request.appointmentType!!,
     ).apply {
