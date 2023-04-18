@@ -59,6 +59,8 @@ data class Appointment(
 
   var comment: String,
 
+  var appointmentDescription: String?,
+
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
@@ -100,6 +102,7 @@ data class Appointment(
     endTime = endTime,
     appointmentType = appointmentType,
     comment = comment,
+    appointmentDescription = appointmentDescription,
     created = created,
     createdBy = createdBy,
     updated = updated,

@@ -35,6 +35,7 @@ internal fun appointmentEntity(
   endTime = endTime,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   comment = "Appointment level comment",
+  appointmentDescription = "Appointment description",
   created = LocalDateTime.now().minusDays(1),
   createdBy = createdBy,
   updated = if (updatedBy == null) null else LocalDateTime.now(),
