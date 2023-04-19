@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
 
 @RestController
 @RequestMapping("/appointment-locations", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentLocationController(private val referenceCodeService: ReferenceCodeService) {
+class AppointmentLocationController(private val locationService: LocationService, private val referenceCodeService: ReferenceCodeService) {
 
   @Operation(
     summary = "Get the list of appointment locations",
@@ -47,5 +47,5 @@ class AppointmentLocationController(private val referenceCodeService: ReferenceC
   fun getAppointmentLocations(
     @PathVariable("prisonCode") prisonCode: String,
   ): List<AppointmentLocationSummary> =
-    referenceCodeService.getScheduleLocations(prisonCode, ScheduleReasonEventType.APPOINTMENT).toAppointmentLocation()
+    locationService.getLocationsForAppointments(prisonCode).toAppointmentLocation()
 }

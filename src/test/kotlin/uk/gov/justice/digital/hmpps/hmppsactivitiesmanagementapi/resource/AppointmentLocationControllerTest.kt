@@ -10,8 +10,8 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
 
 @WebMvcTest(controllers = [AppointmentLocationController::class])
@@ -19,15 +19,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointm
 class AppointmentLocationControllerTest : ControllerTestBase<AppointmentLocationController>() {
 
   @MockBean
+  private lateinit var locationService: LocationService
+
+  @MockBean
   private lateinit var referenceCodeService: ReferenceCodeService
 
-  override fun controller() = AppointmentLocationController(referenceCodeService)
+  override fun controller() = AppointmentLocationController(locationService, referenceCodeService)
 
   @Test
   fun `200 response when get all appointment locations`() {
     val locations = listOf(appointmentLocation(1, moorlandPrisonCode))
 
-    whenever(referenceCodeService.getScheduleLocations(moorlandPrisonCode, ScheduleReasonEventType.APPOINTMENT)).thenReturn(locations)
+    whenever(locationService.getLocationsForAppointments(moorlandPrisonCode)).thenReturn(locations)
 
     val response = mockMvc
       .get("/appointment-locations/{prisonCode}", moorlandPrisonCode)

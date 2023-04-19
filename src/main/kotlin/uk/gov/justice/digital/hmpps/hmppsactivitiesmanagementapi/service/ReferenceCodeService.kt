@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 
 @Service
@@ -20,9 +19,6 @@ class ReferenceCodeService(
 
   fun getScheduleReasonsMap(eventType: ScheduleReasonEventType): Map<String, ReferenceCode> =
     getScheduleReasons(eventType).associateBy { it.code }
-
-  fun getScheduleLocations(prisonCode: String, eventType: ScheduleReasonEventType): List<Location> =
-    prisonApiClient.getLocationsForTypeUnrestricted(prisonCode, eventType.value).block() ?: emptyList()
 }
 
 enum class ReferenceCodeDomain(val value: String) {

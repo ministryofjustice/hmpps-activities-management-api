@@ -9,10 +9,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import java.util.*
 
 class ReferenceCodeServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
+  private val locationGroupService: LocationGroupService = mock()
+  private val groupsProperties: Properties = mock()
 
+  private val locationService = LocationService(prisonApiClient, locationGroupService, groupsProperties)
   private val referenceCodeService = ReferenceCodeService(prisonApiClient)
 
   @Test
@@ -112,7 +116,7 @@ class ReferenceCodeServiceTest {
         ),
       )
 
-    val locations = referenceCodeService.getScheduleLocations(moorlandPrisonCode, ScheduleReasonEventType.APPOINTMENT)
+    val locations = locationService.getLocationsForAppointments(moorlandPrisonCode)
 
     assertThat(locations).containsExactly(
       appointmentLocation(1, moorlandPrisonCode),
