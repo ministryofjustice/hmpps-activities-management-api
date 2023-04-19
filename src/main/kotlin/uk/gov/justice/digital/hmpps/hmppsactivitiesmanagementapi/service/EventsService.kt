@@ -12,17 +12,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Outboun
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsProcessor
 import java.time.LocalDateTime
 
 @Service
-class InboundEventsService {
+class InboundEventsService(
+  private val processor: InboundEventsProcessor,
+) {
 
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun receive(event: InboundHMPPSDomainEvent) {
-    log.info("Ignoring received event: $event")
+  fun process(inboundEvent: InboundEvent) {
+    // TODO check the prison the event is located at against our rollout prisons, ignore it not interested!
+
+    processor.process(inboundEvent)
   }
 }
 
@@ -45,7 +51,7 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
         APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
       }
     } else {
-      log.info("Ignoring publishing of event type $outboundEvent")
+      log.warn("Outbound event type $outboundEvent feature is currently disabled.")
     }
   }
 }
@@ -134,18 +140,3 @@ data class ScheduleCreatedInformation(val activityScheduleId: Long) : Additional
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
 data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
-
-// TODO format of inbound messages to be worked out when we start to consume them ...
-data class InboundHMPPSDomainEvent(
-  val eventType: String? = null,
-  val additionalInformation: InboundAdditionalInformation,
-  val version: String,
-  val occurredAt: String,
-  val description: String,
-)
-
-data class InboundAdditionalInformation(
-  val id: Long,
-  val nomsNumber: String? = null,
-  val reason: String? = null,
-) : AdditionalInformation
