@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
+// TODO move to the events package
 @Service
 class EventsPublisher(
   private val hmppsQueueService: HmppsQueueService,
