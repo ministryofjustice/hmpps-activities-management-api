@@ -38,6 +38,8 @@ class EventListener(
           } ?: log.info("Ignoring domain event ${domainEvent.eventType}")
         }
       }
+      // TODO logging of the raw message is temporary whilst in the development phase!
+      else -> log.info("Ignoring inbound event SQS message $sqsMessage.")
     }
   }
 }
