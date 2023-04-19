@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit
 class InboundEventsProcessorTest {
 
   private val repository: AllocationRepository = mock()
-  private val service = InboundEventsProcessor(repository)
+  private val processor = InboundEventsProcessor(repository)
 
   @Test
   fun `active allocations are auto-suspended on temporary release of prisoner`() {
@@ -38,7 +38,7 @@ class InboundEventsProcessorTest {
       previouslyActiveAllocations,
     )
 
-    service.process(InboundEvent.OFFENDER_TEMPORARILY_RELEASED, moorlandPrisonCode, "123456")
+    processor.process(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -61,7 +61,7 @@ class InboundEventsProcessorTest {
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
 
-    service.process(InboundEvent.OFFENDER_TEMPORARILY_RELEASED, moorlandPrisonCode, "123456")
+    processor.process(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
     assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
     assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue()
@@ -85,7 +85,7 @@ class InboundEventsProcessorTest {
       previouslyActiveAllocations,
     )
 
-    service.process(InboundEvent.OFFENDER_RELEASED, moorlandPrisonCode, "123456")
+    processor.process(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -111,7 +111,7 @@ class InboundEventsProcessorTest {
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
 
-    service.process(InboundEvent.OFFENDER_RELEASED, moorlandPrisonCode, "123456")
+    processor.process(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
     with(previouslyEndedAllocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
@@ -145,7 +145,7 @@ class InboundEventsProcessorTest {
       allocations,
     )
 
-    service.process(InboundEvent.OFFENDER_RECEIVED, moorlandPrisonCode, "123456")
+    processor.process(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
 
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(autoSuspendedTwo.status(PrisonerStatus.ACTIVE)).isTrue
