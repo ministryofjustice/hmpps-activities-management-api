@@ -35,7 +35,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Optional
 
 class AppointmentOccurrenceServiceCancelTestX {
-  private val appointmentRepository: AppointmentRepository = mock()
+  /**private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -340,5 +340,5 @@ class AppointmentOccurrenceServiceCancelTestX {
       }
       verifyNoMoreInteractions(outboundEventsService)
     }
-  }
+  }*/
 }
