@@ -4,8 +4,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 
 class ReferenceCodeServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
@@ -93,6 +96,28 @@ class ReferenceCodeServiceTest {
         "AC2" to appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
         "AC3" to appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
       ),
+    )
+  }
+
+  @Test
+  fun `getScheduleLocations for an event type returns locations`() {
+    whenever(prisonApiClient.getLocationsForTypeUnrestricted(moorlandPrisonCode, "APP"))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            appointmentLocation(1, moorlandPrisonCode),
+            appointmentLocation(2, moorlandPrisonCode),
+            appointmentLocation(3, moorlandPrisonCode),
+          ),
+        ),
+      )
+
+    val locations = referenceCodeService.getScheduleLocations(moorlandPrisonCode, ScheduleReasonEventType.APPOINTMENT)
+
+    assertThat(locations).containsExactly(
+      appointmentLocation(1, moorlandPrisonCode),
+      appointmentLocation(2, moorlandPrisonCode),
+      appointmentLocation(3, moorlandPrisonCode),
     )
   }
 }
