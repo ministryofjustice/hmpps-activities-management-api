@@ -123,7 +123,6 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      appointment.schedule?.toRepeat(),
       comment ?: appointment.comment,
       appointment.schedule?.toRepeat(),
       false,

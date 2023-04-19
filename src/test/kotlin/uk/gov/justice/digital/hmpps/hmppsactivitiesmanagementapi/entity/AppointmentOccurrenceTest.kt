@@ -178,7 +178,6 @@ class AppointmentOccurrenceTest {
         LocalDate.now(),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
-        null,
         "Appointment occurrence level comment",
         repeat = null,
         isEdited = false,
