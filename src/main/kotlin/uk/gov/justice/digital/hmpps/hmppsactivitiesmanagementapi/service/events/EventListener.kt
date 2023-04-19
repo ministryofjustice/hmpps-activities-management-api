@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InboundEventsService
 
 @Profile("!test && !local")
 @Service

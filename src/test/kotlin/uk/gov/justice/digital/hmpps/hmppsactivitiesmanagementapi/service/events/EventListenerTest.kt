@@ -10,7 +10,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InboundEventsService
 
 class EventListenerTest {
 
@@ -18,11 +17,11 @@ class EventListenerTest {
     this.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   }
 
-  private val inboundMessageService: InboundEventsService = mock()
+  private val inboundEventsService: InboundEventsService = mock()
 
   private val featureSwitches: FeatureSwitches = mock()
 
-  private val eventListener = EventListener(objectMapper, inboundMessageService, featureSwitches)
+  private val eventListener = EventListener(objectMapper, inboundEventsService, featureSwitches)
 
   @Test
   fun `inbound event is passed onto the inbound service`() {
@@ -32,7 +31,7 @@ class EventListenerTest {
 
     eventListener.onMessage(rawMessage)
 
-    verify(inboundMessageService).process(offenderTransferReleasedEvent(moorlandPrisonCode, "A1244AB"))
+    verify(inboundEventsService).process(offenderTransferReleasedEvent(moorlandPrisonCode, "A1244AB"))
   }
 
   private fun String.readResourceAsText() =

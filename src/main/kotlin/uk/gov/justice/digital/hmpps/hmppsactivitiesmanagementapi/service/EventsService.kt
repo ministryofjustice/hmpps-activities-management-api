@@ -12,26 +12,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Outboun
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.PRISONER_ATTENDANCE_CREATED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsProcessor
 import java.time.LocalDateTime
 
-@Service
-class InboundEventsService(
-  private val processor: InboundEventsProcessor,
-) {
-
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
-  fun process(inboundEvent: InboundEvent) {
-    // TODO check the prison the event is located at against our rollout prisons, ignore it not interested!
-
-    processor.process(inboundEvent)
-  }
-}
-
+// TODO move to events package and rename to match outbound service name
 @Service
 class OutboundEventsService(private val publisher: EventsPublisher, private val featureSwitches: FeatureSwitches) {
   companion object {
