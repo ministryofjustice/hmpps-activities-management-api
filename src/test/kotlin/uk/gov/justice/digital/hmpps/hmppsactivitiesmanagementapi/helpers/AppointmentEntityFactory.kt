@@ -40,7 +40,6 @@ internal fun appointmentEntity(
   createdBy = createdBy,
   updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
-  deleted = false,
 ).apply {
   repeatPeriod?.let {
     this.schedule = AppointmentSchedule(

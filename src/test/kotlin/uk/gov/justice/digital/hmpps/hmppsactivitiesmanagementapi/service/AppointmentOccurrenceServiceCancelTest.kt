@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.AdditionalAnswers.returnsFirstArg
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -18,7 +17,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
@@ -160,21 +158,20 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
-      whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
+      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(appointment))
     }
 
     @Test
     fun `cancel appointment with reason that triggers soft delete success`() {
       val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
 
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.single()) {
-          assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(cancelledBy).isEqualTo("TEST.USER")
-          assertThat(cancellationReasonId).isEqualTo(1L)
-        }
+      with(appointment.occurrences().single()) {
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(1L)
+        assertThat(deleted).isTrue()
       }
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
@@ -185,14 +182,13 @@ class AppointmentOccurrenceServiceCancelTest {
     fun `cancel appointment with reason that does not trigger soft delete success`() {
       val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
 
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.single()) {
-          assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(cancelledBy).isEqualTo("TEST.USER")
-          assertThat(cancellationReasonId).isEqualTo(2L)
-        }
+      with(appointment.occurrences().single()) {
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2L)
+        assertThat(deleted).isFalse()
       }
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
@@ -230,30 +226,31 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(cancellationReason),
       )
-      whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
+      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(appointment))
     }
 
     @Test
     fun `cancel appointment with a reason that triggers a soft delete and that applies to this occurrence only`() {
       val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.subList(0, 2)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
-          assertThat(map { it.cancelled }.distinct().single()).isNull()
-          assertThat(map { it.cancelledBy }.distinct().single()).isNull()
-        }
-        with(occurrences[2]) {
-          assertThat(cancellationReasonId).isEqualTo(1)
-          assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(cancelledBy).isEqualTo("TEST.USER")
-        }
-        with(occurrences[3]) {
-          assertThat(cancellationReasonId).isNull()
-          assertThat(cancelled).isNull()
-          assertThat(cancelledBy).isNull()
-        }
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences()[2]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(1)
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(deleted).isTrue()
+      }
+      with(appointment.occurrences()[3]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelled).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(deleted).isFalse()
       }
 
       appointmentOccurrence.allocations().forEach {
@@ -265,24 +262,25 @@ class AppointmentOccurrenceServiceCancelTest {
     @Test
     fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this occurrence only`() {
       val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.subList(0, 2)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
-          assertThat(map { it.cancelled }.distinct().single()).isNull()
-          assertThat(map { it.cancelledBy }.distinct().single()).isNull()
-        }
-        with(occurrences[2]) {
-          assertThat(cancellationReasonId).isEqualTo(2)
-          assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(cancelledBy).isEqualTo("TEST.USER")
-        }
-        with(occurrences[3]) {
-          assertThat(cancellationReasonId).isNull()
-          assertThat(cancelled).isNull()
-          assertThat(cancelledBy).isNull()
-        }
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences()[2]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2)
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(deleted).isFalse()
+      }
+      with(appointment.occurrences()[3]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelled).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(deleted).isFalse()
       }
 
       appointmentOccurrence.allocations().forEach {
@@ -295,19 +293,19 @@ class AppointmentOccurrenceServiceCancelTest {
     fun `cancel appointment with a reason that triggers a soft delete and that applies to this and all future occurrences`() {
       val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
 
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.subList(0, 2)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
-          assertThat(map { it.cancelled }.distinct().single()).isNull()
-          assertThat(map { it.cancelledBy }.distinct().single()).isNull()
-        }
-        with(occurrences.subList(2, response.occurrences.size)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(1)
-          assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
-        }
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isTrue()
       }
 
       appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
@@ -320,19 +318,19 @@ class AppointmentOccurrenceServiceCancelTest {
     fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this and all future occurrences`() {
       val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
 
-      val response = service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
-      with(response) {
-        with(occurrences.subList(0, 2)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
-          assertThat(map { it.cancelled }.distinct().single()).isNull()
-          assertThat(map { it.cancelledBy }.distinct().single()).isNull()
-        }
-        with(occurrences.subList(2, response.occurrences.size)) {
-          assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(2)
-          assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
-        }
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(2)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
       }
 
       appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {

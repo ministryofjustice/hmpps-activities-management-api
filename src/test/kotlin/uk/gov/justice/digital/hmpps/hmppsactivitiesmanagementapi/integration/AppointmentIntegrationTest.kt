@@ -102,18 +102,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .expectStatus().isNotFound
   }
 
-  @Sql(
-    "classpath:test_data/seed-appointment-deleted-id-2.sql",
-  )
-  @Test
-  fun `get deleted appointment returns 404 not found`() {
-    webTestClient.get()
-      .uri("/appointments/2")
-      .headers(setAuthorisation(roles = listOf()))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
   @Test
   fun `create appointment authorisation required`() {
     webTestClient.post()

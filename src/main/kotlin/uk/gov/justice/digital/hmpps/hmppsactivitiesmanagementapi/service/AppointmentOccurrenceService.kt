@@ -74,6 +74,7 @@ class AppointmentOccurrenceService(
   fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+    val appointmentId = appointmentOccurrence.appointment.appointmentId
 
     val now = LocalDateTime.now()
     if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
@@ -86,9 +87,13 @@ class AppointmentOccurrenceService(
       it.cancellationReason = cancellationReason
       it.cancelled = now
       it.cancelledBy = principal.name
+      it.deleted = cancellationReason.isDelete
     }
 
-    var updatedAppointment = appointmentRepository.saveAndFlush(appointmentOccurrence.appointment).toModel()
+    appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
+
+    // The return value of saveAndFlush bypasses the JPA annotations that filter out deleted records, hence this reload
+    var updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId)
 
     occurrencesToUpdate.filter { it.isDeleted() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
@@ -98,7 +103,7 @@ class AppointmentOccurrenceService(
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
       .forEach { publishCancellation(it) }
 
-    return updatedAppointment
+    return updatedAppointment.toModel()
   }
 
   private fun applyCategoryCodeUpdate(

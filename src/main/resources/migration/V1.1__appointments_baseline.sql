@@ -22,8 +22,7 @@ CREATE TABLE appointment (
     created                 timestamp       NOT NULL,
     created_by              varchar(100)    NOT NULL,
     updated                 timestamp,
-    updated_by              varchar(100),
-    deleted                 boolean         NOT NULL DEFAULT false
+    updated_by              varchar(100)
 );
 
 CREATE INDEX idx_appointment_category_code ON appointment (category_code);
@@ -54,7 +53,8 @@ CREATE TABLE appointment_occurrence (
      cancellation_reason_id     bigint          REFERENCES appointment_cancellation_reason (appointment_cancellation_reason_id),
      cancelled_by               varchar(100),
      updated                    timestamp,
-     updated_by                 varchar(100)
+     updated_by                 varchar(100),
+     deleted                    boolean         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_appointment_occurrence_appointment_id ON appointment_occurrence (appointment_id);

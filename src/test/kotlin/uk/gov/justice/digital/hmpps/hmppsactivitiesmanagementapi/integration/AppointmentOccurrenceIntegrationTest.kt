@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
@@ -15,6 +16,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
@@ -36,6 +39,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: EventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @Autowired
+  private lateinit var appointmentRepository: AppointmentRepository
 
   @Test
   fun `update appointment occurrence authorisation required`() {
@@ -162,16 +168,11 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       cancellationReasonId = 1,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
-    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val originalAppointment = appointmentRepository.findOrThrowNotFound(1)!!
+    val updatedAppointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
+    val allocationIds = originalAppointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } }
 
-    with(appointment) {
-      with(occurrences.single()) {
-        assertThat(cancellationReasonId).isEqualTo(1)
-        assertThat(cancelledBy).isEqualTo("test-client")
-        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
-    }
+    assertThat(updatedAppointment.occurrences).isEmpty()
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -201,11 +202,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.cancelledBy }.distinct().single()).isNull()
         assertThat(map { it.cancelled }.distinct().single()).isNull()
       }
-      with(occurrences.subList(2, occurrences.size)) {
-        assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(1)
-        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("test-client")
-        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      }
+      assertThat(occurrences.subList(2, occurrences.size)).isEmpty()
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
