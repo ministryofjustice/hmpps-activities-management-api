@@ -34,7 +34,7 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 
-class AppointmentOccurrenceServiceCancelTest {
+class AppointmentOccurrenceServiceCancelTestX {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
