@@ -8,21 +8,27 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "event_consumed")
-data class EventConsumed(
+@Table(name = "event_review")
+data class EventReview(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val eventId: Long = -1,
+  val eventReviewId: Long = -1,
 
-  val eventType: String,
+  val serviceIdentifier: String?,
 
-  val eventTime: LocalDateTime,
+  val eventType: String?,
 
-  val prisonCode: String,
+  val eventTime: LocalDateTime?,
 
-  val bookingId: Int,
+  val prisonCode: String?,
 
-  val prisonerNumber: String,
+  val prisonerNumber: String?,
 
-  val eventData: String,
+  val bookingId: Int?,
+
+  val eventData: String?,
+
+  val acknowledgedTime: LocalDateTime?,
+
+  val acknowledgedBy: String?,
 )

@@ -34,20 +34,25 @@ CREATE TABLE eligibility_rule (
 
 CREATE INDEX idx_eligibility_rule_code ON eligibility_rule (code);
 
-CREATE TABLE event_consumed (
-  event_id        bigserial    NOT NULL CONSTRAINT events_consumed_pk PRIMARY KEY,
-  event_type      varchar(60)  NOT NULL,
-  event_time      timestamp    NOT NULL,
-  prison_code     varchar(3)   NOT NULL,
-  booking_id      integer      NOT NULL,
-  prisoner_number varchar(7)   NOT NULL,
-  event_data      varchar(200) NOT NULL
+CREATE TABLE event_review (
+  event_review_id       bigserial    NOT NULL CONSTRAINT event_review_pk PRIMARY KEY,
+  service_identifier    varchar(200),
+  event_type            varchar(100),
+  event_time            timestamp,
+  prison_code           varchar(5),
+  prisoner_number       char(7),
+  booking_id            integer,
+  event_data            varchar(300),
+  acknowledged_time     timestamp,
+  acknowledged_by       char(40)
 );
 
-CREATE INDEX idx_event_consumed_prisoner_number ON event_consumed (prisoner_number);
-CREATE INDEX idx_event_consumed_event_time ON event_consumed (event_time);
-CREATE INDEX idx_event_consumed_event_type ON event_consumed (event_type);
-CREATE INDEX idx_event_consumed_prison_code ON event_consumed (prison_code);
+CREATE INDEX idx_event_review_event_type ON event_review (event_type);
+CREATE INDEX idx_event_review_event_time ON event_review (event_time);
+CREATE INDEX idx_event_review_prison_code ON event_review (prison_code);
+CREATE INDEX idx_event_review_prisoner_number ON event_review (prisoner_number);
+CREATE INDEX idx_event_review_acknowledged_time ON event_review (acknowledged_time);
+CREATE INDEX idx_event_review_acknowledged_by ON event_review (acknowledged_by);
 
 CREATE TABLE prisoner_history (
   prisoner_history_id bigserial    NOT NULL CONSTRAINT prisoner_history_pk PRIMARY KEY,
