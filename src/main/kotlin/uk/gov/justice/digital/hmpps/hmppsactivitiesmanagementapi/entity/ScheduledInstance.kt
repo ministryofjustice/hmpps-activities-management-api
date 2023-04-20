@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 data class ScheduledInstance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val scheduledInstanceId: Long = -1,
+  val scheduledInstanceId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
