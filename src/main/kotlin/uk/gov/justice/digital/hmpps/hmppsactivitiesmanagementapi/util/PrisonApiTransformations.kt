@@ -267,6 +267,8 @@ fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode
     ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
   }
 
+fun List<PrisonApiLocation>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
+
 fun PrisonApiUserDetail?.toSummary(username: String) =
   if (this == null) {
     ModelUserSummary(-1, username, "UNKNOWN", "UNKNOWN")
