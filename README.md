@@ -48,15 +48,20 @@ Start up the docker dependencies using the docker-compose file in the `hmpps-act
 There is a script to help, which sets local profiles, port and DB connection properties to the
 values required.
 
-`$ ./run-local.sh`
+```
+./run-local.sh
+```
 
 Or, to run with default properties set in the docker-compose file
-
-`$ docker-compose pull && docker-compose up`
+```
+docker-compose pull && docker-compose up
+```
 
 Or, to use default port and properties
 
-`$ SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun`
+```
+SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+```
 
 Ports
 
@@ -77,21 +82,23 @@ curl --location --request POST "http://localhost:8081/auth/oauth/token?grant_typ
 To simulate AWS SQS/SNS mode you need to have the localstack container running:
 
 ```
-$ docker-compose -f docker-compose.yml -f  docker-compose-localstack.yml up
+docker-compose -f docker-compose.yml -f  docker-compose-localstack.yml up
+```
 
-$ ./run-localstack.sh
+```
+./run-localstack.sh
 ```
 
 To list the localstack queue attributes:
 
 ```
-$ aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --attribute-names All --queue-url http://localhost:4566/000000000000/domainevents-queue
+aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --attribute-names All --queue-url http://localhost:4566/000000000000/domainevents-queue
 ```
 
 To read a message off the queue (if there are any):
 
 ```
-$ aws --endpoint-url=http://localhost:4566 sqs receive-message --queue-url http://localhost:4566/000000000000/domainevents-queue
+aws --endpoint-url=http://localhost:4566 sqs receive-message --queue-url http://localhost:4566/000000000000/domainevents-queue
 ```
 
 ## Swagger v3
