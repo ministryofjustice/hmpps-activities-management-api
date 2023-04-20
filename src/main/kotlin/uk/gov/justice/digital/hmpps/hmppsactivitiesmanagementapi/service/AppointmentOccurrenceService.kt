@@ -93,7 +93,7 @@ class AppointmentOccurrenceService(
     appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
 
     // The return value of saveAndFlush bypasses the JPA annotations that filter out deleted records, hence this reload
-    var updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    var updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
     occurrencesToUpdate.filter { it.isDeleted() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
@@ -103,7 +103,7 @@ class AppointmentOccurrenceService(
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
       .forEach { publishCancellation(it) }
 
-    return updatedAppointment.toModel()
+    return updatedAppointment
   }
 
   private fun applyCategoryCodeUpdate(

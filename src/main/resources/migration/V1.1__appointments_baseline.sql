@@ -62,6 +62,7 @@ CREATE INDEX idx_appointment_occurrence_internal_location_id ON appointment_occu
 CREATE INDEX idx_appointment_occurrence_start_date ON appointment_occurrence (start_date);
 CREATE INDEX idx_appointment_occurrence_start_time ON appointment_occurrence (start_time);
 CREATE INDEX idx_appointment_occurrence_end_time ON appointment_occurrence (end_time);
+CREATE INDEX idx_appointment_occurrence_cancellation_reason_id ON appointment_occurrence (cancellation_reason_id);
 
 CREATE TABLE appointment_occurrence_allocation (
     appointment_occurrence_allocation_id    bigserial   NOT NULL CONSTRAINT appointment_allocation_pk PRIMARY KEY,

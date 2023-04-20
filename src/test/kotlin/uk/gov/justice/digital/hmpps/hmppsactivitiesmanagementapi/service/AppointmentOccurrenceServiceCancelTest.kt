@@ -174,7 +174,10 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(deleted).isTrue()
       }
 
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verify(outboundEventsService).send(
+        OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
+      )
       verifyNoMoreInteractions(outboundEventsService)
     }
 
@@ -191,7 +194,10 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(deleted).isFalse()
       }
 
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verify(outboundEventsService).send(
+        OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
+      )
       verifyNoMoreInteractions(outboundEventsService)
     }
   }
@@ -254,7 +260,10 @@ class AppointmentOccurrenceServiceCancelTest {
       }
 
       appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentOccurrenceAllocationId)
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
       }
       verifyNoMoreInteractions(outboundEventsService)
     }
@@ -284,7 +293,10 @@ class AppointmentOccurrenceServiceCancelTest {
       }
 
       appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentOccurrenceAllocationId)
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
       }
       verifyNoMoreInteractions(outboundEventsService)
     }
@@ -303,13 +315,19 @@ class AppointmentOccurrenceServiceCancelTest {
       }
       with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
         assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
-        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          Assertions.within(60, ChronoUnit.SECONDS),
+        )
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isTrue()
       }
 
       appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentOccurrenceAllocationId)
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
       }
       verifyNoMoreInteractions(outboundEventsService)
     }
@@ -328,13 +346,81 @@ class AppointmentOccurrenceServiceCancelTest {
       }
       with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
         assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(2)
-        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isFalse()
       }
 
       appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentOccurrenceAllocationId)
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that triggers a soft delete and that applies to all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences()[0]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelled).isNull()
+      }
+
+      with(appointment.occurrences().subList(1, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isTrue()
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that does not trigger a soft delete and that applies to all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences()[0]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelled).isNull()
+      }
+
+      with(appointment.occurrences().subList(1, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(2)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
       }
       verifyNoMoreInteractions(outboundEventsService)
     }
