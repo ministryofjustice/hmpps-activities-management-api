@@ -22,6 +22,12 @@ data class AppointmentDetails(
   val id: Long,
 
   @Schema(
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
+  )
+  val appointmentType: AppointmentType,
+
+  @Schema(
     description =
     """
     The summary of the appointment's category
@@ -86,12 +92,6 @@ data class AppointmentDetails(
     """,
   )
   val repeat: AppointmentRepeat?,
-
-  @Schema(
-    description = "The appointment type (INDIVIDUAL or GROUP)",
-    example = "INDIVIDUAL",
-  )
-  val appointmentType: AppointmentType,
 
   @Schema(
     description =

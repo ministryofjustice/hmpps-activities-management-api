@@ -70,6 +70,7 @@ class AppointmentOccurrenceDetailsServiceTest {
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
+        AppointmentType.INDIVIDUAL,
         entity.sequenceNumber,
         AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         appointment.prisonCode,
@@ -78,9 +79,8 @@ class AppointmentOccurrenceDetailsServiceTest {
         entity.startDate,
         entity.startTime,
         entity.endTime,
-        null,
-        AppointmentType.INDIVIDUAL,
         entity.comment ?: appointment.comment,
+        null,
         false,
         false,
         appointment.created,
