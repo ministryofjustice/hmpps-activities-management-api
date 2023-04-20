@@ -104,6 +104,7 @@ class AppointmentTest {
     assertThat(entity.toDetails(referenceCodeMap, locationMap, userMap, prisoners)).isEqualTo(
       AppointmentDetails(
         entity.appointmentId,
+        entity.appointmentType,
         AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         entity.prisonCode,
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
@@ -112,7 +113,6 @@ class AppointmentTest {
         entity.startTime,
         entity.endTime,
         null,
-        entity.appointmentType,
         entity.comment,
         entity.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),

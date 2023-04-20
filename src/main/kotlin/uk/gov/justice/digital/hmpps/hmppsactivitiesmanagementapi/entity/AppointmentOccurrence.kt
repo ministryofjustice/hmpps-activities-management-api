@@ -127,6 +127,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
+      appointment.appointmentType,
       sequenceNumber,
       referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       prisonCode,
@@ -139,9 +140,8 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      appointment.schedule?.toRepeat(),
-      appointment.appointmentType,
       comment ?: appointment.comment,
+      appointment.schedule?.toRepeat(),
       false,
       isCancelled(),
       appointment.created,
