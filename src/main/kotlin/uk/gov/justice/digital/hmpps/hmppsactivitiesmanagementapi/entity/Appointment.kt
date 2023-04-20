@@ -39,9 +39,12 @@ data class Appointment(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = 0,
 
-  var categoryCode: String,
-
   val prisonCode: String,
+
+  @Enumerated(EnumType.STRING)
+  val appointmentType: AppointmentType,
+
+  var categoryCode: String,
 
   var internalLocationId: Long?,
 
@@ -70,9 +73,6 @@ data class Appointment(
   var updatedBy: String? = null,
 
   val deleted: Boolean = false,
-
-  @Enumerated(EnumType.STRING)
-  val appointmentType: AppointmentType,
 ) {
   fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
