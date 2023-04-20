@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
@@ -26,6 +27,7 @@ class OutboundEventsService(private val publisher: EventsPublisher, private val 
     if (featureSwitches.isEnabled(outboundEvent)) {
       when (outboundEvent) {
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
+        ACTIVITY_SCHEDULED_INSTANCE_AMENDED -> publisher.send(outboundEvent.event(ScheduledInstanceInformation(identifier)))
         PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ATTENDANCE_CREATED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
@@ -48,6 +50,14 @@ enum class OutboundEvent(val eventType: String) {
         eventType = eventType,
         additionalInformation = additionalInformation,
         description = "A new activity schedule has been created in the activities management service",
+      )
+  },
+  ACTIVITY_SCHEDULED_INSTANCE_AMENDED("activities.scheduled-instance.amended") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "A scheduled instance has been amended in the activities management service",
       )
   },
   PRISONER_ALLOCATED("activities.prisoner.allocated") {
@@ -130,6 +140,7 @@ data class OutboundHMPPSDomainEvent(
 )
 
 data class ScheduleCreatedInformation(val activityScheduleId: Long) : AdditionalInformation
+data class ScheduledInstanceInformation(val scheduledInstanceId: Long) : AdditionalInformation
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
 data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
