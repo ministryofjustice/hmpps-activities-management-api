@@ -70,7 +70,7 @@ class TransformFunctionsTest {
           id = 1,
           instances = listOf(
             ModelScheduledInstance(
-              id = -1,
+              id = 0,
               date = timestamp.toLocalDate(),
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),
@@ -78,7 +78,7 @@ class TransformFunctionsTest {
               attendances = listOf(
                 ModelAttendance(
                   id = 1,
-                  scheduleInstanceId = -1,
+                  scheduleInstanceId = 0,
                   prisonerNumber = "A1234AA",
                   status = "WAITING",
                   issuePayment = null,

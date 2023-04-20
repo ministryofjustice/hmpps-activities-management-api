@@ -1,10 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
@@ -14,10 +19,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceInformation
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
+@TestPropertySource(
+  properties = [
+    "feature.event.activities.scheduled-instance.amended=true",
+  ],
+)
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var eventsPublisher: EventsPublisher
+
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Nested
   @DisplayName("getScheduledInstancesById")
@@ -117,6 +136,15 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(recordedTime).isNull()
         }
       }
+
+      verify(eventsPublisher).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
+        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
     }
 
     @Test
@@ -192,6 +220,15 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(recordedBy).isEqualTo("USER1")
           assertThat(recordedTime).isNotNull
         }
+      }
+
+      verify(eventsPublisher).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
+        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
       }
     }
 
