@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
@@ -20,6 +21,8 @@ class FeatureSwitchesTest {
       "feature.event.activities.activity-schedule.created=true",
       "feature.event.activities.prisoner.allocated=true",
       "feature.event.appointments.appointment-instance.created=true",
+      "feature.event.prison-offender-events.prisoner.received=true",
+      "feature.event.prison-offender-events.prisoner.released=true",
     ],
   )
   @Nested
@@ -31,6 +34,8 @@ class FeatureSwitchesTest {
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED)).isTrue
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED)).isTrue
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED)).isTrue
     }
   }
 
@@ -61,6 +66,8 @@ class FeatureSwitchesTest {
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED)).isFalse
       assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED)).isFalse
       assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED)).isFalse
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED)).isFalse
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED)).isFalse
     }
   }
 
@@ -73,6 +80,8 @@ class FeatureSwitchesTest {
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, true)).isTrue
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED, true)).isTrue
+      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED, true)).isTrue
     }
   }
 }
