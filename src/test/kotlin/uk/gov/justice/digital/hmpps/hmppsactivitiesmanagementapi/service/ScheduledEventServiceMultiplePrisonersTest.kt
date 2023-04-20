@@ -549,6 +549,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
           assertThat(it.eventId).isNull()
+          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentOccurrenceId)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
