@@ -439,4 +439,16 @@ class PrisonApiMockServer : WireMockServer(8999) {
         ),
     )
   }
+
+  fun stubGetEducationLevels() {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/education/prisoners"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody("[]")
+            .withStatus(200),
+        ),
+    )
+  }
 }

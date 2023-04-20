@@ -12,6 +12,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 class PrisonerSearchApiMockServer : WireMockServer(8111) {
   private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
+  fun stubGetAllPrisonersInPrison(prisonCode: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/prisoner-search/prison/$prisonCode?size=2000"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonersearchapi/all-prisoners.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
   fun stubSearchByPrisonerNumber(prisonerNumber: String) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/prisoner-search/prisoner-numbers"))
