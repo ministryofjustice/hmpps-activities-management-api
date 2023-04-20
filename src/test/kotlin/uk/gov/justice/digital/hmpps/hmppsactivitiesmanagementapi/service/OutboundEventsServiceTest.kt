@@ -36,6 +36,19 @@ class OutboundEventsServiceTest {
   }
 
   @Test
+  fun `scheduled instance amended event with id 1 is sent to the events publisher`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, 1L)
+
+    verify(
+      expectedEventType = "activities.scheduled-instance.amended",
+      expectedAdditionalInformation = ScheduledInstanceInformation(1),
+      expectedDescription = "A scheduled instance has been amended in the activities management service",
+    )
+  }
+
+  @Test
   fun `prisoner allocated event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.PRISONER_ALLOCATED) } doReturn true }
 
