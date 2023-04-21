@@ -69,3 +69,8 @@ data class AppointmentOccurrenceSearch(
     isEdited,
   )
 }
+
+fun List<AppointmentOccurrenceSearch>.toResults(
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+) = map { it.toResult(referenceCodeMap, locationMap) }

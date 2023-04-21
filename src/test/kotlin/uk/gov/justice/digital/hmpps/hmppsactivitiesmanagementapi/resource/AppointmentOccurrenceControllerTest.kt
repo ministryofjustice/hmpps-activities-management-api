@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
 import java.security.Principal
 import java.time.LocalDate
@@ -27,7 +28,13 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   @MockBean
   private lateinit var appointmentOccurrenceService: AppointmentOccurrenceService
 
-  override fun controller() = AppointmentOccurrenceController(appointmentOccurrenceService)
+  @MockBean
+  private lateinit var appointmentOccurrenceSearchService: AppointmentOccurrenceSearchService
+
+  override fun controller() = AppointmentOccurrenceController(
+    appointmentOccurrenceService,
+    appointmentOccurrenceSearchService,
+  )
 
   @Test
   fun `404 not found response when update appointment occurrence by invalid id`() {
