@@ -26,6 +26,8 @@ data class AppointmentOccurrenceSearch(
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,
 
+  val prisonerCount: Int,
+
   val categoryCode: String,
 
   val internalLocationId: Long?,
@@ -53,6 +55,7 @@ data class AppointmentOccurrenceSearch(
     appointmentOccurrenceId,
     prisonCode,
     appointmentType,
+    prisonerCount,
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
     if (inCell) {
       null

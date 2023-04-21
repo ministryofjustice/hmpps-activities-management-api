@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -116,7 +117,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentOccurrence::class),
+            array = ArraySchema(schema = Schema(implementation = AppointmentOccurrenceSearchResult::class)),
           ),
         ],
       ),

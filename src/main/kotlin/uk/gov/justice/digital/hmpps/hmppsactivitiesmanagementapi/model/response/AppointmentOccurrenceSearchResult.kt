@@ -48,6 +48,16 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
+    The number of prisoners allocated to this appointment occurrence.
+    Can only be greater that one when the parent appointment's type is GROUP
+    """,
+    example = "1",
+  )
+  val prisonerCount: Int,
+
+  @Schema(
+    description =
+    """
     The summary of the parent appointment's category
     """,
   )
