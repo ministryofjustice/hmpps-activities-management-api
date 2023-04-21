@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
@@ -13,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsProcessor
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderTemporaryReleasedEvent
@@ -48,6 +51,32 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `release of prisoner has no effect on active allocations when unknown reason`() {
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    processor.process(
+      OffenderReleasedEvent(
+        ReleaseInformation(
+          nomsNumber = "A11111A",
+          reason = "UNKNOWN",
+          prisonId = pentonvillePrisonCode,
+        ),
+      ),
+    )
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Sql(

@@ -6,11 +6,13 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -153,5 +155,19 @@ class InboundEventsProcessorTest {
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
     verify(repository).saveAllAndFlush(any<List<Allocation>>())
+  }
+
+  @Test
+  fun `allocation is unmodified for unknown release event`() {
+    val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+      .also { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue() }
+
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(listOf(allocation))
+
+    processor.process(OffenderReleasedEvent(ReleaseInformation(nomsNumber = "12345", reason = "UNKNOWN", prisonId = pentonvillePrisonCode)))
+
+    assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
+
+    verifyNoInteractions(repository)
   }
 }
