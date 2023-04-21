@@ -9,6 +9,7 @@ import java.security.Principal
 
 @Service
 class AppointmentOccurrenceSearchService(
+  private val prisonRegimeService: PrisonRegimeService,
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
@@ -18,7 +19,9 @@ class AppointmentOccurrenceSearchService(
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> {
-    val results = appointmentOccurrenceSearchRepository.findByPrisonCode(prisonCode)
+    val timeRange = request.timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
+
+    val results = appointmentOccurrenceSearchRepository.find(prisonCode, request.categoryCode, request.internalLocationId, request.startDate, timeRange?.start, timeRange?.end)
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 

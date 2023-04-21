@@ -53,7 +53,7 @@ enum class AppointmentRepeatPeriod {
 
   /**
    * @param startDate The date of the first occurrence
-   * @param sequenceNumber Sequence number of the occurence date that should be generated. Starts at 1 not 0
+   * @param sequenceNumber Sequence number of the occurrence date that should be generated. Starts at 1 not 0
    */
   abstract fun occurrenceDate(startDate: LocalDate, sequenceNumber: Int): LocalDate
 }

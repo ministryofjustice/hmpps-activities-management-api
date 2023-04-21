@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 
 @Schema(
@@ -50,6 +51,17 @@ data class AppointmentOccurrenceSearchRequest(
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate? = null,
+
+  @Schema(
+    description =
+    """
+    The time slot to match with the appointment occurrences. Will restrict the search results to appointment occurrences
+    that have a start time between the times defined by the prison for that time slot when this search parameter is
+    supplied.
+    """,
+    example = "PM",
+  )
+  val timeSlot: TimeSlot? = null,
 
   @Schema(
     description =
