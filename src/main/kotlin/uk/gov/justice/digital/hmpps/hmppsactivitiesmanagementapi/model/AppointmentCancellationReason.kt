@@ -13,7 +13,7 @@ data class AppointmentCancellationReason(
     description = "The internally generated identifier for this cancellation reason",
     example = "12345",
   )
-  val appointmentCancellationReasonId: Long = -1,
+  val appointmentCancellationReasonId: Long,
 
   @Schema(
     description = "A human-readable description of the cancellation reason",

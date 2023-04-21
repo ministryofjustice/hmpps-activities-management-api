@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 data class AppointmentCancellationReason(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val appointmentCancellationReasonId: Long = -1,
+  val appointmentCancellationReasonId: Long = 0,
 
   val description: String,
 

@@ -91,7 +91,7 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
         ao.start_time,
         ao.end_time,
         COALESCE(ao.comment, a.comment) AS comment,
-        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS cancelled,
+        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled,
         a.created,
         a.created_by,
         ao.updated,
