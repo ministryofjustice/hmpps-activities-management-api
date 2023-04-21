@@ -106,11 +106,11 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
         ao.start_date,
         ao.start_time,
         ao.end_time,
-        a.appointment_schedule_id IS NOT NULL as isRepeat,
+        a.appointment_schedule_id IS NOT NULL as is_repeat,
         ao.sequence_number,
         COALESCE(asch.repeat_count, 1) as max_sequence_number,
         COALESCE(ao.comment, a.comment) AS comment,
-        ao.updated IS NULL as isEdited
+        ao.updated IS NULL as is_edited
     FROM
         appointment_occurrence ao JOIN appointment a on a.appointment_id = ao.appointment_id
         LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id;
@@ -134,11 +134,11 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_allocation_search AS
         ao.start_date,
         ao.start_time,
         ao.end_time,
-        a.appointment_schedule_id IS NOT NULL as isRepeat,
+        a.appointment_schedule_id IS NOT NULL as is_repeat,
         ao.sequence_number,
         COALESCE(asch.repeat_count, 1) as max_sequence_number,
         COALESCE(ao.comment, a.comment) AS comment,
-        ao.updated IS NULL as isEdited
+        ao.updated IS NULL as is_edited
     FROM
         appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
