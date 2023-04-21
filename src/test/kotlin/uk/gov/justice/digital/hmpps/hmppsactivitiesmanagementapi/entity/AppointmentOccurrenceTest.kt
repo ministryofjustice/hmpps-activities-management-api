@@ -291,13 +291,13 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `isCancelled is false when cancellation reason deleted is true`() {
-    val entity = appointmentEntity().occurrences().first().copy(cancellationReason = AppointmentCancellationReason(1, "", true))
+    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
     assertThat(entity.isCancelled()).isFalse()
   }
 
   @Test
   fun `isCancelled is false when cancellation reason deleted is false`() {
-    val entity = appointmentEntity().occurrences().first().copy(cancellationReason = AppointmentCancellationReason(1, "", false))
+    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
     assertThat(entity.isCancelled()).isTrue()
   }
 }

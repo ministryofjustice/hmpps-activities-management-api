@@ -168,7 +168,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       cancellationReasonId = 1,
     )
 
-    val originalAppointment = appointmentRepository.findOrThrowNotFound(1)!!
+    val originalAppointment = appointmentRepository.findOrThrowNotFound(1)
     val updatedAppointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
     val allocationIds = originalAppointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } }
 
