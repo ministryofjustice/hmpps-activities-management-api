@@ -10,7 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -22,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentOccurrenceService(
   private val appointmentRepository: AppointmentRepository,
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -41,14 +44,7 @@ class AppointmentOccurrenceService(
       throw IllegalArgumentException("Cannot update a past appointment occurrence")
     }
 
-    val occurrencesToUpdate =
-      when (request.applyTo) {
-        ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-          appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) },
-        )
-        ApplyTo.ALL_FUTURE_OCCURRENCES -> appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > now }
-        else -> listOf(appointmentOccurrence)
-      }
+    val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
 
     val updatedIds = mutableListOf<Long>()
 
@@ -73,6 +69,41 @@ class AppointmentOccurrenceService(
     }
 
     return updatedAppointment.toModel()
+  }
+
+  fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
+    val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
+    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+    val appointmentId = appointmentOccurrence.appointment.appointmentId
+
+    val now = LocalDateTime.now()
+    if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
+      throw IllegalArgumentException("Cannot cancel a past appointment occurrence")
+    }
+
+    val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
+
+    occurrencesToUpdate.forEach {
+      it.cancellationReason = cancellationReason
+      it.cancelled = now
+      it.cancelledBy = principal.name
+      it.deleted = cancellationReason.isDelete
+    }
+
+    appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
+
+    // The return value of saveAndFlush bypasses the JPA annotations that filter out deleted records, hence this reload
+    var updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+
+    occurrencesToUpdate.filter { it.isDeleted() }
+      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
+      .forEach { publishDeletion(it) }
+
+    occurrencesToUpdate.filter { it.isCancelled() }
+      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
+      .forEach { publishCancellation(it) }
+
+    return updatedAppointment
   }
 
   private fun applyCategoryCodeUpdate(
@@ -246,5 +277,32 @@ class AppointmentOccurrenceService(
     prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
       if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
     }
+  }
+
+  private fun determineOccurrencesToApplyTo(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, currentTime: LocalDateTime) =
+    when (applyTo) {
+      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
+        appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) },
+      )
+      ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
+      else -> listOf(appointmentOccurrence)
+    }
+
+  private fun publishCancellation(appointmentOccurrenceAllocationId: Long) = runCatching {
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocationId)
+  }.onFailure {
+    log.error(
+      "Failed to send appointment instance cancelled event for appointment instance id $it",
+      it,
+    )
+  }
+
+  private fun publishDeletion(appointmentOccurrenceAllocationId: Long) = runCatching {
+    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, appointmentOccurrenceAllocationId)
+  }.onFailure {
+    log.error(
+      "Failed to send appointment instance deleted event for appointment instance id $it",
+      it,
+    )
   }
 }

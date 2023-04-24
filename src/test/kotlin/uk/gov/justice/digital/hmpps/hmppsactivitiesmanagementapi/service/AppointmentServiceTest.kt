@@ -188,7 +188,6 @@ class AppointmentServiceTest {
       assertThat(createdBy).isEqualTo("TEST.USER")
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
-      assertThat(deleted).isFalse
       with(occurrences()) {
         assertThat(size).isEqualTo(1)
         with(occurrences().first()) {

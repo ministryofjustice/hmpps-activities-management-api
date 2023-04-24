@@ -15,8 +15,6 @@ import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
@@ -32,8 +30,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment")
-@SQLDelete(sql = "UPDATE appointment SET deleted = true WHERE appointment_id = ?")
-@Where(clause = "deleted = false")
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,8 +64,6 @@ data class Appointment(
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
-
-  val deleted: Boolean = false,
 
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,

@@ -9,9 +9,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
@@ -28,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment_occurrence")
+@Where(clause = "deleted = false")
 data class AppointmentOccurrence(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,12 +54,20 @@ data class AppointmentOccurrence(
 
   var comment: String? = null,
 
-  var cancelled: Boolean = false,
-
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  var deleted: Boolean = false,
 ) {
+
+  var cancelled: LocalDateTime? = null
+
+  @OneToOne
+  @JoinColumn(name = "cancellation_reason_id")
+  var cancellationReason: AppointmentCancellationReason? = null
+
+  var cancelledBy: String? = null
 
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -75,6 +86,10 @@ data class AppointmentOccurrence(
 
   fun prisonerCount() = prisonerNumbers().count()
 
+  fun isCancelled() = cancellationReason?.isDelete == false
+
+  fun isDeleted() = cancellationReason?.isDelete == true
+
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     internalLocationId = internalLocationId,
@@ -84,6 +99,8 @@ data class AppointmentOccurrence(
     endTime = endTime,
     comment = comment,
     cancelled = cancelled,
+    cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
+    cancelledBy = cancelledBy,
     updated = updated,
     updatedBy = updatedBy,
     allocations = allocations.toModel(),
@@ -100,7 +117,7 @@ data class AppointmentOccurrence(
       endTime,
       comment ?: appointmentComment,
       isEdited = false,
-      isCancelled = false,
+      isCancelled = isCancelled(),
       updated = updated,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
       prisonerCount = prisonerCount(),
@@ -126,7 +143,7 @@ data class AppointmentOccurrence(
       comment ?: appointment.comment,
       appointment.schedule?.toRepeat(),
       false,
-      false,
+      isCancelled(),
       appointment.created,
       userMap[appointment.createdBy].toSummary(appointment.createdBy),
       updated,

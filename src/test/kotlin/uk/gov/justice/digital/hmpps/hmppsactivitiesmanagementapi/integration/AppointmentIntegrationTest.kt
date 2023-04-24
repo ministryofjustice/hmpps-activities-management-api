@@ -76,7 +76,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
           assertThat(comment).isEqualTo("Appointment occurrence level comment")
-          assertThat(cancelled).isEqualTo(false)
+          assertThat(cancelled).isNull()
+          assertThat(cancellationReasonId).isNull()
+          assertThat(cancelledBy).isNull()
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           with(allocations) {
@@ -95,18 +97,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `get appointment by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf()))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-deleted-id-2.sql",
-  )
-  @Test
-  fun `get deleted appointment returns 404 not found`() {
-    webTestClient.get()
-      .uri("/appointments/2")
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
       .expectStatus().isNotFound
