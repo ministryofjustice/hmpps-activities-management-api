@@ -19,10 +19,11 @@ class InboundEventsProcessor(private val repository: AllocationRepository) {
       is OffenderReceivedEvent -> reactivateSuspendedOffenderAllocations(inboundEvent)
 
       is OffenderReleasedEvent -> {
-        if (inboundEvent.isTemporary()) {
-          suspendOffenderAllocations(inboundEvent)
-        } else {
-          deallocateOffenderAllocations(inboundEvent)
+        when {
+          inboundEvent.isTemporary() -> suspendOffenderAllocations(inboundEvent)
+          inboundEvent.isPermanent() -> deallocateOffenderAllocations(inboundEvent)
+          // TODO pick up with the event of interest work.
+          else -> log.info("Ignoring event of potential interest $inboundEvent.")
         }
       }
 

@@ -30,7 +30,6 @@ class AppointmentOccurrenceTest : ModelTest() {
       inCell = true,
       updatedBy = "A.Jones",
       updated = originalUpdatedTime,
-      cancelled = false,
     )
 
     val json = objectMapper.writeValueAsString(appointmentOccurrence)

@@ -22,6 +22,7 @@ truncate table prison_pay_band restart identity;
 truncate table prison_regime restart identity;
 
 --Appointments
+truncate table appointment_cancellation_reason;
 truncate table appointment_occurrence_allocation;
 truncate table appointment_occurrence;
 truncate table appointment_schedule;

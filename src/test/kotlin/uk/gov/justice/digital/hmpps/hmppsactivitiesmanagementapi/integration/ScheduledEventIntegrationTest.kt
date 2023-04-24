@@ -108,6 +108,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
           assertThat(it.eventSource).isEqualTo("SAA")
+          assertThat(it.appointmentId).isEqualTo(3)
           assertThat(it.appointmentInstanceId).isEqualTo(4)
           assertThat(it.appointmentOccurrenceId).isEqualTo(3)
           assertThat(it.internalLocationId).isEqualTo(123)

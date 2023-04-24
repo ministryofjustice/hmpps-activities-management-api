@@ -169,6 +169,7 @@ class AppointmentOccurrenceTest {
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
+        AppointmentType.INDIVIDUAL,
         1,
         AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         "TPR",
@@ -177,9 +178,8 @@ class AppointmentOccurrenceTest {
         LocalDate.now(),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
-        null,
-        AppointmentType.INDIVIDUAL,
         "Appointment occurrence level comment",
+        repeat = null,
         isEdited = false,
         isCancelled = false,
         created = appointment.created,
@@ -281,5 +281,23 @@ class AppointmentOccurrenceTest {
         prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789),
       )
     }
+  }
+
+  @Test
+  fun `isCancelled is false when cancellation reason is false`() {
+    val entity = appointmentEntity().occurrences().first()
+    assertThat(entity.isCancelled()).isFalse()
+  }
+
+  @Test
+  fun `isCancelled is false when cancellation reason deleted is true`() {
+    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
+    assertThat(entity.isCancelled()).isFalse()
+  }
+
+  @Test
+  fun `isCancelled is false when cancellation reason deleted is false`() {
+    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
+    assertThat(entity.isCancelled()).isTrue()
   }
 }

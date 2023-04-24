@@ -18,7 +18,7 @@ export DB_SSL_MODE=prefer
 export FEATURE_EVENTS_SNS_ENABLED=true
 
 # Run the application with stdout and local profiles active
-SPRING_PROFILES_ACTIVE=stdout,local,localstack ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=stdout,localstack ./gradlew bootRun
 
 # End
 
