@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@7.1.0
+  hmpps: ministryofjustice/hmpps@7.3.0
   codecov: codecov/codecov@3.2.4
 
 parameters:
@@ -17,6 +17,8 @@ jobs:
     executor:
       name: hmpps/java
       tag: "19.0"
+    environment:
+      _JAVA_OPTIONS: -Xmx384m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - checkout
       - restore_cache:
@@ -42,6 +44,8 @@ jobs:
     executor:
       name: hmpps/java
       tag: "19.0"
+    environment:
+      _JAVA_OPTIONS: -Xmx384m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - checkout
       - restore_cache:

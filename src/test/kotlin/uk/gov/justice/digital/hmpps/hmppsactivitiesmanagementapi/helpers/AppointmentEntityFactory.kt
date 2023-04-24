@@ -40,7 +40,6 @@ internal fun appointmentEntity(
   createdBy = createdBy,
   updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
-  deleted = false,
 ).apply {
   repeatPeriod?.let {
     this.schedule = AppointmentSchedule(
@@ -66,7 +65,6 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOcc
     startTime = appointment.startTime,
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
-    cancelled = false,
     updated = if (updatedBy == null) null else LocalDateTime.now(),
     updatedBy = updatedBy,
   ).apply {
@@ -110,6 +108,7 @@ internal fun appointmentInstanceEntity(
     comment = "Appointment instance level comment",
     created = LocalDateTime.now().minusDays(1),
     createdBy = createdBy,
+    isCancelled = false,
     updated = LocalDateTime.now(),
     updatedBy = updatedBy,
   )

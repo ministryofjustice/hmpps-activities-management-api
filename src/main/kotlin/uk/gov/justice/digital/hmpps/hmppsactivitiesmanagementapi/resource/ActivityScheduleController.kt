@@ -357,6 +357,6 @@ class ActivityScheduleController(
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(candidates.size)
 
-    return PageImpl(candidates.subList(start, end), pageable, candidates.size.toLong())
+    return PageImpl(candidates.subList(start.coerceAtMost(end), end), pageable, candidates.size.toLong())
   }
 }

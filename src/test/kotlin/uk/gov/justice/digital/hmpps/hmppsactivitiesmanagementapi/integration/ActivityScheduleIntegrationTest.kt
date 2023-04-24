@@ -14,12 +14,14 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
@@ -254,6 +256,42 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  fun `should be able to fetch a paged list of candidates for an activity`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
+    prisonApiMockServer.stubGetEducationLevels()
+
+    val response = webTestClient.getCandidates(1, 2, 5)
+      .expectStatus().isOk
+      .expectBody(typeReference<LinkedHashMap<String, Any>>())
+      .returnResult().responseBody
+
+    assertThat(response.get("content") as List<ActivityCandidate>).hasSize(5)
+    assertThat(response.get("totalPages")).isEqualTo(4)
+    assertThat(response.get("totalElements")).isEqualTo(16)
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  fun `should handle candidate pagination where page param is more than the number of pages available`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
+    prisonApiMockServer.stubGetEducationLevels()
+
+    val response = webTestClient.getCandidates(1, 20, 5)
+      .expectStatus().isOk
+      .expectBody(typeReference<LinkedHashMap<String, Any>>())
+      .returnResult().responseBody
+
+    assertThat(response.get("content") as List<ActivityCandidate>).isEmpty()
+    assertThat(response.get("totalPages")).isEqualTo(4)
+    assertThat(response.get("totalElements")).isEqualTo(16)
+  }
+
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
     post()
       .uri("/schedules/$scheduleId/allocations")
@@ -261,4 +299,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
+
+  private fun WebTestClient.getCandidates(scheduleId: Long, pageNum: Long = 0, pageSize: Long = 10) =
+    get()
+      .uri("/schedules/$scheduleId/candidates?size=$pageSize&page=$pageNum")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .exchange()
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
 }

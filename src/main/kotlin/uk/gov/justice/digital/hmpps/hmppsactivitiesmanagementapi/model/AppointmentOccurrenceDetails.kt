@@ -29,6 +29,12 @@ data class AppointmentOccurrenceDetails(
   val appointmentId: Long,
 
   @Schema(
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
+  )
+  val appointmentType: AppointmentType,
+
+  @Schema(
     description = "The sequence number of this appointment occurrence within the recurring appointment series",
     example = "3",
   )
@@ -95,28 +101,22 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
-    Describes how an appointment was specified to repeat if at all. The period or frequency of the occurrences and how
-    many occurrences there are in total in the series. Note that the presence of this property does not mean there is
-    always more than one occurrence as a repeat count of one is valid.
-    """,
-  )
-  val repeat: AppointmentRepeat?,
-
-  @Schema(
-    description = "The appointment type (INDIVIDUAL or GROUP)",
-    example = "INDIVIDUAL",
-  )
-  val appointmentType: AppointmentType,
-
-  @Schema(
-    description =
-    """
     Notes relating to this appointment occurrence. Can be different to the parent appointment if this occurrence has
     been edited.
     """,
     example = "This appointment occurrence has been rescheduled due to staff availability",
   )
   val comment: String,
+
+  @Schema(
+    description =
+    """
+    Describes how the parent appointment was specified to repeat if at all. The period or frequency of the occurrences
+    and how many occurrences there are in total in the series. Note that the presence of this property does not mean
+    there is always more than one occurrence as a repeat count of one is valid.
+    """,
+  )
+  val repeat: AppointmentRepeat?,
 
   @Schema(
     description =

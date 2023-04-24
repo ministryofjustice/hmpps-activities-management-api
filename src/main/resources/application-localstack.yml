@@ -2,14 +2,77 @@
 # The "-localstack" profile is for running the API service locally against pre-existing
 # docker containers that are listening on a known port numbers for a localstack container (4566).
 #
-
 # Most values are inherited from - application.yml - except the following:
+spring:
+  flyway:
+    locations: classpath:/migration,classpath:/reference_data/common,classpath:/reference_data/dev
+
+  datasource:
+    url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
+    username: 'activities-management'
+    password: 'activities-management'
+
+  jpa:
+    show-sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:local-public-key.pub
+
+system:
+  client:
+    id: activities-management-admin-1
+    secret: secret
+
+# Container-provider local auth server
+hmpps:
+  auth:
+    # url: http://localhost:8090/auth
+    url: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
+
+prison:
+  api:
+    url: https://api-dev.prison.service.justice.gov.uk
+    timeout: 10s
+
+prisoner-search:
+  api:
+    url: https://prisoner-offender-search-dev.prison.service.justice.gov.uk
+    timeout: 10s
+
+jobs:
+  create-scheduled-instances:
+    days-in-advance: ${SCHEDULE_AHEAD_DAYS:0}
+
+online:
+  create-scheduled-instances:
+    days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE:14}
+
 hmpps.sqs:
   provider: localstack
   queues:
+    activities:
+      queueName: activities-queue
+      subscribeFilter: "{\"eventType\":[\"prison-offender-events.prisoner.received\", \"prison-offender-events.prisoner.released\"]}"
+      dlqName: activities-dead-letter-queue
+      subscribeTopicId: domainevents
+      dlqMaxReceiveCount: 1
+      visibilityTimeout: 1
     domaineventsqueue:
       queueName: domainevents-queue
       subscribeTopicId: domainevents
   topics:
     domainevents:
       arn: arn:aws:sns:eu-west-2:000000000000:domainevents-topic
+
+feature:
+  event:
+    prison-offender-events:
+      prisoner:
+        released: true
+        received: true
+    activities:
+      prisoner:
+        allocation-amended: true

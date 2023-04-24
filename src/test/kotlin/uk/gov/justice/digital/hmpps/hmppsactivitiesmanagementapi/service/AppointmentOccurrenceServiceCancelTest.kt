@@ -1,0 +1,428 @@
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+
+import jakarta.persistence.EntityNotFoundException
+import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import java.security.Principal
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+import java.util.Optional
+
+class AppointmentOccurrenceServiceCancelTest {
+  private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
+  private val locationService: LocationService = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
+
+  private val service = AppointmentOccurrenceService(
+    appointmentRepository,
+    appointmentOccurrenceRepository,
+    appointmentCancellationReasonRepository,
+    referenceCodeService,
+    locationService,
+    prisonerSearchApiClient,
+    outboundEventsService,
+  )
+
+  @Nested
+  @DisplayName("cancel individual appointment validation")
+  inner class CancelIndividualAppointmentValidation {
+
+    private val principal: Principal = mock()
+    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
+    private val appointmentOccurrence = appointment.occurrences().first()
+    private val cancellationReason = AppointmentCancellationReason(1L, "Cancelled", false)
+
+    @BeforeEach
+    fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
+      whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(cancellationReason),
+      )
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+    }
+
+    @Test
+    fun `cancel appointment throws illegal argument exception when appointment occurrence is in the past`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+
+      val appointment = appointmentEntity(
+        appointmentId = 2,
+        startDate = LocalDate.now(),
+        startTime = LocalTime.now().minusMinutes(1),
+        endTime = LocalTime.now().plusHours(1),
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      assertThatThrownBy {
+        service.cancelAppointmentOccurrence(
+          appointmentOccurrence.appointmentOccurrenceId,
+          request,
+          principal,
+        )
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot cancel a past appointment occurrence")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment throws entity not found exception for unknown appointment occurrence id`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+
+      assertThatThrownBy { service.cancelAppointmentOccurrence(-1, request, mock()) }.isInstanceOf(
+        EntityNotFoundException::class.java,
+      )
+        .hasMessage("Appointment Occurrence -1 not found")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment throws entity not found exception for unknown appointment cancellation reason id`() {
+      val request = AppointmentOccurrenceCancelRequest(-1, ApplyTo.THIS_OCCURRENCE)
+
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      assertThatThrownBy {
+        service.cancelAppointmentOccurrence(
+          appointmentOccurrence.appointmentOccurrenceId,
+          request,
+          mock(),
+        )
+      }.isInstanceOf(EntityNotFoundException::class.java)
+        .hasMessage("Appointment Cancellation Reason -1 not found")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+  }
+
+  @Nested
+  @DisplayName("cancel individual appointment")
+  inner class CancelIndividualAppointment {
+
+    private val principal: Principal = mock()
+    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
+    private val appointmentOccurrence = appointment.occurrences().first()
+    private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
+    private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
+    private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+
+    @BeforeEach
+    fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
+      whenever(appointmentCancellationReasonRepository.findById(softDeleteCancellationReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(softDeleteCancellationReason),
+      )
+      whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(cancellationReason),
+      )
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(appointment))
+    }
+
+    @Test
+    fun `cancel appointment with reason that triggers soft delete success`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().single()) {
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(1L)
+        assertThat(deleted).isTrue()
+      }
+
+      verify(outboundEventsService).send(
+        OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
+      )
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with reason that does not trigger soft delete success`() {
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().single()) {
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2L)
+        assertThat(deleted).isFalse()
+      }
+
+      verify(outboundEventsService).send(
+        OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
+      )
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+  }
+
+  @Nested
+  @DisplayName("cancel group repeat appointment")
+  inner class CancelGroupRepeatAppointment {
+
+    private val principal: Principal = mock()
+    private val appointment = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      updatedBy = null,
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 4,
+    )
+    private val appointmentOccurrence = appointment.occurrences()[2]
+    private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
+    private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+
+    @BeforeEach
+    fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
+      appointment.occurrences().forEach {
+        whenever(appointmentOccurrenceRepository.findById(it.appointmentOccurrenceId)).thenReturn(
+          Optional.of(it),
+        )
+      }
+      whenever(appointmentCancellationReasonRepository.findById(softDeleteCancellationReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(softDeleteCancellationReason),
+      )
+      whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(cancellationReason),
+      )
+      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(appointment))
+    }
+
+    @Test
+    fun `cancel appointment with a reason that triggers a soft delete and that applies to this occurrence only`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences()[2]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(1)
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(deleted).isTrue()
+      }
+      with(appointment.occurrences()[3]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelled).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(deleted).isFalse()
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this occurrence only`() {
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences()[2]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2)
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledBy).isEqualTo("TEST.USER")
+        assertThat(deleted).isFalse()
+      }
+      with(appointment.occurrences()[3]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelled).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(deleted).isFalse()
+      }
+
+      appointmentOccurrence.allocations().forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that triggers a soft delete and that applies to this and all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          Assertions.within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isTrue()
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this and all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences().subList(0, 2)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isNull()
+        assertThat(map { it.cancelled }.distinct().single()).isNull()
+        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+      with(appointment.occurrences().subList(2, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(2)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+
+      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that triggers a soft delete and that applies to all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences()[0]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelled).isNull()
+      }
+
+      with(appointment.occurrences().subList(1, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isTrue()
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment with a reason that does not trigger a soft delete and that applies to all future occurrences`() {
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(appointment.occurrences()[0]) {
+        assertThat(cancellationReason?.appointmentCancellationReasonId).isNull()
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelled).isNull()
+      }
+
+      with(appointment.occurrences().subList(1, appointment.occurrences().size)) {
+        assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(2)
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
+        assertThat(map { it.deleted }.distinct().single()).isFalse()
+      }
+
+      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
+        verify(outboundEventsService).send(
+          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
+          it.appointmentOccurrenceAllocationId,
+        )
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+  }
+}
