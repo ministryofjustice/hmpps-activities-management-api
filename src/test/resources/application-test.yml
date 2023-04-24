@@ -51,3 +51,7 @@ prisoner-search:
 bank-holiday:
   api:
     url: http://localhost:8333
+
+case-notes:
+  api:
+    url: http://localhost:8444

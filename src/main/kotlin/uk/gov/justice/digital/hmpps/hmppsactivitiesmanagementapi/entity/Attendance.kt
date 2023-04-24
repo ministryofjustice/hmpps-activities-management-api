@@ -16,6 +16,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -104,6 +105,7 @@ data class Attendance(
     newIssuePayment: Boolean?,
     newPayAmount: Int?,
     newIncentiveLevelWarningIssued: Boolean?,
+    newCaseNoteId: String?,
   ): Attendance {
     if (status != AttendanceStatus.WAITING) {
       this.addHistory(
@@ -136,6 +138,7 @@ data class Attendance(
       issuePayment = newIssuePayment
       payAmount = newPayAmount
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+      caseNoteId = newCaseNoteId?.toLong()
     }
     status = newStatus
     recordedBy = principalName
@@ -153,7 +156,7 @@ data class Attendance(
       .find { it.incentiveNomisCode == incentiveCode }
   }
 
-  fun toModel() = ModelAttendance(
+  fun toModel(caseNotesApiClient: CaseNotesApiClient) = ModelAttendance(
     id = this.attendanceId,
     scheduleInstanceId = this.scheduledInstance.scheduledInstanceId,
     prisonerNumber = this.prisonerNumber,
@@ -182,6 +185,7 @@ data class Attendance(
     pieces = this.pieces,
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
+    caseNoteText = caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text,
     attendanceHistory = this.attendanceHistory
       .sortedWith(compareBy { this.recordedTime })
       .reversed()

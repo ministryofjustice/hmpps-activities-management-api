@@ -14,6 +14,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -69,8 +70,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-          AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
+          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -110,8 +111,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-          AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
+          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -146,7 +147,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)

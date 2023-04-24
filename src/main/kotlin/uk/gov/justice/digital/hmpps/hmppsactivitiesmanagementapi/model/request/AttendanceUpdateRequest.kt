@@ -12,6 +12,10 @@ data class AttendanceUpdateRequest(
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long?,
 
+  @field:NotEmpty(message = "Prison Code")
+  @Schema(description = "The prison code", example = "MDI")
+  val prisonCode: String,
+
   @field:NotEmpty(message = "Attendance status")
   @Schema(description = "The status - WAITING, COMPLETED, LOCKED", example = "WAITING")
   val status: AttendanceStatus,
