@@ -245,6 +245,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     comment = comment,
     created = created,
     createdBy = createdBy,
+    isCancelled = false,
     updated = updated,
     updatedBy = updatedBy,
   )

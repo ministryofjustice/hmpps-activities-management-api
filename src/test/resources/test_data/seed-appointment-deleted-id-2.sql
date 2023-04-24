@@ -1,5 +1,5 @@
-INSERT INTO appointment (appointment_id, appointment_type, category_code, prison_code, internal_location_id, in_cell, start_date, start_time, end_time, comment, created, created_by, deleted)
-VALUES (2, 'INDIVIDUAL', 'AC1', 'TPR', 123, false, now()::date + 1, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER', true);
+INSERT INTO appointment (appointment_id, appointment_type, category_code, prison_code, internal_location_id, in_cell, start_date, start_time, end_time, comment, created, created_by)
+VALUES (2, 'INDIVIDUAL', 'AC1', 'TPR', 123, false, now()::date + 1, '09:00', '10:30', 'Appointment level comment', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, internal_location_id, in_cell, start_date, start_time, end_time, comment)
 VALUES (3, 2, 1, 123, false, now()::date + 1, '09:00', '10:30', 'Appointment occurrence level comment');

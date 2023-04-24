@@ -74,3 +74,10 @@ values (1, 1, 1, 'Pay band 1 (lowest)', 'Pay band 1 (lowest)', 'PVI'),
 INSERT INTO prison_regime
 (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
 VALUES('MDI', '09:00:00', '12:00:00', '13:00:00', '16:30:00', '18:00:00', '20:00:00');
+
+--
+-- Appointment cancellation reasons
+--
+INSERT INTO appointment_cancellation_reason (appointment_cancellation_reason_id, description, is_delete)
+VALUES   (1, 'Created in error', true),
+         (2, 'Cancelled', false);

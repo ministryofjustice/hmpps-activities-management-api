@@ -22,8 +22,7 @@ CREATE TABLE appointment (
     created                 timestamp       NOT NULL,
     created_by              varchar(100)    NOT NULL,
     updated                 timestamp,
-    updated_by              varchar(100),
-    deleted                 boolean         NOT NULL DEFAULT false
+    updated_by              varchar(100)
 );
 
 CREATE INDEX idx_appointment_category_code ON appointment (category_code);
@@ -33,6 +32,12 @@ CREATE INDEX idx_appointment_start_date ON appointment (start_date);
 CREATE INDEX idx_appointment_start_time ON appointment (start_time);
 CREATE INDEX idx_appointment_end_time ON appointment (end_time);
 CREATE INDEX idx_appointment_schedule_id ON appointment (appointment_schedule_id);
+
+CREATE TABLE appointment_cancellation_reason (
+     appointment_cancellation_reason_id bigserial NOT NULL CONSTRAINT appointment_cancellation_reason_pk PRIMARY KEY,
+     description varchar(50) NOT NULL,
+     is_delete boolean NOT NULL
+);
 
 CREATE TABLE appointment_occurrence (
      appointment_occurrence_id  bigserial       NOT NULL CONSTRAINT appointment_occurrence_pk PRIMARY KEY,
@@ -44,9 +49,12 @@ CREATE TABLE appointment_occurrence (
      start_time                 time            NOT NULL,
      end_time                   time,
      comment                    text,
-     cancelled                  boolean         NOT NULL DEFAULT false,
+     cancelled                  timestamp,
+     cancellation_reason_id     bigint          REFERENCES appointment_cancellation_reason (appointment_cancellation_reason_id),
+     cancelled_by               varchar(100),
      updated                    timestamp,
-     updated_by                 varchar(100)
+     updated_by                 varchar(100),
+     deleted                    boolean         NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_appointment_occurrence_appointment_id ON appointment_occurrence (appointment_id);
@@ -54,6 +62,7 @@ CREATE INDEX idx_appointment_occurrence_internal_location_id ON appointment_occu
 CREATE INDEX idx_appointment_occurrence_start_date ON appointment_occurrence (start_date);
 CREATE INDEX idx_appointment_occurrence_start_time ON appointment_occurrence (start_time);
 CREATE INDEX idx_appointment_occurrence_end_time ON appointment_occurrence (end_time);
+CREATE INDEX idx_appointment_occurrence_cancellation_reason_id ON appointment_occurrence (cancellation_reason_id);
 
 CREATE TABLE appointment_occurrence_allocation (
     appointment_occurrence_allocation_id    bigserial   NOT NULL CONSTRAINT appointment_allocation_pk PRIMARY KEY,
@@ -82,6 +91,7 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
         ao.start_time,
         ao.end_time,
         COALESCE(ao.comment, a.comment) AS comment,
+        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled,
         a.created,
         a.created_by,
         ao.updated,
@@ -89,3 +99,4 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
     FROM appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
         JOIN appointment a on a.appointment_id = ao.appointment_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
