@@ -19,10 +19,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -34,7 +34,7 @@ import java.time.temporal.ChronoUnit
 class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
   @MockBean
-  private lateinit var eventsPublisher: EventsPublisher
+  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -275,7 +275,12 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .headers(setAuthorisation(roles = listOf()))
     .exchange()
 
-  private fun WebTestClient.cancelScheduledInstance(id: Long, reason: String, username: String, comment: String? = null) = put()
+  private fun WebTestClient.cancelScheduledInstance(
+    id: Long,
+    reason: String,
+    username: String,
+    comment: String? = null,
+  ) = put()
     .uri("/scheduled-instances/$id/cancel")
     .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
     .accept(MediaType.APPLICATION_JSON)
