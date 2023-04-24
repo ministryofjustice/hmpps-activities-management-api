@@ -160,7 +160,7 @@ data class Attendance(
     attendanceReason = this.attendanceReason?.let {
       ModelAttendanceReason(
         id = it.attendanceReasonId,
-        code = it.code,
+        code = it.code.toString(),
         description = it.description,
         attended = it.attended,
         capturePay = it.capturePay,

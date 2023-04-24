@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
@@ -52,7 +53,7 @@ class ScheduledInstanceService(
       by = scheduleInstanceCancelRequest.username,
       cancelComment = scheduleInstanceCancelRequest.comment,
     ) { attendanceList ->
-      val attendanceReason = attendanceReasonRepository.findByCode("CANCELLED")
+      val attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
       val prisonerNumbers = scheduledInstance.attendances.map { it.prisonerNumber }
       val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()?.associateBy { it.prisonerNumber }
 

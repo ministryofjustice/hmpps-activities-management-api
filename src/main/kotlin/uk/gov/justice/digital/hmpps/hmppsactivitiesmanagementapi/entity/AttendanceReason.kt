@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -14,7 +16,8 @@ data class AttendanceReason(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val attendanceReasonId: Long = -1,
 
-  val code: String,
+  @Enumerated(EnumType.STRING)
+  val code: AttendanceReasonEnum,
 
   val description: String,
 
@@ -44,7 +47,7 @@ data class AttendanceReason(
 
   fun toModel() = modelAttendanceReason(
     id = attendanceReasonId,
-    code = code,
+    code = code.toString(),
     description = description,
     attended = attended,
     capturePay = capturePay,
@@ -59,3 +62,8 @@ data class AttendanceReason(
 }
 
 fun List<AttendanceReason>.toModel() = map { it.toModel() }
+
+enum class AttendanceReasonEnum {
+  SICK, REFUSED, NOT_REQUIRED, REST, CLASH,
+  OTHER, SUSPENDED, CANCELLED, ATTENDED,
+}
