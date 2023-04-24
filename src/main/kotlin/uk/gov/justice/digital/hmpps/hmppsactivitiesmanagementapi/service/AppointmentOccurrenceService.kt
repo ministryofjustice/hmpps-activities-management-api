@@ -16,6 +16,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.security.Principal
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
@@ -93,7 +95,7 @@ class AppointmentOccurrenceService(
     appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
 
     // The return value of saveAndFlush bypasses the JPA annotations that filter out deleted records, hence this reload
-    var updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    val updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
     occurrencesToUpdate.filter { it.isDeleted() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }

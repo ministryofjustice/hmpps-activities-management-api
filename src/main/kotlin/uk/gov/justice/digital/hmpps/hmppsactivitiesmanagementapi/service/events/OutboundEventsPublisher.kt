@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
@@ -10,9 +10,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
-// TODO move to the events package
 @Service
-class EventsPublisher(
+class OutboundEventsPublisher(
   private val hmppsQueueService: HmppsQueueService,
   private val mapper: ObjectMapper,
   features: FeatureSwitches,
@@ -33,7 +32,7 @@ class EventsPublisher(
     hmppsQueueService.findByTopicId(TOPIC_ID) ?: throw RuntimeException("Topic with name $TOPIC_ID doesn't exist")
   }
 
-  internal fun send(event: OutboundHMPPSDomainEvent) {
+  fun send(event: OutboundHMPPSDomainEvent) {
     if (outboundEventsEnabled) {
       domainEventsTopic.snsClient.publish(
         PublishRequest.builder()
