@@ -185,7 +185,7 @@ data class Attendance(
     pieces = this.pieces,
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
-    caseNoteText = caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text,
+    caseNoteText = this.caseNoteId ?.let { caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text },
     attendanceHistory = this.attendanceHistory
       .sortedWith(compareBy { this.recordedTime })
       .reversed()
