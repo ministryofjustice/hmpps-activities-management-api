@@ -21,7 +21,7 @@ class EventListenerTest {
 
   private val featureSwitches: FeatureSwitches = mock()
 
-  private val eventListener = EventListener(objectMapper, inboundEventsService, featureSwitches)
+  private val eventListener = InboundEventsListener(objectMapper, inboundEventsService, featureSwitches)
 
   @Test
   fun `inbound event is passed onto the inbound service`() {

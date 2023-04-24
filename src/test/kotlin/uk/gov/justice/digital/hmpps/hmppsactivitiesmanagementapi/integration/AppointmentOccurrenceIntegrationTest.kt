@@ -18,10 +18,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -37,7 +37,7 @@ import java.time.temporal.ChronoUnit
 )
 class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   @MockBean
-  private lateinit var eventsPublisher: EventsPublisher
+  private lateinit var eventsPublisher: OutboundEventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
@@ -170,7 +170,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     val originalAppointment = appointmentRepository.findOrThrowNotFound(1)
     val updatedAppointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
-    val allocationIds = originalAppointment.occurrences().flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } }
+    val allocationIds = originalAppointment.occurrences()
+      .flatMap { it.allocations().map { allocation -> allocation.appointmentOccurrenceAllocationId } }
 
     assertThat(updatedAppointment.occurrences).isEmpty()
 
@@ -218,7 +219,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       }
       assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.deleted")
-      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been deleted in the activities management service")
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
   }
 
@@ -243,7 +246,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       with(occurrences.subList(2, occurrences.size)) {
         assertThat(map { it.cancellationReasonId }.distinct().single()).isEqualTo(2)
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("test-client")
-        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
       }
     }
 
@@ -260,7 +266,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       }
       assertThat(map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.cancelled")
-      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been cancelled in the activities management service")
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been cancelled in the activities management service")
     }
   }
 
@@ -312,7 +320,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
         assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
-        assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.updated }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
         assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
         assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
         assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(456)
@@ -325,7 +336,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
         assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
-        assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(map { it.updated }.distinct().single()).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
         assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
         assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
         assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
@@ -347,7 +361,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       forEach {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       }
-      assertThat(map { it.description }.distinct().single()).isEqualTo("A new appointment instance has been created in the activities management service")
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("A new appointment instance has been created in the activities management service")
     }
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
@@ -363,7 +379,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       forEach {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       }
-      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been updated in the activities management service")
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been updated in the activities management service")
     }
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
@@ -375,7 +393,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       forEach {
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       }
-      assertThat(map { it.description }.distinct().single()).isEqualTo("An appointment instance has been deleted in the activities management service")
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
   }
 

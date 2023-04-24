@@ -18,10 +18,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -34,7 +34,7 @@ import java.time.temporal.ChronoUnit
 )
 class AppointmentIntegrationTest : IntegrationTestBase() {
   @MockBean
-  private lateinit var eventsPublisher: EventsPublisher
+  private lateinit var eventsPublisher: OutboundEventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
@@ -121,7 +121,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumbers.first(),
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
       ),
     )
 
@@ -155,8 +159,16 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 1, prisonId = request.prisonCode!!),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A12345BC",
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "B23456CE",
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
       ),
     )
 
@@ -168,7 +180,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
-    assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
+    assertThat(
+      eventCaptor.allValues.map { it.eventType }.distinct().single(),
+    ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
       AppointmentInstanceInformation(allocationIds[0]),
       AppointmentInstanceInformation(allocationIds[1]),
@@ -177,7 +191,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create individual repeat appointment success`() {
-    val request = appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
+    val request =
+      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -185,7 +200,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumbers.first(),
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
       ),
     )
 
@@ -200,7 +219,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
-    assertThat(eventCaptor.allValues.map { it.eventType }.distinct().single()).isEqualTo("appointments.appointment-instance.created")
+    assertThat(
+      eventCaptor.allValues.map { it.eventType }.distinct().single(),
+    ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
       AppointmentInstanceInformation(allocationIds[0]),
       AppointmentInstanceInformation(allocationIds[1]),

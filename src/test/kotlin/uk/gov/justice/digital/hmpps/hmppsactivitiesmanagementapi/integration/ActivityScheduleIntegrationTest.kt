@@ -24,11 +24,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OutboundHMPPSDomainEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerAllocatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @MockBean
-  private lateinit var eventsPublisher: EventsPublisher
+  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   @MockBean
   private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
@@ -267,11 +267,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val response = webTestClient.getCandidates(1, 2, 5)
       .expectStatus().isOk
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
-      .returnResult().responseBody
+      .returnResult().responseBody!!
 
-    assertThat(response.get("content") as List<ActivityCandidate>).hasSize(5)
-    assertThat(response.get("totalPages")).isEqualTo(4)
-    assertThat(response.get("totalElements")).isEqualTo(16)
+    assertThat(response["content"] as List<ActivityCandidate>).hasSize(5)
+    assertThat(response["totalPages"]).isEqualTo(4)
+    assertThat(response["totalElements"]).isEqualTo(16)
   }
 
   @Test
@@ -285,11 +285,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val response = webTestClient.getCandidates(1, 20, 5)
       .expectStatus().isOk
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
-      .returnResult().responseBody
+      .returnResult().responseBody!!
 
-    assertThat(response.get("content") as List<ActivityCandidate>).isEmpty()
-    assertThat(response.get("totalPages")).isEqualTo(4)
-    assertThat(response.get("totalElements")).isEqualTo(16)
+    assertThat(response["content"] as List<ActivityCandidate>).isEmpty()
+    assertThat(response["totalPages"]).isEqualTo(4)
+    assertThat(response["totalElements"]).isEqualTo(16)
   }
 
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
