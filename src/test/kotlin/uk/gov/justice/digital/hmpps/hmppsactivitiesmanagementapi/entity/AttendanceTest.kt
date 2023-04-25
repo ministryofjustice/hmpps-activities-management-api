@@ -21,7 +21,7 @@ class AttendanceTest {
       prisonerNumber = "P000111",
       attendanceReason = AttendanceReason(
         1,
-        "Some Reason",
+        AttendanceReasonEnum.ATTENDED,
         "Some Desc",
         false,
         true,

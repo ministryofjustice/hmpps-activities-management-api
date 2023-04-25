@@ -285,7 +285,7 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     attendanceReason = attendance.attendanceReason?.let {
       ModelAttendanceReason(
         id = it.attendanceReasonId,
-        code = it.code,
+        code = it.code.toString(),
         description = it.description,
         attended = it.attended,
         capturePay = it.capturePay,
@@ -319,7 +319,7 @@ fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistor
     attendanceReason = attendanceHistory.attendanceReason?.let {
       ModelAttendanceReason(
         id = it.attendanceReasonId,
-        code = it.code,
+        code = it.code.toString(),
         description = it.description,
         attended = it.attended,
         capturePay = it.capturePay,
