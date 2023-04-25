@@ -9,12 +9,15 @@ import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 
 class InboundEventsServiceTest {
   private val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
   private val repository: RolloutPrisonRepository = mock()
-  private val processor: InboundEventsProcessor = mock()
-  private val service = InboundEventsService(repository, processor)
+  private val receivedEventHandler: OffenderReceivedEventHandler = mock()
+  private val releasedEventHandler: OffenderReleasedEventHandler = mock()
+  private val service = InboundEventsService(repository, releasedEventHandler, receivedEventHandler)
 
   @Test
   fun `inbound event is processed for active prison`() {
@@ -23,7 +26,7 @@ class InboundEventsServiceTest {
     service.process(inboundEvent)
 
     verify(repository).findByCode(moorlandPrisonCode)
-    verify(processor).process(inboundEvent)
+    verify(releasedEventHandler).handle(inboundEvent)
   }
 
   @Test
@@ -33,7 +36,7 @@ class InboundEventsServiceTest {
     service.process(inboundEvent)
 
     verify(repository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(processor)
+    verifyNoInteractions(releasedEventHandler)
   }
 
   @Test
@@ -43,6 +46,6 @@ class InboundEventsServiceTest {
     service.process(inboundEvent)
 
     verify(repository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(processor)
+    verifyNoInteractions(releasedEventHandler)
   }
 }
