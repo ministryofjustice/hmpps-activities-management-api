@@ -4,11 +4,14 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 
 @Service
 class InboundEventsService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val processor: InboundEventsProcessor,
+  private val releasedEventHandler: OffenderReleasedEventHandler,
+  private val receivedEventHandler: OffenderReceivedEventHandler,
 ) {
 
   companion object {
@@ -17,7 +20,12 @@ class InboundEventsService(
 
   fun process(inboundEvent: InboundEvent) {
     if (rolloutPrisonRepository.findByCode(inboundEvent.prisonCode())?.active == true) {
-      processor.process(inboundEvent)
+      when (inboundEvent) {
+        is OffenderReceivedEvent -> receivedEventHandler.handle(inboundEvent)
+        is OffenderReleasedEvent -> releasedEventHandler.handle(inboundEvent)
+        else -> log.warn("Unsupported event ${inboundEvent.javaClass.name}")
+      }
+
       return
     }
 

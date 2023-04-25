@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
@@ -100,7 +101,7 @@ internal fun activityCategory(code: String = "category code") =
     description = "category description",
   )
 
-internal fun attendanceReason(code: String = "reason code") =
+internal fun attendanceReason(code: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) =
   AttendanceReason(
     attendanceReasonId = 1,
     code = code,
@@ -119,15 +120,15 @@ internal fun attendanceReason(code: String = "reason code") =
 internal fun schedule() = activityEntity().schedules().first()
 
 internal fun attendanceReasons() = mapOf(
-  "SICK" to AttendanceReason(1, "SICK", "Sick", false, true, true, false, false, false, true, 1, "Maps to ACCAB in NOMIS"),
-  "REFUSED" to AttendanceReason(2, "REFUSED", "Refused to attend", false, false, false, true, true, false, true, 2, "Maps to UNACAB in NOMIS"),
-  "NOT_REQUIRED" to AttendanceReason(3, "NOT_REQUIRED", "Not required or excused", false, false, false, false, false, false, true, 3, "Maps to ACCAB in NOMIS"),
-  "REST" to AttendanceReason(4, "REST", "Rest day", false, true, false, false, false, false, true, 4, "Maps to ACCAB in NOMIS"),
-  "CLASH" to AttendanceReason(5, "CLASH", "Prisoner's schedule shows another activity", false, false, false, false, false, false, true, 5, "Maps to ACCAB in NOMIS"),
-  "OTHER" to AttendanceReason(6, "OTHER", "Other absence reason not listed", false, true, false, false, false, true, true, 6, "Maps to UNACAB in NOMIS"),
-  "SUSPENDED" to AttendanceReason(7, "SUSPENDED", "Suspended", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
-  "CANCELLED" to AttendanceReason(8, "CANCELLED", "Cancelled", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
-  "ATTENDED" to AttendanceReason(9, "ATTENDED", "Attended", true, false, false, false, false, false, false, null, "Maps to ATT in NOMIS"),
+  "SICK" to AttendanceReason(1, AttendanceReasonEnum.SICK, "Sick", false, true, true, false, false, false, true, 1, "Maps to ACCAB in NOMIS"),
+  "REFUSED" to AttendanceReason(2, AttendanceReasonEnum.REFUSED, "Refused to attend", false, false, false, true, true, false, true, 2, "Maps to UNACAB in NOMIS"),
+  "NOT_REQUIRED" to AttendanceReason(3, AttendanceReasonEnum.NOT_REQUIRED, "Not required or excused", false, false, false, false, false, false, true, 3, "Maps to ACCAB in NOMIS"),
+  "REST" to AttendanceReason(4, AttendanceReasonEnum.REST, "Rest day", false, true, false, false, false, false, true, 4, "Maps to ACCAB in NOMIS"),
+  "CLASH" to AttendanceReason(5, AttendanceReasonEnum.CLASH, "Prisoner's schedule shows another activity", false, false, false, false, false, false, true, 5, "Maps to ACCAB in NOMIS"),
+  "OTHER" to AttendanceReason(6, AttendanceReasonEnum.OTHER, "Other absence reason not listed", false, true, false, false, false, true, true, 6, "Maps to UNACAB in NOMIS"),
+  "SUSPENDED" to AttendanceReason(7, AttendanceReasonEnum.SUSPENDED, "Suspended", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
+  "CANCELLED" to AttendanceReason(8, AttendanceReasonEnum.CANCELLED, "Cancelled", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
+  "ATTENDED" to AttendanceReason(9, AttendanceReasonEnum.ATTENDED, "Attended", true, false, false, false, false, false, false, null, "Maps to ATT in NOMIS"),
 )
 
 internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
@@ -205,7 +206,7 @@ internal fun activitySchedule(
                 attendanceHistoryId = 1,
                 attendanceReason = AttendanceReason(
                   9,
-                  "ATTENDED",
+                  AttendanceReasonEnum.ATTENDED,
                   "Previous Desc",
                   false,
                   true,

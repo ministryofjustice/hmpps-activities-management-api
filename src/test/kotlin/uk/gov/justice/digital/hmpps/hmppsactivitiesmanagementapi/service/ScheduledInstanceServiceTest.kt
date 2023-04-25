@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -22,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -37,9 +36,6 @@ import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
 class ScheduledInstanceServiceTest {
-
-  @Captor
-  private lateinit var updatedFixtureCaptor: ArgumentCaptor<ScheduledInstance>
 
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
@@ -177,7 +173,7 @@ class ScheduledInstanceServiceTest {
 
       whenever(repository.findById(1)).thenReturn(Optional.of(instance))
 
-      whenever(attendanceReasonRepository.findByCode("CANCELLED")).thenReturn(attendanceReasons()["CANCELLED"])
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1234AB"))).thenReturn(
         Mono.just(
@@ -205,7 +201,7 @@ class ScheduledInstanceServiceTest {
       with(instance.attendances.find { it.prisonerNumber == "A1234AA" }!!) {
         assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(payAmount).isEqualTo(30)
-        assertThat(attendanceReason?.code).isEqualTo("CANCELLED")
+        assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
         assertThat(recordedTime).isNotNull
@@ -214,7 +210,7 @@ class ScheduledInstanceServiceTest {
       with(instance.attendances.find { it.prisonerNumber == "A1234AB" }!!) {
         assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(payAmount).isEqualTo(50)
-        assertThat(attendanceReason?.code).isEqualTo("CANCELLED")
+        assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
         assertThat(recordedTime).isNotNull
