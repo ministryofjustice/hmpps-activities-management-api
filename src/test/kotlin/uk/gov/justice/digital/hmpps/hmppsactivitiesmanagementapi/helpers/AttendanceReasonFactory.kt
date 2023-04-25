@@ -1,12 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 
 internal fun attendanceReasonEntities() =
   listOf(
     AttendanceReason(
       attendanceReasonId = 1,
-      code = "reason code",
+      code = AttendanceReasonEnum.ATTENDED,
       description = "reason description",
       attended = false,
       capturePay = true,

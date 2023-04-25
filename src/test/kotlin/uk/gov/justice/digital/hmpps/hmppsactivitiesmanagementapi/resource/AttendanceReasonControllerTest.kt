@@ -27,7 +27,7 @@ class AttendanceReasonControllerTest : ControllerTestBase<AttendanceReasonContro
     val expectedModel = listOf(
       AttendanceReason(
         id = 1,
-        code = "reason code",
+        code = "ATTENDED",
         description = "reason description",
         attended = false,
         capturePay = true,

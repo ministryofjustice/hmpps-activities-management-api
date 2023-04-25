@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
@@ -37,7 +39,7 @@ class AttendancesService(
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }
-    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
+    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.toString() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
       it.mark(
@@ -65,23 +67,23 @@ class AttendancesService(
     scheduledInstanceRepository.findAllBySessionDate(date)
       .andAttendanceRequired()
       .forEach { instance ->
-        instance.forEachActiveAllocation { allocation ->
-          createAttendanceRecordIfNoPreExistingRecord(
-            instance,
-            allocation,
-          )
+        instance.forEachInFlightAllocation { allocation ->
+          createAttendanceRecordIfNoPreExistingRecord(instance, allocation)
         }
       }
   }
 
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
-  private fun ScheduledInstance.forEachActiveAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filter { it.status(PrisonerStatus.ACTIVE) }.forEach { f(it) }
+  private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
   }
 
   // TODO not applying pay rates.
-  private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
+  private fun createAttendanceRecordIfNoPreExistingRecord(
+    instance: ScheduledInstance,
+    allocation: Allocation,
+  ) {
     if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
         instance,
         allocation.prisonerNumber,
@@ -91,7 +93,25 @@ class AttendancesService(
       return
     }
 
-    attendanceRepository.save(
+    if (allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED)) {
+      val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
+
+      attendanceRepository.saveAndFlush(
+        Attendance(
+          scheduledInstance = instance,
+          prisonerNumber = allocation.prisonerNumber,
+          attendanceReason = suspendedReason,
+          issuePayment = false,
+          status = AttendanceStatus.COMPLETED,
+          recordedTime = LocalDateTime.now(),
+          recordedBy = "SYSTEM",
+        ),
+      )
+
+      return
+    }
+
+    attendanceRepository.saveAndFlush(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
