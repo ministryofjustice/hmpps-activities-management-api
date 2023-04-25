@@ -12,7 +12,7 @@
   "pay": [
     {
       "incentiveNomisCode": "1234",
-      "incentiveLevel": "123456789010",
+      "incentiveLevel": "A really long incentive level. 123456789012345678901234567890",
       "rate": 1,
       "pieceRate": 150,
       "pieceRateItems": 10
