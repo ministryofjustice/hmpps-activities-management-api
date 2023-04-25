@@ -14,7 +14,7 @@ class CaseNotesApiMockServer : WireMockServer(8444) {
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBodyFile("casenotesapi/case-note-1.json")
+            .withBodyFile("casenotesapi/case-note-$caseNoteId.json")
             .withStatus(200),
         ),
     )

@@ -44,6 +44,7 @@ class AttendancesService(
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
       var caseNoteDetails: CaseNote? = null
+      if (!attendanceUpdatesById.containsKey(it.attendanceId)) { throw IllegalArgumentException("Attendance record not found") }
       if (!attendanceUpdatesById[it.attendanceId]!!.caseNote.isNullOrEmpty()) {
         caseNoteDetails = caseNotesApiClient.postCaseNote(attendanceUpdatesById[it.attendanceId]!!.prisonCode, it.prisonerNumber, attendanceUpdatesById[it.attendanceId]!!.caseNote!!, attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued!!)
       }
