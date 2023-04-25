@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCas
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import java.lang.IllegalArgumentException
 import java.security.Principal
 import java.time.LocalDateTime
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
+  private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
@@ -48,6 +50,7 @@ class AppointmentServiceTest {
 
   private val service = AppointmentService(
     appointmentRepository,
+    bulkAppointmentRepository,
     referenceCodeService,
     locationService,
     prisonApiUserClient,
