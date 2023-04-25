@@ -76,7 +76,7 @@ class AttendancesService(
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
   private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filter { !it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
   }
 
   // TODO not applying pay rates.
@@ -93,13 +93,10 @@ class AttendancesService(
       return
     }
 
-    if (
-      allocation.status(PrisonerStatus.AUTO_SUSPENDED) ||
-      allocation.status(PrisonerStatus.SUSPENDED)
-    ) {
+    if (allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED)) {
       val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
-      attendanceRepository.save(
+      attendanceRepository.saveAndFlush(
         Attendance(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
@@ -114,7 +111,7 @@ class AttendancesService(
       return
     }
 
-    attendanceRepository.save(
+    attendanceRepository.saveAndFlush(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,

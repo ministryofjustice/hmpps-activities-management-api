@@ -57,7 +57,7 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository).save(
+    verify(attendanceRepository).saveAndFlush(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
@@ -88,7 +88,7 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository).save(attendanceCaptor.capture())
+    verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
     with(attendanceCaptor.firstValue) {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
@@ -108,7 +108,7 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository).save(attendanceCaptor.capture())
+    verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
     with(attendanceCaptor.firstValue) {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
@@ -126,7 +126,7 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository, never()).save(any())
+    verify(attendanceRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -141,7 +141,7 @@ class AttendancesServiceTest {
 
     service.createAttendanceRecordsFor(today)
 
-    verify(attendanceRepository, never()).save(any())
+    verify(attendanceRepository, never()).saveAndFlush(any())
   }
 
   @Test
