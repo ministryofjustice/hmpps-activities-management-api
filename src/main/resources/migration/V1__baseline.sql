@@ -345,7 +345,7 @@ FROM scheduled_instance si
          LEFT JOIN activity_schedule_suspension suspensions
                    ON suspensions.activity_schedule_id = schedule.activity_schedule_id
                        AND si.session_date >= suspensions.suspended_from
-                       AND (suspensions.suspended_until is null OR suspensions.suspended_until <= si.session_date);
+                       AND (suspensions.suspended_until is null OR suspensions.suspended_until >= si.session_date);
 
 CREATE TABLE prison_regime (
     prison_regime_id bigserial NOT NULL CONSTRAINT prison_regime_pk PRIMARY KEY,
