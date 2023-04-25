@@ -2,27 +2,32 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
-class OffenderReleasedEventHandler(private val repository: AllocationRepository) : EventHandler<OffenderReleasedEvent> {
+class OffenderReleasedEventHandler(
+  private val prisonApiClient: PrisonApiApplicationClient,
+  private val repository: AllocationRepository,
+) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  // TODO Needs to use the prison-api-client to check the state in NOMIS.
-  // TODO any issues then flag as event of interest.
   override fun handle(event: OffenderReleasedEvent) {
     when {
+      // TODO temporary release probably needs further validation checks e.g. check state of prisoner against prison-api
       event.isTemporary() -> suspendOffenderAllocations(event)
       event.isPermanent() -> deallocateOffenderAllocations(event)
-      // TODO pick up with the event of interest work.
-      else -> log.info("Ignoring event of potential interest $event.")
+      else -> flagEventOfInterest(event)
     }
   }
 
@@ -33,9 +38,32 @@ class OffenderReleasedEventHandler(private val repository: AllocationRepository)
   }
 
   private fun deallocateOffenderAllocations(event: OffenderReleasedEvent) {
-    repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .deallocateAndSaveAffectedAllocations()
-      .also { log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.") }
+    prisonApiClient.getPrisonerDetails(event.prisonerNumber()).block()?.let { prisoner ->
+      when {
+        prisoner.isReleasedOnDeath() -> "Dead"
+        prisoner.isReleasedFromRemand() -> "Released"
+        prisoner.isReleasedFromCustodialSentence() -> "Released"
+        else -> null
+      }
+    }?.let { reason ->
+      repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+        .deallocateAndSaveAffectedAllocations(reason)
+        .also { log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.") }
+    } ?: flagEventOfInterest(event)
+  }
+
+  private fun InmateDetail.isReleasedOnDeath(): Boolean = this.legalStatus == InmateDetail.LegalStatus.DEAD
+
+  private fun InmateDetail.isReleasedFromRemand(): Boolean = isInactiveOut() && sentenceDetail?.releaseDate == null
+
+  private fun InmateDetail.isReleasedFromCustodialSentence(): Boolean =
+    isInactiveOut() && sentenceDetail?.releaseDate?.onOrBefore(LocalDate.now()) == true
+
+  private fun InmateDetail.isInactiveOut(): Boolean = activeFlag.not() && inOutStatus == InmateDetail.InOutStatus.OUT
+
+  // TODO flag as event of interest.
+  private fun flagEventOfInterest(event: OffenderReleasedEvent) {
+    log.info("Unable to determine release reason, flag $event as event of interest")
   }
 
   private fun List<Allocation>.suspendAndSaveAffectedAllocations() =
@@ -43,9 +71,9 @@ class OffenderReleasedEventHandler(private val repository: AllocationRepository)
       this.filter { it.status(PrisonerStatus.ACTIVE) }.map { it.autoSuspend(now, "Temporarily released from prison") }
     }.saveAffectedAllocations()
 
-  private fun List<Allocation>.deallocateAndSaveAffectedAllocations() =
+  private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: String = "Released from prison") =
     LocalDateTime.now().let { now ->
-      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocate(now, "Released from prison") }
+      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocate(now, reason) }
     }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =

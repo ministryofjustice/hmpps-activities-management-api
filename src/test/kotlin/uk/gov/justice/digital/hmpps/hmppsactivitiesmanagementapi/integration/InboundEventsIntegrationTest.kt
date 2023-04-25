@@ -108,7 +108,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  fun `permanent release of prisoner`() {
+  fun `permanent release of prisoner from remand`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-remand")
+
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
@@ -117,6 +119,51 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Released")
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `permanent release of prisoner from custodial sentence`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-custodial-sentence")
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Released")
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `permanent release of prisoner due to death in prison`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-on-death-in-prison")
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Dead")
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)

@@ -4,10 +4,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.SentenceCalcDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
@@ -25,7 +31,12 @@ import java.time.temporal.ChronoUnit
 class OffenderReleasedEventHandlerTest {
 
   private val repository: AllocationRepository = mock()
-  private val handler = OffenderReleasedEventHandler(repository)
+  private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val handler = OffenderReleasedEventHandler(prisonApiClient, repository)
+  private val prisoner: InmateDetail = mock {
+    on { activeFlag } doReturn false
+    on { inOutStatus } doReturn InmateDetail.InOutStatus.OUT
+  }
 
   @Test
   fun `active allocations are auto-suspended on temporary release of prisoner`() {
@@ -40,7 +51,7 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.suspendedTime).isNull()
     }
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
       previouslyActiveAllocations,
     )
 
@@ -65,7 +76,7 @@ class OffenderReleasedEventHandlerTest {
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
 
     handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -75,7 +86,7 @@ class OffenderReleasedEventHandlerTest {
   }
 
   @Test
-  fun `un-ended allocations are ended on release of prisoner`() {
+  fun `un-ended allocations are ended on release from death of prisoner`() {
     val previouslyActiveAllocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456"),
@@ -87,7 +98,9 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime).isNull()
     }
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
+    whenever(prisoner.legalStatus).doReturn(InmateDetail.LegalStatus.DEAD)
+    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
       previouslyActiveAllocations,
     )
 
@@ -96,7 +109,82 @@ class OffenderReleasedEventHandlerTest {
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
-      assertThat(it.deallocatedReason).isEqualTo("Released from prison")
+      assertThat(it.deallocatedReason).isEqualTo("Dead")
+      assertThat(it.deallocatedTime)
+        .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    }
+
+    verify(repository).saveAllAndFlush(any<List<Allocation>>())
+  }
+
+  @Test
+  fun `un-ended allocations are ended on release from remand`() {
+    val previouslyActiveAllocations = listOf(
+      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
+    ).onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
+      assertThat(it.deallocatedBy).isNull()
+      assertThat(it.deallocatedReason).isNull()
+      assertThat(it.deallocatedTime).isNull()
+    }
+
+    val sentenceCalcDatesNoReleaseDateForRemand: SentenceCalcDates = mock { on { releaseDate } doReturn null }
+
+    prisoner.stub {
+      on { sentenceDetail } doReturn sentenceCalcDatesNoReleaseDateForRemand
+    }
+
+    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
+      previouslyActiveAllocations,
+    )
+
+    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    previouslyActiveAllocations.forEach {
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
+      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedReason).isEqualTo("Released")
+      assertThat(it.deallocatedTime)
+        .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    }
+
+    verify(repository).saveAllAndFlush(any<List<Allocation>>())
+  }
+
+  @Test
+  fun `un-ended allocations are ended on release from custodial`() {
+    val previouslyActiveAllocations = listOf(
+      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
+    ).onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
+      assertThat(it.deallocatedBy).isNull()
+      assertThat(it.deallocatedReason).isNull()
+      assertThat(it.deallocatedTime).isNull()
+    }
+
+    val sentenceCalcDatesReleaseDateTodayForCustodialSentence: SentenceCalcDates =
+      mock { on { releaseDate } doReturn LocalDate.now() }
+
+    prisoner.stub {
+      on { sentenceDetail } doReturn sentenceCalcDatesReleaseDateTodayForCustodialSentence
+    }
+
+    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
+      previouslyActiveAllocations,
+    )
+
+    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    previouslyActiveAllocations.forEach {
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
+      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedReason).isEqualTo("Released")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -116,7 +204,8 @@ class OffenderReleasedEventHandlerTest {
 
     val allocations = listOf(previouslyEndedAllocation, previouslySuspendedAllocation, previouslyActiveAllocation)
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(allocations)
+    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -134,7 +223,7 @@ class OffenderReleasedEventHandlerTest {
     val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
       .also { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue() }
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(listOf(allocation))
+    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(listOf(allocation))
 
     handler.handle(
       OffenderReleasedEvent(
