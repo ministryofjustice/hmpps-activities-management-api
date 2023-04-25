@@ -12,7 +12,7 @@ import java.time.LocalDate
 data class DailyStatistics(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val dailyStatisticsId: Long = -1,
+  val dailyStatisticsId: Long = 0,
 
   val statisticsDate: LocalDate,
 

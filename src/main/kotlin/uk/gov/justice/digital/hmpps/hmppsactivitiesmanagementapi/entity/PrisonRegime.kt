@@ -12,7 +12,7 @@ import java.time.LocalTime
 data class PrisonRegime(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonRegimeId: Long = -1,
+  val prisonRegimeId: Long = 0,
 
   val prisonCode: String,
 

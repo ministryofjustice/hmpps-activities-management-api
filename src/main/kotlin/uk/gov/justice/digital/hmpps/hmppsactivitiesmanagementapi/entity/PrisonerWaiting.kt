@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 data class PrisonerWaiting(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonerWaitingId: Long = -1,
+  val prisonerWaitingId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

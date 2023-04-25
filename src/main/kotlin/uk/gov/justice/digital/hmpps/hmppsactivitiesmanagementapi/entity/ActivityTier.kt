@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 data class ActivityTier(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityTierId: Long = -1,
+  val activityTierId: Long = 0,
 
   @Column(nullable = false)
   val code: String,

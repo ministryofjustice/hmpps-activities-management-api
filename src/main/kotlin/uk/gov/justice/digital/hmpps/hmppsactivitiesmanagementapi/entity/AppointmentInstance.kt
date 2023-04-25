@@ -3,12 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance as AppointmentInstanceModel
 
 @Entity
+@Immutable
 @Table(name = "v_appointment_instance")
 data class AppointmentInstance(
   @Id

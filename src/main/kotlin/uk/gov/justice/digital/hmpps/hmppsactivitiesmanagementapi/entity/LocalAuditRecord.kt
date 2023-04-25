@@ -18,7 +18,7 @@ data class LocalAuditRecord(
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val localAuditId: Long = -1,
+  val localAuditId: Long = 0,
 
   val username: String,
 
