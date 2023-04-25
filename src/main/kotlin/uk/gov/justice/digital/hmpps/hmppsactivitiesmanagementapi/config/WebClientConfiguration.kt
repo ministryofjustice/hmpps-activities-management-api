@@ -30,6 +30,7 @@ class WebClientConfiguration(
   @Value("\${prison.api.url}") private val prisonApiUrl: String,
   @Value("\${prisoner-search.api.url}") private val prisonerSearchApiUrl: String,
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
+  @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   private val webClientBuilder: WebClient.Builder,
 ) {
 
@@ -157,6 +158,13 @@ class WebClientConfiguration(
   @Bean
   fun bankHolidayApiWebClient(): WebClient {
     return webClientBuilder.baseUrl(bankHolidayApiUrl).build()
+  }
+
+  @Bean
+  fun caseNotesApiWebClient(): WebClient {
+    return webClientBuilder.baseUrl(caseNotesApiUrl)
+      .filter(addAuthHeaderFilterFunction())
+      .build()
   }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context

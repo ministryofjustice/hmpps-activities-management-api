@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -24,6 +26,7 @@ class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
 
   companion object {
@@ -42,6 +45,11 @@ class AttendancesService(
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.toString() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
+      var caseNoteDetails: CaseNote? = null
+      if (!attendanceUpdatesById.containsKey(it.attendanceId)) { throw IllegalArgumentException("Attendance record not found") }
+      if (!attendanceUpdatesById[it.attendanceId]!!.caseNote.isNullOrEmpty()) {
+        caseNoteDetails = caseNotesApiClient.postCaseNote(attendanceUpdatesById[it.attendanceId]!!.prisonCode, it.prisonerNumber, attendanceUpdatesById[it.attendanceId]!!.caseNote!!, attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued!!)
+      }
       it.mark(
         principalName,
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason?.uppercase()?.trim()],
@@ -50,6 +58,7 @@ class AttendancesService(
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
         attendanceUpdatesById[it.attendanceId]!!.payAmount,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
+        caseNoteDetails?.caseNoteId,
       )
     }
 
@@ -120,5 +129,5 @@ class AttendancesService(
   }
 
   fun getAttendanceById(id: Long): ModelAttendance =
-    attendanceRepository.findOrThrowNotFound(id).toModel()
+    attendanceRepository.findOrThrowNotFound(id).toModel(caseNotesApiClient)
 }

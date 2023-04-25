@@ -306,6 +306,7 @@ fun completedAttendance() = Attendance(
   recordedBy = "Joe Bloggs",
   recordedTime = LocalDate.now().atStartOfDay(),
   comment = "previous comment",
+  caseNoteId = 1,
 )
 
 internal fun attendance() = schedule().instances().first().attendances.first()

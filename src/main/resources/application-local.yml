@@ -43,6 +43,11 @@ prisoner-search:
     url: https://prisoner-offender-search-dev.prison.service.justice.gov.uk
     timeout: 10s
 
+case-notes:
+  api:
+    url: https://dev.offender-case-notes.service.justice.gov.uk
+    timeout: 10s
+
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS:0}

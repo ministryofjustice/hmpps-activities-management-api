@@ -13,11 +13,15 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import java.security.Principal
+import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [AttendanceController::class])
 @ContextConfiguration(classes = [AttendanceController::class])
@@ -28,6 +32,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   override fun controller() = AttendanceController(attendancesService)
 
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
+
   @Test
   fun `204 response when mark attendance records`() {
     val mockPrincipal: Principal = mock()
@@ -37,8 +43,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
         listOf(
-          AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-          AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
+          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
         ),
       )
     }
@@ -47,15 +53,17 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).mark(
       "",
       listOf(
-        AttendanceUpdateRequest(1, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-        AttendanceUpdateRequest(2, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+        AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
+        AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
       ),
     )
   }
 
   @Test
   fun `200 response when get attendance by ID found`() {
-    val attendance = attendance().toModel()
+    whenever(caseNotesApiClient.getCaseNote("A1234AA", 1)).thenReturn(caseNote)
+
+    val attendance = attendance().toModel(caseNotesApiClient)
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 
@@ -85,4 +93,23 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   private fun MockMvc.getAttendanceById(attendanceId: String) =
     get("/attendances/$attendanceId")
+
+  companion object {
+    val caseNote = CaseNote(
+      caseNoteId = "1",
+      offenderIdentifier = "A1234AA",
+      type = "NEG",
+      typeDescription = "Negative",
+      subType = "sub type",
+      subTypeDescription = "sub type description",
+      source = "source",
+      creationDateTime = LocalDateTime.now(),
+      occurrenceDateTime = LocalDateTime.now(),
+      authorName = "author",
+      authorUserId = "author id",
+      text = "Case Note Text",
+      eventId = 1,
+      sensitive = false,
+    )
+  }
 }
