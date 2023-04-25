@@ -61,7 +61,7 @@ class TransformFunctionsTest {
       assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
-          -1,
+          0,
           ModelEligibilityRule(1, code = "OVER_21", description = "The prisoner must be over 21 to attend"),
         ),
       )
@@ -169,7 +169,7 @@ class TransformFunctionsTest {
       )
       assertThat(pay).containsExactly(
         ModelActivityPay(
-          id = -1,
+          id = 0,
           incentiveNomisCode = "BAS",
           incentiveLevel = "Basic",
           prisonPayBand = lowPayBand.toModelPrisonPayBand(),
@@ -184,7 +184,7 @@ class TransformFunctionsTest {
       assertThat(createdBy).isEqualTo("test")
       assertThat(minimumEducationLevel).containsExactly(
         ModelActivityMinimumEducationLevel(
-          id = -1,
+          id = 0,
           educationLevelCode = "1",
           educationLevelDescription = "Reading Measure 1.0",
         ),

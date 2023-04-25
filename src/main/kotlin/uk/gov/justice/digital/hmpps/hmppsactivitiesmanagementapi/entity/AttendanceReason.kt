@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 data class AttendanceReason(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceReasonId: Long = -1,
+  val attendanceReasonId: Long = 0,
 
   @Enumerated(EnumType.STRING)
   val code: AttendanceReasonEnum,

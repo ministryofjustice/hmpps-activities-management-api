@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -50,7 +50,7 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
       assertThat(it.suspendedBy).isEqualTo("SYSTEM")
       assertThat(it.suspendedReason).isEqualTo("Temporarily released from prison")
-      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
     verify(repository).saveAllAndFlush(any<List<Allocation>>())
@@ -98,7 +98,7 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
       assertThat(it.deallocatedReason).isEqualTo("Released from prison")
       assertThat(it.deallocatedTime)
-        .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
     verify(repository).saveAllAndFlush(any<List<Allocation>>())

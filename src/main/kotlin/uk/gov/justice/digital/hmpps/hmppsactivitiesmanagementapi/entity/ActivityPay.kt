@@ -15,7 +15,7 @@ import org.hibernate.Hibernate
 data class ActivityPay(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityPayId: Long = -1,
+  val activityPayId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

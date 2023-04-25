@@ -11,7 +11,7 @@ import jakarta.persistence.Table
 data class EligibilityRule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  var eligibilityRuleId: Long = -1,
+  var eligibilityRuleId: Long = 0,
 
   val code: String,
 

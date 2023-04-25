@@ -14,7 +14,7 @@ import java.time.LocalDate
 data class RolloutPrison(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val rolloutPrisonId: Long = -1,
+  val rolloutPrisonId: Long = 0,
 
   val code: String,
 

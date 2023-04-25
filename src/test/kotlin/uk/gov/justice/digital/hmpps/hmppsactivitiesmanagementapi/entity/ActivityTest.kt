@@ -96,7 +96,7 @@ class ActivityTest {
         minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ModelActivityMinimumEducationLevel(
-            id = -1,
+            id = 0,
             educationLevelCode = "1",
             educationLevelDescription = "Reading Measure 1.0",
           ),

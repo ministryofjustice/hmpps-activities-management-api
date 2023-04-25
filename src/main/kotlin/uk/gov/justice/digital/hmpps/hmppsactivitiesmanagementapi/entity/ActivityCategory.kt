@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 data class ActivityCategory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityCategoryId: Long = -1,
+  val activityCategoryId: Long = 0,
 
   val code: String,
 

@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 data class AttendanceHistory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val attendanceHistoryId: Long = -1,
+  val attendanceHistoryId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "attendance_id", nullable = false)
