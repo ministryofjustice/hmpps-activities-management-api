@@ -34,7 +34,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import java.lang.IllegalArgumentException
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
@@ -329,6 +331,19 @@ class AppointmentServiceTest {
 
     with(bulkAppointmentEntityCaptor.value) {
       assertThat(appointments).hasSize(2)
+      assertThat(appointments[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(appointments[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
+
+      appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo("TEST")
+        assertThat(it.prisonCode).isEqualTo("TPR")
+        assertThat(it.internalLocationId).isEqualTo(123)
+        assertThat(it.inCell).isFalse()
+        assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
+        assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
+        assertThat(it.appointmentDescription).isEqualTo("Appointment description")
+      }
     }
   }
 }
