@@ -29,7 +29,7 @@ import java.time.temporal.ChronoUnit
 data class ActivitySchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleId: Long = -1,
+  val activityScheduleId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)

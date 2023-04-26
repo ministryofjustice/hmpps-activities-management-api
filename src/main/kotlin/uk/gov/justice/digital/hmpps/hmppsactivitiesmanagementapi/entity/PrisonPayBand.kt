@@ -14,7 +14,7 @@ data class PrisonPayBand(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(nullable = false)
-  val prisonPayBandId: Long = -1,
+  val prisonPayBandId: Long = 0,
 
   @Column(length = 10, nullable = false)
   val prisonCode: String,

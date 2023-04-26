@@ -3,8 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -15,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
@@ -22,6 +26,7 @@ class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
 
   companion object {
@@ -37,9 +42,14 @@ class AttendancesService(
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }
-    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.uppercase().trim() }
+    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code.toString() }
 
     val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull {
+      var caseNoteDetails: CaseNote? = null
+      if (!attendanceUpdatesById.containsKey(it.attendanceId)) { throw IllegalArgumentException("Attendance record not found") }
+      if (!attendanceUpdatesById[it.attendanceId]!!.caseNote.isNullOrEmpty()) {
+        caseNoteDetails = caseNotesApiClient.postCaseNote(attendanceUpdatesById[it.attendanceId]!!.prisonCode, it.prisonerNumber, attendanceUpdatesById[it.attendanceId]!!.caseNote!!, attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued!!)
+      }
       it.mark(
         principalName,
         attendanceReasonsByCode[attendanceUpdatesById[it.attendanceId]!!.attendanceReason?.uppercase()?.trim()],
@@ -48,6 +58,7 @@ class AttendancesService(
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
         attendanceUpdatesById[it.attendanceId]!!.payAmount,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
+        caseNoteDetails?.caseNoteId,
       )
     }
 
@@ -65,23 +76,23 @@ class AttendancesService(
     scheduledInstanceRepository.findAllBySessionDate(date)
       .andAttendanceRequired()
       .forEach { instance ->
-        instance.forEachActiveAllocation { allocation ->
-          createAttendanceRecordIfNoPreExistingRecord(
-            instance,
-            allocation,
-          )
+        instance.forEachInFlightAllocation { allocation ->
+          createAttendanceRecordIfNoPreExistingRecord(instance, allocation)
         }
       }
   }
 
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
-  private fun ScheduledInstance.forEachActiveAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filter { it.status(PrisonerStatus.ACTIVE) }.forEach { f(it) }
+  private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
   }
 
   // TODO not applying pay rates.
-  private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
+  private fun createAttendanceRecordIfNoPreExistingRecord(
+    instance: ScheduledInstance,
+    allocation: Allocation,
+  ) {
     if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
         instance,
         allocation.prisonerNumber,
@@ -91,7 +102,25 @@ class AttendancesService(
       return
     }
 
-    attendanceRepository.save(
+    if (allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED)) {
+      val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
+
+      attendanceRepository.saveAndFlush(
+        Attendance(
+          scheduledInstance = instance,
+          prisonerNumber = allocation.prisonerNumber,
+          attendanceReason = suspendedReason,
+          issuePayment = false,
+          status = AttendanceStatus.COMPLETED,
+          recordedTime = LocalDateTime.now(),
+          recordedBy = "SYSTEM",
+        ),
+      )
+
+      return
+    }
+
+    attendanceRepository.saveAndFlush(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
@@ -100,5 +129,5 @@ class AttendancesService(
   }
 
   fun getAttendanceById(id: Long): ModelAttendance =
-    attendanceRepository.findOrThrowNotFound(id).toModel()
+    attendanceRepository.findOrThrowNotFound(id).toModel(caseNotesApiClient)
 }

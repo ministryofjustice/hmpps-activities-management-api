@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 data class EventReview(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val eventReviewId: Long = -1,
+  val eventReviewId: Long = 0,
 
   val serviceIdentifier: String?,
 

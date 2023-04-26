@@ -15,7 +15,7 @@ import java.time.LocalDate
 data class ActivityScheduleSuspension(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityScheduleSuspensionId: Long = -1,
+  val activityScheduleSuspensionId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)

@@ -50,7 +50,7 @@ class ActivityScheduleTest {
         minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ActivityMinimumEducationLevel(
-            id = -1,
+            id = 0,
             educationLevelCode = "1",
             educationLevelDescription = "Reading Measure 1.0",
           ),
@@ -111,7 +111,7 @@ class ActivityScheduleTest {
           minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
-              id = -1,
+              id = 0,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
             ),

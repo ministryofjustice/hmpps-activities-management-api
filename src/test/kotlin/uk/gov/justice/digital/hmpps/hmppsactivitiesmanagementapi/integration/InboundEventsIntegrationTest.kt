@@ -11,7 +11,7 @@ import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsProcessor
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -32,7 +32,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   private lateinit var repository: AllocationRepository
 
   @Autowired
-  private lateinit var processor: InboundEventsProcessor
+  private lateinit var service: InboundEventsService
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
@@ -43,7 +43,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    processor.process(offenderTemporaryReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(offenderTemporaryReleasedEvent(prisonerNumber = "A11111A"))
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED))
@@ -62,7 +62,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    processor.process(
+    service.process(
       OffenderReleasedEvent(
         ReleaseInformation(
           nomsNumber = "A11111A",
@@ -88,13 +88,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    processor.process(offenderTemporaryReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(offenderTemporaryReleasedEvent(prisonerNumber = "A11111A"))
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED))
     }
 
-    processor.process(offenderReceivedFromTemporaryAbsence(prisonerNumber = "A11111A"))
+    service.process(offenderReceivedFromTemporaryAbsence(prisonerNumber = "A11111A"))
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -108,15 +108,62 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  fun `permanent release of prisoner`() {
+  fun `permanent release of prisoner from remand`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-remand")
+
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    processor.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Released")
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `permanent release of prisoner from custodial sentence`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-custodial-sentence")
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Released")
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `permanent release of prisoner due to death in prison`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-on-death-in-prison")
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.deallocatedReason).isEqualTo("Dead")
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)

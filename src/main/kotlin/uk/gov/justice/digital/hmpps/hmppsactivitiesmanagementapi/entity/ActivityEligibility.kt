@@ -14,7 +14,7 @@ import jakarta.persistence.Table
 data class ActivityEligibility(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityEligibilityId: Long = -1,
+  val activityEligibilityId: Long = 0,
 
   @OneToOne
   @JoinColumn(name = "eligibility_rule_id", nullable = false)

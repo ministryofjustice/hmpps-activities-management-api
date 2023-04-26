@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityId: Long = -1,
+  val activityId: Long = 0,
 
   val prisonCode: String,
 

@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 data class PrisonerHistory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val prisonerHistoryId: Long = -1,
+  val prisonerHistoryId: Long = 0,
 
   val historyType: String,
 

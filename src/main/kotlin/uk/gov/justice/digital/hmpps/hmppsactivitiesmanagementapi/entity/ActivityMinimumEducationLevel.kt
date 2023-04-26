@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityM
 data class ActivityMinimumEducationLevel(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityMinimumEducationLevelId: Long = -1,
+  val activityMinimumEducationLevelId: Long = 0,
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
