@@ -20,11 +20,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
@@ -47,6 +49,9 @@ class AppointmentServiceTest {
 
   @Captor
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
+
+  @Captor
+  private lateinit var bulkAppointmentEntityCaptor: ArgumentCaptor<BulkAppointment>
 
   private val service = AppointmentService(
     appointmentRepository,
@@ -285,6 +290,45 @@ class AppointmentServiceTest {
     with(appointmentEntityCaptor.value.occurrences()) {
       assertThat(size).isEqualTo(3)
       assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
+    }
+  }
+
+  @Test
+  fun `create bulk appointment success`() {
+    val request = bulkAppointmentRequest()
+    val principal: Principal = mock()
+
+    whenever(principal.name).thenReturn("TEST.USER")
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.appointments[0].prisonerNumber)))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber, bookingId = 1, prisonId = request.prisonCode!!),
+          ),
+        ),
+      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.appointments[1].prisonerNumber)))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber, bookingId = 2, prisonId = request.prisonCode!!),
+          ),
+        ),
+      )
+    whenever(bulkAppointmentRepository.saveAndFlush(bulkAppointmentEntityCaptor.capture())).thenReturn(
+      BulkAppointment(bulkAppointmentId = 1, appointments = listOf(appointmentEntity(appointmentId = 1), appointmentEntity(appointmentId = 2))),
+    )
+
+    service.bulkCreateAppointments(request, principal)
+
+    with(bulkAppointmentEntityCaptor.value) {
+      assertThat(appointments).hasSize(2)
     }
   }
 }

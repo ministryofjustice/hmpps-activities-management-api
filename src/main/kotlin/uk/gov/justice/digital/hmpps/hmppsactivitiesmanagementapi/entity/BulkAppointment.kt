@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -18,7 +19,7 @@ data class BulkAppointment(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val bulkAppointmentId: Long = 0,
 
-  @OneToMany
+  @OneToMany(cascade = [CascadeType.ALL])
   @JoinTable(
     name = "bulk_appointment_appointment",
     joinColumns = [JoinColumn(name = "bulkAppointmentId")],

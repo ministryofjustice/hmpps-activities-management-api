@@ -20,7 +20,6 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Service
 class AppointmentService(
@@ -34,8 +33,8 @@ class AppointmentService(
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
-  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) {
-    return BulkAppointment(
+  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
+    BulkAppointment(
       appointments = request.appointments.map {
         buildValidAppointmentEntity(
           prisonCode = request.prisonCode,
@@ -52,10 +51,9 @@ class AppointmentService(
         )
       }.toList(),
     ).let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
-  }
 
-  fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
-    return buildValidAppointmentEntity(
+  fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
+    buildValidAppointmentEntity(
       inCell = request.inCell,
       prisonCode = request.prisonCode,
       categoryCode = request.categoryCode,
@@ -70,7 +68,6 @@ class AppointmentService(
       principal = principal,
       repeat = request.repeat,
     ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
-  }
 
   private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
     prisonApiUserClient.getUserCaseLoads().block()
