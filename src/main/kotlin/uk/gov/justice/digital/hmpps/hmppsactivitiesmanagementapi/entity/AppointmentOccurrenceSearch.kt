@@ -51,6 +51,8 @@ data class AppointmentOccurrenceSearch(
   val comment: String?,
 
   val isEdited: Boolean,
+
+  val isCancelled: Boolean,
 ) {
   fun toResult(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>) = AppointmentOccurrenceSearchResult(
     appointmentId,
@@ -73,6 +75,7 @@ data class AppointmentOccurrenceSearch(
     endTime,
     isRepeat,
     isEdited,
+    isCancelled,
   )
 }
 

@@ -136,4 +136,10 @@ data class AppointmentOccurrenceSearchResult(
     example = "false",
   )
   val isEdited: Boolean,
+
+  @Schema(
+    description = "Indicates whether this appointment occurrence has been cancelled",
+    example = "false",
+  )
+  val isCancelled: Boolean,
 )

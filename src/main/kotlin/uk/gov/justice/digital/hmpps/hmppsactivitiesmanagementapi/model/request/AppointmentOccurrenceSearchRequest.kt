@@ -21,7 +21,7 @@ data class AppointmentOccurrenceSearchRequest(
     """,
     example = "INDIVIDUAL",
   )
-  val appointmentType: AppointmentType,
+  val appointmentType: AppointmentType? = null,
 
   @Schema(
     description =
@@ -106,5 +106,5 @@ data class AppointmentOccurrenceSearchRequest(
     """,
     example = "AAA01U",
   )
-  val createdBy: String,
+  val createdBy: String? = null,
 )

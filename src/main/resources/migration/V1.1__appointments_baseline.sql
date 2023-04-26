@@ -124,10 +124,13 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
         ao.sequence_number,
         COALESCE(asch.repeat_count, 1) as max_sequence_number,
         COALESCE(ao.comment, a.comment) AS comment,
-        ao.updated IS NULL as is_edited
+        ao.updated IS NULL as is_edited,
+        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled
     FROM
         appointment_occurrence ao JOIN appointment a on a.appointment_id = ao.appointment_id
-        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id;
+        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+    WHERE ao.deleted != true;
 
 CREATE OR REPLACE VIEW v_appointment_occurrence_allocation_search AS
     SELECT
@@ -153,9 +156,12 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_allocation_search AS
         ao.sequence_number,
         COALESCE(asch.repeat_count, 1) as max_sequence_number,
         COALESCE(ao.comment, a.comment) AS comment,
-        ao.updated IS NULL as is_edited
+        ao.updated IS NULL as is_edited,
+        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled
     FROM
         appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
         JOIN appointment a on a.appointment_id = ao.appointment_id
-        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id;
+        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+    WHERE ao.deleted != true;
