@@ -1,5 +1,18 @@
 version: "3"
 services:
+  db:
+    image: postgres:latest
+    networks:
+      - hmpps
+    container_name: activities-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: activities-management-db
+      POSTGRES_USER: activities-management
+      POSTGRES_PASSWORD: activities-management
+
   local-stack-aws:
     image: localstack/localstack:0.14.0
     networks:
@@ -20,6 +33,24 @@ services:
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+
+  prison-api:
+    image: rodolpheche/wiremock:latest
+    container_name: prison-api
+    ports:
+      - "8091:8081"
+    volumes:
+      - $PWD/wiremock-docker:/home/wiremock
+    command: --verbose --global-response-templating --port=8081
+
+  oauth-server:
+    image: rodolpheche/wiremock:latest
+    container_name: oauth-server
+    ports:
+      - "8090:8081"
+    volumes:
+      - $PWD/wiremock-docker:/home/wiremock
+    command: --verbose --global-response-templating --port=8081
 
 networks:
   hmpps:
