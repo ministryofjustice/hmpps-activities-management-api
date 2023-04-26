@@ -1,0 +1,16 @@
+{
+  "request" : {
+    "urlPathPattern" : "/api/bookings/offenderNo/.*",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName" : "prison-api/inmates/{{request.pathSegments.[3]}}.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

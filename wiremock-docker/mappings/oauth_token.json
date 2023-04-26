@@ -1,0 +1,16 @@
+{
+  "request" : {
+    "url" : "/auth/oauth/token",
+    "method" : "POST"
+  },
+  "response" : {
+    "status" : 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body" : "{\"token_type\": \"bearer\",\"access_token\": \"atoken\"}",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
