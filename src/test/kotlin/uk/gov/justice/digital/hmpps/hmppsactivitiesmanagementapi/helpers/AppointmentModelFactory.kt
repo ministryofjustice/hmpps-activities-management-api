@@ -89,32 +89,32 @@ fun appointmentInstanceModel(
 )
 
 fun appointmentCreateRequest(
-  categoryCode: String? = "TEST",
+  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   prisonCode: String? = "TPR",
+  prisonerNumbers: List<String> = listOf("A1234BC"),
+  categoryCode: String? = "TEST",
+  appointmentDescription: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
-  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   comment: String = "Appointment level comment",
-  appointmentDescription: String? = "Appointment description",
   repeat: AppointmentRepeat? = null,
-  prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
   AppointmentCreateRequest(
-    categoryCode,
+    appointmentType,
     prisonCode,
+    prisonerNumbers,
+    categoryCode,
+    appointmentDescription,
     internalLocationId,
     inCell,
     startDate,
     startTime,
     endTime,
-    appointmentType,
     repeat,
     comment,
-    appointmentDescription,
-    prisonerNumbers,
   )
 
 fun appointmentDetails() = AppointmentDetails(

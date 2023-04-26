@@ -13,8 +13,11 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisoners
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
@@ -86,12 +89,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               AppointmentOccurrenceAllocation(
                 3,
                 "A1234BC",
-                456
-              )
-            )
-          )
-        )
-      )
+                456,
+              ),
+            ),
+          ),
+        ),
+      ),
     )
 
     assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -266,12 +269,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
               AppointmentOccurrenceAllocation(
                 appointment.occurrences.first().allocations.first().id,
                 request.prisonerNumbers.first(),
-                1
-              )
-            )
-          )
-        )
-      )
+                1,
+              ),
+            ),
+          ),
+        ),
+      ),
     )
 
     assertThat(appointment.id).isGreaterThan(0)
@@ -316,10 +319,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             allocations = listOf(
               AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
               AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     )
 
     assertThat(appointment.id).isGreaterThan(0)

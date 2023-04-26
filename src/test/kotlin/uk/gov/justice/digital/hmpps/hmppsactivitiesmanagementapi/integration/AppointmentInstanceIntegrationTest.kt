@@ -51,7 +51,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
         "TEST.USER",
         null,
         null,
-      )
+      ),
     )
 
     assertThat(appointmentInstance.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

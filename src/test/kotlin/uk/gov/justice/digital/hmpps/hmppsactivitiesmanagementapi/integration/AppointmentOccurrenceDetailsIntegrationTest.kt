@@ -7,7 +7,11 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -70,7 +74,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentOccurrenceDetails).isEqualTo(
       AppointmentOccurrenceDetails(
         2,
-         1,
+        1,
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
@@ -92,7 +96,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
         null,
-      )
+      ),
     )
 
     assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
