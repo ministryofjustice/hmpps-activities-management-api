@@ -165,13 +165,13 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true) {
+  fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, jsonFileSuffix: String = "") {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBodyFile("prisonapi/inmate-details-1.json")
+            .withBodyFile("prisonapi/inmate-details-$prisonerNumber$jsonFileSuffix.json")
             .withStatus(200),
         ),
     )

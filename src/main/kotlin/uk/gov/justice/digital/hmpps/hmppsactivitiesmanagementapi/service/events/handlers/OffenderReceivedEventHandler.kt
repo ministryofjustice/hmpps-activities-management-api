@@ -14,10 +14,12 @@ class OffenderReceivedEventHandler(private val repository: AllocationRepository)
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReceivedEvent) {
+  override fun handle(event: OffenderReceivedEvent): Boolean {
     repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
       .reactivateAndSaveAffectedAllocations()
       .also { log.info("Reactivated ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
+
+    return true
   }
 
   private fun List<Allocation>.reactivateAndSaveAffectedAllocations() =
