@@ -49,7 +49,7 @@ class CreateScheduledInstancesJob(
 
     log.info("Scheduling activities job running - from $today until $endDay")
 
-    rolloutPrisonRepository.findAll().filter { it.active }.forEach { prison ->
+    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
 
       log.info("Scheduling activities for prison ${prison.description} until $endDay")
 

@@ -12,18 +12,18 @@ class RolloutPrisonTest : ModelTest() {
 
     val expectedRolloutDate = "2023-02-01"
 
-    val rolloutPrison = RolloutPrison(
-      id = 1,
-      description = "Some Desc",
-      rolloutDate = originalRolloutDate,
-      active = true,
-      code = "1234",
-      isAppointmentsEnabled = true,
+    val rolloutPrison = RolloutPrisonPlan(
+      prisonCode = "MDI",
+      activitiesRolledOut = true,
+      activitiesRolloutDate = originalRolloutDate,
+      appointmentsRolledOut = true,
+      appointmentsRolloutDate = originalRolloutDate,
     )
 
     val json = objectMapper.writeValueAsString(rolloutPrison)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
-    assertThat(jsonMap["rolloutDate"]).isEqualTo(expectedRolloutDate)
+    assertThat(jsonMap["activitiesRolloutDate"]).isEqualTo(expectedRolloutDate)
+    assertThat(jsonMap["appointmentsRolloutDate"]).isEqualTo(expectedRolloutDate)
   }
 }
