@@ -24,19 +24,27 @@ class AppointmentOccurrenceSearchService(
   ): List<AppointmentOccurrenceSearchResult> {
     var spec = Specification<AppointmentOccurrenceSearch> { root, _, cb -> cb.equal(root.get<String>("prisonCode"), prisonCode) }
 
+    request.appointmentType?.apply {
+      spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), request.appointmentType) }
+    }
+
+    spec = if (request.endDate != null) {
+      spec.and { root, _, cb -> cb.between(root.get("startDate"), request.startDate, request.endDate) }
+    } else {
+      spec.and { root, _, cb -> cb.equal(root.get<LocalDate>("startDate"), request.startDate) }
+    }
+
+    request.timeSlot?.apply {
+      val timeRange = request.timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
+      spec = spec.and { root, _, cb -> cb.between(root.get("startTime"), timeRange.start, timeRange.end) }
+    }
+
     request.categoryCode?.apply {
       spec = spec.and { root, _, cb -> cb.equal(root.get<String>("categoryCode"), request.categoryCode) }
     }
 
     request.internalLocationId?.apply {
       spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("internalLocationId"), request.internalLocationId) }
-    }
-
-    spec = spec.and { root, _, cb -> cb.equal(root.get<LocalDate>("startDate"), request.startDate!!) }
-
-    request.timeSlot?.apply {
-      val timeRange = request.timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
-      spec = spec.and { root, _, cb -> cb.between(root.get("startTime"), timeRange.start, timeRange.end) }
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
