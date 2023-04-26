@@ -55,7 +55,9 @@ class OffenderReleasedEventHandlerTest {
       previouslyActiveAllocations,
     )
 
-    handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
+
+    assertThat(successful).isTrue
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -78,8 +80,9 @@ class OffenderReleasedEventHandlerTest {
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
 
-    handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
+    assertThat(successful).isTrue
     assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
     assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue()
     assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -104,7 +107,9 @@ class OffenderReleasedEventHandlerTest {
       previouslyActiveAllocations,
     )
 
-    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    assertThat(successful).isTrue
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -141,7 +146,9 @@ class OffenderReleasedEventHandlerTest {
       previouslyActiveAllocations,
     )
 
-    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    assertThat(successful).isTrue
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -179,7 +186,9 @@ class OffenderReleasedEventHandlerTest {
       previouslyActiveAllocations,
     )
 
-    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    assertThat(successful).isTrue
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -207,7 +216,9 @@ class OffenderReleasedEventHandlerTest {
     whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
 
-    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+
+    assertThat(successful).isTrue
 
     with(previouslyEndedAllocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
@@ -225,7 +236,7 @@ class OffenderReleasedEventHandlerTest {
 
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(listOf(allocation))
 
-    handler.handle(
+    val successful = handler.handle(
       OffenderReleasedEvent(
         ReleaseInformation(
           nomsNumber = "12345",
@@ -234,6 +245,8 @@ class OffenderReleasedEventHandlerTest {
         ),
       ),
     )
+
+    assertThat(successful).isFalse
 
     assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
 
