@@ -21,8 +21,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
@@ -30,16 +32,19 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary as ModelAllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 class AttendancesServiceTest {
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
+  private val allAttendanceSummaryRepository: AllAttendanceSummaryRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock()
   private val service =
     AttendancesService(
       scheduledInstanceRepository,
+      allAttendanceSummaryRepository,
       attendanceRepository,
       attendanceReasonRepository,
       caseNotesApiClient,
@@ -215,5 +220,13 @@ class AttendancesServiceTest {
     Assertions.assertThatThrownBy { service.getAttendanceById(-1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Attendance -1 not found")
+  }
+
+  @Test
+  fun `retrieve attendance summary`() {
+    whenever(allAttendanceSummaryRepository.findBySessionDate(LocalDate.now())).thenReturn(
+      attendanceSummary(),
+    )
+    assertThat(service.getAttendanceSummaryByDate(LocalDate.now()).first()).isInstanceOf(ModelAllAttendanceSummary::class.java)
   }
 }
