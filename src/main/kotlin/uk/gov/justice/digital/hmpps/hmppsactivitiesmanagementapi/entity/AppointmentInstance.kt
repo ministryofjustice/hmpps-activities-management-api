@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
@@ -22,17 +24,22 @@ data class AppointmentInstance(
 
   val appointmentOccurrenceAllocationId: Long,
 
-  val categoryCode: String,
+  @Enumerated(EnumType.STRING)
+  val appointmentType: AppointmentType,
 
   val prisonCode: String,
-
-  val internalLocationId: Long?,
-
-  val inCell: Boolean,
 
   val prisonerNumber: String,
 
   val bookingId: Long,
+
+  val categoryCode: String,
+
+  val appointmentDescription: String?,
+
+  val internalLocationId: Long?,
+
+  val inCell: Boolean,
 
   val appointmentDate: LocalDate,
 
@@ -57,12 +64,14 @@ data class AppointmentInstance(
     appointmentId = appointmentId,
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
-    categoryCode = categoryCode,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
-    internalLocationId = internalLocationId,
-    inCell = inCell,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
+    internalLocationId = internalLocationId,
+    inCell = inCell,
     appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,

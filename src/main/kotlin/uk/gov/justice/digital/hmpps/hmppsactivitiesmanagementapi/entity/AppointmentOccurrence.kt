@@ -60,7 +60,6 @@ data class AppointmentOccurrence(
 
   var deleted: Boolean = false,
 ) {
-
   var cancelled: LocalDateTime? = null
 
   @OneToOne
@@ -92,6 +91,7 @@ data class AppointmentOccurrence(
 
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
+    sequenceNumber = sequenceNumber,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
@@ -110,6 +110,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
+      prisonerCount = prisonerCount(),
       if (inCell) null else locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode),
       inCell,
       startDate,
@@ -120,17 +121,18 @@ data class AppointmentOccurrence(
       isCancelled = isCancelled(),
       updated = updated,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
-      prisonerCount = prisonerCount(),
     )
 
-  fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+  fun toDetails(prisonCode: String, prisoners: List<Prisoner>, referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>) =
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
       appointment.appointmentType,
       sequenceNumber,
-      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       prisonCode,
+      prisoners.toSummary(),
+      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
+      appointment.appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -152,7 +154,6 @@ data class AppointmentOccurrence(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      prisoners.toSummary(),
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {

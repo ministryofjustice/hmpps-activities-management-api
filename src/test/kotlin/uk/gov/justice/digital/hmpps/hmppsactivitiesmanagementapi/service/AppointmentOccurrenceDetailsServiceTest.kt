@@ -72,8 +72,12 @@ class AppointmentOccurrenceDetailsServiceTest {
         appointment.appointmentId,
         AppointmentType.INDIVIDUAL,
         entity.sequenceNumber,
-        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         appointment.prisonCode,
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
+        "Appointment description",
         AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location"),
         entity.inCell,
         entity.startDate,
@@ -87,9 +91,6 @@ class AppointmentOccurrenceDetailsServiceTest {
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
       ),
     )
   }

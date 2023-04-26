@@ -43,6 +43,25 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
+    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
+    example = "SKI",
+  )
+  val prisonCode: String,
+
+  @Schema(
+    description =
+    """
+    Summary of the prisoner or prisoners allocated to this appointment occurrence. Prisoners are allocated at the
+    occurrence level to allow for per occurrence allocation changes.
+    """,
+  )
+  val prisoners: List<PrisonerSummary> = emptyList(),
+
+  @Schema(
+    description =
+    """
     The summary of the parent appointment's category
     """,
   )
@@ -51,12 +70,11 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
-    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    Free text description for an appointment.  This is used to add more context to the appointment category.
     """,
-    example = "SKI",
+    example = "Meeting with the governor",
   )
-  val prisonCode: String,
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -170,13 +188,4 @@ data class AppointmentOccurrenceDetails(
     """,
   )
   val updatedBy: UserSummary?,
-
-  @Schema(
-    description =
-    """
-    Summary of the prisoner or prisoners allocated to this appointment occurrence. Prisoners are allocated at the
-    occurrence level to allow for per occurrence allocation changes.
-    """,
-  )
-  val prisoners: List<PrisonerSummary> = emptyList(),
 )

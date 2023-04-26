@@ -9,8 +9,9 @@ CREATE INDEX idx_appointment_schedule_repeat_period ON appointment_schedule (rep
 CREATE TABLE appointment (
     appointment_id          bigserial       NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
     appointment_type        varchar(10)     NOT NULL,
-    category_code           varchar(12)     NOT NULL,
     prison_code             varchar(6)      NOT NULL,
+    category_code           varchar(12)     NOT NULL,
+    appointment_description varchar(40),
     internal_location_id    bigint,
     in_cell                 boolean         NOT NULL DEFAULT false,
     start_date              date            NOT NULL,
@@ -18,7 +19,6 @@ CREATE TABLE appointment (
     end_time                time,
     appointment_schedule_id bigint          REFERENCES appointment_schedule (appointment_schedule_id),
     comment                 text            NOT NULL DEFAULT '',
-    appointment_description varchar(40),
     created                 timestamp       NOT NULL,
     created_by              varchar(100)    NOT NULL,
     updated                 timestamp,
@@ -81,12 +81,14 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
         a.appointment_id,
         ao.appointment_occurrence_id,
         aoa.appointment_occurrence_allocation_id,
-        a.category_code,
+        a.appointment_type,
         a.prison_code,
-        CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
-        ao.in_cell,
         aoa.prisoner_number,
         aoa.booking_id,
+        a.category_code,
+        a.appointment_description,
+        CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
+        ao.in_cell,
         ao.start_date AS appointment_date,
         ao.start_time,
         ao.end_time,
@@ -99,4 +101,61 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
     FROM appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
         JOIN appointment a on a.appointment_id = ao.appointment_id
-        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id;
+
+CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
+    SELECT
+        ao.appointment_id,
+        ao.appointment_occurrence_id,
+        a.appointment_type,
+        a.prison_code,
+        CASE
+            WHEN a.appointment_type = 'INDIVIDUAL' THEN 1
+            ELSE (SELECT COUNT(*) FROM appointment_occurrence_allocation WHERE appointment_occurrence_id = ao.appointment_occurrence_id)
+        END AS prisoner_count,
+        a.category_code,
+        a.appointment_description,
+        CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
+        ao.in_cell,
+        ao.start_date,
+        ao.start_time,
+        ao.end_time,
+        a.appointment_schedule_id IS NOT NULL as is_repeat,
+        ao.sequence_number,
+        COALESCE(asch.repeat_count, 1) as max_sequence_number,
+        COALESCE(ao.comment, a.comment) AS comment,
+        ao.updated IS NULL as is_edited
+    FROM
+        appointment_occurrence ao JOIN appointment a on a.appointment_id = ao.appointment_id
+        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id;
+
+CREATE OR REPLACE VIEW v_appointment_occurrence_allocation_search AS
+    SELECT
+        a.appointment_id,
+        ao.appointment_occurrence_id,
+        aoa.appointment_occurrence_allocation_id,
+        a.appointment_type,
+        a.prison_code,
+        CASE
+            WHEN a.appointment_type = 'INDIVIDUAL' THEN 1
+            ELSE (SELECT COUNT(*) FROM appointment_occurrence_allocation WHERE appointment_occurrence_id = ao.appointment_occurrence_id)
+        END AS prisoner_count,
+        aoa.prisoner_number,
+        aoa.booking_id,
+        a.category_code,
+        a.appointment_description,
+        CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
+        ao.in_cell,
+        ao.start_date,
+        ao.start_time,
+        ao.end_time,
+        a.appointment_schedule_id IS NOT NULL as is_repeat,
+        ao.sequence_number,
+        COALESCE(asch.repeat_count, 1) as max_sequence_number,
+        COALESCE(ao.comment, a.comment) AS comment,
+        ao.updated IS NULL as is_edited
+    FROM
+        appointment_occurrence_allocation aoa
+        JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
+        JOIN appointment a on a.appointment_id = ao.appointment_id
+        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id;

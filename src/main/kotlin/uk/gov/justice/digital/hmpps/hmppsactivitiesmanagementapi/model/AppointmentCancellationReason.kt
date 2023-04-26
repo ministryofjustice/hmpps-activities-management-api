@@ -26,5 +26,4 @@ data class AppointmentCancellationReason(
     example = "Created in error",
   )
   val isDelete: Boolean,
-
 )

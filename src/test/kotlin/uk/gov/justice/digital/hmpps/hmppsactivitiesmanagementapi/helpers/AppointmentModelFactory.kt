@@ -24,16 +24,16 @@ fun appointmentCategorySummary() =
 fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
   Appointment(
     1,
-    "TEST",
+    AppointmentType.INDIVIDUAL,
     "TPR",
+    "TEST",
+    "Appointment description",
     123,
     false,
     LocalDate.now(),
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
-    AppointmentType.INDIVIDUAL,
     "Appointment level comment",
-    "Appointment description",
     created,
     "CREATE.USER",
     updated,
@@ -46,6 +46,7 @@ fun appointmentOccurrenceAllocationModel() =
 
 fun appointmentOccurrenceModel(updated: LocalDateTime?) =
   AppointmentOccurrence(
+    1,
     1,
     123,
     false,
@@ -69,12 +70,14 @@ fun appointmentInstanceModel(
   1,
   2,
   3,
-  "TEST",
+  AppointmentType.INDIVIDUAL,
   "TPR",
-  123,
-  false,
   "A1234BC",
   456,
+  "TEST",
+  null,
+  123,
+  false,
   LocalDate.now(),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
@@ -117,8 +120,12 @@ fun appointmentCreateRequest(
 fun appointmentDetails() = AppointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
-  appointmentCategorySummary(),
   "TPR",
+  prisoners = listOf(
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+  ),
+  appointmentCategorySummary(),
+  null,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
   false,
   LocalDate.now(),
@@ -134,6 +141,7 @@ fun appointmentDetails() = AppointmentDetails(
     AppointmentOccurrenceSummary(
       1,
       1,
+      1,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
       false,
       LocalDate.now(),
@@ -144,11 +152,7 @@ fun appointmentDetails() = AppointmentDetails(
       isCancelled = false,
       LocalDateTime.now(),
       UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-      1,
     ),
-  ),
-  prisoners = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
 )
 
@@ -157,8 +161,12 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   2,
   AppointmentType.INDIVIDUAL,
   3,
-  appointmentCategorySummary(),
   "TPR",
+  prisoners = listOf(
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+  ),
+  appointmentCategorySummary(),
+  null,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
   false,
   LocalDate.now(),
@@ -172,7 +180,4 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   LocalDateTime.now(),
   UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-  prisoners = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-  ),
 )

@@ -71,8 +71,12 @@ class AppointmentDetailsServiceTest {
       AppointmentDetails(
         entity.appointmentId,
         AppointmentType.INDIVIDUAL,
-        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         entity.prisonCode,
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
+        "Appointment description",
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
         entity.inCell,
         entity.startDate,
@@ -88,6 +92,7 @@ class AppointmentDetailsServiceTest {
           AppointmentOccurrenceSummary(
             occurrenceEntity.appointmentOccurrenceId,
             1,
+            1,
             AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
             occurrenceEntity.inCell,
             occurrenceEntity.startDate,
@@ -98,11 +103,7 @@ class AppointmentDetailsServiceTest {
             isCancelled = false,
             occurrenceEntity.updated,
             UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-            1,
           ),
-        ),
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
         ),
       ),
     )
