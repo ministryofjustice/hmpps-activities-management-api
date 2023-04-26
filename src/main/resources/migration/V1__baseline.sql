@@ -282,7 +282,7 @@ CREATE TABLE activity_pay (
   activity_pay_id       bigserial NOT NULL CONSTRAINT activity_pay_pk PRIMARY KEY,
   activity_id           bigint    NOT NULL REFERENCES activity (activity_id),
   incentive_nomis_code  varchar(3) NOT NULL,
-  incentive_level       varchar(10) NOT NULL,
+  incentive_level       varchar(50) NOT NULL,
   prison_pay_band_id    bigint    NOT NULL references prison_pay_band(prison_pay_band_id),
   rate                  integer,
   piece_rate            integer,
@@ -345,7 +345,7 @@ FROM scheduled_instance si
          LEFT JOIN activity_schedule_suspension suspensions
                    ON suspensions.activity_schedule_id = schedule.activity_schedule_id
                        AND si.session_date >= suspensions.suspended_from
-                       AND (suspensions.suspended_until is null OR suspensions.suspended_until <= si.session_date);
+                       AND (suspensions.suspended_until is null OR suspensions.suspended_until >= si.session_date);
 
 CREATE TABLE prison_regime (
     prison_regime_id bigserial NOT NULL CONSTRAINT prison_regime_pk PRIMARY KEY,

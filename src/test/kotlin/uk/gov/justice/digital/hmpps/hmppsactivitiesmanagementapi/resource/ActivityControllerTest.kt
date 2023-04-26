@@ -234,7 +234,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
-            value(containsString("Incentive level should not exceed 10 characters"))
+            value(containsString("Incentive level should not exceed 50 characters"))
             value(containsString("Summary should not exceed 50 characters"))
             value(containsString("Pay band must be supplied"))
             value(containsString("Prison code should not exceed 3 characters"))

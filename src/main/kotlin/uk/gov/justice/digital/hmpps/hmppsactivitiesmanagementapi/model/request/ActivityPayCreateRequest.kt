@@ -15,7 +15,7 @@ data class ActivityPayCreateRequest(
   val incentiveNomisCode: String?,
 
   @field:NotEmpty(message = "Minimum incentive level must be supplied")
-  @field:Size(max = 10, message = "Incentive level should not exceed {max} characters")
+  @field:Size(max = 50, message = "Incentive level should not exceed {max} characters")
   @Schema(description = "The incentive/earned privilege level", example = "Basic")
   val incentiveLevel: String?,
 
