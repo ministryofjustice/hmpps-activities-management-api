@@ -36,7 +36,7 @@ class AppointmentOccurrenceSearchService(
 
     request.timeSlot?.apply {
       val timeRange = request.timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
-      spec = spec.and { root, _, cb -> cb.between(root.get("startTime"), timeRange.start, timeRange.end) }
+      spec = spec.and { root, _, cb -> cb.between(root.get("startTime"), timeRange.start, timeRange.end.minusMinutes(1)) }
     }
 
     request.categoryCode?.apply {

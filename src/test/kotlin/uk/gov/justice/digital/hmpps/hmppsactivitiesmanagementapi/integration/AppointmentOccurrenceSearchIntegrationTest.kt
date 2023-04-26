@@ -5,17 +5,19 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import java.time.LocalDate
+import java.time.LocalTime
 
 class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   @Test
   fun `search appointment occurrences authorisation required`() {
     webTestClient.post()
-      .uri("/appointment-occurrences/TPR/search")
+      .uri("/appointment-occurrences/MDI/search")
       .bodyValue(AppointmentOccurrenceSearchRequest())
       .exchange()
       .expectStatus().isUnauthorized
@@ -32,10 +34,13 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("NAP", listOf(
-      appointmentLocation(123, "NAP", userDescription = "Location 123"),
-      appointmentLocation(456, "NAP", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "NAP",
+      listOf(
+        appointmentLocation(123, "NAP", userDescription = "Location 123"),
+        appointmentLocation(456, "NAP", userDescription = "Location 456"),
+      ),
+    )
 
     val results = webTestClient.searchAppointmentOccurrence("NAP", request)!!
 
@@ -53,9 +58,12 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("OTH", listOf(
-      appointmentLocation(789, "OTH", userDescription = "Location 789"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "OTH",
+      listOf(
+        appointmentLocation(789, "OTH", userDescription = "Location 789"),
+      ),
+    )
 
     val results = webTestClient.searchAppointmentOccurrence("OTH", request)!!
 
@@ -74,12 +82,15 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", listOf(
-      appointmentLocation(123, "TPR", userDescription = "Location 123"),
-      appointmentLocation(456, "TPR", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
 
-    val results = webTestClient.searchAppointmentOccurrence("TPR", request)!!
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     assertThat(results.map { it.appointmentType }.distinct().single()).isEqualTo(request.appointmentType)
   }
@@ -94,12 +105,15 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", listOf(
-      appointmentLocation(123, "TPR", userDescription = "Location 123"),
-      appointmentLocation(456, "TPR", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
 
-    val results = webTestClient.searchAppointmentOccurrence("TPR", request)!!
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     assertThat(results.map { it.startDate }.distinct().single()).isEqualTo(request.startDate)
   }
@@ -115,12 +129,15 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", listOf(
-      appointmentLocation(123, "TPR", userDescription = "Location 123"),
-      appointmentLocation(456, "TPR", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
 
-    val results = webTestClient.searchAppointmentOccurrence("TPR", request)!!
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     results.map { it.startDate }.distinct().forEach {
       assertThat(it).isBetween(request.startDate, request.endDate)
@@ -134,20 +151,52 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
+  fun `search for appointment occurrences starting in the AM timeslot`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      timeSlot = TimeSlot.AM,
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+
+    results.map { it.startTime }.distinct().forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(13, 0))
+    }
+
+    assertThat(results.filter { it.startTime == LocalTime.of(13, 0) }).isEmpty()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
   fun `search for appointment occurrences that are part of an appointment with category AC1`() {
     val request = AppointmentOccurrenceSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      categoryCode = "AC1"
+      categoryCode = "AC1",
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", listOf(
-      appointmentLocation(123, "TPR", userDescription = "Location 123"),
-      appointmentLocation(456, "TPR", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
 
-    val results = webTestClient.searchAppointmentOccurrence("TPR", request)!!
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     assertThat(results.map { it.category.code }.distinct().single()).isEqualTo(request.categoryCode)
   }
@@ -160,16 +209,19 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentOccurrenceSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      internalLocationId = 123
+      internalLocationId = 123,
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", listOf(
-      appointmentLocation(123, "TPR", userDescription = "Location 123"),
-      appointmentLocation(456, "TPR", userDescription = "Location 456"),
-    ))
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
 
-    val results = webTestClient.searchAppointmentOccurrence("TPR", request)!!
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     assertThat(results.map { it.internalLocation!!.id }.distinct().single()).isEqualTo(request.internalLocationId)
   }
