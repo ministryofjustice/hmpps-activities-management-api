@@ -7,10 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,8 +37,16 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get deleted appointment details returns 404 not found`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A1234BC"),
+      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
+    )
+
     webTestClient.get()
-      .uri("/appointment-occurrence-details/2")
+      .uri("/appointment-occurrence-details/3")
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
       .expectStatus().isNotFound
@@ -60,39 +65,37 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
     )
 
-    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(2)
+    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(2)!!
 
-    with(appointmentOccurrenceDetails!!) {
-      assertThat(id).isEqualTo(2)
-      assertThat(appointmentId).isEqualTo(1)
-      assertThat(sequenceNumber).isEqualTo(1)
-      assertThat(category).isEqualTo(AppointmentCategorySummary("AC1", "Appointment Category 1"))
-      assertThat(prisonCode).isEqualTo("TPR")
-      assertThat(internalLocation).isEqualTo(AppointmentLocationSummary(123, "TPR", "Test Appointment Location"))
-      assertThat(inCell).isEqualTo(false)
-      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-      assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)
-      assertThat(comment).isEqualTo("Appointment occurrence level comment")
-      assertThat(isEdited).isEqualTo(false)
-      assertThat(isCancelled).isEqualTo(false)
-      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo(UserSummary(1, "TEST.USER", "TEST1", "USER1"))
-      assertThat(updated).isNull()
-      assertThat(updatedBy).isNull()
-      with(prisoners) {
-        assertThat(size).isEqualTo(1)
-        with(get(0)) {
-          assertThat(prisonerNumber).isEqualTo("A1234BC")
-          assertThat(bookingId).isEqualTo(456)
-          assertThat(firstName).isEqualTo("Tim")
-          assertThat(lastName).isEqualTo("Harrison")
-          assertThat(prisonCode).isEqualTo("TPR")
-          assertThat(cellLocation).isEqualTo("1-2-3")
-        }
-      }
-    }
+    assertThat(appointmentOccurrenceDetails).isEqualTo(
+      AppointmentOccurrenceDetails(
+        2,
+         1,
+        AppointmentType.INDIVIDUAL,
+        1,
+        "TPR",
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        "Appointment description",
+        AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        "Appointment occurrence level comment",
+        null,
+        false,
+        false,
+        appointmentOccurrenceDetails.created,
+        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        null,
+        null,
+      )
+    )
+
+    assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   private fun WebTestClient.getAppointmentOccurrenceDetailsById(id: Long) =
