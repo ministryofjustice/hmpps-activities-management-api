@@ -83,7 +83,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
         "Appointment description",
-        AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),

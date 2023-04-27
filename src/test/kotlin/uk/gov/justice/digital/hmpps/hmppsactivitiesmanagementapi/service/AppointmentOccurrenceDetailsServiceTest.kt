@@ -78,7 +78,7 @@ class AppointmentOccurrenceDetailsServiceTest {
         ),
         AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location"),
+        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location User Description"),
         entity.inCell,
         entity.startDate,
         entity.startTime,

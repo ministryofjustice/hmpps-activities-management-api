@@ -237,7 +237,7 @@ class TransformFunctionsTest {
   @Test
   fun `location to appointment location summary mapping`() {
     assertThat(appointmentLocation(1, "TPR").toAppointmentLocationSummary(1, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, "TPR", "Test Appointment Location"),
+      AppointmentLocationSummary(1, "TPR", "Test Appointment Location User Description"),
     )
   }
 

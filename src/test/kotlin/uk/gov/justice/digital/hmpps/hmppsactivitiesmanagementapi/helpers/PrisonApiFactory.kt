@@ -34,7 +34,7 @@ fun userCaseLoads(prisonCode: String) =
     ),
   )
 
-fun appointmentLocation(locationId: Long, prisonCode: String, description: String = "Test Appointment Location", userDescription: String = "Test Appointment User Description") =
+fun appointmentLocation(locationId: Long, prisonCode: String, description: String = "Test Appointment Location", userDescription: String = "Test Appointment Location User Description") =
   Location(
     locationId = locationId,
     locationType = "APP",

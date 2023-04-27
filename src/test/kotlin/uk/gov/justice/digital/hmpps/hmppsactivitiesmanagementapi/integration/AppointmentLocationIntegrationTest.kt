@@ -12,7 +12,7 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
   fun `get list of appointment locations`() {
     prisonApiMockServer.stubGetLocationsForAppointments(moorlandPrisonCode, 1)
     assertThat(webTestClient.getAppointmentLocations()!!).containsExactly(
-      AppointmentLocationSummary(id = 1, prisonCode = moorlandPrisonCode, description = "Test Appointment Location"),
+      AppointmentLocationSummary(id = 1, prisonCode = moorlandPrisonCode, description = "Test Appointment Location User Description"),
     )
   }
 
