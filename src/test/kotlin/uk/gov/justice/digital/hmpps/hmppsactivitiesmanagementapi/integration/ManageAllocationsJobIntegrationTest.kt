@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
+class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -26,7 +26,7 @@ class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
     assertThat(activeAllocations).hasSize(3)
     activeAllocations.forEach { it.assertIsActive() }
 
-    webTestClient.deallocateOffenders()
+    webTestClient.manageAllocations()
 
     val deallocatedAllocations = allocationRepository.findAll()
 
@@ -42,7 +42,7 @@ class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
     assertThat(activeAllocations).hasSize(3)
     activeAllocations.forEach { it.assertIsActive() }
 
-    webTestClient.deallocateOffenders()
+    webTestClient.manageAllocations()
 
     val allocations = allocationRepository.findAll()
 
@@ -68,9 +68,9 @@ class OffenderDeallocationJobIntegrationTest : IntegrationTestBase() {
 
   private fun List<Allocation>.prisoner(number: String) = first { it.prisonerNumber == number }
 
-  private fun WebTestClient.deallocateOffenders() {
+  private fun WebTestClient.manageAllocations() {
     post()
-      .uri("/job/deallocate-offenders")
+      .uri("/job/manage-allocations")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
