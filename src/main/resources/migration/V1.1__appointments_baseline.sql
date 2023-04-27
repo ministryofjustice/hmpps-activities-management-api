@@ -109,10 +109,6 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
         ao.appointment_occurrence_id,
         a.appointment_type,
         a.prison_code,
-        CASE
-            WHEN a.appointment_type = 'INDIVIDUAL' THEN 1
-            ELSE (SELECT COUNT(*) FROM appointment_occurrence_allocation WHERE appointment_occurrence_id = ao.appointment_occurrence_id)
-        END AS prisoner_count,
         a.category_code,
         a.appointment_description,
         CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
@@ -124,44 +120,11 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
         ao.sequence_number,
         COALESCE(asch.repeat_count, 1) as max_sequence_number,
         COALESCE(ao.comment, a.comment) AS comment,
+        a.created_by,
         ao.updated IS NULL as is_edited,
         CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled
     FROM
         appointment_occurrence ao JOIN appointment a on a.appointment_id = ao.appointment_id
-        LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id
-        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
-    WHERE ao.deleted != true;
-
-CREATE OR REPLACE VIEW v_appointment_occurrence_allocation_search AS
-    SELECT
-        a.appointment_id,
-        ao.appointment_occurrence_id,
-        aoa.appointment_occurrence_allocation_id,
-        a.appointment_type,
-        a.prison_code,
-        CASE
-            WHEN a.appointment_type = 'INDIVIDUAL' THEN 1
-            ELSE (SELECT COUNT(*) FROM appointment_occurrence_allocation WHERE appointment_occurrence_id = ao.appointment_occurrence_id)
-        END AS prisoner_count,
-        aoa.prisoner_number,
-        aoa.booking_id,
-        a.category_code,
-        a.appointment_description,
-        CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END AS internal_location_id,
-        ao.in_cell,
-        ao.start_date,
-        ao.start_time,
-        ao.end_time,
-        a.appointment_schedule_id IS NOT NULL as is_repeat,
-        ao.sequence_number,
-        COALESCE(asch.repeat_count, 1) as max_sequence_number,
-        COALESCE(ao.comment, a.comment) AS comment,
-        ao.updated IS NULL as is_edited,
-        CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled
-    FROM
-        appointment_occurrence_allocation aoa
-        JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
-        JOIN appointment a on a.appointment_id = ao.appointment_id
         LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id
         LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
     WHERE ao.deleted != true;

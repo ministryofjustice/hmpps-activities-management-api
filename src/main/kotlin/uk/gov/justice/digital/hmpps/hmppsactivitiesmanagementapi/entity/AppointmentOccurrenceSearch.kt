@@ -3,8 +3,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
@@ -25,8 +29,6 @@ data class AppointmentOccurrenceSearch(
   val appointmentType: AppointmentType,
 
   val prisonCode: String,
-
-  val prisonerCount: Int,
 
   val categoryCode: String,
 
@@ -50,18 +52,22 @@ data class AppointmentOccurrenceSearch(
 
   val comment: String?,
 
+  val createdBy: String,
+
   val isEdited: Boolean,
 
   val isCancelled: Boolean,
 ) {
+  @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.EAGER)
+  @Fetch(FetchMode.SUBSELECT)
+  val allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
+
   fun toResult(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>) = AppointmentOccurrenceSearchResult(
     appointmentId,
     appointmentOccurrenceId,
     appointmentType,
-    sequenceNumber,
-    maxSequenceNumber,
     prisonCode,
-    prisonerCount,
+    allocations = allocations.toModel(),
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
     appointmentDescription,
     if (inCell) {
@@ -74,6 +80,8 @@ data class AppointmentOccurrenceSearch(
     startTime,
     endTime,
     isRepeat,
+    sequenceNumber,
+    maxSequenceNumber,
     isEdited,
     isCancelled,
   )

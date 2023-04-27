@@ -2,18 +2,24 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.time.LocalDate
 import java.time.LocalTime
 
 class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var appointmentRepository: AppointmentRepository
+
   @Test
   fun `search appointment occurrences authorisation required`() {
     webTestClient.post()
@@ -224,6 +230,60 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
 
     assertThat(results.map { it.internalLocation!!.id }.distinct().single()).isEqualTo(request.internalLocationId)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointment occurrences created by DIFFERENT USER`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      createdBy = "DIFFERENT.USER",
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+
+    val appointments = appointmentRepository.findAllById(results.map { it.appointmentId })
+
+    assertThat(appointments.map { it.createdBy }.distinct().single()).isEqualTo(request.createdBy)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointment occurrences for prisoner number B2345CD`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      prisonerNumbers = listOf("B2345CD"),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+
+    results.forEach {
+      assertThat(it.allocations.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
+    }
   }
 
   private fun WebTestClient.searchAppointmentOccurrence(

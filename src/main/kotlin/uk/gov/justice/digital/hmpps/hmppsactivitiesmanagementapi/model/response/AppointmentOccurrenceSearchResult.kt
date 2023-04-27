@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -36,18 +37,6 @@ data class AppointmentOccurrenceSearchResult(
   val appointmentType: AppointmentType,
 
   @Schema(
-    description = "The sequence number of this appointment occurrence within the recurring appointment series",
-    example = "3",
-  )
-  val sequenceNumber: Int,
-
-  @Schema(
-    description = "The sequence number of the final appointment occurrence within the recurring appointment series",
-    example = "6",
-  )
-  val maxSequenceNumber: Int,
-
-  @Schema(
     description =
     """
     The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
@@ -60,12 +49,12 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
-    The number of prisoners allocated to this appointment occurrence.
-    Can only be greater that one when the parent appointment's type is GROUP
+    The prisoner or prisoners attending this appointment occurrence. Appointments of type INDIVIDUAL will have one
+    prisoner allocated to each appointment occurrence. Appointments of type GROUP can have more than one prisoner
+    allocated to each appointment occurrence
     """,
-    example = "1",
   )
-  val prisonerCount: Int,
+  val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
 
   @Schema(
     description =
@@ -130,6 +119,18 @@ data class AppointmentOccurrenceSearchResult(
     example = "false",
   )
   val isRepeat: Boolean,
+
+  @Schema(
+    description = "The sequence number of this appointment occurrence within the recurring appointment series",
+    example = "3",
+  )
+  val sequenceNumber: Int,
+
+  @Schema(
+    description = "The sequence number of the final appointment occurrence within the recurring appointment series",
+    example = "6",
+  )
+  val maxSequenceNumber: Int,
 
   @Schema(
     description = "Indicates whether this appointment occurrence has been changed from its original state",

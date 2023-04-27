@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
@@ -45,6 +46,14 @@ class AppointmentOccurrenceSearchService(
 
     request.internalLocationId?.apply {
       spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("internalLocationId"), request.internalLocationId) }
+    }
+
+    if (request.prisonerNumbers?.isEmpty() == false) {
+      spec = spec.and { root, _, _ -> root.join<AppointmentOccurrenceSearch, AppointmentOccurrenceAllocationSearch>("allocations").get<String>("prisonerNumber").`in`(request.prisonerNumbers) }
+    }
+
+    request.createdBy?.apply {
+      spec = spec.and { root, _, cb -> cb.equal(root.get<String>("createdBy"), request.createdBy) }
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
