@@ -8,7 +8,6 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
@@ -48,7 +47,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("NAP", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("NAP", request)!!
 
     assertThat(results).hasSize(0)
   }
@@ -71,7 +70,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("OTH", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("OTH", request)!!
 
     assertThat(results.map { it.prisonCode }.distinct().single()).isEqualTo("OTH")
   }
@@ -96,7 +95,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     assertThat(results.map { it.appointmentType }.distinct().single()).isEqualTo(request.appointmentType)
   }
@@ -119,7 +118,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     assertThat(results.map { it.startDate }.distinct().single()).isEqualTo(request.startDate)
   }
@@ -143,7 +142,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     results.map { it.startDate }.distinct().forEach {
       assertThat(it).isBetween(request.startDate, request.endDate)
@@ -173,7 +172,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     results.map { it.startTime }.distinct().forEach {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(13, 0))
@@ -202,7 +201,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     assertThat(results.map { it.category.code }.distinct().single()).isEqualTo(request.categoryCode)
   }
@@ -227,7 +226,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     assertThat(results.map { it.internalLocation!!.id }.distinct().single()).isEqualTo(request.internalLocationId)
   }
@@ -252,7 +251,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     val appointments = appointmentRepository.findAllById(results.map { it.appointmentId })
 
@@ -279,14 +278,14 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrence("MDI", request)!!
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     results.forEach {
       assertThat(it.allocations.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
     }
   }
 
-  private fun WebTestClient.searchAppointmentOccurrence(
+  private fun WebTestClient.searchAppointmentOccurrences(
     prisonCode: String,
     request: AppointmentOccurrenceSearchRequest,
   ) =

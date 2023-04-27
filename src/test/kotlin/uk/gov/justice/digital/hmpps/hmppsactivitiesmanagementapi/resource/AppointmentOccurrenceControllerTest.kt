@@ -14,7 +14,10 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
@@ -102,8 +105,56 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
 
+  @Test
+  fun `400 bad request response when search appointment occurrences with invalid json`() {
+    val request = AppointmentOccurrenceSearchRequest()
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isBadRequest() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(Matchers.containsString("Start date must be supplied"))
+          }
+        }
+      }
+
+    verifyNoInteractions(appointmentOccurrenceService)
+  }
+
+  @Test
+  fun `202 accepted response when search appointment occurrences with valid json`() {
+    val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now())
+    val expectedResponse = listOf(appointmentOccurrenceSearchResultModel())
+
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentOccurrenceSearchService.searchAppointmentOccurrences("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
+
+    val response = mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isAccepted() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+  }
+
   private fun MockMvc.updateAppointmentOccurrence(id: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal) =
     patch("/appointment-occurrences/{appointmentOccurrenceId}", id) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
+      )
+    }
+
+  private fun MockMvc.searchAppointmentOccurrences(prisonCode: String, request: AppointmentOccurrenceSearchRequest, principal: Principal) =
+    post("/appointment-occurrences/{prisonCode}/search", prisonCode) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
