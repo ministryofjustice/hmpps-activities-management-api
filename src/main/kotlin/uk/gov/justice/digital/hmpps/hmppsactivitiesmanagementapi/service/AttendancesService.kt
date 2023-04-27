@@ -135,6 +135,6 @@ class AttendancesService(
   fun getAttendanceById(id: Long): ModelAttendance =
     attendanceRepository.findOrThrowNotFound(id).toModel(caseNotesApiClient)
 
-  fun getAttendanceSummaryByDate(sessionDate: LocalDate): List<ModelAllAttendanceSummary> =
-    allAttendanceSummaryRepository.findBySessionDate(sessionDate).toModel()
+  fun getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendanceSummary> =
+    allAttendanceSummaryRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
 }

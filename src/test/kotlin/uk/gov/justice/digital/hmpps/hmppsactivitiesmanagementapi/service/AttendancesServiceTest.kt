@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -224,9 +225,9 @@ class AttendancesServiceTest {
 
   @Test
   fun `retrieve attendance summary`() {
-    whenever(allAttendanceSummaryRepository.findBySessionDate(LocalDate.now())).thenReturn(
+    whenever(allAttendanceSummaryRepository.findByPrisonCodeAndSessionDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(
       attendanceSummary(),
     )
-    assertThat(service.getAttendanceSummaryByDate(LocalDate.now()).first()).isInstanceOf(ModelAllAttendanceSummary::class.java)
+    assertThat(service.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now()).first()).isInstanceOf(ModelAllAttendanceSummary::class.java)
   }
 }

@@ -14,6 +14,12 @@ data class AllAttendanceSummary(
   @Id
   val id: Long,
 
+  val prisonCode: String,
+
+  val activityId: Long,
+
+  val categoryName: String,
+
   val sessionDate: LocalDate,
 
   val timeSlot: String,
@@ -29,6 +35,9 @@ data class AllAttendanceSummary(
   fun toModel() =
     AllAttendanceSummaryModel(
       id = id,
+      prisonCode = prisonCode,
+      activityId = activityId,
+      categoryName = categoryName,
       sessionDate = sessionDate,
       timeSlot = timeSlot,
       status = status,

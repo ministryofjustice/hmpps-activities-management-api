@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -81,7 +82,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
 
-  @GetMapping(value = ["/summary/{sessionDate}"])
+  @GetMapping(value = ["/summary/{prisonCode}/{sessionDate}"])
   @ResponseBody
   @Operation(
     summary = "Get a daily summary of attendances",
@@ -95,7 +96,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AllAttendanceSummary::class),
+            array = ArraySchema(schema = Schema(implementation = AllAttendanceSummary::class)),
           ),
         ],
       ),
@@ -119,21 +120,12 @@ class AttendanceController(private val attendancesService: AttendancesService) {
           ),
         ],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The attendance summary was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
     ],
   )
   fun getAttendanceSummaryByDate(
+    @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("sessionDate") sessionDate: LocalDate,
-  ): List<AllAttendanceSummary> = attendancesService.getAttendanceSummaryByDate(sessionDate)
+  ): List<AllAttendanceSummary> = attendancesService.getAttendanceSummaryByDate(prisonCode, sessionDate)
 
   @PutMapping
   @ResponseBody

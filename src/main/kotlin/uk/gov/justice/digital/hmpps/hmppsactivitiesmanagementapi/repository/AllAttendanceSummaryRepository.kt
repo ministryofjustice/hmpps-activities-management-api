@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository as RepositoryAnnotation
 
 @RepositoryAnnotation
 interface AllAttendanceSummaryRepository : ReadOnlyRepository<AllAttendanceSummary, Long> {
-  fun findBySessionDate(sessionDate: LocalDate): List<AllAttendanceSummary>
+  fun findByPrisonCodeAndSessionDate(prisonCode: String, sessionDate: LocalDate): List<AllAttendanceSummary>
 }

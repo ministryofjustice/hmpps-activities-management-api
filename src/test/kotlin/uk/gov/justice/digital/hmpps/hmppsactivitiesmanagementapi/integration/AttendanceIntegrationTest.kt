@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -204,7 +205,10 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get attendance summary for specified date`() {
-    val attendanceSummary = webTestClient.getAttendanceSummaryByDate(LocalDate.of(2022, 10, 10))
+    val attendanceSummary = webTestClient.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.of(2022, 10, 10))!!
+    assertThat(attendanceSummary.first().prisonCode).isEqualTo(pentonvillePrisonCode)
+    assertThat(attendanceSummary.first().activityId).isEqualTo(1)
+    assertThat(attendanceSummary.first().categoryName).isEqualTo("Education")
     assertThat(attendanceSummary.first().sessionDate).isEqualTo("2022-10-10")
     assertThat(attendanceSummary.first().timeSlot).isEqualTo("AM")
     assertThat(attendanceSummary.first().status).isEqualTo("WAITING")
@@ -222,9 +226,9 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ModelAttendance::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.getAttendanceSummaryByDate(sessionDate: LocalDate) =
+  private fun WebTestClient.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
     get()
-      .uri("/attendances/summary/$sessionDate")
+      .uri("/attendances/summary/$prisonCode/$sessionDate")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()

@@ -17,6 +17,15 @@ data class AllAttendanceSummary(
   )
   val id: Long,
 
+  @Schema(description = "The prison code where this activity takes place", example = "PVI")
+  val prisonCode: String,
+
+  @Schema(description = "The internally-generated ID for the activity", example = "123456")
+  val activityId: Long,
+
+  @Schema(description = "The name of the activity category", example = "Leisure and social")
+  val categoryName: String,
+
   @Schema(
     description = "The scheduled instance date",
     example = "2023-03-30",

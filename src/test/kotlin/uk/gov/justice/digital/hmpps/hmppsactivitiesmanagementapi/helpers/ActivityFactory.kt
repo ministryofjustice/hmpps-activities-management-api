@@ -315,6 +315,9 @@ internal fun attendance() = schedule().instances().first().attendances.first()
 internal fun attendanceSummary() = listOf(
   AllAttendanceSummary(
     id = 1,
+    prisonCode = pentonvillePrisonCode,
+    activityId = 1,
+    categoryName = "Education",
     sessionDate = LocalDate.now(),
     timeSlot = "AM",
     status = "WAITING",

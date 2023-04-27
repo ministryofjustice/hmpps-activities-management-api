@@ -9,13 +9,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
 class AllAttendanceSummaryTest {
   @Test
   fun `converted to model`() {
-    val expectedModel = ModelAllAttendanceSummary(1, LocalDate.now(), "AM", "WAITING", null, null, 2)
+    val expectedModel = ModelAllAttendanceSummary(1, "PVI", 1, "Education", LocalDate.now(), "AM", "WAITING", null, null, 2)
     assertThat(attendanceSummary().toModel().first()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `List converted to model`() {
-    val expectedModel = listOf(ModelAllAttendanceSummary(1, LocalDate.now(), "AM", "WAITING", null, null, 2))
+    val expectedModel = listOf(ModelAllAttendanceSummary(1, "PVI", 1, "Education", LocalDate.now(), "AM", "WAITING", null, null, 2))
     assertThat(attendanceSummary().toModel()).isEqualTo(expectedModel)
   }
 }

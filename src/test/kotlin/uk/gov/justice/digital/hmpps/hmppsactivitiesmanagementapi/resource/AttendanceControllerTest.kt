@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import java.security.Principal
@@ -98,23 +99,23 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
   fun `200 response when get attendance summary by date found`() {
     val attendanceSummary = attendanceSummary().toModel()
 
-    whenever(attendancesService.getAttendanceSummaryByDate(LocalDate.now())).thenReturn(attendanceSummary)
+    whenever(attendancesService.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(attendanceSummary)
 
-    val response = mockMvc.getAttendanceSummaryByDate(LocalDate.now())
+    val response = mockMvc.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendanceSummary))
 
-    verify(attendancesService).getAttendanceSummaryByDate(LocalDate.now())
+    verify(attendancesService).getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
   }
 
   private fun MockMvc.getAttendanceById(attendanceId: String) =
     get("/attendances/$attendanceId")
 
-  private fun MockMvc.getAttendanceSummaryByDate(sessionDate: LocalDate) =
-    get("/attendances/summary/$sessionDate")
+  private fun MockMvc.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
+    get("/attendances/summary/$prisonCode/$sessionDate")
 
   companion object {
     val caseNote = CaseNote(
