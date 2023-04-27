@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -180,4 +181,24 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   LocalDateTime.now(),
   UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+)
+
+fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(
+  1,
+  2,
+  AppointmentType.INDIVIDUAL,
+  "TPR",
+  listOf(appointmentOccurrenceAllocationModel()),
+  appointmentCategorySummary(),
+  null,
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+  false,
+  LocalDate.now(),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  false,
+  1,
+  1,
+  false,
+  false,
 )

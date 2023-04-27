@@ -34,7 +34,7 @@ data class AppointmentOccurrenceSearch(
 
   val appointmentDescription: String?,
 
-  val internalLocationId: Long?,
+  var internalLocationId: Long?,
 
   val inCell: Boolean,
 
@@ -60,7 +60,7 @@ data class AppointmentOccurrenceSearch(
 ) {
   @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.EAGER)
   @Fetch(FetchMode.SUBSELECT)
-  val allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
+  var allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
 
   fun toResult(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>) = AppointmentOccurrenceSearchResult(
     appointmentId,

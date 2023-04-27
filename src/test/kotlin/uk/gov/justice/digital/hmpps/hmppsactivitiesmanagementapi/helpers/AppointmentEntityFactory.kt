@@ -4,6 +4,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -113,4 +115,49 @@ internal fun appointmentInstanceEntity(
     isCancelled = false,
     updated = LocalDateTime.now(),
     updatedBy = updatedBy,
+  )
+
+internal fun appointmentOccurrenceSearchEntity(
+  prisonerNumber: String = "A1234BC",
+  bookingId: Long = 456,
+  internalLocationId: Long = 123,
+  inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now(),
+  createdBy: String = "CREATE.USER",
+) =
+  AppointmentOccurrenceSearch(
+    appointmentId = 1,
+    appointmentOccurrenceId = 2,
+    appointmentType = AppointmentType.INDIVIDUAL,
+    prisonCode = "TPR",
+    categoryCode = "TEST",
+    appointmentDescription = null,
+    internalLocationId = if (inCell) null else internalLocationId,
+    inCell = inCell,
+    startDate = startDate,
+    startTime = LocalTime.of(9, 0),
+    endTime = LocalTime.of(10, 30),
+    isRepeat = false,
+    sequenceNumber = 1,
+    maxSequenceNumber = 1,
+    comment = "Appointment occurrence level comment",
+    createdBy = createdBy,
+    isEdited = false,
+    isCancelled = false,
+  ).apply {
+    allocations = listOf(
+      appointmentOccurrenceAllocationSearchEntity(
+        this,
+        prisonerNumber = prisonerNumber,
+        bookingId = bookingId,
+      ),
+    )
+  }
+
+private fun appointmentOccurrenceAllocationSearchEntity(appointmentOccurrenceSearch: AppointmentOccurrenceSearch, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
+  AppointmentOccurrenceAllocationSearch(
+    appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
+    appointmentOccurrenceSearch = appointmentOccurrenceSearch,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
   )
