@@ -113,7 +113,7 @@ class AttendancesService(
           issuePayment = false,
           status = AttendanceStatus.COMPLETED,
           recordedTime = LocalDateTime.now(),
-          recordedBy = "SYSTEM",
+          recordedBy = "Activities Management Service",
         ),
       )
 
