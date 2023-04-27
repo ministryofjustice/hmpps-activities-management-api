@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
@@ -19,7 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
   properties = [
@@ -44,18 +47,13 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      prisonerNumbers.subList(0, 1),
+      prisonerNumbers,
       listOf(
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = prisonerNumbers[0],
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
-      ),
-    )
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      prisonerNumbers.subList(1, 2),
-      listOf(
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = prisonerNumbers[1],
           bookingId = 2,
@@ -82,6 +80,8 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
   private fun verifyBulkAppointment(response: BulkAppointment) {
     assertThat(response.bulkAppointmentId).isNotNull
     assertThat(response.appointments).hasSize(2)
+    assertThat(response.createdBy).isEqualTo("test-client")
+    assertThat(response.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
 
     assertThat(response.appointments[0].occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
     assertThat(response.appointments[1].occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BD")

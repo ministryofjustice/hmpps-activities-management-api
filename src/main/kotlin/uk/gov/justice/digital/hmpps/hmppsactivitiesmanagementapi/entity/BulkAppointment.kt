@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinTable
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
 
 @Entity
@@ -27,10 +28,17 @@ data class BulkAppointment(
     inverseJoinColumns = [JoinColumn(name = "appointmentId")],
   )
   val appointments: List<Appointment>,
+
+  val created: LocalDateTime = LocalDateTime.now(),
+
+  val createdBy: String,
+
 ) {
 
   fun toModel() = BulkAppointmentModel(
     bulkAppointmentId = this.bulkAppointmentId,
     appointments = this.appointments.toModel(),
+    created = created,
+    createdBy = createdBy,
   )
 }
