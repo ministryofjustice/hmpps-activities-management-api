@@ -7,6 +7,8 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchEntity
@@ -15,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalTime
 
 class AppointmentOccurrenceSearchServiceTest {
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository = mock()
@@ -66,6 +69,27 @@ class AppointmentOccurrenceSearchServiceTest {
 
     verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentOccurrenceSearchSpecification).startDateBetween(request.startDate!!, request.endDate!!)
+    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+  }
+
+  @Test
+  fun `search by time slot`() {
+    val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), timeSlot = TimeSlot.AM)
+    val result = appointmentOccurrenceSearchEntity()
+
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlot!!))
+      .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
+    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+
+    service.searchAppointmentOccurrences("TPR", request, principal)
+
+    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentOccurrenceSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
   }
 

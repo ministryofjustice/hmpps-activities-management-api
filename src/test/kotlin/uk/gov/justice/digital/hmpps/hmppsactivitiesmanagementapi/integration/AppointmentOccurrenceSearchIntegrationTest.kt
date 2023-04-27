@@ -235,6 +235,31 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
+  fun `search for in cell appointment occurrences`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      inCell = true,
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+
+    assertThat(results.map { it.inCell }.distinct().single()).isTrue
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
   fun `search for appointment occurrences created by DIFFERENT USER`() {
     val request = AppointmentOccurrenceSearchRequest(
       startDate = LocalDate.now(),
@@ -283,6 +308,54 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     results.forEach {
       assertThat(it.allocations.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
     }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search returns edited appointment occurrences`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+
+    assertThat(results.filter { it.isEdited }).isNotEmpty
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search returns cancelled appointment occurrences`() {
+    val request = AppointmentOccurrenceSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+
+    assertThat(results.filter { it.isCancelled }).isNotEmpty
   }
 
   private fun WebTestClient.searchAppointmentOccurrences(
