@@ -25,7 +25,7 @@ class RolloutController(
   @GetMapping(value = ["/{prisonCode}"])
   @Operation(
     summary = "Get a prison's rollout plan by prison code",
-    description = "Returns a single prison and it's activities management service rollout plan by its unique code.",
+    description = "Returns a single prison and its activities management service rollout plan by its unique code.",
   )
   @PreAuthorize("hasRole('ACTIVITY_ADMIN')")
   @ResponseBody

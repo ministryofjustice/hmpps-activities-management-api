@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 
 @Entity
@@ -27,16 +28,8 @@ data class RolloutPrison(
   val appointmentsRolloutDate: LocalDate? = null,
 ) {
   fun isActivitiesRolledOut() =
-    this.activitiesToBeRolledOut &&
-      (
-        activitiesRolloutDate?.isBefore(LocalDate.now())?.or(false) == true ||
-          activitiesRolloutDate?.isEqual(LocalDate.now())?.or(false) == true
-        )
+    this.activitiesToBeRolledOut && activitiesRolloutDate?.onOrBefore(LocalDate.now()) == true
 
   fun isAppointmentsRolledOut() =
-    this.appointmentsToBeRolledOut &&
-      (
-        appointmentsRolloutDate?.isBefore(LocalDate.now())?.or(false) == true ||
-          appointmentsRolloutDate?.isEqual(LocalDate.now())?.or(false) == true
-        )
+    this.appointmentsToBeRolledOut && appointmentsRolloutDate?.onOrBefore(LocalDate.now()) == true
 }

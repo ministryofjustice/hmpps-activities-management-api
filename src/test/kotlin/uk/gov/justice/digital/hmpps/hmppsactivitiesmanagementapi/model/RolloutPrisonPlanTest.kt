@@ -4,7 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
-class RolloutPrisonTest : ModelTest() {
+class RolloutPrisonPlanTest : ModelTest() {
 
   @Test
   fun `dates are serialized correctly`() {

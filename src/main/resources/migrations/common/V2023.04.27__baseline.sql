@@ -443,8 +443,9 @@ CREATE TABLE appointment
 (
     appointment_id          bigserial    NOT NULL CONSTRAINT appointment_pk PRIMARY KEY,
     appointment_type        varchar(10)  NOT NULL,
-    category_code           varchar(12)  NOT NULL,
     prison_code             varchar(6)   NOT NULL,
+    category_code           varchar(12)  NOT NULL,
+    appointment_description varchar(40),
     internal_location_id    bigint,
     in_cell                 boolean      NOT NULL DEFAULT false,
     start_date              date         NOT NULL,
@@ -452,7 +453,6 @@ CREATE TABLE appointment
     end_time                time,
     appointment_schedule_id bigint REFERENCES appointment_schedule (appointment_schedule_id),
     comment                 text         NOT NULL DEFAULT '',
-    appointment_description varchar(40),
     created                 timestamp    NOT NULL,
     created_by              varchar(100) NOT NULL,
     updated                 timestamp,
@@ -512,26 +512,44 @@ CREATE INDEX idx_appointment_occurrence_allocation_appointment_occurrence_id ON 
 CREATE INDEX idx_appointment_occurrence_allocation_prisoner_number ON appointment_occurrence_allocation (prisoner_number);
 CREATE INDEX idx_appointment_occurrence_allocation_booking_id ON appointment_occurrence_allocation (booking_id);
 
+CREATE TABLE bulk_appointment
+(
+    bulk_appointment_id bigserial NOT NULL
+        CONSTRAINT bulk_appointment_pk PRIMARY KEY,
+    created             timestamp,
+    created_by          varchar(100)
+);
+
+CREATE TABLE bulk_appointment_appointment
+(
+    bulk_appointment_appointment_id bigserial NOT NULL
+        CONSTRAINT bulk_appointment_appointment_pk PRIMARY KEY,
+    bulk_appointment_id             bigint    NOT NULL REFERENCES bulk_appointment (bulk_appointment_id) ON DELETE CASCADE,
+    appointment_id                  bigint    NOT NULL REFERENCES appointment (appointment_id) ON DELETE CASCADE
+);
+
 CREATE OR REPLACE VIEW v_appointment_instance AS
-SELECT aoa.appointment_occurrence_allocation_id AS appointment_instance_id,
+SELECT aoa.appointment_occurrence_allocation_id                                      AS appointment_instance_id,
        a.appointment_id,
        ao.appointment_occurrence_id,
        aoa.appointment_occurrence_allocation_id,
-       a.category_code,
+       a.appointment_type,
        a.prison_code,
-       CASE
-           WHEN ao.in_cell THEN null
-           ELSE ao.internal_location_id END     AS internal_location_id,
-       ao.in_cell,
        aoa.prisoner_number,
        aoa.booking_id,
-       ao.start_date                            AS appointment_date,
+       a.category_code,
+       a.appointment_description,
+       CASE
+           WHEN ao.in_cell THEN null
+           ELSE ao.internal_location_id END                                          AS internal_location_id,
+       ao.in_cell,
+       ao.start_date                                                                 AS appointment_date,
        ao.start_time,
        ao.end_time,
-       COALESCE(ao.comment, a.comment)          AS comment,
+       COALESCE(ao.comment, a.comment)                                               AS comment,
        CASE
            WHEN ao.cancellation_reason_id IS NULL THEN false
-           ELSE NOT is_delete END               AS is_cancelled,
+           ELSE NOT is_delete END                                                    AS is_cancelled,
        a.created,
        a.created_by,
        ao.updated,
@@ -543,6 +561,32 @@ FROM appointment_occurrence_allocation aoa
          LEFT JOIN appointment_cancellation_reason acr
                    on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id;
 
+CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
+SELECT ao.appointment_id,
+       ao.appointment_occurrence_id,
+       a.appointment_type,
+       a.prison_code,
+       a.category_code,
+       a.appointment_description,
+       CASE WHEN ao.in_cell THEN null ELSE ao.internal_location_id END               AS internal_location_id,
+       ao.in_cell,
+       ao.start_date,
+       ao.start_time,
+       ao.end_time,
+       a.appointment_schedule_id IS NOT NULL                                         as is_repeat,
+       ao.sequence_number,
+       COALESCE(asch.repeat_count, 1)                                                as max_sequence_number,
+       COALESCE(ao.comment, a.comment)                                               AS comment,
+       a.created_by,
+       ao.updated IS NULL                                                            as is_edited,
+       CASE WHEN ao.cancellation_reason_id IS NULL THEN false ELSE NOT is_delete END AS is_cancelled
+FROM appointment_occurrence ao
+         JOIN appointment a on a.appointment_id = ao.appointment_id
+         LEFT JOIN appointment_schedule asch
+                   on a.appointment_schedule_id = asch.appointment_schedule_id
+         LEFT JOIN appointment_cancellation_reason acr
+                   on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+WHERE ao.deleted != true;
 
 -- =============================================
 -- ACTIVITY CATEGORIES
@@ -607,10 +651,10 @@ select a.attendance_id,
        si.activity_schedule_id,
        si.session_date,
        si.start_time as session_start_time,
-       si.end_time as session_end_time,
+       si.end_time   as session_end_time,
        a.prisoner_number,
        a2.booking_id,
-       ar.code as attendance_reason_code,
+       ar.code       as attendance_reason_code,
        a.comment,
        a.status,
        a.pay_amount,
@@ -618,5 +662,6 @@ select a.attendance_id,
        a.issue_payment
 from attendance a
          join scheduled_instance si on a.scheduled_instance_id = si.scheduled_instance_id
-         join allocation a2 on si.activity_schedule_id = a2.activity_schedule_id and a.prisoner_number = a2.prisoner_number
+         join allocation a2 on si.activity_schedule_id = a2.activity_schedule_id and
+                               a.prisoner_number = a2.prisoner_number
          left join attendance_reason ar on a.attendance_reason_id = ar.attendance_reason_id;

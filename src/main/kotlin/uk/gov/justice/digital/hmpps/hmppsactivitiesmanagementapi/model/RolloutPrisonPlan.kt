@@ -15,14 +15,14 @@ data class RolloutPrisonPlan(
   @Schema(description = "Flag to indicate if this prison is presently rolled out for activities", example = "true")
   var activitiesRolledOut: Boolean,
 
-  @Schema(description = "The date activities rolled out", example = "2022-09-30")
+  @Schema(description = "The date activities rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val activitiesRolloutDate: LocalDate?,
 
   @Schema(description = "Flag to indicate if this prison is presently rolled out for appointments", example = "true")
   var appointmentsRolledOut: Boolean,
 
-  @Schema(description = "The date activities rolled out", example = "2022-09-30")
+  @Schema(description = "The date appointments rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val appointmentsRolloutDate: LocalDate?,
 )
