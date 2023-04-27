@@ -1,0 +1,56 @@
+{
+  "_comment_": "Contains inmate that has been released from custodial sentence",
+  "offenderNo": "A11111A",
+  "bookingId": 1111111,
+  "bookingNo": "22222B",
+  "offenderId": 1111111,
+  "rootOffenderId": 1818392,
+  "firstName": "TIM",
+  "middleName": "JETHRONE MASON",
+  "lastName": "HARRISON",
+  "dateOfBirth": "1986-06-27",
+  "age": 36,
+  "activeFlag": false,
+  "facialImageId": 1413290,
+  "agencyId": "MDI",
+  "assignedLivingUnitId": 25663,
+  "alertsCodes": [],
+  "activeAlertCount": 0,
+  "inactiveAlertCount": 0,
+  "alerts": [],
+  "assignedLivingUnit": {
+    "agencyId": "MDI",
+    "locationId": 25663,
+    "description": "2-1-007",
+    "agencyName": "Moorland (HMP & YOI)"
+  },
+  "physicalAttributes": {
+    "sexCode": "M",
+    "gender": "Male",
+    "raceCode": "W1",
+    "ethnicity": "White: Eng./Welsh/Scot./N.Irish/British"
+  },
+  "physicalCharacteristics": [],
+  "profileInformation": [
+    {
+      "type": "YOUTH",
+      "question": "Youth Offender?",
+      "resultValue": "No"
+    }
+  ],
+  "sentenceDetail": {
+    "bookingId": 123456,
+    "sentenceStartDate": "2020-07-20",
+    "nonDtoReleaseDateType": "CRD",
+    "releaseDate": "{{now format='yyyy-MM-dd'}}"
+  },
+  "physicalMarks": [],
+  "birthPlace": "DONCASTER",
+  "birthCountryCode": "ENG",
+  "inOutStatus": "OUT",
+  "status": "ACTIVE IN",
+  "statusReason": "TAP-C3",
+  "lastMovementTypeCode": "TAP",
+  "lastMovementReasonCode": "C3",
+  "receptionDate": "2020-07-20"
+}
