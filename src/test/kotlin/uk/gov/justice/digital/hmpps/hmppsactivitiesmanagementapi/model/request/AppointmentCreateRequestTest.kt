@@ -111,15 +111,15 @@ class AppointmentCreateRequestTest {
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 
-  private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentCreateRequest>>, propertyName: String, message: String) {
-    assertThat(validate.size).isEqualTo(1)
-    assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)
-    assertThat(validate.first().message).isEqualTo(message)
-  }
-
   @Test
   fun `appointment description must not be more than 40 characters`() {
     val request = appointmentCreateRequest(appointmentDescription = "123456789012345678900123456789012345678901")
     assertSingleValidationError(validator.validate(request), "appointmentDescription", "Appointment description should not exceed 40 characters")
+  }
+
+  private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentCreateRequest>>, propertyName: String, message: String) {
+    assertThat(validate.size).isEqualTo(1)
+    assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)
+    assertThat(validate.first().message).isEqualTo(message)
   }
 }

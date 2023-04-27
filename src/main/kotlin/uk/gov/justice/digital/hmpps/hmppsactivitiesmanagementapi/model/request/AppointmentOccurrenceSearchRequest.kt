@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotNull
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
@@ -23,6 +24,7 @@ data class AppointmentOccurrenceSearchRequest(
   )
   val appointmentType: AppointmentType? = null,
 
+  @field:NotNull(message = "Start date must be supplied")
   @Schema(
     description =
     """
