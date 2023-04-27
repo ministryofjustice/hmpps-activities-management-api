@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
-import java.util.*
+import java.util.Optional
 
 class AppointmentOccurrenceDetailsServiceTest {
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()

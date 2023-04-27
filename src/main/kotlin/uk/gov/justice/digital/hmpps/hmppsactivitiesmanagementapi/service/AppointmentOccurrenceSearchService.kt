@@ -1,20 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
 import java.security.Principal
-import java.time.LocalDate
 
 @Service
 class AppointmentOccurrenceSearchService(
-  private val prisonRegimeService: PrisonRegimeService,
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository,
+  private val appointmentOccurrenceSearchSpecification: AppointmentOccurrenceSearchSpecification,
+  private val prisonRegimeService: PrisonRegimeService,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
 ) {
@@ -23,37 +21,41 @@ class AppointmentOccurrenceSearchService(
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> {
-    var spec = Specification<AppointmentOccurrenceSearch> { root, _, cb -> cb.equal(root.get<String>("prisonCode"), prisonCode) }
+    var spec = appointmentOccurrenceSearchSpecification.prisonCodeEquals(prisonCode)
 
     request.appointmentType?.apply {
       spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), request.appointmentType) }
     }
 
     spec = if (request.endDate != null) {
-      spec.and { root, _, cb -> cb.between(root.get("startDate"), request.startDate, request.endDate) }
+      spec.and(appointmentOccurrenceSearchSpecification.startDateBetween(request.startDate!!, request.endDate))
     } else {
-      spec.and { root, _, cb -> cb.equal(root.get<LocalDate>("startDate"), request.startDate) }
+      spec.and(appointmentOccurrenceSearchSpecification.startDateEquals(request.startDate!!))
     }
 
     request.timeSlot?.apply {
       val timeRange = request.timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
-      spec = spec.and { root, _, cb -> cb.between(root.get("startTime"), timeRange.start, timeRange.end.minusMinutes(1)) }
+      spec = spec.and(appointmentOccurrenceSearchSpecification.startTimeBetween(timeRange.start, timeRange.end.minusMinutes(1)))
     }
 
     request.categoryCode?.apply {
-      spec = spec.and { root, _, cb -> cb.equal(root.get<String>("categoryCode"), request.categoryCode) }
+      spec = spec.and(appointmentOccurrenceSearchSpecification.categoryCodeEquals(request.categoryCode))
     }
 
     request.internalLocationId?.apply {
-      spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("internalLocationId"), request.internalLocationId) }
+      spec = spec.and(appointmentOccurrenceSearchSpecification.internalLocationIdEquals(request.internalLocationId))
+    }
+
+    request.inCell?.apply {
+      spec = spec.and(appointmentOccurrenceSearchSpecification.inCellEquals(request.inCell))
     }
 
     if (request.prisonerNumbers?.isEmpty() == false) {
-      spec = spec.and { root, _, _ -> root.join<AppointmentOccurrenceSearch, AppointmentOccurrenceAllocationSearch>("allocations").get<String>("prisonerNumber").`in`(request.prisonerNumbers) }
+      spec = spec.and(appointmentOccurrenceSearchSpecification.prisonerNumbersIn(request.prisonerNumbers))
     }
 
     request.createdBy?.apply {
-      spec = spec.and { root, _, cb -> cb.equal(root.get<String>("createdBy"), request.createdBy) }
+      spec = spec.and(appointmentOccurrenceSearchSpecification.createdByEquals(request.createdBy))
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
