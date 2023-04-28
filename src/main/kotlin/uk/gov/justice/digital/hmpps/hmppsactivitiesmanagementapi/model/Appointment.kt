@@ -26,16 +26,31 @@ data class Appointment(
   val id: Long,
 
   @Schema(
-    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
-    example = "CHAP",
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
   )
-  val categoryCode: String,
+  val appointmentType: AppointmentType,
 
   @Schema(
     description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
     example = "SKI",
   )
   val prisonCode: String,
+
+  @Schema(
+    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
+    example = "CHAP",
+  )
+  val categoryCode: String,
+
+  @Schema(
+    description =
+    """
+    Free text description for an appointment.  This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -78,12 +93,6 @@ data class Appointment(
   val endTime: LocalTime?,
 
   @Schema(
-    description = "The appointment type (INDIVIDUAL or GROUP)",
-    example = "INDIVIDUAL",
-  )
-  val appointmentType: AppointmentType,
-
-  @Schema(
     description =
     """
     Notes relating to the appointment.
@@ -92,15 +101,6 @@ data class Appointment(
     example = "This appointment will help adjusting to life outside of prison",
   )
   val comment: String,
-
-  @Schema(
-    description =
-    """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
-    """,
-    example = "Meeting with the governor",
-  )
-  val appointmentDescription: String?,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",

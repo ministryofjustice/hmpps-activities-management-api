@@ -26,6 +26,12 @@ data class AppointmentOccurrence(
   val id: Long,
 
   @Schema(
+    description = "The sequence number of this appointment occurrence within the recurring appointment series",
+    example = "3",
+  )
+  val sequenceNumber: Int,
+
+  @Schema(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
@@ -139,6 +145,5 @@ data class AppointmentOccurrence(
   )
   val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
 ) {
-
   fun isCancelled() = cancelled != null
 }

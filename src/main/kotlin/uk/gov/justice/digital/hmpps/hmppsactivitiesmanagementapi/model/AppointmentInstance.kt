@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -39,16 +40,43 @@ data class AppointmentInstance(
   val appointmentOccurrenceAllocationId: Long,
 
   @Schema(
-    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
-    example = "CHAP",
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
   )
-  val categoryCode: String,
+  val appointmentType: AppointmentType,
 
   @Schema(
     description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
     example = "SKI",
   )
   val prisonCode: String,
+
+  @Schema(
+    description = "The NOMIS OFFENDERS.OFFENDER_ID_DISPLAY value for mapping to a prisoner record in NOMIS",
+    example = "A1234BC",
+  )
+  val prisonerNumber: String,
+
+  @Schema(
+    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
+    example = "456",
+  )
+  val bookingId: Long,
+
+  @Schema(
+    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
+    example = "CHAP",
+  )
+  val categoryCode: String,
+
+  @Schema(
+    description =
+    """
+    Free text description for an appointment.  This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -69,18 +97,6 @@ data class AppointmentInstance(
     example = "false",
   )
   val inCell: Boolean,
-
-  @Schema(
-    description = "The NOMIS OFFENDERS.OFFENDER_ID_DISPLAY value for mapping to a prisoner record in NOMIS",
-    example = "A1234BC",
-  )
-  val prisonerNumber: String,
-
-  @Schema(
-    description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
-    example = "456",
-  )
-  val bookingId: Long,
 
   @Schema(
     description = "The date of the appointment instance",
