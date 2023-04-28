@@ -138,7 +138,5 @@ CREATE OR REPLACE VIEW v_appointment_occurrence_search AS
     FROM
         appointment_occurrence ao JOIN appointment a on a.appointment_id = ao.appointment_id
         LEFT JOIN appointment_schedule asch on a.appointment_schedule_id = asch.appointment_schedule_id
-        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id;
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
     WHERE ao.deleted != true;
-
-
