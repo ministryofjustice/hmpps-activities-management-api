@@ -75,6 +75,18 @@ CREATE INDEX idx_appointment_occurrence_allocation_appointment_occurrence_id ON 
 CREATE INDEX idx_appointment_occurrence_allocation_prisoner_number ON appointment_occurrence_allocation (prisoner_number);
 CREATE INDEX idx_appointment_occurrence_allocation_booking_id ON appointment_occurrence_allocation (booking_id);
 
+CREATE TABLE bulk_appointment (
+        bulk_appointment_id        bigserial   NOT NULL CONSTRAINT bulk_appointment_pk PRIMARY KEY,
+        created                    timestamp,
+        created_by                 varchar(100)
+);
+
+CREATE TABLE bulk_appointment_appointment (
+        bulk_appointment_appointment_id        bigserial   NOT NULL CONSTRAINT bulk_appointment_appointment_pk PRIMARY KEY,
+        bulk_appointment_id                    bigint      NOT NULL REFERENCES bulk_appointment (bulk_appointment_id) ON DELETE CASCADE,
+        appointment_id                         bigint      NOT NULL REFERENCES appointment (appointment_id) ON DELETE CASCADE
+);
+
 CREATE OR REPLACE VIEW v_appointment_instance AS
     SELECT
         aoa.appointment_occurrence_allocation_id AS appointment_instance_id,
@@ -99,4 +111,7 @@ CREATE OR REPLACE VIEW v_appointment_instance AS
     FROM appointment_occurrence_allocation aoa
         JOIN appointment_occurrence ao on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
         JOIN appointment a on a.appointment_id = ao.appointment_id
-        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+        LEFT JOIN appointment_cancellation_reason acr on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id;
+
+
+

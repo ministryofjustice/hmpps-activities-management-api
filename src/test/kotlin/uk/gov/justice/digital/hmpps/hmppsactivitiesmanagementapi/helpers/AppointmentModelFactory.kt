@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.IndividualAppointment
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -112,6 +114,33 @@ fun appointmentCreateRequest(
     comment,
     appointmentDescription,
     prisonerNumbers,
+  )
+
+fun bulkAppointmentRequest(
+  categoryCode: String = "TEST",
+  prisonCode: String = "TPR",
+  internalLocationId: Long = 123,
+  inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = LocalTime.of(13, 0),
+  endTime: LocalTime = LocalTime.of(14, 30),
+  appointmentDescription: String = "Appointment description",
+  prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
+) =
+  BulkAppointmentsRequest(
+    categoryCode = categoryCode,
+    prisonCode = prisonCode,
+    internalLocationId = internalLocationId,
+    inCell = inCell,
+    startDate = startDate,
+    appointmentDescription = appointmentDescription,
+    appointments = prisonerNumbers.map {
+      IndividualAppointment(
+        prisonerNumber = it,
+        startTime = startTime,
+        endTime = endTime,
+      )
+    }.toList(),
   )
 
 fun appointmentDetails() = AppointmentDetails(
