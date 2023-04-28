@@ -22,12 +22,12 @@ import java.time.LocalTime
   """,
 )
 data class AppointmentCreateRequest(
-  @field:NotEmpty(message = "Category code must be supplied")
+  @field:NotNull(message = "Appointment type must be supplied")
   @Schema(
-    description = "The NOMIS reference code for this appointment. Must exist and be active",
-    example = "CHAP",
+    description = "The appointment type (INDIVIDUAL or GROUP)",
+    example = "INDIVIDUAL",
   )
-  val categoryCode: String?,
+  val appointmentType: AppointmentType?,
 
   @field:NotEmpty(message = "Prison code must be supplied")
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
@@ -36,6 +36,30 @@ data class AppointmentCreateRequest(
     example = "PVI",
   )
   val prisonCode: String?,
+
+  @field:NotEmpty(message = "At least one prisoner number must be supplied")
+  @Schema(
+    description = "The prisoner or prisoners to allocate to the created appointment or series of appointment occurrences",
+    example = "[\"A1234BC\"]",
+  )
+  val prisonerNumbers: List<String> = emptyList(),
+
+  @field:NotEmpty(message = "Category code must be supplied")
+  @Schema(
+    description = "The NOMIS reference code for this appointment. Must exist and be active",
+    example = "CHAP",
+  )
+  val categoryCode: String?,
+
+  @field:Size(max = 40, message = "Appointment description should not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    Free text description for an appointment.  This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -81,13 +105,6 @@ data class AppointmentCreateRequest(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
-  @field:NotNull(message = "Appointment type must be supplied")
-  @Schema(
-    description = "The appointment type (INDIVIDUAL or GROUP)",
-    example = "INDIVIDUAL",
-  )
-  val appointmentType: AppointmentType?,
-
   @field:Valid
   @Schema(
     description =
@@ -107,24 +124,10 @@ data class AppointmentCreateRequest(
     example = "This appointment will help adjusting to life outside of prison",
   )
   val comment: String = "",
-
-  @field:Size(max = 40, message = "Appointment description should not exceed {max} characters")
-  @Schema(
-    description =
-    """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
-    """,
-    example = "Meeting with the governor",
-  )
-  val appointmentDescription: String?,
-
-  @field:NotEmpty(message = "At least one prisoner number must be supplied")
-  @Schema(
-    description = "The prisoner or prisoners to allocate to the created appointment or series of appointment occurrences",
-    example = "[\"A1234BC\"]",
-  )
-  val prisonerNumbers: List<String> = emptyList(),
 ) {
+  @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
+  private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2
+
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell || internalLocationId != null
 
@@ -133,7 +136,4 @@ data class AppointmentCreateRequest(
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
-
-  @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
-  private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2
 }

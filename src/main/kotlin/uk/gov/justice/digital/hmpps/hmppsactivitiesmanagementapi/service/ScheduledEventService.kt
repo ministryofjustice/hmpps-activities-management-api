@@ -118,7 +118,7 @@ class ScheduledEventService(
           }
           .apply {
             // If activities is enabled replace the empty list with the details from the local database
-            if (prisonRolledOut.isActivitiesEnabled()) {
+            if (prisonRolledOut.isActivitiesRolledOut()) {
               activities = transformPrisonerScheduledActivityToScheduledEvents(
                 prisonCode,
                 eventPriorities,
@@ -127,7 +127,7 @@ class ScheduledEventService(
             }
 
             // If appointments is enabled replace the empty list with the details from the local database
-            if (prisonRolledOut.isAppointmentsEnabled()) {
+            if (prisonRolledOut.isAppointmentsRolledOut()) {
               appointments = transformAppointmentInstanceToScheduledEvents(
                 prisonCode,
                 eventPriorities,
@@ -155,7 +155,7 @@ class ScheduledEventService(
     dateRange: LocalDateRange,
   ): SinglePrisonerSchedules = coroutineScope {
     val appointments = async {
-      if (prisonRolledOut.isAppointmentsEnabled()) {
+      if (prisonRolledOut.isAppointmentsRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledAppointmentsAsync(prisoner.first, dateRange)
@@ -163,7 +163,7 @@ class ScheduledEventService(
     }
 
     val activities = async {
-      if (prisonRolledOut.isActivitiesEnabled()) {
+      if (prisonRolledOut.isActivitiesRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledActivitiesAsync(prisoner.first, dateRange)
@@ -281,7 +281,7 @@ class ScheduledEventService(
       }
       .apply {
         // If activities is enabled replace the empty list with the details from the local database
-        if (prisonRolledOut.isActivitiesEnabled()) {
+        if (prisonRolledOut.isActivitiesRolledOut()) {
           activities = transformPrisonerScheduledActivityToScheduledEvents(
             prisonCode,
             eventPriorities,
@@ -290,7 +290,7 @@ class ScheduledEventService(
         }
 
         // If appointments is enabled replace the empty list with the details from the local database
-        if (prisonRolledOut.isAppointmentsEnabled()) {
+        if (prisonRolledOut.isAppointmentsRolledOut()) {
           appointments = transformAppointmentInstanceToScheduledEvents(
             prisonCode,
             eventPriorities,
@@ -318,7 +318,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
     val appointments = async {
-      if (rolloutPrison.isAppointmentsEnabled()) {
+      if (rolloutPrison.isAppointmentsRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -331,7 +331,7 @@ class ScheduledEventService(
     }
 
     val activities = async {
-      if (rolloutPrison.isActivitiesEnabled()) {
+      if (rolloutPrison.isActivitiesRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(

@@ -21,4 +21,4 @@ spec:
             args:
               - /bin/sh
               - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/deallocate-offenders
+              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-allocations

@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -70,7 +70,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(rolloutDate: LocalDate, dataSource: AppointmentsDataSource) {
+  private fun setupRolledOutPrisonMock(activitiesRolloutDate: LocalDate, appointmentsRolloutDate: LocalDate) {
     val prisonCode = "MDI"
     val active = true
     whenever(rolloutPrisonRepository.findByCode(prisonCode))
@@ -79,9 +79,10 @@ class ScheduledEventServiceMultiplePrisonersTest {
           rolloutPrisonId = 10,
           code = prisonCode,
           description = "Description",
-          active = active,
-          rolloutDate = rolloutDate,
-          appointmentsDataSource = dataSource,
+          activitiesToBeRolledOut = active,
+          activitiesRolloutDate = activitiesRolloutDate,
+          appointmentsToBeRolledOut = active,
+          appointmentsRolloutDate = appointmentsRolloutDate,
         ),
       )
   }
@@ -206,12 +207,14 @@ class ScheduledEventServiceMultiplePrisonersTest {
     appointmentId: Long = 1L,
     appointmentOccurrenceId: Long = 1L,
     appointmentOccurrenceAllocationId: Long = 1L,
-    categoryCode: String = "TEST",
+    appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
-    internalLocationId: Long? = 101,
-    inCell: Boolean = false,
     prisonerNumber: String,
     bookingId: Long,
+    categoryCode: String = "TEST",
+    appointmentDescription: String? = null,
+    internalLocationId: Long? = 101,
+    inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
     startTime: LocalTime = LocalTime.now(),
     endTime: LocalTime? = null,
@@ -225,12 +228,14 @@ class ScheduledEventServiceMultiplePrisonersTest {
     appointmentId,
     appointmentOccurrenceId,
     appointmentOccurrenceAllocationId,
-    categoryCode = categoryCode,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
-    internalLocationId = internalLocationId,
-    inCell = inCell,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
+    internalLocationId = internalLocationId,
+    inCell = inCell,
     appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,
@@ -257,7 +262,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), AppointmentsDataSource.PRISON_API)
+      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -404,7 +409,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), AppointmentsDataSource.PRISON_API)
+      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
 
       val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
       whenever(
@@ -508,7 +513,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), AppointmentsDataSource.ACTIVITIES_SERVICE)
+      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2022, 12, 22))
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -557,7 +562,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.internalLocationId).isEqualTo(101L)
           assertThat(it.internalLocationCode).isEqualTo("Unknown")
-          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location")
+          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
           assertThat(it.cancelled).isFalse
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }

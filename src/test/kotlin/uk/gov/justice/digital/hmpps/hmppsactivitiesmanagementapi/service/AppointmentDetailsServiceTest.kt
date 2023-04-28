@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import java.util.*
+import java.util.Optional
 
 class AppointmentDetailsServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -71,9 +71,13 @@ class AppointmentDetailsServiceTest {
       AppointmentDetails(
         entity.appointmentId,
         AppointmentType.INDIVIDUAL,
-        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         entity.prisonCode,
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
+        "Appointment description",
+        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
         entity.inCell,
         entity.startDate,
         entity.startTime,
@@ -88,7 +92,8 @@ class AppointmentDetailsServiceTest {
           AppointmentOccurrenceSummary(
             occurrenceEntity.appointmentOccurrenceId,
             1,
-            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location"),
+            1,
+            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
             occurrenceEntity.inCell,
             occurrenceEntity.startDate,
             occurrenceEntity.startTime,
@@ -98,11 +103,7 @@ class AppointmentDetailsServiceTest {
             isCancelled = false,
             occurrenceEntity.updated,
             UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-            1,
           ),
-        ),
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
         ),
       ),
     )

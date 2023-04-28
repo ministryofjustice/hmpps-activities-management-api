@@ -5,9 +5,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OffenderDeallocationService
 
-class OffenderDeallocationJobTest {
+class ManageAllocationsJobTest {
   private val offenderDeallocationService: OffenderDeallocationService = mock()
-  private val job = OffenderDeallocationJob(offenderDeallocationService)
+  private val job = ManageAllocationsJob(offenderDeallocationService)
 
   @Test
   fun `attendance records creation triggered for today`() {

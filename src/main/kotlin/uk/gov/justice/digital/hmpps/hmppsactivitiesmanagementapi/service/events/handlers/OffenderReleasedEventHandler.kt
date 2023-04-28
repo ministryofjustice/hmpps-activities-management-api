@@ -23,15 +23,17 @@ class OffenderReleasedEventHandler(
   }
 
   override fun handle(event: OffenderReleasedEvent) =
-    when {
-      // TODO temporary release probably needs further validation checks e.g. check state of prisoner against prison-api
-      event.isTemporary() -> {
-        suspendOffenderAllocations(event)
-        true
-      }
+    log.info("Handling released event $event").run {
+      when {
+        // TODO temporary release probably needs further validation checks e.g. check state of prisoner against prison-api
+        event.isTemporary() -> {
+          suspendOffenderAllocations(event)
+          true
+        }
 
-      event.isPermanent() -> deallocateOffenderAllocations(event)
-      else -> false
+        event.isPermanent() -> deallocateOffenderAllocations(event)
+        else -> false
+      }
     }
 
   private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =

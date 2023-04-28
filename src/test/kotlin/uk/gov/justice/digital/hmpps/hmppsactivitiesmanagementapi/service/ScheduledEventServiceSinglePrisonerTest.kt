@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -73,7 +73,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(active: Boolean, rolloutDate: LocalDate, dataSource: AppointmentsDataSource) {
+  private fun setupRolledOutPrisonMock(activitiesRolloutDate: LocalDate, appointmentsRolloutDate: LocalDate) {
     val prisonCode = "MDI"
     whenever(rolloutPrisonRepository.findByCode(prisonCode))
       .thenReturn(
@@ -81,9 +81,10 @@ class ScheduledEventServiceSinglePrisonerTest {
           rolloutPrisonId = 10,
           code = prisonCode,
           description = "Description",
-          active = active,
-          rolloutDate = rolloutDate,
-          appointmentsDataSource = dataSource,
+          activitiesToBeRolledOut = true,
+          activitiesRolloutDate = activitiesRolloutDate,
+          appointmentsToBeRolledOut = true,
+          appointmentsRolloutDate = appointmentsRolloutDate,
         ),
       )
   }
@@ -214,12 +215,14 @@ class ScheduledEventServiceSinglePrisonerTest {
     appointmentId: Long = 1L,
     appointmentOccurrenceId: Long = 1L,
     appointmentOccurrenceAllocationId: Long = 1L,
-    categoryCode: String = "TEST",
+    appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
-    internalLocationId: Long? = 101,
-    inCell: Boolean = false,
     prisonerNumber: String,
     bookingId: Long,
+    categoryCode: String = "TEST",
+    appointmentDescription: String? = null,
+    internalLocationId: Long? = 101,
+    inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
     startTime: LocalTime = LocalTime.of(10, 0, 0),
     endTime: LocalTime? = LocalTime.of(11, 0, 0),
@@ -233,13 +236,15 @@ class ScheduledEventServiceSinglePrisonerTest {
     appointmentId,
     appointmentOccurrenceId,
     appointmentOccurrenceAllocationId,
-    categoryCode = categoryCode,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
+    bookingId = bookingId,
+    appointmentDate = appointmentDate,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
     internalLocationId = internalLocationId,
     inCell = inCell,
     prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-    appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,
     comment = comment,
@@ -267,9 +272,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
@@ -445,9 +449,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeNotOverlappingTodaysDate)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
@@ -509,9 +512,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(
@@ -579,9 +581,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(
@@ -648,9 +649,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
@@ -724,9 +724,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.ACTIVITIES_SERVICE,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2022, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
@@ -823,9 +822,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate)
 
       setupRolledOutPrisonMock(
-        active = true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        AppointmentsDataSource.ACTIVITIES_SERVICE,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2022, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
@@ -879,7 +877,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
           assertThat(it.internalLocationCode).isEqualTo("Unknown")
-          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location")
+          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }
 
@@ -941,9 +939,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, withAppointmentSubType = "LACO")
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode)).thenReturn(
@@ -1003,9 +1000,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, withPrisonerDetailsException = true)
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       assertThatThrownBy {
@@ -1034,9 +1030,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange, prisonOverride = "PVI")
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       assertThatThrownBy {
@@ -1064,9 +1059,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       // Simulate appointment error from prison API
@@ -1103,9 +1097,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       // Simulate activities error from prison API
@@ -1145,9 +1138,8 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
 
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       // Simulate visits error from prison API
@@ -1186,9 +1178,8 @@ class ScheduledEventServiceSinglePrisonerTest {
 
       setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRange)
       setupRolledOutPrisonMock(
-        active = false,
-        rolloutDate = LocalDate.of(2023, 12, 22),
-        AppointmentsDataSource.PRISON_API,
+        activitiesRolloutDate = LocalDate.of(2600, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
       )
 
       // Simulate court hearings error from prison API
