@@ -14,6 +14,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
@@ -50,47 +51,53 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get single appointment`() {
-    val appointment = webTestClient.getAppointmentById(1)
+    val appointment = webTestClient.getAppointmentById(1)!!
 
-    with(appointment!!) {
-      assertThat(categoryCode).isEqualTo("AC1")
-      assertThat(prisonCode).isEqualTo("TPR")
-      assertThat(internalLocationId).isEqualTo(123)
-      assertThat(inCell).isEqualTo(false)
-      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-      assertThat(comment).isEqualTo("Appointment level comment")
-      assertThat(appointmentDescription).isEqualTo("Appointment description")
-      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("TEST.USER")
-      assertThat(updated).isNull()
-      assertThat(updatedBy).isNull()
-      assertThat(schedule).isNull()
-      with(occurrences) {
-        assertThat(size).isEqualTo(1)
-        with(get(0)) {
-          assertThat(internalLocationId).isEqualTo(123)
-          assertThat(inCell).isEqualTo(false)
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-          assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-          assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-          assertThat(comment).isEqualTo("Appointment occurrence level comment")
-          assertThat(cancelled).isNull()
-          assertThat(cancellationReasonId).isNull()
-          assertThat(cancelledBy).isNull()
-          assertThat(updated).isNull()
-          assertThat(updatedBy).isNull()
-          with(allocations) {
-            assertThat(size).isEqualTo(1)
-            with(get(0)) {
-              assertThat(prisonerNumber).isEqualTo("A1234BC")
-              assertThat(bookingId).isEqualTo(456)
-            }
-          }
-        }
-      }
-    }
+    assertThat(appointment).isEqualTo(
+      Appointment(
+        1,
+        AppointmentType.INDIVIDUAL,
+        "TPR",
+        "AC1",
+        "Appointment description",
+        123,
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        "Appointment level comment",
+        appointment.created,
+        "TEST.USER",
+        null,
+        null,
+        occurrences = listOf(
+          AppointmentOccurrence(
+            2,
+            1,
+            123,
+            false,
+            LocalDate.now().plusDays(1),
+            LocalTime.of(9, 0),
+            LocalTime.of(10, 30),
+            "Appointment occurrence level comment",
+            null,
+            null,
+            null,
+            null,
+            null,
+            allocations = listOf(
+              AppointmentOccurrenceAllocation(
+                3,
+                "A1234BC",
+                456,
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Test
@@ -166,7 +173,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         ),
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = "B23456CE",
-          bookingId = 1,
+          bookingId = 2,
           prisonId = request.prisonCode!!,
         ),
       ),
@@ -211,11 +218,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointment = webTestClient.createAppointment(request)!!
     val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
 
-    with(appointment) {
-      with(occurrences) {
-        assertThat(size).isEqualTo(3)
-      }
-    }
+    assertThat(appointment.occurrences).hasSize(3)
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
@@ -230,99 +233,101 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
-    with(appointment) {
-      assertThat(id).isGreaterThan(0)
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(prisonCode).isEqualTo(request.prisonCode)
-      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(inCell).isEqualTo(request.inCell)
-      assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(startTime).isEqualTo(request.startTime)
-      assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)
-      assertThat(comment).isEqualTo(request.comment)
-      assertThat(appointmentDescription).isEqualTo(request.appointmentDescription)
-      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("test-client")
-      assertThat(updated).isNull()
-      assertThat(updatedBy).isNull()
-      assertThat(schedule).isNull()
-      with(occurrences) {
-        assertThat(size).isEqualTo(1)
-        with(occurrences.first()) {
-          assertThat(id).isGreaterThan(0)
-          assertThat(categoryCode).isEqualTo(request.categoryCode)
-          assertThat(prisonCode).isEqualTo(request.prisonCode)
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(inCell).isEqualTo(request.inCell)
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
-          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo("test-client")
-          assertThat(updated).isNull()
-          assertThat(updatedBy).isNull()
-          with(allocations) {
-            assertThat(size).isEqualTo(1)
-            with(first()) {
-              assertThat(id).isGreaterThan(0)
-              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
-              assertThat(bookingId).isEqualTo(1)
-            }
-          }
-        }
-      }
-    }
+    assertThat(appointment).isEqualTo(
+      Appointment(
+        appointment.id,
+        request.appointmentType!!,
+        request.prisonCode!!,
+        request.categoryCode!!,
+        request.appointmentDescription,
+        request.internalLocationId,
+        request.inCell,
+        request.startDate!!,
+        request.startTime!!,
+        request.endTime,
+        request.comment,
+        appointment.created,
+        "test-client",
+        null,
+        null,
+        occurrences = listOf(
+          AppointmentOccurrence(
+            appointment.occurrences.first().id,
+            1,
+            request.internalLocationId,
+            request.inCell,
+            request.startDate!!,
+            request.startTime!!,
+            request.endTime,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            allocations = listOf(
+              AppointmentOccurrenceAllocation(
+                appointment.occurrences.first().allocations.first().id,
+                request.prisonerNumbers.first(),
+                1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointment.id).isGreaterThan(0)
+    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointment.occurrences.first().id).isGreaterThan(0)
+    assertThat(appointment.occurrences.first().allocations.first().id).isGreaterThan(0)
   }
 
   private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
-    with(appointment) {
-      assertThat(id).isGreaterThan(0)
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(prisonCode).isEqualTo(request.prisonCode)
-      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(inCell).isEqualTo(request.inCell)
-      assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(startTime).isEqualTo(request.startTime)
-      assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(appointmentType).isEqualTo(AppointmentType.GROUP)
-      assertThat(comment).isEqualTo(request.comment)
-      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("test-client")
-      assertThat(updated).isNull()
-      assertThat(updatedBy).isNull()
-      assertThat(schedule).isNull()
-      with(occurrences) {
-        assertThat(size).isEqualTo(1)
-        with(occurrences.first()) {
-          assertThat(id).isGreaterThan(0)
-          assertThat(categoryCode).isEqualTo(request.categoryCode)
-          assertThat(prisonCode).isEqualTo(request.prisonCode)
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(inCell).isEqualTo(request.inCell)
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
-          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo("test-client")
-          assertThat(updated).isNull()
-          assertThat(updatedBy).isNull()
-          with(allocations) {
-            assertThat(size).isEqualTo(2)
-          }
-          assertThat(
-            allocations.containsAll(
-              listOf(
-                AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
-                AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
-              ),
+    assertThat(appointment).isEqualTo(
+      Appointment(
+        appointment.id,
+        request.appointmentType!!,
+        request.prisonCode!!,
+        request.categoryCode!!,
+        request.appointmentDescription,
+        request.internalLocationId,
+        request.inCell,
+        request.startDate!!,
+        request.startTime!!,
+        request.endTime,
+        request.comment,
+        appointment.created,
+        "test-client",
+        null,
+        null,
+        occurrences = listOf(
+          AppointmentOccurrence(
+            appointment.occurrences.first().id,
+            1,
+            request.internalLocationId,
+            request.inCell,
+            request.startDate!!,
+            request.startTime!!,
+            request.endTime,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            allocations = listOf(
+              AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
+              AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
             ),
-          )
-        }
-      }
-    }
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointment.id).isGreaterThan(0)
+    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointment.occurrences.first().id).isGreaterThan(0)
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =

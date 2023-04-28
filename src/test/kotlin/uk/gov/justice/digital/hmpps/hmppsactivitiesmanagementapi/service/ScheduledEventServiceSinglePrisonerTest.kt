@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentsDataSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -214,12 +215,14 @@ class ScheduledEventServiceSinglePrisonerTest {
     appointmentId: Long = 1L,
     appointmentOccurrenceId: Long = 1L,
     appointmentOccurrenceAllocationId: Long = 1L,
-    categoryCode: String = "TEST",
+    appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
-    internalLocationId: Long? = 101,
-    inCell: Boolean = false,
     prisonerNumber: String,
     bookingId: Long,
+    categoryCode: String = "TEST",
+    appointmentDescription: String? = null,
+    internalLocationId: Long? = 101,
+    inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
     startTime: LocalTime = LocalTime.of(10, 0, 0),
     endTime: LocalTime? = LocalTime.of(11, 0, 0),
@@ -233,13 +236,15 @@ class ScheduledEventServiceSinglePrisonerTest {
     appointmentId,
     appointmentOccurrenceId,
     appointmentOccurrenceAllocationId,
-    categoryCode = categoryCode,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
+    bookingId = bookingId,
+    appointmentDate = appointmentDate,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
     internalLocationId = internalLocationId,
     inCell = inCell,
     prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-    appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,
     comment = comment,
@@ -879,7 +884,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
           assertThat(it.internalLocationCode).isEqualTo("Unknown")
-          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location")
+          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }
 

@@ -18,14 +18,14 @@ class AppointmentDetailsService(
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
 
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointment.prisonerNumbers()).block()!!
+
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointment.prisonerNumbers()).block()!!
-
-    return appointment.toDetails(referenceCodeMap, locationMap, userMap, prisoners)
+    return appointment.toDetails(prisoners, referenceCodeMap, locationMap, userMap)
   }
 }

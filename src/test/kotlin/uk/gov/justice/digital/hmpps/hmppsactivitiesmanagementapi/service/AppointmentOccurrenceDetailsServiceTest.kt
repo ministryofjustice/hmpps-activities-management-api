@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
-import java.util.*
+import java.util.Optional
 
 class AppointmentOccurrenceDetailsServiceTest {
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
@@ -72,9 +72,13 @@ class AppointmentOccurrenceDetailsServiceTest {
         appointment.appointmentId,
         AppointmentType.INDIVIDUAL,
         entity.sequenceNumber,
-        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         appointment.prisonCode,
-        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location"),
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
+        "Appointment description",
+        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location User Description"),
         entity.inCell,
         entity.startDate,
         entity.startTime,
@@ -87,9 +91,6 @@ class AppointmentOccurrenceDetailsServiceTest {
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
       ),
     )
   }

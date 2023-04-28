@@ -29,6 +29,15 @@ data class AppointmentOccurrenceSummary(
   @Schema(
     description =
     """
+    The number of prisoners allocated to this appointment occurrence
+    """,
+    example = "3",
+  )
+  val prisonerCount: Int,
+
+  @Schema(
+    description =
+    """
     The summary of the internal location this appointment occurrence will take place. Can be different to the parent
     appointment if this occurrence has been edited.
     Will be null if in cell = true
@@ -114,13 +123,4 @@ data class AppointmentOccurrenceSummary(
     """,
   )
   val updatedBy: UserSummary?,
-
-  @Schema(
-    description =
-    """
-    The number of prisoners allocated to this appointment occurrence
-    """,
-    example = "3",
-  )
-  val prisonerCount: Int,
 )
