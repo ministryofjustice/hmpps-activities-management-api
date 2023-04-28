@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
@@ -75,7 +76,7 @@ data class Allocation(
 
       prisonerStatus = PrisonerStatus.ENDED
       deallocatedReason = reason
-      deallocatedBy = "SYSTEM"
+      deallocatedBy = ServiceName.SERVICE_NAME.value
       deallocatedTime = dateTime
     }
 
@@ -106,7 +107,7 @@ data class Allocation(
       prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
       suspendedTime = dateTime
       suspendedReason = reason
-      suspendedBy = "SYSTEM"
+      suspendedBy = ServiceName.SERVICE_NAME.value
     }
 
   fun userSuspend(dateTime: LocalDateTime, reason: String, byWhom: String) =
