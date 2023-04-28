@@ -29,6 +29,6 @@ class InboundEventsService(
       return
     }
 
-    log.debug("Ignoring event $inboundEvent")
+    log.info("Ignoring event $inboundEvent")
   }
 }
