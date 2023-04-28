@@ -86,6 +86,7 @@ class ActivityService(
       attendanceRequired = request.attendanceRequired,
       summary = request.summary,
       description = request.description,
+      inCell = request.inCell,
       startDate = request.startDate ?: LocalDate.now(),
       endDate = request.endDate,
       riskLevel = request.riskLevel!!,
@@ -115,8 +116,7 @@ class ActivityService(
     }
 
     activity.let {
-      val scheduleLocation = getLocationForSchedule(it, request)
-
+      val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request)
       val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
       val timeSlots =
         mapOf(
@@ -127,9 +127,7 @@ class ActivityService(
 
       activity.addSchedule(
         description = request.description!!,
-        internalLocationId = scheduleLocation.locationId.toInt(),
-        internalLocationCode = scheduleLocation.internalLocationCode ?: "",
-        internalLocationDescription = scheduleLocation.description,
+        internalLocation = scheduleLocation,
         capacity = request.capacity!!,
         startDate = request.startDate!!,
         endDate = request.endDate,
