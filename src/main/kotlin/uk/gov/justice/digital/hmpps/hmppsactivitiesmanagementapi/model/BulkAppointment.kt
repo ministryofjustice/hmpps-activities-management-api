@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(
-  description = "Describes a list of activities created as part of a sinle bulk operation",
+  description = "Describes a list of activities created as part of a single bulk operation",
 )
 data class BulkAppointment(
 
