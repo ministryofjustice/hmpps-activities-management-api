@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -201,18 +200,20 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
+    "classpath:test_data/seed-attendance-summary.sql",
   )
   @Test
   fun `get attendance summary for specified date`() {
-    val attendanceSummary = webTestClient.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.of(2022, 10, 10))!!
-    assertThat(attendanceSummary.first().prisonCode).isEqualTo(pentonvillePrisonCode)
-    assertThat(attendanceSummary.first().activityId).isEqualTo(1)
-    assertThat(attendanceSummary.first().categoryName).isEqualTo("Education")
-    assertThat(attendanceSummary.first().sessionDate).isEqualTo("2022-10-10")
-    assertThat(attendanceSummary.first().timeSlot).isEqualTo("AM")
-    assertThat(attendanceSummary.first().status).isEqualTo("WAITING")
-    assertThat(attendanceSummary.first().attendanceCount).isEqualTo(2)
+    val attendanceSummary = webTestClient.getAttendanceSummaryByDate(moorlandPrisonCode, LocalDate.of(2022, 10, 10))!!
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().prisonCode).isEqualTo(moorlandPrisonCode)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().activityId).isEqualTo(1)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().sessionDate).isEqualTo("2022-10-10")
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().status).isEqualTo("WAITING")
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(3)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("PM") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(2)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("ED") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(1)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Gym, sport, fitness") }.first().attendanceCount).isEqualTo(2)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("PM") && it.categoryName.equals("Gym, sport, fitness") }.first().attendanceCount).isEqualTo(1)
   }
 
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =

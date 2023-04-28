@@ -27,7 +27,7 @@ data class AllAttendanceSummary(
   val categoryName: String,
 
   @Schema(
-    description = "The scheduled instance date",
+    description = "The date of the session for which attendance may have been marked or a planned absence recorded",
     example = "2023-03-30",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")

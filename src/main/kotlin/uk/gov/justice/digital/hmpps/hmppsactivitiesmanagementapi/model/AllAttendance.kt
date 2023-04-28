@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
@@ -17,9 +18,10 @@ data class AllAttendance(
   val attendanceId: Long,
 
   @Schema(
-    description = "The scheduled instance date",
+    description = "The date of the session for which attendance may have been marked or a planned absence recorded",
     example = "2023-03-30",
   )
+  @JsonFormat(pattern = "yyyy-MM-dd")
   val sessionDate: LocalDate,
 
   @Schema(description = "AM, PM, ED.", example = "AM")
