@@ -42,8 +42,9 @@ class OffenderReceivedEventHandlerTest {
       allocations,
     )
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    val successful = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
 
+    assertThat(successful).isTrue
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(autoSuspendedTwo.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue

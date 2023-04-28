@@ -29,17 +29,21 @@ system:
 # Container-provider local auth server
 hmpps:
   auth:
-    # url: http://localhost:8090/auth
-    url: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
+    url: http://localhost:8090/auth
 
 prison:
   api:
-    url: https://api-dev.prison.service.justice.gov.uk
+    url: http://localhost:8091
     timeout: 10s
 
 prisoner-search:
   api:
     url: https://prisoner-offender-search-dev.prison.service.justice.gov.uk
+    timeout: 10s
+
+case-notes:
+  api:
+    url: https://dev.offender-case-notes.service.justice.gov.uk
     timeout: 10s
 
 jobs:
