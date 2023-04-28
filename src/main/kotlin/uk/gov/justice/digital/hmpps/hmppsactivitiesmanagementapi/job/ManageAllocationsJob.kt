@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.OffenderDeallocationService
 
 @Component
-class OffenderDeallocationJob(private val offenderDeallocationService: OffenderDeallocationService) {
+class ManageAllocationsJob(private val offenderDeallocationService: OffenderDeallocationService) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
