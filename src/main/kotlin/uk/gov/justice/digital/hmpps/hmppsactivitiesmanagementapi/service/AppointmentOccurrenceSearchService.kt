@@ -23,39 +23,46 @@ class AppointmentOccurrenceSearchService(
   ): List<AppointmentOccurrenceSearchResult> {
     var spec = appointmentOccurrenceSearchSpecification.prisonCodeEquals(prisonCode)
 
-    request.appointmentType?.apply {
-      spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), request.appointmentType) }
-    }
+    with(request) {
+      appointmentType?.apply {
+        spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), appointmentType) }
+      }
 
-    spec = if (request.endDate != null) {
-      spec.and(appointmentOccurrenceSearchSpecification.startDateBetween(request.startDate!!, request.endDate))
-    } else {
-      spec.and(appointmentOccurrenceSearchSpecification.startDateEquals(request.startDate!!))
-    }
+      spec = if (endDate != null) {
+        spec.and(appointmentOccurrenceSearchSpecification.startDateBetween(startDate!!, endDate))
+      } else {
+        spec.and(appointmentOccurrenceSearchSpecification.startDateEquals(startDate!!))
+      }
 
-    request.timeSlot?.apply {
-      val timeRange = request.timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
-      spec = spec.and(appointmentOccurrenceSearchSpecification.startTimeBetween(timeRange.start, timeRange.end.minusMinutes(1)))
-    }
+      timeSlot?.apply {
+        val timeRange = timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
+        spec = spec.and(
+          appointmentOccurrenceSearchSpecification.startTimeBetween(
+            timeRange.start,
+            timeRange.end.minusMinutes(1),
+          ),
+        )
+      }
 
-    request.categoryCode?.apply {
-      spec = spec.and(appointmentOccurrenceSearchSpecification.categoryCodeEquals(request.categoryCode))
-    }
+      categoryCode?.apply {
+        spec = spec.and(appointmentOccurrenceSearchSpecification.categoryCodeEquals(categoryCode))
+      }
 
-    request.internalLocationId?.apply {
-      spec = spec.and(appointmentOccurrenceSearchSpecification.internalLocationIdEquals(request.internalLocationId))
-    }
+      internalLocationId?.apply {
+        spec = spec.and(appointmentOccurrenceSearchSpecification.internalLocationIdEquals(internalLocationId))
+      }
 
-    request.inCell?.apply {
-      spec = spec.and(appointmentOccurrenceSearchSpecification.inCellEquals(request.inCell))
-    }
+      inCell?.apply {
+        spec = spec.and(appointmentOccurrenceSearchSpecification.inCellEquals(inCell))
+      }
 
-    if (request.prisonerNumbers?.isEmpty() == false) {
-      spec = spec.and(appointmentOccurrenceSearchSpecification.prisonerNumbersIn(request.prisonerNumbers))
-    }
+      if (prisonerNumbers?.isEmpty() == false) {
+        spec = spec.and(appointmentOccurrenceSearchSpecification.prisonerNumbersIn(prisonerNumbers))
+      }
 
-    request.createdBy?.apply {
-      spec = spec.and(appointmentOccurrenceSearchSpecification.createdByEquals(request.createdBy))
+      createdBy?.apply {
+        spec = spec.and(appointmentOccurrenceSearchSpecification.createdByEquals(createdBy))
+      }
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
