@@ -21,7 +21,7 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound event is processed for active prison`() {
-    repository.stub { on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison().copy(active = true) }
+    repository.stub { on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison() }
 
     service.process(inboundEvent)
 
@@ -31,7 +31,13 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound event is not processed for inactive prison`() {
-    repository.stub { on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison().copy(active = false) }
+    repository.stub {
+      on { findByCode(moorlandPrisonCode) } doReturn
+        rolloutPrison().copy(
+          activitiesToBeRolledOut = false,
+          activitiesRolloutDate = null,
+        )
+    }
 
     service.process(inboundEvent)
 

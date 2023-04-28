@@ -27,18 +27,23 @@ class OffenderDeallocationService(
     val now = LocalDateTime.now()
     val today = now.toLocalDate()
 
-    rolloutPrisonRepository.findAllByActiveIsTrue().forEach { prison ->
-      activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
-        if (activity.ends(today)) {
-          activity.schedules().deallocateAllOffenders(now)
-        } else {
-          activity.schedules().deallocateOffendersEnding(today, now)
+    rolloutPrisonRepository.findAll()
+      .filter { it.isActivitiesRolledOut() }
+      .forEach { prison ->
+        activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
+          if (activity.ends(today)) {
+            activity.schedules().deallocateAllOffenders(now)
+          } else {
+            activity.schedules().deallocateOffendersEnding(today, now)
+          }
         }
       }
-    }
   }
 
-  private fun List<ActivitySchedule>.deallocateOffendersEnding(date: LocalDate, timestamp: LocalDateTime) {
+  private fun List<ActivitySchedule>.deallocateOffendersEnding(
+    date: LocalDate,
+    timestamp: LocalDateTime,
+  ) {
     this.associateSchedulesWithAllocationsEnding(date).forEach { (schedule, allocations) ->
       continueToRunOnFailure(
         block = {
