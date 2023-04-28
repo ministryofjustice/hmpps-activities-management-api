@@ -42,7 +42,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .returnResult().responseBody
 
     @Test
-    @Sql("classpath:test_data/make-MDI-rollout-active-for-activities.sql")
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-appointments.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `GET single prisoner - activities active, appointments not active - 200 success`() {
       val prisonCode = "MDI"
@@ -75,7 +75,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/make-MDI-rollout-active-for-both.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
     fun `GET single prisoner - both activities and appointments active - 200 success`() {
@@ -129,6 +128,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `GET single prisoner - neither activities and appointments active (both prison API) - 200 success`() {
       val prisonCode = "MDI"
@@ -174,6 +174,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     fun `GET single prisoner - neither activities nor appointments active - 404 prisoner details not found`() {
       val prisonCode = "MDI"
       val prisonerNumber = "AAAAA"
@@ -218,6 +219,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     fun `GET single prisoner - neither activities or appointments active - 404 bookingId appointments`() {
       val prisonCode = "MDI"
       val prisonerNumber = "AAAAA"
@@ -262,6 +264,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     fun `GET single prisoner - neither activities or appointments active - 404 bookingId activities`() {
       val prisonCode = "MDI"
       val prisonerNumber = "AAAAA"
@@ -306,6 +309,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     fun `GET single prisoner - neither activities nor appointments rolled out - 404 bookingId visits`() {
       val prisonCode = "MDI"
       val prisonerNumber = "AAAAA"
@@ -350,6 +354,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     fun `GET single prisoner - neither activities not appointments active - 404 bookingId court hearings`() {
       val prisonCode = "MDI"
       val prisonerNumber = "AAAAA"
@@ -414,7 +419,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .returnResult().responseBody
 
     @Test
-    @Sql("classpath:test_data/make-MDI-rollout-active-for-activities.sql")
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-appointments.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `POST - multiple prisoners - activities active, appointments not active - 200 success`() {
       val prisonCode = "MDI"
@@ -444,6 +449,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `POST - multiple prisoners - neither activities nor appointments active - 200 success`() {
       val prisonCode = "MDI"
@@ -497,7 +503,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/make-MDI-rollout-active-for-both.sql")
     @Sql("classpath:test_data/seed-activity-for-events.sql")
     @Sql("classpath:test_data/seed-appointment-group-id-4.sql")
     fun `POST - multiple prisoners - activities and appointments active - 200 success`() {

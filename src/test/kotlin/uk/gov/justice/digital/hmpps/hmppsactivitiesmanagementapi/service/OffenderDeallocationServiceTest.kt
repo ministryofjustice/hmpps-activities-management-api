@@ -41,7 +41,7 @@ class OffenderDeallocationServiceTest {
       assertThat(deallocatedBy).isNull()
     }
 
-    whenever(rolloutPrisonRepo.findAllByActiveIsTrue()).thenReturn(listOf(prison))
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
     service.deallocateOffendersWhenEndDatesReached()
@@ -70,7 +70,7 @@ class OffenderDeallocationServiceTest {
       assertThat(deallocatedBy).isNull()
     }
 
-    whenever(rolloutPrisonRepo.findAllByActiveIsTrue()).thenReturn(listOf(prison))
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
     service.deallocateOffendersWhenEndDatesReached()
@@ -99,7 +99,7 @@ class OffenderDeallocationServiceTest {
       assertThat(deallocatedBy).isNull()
     }
 
-    whenever(rolloutPrisonRepo.findAllByActiveIsTrue()).thenReturn(listOf(prison))
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
     service.deallocateOffendersWhenEndDatesReached()

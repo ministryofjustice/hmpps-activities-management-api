@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -38,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime as ModelPrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
@@ -268,13 +268,12 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
   )
 }
 
-fun transform(prison: EntityRolloutPrison) = ModelRolloutPrison(
-  id = prison.rolloutPrisonId,
-  code = prison.code,
-  description = prison.description,
-  active = prison.active,
-  rolloutDate = prison.rolloutDate,
-  isAppointmentsEnabled = prison.isAppointmentsEnabled(),
+fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
+  prisonCode = prison.code,
+  activitiesRolledOut = prison.isActivitiesRolledOut(),
+  activitiesRolloutDate = prison.activitiesRolloutDate,
+  appointmentsRolledOut = prison.isAppointmentsRolledOut(),
+  appointmentsRolloutDate = prison.appointmentsRolloutDate,
 )
 
 fun transform(attendance: EntityAttendance): ModelAttendance =

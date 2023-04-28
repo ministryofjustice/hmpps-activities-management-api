@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison as ModelRolloutPrison
 
 class RolloutPrisonServiceTest {
   private val repository: RolloutPrisonRepository = mock()
@@ -18,7 +18,7 @@ class RolloutPrisonServiceTest {
   fun `returns an rollout prison for known prison code`() {
     whenever(repository.findByCode("PVI")).thenReturn(rolloutPrison())
 
-    assertThat(service.getByPrisonCode("PVI")).isInstanceOf(ModelRolloutPrison::class.java)
+    assertThat(service.getByPrisonCode("PVI")).isInstanceOf(RolloutPrisonPlan::class.java)
   }
 
   @Test
