@@ -20,24 +20,29 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import java.lang.IllegalArgumentException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
+  private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
@@ -46,8 +51,12 @@ class AppointmentServiceTest {
   @Captor
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
 
+  @Captor
+  private lateinit var bulkAppointmentEntityCaptor: ArgumentCaptor<BulkAppointment>
+
   private val service = AppointmentService(
     appointmentRepository,
+    bulkAppointmentRepository,
     referenceCodeService,
     locationService,
     prisonApiUserClient,
@@ -73,34 +82,69 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when requested prison code is not in user's case load`() {
+  fun `buildValidAppointmentEntity throws illegal argument exception when requested prison code is not in user's case load`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
 
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy {
+      service.buildValidAppointmentEntity(
+        inCell = request.inCell,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = emptyMap(),
+        prisonerNumbers = request.prisonerNumbers,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment,
+        appointmentDescription = request.appointmentDescription,
+        appointmentType = request.appointmentType,
+        principal = principal,
+        repeat = request.repeat,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison code '${request.prisonCode}' not found in user's case load")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when requested category code is not found`() {
+  fun `buildValidAppointmentEntity throws illegal argument exception when requested category code is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
-
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
+    assertThatThrownBy {
+      service.buildValidAppointmentEntity(
+        inCell = request.inCell,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = emptyMap(),
+        prisonerNumbers = request.prisonerNumbers,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment,
+        appointmentDescription = request.appointmentDescription,
+        appointmentType = request.appointmentType,
+        principal = principal,
+        repeat = request.repeat,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when inCell = false and requested internal location id is not found`() {
+  fun `buildValidAppointmentEntity throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
 
@@ -109,14 +153,31 @@ class AppointmentServiceTest {
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!)).thenReturn(emptyMap())
 
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy {
+      service.buildValidAppointmentEntity(
+        inCell = request.inCell,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = emptyMap(),
+        prisonerNumbers = request.prisonerNumbers,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment,
+        appointmentDescription = request.appointmentDescription,
+        appointmentType = request.appointmentType,
+        principal = principal,
+        repeat = request.repeat,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when prisoner is not found`() {
+  fun `buildValidAppointmentEntity throws illegal argument exception when prisoner is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
 
@@ -127,7 +188,24 @@ class AppointmentServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy {
+      service.buildValidAppointmentEntity(
+        inCell = request.inCell,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = emptyMap(),
+        prisonerNumbers = request.prisonerNumbers,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment,
+        appointmentDescription = request.appointmentDescription,
+        appointmentType = request.appointmentType,
+        principal = principal,
+        repeat = request.repeat,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
@@ -137,6 +215,7 @@ class AppointmentServiceTest {
   fun `createAppointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
+    whenever(principal.name).thenReturn("test.user")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -146,7 +225,9 @@ class AppointmentServiceTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), prisonId = "DIFFERENT"))))
 
-    assertThatThrownBy { service.createAppointment(request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy {
+      service.createAppointment(request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
@@ -283,5 +364,94 @@ class AppointmentServiceTest {
       assertThat(size).isEqualTo(3)
       assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
     }
+  }
+
+  @Test
+  fun `create bulk appointment success`() {
+    val request = bulkAppointmentRequest()
+    val principal: Principal = mock()
+
+    whenever(principal.name).thenReturn("TEST.USER")
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode))
+      .thenReturn(
+        mapOf(
+          request.internalLocationId to appointmentLocation(
+            request.internalLocationId,
+            request.prisonCode,
+          ),
+        ),
+      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber }))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber, bookingId = 1, prisonId = request.prisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber, bookingId = 2, prisonId = request.prisonCode),
+          ),
+        ),
+      )
+
+    whenever(bulkAppointmentRepository.saveAndFlush(bulkAppointmentEntityCaptor.capture())).thenReturn(
+      BulkAppointment(bulkAppointmentId = 1, appointments = listOf(appointmentEntity(appointmentId = 1), appointmentEntity(appointmentId = 2)), createdBy = "TEST.USER"),
+    )
+
+    service.bulkCreateAppointments(request, principal)
+
+    with(bulkAppointmentEntityCaptor.value) {
+      assertThat(appointments).hasSize(2)
+      assertThat(appointments[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(appointments[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
+
+      appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo("TEST")
+        assertThat(it.prisonCode).isEqualTo("TPR")
+        assertThat(it.internalLocationId).isEqualTo(123)
+        assertThat(it.inCell).isFalse()
+        assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
+        assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
+        assertThat(it.appointmentDescription).isEqualTo("Appointment description")
+      }
+    }
+  }
+
+  @Test
+  fun `create bulk appointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
+    val request = bulkAppointmentRequest()
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("test.user")
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode))
+      .thenReturn(
+        mapOf(
+          request.internalLocationId to appointmentLocation(
+            request.internalLocationId,
+            request.prisonCode,
+          ),
+        ),
+      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber }))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber, bookingId = 1, prisonId = "DIFFERENT"),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber, bookingId = 2, prisonId = request.prisonCode),
+          ),
+        ),
+      )
+
+    assertThatThrownBy {
+      service.bulkCreateAppointments(request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Prisoner(s) with prisoner number(s) '${request.appointments[0].prisonerNumber}' not found, were inactive or are residents of a different prison.")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 }

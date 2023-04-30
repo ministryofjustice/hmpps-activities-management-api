@@ -4,27 +4,28 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import java.time.LocalDate
 
 class RolloutIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun `get active rollout prison HMP Pentonville`() {
+  fun `get rollout prison HMP Pentonville - active activities, inactive appointments`() {
     with(webTestClient.getPrisonByCode("PVI")!!) {
-      assertThat(id).isEqualTo(1)
-      assertThat(code).isEqualTo("PVI")
-      assertThat(description).isEqualTo("HMP Pentonville")
-      assertThat(active).isTrue
+      assertThat(activitiesRolledOut).isTrue
+      assertThat(activitiesRolloutDate).isEqualTo(LocalDate.of(2022, 12, 22))
+      assertThat(appointmentsRolledOut).isFalse
+      assertThat(appointmentsRolloutDate).isNull()
     }
   }
 
   @Test
-  fun `get inactive rollout prison HMP Moorland`() {
+  fun `get inactive rollout prison HMP Moorland - both active activities and appointments`() {
     with(webTestClient.getPrisonByCode("MDI")!!) {
-      assertThat(id).isEqualTo(2)
-      assertThat(code).isEqualTo("MDI")
-      assertThat(description).isEqualTo("HMP Moorland")
-      assertThat(active).isFalse
+      assertThat(activitiesRolledOut).isTrue
+      assertThat(activitiesRolloutDate).isEqualTo(LocalDate.of(2022, 12, 22))
+      assertThat(appointmentsRolledOut).isTrue
+      assertThat(appointmentsRolloutDate).isEqualTo(LocalDate.of(2022, 12, 23))
     }
   }
 
@@ -32,10 +33,10 @@ class RolloutIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/rollout/$code")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(RolloutPrison::class.java)
+      .expectBody(RolloutPrisonPlan::class.java)
       .returnResult().responseBody
 }

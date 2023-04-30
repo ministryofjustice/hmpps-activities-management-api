@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
@@ -195,13 +195,12 @@ class TransformFunctionsTest {
   @Test
   fun `transformation of rollout prison entity to rollout prison model`() {
     assertThat(transform(rolloutPrison())).isEqualTo(
-      RolloutPrison(
-        1,
-        "PVI",
-        "HMP Pentonville",
-        true,
-        rolloutDate = LocalDate.of(2022, 12, 22),
-        isAppointmentsEnabled = false,
+      RolloutPrisonPlan(
+        prisonCode = "PVI",
+        activitiesRolledOut = true,
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolledOut = true,
+        appointmentsRolloutDate = LocalDate.of(2022, 12, 23),
       ),
     )
   }
@@ -237,7 +236,7 @@ class TransformFunctionsTest {
   @Test
   fun `location to appointment location summary mapping`() {
     assertThat(appointmentLocation(1, "TPR").toAppointmentLocationSummary(1, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, "TPR", "Test Appointment Location"),
+      AppointmentLocationSummary(1, "TPR", "Test Appointment Location User Description"),
     )
   }
 

@@ -22,8 +22,7 @@ class InboundEventsService(
 
   fun process(inboundEvent: InboundEvent) {
     // TODO: Some events have prisonCodes, some don't - check by type
-
-    if (rolloutPrisonRepository.findByCode(inboundEvent.prisonCode())?.active == true) {
+    if (rolloutPrisonRepository.findByCode(inboundEvent.prisonCode())?.isActivitiesRolledOut() == true) {
       when (inboundEvent) {
         is OffenderReceivedEvent -> receivedEventHandler.handle(inboundEvent)
         is OffenderReleasedEvent -> releasedEventHandler.handle(inboundEvent)
@@ -38,6 +37,6 @@ class InboundEventsService(
       return
     }
 
-    log.debug("Ignoring event $inboundEvent")
+    log.info("Ignoring event $inboundEvent")
   }
 }

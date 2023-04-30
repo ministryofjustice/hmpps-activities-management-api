@@ -4,6 +4,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -13,6 +15,7 @@ import java.time.LocalTime
 
 internal fun appointmentEntity(
   appointmentId: Long = 1,
+  appointmentType: AppointmentType? = null,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
   startDate: LocalDate = LocalDate.now(),
@@ -20,20 +23,19 @@ internal fun appointmentEntity(
   endTime: LocalTime = LocalTime.of(10, 30),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
-  appointmentType: AppointmentType? = null,
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
   repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = appointmentId,
-  categoryCode = "TEST",
+  appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
+  categoryCode = "TEST",
   internalLocationId = if (inCell) null else internalLocationId,
   inCell = inCell,
   startDate = startDate,
   startTime = startTime,
   endTime = endTime,
-  appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   comment = "Appointment level comment",
   appointmentDescription = "Appointment description",
   created = LocalDateTime.now().minusDays(1),
@@ -83,11 +85,11 @@ private fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: Appoint
   )
 
 internal fun appointmentInstanceEntity(
+  prisonerNumber: String = "A1234BC",
+  bookingId: Long = 456,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
   appointmentDate: LocalDate = LocalDate.now(),
-  prisonerNumber: String = "A1234BC",
-  bookingId: Long = 456,
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
 ) =
@@ -96,12 +98,14 @@ internal fun appointmentInstanceEntity(
     appointmentId = 1,
     appointmentOccurrenceId = 2,
     appointmentOccurrenceAllocationId = 3,
-    categoryCode = "TEST",
+    appointmentType = AppointmentType.INDIVIDUAL,
     prisonCode = "TPR",
-    internalLocationId = if (inCell) null else internalLocationId,
-    inCell = inCell,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
+    categoryCode = "TEST",
+    appointmentDescription = null,
+    internalLocationId = if (inCell) null else internalLocationId,
+    inCell = inCell,
     appointmentDate = appointmentDate,
     startTime = LocalTime.of(9, 0),
     endTime = LocalTime.of(10, 30),
@@ -111,4 +115,49 @@ internal fun appointmentInstanceEntity(
     isCancelled = false,
     updated = LocalDateTime.now(),
     updatedBy = updatedBy,
+  )
+
+internal fun appointmentOccurrenceSearchEntity(
+  prisonerNumber: String = "A1234BC",
+  bookingId: Long = 456,
+  internalLocationId: Long = 123,
+  inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now(),
+  createdBy: String = "CREATE.USER",
+) =
+  AppointmentOccurrenceSearch(
+    appointmentId = 1,
+    appointmentOccurrenceId = 2,
+    appointmentType = AppointmentType.INDIVIDUAL,
+    prisonCode = "TPR",
+    categoryCode = "TEST",
+    appointmentDescription = null,
+    internalLocationId = if (inCell) null else internalLocationId,
+    inCell = inCell,
+    startDate = startDate,
+    startTime = LocalTime.of(9, 0),
+    endTime = LocalTime.of(10, 30),
+    isRepeat = false,
+    sequenceNumber = 1,
+    maxSequenceNumber = 1,
+    comment = "Appointment occurrence level comment",
+    createdBy = createdBy,
+    isEdited = false,
+    isCancelled = false,
+  ).apply {
+    allocations = listOf(
+      appointmentOccurrenceAllocationSearchEntity(
+        this,
+        prisonerNumber = prisonerNumber,
+        bookingId = bookingId,
+      ),
+    )
+  }
+
+private fun appointmentOccurrenceAllocationSearchEntity(appointmentOccurrenceSearch: AppointmentOccurrenceSearch, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
+  AppointmentOccurrenceAllocationSearch(
+    appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
+    appointmentOccurrenceSearch = appointmentOccurrenceSearch,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
   )

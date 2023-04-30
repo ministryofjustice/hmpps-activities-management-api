@@ -7,7 +7,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AppointmentOccurrenceTest : ModelTest() {
-
   @Test
   fun `dates and times are serialized correctly`() {
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
@@ -22,6 +21,7 @@ class AppointmentOccurrenceTest : ModelTest() {
 
     val appointmentOccurrence = AppointmentOccurrence(
       id = 1,
+      sequenceNumber = 1,
       internalLocationId = null,
       comment = "Blah",
       startDate = originalStartDate,

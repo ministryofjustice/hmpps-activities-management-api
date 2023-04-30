@@ -70,7 +70,8 @@ class AppointmentOccurrenceTest {
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
         1,
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+        prisonerCount = 1,
+        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now(),
         LocalTime.of(9, 0),
@@ -80,7 +81,6 @@ class AppointmentOccurrenceTest {
         isCancelled = false,
         updated = entity.updated,
         updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
-        prisonerCount = 1,
       ),
     )
   }
@@ -95,7 +95,8 @@ class AppointmentOccurrenceTest {
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
           1,
-          AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+          1,
+          AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
           entity.inCell,
           entity.startDate,
           entity.startTime,
@@ -105,7 +106,6 @@ class AppointmentOccurrenceTest {
           isCancelled = false,
           entity.updated,
           updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
-          1,
         ),
       ),
     )
@@ -165,15 +165,19 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)).isEqualTo(
+    assertThat(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
         AppointmentType.INDIVIDUAL,
         1,
-        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
         "TPR",
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location"),
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
+        "Appointment description",
+        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now(),
         LocalTime.of(9, 0),
@@ -186,9 +190,6 @@ class AppointmentOccurrenceTest {
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         updated = entity.updated,
         updatedBy = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
       ),
     )
   }
@@ -215,7 +216,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
+    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -241,7 +242,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
+    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
     }
   }
@@ -266,7 +267,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(referenceCodeMap, "TPR", locationMap, userMap, prisoners)) {
+    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
       assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriod.WEEKLY, 4))
     }
   }

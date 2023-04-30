@@ -34,9 +34,11 @@ values (1, 'OVER_21', 'Must be over 21'),
 --
 -- Rollout prisons
 --
-insert into rollout_prison (rollout_prison_id, code, description, active, rollout_date, appointments_data_source)
-values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', 'PRISON_API'),
-       (2, 'MDI', 'HMP Moorland', false, '2022-12-22', 'PRISON_API');
+insert into rollout_prison (rollout_prison_id, code, description, activities_to_be_rolled_out,
+                            activities_rollout_date, appointments_to_be_rolled_out,
+                            appointments_rollout_date)
+values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', false, null),
+       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23');
 
 --
 -- Attendance reason codes

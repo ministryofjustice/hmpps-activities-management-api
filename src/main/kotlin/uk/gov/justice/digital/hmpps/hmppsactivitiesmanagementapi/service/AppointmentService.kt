@@ -6,18 +6,25 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
+import java.time.LocalDate
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment as BulkAppointmentEntity
 
 @Service
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
+  private val bulkAppointmentRepository: BulkAppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonApiUserClient: PrisonApiUserClient,
@@ -26,37 +33,115 @@ class AppointmentService(
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
-  fun createAppointment(request: AppointmentCreateRequest, principal: Principal): AppointmentModel {
-    failIfPrisonCodeNotInUserCaseLoad(request.prisonCode!!)
+  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
+    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerMap ->
+      BulkAppointmentEntity(
+        appointments = request.appointments.map {
+          buildValidAppointmentEntity(
+            prisonCode = request.prisonCode,
+            categoryCode = request.categoryCode,
+            appointmentDescription = request.appointmentDescription,
+            internalLocationId = request.internalLocationId,
+            inCell = request.inCell,
+            startDate = request.startDate,
+            prisonerMap = prisonerMap.filter { entry -> entry.key == it.prisonerNumber },
+            prisonerNumbers = listOf(it.prisonerNumber),
+            startTime = it.startTime,
+            endTime = it.endTime,
+            appointmentType = AppointmentType.INDIVIDUAL,
+            principal = principal,
+          )
+        }.toList(),
+        createdBy = principal.name,
+      ).let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+    }
 
-    failIfCategoryNotFound(request.categoryCode!!)
+  fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
+    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerMap ->
+      buildValidAppointmentEntity(
+        inCell = request.inCell,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = prisonerMap,
+        prisonerNumbers = request.prisonerNumbers,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment,
+        appointmentDescription = request.appointmentDescription,
+        appointmentType = request.appointmentType,
+        principal = principal,
+        repeat = request.repeat,
+      ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
+    }
 
-    failIfLocationNotFound(request)
+  private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
+    prisonApiUserClient.getUserCaseLoads().block()
+      ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
+      ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
+  }
 
-    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers).block()!!
-      .filter { prisoner -> prisoner.prisonId == request.prisonCode }
-      .associateBy { it.prisonerNumber }
+  private fun failIfCategoryNotFound(categoryCode: String) {
+    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
+      ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
+  }
 
-    failIfMissingPrisoners(request.prisonerNumbers, prisonerMap)
+  private fun failIfLocationNotFound(inCell: Boolean, prisonCode: String?, internalLocationId: Long?) {
+    if (!inCell) {
+      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]
+        ?: throw IllegalArgumentException("Appointment location with id $internalLocationId not found in prison '$prisonCode'")
+    }
+  }
+
+  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
+    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
+      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
+    }
+  }
+
+  fun buildValidAppointmentEntity(
+    inCell: Boolean,
+    prisonCode: String? = null,
+    categoryCode: String? = null,
+    internalLocationId: Long? = null,
+    prisonerNumbers: List<String>,
+    prisonerMap: Map<String, Prisoner>,
+    startDate: LocalDate?,
+    startTime: LocalTime?,
+    endTime: LocalTime?,
+    comment: String = "",
+    appointmentDescription: String? = null,
+    appointmentType: AppointmentType? = null,
+    repeat: AppointmentRepeat? = null,
+    principal: Principal,
+  ): AppointmentEntity {
+    failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
+
+    failIfCategoryNotFound(categoryCode!!)
+
+    failIfLocationNotFound(inCell, prisonCode, internalLocationId)
+
+    failIfMissingPrisoners(prisonerNumbers, prisonerMap)
 
     return AppointmentEntity(
-      categoryCode = request.categoryCode,
-      prisonCode = request.prisonCode,
-      internalLocationId = if (request.inCell) null else request.internalLocationId,
-      inCell = request.inCell,
-      startDate = request.startDate!!,
-      startTime = request.startTime!!,
-      endTime = request.endTime,
-      comment = request.comment,
-      appointmentDescription = request.appointmentDescription,
+      categoryCode = categoryCode,
+      prisonCode = prisonCode,
+      internalLocationId = if (inCell) null else internalLocationId,
+      inCell = inCell,
+      startDate = startDate!!,
+      startTime = startTime!!,
+      endTime = endTime,
+      comment = comment,
+      appointmentDescription = appointmentDescription,
       createdBy = principal.name,
-      appointmentType = request.appointmentType!!,
+      appointmentType = appointmentType!!,
     ).apply {
-      this.schedule = request.repeat?.let {
+      this.schedule = repeat?.let {
         AppointmentSchedule(
           appointment = this,
-          repeatPeriod = AppointmentRepeatPeriod.valueOf(request.repeat.period!!.name),
-          repeatCount = request.repeat.count!!,
+          repeatPeriod = AppointmentRepeatPeriod.valueOf(repeat.period!!.name),
+          repeatCount = repeat.count!!,
         )
       }
 
@@ -83,30 +168,11 @@ class AppointmentService(
           },
         )
       }
-    }.let { (appointmentRepository.saveAndFlush(it)).toModel() }
-  }
-
-  private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
-    prisonApiUserClient.getUserCaseLoads().block()
-      ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
-      ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
-  }
-
-  private fun failIfCategoryNotFound(categoryCode: String) {
-    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
-      ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
-  }
-
-  private fun failIfLocationNotFound(request: AppointmentCreateRequest) {
-    if (!request.inCell) {
-      locationService.getLocationsForAppointmentsMap(request.prisonCode!!)[request.internalLocationId]
-        ?: throw IllegalArgumentException("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
     }
   }
 
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
-    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
-    }
-  }
+  private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
+    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
+      .filter { prisoner -> prisoner.prisonId == prisonCode }
+      .associateBy { it.prisonerNumber }
 }

@@ -14,6 +14,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.IndividualAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -24,16 +27,16 @@ fun appointmentCategorySummary() =
 fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
   Appointment(
     1,
-    "TEST",
+    AppointmentType.INDIVIDUAL,
     "TPR",
+    "TEST",
+    "Appointment description",
     123,
     false,
     LocalDate.now(),
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
-    AppointmentType.INDIVIDUAL,
     "Appointment level comment",
-    "Appointment description",
     created,
     "CREATE.USER",
     updated,
@@ -46,6 +49,7 @@ fun appointmentOccurrenceAllocationModel() =
 
 fun appointmentOccurrenceModel(updated: LocalDateTime?) =
   AppointmentOccurrence(
+    1,
     1,
     123,
     false,
@@ -69,12 +73,14 @@ fun appointmentInstanceModel(
   1,
   2,
   3,
-  "TEST",
+  AppointmentType.INDIVIDUAL,
   "TPR",
-  123,
-  false,
   "A1234BC",
   456,
+  "TEST",
+  null,
+  123,
+  false,
   LocalDate.now(),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
@@ -86,40 +92,71 @@ fun appointmentInstanceModel(
 )
 
 fun appointmentCreateRequest(
-  categoryCode: String? = "TEST",
+  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   prisonCode: String? = "TPR",
+  prisonerNumbers: List<String> = listOf("A1234BC"),
+  categoryCode: String? = "TEST",
+  appointmentDescription: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
-  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   comment: String = "Appointment level comment",
-  appointmentDescription: String? = "Appointment description",
   repeat: AppointmentRepeat? = null,
-  prisonerNumbers: List<String> = listOf("A1234BC"),
 ) =
   AppointmentCreateRequest(
-    categoryCode,
+    appointmentType,
     prisonCode,
+    prisonerNumbers,
+    categoryCode,
+    appointmentDescription,
     internalLocationId,
     inCell,
     startDate,
     startTime,
     endTime,
-    appointmentType,
     repeat,
     comment,
-    appointmentDescription,
-    prisonerNumbers,
+  )
+
+fun bulkAppointmentRequest(
+  categoryCode: String = "TEST",
+  prisonCode: String = "TPR",
+  internalLocationId: Long = 123,
+  inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = LocalTime.of(13, 0),
+  endTime: LocalTime = LocalTime.of(14, 30),
+  appointmentDescription: String = "Appointment description",
+  prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
+) =
+  BulkAppointmentsRequest(
+    categoryCode = categoryCode,
+    prisonCode = prisonCode,
+    internalLocationId = internalLocationId,
+    inCell = inCell,
+    startDate = startDate,
+    appointmentDescription = appointmentDescription,
+    appointments = prisonerNumbers.map {
+      IndividualAppointment(
+        prisonerNumber = it,
+        startTime = startTime,
+        endTime = endTime,
+      )
+    }.toList(),
   )
 
 fun appointmentDetails() = AppointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
-  appointmentCategorySummary(),
   "TPR",
-  AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+  prisoners = listOf(
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+  ),
+  appointmentCategorySummary(),
+  null,
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now(),
   LocalTime.of(9, 0),
@@ -134,7 +171,8 @@ fun appointmentDetails() = AppointmentDetails(
     AppointmentOccurrenceSummary(
       1,
       1,
-      AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+      1,
+      AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
       LocalDate.now(),
       LocalTime.of(9, 0),
@@ -144,11 +182,7 @@ fun appointmentDetails() = AppointmentDetails(
       isCancelled = false,
       LocalDateTime.now(),
       UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-      1,
     ),
-  ),
-  prisoners = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
 )
 
@@ -157,9 +191,13 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   2,
   AppointmentType.INDIVIDUAL,
   3,
-  appointmentCategorySummary(),
   "TPR",
-  AppointmentLocationSummary(123, "TPR", "Test Appointment Location"),
+  prisoners = listOf(
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+  ),
+  appointmentCategorySummary(),
+  null,
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now(),
   LocalTime.of(9, 0),
@@ -172,7 +210,24 @@ fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   LocalDateTime.now(),
   UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-  prisoners = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-  ),
+)
+
+fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(
+  1,
+  2,
+  AppointmentType.INDIVIDUAL,
+  "TPR",
+  listOf(appointmentOccurrenceAllocationModel()),
+  appointmentCategorySummary(),
+  null,
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+  false,
+  LocalDate.now(),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  false,
+  1,
+  1,
+  false,
+  false,
 )

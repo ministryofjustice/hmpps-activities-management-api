@@ -1,12 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType.STRING
-import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 
 @Entity
@@ -20,13 +19,17 @@ data class RolloutPrison(
 
   val description: String,
 
-  var active: Boolean = false,
+  val activitiesToBeRolledOut: Boolean,
 
-  val rolloutDate: LocalDate?,
+  val activitiesRolloutDate: LocalDate? = null,
 
-  @Enumerated(STRING)
-  private val appointmentsDataSource: AppointmentsDataSource,
+  val appointmentsToBeRolledOut: Boolean,
+
+  val appointmentsRolloutDate: LocalDate? = null,
 ) {
-  fun isAppointmentsEnabled() = this.appointmentsDataSource == AppointmentsDataSource.ACTIVITIES_SERVICE
-  fun isActivitiesEnabled() = this.active
+  fun isActivitiesRolledOut() =
+    this.activitiesToBeRolledOut && activitiesRolloutDate?.onOrBefore(LocalDate.now()) == true
+
+  fun isAppointmentsRolledOut() =
+    this.appointmentsToBeRolledOut && appointmentsRolloutDate?.onOrBefore(LocalDate.now()) == true
 }

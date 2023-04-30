@@ -35,9 +35,14 @@ data class Appointment(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = 0,
 
-  var categoryCode: String,
+  @Enumerated(EnumType.STRING)
+  val appointmentType: AppointmentType,
 
   val prisonCode: String,
+
+  var categoryCode: String,
+
+  var appointmentDescription: String?,
 
   var internalLocationId: Long?,
 
@@ -55,8 +60,6 @@ data class Appointment(
 
   var comment: String,
 
-  var appointmentDescription: String?,
-
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
@@ -64,9 +67,6 @@ data class Appointment(
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
-
-  @Enumerated(EnumType.STRING)
-  val appointmentType: AppointmentType,
 ) {
   fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
@@ -87,8 +87,8 @@ data class Appointment(
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
-    categoryCode = categoryCode,
     prisonCode = prisonCode,
+    categoryCode = categoryCode,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
@@ -104,12 +104,14 @@ data class Appointment(
     occurrences = occurrences.toModel(),
   )
 
-  fun toDetails(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, prisoners: List<Prisoner>) =
+  fun toDetails(prisoners: List<Prisoner>, referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>) =
     AppointmentDetails(
       appointmentId,
       appointmentType,
-      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       prisonCode,
+      prisoners.toSummary(),
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -130,7 +132,6 @@ data class Appointment(
         userMap[updatedBy].toSummary(updatedBy!!)
       },
       occurrences().toSummary(prisonCode, locationMap, userMap, comment),
-      prisoners.toSummary(),
     )
 }
 

@@ -61,7 +61,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-      assertThat(it.suspendedBy).isEqualTo("SYSTEM")
+      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
       assertThat(it.suspendedReason).isEqualTo("Temporarily released from prison")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -113,7 +113,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Dead")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -152,7 +152,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Released")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -192,7 +192,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Released")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

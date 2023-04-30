@@ -30,6 +30,27 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
+    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
+    example = "SKI",
+  )
+  val prisonCode: String,
+
+  @Schema(
+    description =
+    """
+    Summary of the prisoner or prisoners allocated to the first future occurrence (or most recent past occurrence if all
+    occurrences are in the past) of this appointment. Prisoners are allocated at the occurrence level to allow for per
+    occurrence allocation changes. The occurrence summary contains a count of allocated prisoners rather than the full
+    list as the expected usage is to show a summary of the occurrences then a link to display the full occurrence details.
+    """,
+  )
+  val prisoners: List<PrisonerSummary> = emptyList(),
+
+  @Schema(
+    description =
+    """
     The summary of the appointment's category
     """,
   )
@@ -38,12 +59,11 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    Free text description for an appointment.  This is used to add more context to the appointment category.
     """,
-    example = "SKI",
+    example = "Meeting with the governor",
   )
-  val prisonCode: String,
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -149,15 +169,4 @@ data class AppointmentDetails(
     """,
   )
   val occurrences: List<AppointmentOccurrenceSummary> = emptyList(),
-
-  @Schema(
-    description =
-    """
-    Summary of the prisoner or prisoners allocated to the first future occurrence (or most recent past occurrence if all
-    occurrences are in the past) of this appointment. Prisoners are allocated at the occurrence level to allow for per
-    occurrence allocation changes. The occurrence summary contains a count of allocated prisoners rather than the full
-    list as the expected usage is to show a summary of the occurrences then a link to display the full occurrence details.
-    """,
-  )
-  val prisoners: List<PrisonerSummary> = emptyList(),
 )

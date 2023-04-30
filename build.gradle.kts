@@ -32,6 +32,8 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.0-beta-14")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.25.0")
+
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
 

@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 class AttendancesServiceTest {
@@ -97,7 +97,7 @@ class AttendancesServiceTest {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
-      assertThat(recordedBy).isEqualTo("SYSTEM")
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
       assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }
@@ -117,7 +117,7 @@ class AttendancesServiceTest {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
-      assertThat(recordedBy).isEqualTo("SYSTEM")
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
       assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }
