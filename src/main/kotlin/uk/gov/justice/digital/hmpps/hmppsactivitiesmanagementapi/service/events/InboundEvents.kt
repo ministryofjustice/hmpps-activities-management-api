@@ -38,14 +38,13 @@ enum class InboundEventType(val eventType: String) {
 }
 
 interface InboundEvent {
-  fun prisonCode(): String
   fun prisonerNumber(): String
 }
 
 // ------------ Offender released from prison events ------------------------------------------
 
 data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundEvent {
-  override fun prisonCode() = additionalInformation.prisonId
+  fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "RELEASED_TO_HOSPITAL", "SENT_TO_COURT")
     .any { it == additionalInformation.reason }
@@ -58,7 +57,7 @@ data class ReleaseInformation(val nomsNumber: String, val reason: String, val pr
 // ------------ Offender received into prison events -------------------------------------------
 
 data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation) : InboundEvent {
-  override fun prisonCode() = additionalInformation.prisonId
+  fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
 }
 
@@ -67,7 +66,6 @@ data class ReceivedInformation(val nomsNumber: String, val reason: String, val p
 // ------------ Incentives review events --------------------------------------------------------
 
 data class IncentivesEvent(val additionalInformation: IncentivesInformation) : InboundEvent {
-  override fun prisonCode() = "" // Not populated in additional information
   override fun prisonerNumber() = additionalInformation.nomsNumber
 }
 
@@ -76,7 +74,6 @@ data class IncentivesInformation(val nomsNumber: String, val reason: String, val
 // ------------ Cell move events ------------------------------------------------------------------
 
 data class CellMoveEvent(val additionalInformation: CellMoveInformation) : InboundEvent {
-  override fun prisonCode() = "" // Not populated in additional information
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun bookingId() = additionalInformation.bookingId
 }
@@ -86,7 +83,6 @@ data class CellMoveInformation(val nomsNumber: String, val livingUnitId: Long, v
 // ------------ Non associations changed events ----------------------------------------------------
 
 data class NonAssociationsChangedEvent(val additionalInformation: NonAssociationInformation) : InboundEvent {
-  override fun prisonCode() = "" // Not populated in additional information
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun bookingId() = additionalInformation.bookingId
 }

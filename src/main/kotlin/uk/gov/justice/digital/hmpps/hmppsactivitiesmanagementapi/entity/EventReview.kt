@@ -14,21 +14,21 @@ data class EventReview(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val eventReviewId: Long = 0,
 
-  val serviceIdentifier: String?,
+  val serviceIdentifier: String? = null,
 
-  val eventType: String?,
+  val eventType: String? = null,
 
-  val eventTime: LocalDateTime?,
+  val eventTime: LocalDateTime? = null,
 
-  val prisonCode: String?,
+  val prisonCode: String? = null,
 
-  val prisonerNumber: String?,
+  val prisonerNumber: String? = null,
 
-  val bookingId: Int?,
+  val bookingId: Int? = 0,
 
-  val eventData: String?,
+  val eventData: String? = null,
 
-  val acknowledgedTime: LocalDateTime?,
+  val acknowledgedTime: LocalDateTime? = null,
 
-  val acknowledgedBy: String?,
+  val acknowledgedBy: String? = null,
 )

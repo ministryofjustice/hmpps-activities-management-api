@@ -45,3 +45,12 @@ fun offenderReceivedFromTemporaryAbsence(
     prisonCode,
   ),
 )
+
+fun cellMoveEvent(prisonerNumber: String = "XXXXXX") =
+  CellMoveEvent(
+    CellMoveInformation(
+      nomsNumber = prisonerNumber,
+      bookingId = 123L,
+      livingUnitId = 234L,
+    ),
+  )
