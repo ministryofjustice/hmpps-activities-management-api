@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -120,9 +121,13 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocationId = 1,
-      internalLocationCode = "WW",
-      internalLocationDescription = "The wood work room description",
+      internalLocation = Location(
+        locationId = 1,
+        internalLocationCode = "WW",
+        description = "The wood work room description",
+        locationType = "APP",
+        agencyId = "MDI",
+      ),
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
@@ -150,9 +155,13 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocationId = 1,
-        internalLocationCode = "WW",
-        internalLocationDescription = "The wood work room description",
+        internalLocation = Location(
+          locationId = 1,
+          internalLocationCode = "WW",
+          description = "The wood work room description",
+          locationType = "APP",
+          agencyId = "MDI",
+        ),
         capacity = 10,
         startDate = activity.startDate.minusDays(1),
         runsOnBankHoliday = true,
@@ -170,9 +179,13 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocationId = 1,
-        internalLocationCode = "WW",
-        internalLocationDescription = "The wood work room description",
+        internalLocation = Location(
+          locationId = 1,
+          internalLocationCode = "WW",
+          description = "The wood work room description",
+          locationType = "APP",
+          agencyId = "MDI",
+        ),
         capacity = 10,
         startDate = activity.endDate!!,
         runsOnBankHoliday = true,
@@ -190,9 +203,13 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocationId = 1,
-        internalLocationCode = "WW",
-        internalLocationDescription = "The wood work room description",
+        internalLocation = Location(
+          locationId = 1,
+          internalLocationCode = "WW",
+          description = "The wood work room description",
+          locationType = "APP",
+          agencyId = "MDI",
+        ),
         capacity = 10,
         startDate = activity.startDate,
         endDate = activity.endDate!!.plusDays(1),
@@ -210,9 +227,13 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocationId = 1,
-        internalLocationCode = "WW",
-        internalLocationDescription = "The wood work room description",
+        internalLocation = Location(
+          locationId = 1,
+          internalLocationCode = "WW",
+          description = "The wood work room description",
+          locationType = "APP",
+          agencyId = "MDI",
+        ),
         capacity = 0,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
@@ -228,9 +249,13 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocationId = 1,
-      internalLocationCode = "WW",
-      internalLocationDescription = "The wood work room description",
+      internalLocation = Location(
+        locationId = 1,
+        internalLocationCode = "WW",
+        description = "The wood work room description",
+        locationType = "APP",
+        agencyId = "MDI",
+      ),
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
@@ -239,9 +264,13 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = " WooDwork ",
-        internalLocationId = 2,
-        internalLocationCode = "WW2",
-        internalLocationDescription = "The wood work room description 2",
+        internalLocation = Location(
+          locationId = 1,
+          internalLocationCode = "WW",
+          description = "The wood work room description",
+          locationType = "APP",
+          agencyId = "MDI",
+        ),
         capacity = 10,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
@@ -400,9 +429,13 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "description",
-      internalLocationId = 1,
-      internalLocationCode = "RM1",
-      internalLocationDescription = "Room 1",
+      internalLocation = Location(
+        locationId = 1,
+        internalLocationCode = "RM1",
+        description = "Room 1",
+        locationType = "APP",
+        agencyId = "MDI",
+      ),
       capacity = 1,
       startDate = activity.startDate.plusDays(1),
       runsOnBankHoliday = true,
