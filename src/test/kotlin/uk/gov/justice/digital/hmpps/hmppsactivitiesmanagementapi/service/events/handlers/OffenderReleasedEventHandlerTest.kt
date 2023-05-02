@@ -101,9 +101,8 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.suspendedTime).isNull()
     }
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
-      previouslyActiveAllocations,
-    )
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
+      .doReturn(previouslyActiveAllocations)
 
     val successful = handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -151,10 +150,12 @@ class OffenderReleasedEventHandlerTest {
     }
 
     whenever(prisoner.legalStatus).doReturn(InmateDetail.LegalStatus.DEAD)
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
-      previouslyActiveAllocations,
-    )
+
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
+      .doReturn(Mono.just(prisoner))
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
+      .doReturn(previouslyActiveAllocations)
 
     val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -190,10 +191,11 @@ class OffenderReleasedEventHandlerTest {
       on { sentenceDetail } doReturn sentenceCalcDatesNoReleaseDateForRemand
     }
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
-      previouslyActiveAllocations,
-    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
+      .doReturn(Mono.just(prisoner))
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
+      .doReturn(previouslyActiveAllocations)
 
     val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -230,10 +232,11 @@ class OffenderReleasedEventHandlerTest {
       on { sentenceDetail } doReturn sentenceCalcDatesReleaseDateTodayForCustodialSentence
     }
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
-      previouslyActiveAllocations,
-    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
+      .doReturn(Mono.just(prisoner))
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
+      .doReturn(previouslyActiveAllocations)
 
     val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -262,8 +265,11 @@ class OffenderReleasedEventHandlerTest {
 
     val allocations = listOf(previouslyEndedAllocation, previouslySuspendedAllocation, previouslyActiveAllocation)
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
+      .doReturn(Mono.just(prisoner))
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
+      .doReturn(allocations)
 
     val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -297,7 +303,6 @@ class OffenderReleasedEventHandlerTest {
 
     assertThat(successful).isFalse
     assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
-
     verifyNoInteractions(allocationRepository)
   }
 }
