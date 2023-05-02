@@ -16,6 +16,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import java.time.LocalDate
@@ -172,9 +173,7 @@ data class Activity(
 
   fun addSchedule(
     description: String,
-    internalLocationId: Int,
-    internalLocationCode: String,
-    internalLocationDescription: String,
+    internalLocation: Location? = null,
     capacity: Int,
     startDate: LocalDate,
     endDate: LocalDate? = null,
@@ -184,9 +183,9 @@ data class Activity(
       ActivitySchedule.valueOf(
         activity = this,
         description = description,
-        internalLocationId = internalLocationId,
-        internalLocationCode = internalLocationCode,
-        internalLocationDescription = internalLocationDescription,
+        internalLocationId = internalLocation?.locationId?.toInt(),
+        internalLocationCode = internalLocation?.internalLocationCode,
+        internalLocationDescription = internalLocation?.description,
         capacity = capacity,
         startDate = startDate,
         endDate = endDate,
