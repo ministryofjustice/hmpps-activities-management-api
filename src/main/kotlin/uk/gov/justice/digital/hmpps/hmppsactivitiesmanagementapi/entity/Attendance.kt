@@ -91,6 +91,7 @@ data class Attendance(
   fun cancel(reason: AttendanceReason, payIncentiveCode: String?) {
     status = AttendanceStatus.COMPLETED
     payAmount = if (payIncentiveCode != null) getPay(payIncentiveCode)?.rate ?: 0 else 0
+    issuePayment = true
     attendanceReason = reason
     comment = scheduledInstance.cancelledReason
     recordedTime = scheduledInstance.cancelledTime
