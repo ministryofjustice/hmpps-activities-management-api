@@ -109,7 +109,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `permanent release of prisoner from remand`() {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-remand")
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-from-remand")
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -131,7 +131,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `permanent release of prisoner from custodial sentence`() {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-from-custodial-sentence")
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-from-custodial-sentence")
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -153,7 +153,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `permanent release of prisoner due to death in prison`() {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", jsonFileSuffix = "-released-on-death-in-prison")
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-on-death-in-prison")
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))

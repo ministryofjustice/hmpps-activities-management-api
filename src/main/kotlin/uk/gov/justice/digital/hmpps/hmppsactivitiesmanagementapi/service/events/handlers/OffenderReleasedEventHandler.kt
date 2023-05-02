@@ -32,7 +32,7 @@ class OffenderReleasedEventHandler(
         }
 
         event.isPermanent() -> deallocateOffenderAllocations(event)
-        else -> false
+        else -> log.warn("Failed to handle event $event").let { false }
       }
     }
 
@@ -44,12 +44,16 @@ class OffenderReleasedEventHandler(
       }
 
   private fun deallocateOffenderAllocations(event: OffenderReleasedEvent) =
-    prisonApiClient.getPrisonerDetails(event.prisonerNumber()).block()?.let { prisoner ->
+    prisonApiClient.getPrisonerDetails(
+      prisonerNumber = event.prisonerNumber(),
+      fullInfo = true,
+      extraInfo = true,
+    ).block()?.let { prisoner ->
       when {
         prisoner.isReleasedOnDeath() -> "Dead"
         prisoner.isReleasedFromRemand() -> "Released"
         prisoner.isReleasedFromCustodialSentence() -> "Released"
-        else -> null
+        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
       }
     }?.let { reason ->
       repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
@@ -58,7 +62,7 @@ class OffenderReleasedEventHandler(
           log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
         }
       true
-    } ?: false
+    } ?: log.warn("Prisoner for not $event found").let { false }
 
   private fun List<Allocation>.suspendAndSaveAffectedAllocations() =
     LocalDateTime.now().let { now ->

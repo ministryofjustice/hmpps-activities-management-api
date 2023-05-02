@@ -26,12 +26,13 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
-  fun getPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true): Mono<InmateDetail> {
+  fun getPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null): Mono<InmateDetail> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/offenderNo/{prisonerNumber}")
           .queryParam("fullInfo", fullInfo)
+          .maybeQueryParam("extraInfo", extraInfo)
           .build(prisonerNumber)
       }
       .retrieve()
