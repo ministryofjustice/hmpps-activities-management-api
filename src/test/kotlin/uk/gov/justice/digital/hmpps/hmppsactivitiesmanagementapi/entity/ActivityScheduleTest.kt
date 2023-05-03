@@ -530,4 +530,21 @@ class ActivityScheduleTest {
       assertThat(next(fourthInstance)).isNull()
     }
   }
+
+  @Test
+  fun `in-cell activity should not contain internal location`() {
+    val activitySchedule = activitySchedule(
+      activityEntity(
+        inCell = true,
+      ),
+    ).toModelLite()
+
+    assertThat(activitySchedule.id).isEqualTo(1)
+    assertThat(activitySchedule.internalLocation).isNull()
+
+    with(activitySchedule.activity) {
+      assertThat(id).isEqualTo(1)
+      assertThat(inCell).isTrue
+    }
+  }
 }

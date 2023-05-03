@@ -97,6 +97,8 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
+  fun activityPayForBand(payBand: PrisonPayBand) = activityPay().find { it.payBand == payBand }!!
+
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
   fun isActive(date: LocalDate): Boolean =

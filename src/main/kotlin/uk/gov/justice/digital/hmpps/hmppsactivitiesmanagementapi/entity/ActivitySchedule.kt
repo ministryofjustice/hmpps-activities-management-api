@@ -226,17 +226,20 @@ data class ActivitySchedule(
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId,
     description = this.description,
-    internalLocation = InternalLocation(
-      id = internalLocationId!!,
-      code = internalLocationCode!!,
-      description = internalLocationDescription!!,
-    ),
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,
     endDate = this.endDate,
-  )
+  ).apply {
+    if (!this.activity.inCell) {
+      this.internalLocation = InternalLocation(
+        id = internalLocationId!!,
+        code = internalLocationCode!!,
+        description = internalLocationDescription!!,
+      )
+    }
+  }
 
   @Override
   override fun toString(): String {
