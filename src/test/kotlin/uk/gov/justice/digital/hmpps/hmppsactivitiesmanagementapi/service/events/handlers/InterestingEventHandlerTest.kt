@@ -75,7 +75,7 @@ class InterestingEventHandlerTest {
 
   @Test
   fun `stores a received event when allocations exist`() {
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(pentonvillePrisonCode,"123456")
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(pentonvillePrisonCode, "123456")
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
@@ -90,7 +90,7 @@ class InterestingEventHandlerTest {
 
   @Test
   fun `stores a released event when allocations exist`() {
-    val inboundEvent = offenderReleasedEvent(pentonvillePrisonCode,"123456")
+    val inboundEvent = offenderReleasedEvent(pentonvillePrisonCode, "123456")
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
