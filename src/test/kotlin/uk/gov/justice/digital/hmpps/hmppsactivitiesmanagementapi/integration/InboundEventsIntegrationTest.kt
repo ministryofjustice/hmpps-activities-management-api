@@ -66,7 +66,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `release with unknown reason does not affect allocations but is treated as an interesting event`() {
     assertThat(eventReviewRepository.count()).isEqualTo(0)
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "")
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))

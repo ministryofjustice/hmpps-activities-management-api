@@ -8,13 +8,14 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail.InOutStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail.Status
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -38,13 +39,13 @@ class InterestingEventHandlerTest {
   private val prisoner = InmateDetail(
     agencyId = "PVI",
     offenderNo = "123456",
-    inOutStatus = InmateDetail.InOutStatus.IN,
+    inOutStatus = InOutStatus.IN,
     firstName = "Bob",
     lastName = "Bobson",
     activeFlag = true,
     offenderId = 1L,
     rootOffenderId = 1L,
-    status = InmateDetail.Status.IN,
+    status = Status.IN,
     dateOfBirth = LocalDate.of(2001, 10, 1),
   )
 
@@ -54,7 +55,7 @@ class InterestingEventHandlerTest {
     rolloutPrisonRepository.stub {
       on { findByCode(pentonvillePrisonCode) } doReturn rolloutPrison()
     }
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
     whenever(eventReviewRepository.saveAndFlush(any<EventReview>())).doReturn(EventReview(eventReviewId = 1))
   }
 
@@ -68,9 +69,9 @@ class InterestingEventHandlerTest {
     val result = handler.handle(inboundEvent)
 
     assertThat(result).isTrue
-    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
-    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
-    verify(eventReviewRepository, times(1)).saveAndFlush(any<EventReview>())
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
   }
 
   @Test
@@ -83,9 +84,9 @@ class InterestingEventHandlerTest {
     val result = handler.handle(inboundEvent)
 
     assertThat(result).isTrue
-    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
-    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
-    verify(eventReviewRepository, times(1)).saveAndFlush(any<EventReview>())
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
   }
 
   @Test
@@ -98,9 +99,9 @@ class InterestingEventHandlerTest {
     val result = handler.handle(inboundEvent)
 
     assertThat(result).isTrue
-    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
-    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
-    verify(eventReviewRepository, times(1)).saveAndFlush(any<EventReview>())
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
   }
 
   @Test
@@ -132,8 +133,8 @@ class InterestingEventHandlerTest {
     val result = handler.handle(inboundEvent)
 
     assertThat(result).isFalse
-    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
-    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verifyNoInteractions(eventReviewRepository)
   }
 }

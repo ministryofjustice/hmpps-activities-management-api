@@ -12,8 +12,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Even
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.CellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesDeletedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -33,20 +34,20 @@ class InterestingEventHandler(
   override fun handle(event: InboundEvent): Boolean {
     log.info("Checking for interesting event: $event")
 
-    prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = true, extraInfo = true).block()?.let { prisoner ->
+    prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()?.let { prisoner ->
       if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
         if (allocationRepository.findByPrisonCodeAndPrisonerNumber(prisoner.agencyId, prisoner.offenderNo).hasActiveAllocations()) {
           val saved = eventReviewRepository.saveAndFlush(
             EventReview(
               eventTime = LocalDateTime.now(),
-              eventType = this.getEventType(event),
+              eventType = event.eventType(),
               eventData = this.getEventMessage(event, prisoner),
               prisonCode = prisoner.agencyId,
               prisonerNumber = prisoner.offenderNo,
               bookingId = prisoner.bookingId?.toInt(),
             ),
           )
-          log.info("Saved interesting event ID ${saved.eventReviewId} - ${this.getEventType(event)} - for ${prisoner.offenderNo}")
+          log.info("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
           return true
         } else {
           log.info("${prisoner.offenderNo} has no active allocations at ${prisoner.agencyId}")
@@ -58,21 +59,13 @@ class InterestingEventHandler(
     return false
   }
 
-  private fun getEventType(event: InboundEvent) =
-    when (event) {
-      is CellMoveEvent -> InboundEventType.CELL_MOVE.name
-      is NonAssociationsChangedEvent -> InboundEventType.NON_ASSOCIATIONS.name
-      is IncentivesEvent -> InboundEventType.INCENTIVES_UPDATED.name // TODO: Which of the incentives events?
-      is OffenderReceivedEvent -> InboundEventType.OFFENDER_RECEIVED.name
-      is OffenderReleasedEvent -> InboundEventType.OFFENDER_RELEASED.name
-      else -> "Unknown"
-    }
-
   private fun getEventMessage(event: InboundEvent, prisoner: InmateDetail) =
     when (event) {
       is CellMoveEvent -> "Cell move for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is NonAssociationsChangedEvent -> "Non-associations for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
-      is IncentivesEvent -> "Incentive level for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
+      is IncentivesInsertedEvent -> "Incentive review created for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
+      is IncentivesUpdatedEvent -> "Incentive review updated for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
+      is IncentivesDeletedEvent -> "Incentive review deleted for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is OffenderReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is OffenderReleasedEvent -> "Prisoner released from prison ${prisoner.agencyId}, ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       else -> "Unknown event for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"

@@ -29,7 +29,9 @@ class InboundEventsService(
           interestingEventHandler.handle(inboundEvent)
         }
       }
-      is IncentivesEvent -> interestingEventHandler.handle(inboundEvent)
+      is IncentivesInsertedEvent -> interestingEventHandler.handle(inboundEvent)
+      is IncentivesUpdatedEvent -> interestingEventHandler.handle(inboundEvent)
+      is IncentivesDeletedEvent -> interestingEventHandler.handle(inboundEvent)
       is CellMoveEvent -> interestingEventHandler.handle(inboundEvent)
       is NonAssociationsChangedEvent -> interestingEventHandler.handle(inboundEvent)
       else -> log.warn("Unsupported event ${inboundEvent.javaClass.name}")
