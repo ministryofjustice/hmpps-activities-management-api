@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary as ModelAllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @TestPropertySource(
@@ -198,6 +199,23 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql(
+    "classpath:test_data/seed-attendance-summary.sql",
+  )
+  @Test
+  fun `get attendance summary for specified date`() {
+    val attendanceSummary = webTestClient.getAttendanceSummaryByDate(moorlandPrisonCode, LocalDate.of(2022, 10, 10))!!
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().prisonCode).isEqualTo(moorlandPrisonCode)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().activityId).isEqualTo(1)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().sessionDate).isEqualTo("2022-10-10")
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().status).isEqualTo("WAITING")
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(3)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("PM") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(2)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("ED") && it.categoryName.equals("Education") }.first().attendanceCount).isEqualTo(1)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("AM") && it.categoryName.equals("Gym, sport, fitness") }.first().attendanceCount).isEqualTo(2)
+    assertThat(attendanceSummary.filter { it.timeSlot.equals("PM") && it.categoryName.equals("Gym, sport, fitness") }.first().attendanceCount).isEqualTo(1)
+  }
+
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =
     get()
       .uri("/scheduled-instances/$instanceId/attendances")
@@ -207,6 +225,17 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ModelAttendance::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
+    get()
+      .uri("/attendances/summary/$prisonCode/$sessionDate")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ModelAllAttendanceSummary::class.java)
       .returnResult().responseBody
 
   private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) =

@@ -16,11 +16,15 @@ import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [AttendanceController::class])
@@ -91,8 +95,27 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).getAttendanceById(2)
   }
 
+  @Test
+  fun `200 response when get attendance summary by date found`() {
+    val attendanceSummary = attendanceSummary().toModel()
+
+    whenever(attendancesService.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(attendanceSummary)
+
+    val response = mockMvc.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendanceSummary))
+
+    verify(attendancesService).getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
+  }
+
   private fun MockMvc.getAttendanceById(attendanceId: String) =
     get("/attendances/$attendanceId")
+
+  private fun MockMvc.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
+    get("/attendances/summary/$prisonCode/$sessionDate")
 
   companion object {
     val caseNote = CaseNote(
