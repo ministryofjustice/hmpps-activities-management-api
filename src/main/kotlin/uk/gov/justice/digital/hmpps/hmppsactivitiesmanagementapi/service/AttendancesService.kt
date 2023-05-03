@@ -61,7 +61,6 @@ class AttendancesService(
         attendanceUpdatesById[it.attendanceId]?.status ?: AttendanceStatus.COMPLETED,
         attendanceUpdatesById[it.attendanceId]!!.comment,
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
-        attendanceUpdatesById[it.attendanceId]!!.payAmount,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
         caseNoteDetails?.caseNoteId,
       )
@@ -107,6 +106,8 @@ class AttendancesService(
       return
     }
 
+    val payAmount = instance.activitySchedule.activity.activityPayForBand(allocation.payBand).rate
+
     if (allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED)) {
       val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
@@ -115,6 +116,7 @@ class AttendancesService(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
           attendanceReason = suspendedReason,
+          payAmount = payAmount,
           issuePayment = false,
           status = AttendanceStatus.COMPLETED,
           recordedTime = LocalDateTime.now(),
@@ -129,6 +131,7 @@ class AttendancesService(
       Attendance(
         scheduledInstance = instance,
         prisonerNumber = allocation.prisonerNumber,
+        payAmount = payAmount,
       ),
     )
   }

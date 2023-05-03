@@ -104,7 +104,6 @@ data class Attendance(
     newStatus: AttendanceStatus,
     newComment: String?,
     newIssuePayment: Boolean?,
-    newPayAmount: Int?,
     newIncentiveLevelWarningIssued: Boolean?,
     newCaseNoteId: String?,
   ): Attendance {
@@ -128,7 +127,6 @@ data class Attendance(
       comment = null
       issuePayment = null
       incentiveLevelWarningIssued = null
-      payAmount = null
       bonusAmount = null
       pieces = null
       caseNoteId = null
@@ -137,7 +135,6 @@ data class Attendance(
       attendanceReason = reason
       comment = newComment
       issuePayment = newIssuePayment
-      payAmount = newPayAmount
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
       caseNoteId = newCaseNoteId?.toLong()
     }
