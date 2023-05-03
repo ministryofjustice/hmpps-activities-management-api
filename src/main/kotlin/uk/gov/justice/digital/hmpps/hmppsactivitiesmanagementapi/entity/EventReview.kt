@@ -24,7 +24,7 @@ data class EventReview(
 
   val prisonerNumber: String? = null,
 
-  val bookingId: Int? = 0,
+  val bookingId: Int? = null,
 
   val eventData: String? = null,
 

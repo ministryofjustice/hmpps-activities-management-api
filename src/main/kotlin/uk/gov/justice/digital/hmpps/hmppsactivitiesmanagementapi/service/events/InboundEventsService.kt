@@ -19,8 +19,16 @@ class InboundEventsService(
 
   fun process(inboundEvent: InboundEvent) {
     when (inboundEvent) {
-      is OffenderReceivedEvent -> receivedEventHandler.handle(inboundEvent)
-      is OffenderReleasedEvent -> releasedEventHandler.handle(inboundEvent)
+      is OffenderReceivedEvent -> {
+        if (!receivedEventHandler.handle(inboundEvent)) {
+          interestingEventHandler.handle(inboundEvent)
+        }
+      }
+      is OffenderReleasedEvent -> {
+        if (!releasedEventHandler.handle(inboundEvent)) {
+          interestingEventHandler.handle(inboundEvent)
+        }
+      }
       is IncentivesEvent -> interestingEventHandler.handle(inboundEvent)
       is CellMoveEvent -> interestingEventHandler.handle(inboundEvent)
       is NonAssociationsChangedEvent -> interestingEventHandler.handle(inboundEvent)

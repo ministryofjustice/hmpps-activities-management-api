@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import java.time.LocalDateTime
 
 @Component
@@ -31,7 +33,7 @@ class InterestingEventHandler(
   override fun handle(event: InboundEvent): Boolean {
     log.info("Checking for interesting event: $event")
 
-    prisonApiClient.getPrisonerDetails(event.prisonerNumber()).block()?.let { prisoner ->
+    prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = true, extraInfo = true).block()?.let { prisoner ->
       if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
         if (allocationRepository.findByPrisonCodeAndPrisonerNumber(prisoner.agencyId, prisoner.offenderNo).hasActiveAllocations()) {
           val saved = eventReviewRepository.saveAndFlush(
@@ -61,6 +63,8 @@ class InterestingEventHandler(
       is CellMoveEvent -> InboundEventType.CELL_MOVE.name
       is NonAssociationsChangedEvent -> InboundEventType.NON_ASSOCIATIONS.name
       is IncentivesEvent -> InboundEventType.INCENTIVES_UPDATED.name // TODO: Which of the incentives events?
+      is OffenderReceivedEvent -> InboundEventType.OFFENDER_RECEIVED.name
+      is OffenderReleasedEvent -> InboundEventType.OFFENDER_RELEASED.name
       else -> "Unknown"
     }
 
@@ -69,6 +73,8 @@ class InterestingEventHandler(
       is CellMoveEvent -> "Cell move for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is NonAssociationsChangedEvent -> "Non-associations for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is IncentivesEvent -> "Incentive level for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
+      is OffenderReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
+      is OffenderReleasedEvent -> "Prisoner released from prison ${prisoner.agencyId}, ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       else -> "Unknown event for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
     }
 

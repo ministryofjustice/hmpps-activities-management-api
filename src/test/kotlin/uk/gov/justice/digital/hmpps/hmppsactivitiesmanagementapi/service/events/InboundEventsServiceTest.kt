@@ -1,8 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
@@ -14,6 +18,14 @@ class InboundEventsServiceTest {
   private val interestingEventHandler: InterestingEventHandler = mock()
 
   private val service = InboundEventsService(releasedEventHandler, receivedEventHandler, interestingEventHandler)
+
+  @BeforeEach
+  fun setupMocks() {
+    reset(receivedEventHandler, releasedEventHandler, interestingEventHandler)
+    whenever(releasedEventHandler.handle(any())).thenReturn(true)
+    whenever(receivedEventHandler.handle(any())).thenReturn(true)
+    whenever(interestingEventHandler.handle(any())).thenReturn(true)
+  }
 
   @Test
   fun `inbound released event is processed by release event handler`() {
@@ -27,6 +39,24 @@ class InboundEventsServiceTest {
     val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
     verify(receivedEventHandler).handle(inboundEvent)
+  }
+
+  @Test
+  fun `inbound released event failure is handled as an interesting event`() {
+    whenever(releasedEventHandler.handle(any())).thenReturn(false)
+    val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
+    service.process(inboundEvent)
+    verify(releasedEventHandler).handle(inboundEvent)
+    verify(interestingEventHandler).handle(inboundEvent)
+  }
+
+  @Test
+  fun `inbound received event failure is handled as an interesting event`() {
+    whenever(receivedEventHandler.handle(any())).thenReturn(false)
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    service.process(inboundEvent)
+    verify(receivedEventHandler).handle(inboundEvent)
+    verify(interestingEventHandler).handle(inboundEvent)
   }
 
   @Test

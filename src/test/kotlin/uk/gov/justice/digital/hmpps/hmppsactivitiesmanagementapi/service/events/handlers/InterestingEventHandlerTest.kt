@@ -23,6 +23,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import java.time.LocalDate
 
 class InterestingEventHandlerTest {
@@ -52,13 +54,43 @@ class InterestingEventHandlerTest {
     rolloutPrisonRepository.stub {
       on { findByCode(pentonvillePrisonCode) } doReturn rolloutPrison()
     }
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(Mono.just(prisoner))
     whenever(eventReviewRepository.saveAndFlush(any<EventReview>())).doReturn(EventReview(eventReviewId = 1))
   }
 
   @Test
   fun `stores an interesting event when allocations exist`() {
     val inboundEvent = cellMoveEvent("123456")
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
+      .doReturn(activeAllocations)
+
+    val result = handler.handle(inboundEvent)
+
+    assertThat(result).isTrue
+    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository, times(1)).saveAndFlush(any<EventReview>())
+  }
+
+  @Test
+  fun `stores a received event when allocations exist`() {
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(pentonvillePrisonCode,"123456")
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
+      .doReturn(activeAllocations)
+
+    val result = handler.handle(inboundEvent)
+
+    assertThat(result).isTrue
+    verify(rolloutPrisonRepository, times(1)).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository, times(1)).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository, times(1)).saveAndFlush(any<EventReview>())
+  }
+
+  @Test
+  fun `stores a released event when allocations exist`() {
+    val inboundEvent = offenderReleasedEvent(pentonvillePrisonCode,"123456")
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
