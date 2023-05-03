@@ -125,7 +125,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/clear-local-audit.sql",
   )
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -176,7 +176,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -202,7 +202,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -238,7 +238,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `the allocation should be persisted even if the subsequent event notification fails`() {
     whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
 
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 

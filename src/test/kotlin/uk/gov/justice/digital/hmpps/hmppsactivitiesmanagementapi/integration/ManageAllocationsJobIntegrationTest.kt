@@ -61,7 +61,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private fun Allocation.assertIsDeallocated() {
     assertThat(status(PrisonerStatus.ENDED))
-    assertThat(deallocatedBy).isEqualTo("SYSTEM")
+    assertThat(deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(deallocatedReason).isEqualTo("Allocation end date reached")
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
   }

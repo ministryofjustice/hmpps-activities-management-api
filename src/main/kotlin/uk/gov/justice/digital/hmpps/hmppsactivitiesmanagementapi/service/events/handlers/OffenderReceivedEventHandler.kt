@@ -14,13 +14,14 @@ class OffenderReceivedEventHandler(private val repository: AllocationRepository)
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReceivedEvent): Boolean {
-    repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .reactivateAndSaveAffectedAllocations()
-      .also { log.info("Reactivated ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
+  override fun handle(event: OffenderReceivedEvent): Boolean =
+    log.info("Handling received event $event").run {
+      repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+        .reactivateAndSaveAffectedAllocations()
+        .also { log.info("Reactivated ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
-    return true
-  }
+      return true
+    }
 
   private fun List<Allocation>.reactivateAndSaveAffectedAllocations() =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }

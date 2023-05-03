@@ -103,7 +103,7 @@ class AttendancesServiceTest {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
-      assertThat(recordedBy).isEqualTo("SYSTEM")
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
       assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }
@@ -123,7 +123,7 @@ class AttendancesServiceTest {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
-      assertThat(recordedBy).isEqualTo("SYSTEM")
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
       assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }

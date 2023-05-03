@@ -20,7 +20,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate >= :startDate
     AND sa.sessionDate <= :endDate
     AND sa.prisonerNumber = :prisonerNumber
-    AND sa.suspended = false
     AND sa.cancelled = false
     """,
   )
@@ -37,7 +36,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     WHERE sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
     AND sa.prisonerNumber in :prisonerNumbers
-    AND sa.suspended = false
     AND sa.cancelled = false
     """,
   )

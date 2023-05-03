@@ -61,7 +61,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-      assertThat(it.suspendedBy).isEqualTo("SYSTEM")
+      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
       assertThat(it.suspendedReason).isEqualTo("Temporarily released from prison")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -102,7 +102,11 @@ class OffenderReleasedEventHandlerTest {
     }
 
     whenever(prisoner.legalStatus).doReturn(InmateDetail.LegalStatus.DEAD)
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
       previouslyActiveAllocations,
     )
@@ -113,7 +117,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Dead")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -141,7 +145,11 @@ class OffenderReleasedEventHandlerTest {
       on { sentenceDetail } doReturn sentenceCalcDatesNoReleaseDateForRemand
     }
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
       previouslyActiveAllocations,
     )
@@ -152,7 +160,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Released")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -181,7 +189,11 @@ class OffenderReleasedEventHandlerTest {
       on { sentenceDetail } doReturn sentenceCalcDatesReleaseDateTodayForCustodialSentence
     }
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
       previouslyActiveAllocations,
     )
@@ -192,7 +204,7 @@ class OffenderReleasedEventHandlerTest {
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("SYSTEM")
+      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
       assertThat(it.deallocatedReason).isEqualTo("Released")
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -213,7 +225,11 @@ class OffenderReleasedEventHandlerTest {
 
     val allocations = listOf(previouslyEndedAllocation, previouslySuspendedAllocation, previouslyActiveAllocation)
 
-    whenever(prisonApiClient.getPrisonerDetails("123456")).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
 
     val successful = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))

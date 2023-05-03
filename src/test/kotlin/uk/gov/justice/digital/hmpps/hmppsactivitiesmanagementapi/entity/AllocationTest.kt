@@ -48,7 +48,7 @@ class AllocationTest {
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo("Allocation end date reached")
-    assertThat(allocation.deallocatedBy).isEqualTo("SYSTEM")
+    assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(allocation.deallocatedTime).isEqualTo(dateTime)
   }
 
@@ -69,7 +69,7 @@ class AllocationTest {
 
     with(allocation) {
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
-      assertThat(suspendedBy).isEqualTo("SYSTEM")
+      assertThat(suspendedBy).isEqualTo("Activities Management Service")
       assertThat(suspendedTime).isEqualTo(today.atStartOfDay())
       assertThat(suspendedReason).isEqualTo("Temporarily released from prison")
     }

@@ -370,4 +370,45 @@ class ActivityServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The education level code '1' is not active in NOMIS")
   }
+
+  @Test
+  fun `createActivity - Create In-cell activity`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createInCellActivityRequest: ActivityCreateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-create-request-6.json"),
+      object : TypeReference<ActivityCreateRequest>() {},
+    )
+
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+
+    service.createActivity(createInCellActivityRequest, createdBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    with(activityArg) {
+      assertThat(inCell).isTrue
+
+      with(schedules()[0]) {
+        assertThat(internalLocationId).isNull()
+        assertThat(internalLocationCode).isNull()
+        assertThat(internalLocationDescription).isNull()
+      }
+    }
+  }
 }
