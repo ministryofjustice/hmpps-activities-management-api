@@ -29,9 +29,6 @@ data class AttendanceUpdateRequest(
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
 
-  @Schema(description = "The payment amount in pence", example = "100")
-  val payAmount: Int?,
-
   @Schema(description = "Case note provided for REFUSED", example = "Prisoner refused to attend the scheduled activity without reasonable excuse")
   val caseNote: String?,
 

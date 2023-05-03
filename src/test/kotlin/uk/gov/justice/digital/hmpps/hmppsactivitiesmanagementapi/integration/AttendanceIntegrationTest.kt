@@ -72,8 +72,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -113,8 +113,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null, null),
-          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -149,7 +149,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null, null),
+          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
