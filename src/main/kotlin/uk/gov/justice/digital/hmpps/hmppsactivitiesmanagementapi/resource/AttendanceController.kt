@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -16,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import java.security.Principal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/attendances", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -78,6 +81,51 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   fun getAttendanceById(
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
+
+  @GetMapping(value = ["/summary/{prisonCode}/{sessionDate}"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a daily summary of attendances",
+    description = "Returns an attendance summary.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance Summary found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = AllAttendanceSummary::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAttendanceSummaryByDate(
+    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable("sessionDate") sessionDate: LocalDate,
+  ): List<AllAttendanceSummary> = attendancesService.getAttendanceSummaryByDate(prisonCode, sessionDate)
 
   @PutMapping
   @ResponseBody
