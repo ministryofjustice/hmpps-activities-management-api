@@ -69,6 +69,8 @@ data class PrisonerScheduledActivity(
 
   val bookingId: Int,
 
+  val inCell: Boolean,
+
   val internalLocationId: Int? = null,
 
   val internalLocationCode: String? = null,

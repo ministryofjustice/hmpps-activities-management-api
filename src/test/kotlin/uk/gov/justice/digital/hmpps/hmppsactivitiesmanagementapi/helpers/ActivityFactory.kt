@@ -52,6 +52,7 @@ internal fun activityEntity(
   noEligibilityRules: Boolean = false,
   noPayBands: Boolean = false,
   noMinimumEducationLevels: Boolean = false,
+  inCell: Boolean = false,
 ) =
   Activity(
     activityId = activityId,
@@ -67,6 +68,7 @@ internal fun activityEntity(
     endDate = endDate,
     createdTime = timestamp,
     createdBy = "test",
+    inCell = inCell,
   ).apply {
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)

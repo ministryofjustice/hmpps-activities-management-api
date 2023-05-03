@@ -291,7 +291,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         activity = ActivityLite(
           id = 1L,
           attendanceRequired = true,
-          inCell = true,
+          inCell = false,
           pieceWork = true,
           outsideWork = true,
           payPerSession = PayPerSession.H,
