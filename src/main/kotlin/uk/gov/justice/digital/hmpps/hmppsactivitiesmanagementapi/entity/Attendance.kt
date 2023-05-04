@@ -74,32 +74,33 @@ data class Attendance(
     attendanceHistory.add(history)
   }
 
-  fun waiting() {
-    attendanceReason = null
-    status = AttendanceStatus.WAITING
-    comment = null
-    recordedBy = null
-    recordedTime = null
-    payAmount = null
-  }
-
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(attendanceId = $attendanceId )"
   }
 
-  fun cancel(reason: AttendanceReason, payIncentiveCode: String?) {
-    status = AttendanceStatus.COMPLETED
-    payAmount = if (payIncentiveCode != null) getPay(payIncentiveCode)?.rate ?: 0 else 0
-    issuePayment = true
-    attendanceReason = reason
-    comment = scheduledInstance.cancelledReason
-    recordedTime = scheduledInstance.cancelledTime
-    recordedBy = scheduledInstance.cancelledBy
-  }
+  fun cancel(reason: AttendanceReason) = mark(
+    principalName = scheduledInstance.cancelledBy,
+    reason = reason,
+    newStatus = AttendanceStatus.COMPLETED,
+    newComment = scheduledInstance.cancelledReason,
+    newIssuePayment = true,
+    newIncentiveLevelWarningIssued = null,
+    newCaseNoteId = null,
+  )
+
+  fun uncancel() = mark(
+    principalName = null,
+    reason = null,
+    newStatus = AttendanceStatus.WAITING,
+    newComment = null,
+    newIssuePayment = null,
+    newIncentiveLevelWarningIssued = null,
+    newCaseNoteId = null,
+  )
 
   fun mark(
-    principalName: String,
+    principalName: String?,
     reason: AttendanceReason?,
     newStatus: AttendanceStatus,
     newComment: String?,
@@ -140,18 +141,8 @@ data class Attendance(
     }
     status = newStatus
     recordedBy = principalName
-    recordedTime = LocalDateTime.now()
+    recordedTime = if (newStatus != AttendanceStatus.WAITING) LocalDateTime.now() else null
     return this
-  }
-
-  private fun getPay(incentiveCode: String): ActivityPay? {
-    val currentAllocation = scheduledInstance.activitySchedule.allocations()
-      .filter { it.isAllocated() }
-      .find { it.prisonerNumber == prisonerNumber }
-
-    return scheduledInstance.activitySchedule.activity.activityPay()
-      .filter { it.payBand.prisonPayBandId == currentAllocation?.payBand?.prisonPayBandId }
-      .find { it.incentiveNomisCode == incentiveCode }
   }
 
   fun toModel(caseNotesApiClient: CaseNotesApiClient) = ModelAttendance(
@@ -185,7 +176,7 @@ data class Attendance(
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
     caseNoteText = this.caseNoteId ?.let { caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text },
     attendanceHistory = this.attendanceHistory
-      .sortedWith(compareBy { this.recordedTime })
+      .sortedWith(compareBy { it.recordedTime })
       .reversed()
       .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
   )
