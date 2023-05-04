@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -11,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -32,12 +35,18 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   private lateinit var repository: AllocationRepository
 
   @Autowired
+  private lateinit var eventReviewRepository: EventReviewRepository
+
+  @Autowired
   private lateinit var service: InboundEventsService
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
+  @BeforeEach
+  fun initMocks() {
+    reset(outboundEventsService)
+  }
+
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `temporary release of prisoner`() {
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -53,15 +62,17 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
   }
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
   @Test
-  fun `release of prisoner has no effect on active allocations when unknown reason`() {
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `release with unknown reason does not affect allocations but is treated as an interesting event`() {
+    assertThat(eventReviewRepository.count()).isEqualTo(0)
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
+
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
+    // This event falls back to being processed as an interesting event due to the unknown reason for release
     service.process(
       OffenderReleasedEvent(
         ReleaseInformation(
@@ -76,13 +87,12 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
+    assertThat(eventReviewRepository.count()).isEqualTo(1L)
     verifyNoInteractions(outboundEventsService)
   }
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `receive prisoner back after temporary release`() {
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -104,10 +114,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
   }
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `permanent release of prisoner from remand`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-from-remand")
 
@@ -126,10 +134,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
   }
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `permanent release of prisoner from custodial sentence`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-from-custodial-sentence")
 
@@ -148,10 +154,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
   }
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
-  )
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `permanent release of prisoner due to death in prison`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true, extraInfo = true, jsonFileSuffix = "-released-on-death-in-prison")
 

@@ -9,35 +9,47 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import java.time.LocalDateTime
 
 @Component
 class OffenderReleasedEventHandler(
+  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val allocationRepository: AllocationRepository,
   private val prisonApiClient: PrisonApiApplicationClient,
-  private val repository: AllocationRepository,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReleasedEvent) =
-    log.info("Handling released event $event").run {
+  override fun handle(event: OffenderReleasedEvent): Boolean {
+    log.info("Handling offender released event $event")
+
+    if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       when {
-        // TODO temporary release probably needs further validation checks e.g. check state of prisoner against prison-api
         event.isTemporary() -> {
           suspendOffenderAllocations(event)
-          true
+          return true
         }
-
-        event.isPermanent() -> deallocateOffenderAllocations(event)
-        else -> log.warn("Failed to handle event $event").let { false }
+        event.isPermanent() -> {
+          deallocateOffenderAllocations(event)
+          return true
+        }
+        else -> {
+          log.warn("Failed to handle event $event")
+        }
       }
+    } else {
+      log.info("Ignoring released event for ${event.prisonCode()} - not rolled out.")
     }
 
+    return false
+  }
+
   private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =
-    repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
       .suspendAndSaveAffectedAllocations()
       .let {
         log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
@@ -56,7 +68,7 @@ class OffenderReleasedEventHandler(
         else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
       }
     }?.let { reason ->
-      repository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
         .deallocateAndSaveAffectedAllocations(reason)
         .also {
           log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
@@ -75,5 +87,5 @@ class OffenderReleasedEventHandler(
     }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
-    repository.saveAllAndFlush(this).toList()
+    allocationRepository.saveAllAndFlush(this).toList()
 }

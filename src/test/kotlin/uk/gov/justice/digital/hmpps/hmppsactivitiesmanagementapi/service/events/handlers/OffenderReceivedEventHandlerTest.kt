@@ -1,23 +1,63 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class OffenderReceivedEventHandlerTest {
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
+  private val allocationRepository: AllocationRepository = mock()
 
-  private val repository: AllocationRepository = mock()
-  private val handler = OffenderReceivedEventHandler(repository)
+  private val handler = OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository)
+
+  @BeforeEach
+  fun beforeTests() {
+    reset(rolloutPrisonRepository, allocationRepository)
+    rolloutPrisonRepository.stub {
+      on { findByCode(moorlandPrisonCode) } doReturn
+        rolloutPrison().copy(
+          activitiesToBeRolledOut = true,
+          activitiesRolloutDate = LocalDate.now().plusDays(-1),
+        )
+    }
+  }
+
+  @Test
+  fun `inbound received event is not handled for an inactive prison`() {
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    reset(rolloutPrisonRepository)
+    rolloutPrisonRepository.stub {
+      on { findByCode(moorlandPrisonCode) } doReturn
+        rolloutPrison().copy(
+          activitiesToBeRolledOut = false,
+          activitiesRolloutDate = null,
+        )
+    }
+
+    val result = handler.handle(inboundEvent)
+
+    assertThat(result).isFalse
+    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verifyNoInteractions(allocationRepository)
+  }
 
   @Test
   fun `only auto-suspended allocations are reactivated on receipt of prisoner`() {
@@ -38,7 +78,7 @@ class OffenderReceivedEventHandlerTest {
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
-    whenever(repository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
       allocations,
     )
 
@@ -50,6 +90,6 @@ class OffenderReceivedEventHandlerTest {
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
-    verify(repository).saveAllAndFlush(any<List<Allocation>>())
+    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
   }
 }
