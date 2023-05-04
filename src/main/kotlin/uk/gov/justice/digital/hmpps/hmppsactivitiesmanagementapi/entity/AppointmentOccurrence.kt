@@ -15,8 +15,8 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
@@ -68,7 +68,12 @@ data class AppointmentOccurrence(
 
   var deleted: Boolean = false
 
-  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(
+    mappedBy = "appointmentOccurrence",
+    fetch = FetchType.EAGER,
+    cascade = [CascadeType.ALL],
+    orphanRemoval = true,
+  )
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 
@@ -106,12 +111,24 @@ data class AppointmentOccurrence(
     allocations = allocations.toModel(),
   )
 
-  fun toSummary(prisonCode: String, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>, appointmentComment: String) =
+  fun toSummary(
+    prisonCode: String,
+    locationMap: Map<Long, Location>,
+    userMap: Map<String, UserDetail>,
+    appointmentComment: String,
+  ) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
       prisonerCount = prisonerCount(),
-      if (inCell) null else locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode),
+      if (inCell) {
+        null
+      } else {
+        locationMap[internalLocationId].toAppointmentLocationSummary(
+          internalLocationId!!,
+          prisonCode,
+        )
+      },
       inCell,
       startDate,
       startTime,
@@ -123,7 +140,13 @@ data class AppointmentOccurrence(
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
     )
 
-  fun toDetails(prisonCode: String, prisoners: List<Prisoner>, referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>, userMap: Map<String, UserDetail>) =
+  fun toDetails(
+    prisonCode: String,
+    prisoners: List<Prisoner>,
+    referenceCodeMap: Map<String, ReferenceCode>,
+    locationMap: Map<Long, Location>,
+    userMap: Map<String, UserDetail>,
+  ) =
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,

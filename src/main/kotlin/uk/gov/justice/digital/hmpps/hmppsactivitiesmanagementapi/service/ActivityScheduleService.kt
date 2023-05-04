@@ -115,7 +115,7 @@ class ActivityScheduleService(
   }
 
   private fun InmateDetail.failIfNotActive() =
-    takeIf { it.activeFlag } ?: throw IllegalStateException("Prisoner ${this.offenderNo} is not active.")
+    takeIf { it.activeFlag == true } ?: throw IllegalStateException("Prisoner ${this.offenderNo} is not active.")
 
   private fun InmateDetail.failIfAtDifferentPrisonTo(activity: Activity) =
     takeIf { it.agencyId == activity.prisonCode }

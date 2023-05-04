@@ -36,7 +36,7 @@ class InterestingEventHandler(
 
     prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()?.let { prisoner ->
       if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
-        if (allocationRepository.findByPrisonCodeAndPrisonerNumber(prisoner.agencyId, prisoner.offenderNo).hasActiveAllocations()) {
+        if (allocationRepository.findByPrisonCodeAndPrisonerNumber(prisoner.agencyId, prisoner.offenderNo!!).hasActiveAllocations()) {
           val saved = eventReviewRepository.saveAndFlush(
             EventReview(
               eventTime = LocalDateTime.now(),
