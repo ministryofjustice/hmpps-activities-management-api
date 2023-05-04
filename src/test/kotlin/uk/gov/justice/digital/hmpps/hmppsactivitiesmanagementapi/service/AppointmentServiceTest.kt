@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
@@ -209,6 +211,35 @@ class AppointmentServiceTest {
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun`buildValidAppointmentEntity does not perform any validation if the appointment is a migration`() {
+    val request = appointmentCreateRequest()
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
+
+    service.buildValidAppointmentEntity(
+      inCell = request.inCell,
+      prisonCode = request.prisonCode,
+      categoryCode = request.categoryCode,
+      internalLocationId = request.internalLocationId,
+      prisonerMap = emptyMap(),
+      prisonerNumbers = request.prisonerNumbers,
+      startDate = request.startDate,
+      startTime = request.startTime,
+      endTime = request.endTime,
+      comment = request.comment,
+      appointmentDescription = request.appointmentDescription,
+      appointmentType = request.appointmentType,
+      principal = principal,
+      repeat = request.repeat,
+      isMigration = true,
+    )
+
+    verify(times(0)) { prisonApiUserClient.getUserCaseLoads() }
+    verify(times(0)) { referenceCodeService.getScheduleReasonsMap(any()) }
+    verify(times(0)) { locationService.getLocationsForAppointmentsMap(any()) }
   }
 
   @Test
@@ -453,5 +484,121 @@ class AppointmentServiceTest {
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.appointments[0].prisonerNumber}' not found, were inactive or are residents of a different prison.")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `migrateAppointment with comment under 40 characters success`() {
+    val request = appointmentMigrateRequest()
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumber, bookingId = 1, prisonId = request.prisonCode!!),
+          ),
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(startTime).isEqualTo(request.startTime)
+      assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(comment).isEqualTo(request.comment)
+      assertThat(appointmentDescription).isNull()
+      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(updated).isNull()
+      assertThat(updatedBy).isNull()
+      assertThat(isMigrated).isTrue()
+      with(occurrences()) {
+        assertThat(size).isEqualTo(1)
+        with(occurrences().first()) {
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
+          assertThat(prisonCode).isEqualTo(request.prisonCode)
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isNull()
+          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(createdBy).isEqualTo("TEST.USER")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+          assertThat(deleted).isFalse
+          with(allocations()) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with comment over 40 characters success`() {
+    val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)))
+      .thenReturn(
+        Mono.just(
+          listOf(
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumber, bookingId = 1, prisonId = request.prisonCode!!),
+          ),
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(startTime).isEqualTo(request.startTime)
+      assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(comment).isEqualTo("")
+      assertThat(appointmentDescription).isEqualTo(request.comment)
+      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(updated).isNull()
+      assertThat(updatedBy).isNull()
+      assertThat(isMigrated).isTrue()
+      with(occurrences()) {
+        assertThat(size).isEqualTo(1)
+        with(occurrences().first()) {
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
+          assertThat(prisonCode).isEqualTo(request.prisonCode)
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isNull()
+          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(createdBy).isEqualTo("TEST.USER")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
+          assertThat(deleted).isFalse
+          with(allocations()) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
+        }
+      }
+    }
   }
 }

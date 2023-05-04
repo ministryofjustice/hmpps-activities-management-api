@@ -67,6 +67,8 @@ data class Appointment(
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  val isMigrated: Boolean = false,
 ) {
   fun scheduleIterator() = schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) } ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 

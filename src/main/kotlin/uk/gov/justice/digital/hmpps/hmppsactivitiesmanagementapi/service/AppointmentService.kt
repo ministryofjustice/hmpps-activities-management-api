@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
@@ -76,6 +77,27 @@ class AppointmentService(
       ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
     }
 
+  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
+
+    createPrisonerMap(listOf(request.prisonerNumber), request.prisonCode).let { prisonerMap ->
+      buildValidAppointmentEntity(
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        internalLocationId = request.internalLocationId,
+        prisonerMap = prisonerMap,
+        prisonerNumbers = listOf(request.prisonerNumber),
+        inCell = false,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = if (request.comment.length <= 40) request.comment else "",
+        appointmentDescription = if (request.comment.length > 40) request.comment else null,
+        appointmentType = AppointmentType.INDIVIDUAL,
+        principal = principal,
+        isMigration = true,
+      ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
+    }
+
   private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
     prisonApiUserClient.getUserCaseLoads().block()
       ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
@@ -115,18 +137,18 @@ class AppointmentService(
     appointmentType: AppointmentType? = null,
     repeat: AppointmentRepeat? = null,
     principal: Principal,
+    isMigration: Boolean = false,
   ): AppointmentEntity {
-    failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
-
-    failIfCategoryNotFound(categoryCode!!)
-
-    failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-
-    failIfMissingPrisoners(prisonerNumbers, prisonerMap)
+    if (!isMigration) {
+      failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
+      failIfCategoryNotFound(categoryCode!!)
+      failIfLocationNotFound(inCell, prisonCode, internalLocationId)
+      failIfMissingPrisoners(prisonerNumbers, prisonerMap)
+    }
 
     return AppointmentEntity(
-      categoryCode = categoryCode,
-      prisonCode = prisonCode,
+      categoryCode = categoryCode ?: "",
+      prisonCode = prisonCode ?: "",
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
@@ -136,6 +158,7 @@ class AppointmentService(
       appointmentDescription = appointmentDescription,
       createdBy = principal.name,
       appointmentType = appointmentType!!,
+      isMigrated = isMigration,
     ).apply {
       this.schedule = repeat?.let {
         AppointmentSchedule(
