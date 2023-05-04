@@ -97,7 +97,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = emptyMap(),
+        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -128,7 +128,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = emptyMap(),
+        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -161,7 +161,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = emptyMap(),
+        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -196,7 +196,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = emptyMap(),
+        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -224,7 +224,7 @@ class AppointmentServiceTest {
       prisonCode = request.prisonCode,
       categoryCode = request.categoryCode,
       internalLocationId = request.internalLocationId,
-      prisonerMap = emptyMap(),
+      prisonerBookings = emptyMap(),
       prisonerNumbers = request.prisonerNumbers,
       startDate = request.startDate,
       startTime = request.startTime,
@@ -491,14 +491,6 @@ class AppointmentServiceTest {
     val request = appointmentMigrateRequest()
     val principal: Principal = mock()
     whenever(principal.name).thenReturn("TEST.USER")
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)))
-      .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumber, bookingId = 1, prisonId = request.prisonCode!!),
-          ),
-        ),
-      )
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -536,7 +528,7 @@ class AppointmentServiceTest {
             assertThat(size).isEqualTo(1)
             with(first()) {
               assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
-              assertThat(bookingId).isEqualTo(1)
+              assertThat(bookingId).isEqualTo(request.bookingId)
             }
           }
         }
@@ -549,14 +541,6 @@ class AppointmentServiceTest {
     val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
     val principal: Principal = mock()
     whenever(principal.name).thenReturn("TEST.USER")
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)))
-      .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumber, bookingId = 1, prisonId = request.prisonCode!!),
-          ),
-        ),
-      )
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -594,7 +578,7 @@ class AppointmentServiceTest {
             assertThat(size).isEqualTo(1)
             with(first()) {
               assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
-              assertThat(bookingId).isEqualTo(1)
+              assertThat(bookingId).isEqualTo(request.bookingId)
             }
           }
         }

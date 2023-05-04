@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -35,7 +34,7 @@ class AppointmentService(
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
-    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerMap ->
+    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
       BulkAppointmentEntity(
         appointments = request.appointments.map {
           buildValidAppointmentEntity(
@@ -45,7 +44,7 @@ class AppointmentService(
             internalLocationId = request.internalLocationId,
             inCell = request.inCell,
             startDate = request.startDate,
-            prisonerMap = prisonerMap.filter { entry -> entry.key == it.prisonerNumber },
+            prisonerBookings = prisonerBookings.filter { entry -> entry.key == it.prisonerNumber },
             prisonerNumbers = listOf(it.prisonerNumber),
             startTime = it.startTime,
             endTime = it.endTime,
@@ -58,13 +57,13 @@ class AppointmentService(
     }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
-    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerMap ->
+    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerBookings ->
       buildValidAppointmentEntity(
         inCell = request.inCell,
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = prisonerMap,
+        prisonerBookings = prisonerBookings,
         prisonerNumbers = request.prisonerNumbers,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -79,12 +78,12 @@ class AppointmentService(
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
 
-    createPrisonerMap(listOf(request.prisonerNumber), request.prisonCode).let { prisonerMap ->
+    mapOf(request.prisonerNumber to request.bookingId.toString()).let { prisonerBookings ->
       buildValidAppointmentEntity(
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
-        prisonerMap = prisonerMap,
+        prisonerBookings = prisonerBookings,
         prisonerNumbers = listOf(request.prisonerNumber),
         inCell = false,
         startDate = request.startDate,
@@ -116,8 +115,8 @@ class AppointmentService(
     }
   }
 
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
-    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
+  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerBookings: Map<String, String?>) {
+    prisonerNumbers.filter { number -> !prisonerBookings.containsKey(number) }.let {
       if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
     }
   }
@@ -128,7 +127,7 @@ class AppointmentService(
     categoryCode: String? = null,
     internalLocationId: Long? = null,
     prisonerNumbers: List<String>,
-    prisonerMap: Map<String, Prisoner>,
+    prisonerBookings: Map<String, String?>,
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
@@ -143,7 +142,7 @@ class AppointmentService(
       failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
       failIfCategoryNotFound(categoryCode!!)
       failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-      failIfMissingPrisoners(prisonerNumbers, prisonerMap)
+      failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
     }
 
     return AppointmentEntity(
@@ -179,12 +178,12 @@ class AppointmentService(
             startTime = this.startTime,
             endTime = this.endTime,
           ).apply {
-            prisonerMap.values.forEach { prisoner ->
+            prisonerBookings.forEach { prisonerBooking ->
               this.addAllocation(
                 AppointmentOccurrenceAllocationEntity(
                   appointmentOccurrence = this,
-                  prisonerNumber = prisoner.prisonerNumber,
-                  bookingId = prisoner.bookingId!!.toLong(),
+                  prisonerNumber = prisonerBooking.key,
+                  bookingId = prisonerBooking.value!!.toLong(),
                 ),
               )
             }
@@ -197,5 +196,5 @@ class AppointmentService(
   private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
     prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
       .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associateBy { it.prisonerNumber }
+      .associate { it.prisonerNumber to it.bookingId }
 }
