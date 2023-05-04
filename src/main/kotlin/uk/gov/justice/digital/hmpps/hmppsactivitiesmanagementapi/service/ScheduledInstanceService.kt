@@ -54,12 +54,9 @@ class ScheduledInstanceService(
       cancelComment = scheduleInstanceCancelRequest.comment,
     ) { attendanceList ->
       val attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
-      val prisonerNumbers = scheduledInstance.attendances.map { it.prisonerNumber }
-      val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()?.associateBy { it.prisonerNumber }
 
       attendanceList.forEach {
-        val payIncentiveCode = prisoners?.get(it.prisonerNumber)?.currentIncentive?.level?.code
-        it.cancel(attendanceReason, payIncentiveCode)
+        it.cancel(attendanceReason)
       }
     }
 

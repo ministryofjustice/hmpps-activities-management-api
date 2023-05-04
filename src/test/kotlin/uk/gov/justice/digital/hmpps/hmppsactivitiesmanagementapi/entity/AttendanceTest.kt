@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class AttendanceTest {
   private val activity = activityEntity()
@@ -15,7 +17,7 @@ class AttendanceTest {
   private val today = LocalDateTime.now()
 
   @Test
-  fun `waiting method sets the state correctly`() {
+  fun `uncancel method sets the state correctly`() {
     val attendance = Attendance(
       scheduledInstance = mock(),
       prisonerNumber = "P000111",
@@ -39,7 +41,7 @@ class AttendanceTest {
       recordedTime = LocalDateTime.now(),
     )
 
-    attendance.waiting()
+    attendance.uncancel()
 
     with(attendance) {
       assertThat(attendanceReason).isNull()
@@ -56,13 +58,12 @@ class AttendanceTest {
     val canceledInstance = instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
     val attendanceWithCanceledInstance = attendance.copy(scheduledInstance = canceledInstance)
 
-    attendanceWithCanceledInstance.cancel(attendanceReason, "BAS")
+    attendanceWithCanceledInstance.cancel(attendanceReason)
     assertThat(attendanceWithCanceledInstance.status).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
-    assertThat(attendanceWithCanceledInstance.payAmount).isEqualTo(30)
     assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReason)
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
-    assertThat(attendanceWithCanceledInstance.recordedTime).isEqualTo(today)
+    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(LocalDateTime.now(), Assertions.within(1, ChronoUnit.SECONDS))
     assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
   }
 }
