@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -22,12 +23,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary as ModelAllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
 class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
+  private val allAttendanceRepository: AllAttendanceRepository,
   private val allAttendanceSummaryRepository: AllAttendanceSummaryRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
@@ -141,4 +144,7 @@ class AttendancesService(
 
   fun getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendanceSummary> =
     allAttendanceSummaryRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
+
+  fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendance> =
+    allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
 }

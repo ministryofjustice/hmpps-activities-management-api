@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -111,11 +112,30 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
   }
 
+  @Test
+  fun `200 response when get attendance list by date found`() {
+    val attendanceList = attendanceList().toModel()
+
+    whenever(attendancesService.getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(attendanceList)
+
+    val response = mockMvc.getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now())
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendanceList))
+
+    verify(attendancesService).getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now())
+  }
+
   private fun MockMvc.getAttendanceById(attendanceId: String) =
     get("/attendances/$attendanceId")
 
   private fun MockMvc.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
     get("/attendances/summary/$prisonCode/$sessionDate")
+
+  private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) =
+    get("/attendances/$prisonCode/$sessionDate")
 
   companion object {
     val caseNote = CaseNote(
