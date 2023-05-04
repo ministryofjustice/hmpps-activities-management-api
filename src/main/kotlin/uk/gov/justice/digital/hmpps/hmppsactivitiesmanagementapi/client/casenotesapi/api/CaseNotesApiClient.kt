@@ -12,8 +12,8 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
 
-  fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, incentiveLevelWarningIssued: Boolean): CaseNote? {
-    val subType = if (incentiveLevelWarningIssued) { "IEP_WARN" } else { "NEG_GEN" }
+  fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, incentiveLevelWarningIssued: Boolean? = false): CaseNote? {
+    val subType = if (incentiveLevelWarningIssued == true) { "IEP_WARN" } else { "NEG_GEN" }
     val newCaseNote = NewCaseNote(prisonCode, "NEG", subType, null, caseNote)
     return webClient.post()
       .uri("/case-notes/{offenderNo}", prisonerNumber)
