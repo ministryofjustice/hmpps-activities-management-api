@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -101,7 +101,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     summary = it.scheduleDescription,
     comments = it.activitySummary,
     prisonerNumber = it.prisonerNumber,
-    inCell = false, // TODO: Add the inCell flag to the view
+    inCell = it.inCell,
     outsidePrison = false, // TODO: Add the outside prison flag to the view
     date = it.sessionDate,
     startTime = it.startTime!!,

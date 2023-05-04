@@ -3,9 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,6 +22,7 @@ fun userDetail(
   lastName = lastName,
   accountStatus = UserDetail.AccountStatus.ACTIVE,
   active = true,
+  lockDate = "",
 )
 
 fun userCaseLoads(prisonCode: String) =
@@ -59,11 +60,11 @@ fun prisonerTransfer(
   eventId: Long? = 1,
   firstName: String = "FRED",
   lastName: String = "BLOGGS",
-  cellLocation: String? = "2-1-001",
+  cellLocation: String = "2-1-001",
   event: String = "TRANSFER",
-  eventType: String? = "TRANSFER",
+  eventType: String = "TRANSFER",
   eventDescription: String = "Governor",
-  eventStatus: String? = "SCH",
+  eventStatus: String = "SCH",
   date: LocalDate,
   startTime: String = date.atStartOfDay().toIsoDateTime(),
   endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
@@ -71,7 +72,7 @@ fun prisonerTransfer(
   PrisonerSchedule(
     offenderNo = offenderNo,
     bookingId = bookingId,
-    locationId = null,
+    locationId = -1,
     eventId = eventId,
     firstName = firstName,
     lastName = lastName,

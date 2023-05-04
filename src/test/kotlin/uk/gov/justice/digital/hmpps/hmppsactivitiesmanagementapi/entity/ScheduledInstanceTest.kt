@@ -63,7 +63,7 @@ class ScheduledInstanceTest {
       assertThat(cancelledBy).isNull()
       assertThat(cancelledReason).isNull()
 
-      verify(attendances.first()).waiting()
+      verify(attendances.first()).uncancel()
     }
   }
 
@@ -101,7 +101,7 @@ class ScheduledInstanceTest {
       by = "USER1",
       cancelComment = "Resume tomorrow",
     ) {
-      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!, "BAS") }
+      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
     }
     with(cancelableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")
@@ -124,7 +124,7 @@ class ScheduledInstanceTest {
         by = "USER1",
         cancelComment = "Resume tomorrow",
       ) {
-        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!) }
       }
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule instance has already been cancelled")
@@ -138,7 +138,7 @@ class ScheduledInstanceTest {
         by = "USER1",
         cancelComment = "Resume tomorrow",
       ) {
-        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!, "BAS") }
+        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!) }
       }
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule instance has ended")

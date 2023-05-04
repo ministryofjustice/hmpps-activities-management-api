@@ -40,8 +40,7 @@ class InboundEventsListener(
         mapper.readValue<HMPPSDomainEvent>(sqsMessage.Message).let { domainEvent ->
           domainEvent.toInboundEventType()?.let { inboundEventType ->
             if (feature.isEnabled(inboundEventType)) {
-              log.info("Processing inbound event type $inboundEventType")
-
+              log.info("Processing inbound event $inboundEventType")
               inboundEventsService.process(inboundEventType.toInboundEvent(mapper, sqsMessage.Message))
             } else {
               log.warn("Inbound event type $inboundEventType feature is currently disabled.")
@@ -60,6 +59,5 @@ data class HMPPSDomainEvent(
   fun toInboundEventType() = InboundEventType.values().firstOrNull { it.eventType == eventType }
 }
 
-@Suppress("PropertyName")
 @JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy::class)
 data class SQSMessage(val Type: String, val Message: String, val MessageId: String? = null)

@@ -1,57 +1,68 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 
 class InboundEventsServiceTest {
-  private val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
-  private val repository: RolloutPrisonRepository = mock()
   private val receivedEventHandler: OffenderReceivedEventHandler = mock()
   private val releasedEventHandler: OffenderReleasedEventHandler = mock()
-  private val service = InboundEventsService(repository, releasedEventHandler, receivedEventHandler)
+  private val interestingEventHandler: InterestingEventHandler = mock()
+
+  private val service = InboundEventsService(releasedEventHandler, receivedEventHandler, interestingEventHandler)
+
+  @BeforeEach
+  fun setupMocks() {
+    reset(receivedEventHandler, releasedEventHandler, interestingEventHandler)
+    whenever(releasedEventHandler.handle(any())).thenReturn(true)
+    whenever(receivedEventHandler.handle(any())).thenReturn(true)
+    whenever(interestingEventHandler.handle(any())).thenReturn(true)
+  }
 
   @Test
-  fun `inbound event is processed for active prison`() {
-    repository.stub { on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison() }
-
+  fun `inbound released event is processed by release event handler`() {
+    val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
-
-    verify(repository).findByCode(moorlandPrisonCode)
     verify(releasedEventHandler).handle(inboundEvent)
   }
 
   @Test
-  fun `inbound event is not processed for inactive prison`() {
-    repository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
-        rolloutPrison().copy(
-          activitiesToBeRolledOut = false,
-          activitiesRolloutDate = null,
-        )
-    }
-
+  fun `inbound received event is processed by received event handler`() {
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
-
-    verify(repository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(releasedEventHandler)
+    verify(receivedEventHandler).handle(inboundEvent)
   }
 
   @Test
-  fun `inbound event is not processed when no matching prison`() {
-    repository.stub { on { findByCode(moorlandPrisonCode) } doReturn null }
-
+  fun `inbound released event failure is handled as an interesting event`() {
+    whenever(releasedEventHandler.handle(any())).thenReturn(false)
+    val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
+    verify(releasedEventHandler).handle(inboundEvent)
+    verify(interestingEventHandler).handle(inboundEvent)
+  }
 
-    verify(repository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(releasedEventHandler)
+  @Test
+  fun `inbound received event failure is handled as an interesting event`() {
+    whenever(receivedEventHandler.handle(any())).thenReturn(false)
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    service.process(inboundEvent)
+    verify(receivedEventHandler).handle(inboundEvent)
+    verify(interestingEventHandler).handle(inboundEvent)
+  }
+
+  @Test
+  fun `inbound interesting event is processed by interesting event handler`() {
+    val inboundEvent = cellMoveEvent("123456")
+    service.process(inboundEvent)
+    verify(interestingEventHandler).handle(inboundEvent)
   }
 }

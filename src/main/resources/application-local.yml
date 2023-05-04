@@ -50,7 +50,7 @@ case-notes:
 
 jobs:
   create-scheduled-instances:
-    days-in-advance: ${SCHEDULE_AHEAD_DAYS:0}
+    days-in-advance: ${SCHEDULE_AHEAD_DAYS:14}
 
 online:
   create-scheduled-instances:
