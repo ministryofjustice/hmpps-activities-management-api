@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
 import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 
 class CaseNotesApiMockServer : WireMockServer(8444) {
@@ -11,6 +12,23 @@ class CaseNotesApiMockServer : WireMockServer(8444) {
   fun stubGetCaseNote(prisonerNumber: String, caseNoteId: Long) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/case-notes/$prisonerNumber/$caseNoteId"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("casenotesapi/case-note-$caseNoteId.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubPostCaseNote(caseNoteId: Long, prisonCode: String, prisonerNumber: String, caseNote: String, type: String, subType: String) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/case-notes/$prisonerNumber"))
+        .withRequestBody(
+          WireMock.equalToJson(
+            mapper.writeValueAsString(NewCaseNote(prisonCode, "NEG", subType, null, caseNote)),
+          ),
+        )
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
