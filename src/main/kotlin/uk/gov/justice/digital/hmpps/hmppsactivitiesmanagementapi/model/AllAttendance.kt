@@ -39,6 +39,6 @@ data class AllAttendance(
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
 
-  @Schema(description = "The prison number this attendance record is for", example = "A1234AA")
+  @Schema(description = "The prisoner number this attendance record is for", example = "A1234AA")
   val prisonerNumber: String,
 )
