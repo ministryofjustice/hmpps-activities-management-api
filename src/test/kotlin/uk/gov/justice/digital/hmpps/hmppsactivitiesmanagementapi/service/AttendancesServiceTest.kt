@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -13,6 +14,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -172,6 +174,63 @@ class AttendancesServiceTest {
   }
 
   @Test
+  fun `mark attendance record with case note`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(null))).thenReturn(caseNote)
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
+    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.incentiveLevelWarningIssued).isNull()
+  }
+
+  @Test
+  fun `mark attendance record with case note and incentive level warning not issued`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(false))).thenReturn(caseNote)
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
+    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.incentiveLevelWarningIssued).isFalse
+  }
+
+  @Test
+  fun `mark attendance record with case note and incentive level warning issued`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(true))).thenReturn(caseNote)
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
+    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.incentiveLevelWarningIssued).isTrue
+  }
+
+  @Test
   fun `remove attendance`() {
     attendance.status = AttendanceStatus.COMPLETED
     attendance.attendanceReason = AttendanceReason(
@@ -230,5 +289,24 @@ class AttendancesServiceTest {
       attendanceSummary(),
     )
     assertThat(service.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now()).first()).isInstanceOf(ModelAllAttendanceSummary::class.java)
+  }
+
+  companion object {
+    val caseNote = CaseNote(
+      caseNoteId = "1",
+      offenderIdentifier = "A1234AA",
+      type = "NEG",
+      typeDescription = "Negative",
+      subType = "sub type",
+      subTypeDescription = "sub type description",
+      source = "source",
+      creationDateTime = LocalDateTime.now(),
+      occurrenceDateTime = LocalDateTime.now(),
+      authorName = "author",
+      authorUserId = "author id",
+      text = "Case Note Text",
+      eventId = 1,
+      sensitive = false,
+    )
   }
 }
