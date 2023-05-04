@@ -14,8 +14,6 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail.InOutStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail.Status
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -34,18 +32,19 @@ class InterestingEventHandlerTest {
   private val eventReviewRepository: EventReviewRepository = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
 
-  private val handler = InterestingEventHandler(rolloutPrisonRepository, allocationRepository, eventReviewRepository, prisonApiClient)
+  private val handler =
+    InterestingEventHandler(rolloutPrisonRepository, allocationRepository, eventReviewRepository, prisonApiClient)
 
   private val prisoner = InmateDetail(
     agencyId = "PVI",
     offenderNo = "123456",
-    inOutStatus = InOutStatus.IN,
+    inOutStatus = "IN",
     firstName = "Bob",
     lastName = "Bobson",
     activeFlag = true,
     offenderId = 1L,
     rootOffenderId = 1L,
-    status = Status.IN,
+    status = "IN",
     dateOfBirth = LocalDate.of(2001, 10, 1),
   )
 

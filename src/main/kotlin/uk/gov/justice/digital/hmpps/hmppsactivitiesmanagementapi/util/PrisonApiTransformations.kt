@@ -5,10 +5,10 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location as PrisonApiLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerSchedule as PrisonApiPrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ReferenceCode as PrisonApiReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.UserDetail as PrisonApiUserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode as PrisonApiReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail as PrisonApiUserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
@@ -75,10 +75,10 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
   )
 }
 
- /*
- Takes a list of Prison API CourtHearings for a single person from NOMIS.
- Produces a list of SAA ScheduledEvents for court hearings.
- */
+/*
+Takes a list of Prison API CourtHearings for a single person from NOMIS.
+Produces a list of SAA ScheduledEvents for court hearings.
+*/
 fun PrisonApiCourtHearings.nomisCourtHearingsToScheduledEvents(
   bookingId: Long,
   prisonCode: String?,
@@ -144,7 +144,9 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
     suspended = false,
     date = LocalDateTime.parse(it.startTime).toLocalDate(),
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
-    endTime = it.startTime?.let { startTime -> LocalDateTime.parse(startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS) },
+    endTime = it.startTime?.let { startTime ->
+      LocalDateTime.parse(startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS)
+    },
     priority = priority,
   )
 }
@@ -273,7 +275,8 @@ fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode
     ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
   }
 
-fun List<PrisonApiLocation>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
+fun List<PrisonApiLocation>.toAppointmentLocation() =
+  map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
 
 fun PrisonApiUserDetail?.toSummary(username: String) =
   if (this == null) {
