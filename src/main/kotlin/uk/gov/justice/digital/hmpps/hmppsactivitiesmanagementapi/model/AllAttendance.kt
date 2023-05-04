@@ -17,6 +17,9 @@ data class AllAttendance(
   )
   val attendanceId: Long,
 
+  @Schema(description = "The prison code where this activity takes place", example = "PVI")
+  val prisonCode: String,
+
   @Schema(
     description = "The date of the session for which attendance may have been marked or a planned absence recorded",
     example = "2023-03-30",
@@ -35,4 +38,7 @@ data class AllAttendance(
 
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
+
+  @Schema(description = "The prison number this attendance record is for", example = "A1234AA")
+  val prisonerNumber: String,
 )

@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
@@ -325,5 +326,18 @@ internal fun attendanceSummary() = listOf(
     attendanceReasonCode = null,
     issuePayment = null,
     attendanceCount = 2,
+  ),
+)
+
+internal fun attendanceList() = listOf(
+  AllAttendance(
+    attendanceId = 1,
+    prisonCode = pentonvillePrisonCode,
+    sessionDate = LocalDate.now(),
+    timeSlot = "AM",
+    status = "WAITING",
+    attendanceReasonCode = null,
+    issuePayment = null,
+    prisonerNumber = "A11111A",
   ),
 )

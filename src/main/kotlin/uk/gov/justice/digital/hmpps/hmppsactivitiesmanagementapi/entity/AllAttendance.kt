@@ -14,6 +14,8 @@ data class `AllAttendance`(
   @Id
   val attendanceId: Long,
 
+  val prisonCode: String,
+
   val sessionDate: LocalDate,
 
   val timeSlot: String,
@@ -23,14 +25,20 @@ data class `AllAttendance`(
   val attendanceReasonCode: String?,
 
   val issuePayment: Boolean?,
+
+  val prisonerNumber: String,
 ) {
   fun toModel() =
     AllAttendanceModel(
       attendanceId = attendanceId,
+      prisonCode = prisonCode,
       sessionDate = sessionDate,
       timeSlot = timeSlot,
       status = status,
       attendanceReasonCode = attendanceReasonCode,
       issuePayment = issuePayment,
+      prisonerNumber = prisonerNumber,
     )
 }
+
+fun List<AllAttendance>.toModel() = map { it.toModel() }

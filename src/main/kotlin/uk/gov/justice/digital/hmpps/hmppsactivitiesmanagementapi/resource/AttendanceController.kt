@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -126,6 +127,51 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("sessionDate") sessionDate: LocalDate,
   ): List<AllAttendanceSummary> = attendancesService.getAttendanceSummaryByDate(prisonCode, sessionDate)
+
+  @GetMapping(value = ["/{prisonCode}/{sessionDate}"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a daily list of attendances",
+    description = "Returns an attendance list.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance list found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = AllAttendance::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAttendanceByDate(
+    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable("sessionDate") sessionDate: LocalDate,
+  ): List<AllAttendance> = attendancesService.getAllAttendanceByDate(prisonCode, sessionDate)
 
   @PutMapping
   @ResponseBody
