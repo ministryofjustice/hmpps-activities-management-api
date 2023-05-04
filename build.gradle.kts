@@ -1,8 +1,13 @@
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
+import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
+import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
+
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.4-beta-3"
   kotlin("plugin.spring") version "1.8.10"
   kotlin("plugin.jpa") version "1.8.10"
   jacoco
+  id("org.openapi.generator") version "6.5.0"
 }
 
 allOpen {
@@ -17,11 +22,6 @@ configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
-// Maven Central repo required for spring-cloud-dependencies-parent-4.0.0-M5.pom
-repositories {
-  maven { url = uri("https://repo.spring.io/milestone") }
-  mavenCentral()
-}
 dependencies {
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -61,9 +61,44 @@ java {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    dependsOn("buildPrisonApiModel")
     kotlinOptions {
       jvmTarget = "18"
     }
+  }
+  withType<KtLintCheckTask> {
+    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
+    mustRunAfter("buildPrisonApiModel")
+  }
+  withType<KtLintFormatTask> {
+    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
+    mustRunAfter("buildPrisonApiModel")
+  }
+}
+
+tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+  generatorName.set("kotlin-spring")
+  inputSpec.set("openapi-specs/prison-api.json")
+  outputDir.set("$buildDir/generated")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
+  configOptions.set(
+    mapOf(
+      "dateLibrary" to "java8-localdatetime",
+      "serializationLibrary" to "jackson",
+      "useBeanValidation" to "false",
+      "enumPropertyNaming" to "UPPERCASE"
+    )
+  )
+  globalProperties.set(
+    mapOf(
+      "models" to ""
+    )
+  )
+}
+
+kotlin {
+  sourceSets["main"].apply {
+    kotlin.srcDir("$buildDir/generated/src/main/kotlin")
   }
 }
 
@@ -98,10 +133,16 @@ tasks.named<JacocoReport>("jacocoTestReport") {
   }
 }
 
-ktlint {
+configure<KtlintExtension> {
   filter {
-    // exclude open api generated types
-    exclude("**/prisonapi/model/")
-    exclude("**/prisonersearchapi/model/")
+    exclude {
+      it.file.path.contains("build/generated/src/main/")
+    }
+    exclude {
+      it.file.path.contains("prisonersearchapi/model/")
+    }
+    exclude {
+      it.file.path.contains("prisonapi/overrides/")
+    }
   }
 }

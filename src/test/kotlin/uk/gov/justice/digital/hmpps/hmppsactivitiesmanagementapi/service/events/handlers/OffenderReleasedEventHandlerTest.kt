@@ -41,7 +41,7 @@ class OffenderReleasedEventHandlerTest {
 
   private val prisoner: InmateDetail = mock {
     on { activeFlag } doReturn false
-    on { inOutStatus } doReturn InmateDetail.InOutStatus.OUT
+    on { inOutStatus } doReturn "OUT"
   }
 
   @BeforeEach
