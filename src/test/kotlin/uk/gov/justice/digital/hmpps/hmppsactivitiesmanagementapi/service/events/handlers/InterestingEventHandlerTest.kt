@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import java.time.LocalDate
@@ -61,6 +62,21 @@ class InterestingEventHandlerTest {
   @Test
   fun `stores an interesting event when allocations exist`() {
     val inboundEvent = cellMoveEvent("123456")
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
+      .doReturn(activeAllocations)
+
+    val result = handler.handle(inboundEvent)
+
+    assertThat(result).isTrue
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
+  }
+
+  @Test
+  fun `stores an iep-review-inserted event despite the reason and prisonId being null`() {
+    val inboundEvent = iepReviewInsertedEvent("123456")
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)

@@ -83,7 +83,7 @@ data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformati
   override fun eventType() = InboundEventType.INCENTIVES_DELETED.eventType
 }
 
-data class IncentivesInformation(val nomsNumber: String, val reason: String, val prisonId: String)
+data class IncentivesInformation(val nomsNumber: String, val reason: String?, val prisonId: String?)
 
 // ------------ Cell move events ------------------------------------------------------------------
 
