@@ -10,7 +10,9 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
@@ -25,8 +27,13 @@ import java.time.LocalDateTime
 class OffenderReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
+  private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val activeMoorlandPrisoner: InmateDetail = mock {
+    on { status } doReturn "ACTIVE IN"
+    on { agencyId } doReturn moorlandPrisonCode
+  }
 
-  private val handler = OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository)
+  private val handler = OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient)
 
   @BeforeEach
   fun beforeTests() {
@@ -60,7 +67,7 @@ class OffenderReceivedEventHandlerTest {
   }
 
   @Test
-  fun `only auto-suspended allocations are reactivated on receipt of prisoner`() {
+  fun `auto-suspended allocations are reactivated on receipt of prisoner`() {
     val now = LocalDateTime.now()
 
     val autoSuspendedOne =
@@ -78,9 +85,13 @@ class OffenderReceivedEventHandlerTest {
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).thenReturn(
-      allocations,
-    )
+    prisonApiClient.stub {
+      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    }
+
+    allocationRepository.stub {
+      on { findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456") } doReturn allocations
+    }
 
     val successful = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
 

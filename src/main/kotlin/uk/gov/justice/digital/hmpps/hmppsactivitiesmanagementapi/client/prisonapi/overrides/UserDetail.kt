@@ -4,19 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
- * User Details
- * @param staffId Staff Id
- * @param username Username
- * @param firstName First Name
- * @param lastName Last Name
- * @param accountStatus Status of the User Account
- * @param lockDate Date the user account was locked
- * @param active Indicate if the account is active
- * @param thumbnailId Image Thumbnail Id
- * @param activeCaseLoadId Current Active Caseload
- * @param expiryDate Date the user account has expired
- * @param lockedFlag The User account is locked
- * @param expiredFlag Indicates the user account has expired
+ * This is overriding the generated UserDetail model because lockDate is marked as mandatory even though it can be null.
  */
 data class UserDetail(
   @Schema(example = "231232", required = true, description = "Staff Id")

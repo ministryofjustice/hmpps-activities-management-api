@@ -94,6 +94,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `receive prisoner back after temporary release`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
+
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
