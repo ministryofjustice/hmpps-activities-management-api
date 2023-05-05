@@ -40,8 +40,7 @@ class OffenderReleasedEventHandlerTest {
   private val handler = OffenderReleasedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient)
 
   private val prisoner: InmateDetail = mock {
-    on { activeFlag } doReturn false
-    on { inOutStatus } doReturn "OUT"
+    on { status } doReturn "INACTIVE OUT"
   }
 
   @BeforeEach

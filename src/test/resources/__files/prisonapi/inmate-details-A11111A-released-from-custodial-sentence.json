@@ -47,7 +47,7 @@
   "birthPlace": "DONCASTER",
   "birthCountryCode": "ENG",
   "inOutStatus": "OUT",
-  "status": "ACTIVE IN",
+  "status": "INACTIVE OUT",
   "statusReason": "TAP-C3",
   "lastMovementTypeCode": "TAP",
   "lastMovementReasonCode": "C3",
