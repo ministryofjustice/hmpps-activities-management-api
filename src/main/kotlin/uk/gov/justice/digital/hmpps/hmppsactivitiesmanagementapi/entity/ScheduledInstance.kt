@@ -65,7 +65,7 @@ data class ScheduledInstance(
     cancelled = false
     cancelledBy = null
     cancelledReason = null
-    attendances.forEach(Attendance::waiting)
+    attendances.forEach(Attendance::uncancel)
   }
 
   fun toModel() = ModelScheduledInstance(
