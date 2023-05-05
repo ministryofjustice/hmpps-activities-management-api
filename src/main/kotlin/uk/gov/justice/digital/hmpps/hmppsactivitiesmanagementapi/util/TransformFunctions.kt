@@ -336,6 +336,7 @@ fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistor
     recordedBy = attendanceHistory.recordedBy,
     issuePayment = attendanceHistory.issuePayment,
     incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
+    otherAbsenceReason = attendanceHistory.otherAbsenceReason,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
