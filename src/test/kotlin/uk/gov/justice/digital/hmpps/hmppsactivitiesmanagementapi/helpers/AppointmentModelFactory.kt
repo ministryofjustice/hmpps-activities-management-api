@@ -152,10 +152,10 @@ fun appointmentMigrateRequest(
   prisonCode: String? = "TPR",
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 123,
-  categoryCode: String? = "TEST",
+  categoryCode: String = "TEST",
   internalLocationId: Long? = 123,
-  startDate: LocalDate? = LocalDate.now().plusDays(1),
-  startTime: LocalTime? = LocalTime.of(13, 0),
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   comment: String = "Appointment level comment",
 ) =
