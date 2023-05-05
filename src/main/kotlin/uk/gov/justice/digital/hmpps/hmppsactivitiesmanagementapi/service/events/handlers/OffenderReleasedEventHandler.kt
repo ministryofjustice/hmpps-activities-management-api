@@ -74,7 +74,7 @@ class OffenderReleasedEventHandler(
           log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
         }
       true
-    } ?: log.warn("Prisoner for not $event found").let { false }
+    } ?: log.warn("Prisoner for $event not found").let { false }
 
   private fun List<Allocation>.suspendAndSaveAffectedAllocations() =
     LocalDateTime.now().let { now ->

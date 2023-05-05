@@ -5,17 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
 /**
- * Reference Code
- * @param domain Reference data item domain.
- * @param code Reference data item code.
- * @param description Reference data item description.
- * @param activeFlag Reference data item active indicator flag.
- * @param parentDomain Parent reference data item domain.
- * @param parentCode Parent reference data item code.
- * @param listSeq List Sequence
- * @param systemDataFlag System Data Flag
- * @param expiredDate Expired Date
- * @param subCodes List of subordinate reference data items associated with this reference data item. Not returned by default
+ * This is overriding the generated ReferenceCode model because domain is marked as mandatory even though it can be null.
+ *
+ * The offending prison-api endpoint "/api/reference-domains/scheduleReasons"
  */
 data class ReferenceCode(
 

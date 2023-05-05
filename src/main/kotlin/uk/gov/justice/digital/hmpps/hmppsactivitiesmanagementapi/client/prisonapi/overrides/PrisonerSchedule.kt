@@ -6,32 +6,7 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 /**
- * Prisoner Schedule
- * @param offenderNo Offender number (e.g. NOMS Number)
- * @param locationId The number which (uniquely) identifies the internal location associated with the Scheduled Event (Prisoner Schedule)
- * @param firstName Offender first name
- * @param lastName Offender last name
- * @param cellLocation Offender cell
- * @param event Event code
- * @param eventType Event type, e.g. VISIT, APP, PRISON_ACT
- * @param eventDescription Description of event code
- * @param eventLocation Location of the event
- * @param eventStatus The event's status. Includes 'CANC', meaning cancelled for 'VISIT'
- * @param comment Comment
- * @param startTime Date and time at which event starts
- * @param eventId Activity id if any. Used to attend or pay the event
- * @param bookingId Booking id for offender
- * @param eventLocationId Id of an internal event location
- * @param endTime Date and time at which event ends
- * @param eventOutcome Attendance, possible values are the codes in the 'PS_PA_OC' reference domain
- * @param performance Possible values are the codes in the 'PERFORMANCE' reference domain
- * @param outcomeComment No-pay reason
- * @param paid Activity paid flag
- * @param payRate Amount paid per activity session in pounds
- * @param excluded Activity excluded flag
- * @param timeSlot Activity time slot
- * @param locationCode The code for the activity location
- * @param suspended Event scheduled has been suspended
+ * TODO - document why we are overriding the generated version???
  */
 data class PrisonerSchedule(
 
