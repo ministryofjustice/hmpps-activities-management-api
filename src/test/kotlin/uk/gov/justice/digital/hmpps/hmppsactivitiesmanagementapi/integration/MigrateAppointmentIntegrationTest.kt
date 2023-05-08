@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -58,14 +57,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     verifyAppointment(response)
     verifyDatabase()
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
-
-    assertThat(
-      eventCaptor.allValues.map { it.eventType }.distinct().single(),
-    ).isEqualTo("appointments.appointment-instance.created")
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.occurrences[0].allocations[0].id),
-    )
+    verify(eventsPublisher, times(0)).send(eventCaptor.capture())
   }
 
   private fun verifyAppointment(response: Appointment) {

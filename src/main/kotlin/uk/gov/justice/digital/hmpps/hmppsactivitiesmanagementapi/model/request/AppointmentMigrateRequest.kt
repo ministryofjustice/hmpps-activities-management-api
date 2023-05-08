@@ -42,7 +42,7 @@ data class AppointmentMigrateRequest(
   @field:NotEmpty(message = "Category code must be supplied")
   @field:Size(max = 12, message = "Category code should not exceed {max} characters")
   @Schema(
-    description = "The NOMIS reference code for this appointment. Must exist and be active",
+    description = "The NOMIS reference code for this appointment.",
     example = "CHAP",
   )
   val categoryCode: String,
@@ -50,8 +50,7 @@ data class AppointmentMigrateRequest(
   @Schema(
     description =
     """
-    The NOMIS internal location id within the specified prison. This must be supplied if inCell is false.
-    The internal location id must exist, must be within the prison specified by the prisonCode property and be active. 
+    The NOMIS internal location id within the specified prison.
     """,
     example = "123",
   )
@@ -82,8 +81,7 @@ data class AppointmentMigrateRequest(
   @Schema(
     description =
     """
-    Notes relating to the appointment.
-    The default value if no notes are specified at the occurrence or instance levels
+    Notes relating to the appointment.    
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
