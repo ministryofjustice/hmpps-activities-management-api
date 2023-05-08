@@ -10,9 +10,6 @@ import java.time.LocalDate
 
 @Repository
 interface ActivityRepository : JpaRepository<Activity, Long> {
-  @Query(value = "from Activity a where a.startDate <= :date and (a.endDate is null or a.endDate >= :date)")
-  fun getAllForDate(@Param("date") date: LocalDate): List<Activity>
-
   @Query(value = "from Activity a where a.prisonCode = :prison and a.startDate <= :date and (a.endDate is null or a.endDate >= :date)")
   fun getAllForPrisonAndDate(@Param("prison") prison: String, @Param("date") date: LocalDate): List<Activity>
 
