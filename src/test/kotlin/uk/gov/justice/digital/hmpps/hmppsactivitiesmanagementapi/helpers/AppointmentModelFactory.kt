@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.IndividualAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
@@ -145,6 +146,29 @@ fun bulkAppointmentRequest(
         endTime = endTime,
       )
     }.toList(),
+  )
+
+fun appointmentMigrateRequest(
+  prisonCode: String? = "TPR",
+  prisonerNumber: String = "A1234BC",
+  bookingId: Long = 123,
+  categoryCode: String = "TEST",
+  internalLocationId: Long? = 123,
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = LocalTime.of(13, 0),
+  endTime: LocalTime? = LocalTime.of(14, 30),
+  comment: String = "Appointment level comment",
+) =
+  AppointmentMigrateRequest(
+    prisonCode,
+    prisonerNumber,
+    bookingId,
+    categoryCode,
+    internalLocationId,
+    startDate,
+    startTime,
+    endTime,
+    comment,
   )
 
 fun appointmentDetails() = AppointmentDetails(
