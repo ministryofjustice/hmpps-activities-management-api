@@ -3,9 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -17,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -36,17 +33,16 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentRepository: AppointmentRepository
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
-
   @Test
   fun `migrate appointment success`() {
+    verifyDatabaseIsEmpty()
     val request = appointmentMigrateRequest(categoryCode = "AC1")
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber),
+      listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
+          prisonerNumber = request.prisonerNumber!!,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -55,27 +51,33 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointment(response)
-    verifyDatabase()
+    verifyDatabaseHasBeenUpdatedCorrectly()
 
-    verify(eventsPublisher, times(0)).send(eventCaptor.capture())
+    verifyNoInteractions(eventsPublisher)
   }
 
   private fun verifyAppointment(response: Appointment) {
-    assertThat(response.id).isNotNull
-    assertThat(response.createdBy).isEqualTo("test-client")
-    assertThat(response.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(response.occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
-    assertThat(response.categoryCode).isEqualTo("AC1")
-    assertThat(response.prisonCode).isEqualTo("TPR")
-    assertThat(response.internalLocationId).isEqualTo(123)
-    assertThat(response.inCell).isFalse()
-    assertThat(response.startDate).isEqualTo(LocalDate.now().plusDays(1))
-    assertThat(response.startTime).isEqualTo(LocalTime.of(13, 0))
-    assertThat(response.endTime).isEqualTo(LocalTime.of(14, 30))
-    assertThat(response.comment).isEqualTo("Appointment level comment")
+    with(response) {
+      assertThat(id).isNotNull
+      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(prisonCode).isEqualTo("TPR")
+      assertThat(internalLocationId).isEqualTo(123)
+      assertThat(inCell).isFalse()
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
+      assertThat(comment).isEqualTo("Appointment level comment")
+    }
   }
 
-  private fun verifyDatabase() {
+  private fun verifyDatabaseIsEmpty() {
+    assertThat(appointmentRepository.count()).isEqualTo(0)
+  }
+
+  private fun verifyDatabaseHasBeenUpdatedCorrectly() {
     val appointments = appointmentRepository.findAll().map { it.toModel() }
 
     assertThat(appointments).hasSize(1)

@@ -30,14 +30,14 @@ data class AppointmentMigrateRequest(
     description = "The prisoner to allocate to the appointment",
     example = "A1234BC",
   )
-  val prisonerNumber: String,
+  val prisonerNumber: String?,
 
   @field:NotNull(message = "Booking ID must be supplied")
   @Schema(
     description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
     example = "456",
   )
-  val bookingId: Long,
+  val bookingId: Long?,
 
   @field:NotEmpty(message = "Category code must be supplied")
   @field:Size(max = 12, message = "Category code should not exceed {max} characters")
@@ -45,7 +45,7 @@ data class AppointmentMigrateRequest(
     description = "The NOMIS reference code for this appointment.",
     example = "CHAP",
   )
-  val categoryCode: String,
+  val categoryCode: String?,
 
   @Schema(
     description =
@@ -61,7 +61,7 @@ data class AppointmentMigrateRequest(
     description = "The date of the appointment",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
+  val startDate: LocalDate?,
 
   @field:NotNull(message = "Start time must be supplied")
   @Schema(
@@ -69,7 +69,7 @@ data class AppointmentMigrateRequest(
     example = "09:00",
   )
   @JsonFormat(pattern = "HH:mm")
-  val startTime: LocalTime,
+  val startTime: LocalTime?,
 
   @Schema(
     description = "The end time of the appointment",

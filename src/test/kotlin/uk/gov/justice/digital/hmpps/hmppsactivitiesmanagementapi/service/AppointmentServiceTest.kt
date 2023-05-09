@@ -94,7 +94,7 @@ class AppointmentServiceTest {
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
         inCell = request.inCell,
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = emptyMap(),
@@ -125,7 +125,7 @@ class AppointmentServiceTest {
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
         inCell = request.inCell,
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = emptyMap(),
@@ -158,7 +158,7 @@ class AppointmentServiceTest {
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
         inCell = request.inCell,
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = emptyMap(),
@@ -193,7 +193,7 @@ class AppointmentServiceTest {
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
         inCell = request.inCell,
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = emptyMap(),
@@ -221,7 +221,7 @@ class AppointmentServiceTest {
 
     service.buildValidAppointmentEntity(
       inCell = request.inCell,
-      prisonCode = request.prisonCode,
+      prisonCode = request.prisonCode!!,
       categoryCode = request.categoryCode,
       internalLocationId = request.internalLocationId,
       prisonerBookings = emptyMap(),

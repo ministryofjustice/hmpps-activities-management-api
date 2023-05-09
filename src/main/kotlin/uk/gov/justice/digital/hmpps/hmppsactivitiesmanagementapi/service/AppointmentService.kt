@@ -60,7 +60,7 @@ class AppointmentService(
     createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerBookings ->
       buildValidAppointmentEntity(
         inCell = request.inCell,
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = prisonerBookings,
@@ -78,13 +78,13 @@ class AppointmentService(
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
 
-    mapOf(request.prisonerNumber to request.bookingId.toString()).let { prisonerBookings ->
+    mapOf(request.prisonerNumber!! to request.bookingId.toString()).let { prisonerBookings ->
       buildValidAppointmentEntity(
-        prisonCode = request.prisonCode,
+        prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode,
         internalLocationId = request.internalLocationId,
         prisonerBookings = prisonerBookings,
-        prisonerNumbers = listOf(request.prisonerNumber),
+        prisonerNumbers = listOf(request.prisonerNumber!!),
         inCell = false,
         startDate = request.startDate,
         startTime = request.startTime,
@@ -116,14 +116,16 @@ class AppointmentService(
   }
 
   private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerBookings: Map<String, String?>) {
-    prisonerNumbers.filter { number -> !prisonerBookings.containsKey(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
+    prisonerNumbers.filterNot(prisonerBookings::containsKey).let {
+      require(it.isEmpty()) {
+        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+      }
     }
   }
 
   fun buildValidAppointmentEntity(
     inCell: Boolean,
-    prisonCode: String? = null,
+    prisonCode: String,
     categoryCode: String? = null,
     internalLocationId: Long? = null,
     prisonerNumbers: List<String>,
@@ -147,7 +149,7 @@ class AppointmentService(
 
     return AppointmentEntity(
       categoryCode = categoryCode ?: "",
-      prisonCode = prisonCode ?: "",
+      prisonCode = prisonCode,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
