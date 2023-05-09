@@ -49,6 +49,7 @@ class AttendanceTest {
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
       assertThat(recordedTime).isNull()
+      assertThat(otherAbsenceReason).isNull()
     }
   }
 

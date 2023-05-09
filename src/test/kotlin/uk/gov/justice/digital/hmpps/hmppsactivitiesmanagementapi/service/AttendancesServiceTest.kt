@@ -219,7 +219,6 @@ class AttendancesServiceTest {
   @Test
   fun `mark attendance record with case note and incentive level warning issued`() {
     assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
-
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
@@ -233,6 +232,74 @@ class AttendancesServiceTest {
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
     assertThat(attendance.incentiveLevelWarningIssued).isTrue
+  }
+
+  @Test
+  fun `mark attendance record with other absence reason`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.attendanceReason).isNull()
+    assertThat(attendance.otherAbsenceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(
+        AttendanceUpdateRequest(
+          attendance.attendanceId,
+          moorlandPrisonCode,
+          AttendanceStatus.COMPLETED,
+          "OTHER",
+          null,
+          null,
+          "test case note",
+          true,
+          "other absence reason",
+        ),
+      ),
+    )
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    with(attendance.attendanceReason!!) {
+      assertThat(code).isEqualTo(AttendanceReasonEnum.OTHER)
+    }
+    assertThat(attendance.otherAbsenceReason).isEqualTo("other absence reason")
+  }
+
+  @Test
+  fun `other absence reason is not set when attendance reason does not equal "OTHER"`() {
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.attendanceReason).isNull()
+    assertThat(attendance.otherAbsenceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(
+        AttendanceUpdateRequest(
+          attendance.attendanceId,
+          moorlandPrisonCode,
+          AttendanceStatus.COMPLETED,
+          "REFUSED",
+          null,
+          null,
+          "test case note",
+          true,
+          "other absence reason",
+        ),
+      ),
+    )
+
+    verify(attendanceRepository).saveAll(listOf(attendance))
+    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    with(attendance.attendanceReason!!) {
+      assertThat(code).isEqualTo(AttendanceReasonEnum.REFUSED)
+    }
+    assertThat(attendance.otherAbsenceReason).isNull()
   }
 
   @Test

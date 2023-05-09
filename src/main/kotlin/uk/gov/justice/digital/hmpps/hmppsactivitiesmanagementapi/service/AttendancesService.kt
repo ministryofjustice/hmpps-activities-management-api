@@ -66,6 +66,7 @@ class AttendancesService(
         attendanceUpdatesById[it.attendanceId]!!.issuePayment,
         attendanceUpdatesById[it.attendanceId]!!.incentiveLevelWarningIssued,
         caseNoteDetails?.caseNoteId,
+        attendanceUpdatesById[it.attendanceId]!!.otherAbsenceReason,
       )
     }
 

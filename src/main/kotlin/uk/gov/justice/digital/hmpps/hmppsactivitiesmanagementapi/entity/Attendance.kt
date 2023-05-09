@@ -87,6 +87,7 @@ data class Attendance(
     newIssuePayment = true,
     newIncentiveLevelWarningIssued = null,
     newCaseNoteId = null,
+    newOtherAbsenceReason = null,
   )
 
   fun uncancel() = mark(
@@ -97,6 +98,7 @@ data class Attendance(
     newIssuePayment = null,
     newIncentiveLevelWarningIssued = null,
     newCaseNoteId = null,
+    newOtherAbsenceReason = null,
   )
 
   fun mark(
@@ -107,6 +109,7 @@ data class Attendance(
     newIssuePayment: Boolean?,
     newIncentiveLevelWarningIssued: Boolean?,
     newCaseNoteId: String?,
+    newOtherAbsenceReason: String?,
   ): Attendance {
     if (status != AttendanceStatus.WAITING) {
       this.addHistory(
@@ -119,7 +122,7 @@ data class Attendance(
           issuePayment = issuePayment,
           caseNoteId = caseNoteId,
           incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = otherAbsenceReason,
+          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) otherAbsenceReason else null,
         ),
       )
     }
@@ -138,6 +141,7 @@ data class Attendance(
       issuePayment = newIssuePayment
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
       caseNoteId = newCaseNoteId?.toLong()
+      otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
     }
     status = newStatus
     recordedBy = principalName
@@ -174,6 +178,7 @@ data class Attendance(
     pieces = this.pieces,
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
+    otherAbsenceReason = this.otherAbsenceReason,
     caseNoteText = this.caseNoteId ?.let { caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text },
     attendanceHistory = this.attendanceHistory
       .sortedWith(compareBy { it.recordedTime })
