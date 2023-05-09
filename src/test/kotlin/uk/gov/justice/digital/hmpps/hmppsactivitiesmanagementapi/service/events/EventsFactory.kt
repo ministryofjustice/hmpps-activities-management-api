@@ -54,3 +54,12 @@ fun cellMoveEvent(prisonerNumber: String = "XXXXXX") =
       livingUnitId = 234L,
     ),
   )
+
+fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
+  IncentivesInsertedEvent(
+    IncentivesInformation(
+      nomsNumber = prisonerNumber,
+      prisonId = prisonId,
+      reason = reason,
+    ),
+  )

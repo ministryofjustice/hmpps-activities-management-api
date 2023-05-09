@@ -11,4 +11,6 @@ fun InmateDetail.isReleasedFromRemand(): Boolean = isInactiveOut() && sentenceDe
 fun InmateDetail.isReleasedFromCustodialSentence(): Boolean =
   isInactiveOut() && sentenceDetail?.releaseDate?.onOrBefore(LocalDate.now()) == true
 
-fun InmateDetail.isInactiveOut(): Boolean = activeFlag != null && activeFlag == false && inOutStatus == "OUT"
+fun InmateDetail.isInactiveOut(): Boolean = status == "INACTIVE OUT"
+
+fun InmateDetail.isActiveInPrison(prisonCode: String): Boolean = status == "ACTIVE IN" && agencyId == prisonCode
