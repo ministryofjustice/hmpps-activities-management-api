@@ -96,17 +96,11 @@ class AttendancesService(
     activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
   }
 
-  // TODO not applying pay rates.
   private fun createAttendanceRecordIfNoPreExistingRecord(
     instance: ScheduledInstance,
     allocation: Allocation,
   ) {
-    if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
-        instance,
-        allocation.prisonerNumber,
-      )
-    ) {
-      log.info("Attendance record already exists for allocation ${allocation.allocationId} and scheduled instance ${instance.scheduledInstanceId}")
+    if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)) {
       return
     }
 
