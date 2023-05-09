@@ -122,7 +122,7 @@ data class Attendance(
           issuePayment = issuePayment,
           caseNoteId = caseNoteId,
           incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = otherAbsenceReason,
+          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) otherAbsenceReason else null,
         ),
       )
     }
@@ -141,7 +141,7 @@ data class Attendance(
       issuePayment = newIssuePayment
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
       caseNoteId = newCaseNoteId?.toLong()
-      otherAbsenceReason = newOtherAbsenceReason
+      otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
     }
     status = newStatus
     recordedBy = principalName
