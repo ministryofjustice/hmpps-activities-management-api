@@ -156,7 +156,7 @@ class AppointmentService(
       startTime = startTime!!,
       endTime = endTime,
       comment = comment,
-      appointmentDescription = if (appointmentDescription?.isBlank() == true) null else appointmentDescription,
+      appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
       createdBy = principal.name,
       appointmentType = appointmentType!!,
       isMigrated = isMigration,
