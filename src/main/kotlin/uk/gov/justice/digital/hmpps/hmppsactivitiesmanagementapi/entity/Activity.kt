@@ -165,7 +165,7 @@ data class Activity(
   }
 
   fun removePay() {
-    activityPay.forEach { activityPay.remove(it) }
+    activityPay.removeAll(activityPay)
   }
 
   fun addMinimumEducationLevel(
@@ -182,7 +182,7 @@ data class Activity(
   }
 
   fun removeMinimumEducationLevel() {
-    activityMinimumEducationLevel.forEach { activityMinimumEducationLevel.remove(it) }
+    activityMinimumEducationLevel.removeAll(activityMinimumEducationLevel)
   }
 
   fun addSchedule(

@@ -242,13 +242,13 @@ class ActivityService(
     applyLocationUpdate(request, activity)
     applyInCellUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
-    if (request.minimumEducationLevel?.isNotEmpty()!!) {
+    if (request.minimumEducationLevel != null) {
       applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
     }
-    if (request.pay?.isNotEmpty()!!) {
+    if (request.pay != null) {
       applyPayUpdate(prisonCode, request.pay, activity)
     }
-    if (request.slots?.isNotEmpty()!!) {
+    if (request.slots != null) {
       applySlotsUpdate(request.slots, activity)
     }
 

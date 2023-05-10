@@ -191,7 +191,7 @@ data class ActivitySchedule(
   }
 
   fun removeSlots() {
-    slots.forEach { slots.remove(it) }
+    slots.removeAll(slots)
   }
 
   fun allocatePrisoner(
