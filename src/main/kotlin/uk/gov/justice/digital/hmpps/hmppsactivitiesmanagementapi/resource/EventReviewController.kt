@@ -69,39 +69,39 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     ],
   )
   fun getEventsForReview(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-letter prison code")
+    @PathVariable("prisonCode", required = true)
+    @Parameter(description = "The prison code e.g. MDI")
     prisonCode: String,
 
     @RequestParam(required = true)
-    @Parameter(description = "The date for which to request events, in format YYYY-MM-DD, e.b. 2023-10-01")
+    @Parameter(description = "The date for which to request events, format YYYY-MM-DD, e.g. 2023-10-01")
     date: LocalDate,
 
-    @RequestParam(required = false, defaultValue = "null")
-    @Parameter(description = "The prisoner number, eg. A9999AA")
+    @RequestParam(required = false)
+    @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
     prisonerNumber: String?,
 
     @RequestParam(required = false, defaultValue = "false")
-    @Parameter(description = "Whether to include acknowledged events, un-acknowledged events or both. Values true, false or null.")
-    acknowledged: Boolean?,
+    @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
+    includeAcknowledged: Boolean? = false,
 
     @RequestParam(required = false, defaultValue = "0")
-    @Parameter(description = "The page number, eg. 1")
-    page: Int,
+    @Parameter(description = "The page number to return (optional). Default is page zero.")
+    page: Int = 0,
 
     @RequestParam(required = false, defaultValue = "10")
-    @Parameter(description = "How many items to return in a page, e.g. 10")
-    size: Int,
+    @Parameter(description = "The maximum number of items to return in each page (optional). Default is 10.")
+    size: Int = 10,
 
-    @RequestParam(required = false, defaultValue = "")
-    @Parameter(description = "The sort direction e.g ASC, DESC")
-    sortDirection: String,
+    @RequestParam(required = false, defaultValue = "ascending")
+    @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
+    sortDirection: String = "ascending",
   ): EventReviewSearchResults {
     val filters = EventReviewSearchRequest(
       prisonCode = prisonCode,
       eventDate = date,
       prisonerNumber = prisonerNumber,
-      acknowledgedEvents = acknowledged,
+      acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
     return EventReviewSearchResults(paginatedResults.content, paginatedResults.number, paginatedResults.totalPages)

@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
-@Schema(description = "Describes one event that has occurred to indicate a potential change of circumstance")
+@Schema(description = "Describes one event that has occurred to indicate a change of circumstance")
 data class EventReview(
   @Schema(description = "The internally-generated ID for this event", example = "123456")
   val eventReviewId: Long = 0,
@@ -32,9 +32,9 @@ data class EventReview(
   )
   val eventData: String? = null,
 
-  @Schema(description = "The date and time that this event was acknowledged as seen.", example = "2022-10-01 23:11:01")
+  @Schema(description = "The date and time that this event was acknowledged.", example = "2022-10-01 23:11:01")
   val acknowledgedTime: LocalDateTime? = null,
 
-  @Schema(description = "The username of the user who acknowledged the event.", example = "G4588F")
+  @Schema(description = "The username of the person who acknowledged the event.", example = "U4588F")
   val acknowledgedBy: String? = null,
 )
