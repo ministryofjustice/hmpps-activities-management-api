@@ -40,7 +40,7 @@ data class BulkAppointmentsRequest(
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String,
+  val appointmentDescription: String?,
 
   @Schema(
     description =

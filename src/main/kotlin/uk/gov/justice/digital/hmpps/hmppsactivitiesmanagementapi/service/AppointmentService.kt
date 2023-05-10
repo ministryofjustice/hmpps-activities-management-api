@@ -156,7 +156,7 @@ class AppointmentService(
       startTime = startTime!!,
       endTime = endTime,
       comment = comment,
-      appointmentDescription = appointmentDescription,
+      appointmentDescription = if (appointmentDescription?.isBlank() == true) null else appointmentDescription,
       createdBy = principal.name,
       appointmentType = appointmentType!!,
       isMigrated = isMigration,

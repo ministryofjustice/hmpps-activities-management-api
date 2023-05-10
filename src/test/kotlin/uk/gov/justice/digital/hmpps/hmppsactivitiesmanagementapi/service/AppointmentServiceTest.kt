@@ -243,6 +243,33 @@ class AppointmentServiceTest {
   }
 
   @Test
+  fun`buildValidAppointmentEntity converts a blank appointment description to null`() {
+    val request = appointmentCreateRequest(appointmentDescription = "    ")
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
+
+    val appointment = service.buildValidAppointmentEntity(
+      inCell = request.inCell,
+      prisonCode = request.prisonCode!!,
+      categoryCode = request.categoryCode,
+      internalLocationId = request.internalLocationId,
+      prisonerBookings = emptyMap(),
+      prisonerNumbers = request.prisonerNumbers,
+      startDate = request.startDate,
+      startTime = request.startTime,
+      endTime = request.endTime,
+      comment = request.comment,
+      appointmentDescription = request.appointmentDescription,
+      appointmentType = request.appointmentType,
+      principal = principal,
+      repeat = request.repeat,
+      isMigration = true,
+    )
+
+    assertThat(appointment.appointmentDescription).isNull()
+  }
+
+  @Test
   fun `createAppointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
