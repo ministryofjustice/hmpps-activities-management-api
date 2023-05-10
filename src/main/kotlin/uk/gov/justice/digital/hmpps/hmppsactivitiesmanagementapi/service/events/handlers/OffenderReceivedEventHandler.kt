@@ -40,11 +40,11 @@ class OffenderReceivedEventHandler(
 
         return true
       }
-    } else {
-      log.info("Ignoring received event for ${event.prisonCode()} - not rolled out.")
     }
 
-    return false
+    log.info("Ignoring received event for ${event.prisonCode()} - not rolled out.")
+
+    return true
   }
 
   private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =

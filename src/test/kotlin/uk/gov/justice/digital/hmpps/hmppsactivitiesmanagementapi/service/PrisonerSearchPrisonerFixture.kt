@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -31,6 +32,8 @@ object PrisonerSearchPrisonerFixture {
       dateTime = "2020-07-20T10:36:53",
       nextReviewDate = LocalDate.of(2021, 7, 20),
     ),
+    lastMovementType: MovementType? = null,
+    releaseDate: LocalDate? = null,
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -53,5 +56,7 @@ object PrisonerSearchPrisonerFixture {
       prisonId = prisonId,
       cellLocation = cellLocation,
       currentIncentive = currentIncentive,
+      lastMovementTypeCode = lastMovementType?.nomisShortCode,
+      releaseDate = releaseDate,
     )
 }
