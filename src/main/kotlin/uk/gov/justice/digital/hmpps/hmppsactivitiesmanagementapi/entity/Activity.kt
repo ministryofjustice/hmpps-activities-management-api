@@ -35,11 +35,11 @@ data class Activity(
 
   @OneToOne
   @JoinColumn(name = "activity_category_id", nullable = false)
-  val activityCategory: ActivityCategory,
+  var activityCategory: ActivityCategory,
 
   @OneToOne
   @JoinColumn(name = "activity_tier_id")
-  val activityTier: ActivityTier?,
+  var activityTier: ActivityTier?,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -56,11 +56,11 @@ data class Activity(
   @Enumerated(EnumType.STRING)
   var payPerSession: PayPerSession = PayPerSession.H,
 
-  val summary: String,
+  var summary: String,
 
-  val description: String?,
+  var description: String?,
 
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   var endDate: LocalDate? = null,
 
@@ -73,15 +73,19 @@ data class Activity(
   val createdTime: LocalDateTime,
 
   val createdBy: String,
+
+  var updatedTime: LocalDateTime? = null,
+
+  var updatedBy: String? = null,
 ) {
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private val activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
+  private var activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private val activityPay: MutableList<ActivityPay> = mutableListOf()
+  private var activityPay: MutableList<ActivityPay> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -89,7 +93,7 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private val schedules: MutableList<ActivitySchedule> = mutableListOf()
+  private var schedules: MutableList<ActivitySchedule> = mutableListOf()
 
   fun schedules() = schedules.toList()
 
@@ -160,6 +164,10 @@ data class Activity(
     )
   }
 
+  fun removePay() {
+    activityPay.forEach { activityPay.remove(it) }
+  }
+
   fun addMinimumEducationLevel(
     educationLevelCode: String,
     educationLevelDescription: String,
@@ -171,6 +179,10 @@ data class Activity(
         educationLevelDescription = educationLevelDescription,
       ),
     )
+  }
+
+  fun removeMinimumEducationLevel() {
+    activityMinimumEducationLevel.forEach { activityMinimumEducationLevel.remove(it) }
   }
 
   fun addSchedule(
