@@ -1,0 +1,79 @@
+{
+  "id": 17,
+  "prisonCode": "PVI",
+  "attendanceRequired": false,
+  "summary": "IT level 1",
+  "description": "A basic IT course suitable for introduction to the subject",
+  "category": {
+    "id": 1,
+    "code": "EDUCATION",
+    "name": "Education",
+    "description": "Such as classes in English, maths, construction and computer skills"
+  },
+  "payPerSession": "H",
+  "tier": {
+    "id": 1,
+    "code": "Tier1",
+    "description": "Work, education and maintenance"
+  },
+  "eligibilityRules": [
+    {
+      "id": 2,
+      "eligibility": {
+        "id": 1,
+        "code": "ER1",
+        "description": "Eligibility rule 1"
+      }
+    }
+  ],
+  "schedules": [],
+  "waitingList": [],
+  "pay": [
+    {
+      "id": 73,
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "prisonPayBand": {
+        "id": 1,
+        "displaySequence": 1,
+        "alias": "Low",
+        "description": "Pay band 1 (lowest)",
+        "nomisPayBand": 1,
+        "prisonCode": "PVI"
+      },
+      "rate": 125,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "id": 74,
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
+      "prisonPayBand": {
+        "id": 2,
+        "displaySequence": 1,
+        "alias": "Low",
+        "description": "Pay band 1 (lowest)",
+        "nomisPayBand": 1,
+        "prisonCode": "PVI"
+      },
+      "rate": 160,
+      "pieceRate": 180,
+      "pieceRateItems": 15
+    }
+  ],
+  "startDate": "2022-12-16",
+  "endDate": null,
+  "minimumIncentiveNomisCode": "BAS",
+  "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
+  "createdTime": "2022-12-16T14:38:00",
+  "createdBy": "activities-management-admin-1",
+  "minimumEducationLevel": [
+    {
+      "id": 3,
+      "educationLevelCode": "1",
+      "educationLevelDescription": "Reading Measure 1.0"
+    }
+  ]
+}

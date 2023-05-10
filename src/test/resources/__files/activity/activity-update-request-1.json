@@ -1,0 +1,43 @@
+{
+  "attendanceRequired": false,
+  "summary": "IT level 1",
+  "categoryId": 1,
+  "tierId": 1,
+  "minimumIncentiveNomisCode": "BAS",
+  "minimumIncentiveLevel": "Basic",
+  "riskLevel": "high",
+  "pay": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 11,
+      "rate": 125,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
+      "payBandId": 12,
+      "rate": 160,
+      "pieceRate": 180,
+      "pieceRateItems": 15
+    }
+  ],
+  "minimumEducationLevel": [
+    {
+      "educationLevelCode": "1",
+      "educationLevelDescription": "Reading Measure 1.0"
+    }
+  ],
+  "startDate": "2023-03-31",
+  "locationId": 1,
+  "capacity": 20,
+  "slots": [
+    {
+      "timeSlot": "AM",
+      "monday": true
+    }
+  ],
+  "runsOnBankHoliday": false
+}

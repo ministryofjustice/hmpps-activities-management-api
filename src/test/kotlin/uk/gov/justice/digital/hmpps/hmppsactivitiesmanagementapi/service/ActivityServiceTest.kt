@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -408,6 +409,56 @@ class ActivityServiceTest {
         assertThat(internalLocationId).isNull()
         assertThat(internalLocationCode).isNull()
         assertThat(internalLocationDescription).isNull()
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - success`() {
+    val updatedBy = "SCH_ACTIVITY"
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    verify(activityCategoryRepository).findById(1)
+    verify(activityTierRepository).findById(1)
+    verify(activityRepository).saveAndFlush(activityArg)
+
+    with(activityArg) {
+      assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
+      with(activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(1)
+        assertThat(code).isEqualTo("category code")
+        assertThat(description).isEqualTo("category description")
+      }
+      with(activityTier) {
+        assertThat(activityTierId).isEqualTo(1)
+        assertThat(code).isEqualTo("T1")
+        assertThat(description).isEqualTo("Tier 1")
       }
     }
   }
