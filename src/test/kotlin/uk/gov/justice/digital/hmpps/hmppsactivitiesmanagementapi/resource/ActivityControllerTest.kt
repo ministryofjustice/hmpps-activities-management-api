@@ -405,7 +405,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     whenever(activityService.updateActivity(any(), any(), any(), any())).thenReturn(updateActivityResponse)
 
     val response =
-      mockMvc.patch("/activities/"+ pentonvillePrisonCode+"/activityId/17") {
+      mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
         principal = mockPrincipal
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
@@ -428,7 +428,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    mockMvc.patch("/activities/"+ pentonvillePrisonCode+"/activityId/17") {
+    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -458,7 +458,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     whenever(mockPrincipal.name).thenReturn("USER")
     whenever(activityService.updateActivity(any(), any(), any(), any())).thenThrow(EntityNotFoundException("not found"))
 
-    mockMvc.patch("/activities/"+ pentonvillePrisonCode+"/activityId/17") {
+    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -466,10 +466,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         updateActivityRequest,
       )
     }
-    .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-    .andExpect {
-      status { isNotFound() }
-    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isNotFound() }
+      }
 
     verify(activityService).updateActivity(any(), any(), any(), any())
   }

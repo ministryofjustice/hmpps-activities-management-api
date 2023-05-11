@@ -462,4 +462,27 @@ class ActivityServiceTest {
       }
     }
   }
+
+  @Test
+  fun `updateActivity - duplicate summary`() {
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
+
+    val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
+      on { summary } doReturn ("IT level 1")
+    }
+
+    assertThatThrownBy { service.updateActivity(moorlandPrisonCode, 1, updateDuplicateActivityRequest, "SCH_ACTIVITY") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
+
+    verify(activityRepository, never()).saveAndFlush(any())
+  }
 }
