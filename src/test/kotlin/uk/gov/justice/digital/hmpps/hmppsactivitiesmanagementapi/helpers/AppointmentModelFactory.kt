@@ -158,6 +158,11 @@ fun appointmentMigrateRequest(
   startTime: LocalTime = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   comment: String = "Appointment level comment",
+  created: LocalDateTime? = LocalDateTime.now(),
+  createdBy: String? = "CREATE.USER",
+  updated: LocalDateTime? = null,
+  updatedBy: String? = null,
+  isCancelled: Boolean = false,
 ) =
   AppointmentMigrateRequest(
     prisonCode,
@@ -169,6 +174,11 @@ fun appointmentMigrateRequest(
     startTime,
     endTime,
     comment,
+    isCancelled,
+    created,
+    createdBy,
+    updated,
+    updatedBy,
   )
 
 fun appointmentDetails() = AppointmentDetails(

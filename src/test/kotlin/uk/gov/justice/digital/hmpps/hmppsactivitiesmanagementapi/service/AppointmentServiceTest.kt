@@ -234,7 +234,7 @@ class AppointmentServiceTest {
       appointmentType = request.appointmentType,
       principal = principal,
       repeat = request.repeat,
-      isMigration = true,
+      isMigrated = true,
     )
 
     verify(times(0)) { prisonApiUserClient.getUserCaseLoads() }

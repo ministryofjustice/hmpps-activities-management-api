@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -32,7 +33,7 @@ data class AppointmentMigrateRequest(
   )
   val prisonerNumber: String?,
 
-  @field:NotNull(message = "Booking ID must be supplied")
+  @field:NotNull(message = "Booking id must be supplied")
   @Schema(
     description = "The NOMIS OFFENDER_BOOKINGS.OFFENDER_BOOK_ID value for mapping to a prisoner booking record in NOMIS",
     example = "456",
@@ -47,6 +48,7 @@ data class AppointmentMigrateRequest(
   )
   val categoryCode: String?,
 
+  @field:NotNull(message = "Internal location id must be supplied")
   @Schema(
     description =
     """
@@ -85,5 +87,49 @@ data class AppointmentMigrateRequest(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String = "",
+  val comment: String?,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been cancelled
+    """,
+    example = "false",
+  )
+  val isCancelled: Boolean?,
+
+  @Schema(
+    description = "The date and time this appointment was created",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val created: LocalDateTime?,
+
+  @field:Size(max = 100, message = "Created by should not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via NOMIS/HMPPS auth that created the appointment
+    """,
+    example = "AAA01U",
+  )
+  val createdBy: String?,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment was last changed
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updated: LocalDateTime?,
+
+  @field:Size(max = 100, message = "Updated by should not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via NOMIS/HMPPS auth that modified the appointment
+    """,
+    example = "AAA01U",
+  )
+  val updatedBy: String?,
 )
