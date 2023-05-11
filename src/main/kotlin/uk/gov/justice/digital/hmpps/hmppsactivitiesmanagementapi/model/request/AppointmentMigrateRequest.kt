@@ -98,12 +98,14 @@ data class AppointmentMigrateRequest(
   )
   val isCancelled: Boolean?,
 
+  @field:NotNull(message = "Created must be supplied")
   @Schema(
     description = "The date and time this appointment was created",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val created: LocalDateTime?,
 
+  @field:NotEmpty(message = "Created by must be supplied")
   @field:Size(max = 100, message = "Created by should not exceed {max} characters")
   @Schema(
     description =

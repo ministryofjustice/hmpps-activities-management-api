@@ -65,6 +65,18 @@ class AppointmentMigrateRequestTest {
   }
 
   @Test
+  fun `created must be supplied`() {
+    val request = appointmentMigrateRequest(created = null)
+    assertSingleValidationError(validator.validate(request), "created", "Created must be supplied")
+  }
+
+  @Test
+  fun `created by must be supplied`() {
+    val request = appointmentMigrateRequest(createdBy = null)
+    assertSingleValidationError(validator.validate(request), "createdBy", "Created by must be supplied")
+  }
+
+  @Test
   fun `created by should not exceed 100 characters`() {
     val request = appointmentMigrateRequest(createdBy = "A".padEnd(101, 'A'))
     assertSingleValidationError(validator.validate(request), "createdBy", "Created by should not exceed 100 characters")

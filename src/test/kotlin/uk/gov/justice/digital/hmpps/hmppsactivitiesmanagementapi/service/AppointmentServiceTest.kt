@@ -637,21 +637,6 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `migrateAppointment with no created and createdBy uses now() and principle name`() {
-    val request = appointmentMigrateRequest(created = null, createdBy = null)
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("PRINCIPAL.NAME")
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentEntityCaptor.value) {
-      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("PRINCIPAL.NAME")
-    }
-  }
-
-  @Test
   fun `migrateAppointment with specified updated and updatedBy success`() {
     val request = appointmentMigrateRequest(
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
