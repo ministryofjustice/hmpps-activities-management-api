@@ -29,11 +29,12 @@ data class PrisonRegime(
   val edStart: LocalTime,
 
   val edFinish: LocalTime,
+
+  val maxDaysToExpiry: Int,
 ) {
-  // TODO the expiry days needs to be configurable here i.e. new column is required to capture this.
   fun hasExpired(allocation: Allocation) =
     allocation.status(PrisonerStatus.AUTO_SUSPENDED) && hasExpired { allocation.suspendedTime?.toLocalDate() }
 
   fun hasExpired(predicate: () -> LocalDate?) =
-    predicate()?.onOrBefore(LocalDate.now().minusDays(5)) == true
+    predicate()?.onOrBefore(LocalDate.now().minusDays(maxDaysToExpiry.toLong())) == true
 }

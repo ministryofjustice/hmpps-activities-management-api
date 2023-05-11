@@ -10,6 +10,8 @@ import java.time.LocalTime
 
 class PrisonRegimeTest {
 
+  private val fiveDaysToExpiry = 5
+
   private val regime = PrisonRegime(
     1,
     prisonCode = moorlandPrisonCode,
@@ -19,6 +21,7 @@ class PrisonRegimeTest {
     pmFinish = LocalTime.NOON.plusHours(1),
     edStart = LocalTime.NOON.plusHours(5),
     edFinish = LocalTime.NOON.plusHours(10),
+    maxDaysToExpiry = fiveDaysToExpiry,
   )
 
   @Test
@@ -37,7 +40,7 @@ class PrisonRegimeTest {
 
   @Test
   fun `user suspended allocation 5 days old has not expired`() {
-    val userSuspendedAllocation = allocation().userSuspend(LocalDateTime.now().minusDays(5), "reason", "by test")
+    val userSuspendedAllocation = allocation().userSuspend(LocalDateTime.now().minusDays(fiveDaysToExpiry.toLong()), "reason", "by test")
 
     assertThat(regime.hasExpired(userSuspendedAllocation)).isFalse
   }
@@ -51,7 +54,8 @@ class PrisonRegimeTest {
 
   @Test
   fun `auto suspended allocation 5 days has expired`() {
-    val userSuspendedAllocation = allocation().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
+    val userSuspendedAllocation =
+      allocation().autoSuspend(LocalDateTime.now().minusDays(fiveDaysToExpiry.toLong()), "reason")
 
     assertThat(regime.hasExpired(userSuspendedAllocation)).isTrue
   }
@@ -63,6 +67,6 @@ class PrisonRegimeTest {
 
   @Test
   fun `date has expired`() {
-    assertThat(regime.hasExpired { LocalDate.now().minusDays(5) }).isTrue
+    assertThat(regime.hasExpired { LocalDate.now().minusDays(fiveDaysToExpiry.toLong()) }).isTrue
   }
 }
