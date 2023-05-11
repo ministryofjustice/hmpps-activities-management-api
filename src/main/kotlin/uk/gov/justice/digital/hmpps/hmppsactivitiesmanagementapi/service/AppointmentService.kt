@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.B
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import java.time.LocalDate
@@ -87,7 +88,7 @@ class AppointmentService(
         prisonerNumbers = listOf(request.prisonerNumber),
         prisonerBookings = prisonerBookings,
         categoryCode = request.categoryCode,
-        appointmentDescription = request.comment?.let { if (it.length <= 40) it else null },
+        appointmentDescription = request.comment?.takeIf { it.length <= 40 },
         internalLocationId = request.internalLocationId,
         inCell = false,
         startDate = request.startDate,
@@ -206,7 +207,7 @@ class AppointmentService(
             }
             if (isCancelled) {
               cancelled = updated ?: created
-              cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(2)
+              cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
               cancelledBy = updatedBy ?: createdBy
             }
           },
