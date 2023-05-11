@@ -59,7 +59,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   private fun verifyAppointment(response: Appointment) {
     with(response) {
       assertThat(id).isNotNull
-      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(createdBy).isEqualTo("CREATE.USER")
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
       assertThat(categoryCode).isEqualTo("AC1")
