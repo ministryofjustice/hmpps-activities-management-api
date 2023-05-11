@@ -78,6 +78,13 @@ data class Activity(
   @Schema(description = "The person who created this activity", example = "Adam Smith")
   val createdBy: String,
 
+  @Schema(description = "The date and time when this activity was updated", example = "2022-09-01T09:01:02")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedTime: LocalDateTime?,
+
+  @Schema(description = "The person who updated this activity", example = "Adam Smith")
+  val updatedBy: String?,
+
   @Schema(description = "The list of minimum education levels that can apply to this activity")
   val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList(),
 )

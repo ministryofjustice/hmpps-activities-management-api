@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Schema(
   description =
@@ -53,4 +54,11 @@ data class ActivitySchedule(
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean,
+
+  @Schema(description = "The date and time when this activity schedule was updated", example = "2022-09-01T09:01:02")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedTime: LocalDateTime?,
+
+  @Schema(description = "The person who updated this activity schedule", example = "Adam Smith")
+  val updatedBy: String?,
 )

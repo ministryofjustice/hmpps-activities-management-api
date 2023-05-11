@@ -1,0 +1,11 @@
+{
+  "locationId": 1,
+  "locationType": "CELL",
+  "description": "House_block_7-1-002",
+  "agencyId": "PVI",
+  "currentOccupancy": 1,
+  "locationPrefix": "LEI-House-block-7-1-002",
+  "operationalCapacity": 2,
+  "userDescription": "user description",
+  "internalLocationCode": "internal location code"
+}

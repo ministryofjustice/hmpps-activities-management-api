@@ -11,6 +11,14 @@ enum class OutboundEvent(val eventType: String) {
         description = "A new activity schedule has been created in the activities management service",
       )
   },
+  ACTIVITY_SCHEDULE_UPDATED("activities.activity-schedule.amended") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "An activity schedule has been updated in the activities management service",
+      )
+  },
   ACTIVITY_SCHEDULED_INSTANCE_AMENDED("activities.scheduled-instance.amended") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(

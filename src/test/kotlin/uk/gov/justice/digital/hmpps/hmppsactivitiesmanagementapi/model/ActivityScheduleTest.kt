@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ActivityScheduleTest : ModelTest() {
 
@@ -36,6 +37,8 @@ class ActivityScheduleTest : ModelTest() {
       startDate = originalStartDate,
       endDate = originalEndDate,
       runsOnBankHoliday = true,
+      updatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter),
+      updatedBy = "TestUser",
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)

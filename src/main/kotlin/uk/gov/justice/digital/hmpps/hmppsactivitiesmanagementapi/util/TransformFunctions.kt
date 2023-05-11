@@ -68,6 +68,8 @@ fun transform(activity: EntityActivity) =
     minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy,
+    updatedTime = activity.updatedTime,
+    updatedBy = activity.updatedBy,
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
   )
 
@@ -190,6 +192,8 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
       startDate = it.key.startDate,
       endDate = it.key.endDate,
       runsOnBankHoliday = it.key.runsOnBankHoliday,
+      updatedTime = it.key.updatedTime,
+      updatedBy = it.key.updatedBy,
     )
   }
 
@@ -209,6 +213,8 @@ fun EntityActivitySchedule.toModelSchedule() =
     startDate = this.startDate,
     endDate = this.endDate,
     runsOnBankHoliday = this.runsOnBankHoliday,
+    updatedTime = this.updatedTime,
+    updatedBy = this.updatedBy,
   )
 
 private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
