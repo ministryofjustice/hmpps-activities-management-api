@@ -263,7 +263,7 @@ fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville",
 
 fun prisonRegime() = PrisonRegime(
   1,
-  "PVI",
+  pentonvillePrisonCode,
   LocalTime.of(9, 0),
   LocalTime.of(12, 0),
   LocalTime.of(13, 0),
