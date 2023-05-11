@@ -36,3 +36,5 @@ values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (2, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
+
+DELETE FROM local_audit;
