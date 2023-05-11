@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
@@ -614,6 +615,143 @@ class AppointmentServiceTest {
             }
           }
         }
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with specified created and createdBy success`() {
+    val request = appointmentMigrateRequest(
+      created = LocalDateTime.of(2022, 10, 23, 10, 30),
+      createdBy = "DPS.USER",
+    )
+    val principal: Principal = mock()
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      assertThat(created).isEqualTo(request.created)
+      assertThat(createdBy).isEqualTo(request.createdBy)
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with no created and createdBy uses now() and principle name`() {
+    val request = appointmentMigrateRequest(created = null, createdBy = null)
+    val principal: Principal = mock()
+    whenever(principal.name).thenReturn("PRINCIPAL.NAME")
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo("PRINCIPAL.NAME")
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with specified updated and updatedBy success`() {
+    val request = appointmentMigrateRequest(
+      updated = LocalDateTime.of(2022, 10, 23, 10, 30),
+      updatedBy = "DPS.USER",
+    )
+    val principal: Principal = mock()
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      assertThat(updated).isEqualTo(request.updated)
+      assertThat(updatedBy).isEqualTo(request.updatedBy)
+      with(occurrences().first()) {
+        assertThat(updated).isEqualTo(request.updated)
+        assertThat(updatedBy).isEqualTo(request.updatedBy)
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment isCancelled defaults to false`() {
+    val request = appointmentMigrateRequest(isCancelled = null)
+    val principal: Principal = mock()
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      with(occurrences().first()) {
+        assertThat(cancelled).isNull()
+        assertThat(cancellationReason).isNull()
+        assertThat(cancelledBy).isNull()
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with isCancelled = true success`() {
+    val request = appointmentMigrateRequest(isCancelled = true)
+    val principal: Principal = mock()
+    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      with(occurrences().first()) {
+        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancellationReason).isEqualTo(cancellationReason)
+        assertThat(cancelledBy).isEqualTo(request.createdBy)
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with isCancelled = true will use updated and updated by if specified`() {
+    val request = appointmentMigrateRequest(
+      isCancelled = true,
+      updated = LocalDateTime.of(2022, 10, 23, 10, 30),
+      updatedBy = "DPS.USER",
+    )
+    val principal: Principal = mock()
+    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      with(occurrences().first()) {
+        assertThat(cancelled).isEqualTo(request.updated)
+        assertThat(cancellationReason).isEqualTo(cancellationReason)
+        assertThat(cancelledBy).isEqualTo(request.updatedBy)
+      }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with isCancelled = true will use created and created by if specified and updated and updated by are null`() {
+    val request = appointmentMigrateRequest(
+      isCancelled = true,
+      created = LocalDateTime.of(2022, 10, 23, 10, 30),
+      createdBy = "DPS.USER",
+      updated = null,
+      updatedBy = null,
+    )
+    val principal: Principal = mock()
+    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      with(occurrences().first()) {
+        assertThat(cancelled).isEqualTo(request.created)
+        assertThat(cancellationReason).isEqualTo(cancellationReason)
+        assertThat(cancelledBy).isEqualTo(request.createdBy)
       }
     }
   }

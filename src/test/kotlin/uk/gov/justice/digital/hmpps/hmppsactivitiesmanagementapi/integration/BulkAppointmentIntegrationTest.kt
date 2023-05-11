@@ -43,21 +43,21 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
   fun `create bulk appointments success`() {
     val request = bulkAppointmentRequest(categoryCode = "AC1")
     val prisonerNumbers = request.appointments.map { it.prisonerNumber }.toList()
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode, request.internalLocationId)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
       listOf(
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = prisonerNumbers[0],
           bookingId = 1,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         ),
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = prisonerNumbers[1],
           bookingId = 2,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         ),
       ),
     )
