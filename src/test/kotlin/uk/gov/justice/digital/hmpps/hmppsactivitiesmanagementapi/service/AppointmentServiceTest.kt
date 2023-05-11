@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkApp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import java.security.Principal
@@ -44,6 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
@@ -58,6 +60,7 @@ class AppointmentServiceTest {
 
   private val service = AppointmentService(
     appointmentRepository,
+    appointmentCancellationReasonRepository,
     bulkAppointmentRepository,
     referenceCodeService,
     locationService,
@@ -87,26 +90,27 @@ class AppointmentServiceTest {
   fun `buildValidAppointmentEntity throws illegal argument exception when requested prison code is not in user's case load`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(emptyList()))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
 
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
-        inCell = request.inCell,
+        appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = emptyMap(),
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison code '${request.prisonCode}' not found in user's case load")
@@ -118,26 +122,27 @@ class AppointmentServiceTest {
   fun `buildValidAppointmentEntity throws illegal argument exception when requested category code is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
-        inCell = request.inCell,
+        appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = emptyMap(),
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
@@ -149,6 +154,7 @@ class AppointmentServiceTest {
   fun `buildValidAppointmentEntity throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -157,20 +163,20 @@ class AppointmentServiceTest {
 
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
-        inCell = request.inCell,
+        appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = emptyMap(),
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
@@ -182,6 +188,7 @@ class AppointmentServiceTest {
   fun `buildValidAppointmentEntity throws illegal argument exception when prisoner is not found`() {
     val request = appointmentCreateRequest()
     val principal: Principal = mock()
+    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -192,20 +199,20 @@ class AppointmentServiceTest {
 
     assertThatThrownBy {
       service.buildValidAppointmentEntity(
-        inCell = request.inCell,
+        appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerBookings = emptyMap(),
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = emptyMap(),
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
@@ -215,25 +222,22 @@ class AppointmentServiceTest {
 
   @Test
   fun`buildValidAppointmentEntity does not perform any validation if the appointment is a migration`() {
-    val request = appointmentCreateRequest()
+    val request = appointmentMigrateRequest()
     val principal: Principal = mock()
     whenever(principal.name).thenReturn("TEST.USER")
 
     service.buildValidAppointmentEntity(
-      inCell = request.inCell,
+      appointmentType = AppointmentType.INDIVIDUAL,
       prisonCode = request.prisonCode!!,
+      prisonerNumbers = listOf(request.prisonerNumber!!),
+      prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString()),
       categoryCode = request.categoryCode,
       internalLocationId = request.internalLocationId,
-      prisonerBookings = emptyMap(),
-      prisonerNumbers = request.prisonerNumbers,
       startDate = request.startDate,
       startTime = request.startTime,
       endTime = request.endTime,
-      comment = request.comment,
-      appointmentDescription = request.appointmentDescription,
-      appointmentType = request.appointmentType,
-      principal = principal,
-      repeat = request.repeat,
+      comment = request.comment!!,
+      createdBy = "MIGRATION.USER",
       isMigrated = true,
     )
 
@@ -248,22 +252,24 @@ class AppointmentServiceTest {
     val principal: Principal = mock()
     whenever(principal.name).thenReturn("TEST.USER")
 
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
+
     val appointment = service.buildValidAppointmentEntity(
-      inCell = request.inCell,
+      appointmentType = request.appointmentType,
       prisonCode = request.prisonCode!!,
-      categoryCode = request.categoryCode,
-      internalLocationId = request.internalLocationId,
-      prisonerBookings = emptyMap(),
       prisonerNumbers = request.prisonerNumbers,
+      prisonerBookings = emptyMap(),
+      categoryCode = request.categoryCode,
+      appointmentDescription = request.appointmentDescription,
+      internalLocationId = request.internalLocationId,
+      inCell = request.inCell,
       startDate = request.startDate,
       startTime = request.startTime,
       endTime = request.endTime,
-      comment = request.comment,
-      appointmentDescription = request.appointmentDescription,
-      appointmentType = request.appointmentType,
-      principal = principal,
       repeat = request.repeat,
-      isMigration = true,
+      comment = request.comment,
+      createdBy = principal.name,
+      isMigrated = true,
     )
 
     assertThat(appointment.appointmentDescription).isNull()
@@ -517,7 +523,6 @@ class AppointmentServiceTest {
   fun `migrateAppointment with comment under 40 characters success`() {
     val request = appointmentMigrateRequest()
     val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -530,9 +535,9 @@ class AppointmentServiceTest {
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
       assertThat(comment).isEqualTo(request.comment)
-      assertThat(appointmentDescription).isNull()
+      assertThat(appointmentDescription).isEqualTo(request.comment)
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
       assertThat(isMigrated).isTrue()
@@ -547,7 +552,7 @@ class AppointmentServiceTest {
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(comment).isNull()
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo("TEST.USER")
+          assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           assertThat(deleted).isFalse
@@ -579,10 +584,10 @@ class AppointmentServiceTest {
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(comment).isEqualTo("")
-      assertThat(appointmentDescription).isEqualTo(request.comment)
+      assertThat(comment).isEqualTo(request.comment)
+      assertThat(appointmentDescription).isNull()
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
       assertThat(isMigrated).isTrue()
@@ -597,7 +602,7 @@ class AppointmentServiceTest {
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(comment).isNull()
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo("TEST.USER")
+          assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           assertThat(deleted).isFalse

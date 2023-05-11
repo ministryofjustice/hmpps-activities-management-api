@@ -137,7 +137,7 @@ class AppointmentService(
     categoryCode: String? = null,
     appointmentDescription: String? = null,
     internalLocationId: Long? = null,
-    inCell: Boolean,
+    inCell: Boolean = false,
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
