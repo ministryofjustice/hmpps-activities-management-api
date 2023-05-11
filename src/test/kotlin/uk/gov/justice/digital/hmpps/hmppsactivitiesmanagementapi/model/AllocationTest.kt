@@ -2,8 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 
 class AllocationTest : ModelTest() {
 
@@ -31,6 +35,7 @@ class AllocationTest : ModelTest() {
       prisonerNumber = "1234",
       scheduleDescription = "Blah blah",
       scheduleId = 123,
+      status = PrisonerStatus.ACTIVE,
     )
 
     val json = objectMapper.writeValueAsString(allocation)
@@ -40,5 +45,97 @@ class AllocationTest : ModelTest() {
     assertThat(jsonMap["endDate"]).isEqualTo(expectedEndDate)
     assertThat(jsonMap["allocatedTime"]).isEqualTo(expectedAllocatedTime)
     assertThat(jsonMap["deallocatedTime"]).isEqualTo(expectedDeallocatedTime)
+  }
+
+  @Test
+  fun `check active allocation transformation`() {
+    val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    with(allocation.toModel()) {
+      assertOnCommonModalTransformation(this, allocation)
+      assertThat(deallocatedBy).isNull()
+      assertThat(deallocatedReason).isNull()
+      assertThat(deallocatedTime).isNull()
+      assertThat(suspendedBy).isNull()
+      assertThat(suspendedReason).isNull()
+      assertThat(suspendedTime).isNull()
+    }
+  }
+
+  @Test
+  fun `check auto suspended allocation transformation`() {
+    val now = LocalDateTime.now()
+
+    val allocation = allocation().also {
+      it.autoSuspend(now, "auto suspend reason")
+      assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
+    }
+
+    with(allocation.toModel()) {
+      assertOnCommonModalTransformation(this, allocation)
+      assertThat(suspendedBy).isEqualTo("Activities Management Service")
+      assertThat(suspendedReason).isEqualTo("auto suspend reason")
+      assertThat(suspendedTime).isEqualTo(now)
+      assertThat(deallocatedBy).isNull()
+      assertThat(deallocatedReason).isNull()
+      assertThat(deallocatedTime).isNull()
+    }
+  }
+
+  @Test
+  fun `check user suspended allocation transformation`() {
+    val now = LocalDateTime.now()
+
+    val allocation = allocation().also {
+      it.userSuspend(now, "user suspend reason", "by test")
+      assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED)
+    }
+
+    with(allocation.toModel()) {
+      assertOnCommonModalTransformation(this, allocation)
+      assertThat(suspendedBy).isEqualTo("by test")
+      assertThat(suspendedReason).isEqualTo("user suspend reason")
+      assertThat(suspendedTime).isEqualTo(now)
+      assertThat(deallocatedBy).isNull()
+      assertThat(deallocatedReason).isNull()
+      assertThat(deallocatedTime).isNull()
+    }
+  }
+
+  @Test
+  fun `check deallocated allocation transformation`() {
+    val now = LocalDateTime.now()
+
+    val allocation = allocation().also {
+      it.deallocate(now, "deallocation reason")
+      assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
+    }
+
+    with(allocation.toModel()) {
+      assertOnCommonModalTransformation(this, allocation)
+      assertThat(deallocatedBy).isEqualTo("Activities Management Service")
+      assertThat(deallocatedReason).isEqualTo("deallocation reason")
+      assertThat(deallocatedTime).isEqualTo(now)
+      assertThat(suspendedBy).isNull()
+      assertThat(suspendedReason).isNull()
+      assertThat(suspendedTime).isNull()
+    }
+  }
+
+  private fun assertOnCommonModalTransformation(model: Allocation, entity: EntityAllocation) {
+    with(model) {
+      assertThat(id).isEqualTo(entity.allocationId)
+      assertThat(prisonerNumber).isEqualTo(entity.prisonerNumber)
+      assertThat(bookingId).isEqualTo(entity.bookingId)
+      assertThat(activitySummary).isEqualTo(entity.activitySchedule.activity.summary)
+      assertThat(scheduleId).isEqualTo(entity.activitySchedule.activityScheduleId)
+      assertThat(scheduleDescription).isEqualTo(entity.activitySchedule.description)
+      assertThat(isUnemployment).isEqualTo(entity.activitySchedule.activity.isUnemployment())
+      assertThat(prisonPayBand).isEqualTo(entity.payBand.toModelPrisonPayBand())
+      assertThat(startDate).isEqualTo(entity.startDate)
+      assertThat(endDate).isEqualTo(entity.endDate)
+      assertThat(allocatedTime).isEqualTo(entity.allocatedTime)
+      assertThat(allocatedBy).isEqualTo(entity.allocatedBy)
+    }
   }
 }

@@ -45,7 +45,7 @@ class AppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode,
             prisonerNumbers = listOf(it.prisonerNumber),
-            prisonerBookings = prisonerBookings.filter { entry -> entry.key == it.prisonerNumber },
+            prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
             categoryCode = request.categoryCode,
             appointmentDescription = request.appointmentDescription,
             internalLocationId = request.internalLocationId,

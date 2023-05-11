@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
@@ -39,6 +40,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
           allocatedBy = "MR BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
         Allocation(
           id = 4,
@@ -53,6 +55,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
           allocatedBy = "MR BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
       )
     }
@@ -72,20 +75,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
           allocatedBy = "MRS BLOGS",
-        ),
-        Allocation(
-          id = 5,
-          prisonerNumber = "A22222A",
-          bookingId = 10002,
-          activitySummary = "Retirement",
-          scheduleId = 2,
-          scheduleDescription = "Retirement PM",
-          prisonPayBand = testPentonvillePayBandThree,
-          isUnemployment = true,
-          startDate = LocalDate.of(2022, 10, 10),
-          endDate = null,
-          allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
-          allocatedBy = "MRS BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
       )
     }
@@ -117,6 +107,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
           allocatedBy = "MR BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
         Allocation(
           id = 4,
@@ -131,6 +122,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
           allocatedBy = "MR BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
       )
     }
@@ -150,6 +142,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
           allocatedBy = "MRS BLOGS",
+          status = PrisonerStatus.ACTIVE,
         ),
         Allocation(
           id = 5,
@@ -164,6 +157,10 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = null,
           allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
           allocatedBy = "MRS BLOGS",
+          status = PrisonerStatus.AUTO_SUSPENDED,
+          suspendedBy = "SYSTEM",
+          suspendedTime = LocalDateTime.of(2022, 10, 11, 10, 0),
+          suspendedReason = "Temporary absence",
         ),
       )
     }
@@ -183,6 +180,10 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           endDate = LocalDate.of(2022, 10, 11),
           allocatedTime = LocalDateTime.of(2022, 10, 10, 9, 0),
           allocatedBy = "MRS BLOGS",
+          status = PrisonerStatus.ENDED,
+          deallocatedBy = "SYSTEM",
+          deallocatedReason = "Allocation end date reached",
+          deallocatedTime = LocalDateTime.of(2022, 10, 11, 9, 0),
         ),
       )
     }
