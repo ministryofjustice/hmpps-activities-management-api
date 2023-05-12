@@ -24,31 +24,31 @@ class OffenderReleasedEventHandler(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReleasedEvent): Boolean {
+  override fun handle(event: OffenderReleasedEvent): Outcome {
     log.info("Handling offender released event $event")
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when {
         event.isTemporary() -> {
           suspendOffenderAllocations(event)
-          true
+          Outcome.success()
         }
 
         event.isPermanent() -> {
           deallocateOffenderAllocations(event)
-          true
+          Outcome.success()
         }
 
         else -> {
           log.warn("Failed to handle event $event")
-          false
+          Outcome.failed()
         }
       }
     } else {
       log.info("Ignoring released event for ${event.prisonCode()} - not rolled out.")
     }
 
-    return true
+    return Outcome.success()
   }
 
   private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =

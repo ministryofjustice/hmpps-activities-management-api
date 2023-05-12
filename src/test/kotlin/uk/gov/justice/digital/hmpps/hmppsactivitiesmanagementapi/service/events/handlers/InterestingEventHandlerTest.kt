@@ -66,9 +66,9 @@ class InterestingEventHandlerTest {
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verify(eventReviewRepository).saveAndFlush(any<EventReview>())
@@ -81,9 +81,9 @@ class InterestingEventHandlerTest {
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verify(eventReviewRepository).saveAndFlush(any<EventReview>())
@@ -96,9 +96,9 @@ class InterestingEventHandlerTest {
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verify(eventReviewRepository).saveAndFlush(any<EventReview>())
@@ -111,9 +111,9 @@ class InterestingEventHandlerTest {
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verify(eventReviewRepository).saveAndFlush(any<EventReview>())
@@ -131,9 +131,9 @@ class InterestingEventHandlerTest {
         )
     }
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isFalse
+    assertThat(outcome.isSuccess()).isFalse
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verifyNoInteractions(allocationRepository)
     verifyNoInteractions(eventReviewRepository)
@@ -145,9 +145,9 @@ class InterestingEventHandlerTest {
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(emptyList())
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isFalse
+    assertThat(outcome.isSuccess()).isFalse
     verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
     verifyNoInteractions(eventReviewRepository)
