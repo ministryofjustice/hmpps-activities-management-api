@@ -122,7 +122,7 @@ data class Attendance(
           issuePayment = issuePayment,
           caseNoteId = caseNoteId,
           incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) otherAbsenceReason else null,
+          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
         ),
       )
     }
