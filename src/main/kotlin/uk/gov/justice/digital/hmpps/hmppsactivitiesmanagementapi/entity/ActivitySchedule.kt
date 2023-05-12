@@ -197,7 +197,7 @@ data class ActivitySchedule(
   fun allocatePrisoner(
     prisonerNumber: PrisonerNumber,
     payBand: PrisonPayBand,
-    bookingId: Long?,
+    bookingId: Long,
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
     allocatedBy: String,

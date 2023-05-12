@@ -26,11 +26,11 @@ class CreateScheduledInstancesJob(
 
   /*
   * This job finds all prisons that are active in the rollout table, and for each one, finds
-  * the activities and schedules that are active at that prison between today SCHEDULE_AHEAD_DAYS days
+  * the activities and schedules that are active at that prison between today and SCHEDULE_AHEAD_DAYS days
   * into the future. This value is set as an environment variable in the helm configuration.
   *
   * For each day between the two dates it looks at the list of activities in a prison, their schedules and
-  * slots, and determine which ones need a scheduled instance creating for them. It will avoid duplicating
+  * slots, and determines which ones need a scheduled instance creating for them. It will avoid duplicating
   * instances for the same day - so safe to re-run for the same period (or overlapping periods). Will need
   * some thought here to pick up changes made to scheduled instances that already exist? These will need to
   * be amended in-situ by the user action of changing a schedule or slot (i.e. not the responsibility of this job).

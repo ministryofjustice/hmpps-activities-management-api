@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -69,7 +68,7 @@ class OffenderReleasedEventHandlerTest {
 
     val result = handler.handle(inboundEvent)
 
-    assertThat(result).isFalse
+    assertThat(result).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
   }
@@ -82,7 +81,7 @@ class OffenderReleasedEventHandlerTest {
 
     val result = handler.handle(inboundEvent)
 
-    assertThat(result).isFalse
+    assertThat(result).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
   }
@@ -121,7 +120,8 @@ class OffenderReleasedEventHandlerTest {
   fun `only active allocations are auto-suspended on temporary release of prisoner`() {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456").also { it.deallocate(LocalDateTime.now(), "reason") },
+      allocation().copy(allocationId = 2, prisonerNumber = "123456")
+        .also { it.deallocate(LocalDateTime.now(), "reason") },
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 
@@ -288,14 +288,18 @@ class OffenderReleasedEventHandlerTest {
     val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
       .also { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue() }
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(listOf(allocation))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(
+      listOf(
+        allocation,
+      ),
+    )
 
     val successful = handler.handle(
       OffenderReleasedEvent(
         ReleaseInformation(
           nomsNumber = "12345",
           reason = "UNKNOWN",
-          prisonId = pentonvillePrisonCode,
+          prisonId = moorlandPrisonCode,
         ),
       ),
     )

@@ -30,7 +30,11 @@ class AppointmentOccurrenceAllocationEntityListener {
   @PostPersist
   fun onCreate(entity: AppointmentOccurrenceAllocation) {
     runCatching {
-      outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
+      if (entity.appointmentOccurrence.appointment.isMigrated) {
+        log.info("Not sending appointment instance created event for appointment instance id ${entity.appointmentOccurrenceAllocationId} as it is a migration.")
+      } else {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
+      }
     }.onFailure {
       log.error(
         "Failed to send appointment instance created event for appointment instance id ${entity.appointmentOccurrenceAllocationId}",

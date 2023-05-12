@@ -61,7 +61,7 @@ class OffenderReceivedEventHandlerTest {
 
     val result = handler.handle(inboundEvent)
 
-    assertThat(result).isFalse
+    assertThat(result).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
   }

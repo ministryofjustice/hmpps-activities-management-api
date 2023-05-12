@@ -1,0 +1,1 @@
+ALTER TABLE allocation ALTER COLUMN booking_id SET NOT NULL;

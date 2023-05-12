@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 
 @Repository
 interface AllocationRepository : JpaRepository<Allocation, Long> {
@@ -22,4 +23,12 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
   fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<Allocation>
+
+  @Query(
+    value =
+    "FROM Allocation a " +
+      "WHERE a.prisonerStatus = :prisonerStatus " +
+      "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
+  )
+  fun findByPrisonCodePrisonerStatus(prisonCode: String, prisonerStatus: PrisonerStatus): List<Allocation>
 }

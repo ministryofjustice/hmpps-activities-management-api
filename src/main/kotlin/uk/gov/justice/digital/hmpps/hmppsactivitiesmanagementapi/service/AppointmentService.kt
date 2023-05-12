@@ -3,18 +3,21 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
@@ -24,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppo
 @Service
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val bulkAppointmentRepository: BulkAppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
@@ -34,22 +38,22 @@ class AppointmentService(
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
-    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerMap ->
+    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
       BulkAppointmentEntity(
         appointments = request.appointments.map {
           buildValidAppointmentEntity(
+            appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode,
+            prisonerNumbers = listOf(it.prisonerNumber),
+            prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
             categoryCode = request.categoryCode,
             appointmentDescription = request.appointmentDescription,
             internalLocationId = request.internalLocationId,
             inCell = request.inCell,
             startDate = request.startDate,
-            prisonerMap = prisonerMap.filter { entry -> entry.key == it.prisonerNumber },
-            prisonerNumbers = listOf(it.prisonerNumber),
             startTime = it.startTime,
             endTime = it.endTime,
-            appointmentType = AppointmentType.INDIVIDUAL,
-            principal = principal,
+            createdBy = principal.name,
           )
         }.toList(),
         createdBy = principal.name,
@@ -57,22 +61,46 @@ class AppointmentService(
     }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
-    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerMap ->
+    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerBookings ->
       buildValidAppointmentEntity(
-        inCell = request.inCell,
-        prisonCode = request.prisonCode,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerMap = prisonerMap,
+        appointmentType = request.appointmentType,
+        prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = prisonerBookings,
+        inCell = request.inCell,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
+      ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
+    }
+
+  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
+    mapOf(request.prisonerNumber!! to request.bookingId.toString()).let { prisonerBookings ->
+      buildValidAppointmentEntity(
+        appointmentType = AppointmentType.INDIVIDUAL,
+        prisonCode = request.prisonCode!!,
+        prisonerNumbers = listOf(request.prisonerNumber),
+        prisonerBookings = prisonerBookings,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.comment?.takeIf { it.length <= 40 },
+        internalLocationId = request.internalLocationId,
+        inCell = false,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        comment = request.comment ?: "",
+        created = request.created!!,
+        createdBy = request.createdBy!!,
+        updated = request.updated,
+        updatedBy = request.updatedBy,
+        isCancelled = request.isCancelled ?: false,
+        isMigrated = true,
       ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
     }
 
@@ -94,48 +122,58 @@ class AppointmentService(
     }
   }
 
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
-    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
+  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerBookings: Map<String, String?>) {
+    prisonerNumbers.filterNot(prisonerBookings::containsKey).let {
+      require(it.isEmpty()) {
+        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+      }
     }
   }
 
   fun buildValidAppointmentEntity(
-    inCell: Boolean,
-    prisonCode: String? = null,
-    categoryCode: String? = null,
-    internalLocationId: Long? = null,
+    appointmentType: AppointmentType? = null,
+    prisonCode: String,
     prisonerNumbers: List<String>,
-    prisonerMap: Map<String, Prisoner>,
+    prisonerBookings: Map<String, String?>,
+    categoryCode: String? = null,
+    appointmentDescription: String? = null,
+    internalLocationId: Long? = null,
+    inCell: Boolean = false,
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
-    comment: String = "",
-    appointmentDescription: String? = null,
-    appointmentType: AppointmentType? = null,
     repeat: AppointmentRepeat? = null,
-    principal: Principal,
+    comment: String = "",
+    created: LocalDateTime = LocalDateTime.now(),
+    createdBy: String,
+    updated: LocalDateTime? = null,
+    updatedBy: String? = null,
+    isCancelled: Boolean = false,
+    isMigrated: Boolean = false,
   ): AppointmentEntity {
-    failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
-
-    failIfCategoryNotFound(categoryCode!!)
-
-    failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-
-    failIfMissingPrisoners(prisonerNumbers, prisonerMap)
+    if (!isMigrated) {
+      failIfPrisonCodeNotInUserCaseLoad(prisonCode)
+      failIfCategoryNotFound(categoryCode!!)
+      failIfLocationNotFound(inCell, prisonCode, internalLocationId)
+      failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
+    }
 
     return AppointmentEntity(
-      categoryCode = categoryCode,
+      appointmentType = appointmentType!!,
       prisonCode = prisonCode,
+      categoryCode = categoryCode ?: "",
+      appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
       startTime = startTime!!,
       endTime = endTime,
       comment = comment,
-      appointmentDescription = appointmentDescription,
-      createdBy = principal.name,
-      appointmentType = appointmentType!!,
+      created = created,
+      createdBy = createdBy,
+      updated = updated,
+      updatedBy = updatedBy,
+      isMigrated = isMigrated,
     ).apply {
       this.schedule = repeat?.let {
         AppointmentSchedule(
@@ -155,15 +193,22 @@ class AppointmentService(
             startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
+            updated = updated,
+            updatedBy = updatedBy,
           ).apply {
-            prisonerMap.values.forEach { prisoner ->
+            prisonerBookings.forEach { prisonerBooking ->
               this.addAllocation(
                 AppointmentOccurrenceAllocationEntity(
                   appointmentOccurrence = this,
-                  prisonerNumber = prisoner.prisonerNumber,
-                  bookingId = prisoner.bookingId!!.toLong(),
+                  prisonerNumber = prisonerBooking.key,
+                  bookingId = prisonerBooking.value!!.toLong(),
                 ),
               )
+            }
+            if (isCancelled) {
+              cancelled = updated ?: created
+              cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
+              cancelledBy = updatedBy ?: createdBy
             }
           },
         )
@@ -174,5 +219,5 @@ class AppointmentService(
   private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
     prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
       .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associateBy { it.prisonerNumber }
+      .associate { it.prisonerNumber to it.bookingId }
 }

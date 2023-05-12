@@ -30,7 +30,7 @@ data class Allocation(
 
   val prisonerNumber: String,
 
-  val bookingId: Long? = null,
+  val bookingId: Long,
 
   @OneToOne
   @JoinColumn(name = "prison_pay_band_id")
@@ -98,6 +98,13 @@ data class Allocation(
       scheduleId = activitySchedule.activityScheduleId,
       scheduleDescription = activitySchedule.description,
       isUnemployment = activitySchedule.activity.isUnemployment(),
+      deallocatedBy = deallocatedBy,
+      deallocatedReason = deallocatedReason,
+      deallocatedTime = deallocatedTime,
+      suspendedBy = suspendedBy,
+      suspendedReason = suspendedReason,
+      suspendedTime = suspendedTime,
+      status = prisonerStatus,
     )
 
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
@@ -122,7 +129,10 @@ data class Allocation(
 
   fun reactivateAutoSuspensions() =
     this.apply {
-      failWithMessageIfAllocationsIsNot("You can only reactivate auto-suspended allocations", PrisonerStatus.AUTO_SUSPENDED)
+      failWithMessageIfAllocationsIsNot(
+        "You can only reactivate auto-suspended allocations",
+        PrisonerStatus.AUTO_SUSPENDED,
+      )
 
       prisonerStatus = PrisonerStatus.ACTIVE
       suspendedTime = null
