@@ -17,24 +17,16 @@ class InboundEventsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun process(inboundEvent: InboundEvent) {
-    when (inboundEvent) {
-      is OffenderReceivedEvent -> {
-        if (!receivedEventHandler.handle(inboundEvent)) {
-          interestingEventHandler.handle(inboundEvent)
-        }
-      }
-      is OffenderReleasedEvent -> {
-        if (!releasedEventHandler.handle(inboundEvent)) {
-          interestingEventHandler.handle(inboundEvent)
-        }
-      }
-      is IncentivesInsertedEvent -> interestingEventHandler.handle(inboundEvent)
-      is IncentivesUpdatedEvent -> interestingEventHandler.handle(inboundEvent)
-      is IncentivesDeletedEvent -> interestingEventHandler.handle(inboundEvent)
-      is CellMoveEvent -> interestingEventHandler.handle(inboundEvent)
-      is NonAssociationsChangedEvent -> interestingEventHandler.handle(inboundEvent)
-      else -> log.warn("Unsupported event ${inboundEvent.javaClass.name}")
+  fun process(event: InboundEvent) {
+    when (event) {
+      is OffenderReceivedEvent -> receivedEventHandler.handle(event).onFailure { interestingEventHandler.handle(event) }
+      is OffenderReleasedEvent -> releasedEventHandler.handle(event).onFailure { interestingEventHandler.handle(event) }
+      is IncentivesInsertedEvent -> interestingEventHandler.handle(event)
+      is IncentivesUpdatedEvent -> interestingEventHandler.handle(event)
+      is IncentivesDeletedEvent -> interestingEventHandler.handle(event)
+      is CellMoveEvent -> interestingEventHandler.handle(event)
+      is NonAssociationsChangedEvent -> interestingEventHandler.handle(event)
+      else -> log.warn("Unsupported event ${event.javaClass.name}")
     }
   }
 }

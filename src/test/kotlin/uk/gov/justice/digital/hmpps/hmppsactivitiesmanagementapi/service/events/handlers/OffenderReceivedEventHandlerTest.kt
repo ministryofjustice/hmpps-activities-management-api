@@ -59,9 +59,9 @@ class OffenderReceivedEventHandlerTest {
         )
     }
 
-    val result = handler.handle(inboundEvent)
+    val outcome = handler.handle(inboundEvent)
 
-    assertThat(result).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
   }
@@ -93,9 +93,9 @@ class OffenderReceivedEventHandlerTest {
       on { findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456") } doReturn allocations
     }
 
-    val successful = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
 
-    assertThat(successful).isTrue
+    assertThat(outcome.isSuccess()).isTrue
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(autoSuspendedTwo.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
