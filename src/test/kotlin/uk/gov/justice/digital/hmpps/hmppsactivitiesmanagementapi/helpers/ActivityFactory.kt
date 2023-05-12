@@ -263,13 +263,14 @@ fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville",
 
 fun prisonRegime() = PrisonRegime(
   1,
-  "PVI",
+  pentonvillePrisonCode,
   LocalTime.of(9, 0),
   LocalTime.of(12, 0),
   LocalTime.of(13, 0),
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
   LocalTime.of(20, 0),
+  1,
 )
 
 // TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.

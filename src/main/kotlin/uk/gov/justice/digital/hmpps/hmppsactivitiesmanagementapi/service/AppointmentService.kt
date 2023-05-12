@@ -10,11 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
@@ -24,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppo
 @Service
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val bulkAppointmentRepository: BulkAppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
@@ -38,18 +42,18 @@ class AppointmentService(
       BulkAppointmentEntity(
         appointments = request.appointments.map {
           buildValidAppointmentEntity(
+            appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode,
+            prisonerNumbers = listOf(it.prisonerNumber),
+            prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
             categoryCode = request.categoryCode,
             appointmentDescription = request.appointmentDescription,
             internalLocationId = request.internalLocationId,
             inCell = request.inCell,
             startDate = request.startDate,
-            prisonerBookings = prisonerBookings.filter { entry -> entry.key == it.prisonerNumber },
-            prisonerNumbers = listOf(it.prisonerNumber),
             startTime = it.startTime,
             endTime = it.endTime,
-            appointmentType = AppointmentType.INDIVIDUAL,
-            principal = principal,
+            createdBy = principal.name,
           )
         }.toList(),
         createdBy = principal.name,
@@ -59,41 +63,44 @@ class AppointmentService(
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
     createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerBookings ->
       buildValidAppointmentEntity(
-        inCell = request.inCell,
+        appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
-        prisonerBookings = prisonerBookings,
         prisonerNumbers = request.prisonerNumbers,
+        prisonerBookings = prisonerBookings,
+        inCell = request.inCell,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment,
-        appointmentDescription = request.appointmentDescription,
-        appointmentType = request.appointmentType,
-        principal = principal,
         repeat = request.repeat,
+        comment = request.comment,
+        createdBy = principal.name,
       ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
     }
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
-
     mapOf(request.prisonerNumber!! to request.bookingId.toString()).let { prisonerBookings ->
       buildValidAppointmentEntity(
+        appointmentType = AppointmentType.INDIVIDUAL,
         prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode,
-        internalLocationId = request.internalLocationId,
+        prisonerNumbers = listOf(request.prisonerNumber),
         prisonerBookings = prisonerBookings,
-        prisonerNumbers = listOf(request.prisonerNumber!!),
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.comment?.takeIf { it.length <= 40 },
+        internalLocationId = request.internalLocationId,
         inCell = false,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = if (request.comment.length <= 40) request.comment else "",
-        appointmentDescription = if (request.comment.length > 40) request.comment else null,
-        appointmentType = AppointmentType.INDIVIDUAL,
-        principal = principal,
-        isMigration = true,
+        comment = request.comment ?: "",
+        created = request.created!!,
+        createdBy = request.createdBy!!,
+        updated = request.updated,
+        updatedBy = request.updatedBy,
+        isCancelled = request.isCancelled ?: false,
+        isMigrated = true,
       ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
     }
 
@@ -124,42 +131,49 @@ class AppointmentService(
   }
 
   fun buildValidAppointmentEntity(
-    inCell: Boolean,
+    appointmentType: AppointmentType? = null,
     prisonCode: String,
-    categoryCode: String? = null,
-    internalLocationId: Long? = null,
     prisonerNumbers: List<String>,
     prisonerBookings: Map<String, String?>,
+    categoryCode: String? = null,
+    appointmentDescription: String? = null,
+    internalLocationId: Long? = null,
+    inCell: Boolean = false,
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
-    comment: String = "",
-    appointmentDescription: String? = null,
-    appointmentType: AppointmentType? = null,
     repeat: AppointmentRepeat? = null,
-    principal: Principal,
-    isMigration: Boolean = false,
+    comment: String = "",
+    created: LocalDateTime = LocalDateTime.now(),
+    createdBy: String,
+    updated: LocalDateTime? = null,
+    updatedBy: String? = null,
+    isCancelled: Boolean = false,
+    isMigrated: Boolean = false,
   ): AppointmentEntity {
-    if (!isMigration) {
-      failIfPrisonCodeNotInUserCaseLoad(prisonCode!!)
+    if (!isMigrated) {
+      failIfPrisonCodeNotInUserCaseLoad(prisonCode)
       failIfCategoryNotFound(categoryCode!!)
       failIfLocationNotFound(inCell, prisonCode, internalLocationId)
       failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
     }
 
     return AppointmentEntity(
-      categoryCode = categoryCode ?: "",
+      appointmentType = appointmentType!!,
       prisonCode = prisonCode,
+      categoryCode = categoryCode ?: "",
+      appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
       startTime = startTime!!,
       endTime = endTime,
       comment = comment,
-      appointmentDescription = appointmentDescription,
-      createdBy = principal.name,
-      appointmentType = appointmentType!!,
-      isMigrated = isMigration,
+      created = created,
+      createdBy = createdBy,
+      updated = updated,
+      updatedBy = updatedBy,
+      isMigrated = isMigrated,
     ).apply {
       this.schedule = repeat?.let {
         AppointmentSchedule(
@@ -179,6 +193,8 @@ class AppointmentService(
             startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
+            updated = updated,
+            updatedBy = updatedBy,
           ).apply {
             prisonerBookings.forEach { prisonerBooking ->
               this.addAllocation(
@@ -188,6 +204,11 @@ class AppointmentService(
                   bookingId = prisonerBooking.value!!.toLong(),
                 ),
               )
+            }
+            if (isCancelled) {
+              cancelled = updated ?: created
+              cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
+              cancelledBy = updatedBy ?: createdBy
             }
           },
         )

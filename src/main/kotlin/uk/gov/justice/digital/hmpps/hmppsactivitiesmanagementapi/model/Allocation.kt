@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -15,7 +16,7 @@ data class Allocation(
   val prisonerNumber: String,
 
   @Schema(description = "The offender booking id", example = "10001")
-  val bookingId: Long?,
+  val bookingId: Long,
 
   val activitySummary: String,
 
@@ -44,13 +45,35 @@ data class Allocation(
   @Schema(description = "The person who allocated the prisoner to the activity", example = "Mr Blogs")
   val allocatedBy: String? = null,
 
-  @Schema(description = "The date and time the prisoner was deallocated from the activity", example = "2022-09-02T09:00:00")
+  @Schema(
+    description = "The date and time the prisoner was deallocated from the activity",
+    example = "2022-09-02T09:00:00",
+  )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val deallocatedTime: LocalDateTime? = null,
 
   @Schema(description = "The person who deallocated the prisoner from the activity", example = "Mrs Blogs")
   val deallocatedBy: String? = null,
 
-  @Schema(description = "The descriptive reason why this prisoner was deallocated from the activity", example = "Not attending regularly")
+  @Schema(
+    description = "The descriptive reason why this prisoner was deallocated from the activity",
+    example = "Not attending regularly",
+  )
   val deallocatedReason: String? = null,
+
+  @Schema(description = "The date and time the allocation was suspended", example = "2022-09-02T09:00:00")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val suspendedTime: LocalDateTime? = null,
+
+  @Schema(description = "The person who suspended the prisoner from the activity", example = "Mrs Blogs")
+  val suspendedBy: String? = null,
+
+  @Schema(
+    description = "The descriptive reason why this prisoner was suspended from the activity",
+    example = "Temporarily released from prison",
+  )
+  val suspendedReason: String? = null,
+
+  @Schema(description = "The status of the allocation", example = "ACTIVE")
+  val status: PrisonerStatus,
 )

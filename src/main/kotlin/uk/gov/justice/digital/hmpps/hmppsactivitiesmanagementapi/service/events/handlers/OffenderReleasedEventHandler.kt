@@ -28,24 +28,27 @@ class OffenderReleasedEventHandler(
     log.info("Handling offender released event $event")
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
-      when {
+      return when {
         event.isTemporary() -> {
           suspendOffenderAllocations(event)
-          return true
+          true
         }
+
         event.isPermanent() -> {
           deallocateOffenderAllocations(event)
-          return true
+          true
         }
+
         else -> {
           log.warn("Failed to handle event $event")
+          false
         }
       }
     } else {
       log.info("Ignoring released event for ${event.prisonCode()} - not rolled out.")
     }
 
-    return false
+    return true
   }
 
   private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =
