@@ -21,7 +21,7 @@ class OffenderReceivedEventHandler(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReceivedEvent): Boolean {
+  override fun handle(event: OffenderReceivedEvent): Outcome {
     log.info("Handling offender received event $event")
 
     if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
@@ -38,13 +38,13 @@ class OffenderReceivedEventHandler(
           log.info("Prisoner is not active in prison ${event.prisonCode()}")
         }
 
-        return true
+        return Outcome.success()
       }
     }
 
     log.info("Ignoring received event for ${event.prisonCode()} - not rolled out.")
 
-    return true
+    return Outcome.success()
   }
 
   private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
