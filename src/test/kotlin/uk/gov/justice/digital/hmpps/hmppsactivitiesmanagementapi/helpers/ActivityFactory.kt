@@ -270,6 +270,7 @@ fun prisonRegime() = PrisonRegime(
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
   LocalTime.of(20, 0),
+  1,
 )
 
 // TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
