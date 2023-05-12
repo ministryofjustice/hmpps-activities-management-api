@@ -81,11 +81,11 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private var activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
+  private val activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private var activityPay: MutableList<ActivityPay> = mutableListOf()
+  private val activityPay: MutableList<ActivityPay> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -165,7 +165,7 @@ data class Activity(
   }
 
   fun removePay() {
-    activityPay.removeAll(activityPay)
+    activityPay.clear()
   }
 
   fun addMinimumEducationLevel(
@@ -182,7 +182,7 @@ data class Activity(
   }
 
   fun removeMinimumEducationLevel() {
-    activityMinimumEducationLevel.removeAll(activityMinimumEducationLevel)
+    activityMinimumEducationLevel.clear()
   }
 
   fun addSchedule(
