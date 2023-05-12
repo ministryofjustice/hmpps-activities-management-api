@@ -21,20 +21,7 @@ class AttendanceTest {
     val attendance = Attendance(
       scheduledInstance = mock(),
       prisonerNumber = "P000111",
-      attendanceReason = AttendanceReason(
-        1,
-        AttendanceReasonEnum.ATTENDED,
-        "Some Desc",
-        false,
-        true,
-        true,
-        false,
-        false,
-        false,
-        true,
-        1,
-        "some note",
-      ),
+      attendanceReason = attendanceReasons()["ATTENDED"]!!,
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
@@ -66,5 +53,36 @@ class AttendanceTest {
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
     assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(LocalDateTime.now(), Assertions.within(1, ChronoUnit.SECONDS))
     assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
+  }
+
+  @Test
+  fun `marking attendance records history`() {
+    val attendanceReason = attendanceReasons()["OTHER"]!!
+    val otherAttendance = attendance.copy(
+      status = AttendanceStatus.COMPLETED,
+      attendanceReason = attendanceReason,
+      otherAbsenceReason = "Other reason",
+      comment = "Some comment",
+      issuePayment = true,
+    )
+
+    otherAttendance.mark(
+      principalName = "New user",
+      reason = null,
+      newStatus = AttendanceStatus.WAITING,
+      newComment = null,
+      newIssuePayment = null,
+      newIncentiveLevelWarningIssued = null,
+      newCaseNoteId = null,
+      newOtherAbsenceReason = null,
+    )
+
+    with(otherAttendance.history().last()) {
+      assertThat(this.attendanceReason).isEqualTo(attendanceReason)
+      assertThat(this.comment).isEqualTo("Some comment")
+      assertThat(this.recordedBy).isEqualTo("Joe Bloggs")
+      assertThat(this.issuePayment).isEqualTo(true)
+      assertThat(this.otherAbsenceReason).isEqualTo("Other reason")
+    }
   }
 }
