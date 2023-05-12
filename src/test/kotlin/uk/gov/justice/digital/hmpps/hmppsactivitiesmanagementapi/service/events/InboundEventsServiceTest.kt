@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
 
 class InboundEventsServiceTest {
   private val receivedEventHandler: OffenderReceivedEventHandler = mock()
@@ -22,9 +23,9 @@ class InboundEventsServiceTest {
   @BeforeEach
   fun setupMocks() {
     reset(receivedEventHandler, releasedEventHandler, interestingEventHandler)
-    whenever(releasedEventHandler.handle(any())).thenReturn(true)
-    whenever(receivedEventHandler.handle(any())).thenReturn(true)
-    whenever(interestingEventHandler.handle(any())).thenReturn(true)
+    whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.success())
+    whenever(receivedEventHandler.handle(any())).thenReturn(Outcome.success())
+    whenever(interestingEventHandler.handle(any())).thenReturn(Outcome.success())
   }
 
   @Test
@@ -43,7 +44,7 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound released event failure is handled as an interesting event`() {
-    whenever(releasedEventHandler.handle(any())).thenReturn(false)
+    whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.failed())
     val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
     verify(releasedEventHandler).handle(inboundEvent)
@@ -52,7 +53,7 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound received event failure is handled as an interesting event`() {
-    whenever(receivedEventHandler.handle(any())).thenReturn(false)
+    whenever(receivedEventHandler.handle(any())).thenReturn(Outcome.failed())
     val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
     service.process(inboundEvent)
     verify(receivedEventHandler).handle(inboundEvent)

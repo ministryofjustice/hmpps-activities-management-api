@@ -31,7 +31,7 @@ class InterestingEventHandler(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: InboundEvent): Boolean {
+  override fun handle(event: InboundEvent): Outcome {
     log.info("Checking for interesting event: $event")
 
     prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()?.let { prisoner ->
@@ -48,7 +48,7 @@ class InterestingEventHandler(
             ),
           )
           log.info("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
-          return true
+          return Outcome.success()
         } else {
           log.info("${prisoner.offenderNo} has no active allocations at ${prisoner.agencyId}")
         }
@@ -56,7 +56,7 @@ class InterestingEventHandler(
         log.info("${prisoner.agencyId} is not a rolled out prison")
       }
     }
-    return false
+    return Outcome.failed()
   }
 
   private fun getEventMessage(event: InboundEvent, prisoner: InmateDetail) =
