@@ -37,12 +37,6 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       ApiResponse(
         responseCode = "200",
         description = "Search performed successfully",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = EventReview::class),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",

@@ -37,12 +37,6 @@ class AuditController(
       ApiResponse(
         responseCode = "200",
         description = "Search performed successfully",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = Activity::class),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
