@@ -25,14 +25,14 @@ class EventReviewService(
   ): Page<ModelEventReview> {
     val sort: Sort? = createSort(sortDirection)
     val pageable: Pageable = if (sort != null) PageRequest.of(page, size, sort) else PageRequest.of(page, size)
-
-    // Build a JPA search specification for the requested options
     var spec = eventReviewSearchSpecification.prisonCodeEquals(request.prisonCode)
     with(request) {
-      prisonerNumber?.apply {
+      prisonerNumber?.let {
+        // If a prisonerNumber is supplied restrict results only to those relating to this person
         spec = spec.and(eventReviewSearchSpecification.prisonerNumberEquals(prisonerNumber))
       }
-      eventDate?.apply {
+      eventDate?.let {
+        // Restrict results to the time period of the date supplied (start to end of day)
         spec = spec.and(
           eventReviewSearchSpecification.eventTimeBetween(
             eventDate.atStartOfDay(),
@@ -40,11 +40,10 @@ class EventReviewService(
           ),
         )
       }
-      acknowledgedEvents?.apply {
-        spec = if (this) {
-          spec.and(eventReviewSearchSpecification.isAcknowledged())
-        } else {
-          spec.and(eventReviewSearchSpecification.isNotAcknowledged())
+      acknowledgedEvents?.let {
+        // If acknowledgedEvents is false exclude any with an acknowledgedTime set
+        if (!it) {
+          spec = spec.and(eventReviewSearchSpecification.isNotAcknowledged())
         }
       }
     }

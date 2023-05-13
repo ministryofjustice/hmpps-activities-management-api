@@ -17,5 +17,5 @@ data class EventReviewSearchRequest(
   val prisonerNumber: String? = null,
 
   @Schema(description = "A boolean value indicating whether acknowledged events should be returned. Default is true.", example = "true")
-  val acknowledgedEvents: Boolean? = true,
+  val acknowledgedEvents: Boolean? = false,
 )

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -14,7 +15,8 @@ data class EventReview(
   @Schema(description = "The internal name for the event", example = "prisoner-offender-events.prisoner.cell-move")
   val eventType: String? = null,
 
-  @Schema(description = "The date and time that this event occurred", example = "2022-10-01 23:11:01")
+  @Schema(description = "The date and time that this event occurred", example = "2022-10-01T23:11:01")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val eventTime: LocalDateTime? = null,
 
   @Schema(description = "The prison code where this event took place", example = "MDI")
@@ -32,7 +34,8 @@ data class EventReview(
   )
   val eventData: String? = null,
 
-  @Schema(description = "The date and time that this event was acknowledged.", example = "2022-10-01 23:11:01")
+  @Schema(description = "The date and time that this event was acknowledged.", example = "2022-10-01T23:11:01")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val acknowledgedTime: LocalDateTime? = null,
 
   @Schema(description = "The username of the person who acknowledged the event.", example = "U4588F")
