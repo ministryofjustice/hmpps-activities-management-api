@@ -52,7 +52,7 @@ class EventReviewServiceTest {
     assertThat(result.totalPages).isEqualTo(1)
 
     result.content.map {
-      assertThat(it.eventReviewId in 1..3)
+      assertThat(it.eventReviewId in 1..3).isTrue
       assertThat(it.prisonerNumber).isEqualTo("G1234FF")
       assertThat(it.bookingId).isEqualTo(1)
       assertThat(it.eventData).isEqualTo("XYZ")
