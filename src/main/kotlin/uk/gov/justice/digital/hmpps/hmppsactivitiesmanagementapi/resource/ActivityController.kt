@@ -252,7 +252,7 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ActivityUpdateRequest::class),
+            schema = Schema(implementation = Activity::class),
           ),
         ],
       ),
