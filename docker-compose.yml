@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: activities-management-db
       POSTGRES_USER: activities-management
       POSTGRES_PASSWORD: activities-management
+      DPR_USER: dpr_user
+      DPR_PASSWORD: dpr_password
 
   prison-api:
     image: quay.io/hmpps/prison-api:latest
