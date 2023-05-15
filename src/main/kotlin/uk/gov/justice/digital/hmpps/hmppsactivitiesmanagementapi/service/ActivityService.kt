@@ -11,6 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -77,7 +80,7 @@ class ActivityService(
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
-    checkEducationLevels(request)
+    checkEducationLevels(request.minimumEducationLevel)
 
     val activity = Activity(
       prisonCode = request.prisonCode,
@@ -116,7 +119,7 @@ class ActivityService(
     }
 
     activity.let {
-      val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request)
+      val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request.locationId!!)
       val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
       val timeSlots =
         mapOf(
@@ -141,8 +144,8 @@ class ActivityService(
     }
   }
 
-  private fun checkEducationLevels(request: ActivityCreateRequest) {
-    request.minimumEducationLevel.forEach {
+  private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
+    minimumEducationLevels.forEach {
       val educationLevelCode = it.educationLevelCode!!
       val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
       if (educationLevel.activeFlag != "Y") {
@@ -200,8 +203,8 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, request: ActivityCreateRequest) =
-    prisonApiClient.getLocation(request.locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
+  private fun getLocationForSchedule(activity: Activity, locationId: Long?) =
+    prisonApiClient.getLocation(locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
 
   private fun failIfPrisonsDiffer(activity: Activity, location: Location) {
     if (activity.prisonCode != location.agencyId) {
@@ -219,5 +222,234 @@ class ActivityService(
       DayOfWeek.SATURDAY.takeIf { slot.saturday },
       DayOfWeek.SUNDAY.takeIf { slot.sunday },
     )
+  }
+
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
+    var activity = activityRepository.findOrThrowNotFound(activityId)
+    val now = LocalDateTime.now()
+
+    applyCategoryUpdate(request, activity)
+    applyTierUpdate(request, activity)
+    applySummaryUpdate(prisonCode, request, activity)
+    applyStartDateUpdate(request, activity)
+    applyEndDateUpdate(request, activity)
+    applyMinimumIncentiveNomisCodeUpdate(request, activity)
+    applyMinimumIncentiveLevelUpdate(request, activity)
+    applyRunsOnBankHolidayUpdate(request, activity)
+    applyCapacityUpdate(request, activity)
+    applyRiskLevelUpdate(request, activity)
+    applyLocationUpdate(request, activity)
+    applyInCellUpdate(request, activity)
+    applyAttendanceRequiredUpdate(request, activity)
+    if (request.minimumEducationLevel != null) {
+      applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
+    }
+    if (request.pay != null) {
+      applyPayUpdate(prisonCode, request.pay, activity)
+    }
+    if (request.slots != null) {
+      applySlotsUpdate(request.slots, activity)
+    }
+
+    activity.updatedTime = now
+    activity.updatedBy = updatedBy
+
+    activity.schedules().forEach { it.markAsUpdated(now, updatedBy) }
+
+    activityRepository.saveAndFlush(activity)
+
+    activity = activityRepository.findOrThrowNotFound(activityId)
+
+    return transform(activity)
+  }
+
+  private fun ActivitySchedule.markAsUpdated(
+    updated: LocalDateTime,
+    updatedBy: String,
+  ) {
+    this.updatedTime = updated
+    this.updatedBy = updatedBy
+  }
+
+  private fun applyCategoryUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.categoryId?.apply {
+      activity.activityCategory = activityCategoryRepository.findOrThrowIllegalArgument(this)
+    }
+  }
+
+  private fun applyTierUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.tierId?.apply {
+      activity.activityTier = activityTierRepository.findOrThrowIllegalArgument(this)
+    }
+  }
+
+  private fun applySummaryUpdate(
+    prisonCode: String,
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.summary?.apply {
+      failDuplicateActivity(prisonCode, this)
+      activity.summary = this
+      activity.description = this
+      activity.schedules().forEach { it.description = this }
+    }
+  }
+
+  private fun applyStartDateUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.startDate?.apply {
+      activity.startDate = this
+      activity.schedules().forEach { it.startDate = this }
+    }
+  }
+
+  private fun applyEndDateUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.endDate?.apply {
+      activity.endDate = this
+      activity.schedules().forEach { it.endDate = this }
+    }
+  }
+
+  private fun applyMinimumIncentiveNomisCodeUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.minimumIncentiveNomisCode?.apply {
+      activity.minimumIncentiveNomisCode = this
+    }
+  }
+
+  private fun applyMinimumIncentiveLevelUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.minimumIncentiveLevel?.apply {
+      activity.minimumIncentiveLevel = this
+    }
+  }
+
+  private fun applyRunsOnBankHolidayUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.runsOnBankHoliday?.apply {
+      activity.schedules().forEach { it.runsOnBankHoliday = this }
+    }
+  }
+
+  private fun applyCapacityUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.capacity?.apply {
+      activity.schedules().forEach { it.capacity = this }
+    }
+  }
+
+  private fun applyRiskLevelUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.riskLevel?.apply {
+      activity.riskLevel = this
+    }
+  }
+
+  private fun applyLocationUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.locationId?.apply {
+      val scheduleLocation = getLocationForSchedule(activity, this)
+      activity.schedules().forEach {
+        it.internalLocationId = scheduleLocation.locationId.toInt()
+        it.internalLocationCode = scheduleLocation.internalLocationCode
+        it.internalLocationDescription = scheduleLocation.description
+      }
+    }
+  }
+
+  private fun applyInCellUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.inCell?.apply {
+      activity.inCell = this
+    }
+  }
+
+  private fun applyAttendanceRequiredUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.attendanceRequired?.apply {
+      activity.attendanceRequired = this
+    }
+  }
+
+  private fun applyMinimumEducationLevelUpdate(
+    minimumEducationLevel: List<ActivityMinimumEducationLevelCreateRequest>,
+    activity: Activity,
+  ) {
+    checkEducationLevels(minimumEducationLevel)
+    activity.removeMinimumEducationLevel()
+    minimumEducationLevel.forEach {
+      activity.addMinimumEducationLevel(
+        educationLevelCode = it.educationLevelCode!!,
+        educationLevelDescription = it.educationLevelDescription!!,
+      )
+    }
+  }
+
+  private fun applyPayUpdate(
+    prisonCode: String,
+    pay: List<ActivityPayCreateRequest>,
+    activity: Activity,
+  ) {
+    activity.removePay()
+    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
+      .associateBy { it.prisonPayBandId }
+      .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
+    pay.forEach {
+      activity.addPay(
+        incentiveNomisCode = it.incentiveNomisCode!!,
+        incentiveLevel = it.incentiveLevel!!,
+        payBand = prisonPayBands[it.payBandId]
+          ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
+        rate = it.rate,
+        pieceRate = it.pieceRate,
+        pieceRateItems = it.pieceRateItems,
+      )
+    }
+  }
+
+  private fun applySlotsUpdate(
+    slots: List<Slot>,
+    activity: Activity,
+  ) {
+    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
+    val timeSlots =
+      mapOf(
+        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
+        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
+        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
+      )
+    activity.schedules().forEach {
+      it.removeSlots()
+      it.addSlots(slots, timeSlots)
+    }
   }
 }

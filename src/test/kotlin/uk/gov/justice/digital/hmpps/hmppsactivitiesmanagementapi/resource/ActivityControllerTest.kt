@@ -16,9 +16,11 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -26,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -382,6 +385,93 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     assertThat(response.contentAsString).contains("Not found")
 
     verify(activityService).getSchedulesForActivity(2)
+  }
+
+  @Test
+  fun `updateActivity - success`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val updateActivityResponse: Activity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-response-1.json"),
+      object : TypeReference<Activity>() {},
+    )
+
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("USER")
+
+    whenever(activityService.updateActivity(any(), any(), any(), any())).thenReturn(updateActivityResponse)
+
+    val response =
+      mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+        principal = mockPrincipal
+        accept = MediaType.APPLICATION_JSON
+        contentType = MediaType.APPLICATION_JSON
+        content = mapper.writeValueAsBytes(
+          updateActivityRequest,
+        )
+      }
+        .andDo { print() }
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isAccepted() } }
+        .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(updateActivityResponse))
+
+    verify(activityService).updateActivity(any(), any(), any(), any())
+  }
+
+  @Test
+  fun `updateActivity - no request body`() {
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("USER")
+
+    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+      principal = mockPrincipal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = null
+    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value("Required request body is missing: public uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ActivityController.update(java.lang.String,long,java.security.Principal,uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest)")
+          }
+        }
+      }
+
+    verifyNoInteractions(activityService)
+  }
+
+  @Test
+  fun `404 response when get activity id not found`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("USER")
+    whenever(activityService.updateActivity(any(), any(), any(), any())).thenThrow(EntityNotFoundException("not found"))
+
+    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+      principal = mockPrincipal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        updateActivityRequest,
+      )
+    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isNotFound() }
+      }
+
+    verify(activityService).updateActivity(any(), any(), any(), any())
   }
 
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)

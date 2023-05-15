@@ -104,6 +104,14 @@ internal fun activityCategory(code: String = "category code") =
     description = "category description",
   )
 
+internal fun activityCategory2(code: String = "category code 2") =
+  ActivityCategory(
+    activityCategoryId = 2,
+    code = code,
+    name = "category name 2",
+    description = "category description 2",
+  )
+
 internal fun attendanceReason(code: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) =
   AttendanceReason(
     attendanceReasonId = 1,

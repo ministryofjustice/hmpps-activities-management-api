@@ -36,6 +36,8 @@ class ActivityTest : ModelTest() {
       createdBy = "TestUser",
       createdTime = originalCreatedTime,
       minimumIncentiveNomisCode = "N1",
+      updatedBy = "TestUser",
+      updatedTime = originalCreatedTime,
     )
 
     val json = objectMapper.writeValueAsString(activity)

@@ -25,14 +25,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -408,6 +411,223 @@ class ActivityServiceTest {
         assertThat(internalLocationId).isNull()
         assertThat(internalLocationCode).isNull()
         assertThat(internalLocationDescription).isNull()
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - success`() {
+    val updatedBy = "SCH_ACTIVITY"
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    verify(activityCategoryRepository).findById(1)
+    verify(activityTierRepository).findById(1)
+    verify(activityRepository).saveAndFlush(activityArg)
+
+    with(activityArg) {
+      with(activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(1)
+        assertThat(code).isEqualTo("category code")
+        assertThat(description).isEqualTo("category description")
+      }
+      with(activityTier) {
+        assertThat(activityTierId).isEqualTo(1)
+        assertThat(code).isEqualTo("T1")
+        assertThat(description).isEqualTo("Tier 1")
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - duplicate summary`() {
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
+
+    val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
+      on { summary } doReturn ("IT level 1")
+    }
+
+    assertThatThrownBy { service.updateActivity(moorlandPrisonCode, 1, updateDuplicateActivityRequest, "SCH_ACTIVITY") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
+
+    verify(activityRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `updateActivity - category id not found`() {
+    val updatedBy = "SCH_ACTIVITY"
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
+
+    assertThatThrownBy { service.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity Category 1 not found")
+  }
+
+  @Test
+  fun `updateActivity - tier id not found`() {
+    val updatedBy = "SCH_ACTIVITY"
+    val savedActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.empty())
+
+    assertThatThrownBy { service.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity Tier 1 not found")
+  }
+
+  @Test
+  fun `updateActivity - update category`() {
+    val updatedBy = "SCH_ACTIVITY"
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-2.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val beforeActivityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(beforeActivityCategory))
+
+    val afterActivityCategory = activityCategory2()
+    whenever(activityCategoryRepository.findById(2)).thenReturn(Optional.of(afterActivityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val beforeActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
+
+    val afterActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/updated-activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    verify(activityCategoryRepository).findById(2)
+    verify(activityRepository).saveAndFlush(activityArg)
+
+    with(activityArg) {
+      with(activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(2)
+        assertThat(code).isEqualTo("category code 2")
+        assertThat(description).isEqualTo("category description 2")
+      }
+      with(activityTier) {
+        assertThat(activityTierId).isEqualTo(1)
+        assertThat(code).isEqualTo("T1")
+        assertThat(description).isEqualTo("Tier 1")
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - update pay`() {
+    val updatedBy = "SCH_ACTIVITY"
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-3.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val activityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-1.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.findById(17)).thenReturn(Optional.of(activityEntity))
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 0))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service.updateActivity(moorlandPrisonCode, 17, updateActivityRequest, updatedBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    verify(activityRepository).saveAndFlush(activityArg)
+
+    with(activityArg) {
+      assertThat(activityPay()).hasSize(1)
+      with(activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(1)
+        assertThat(code).isEqualTo("category code")
+        assertThat(description).isEqualTo("category description")
+      }
+      with(activityTier) {
+        assertThat(activityTierId).isEqualTo(1)
+        assertThat(code).isEqualTo("T1")
+        assertThat(description).isEqualTo("Tier 1")
       }
     }
   }

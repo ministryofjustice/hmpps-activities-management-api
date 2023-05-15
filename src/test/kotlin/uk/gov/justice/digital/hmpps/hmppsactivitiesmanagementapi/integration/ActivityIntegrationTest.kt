@@ -17,6 +17,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
@@ -47,6 +49,7 @@ import java.time.temporal.ChronoUnit
 @TestPropertySource(
   properties = [
     "feature.event.activities.activity-schedule.created=true",
+    "feature.event.activities.activity-schedule.amended=true",
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
   ],
@@ -73,6 +76,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
     )
 
     val createActivityRequest: ActivityCreateRequest = mapper.readValue(
@@ -535,6 +543,22 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectBody(Activity::class.java)
       .returnResult().responseBody
 
+  private fun WebTestClient.updateActivity(
+    prisonCode: String,
+    id: Long,
+    activityUpdateRequest: ActivityUpdateRequest,
+  ) =
+    patch()
+      .uri("/activities/$prisonCode/activityId/$id")
+      .bodyValue(activityUpdateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .exchange()
+      .expectStatus().isAccepted
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Activity::class.java)
+      .returnResult().responseBody
+
   private fun Activity.schedule(description: String) = schedules.schedule(description)
 
   private fun List<ActivitySchedule>.schedule(description: String) =
@@ -578,6 +602,64 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("IT level 1")
       assertThat(startDate).isEqualTo(today)
       assertThat(description).isEqualTo("A basic IT course")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity - is successful`() {
+    prisonApiMockServer.stubGetEducationLevel(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-PVI.json",
+    )
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activity = webTestClient.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(summary).isEqualTo("IT level 1 - updated")
+      assertThat(tier!!.id).isEqualTo(1)
+      assertThat(pay.size).isEqualTo(1)
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(schedules.first().updatedBy).isEqualTo("test-client")
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_UPDATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1 - updated\",\"prisonCode\":\"PVI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
+      assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
+      assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2023-03-31 at prison PVI was updated")
     }
   }
 }

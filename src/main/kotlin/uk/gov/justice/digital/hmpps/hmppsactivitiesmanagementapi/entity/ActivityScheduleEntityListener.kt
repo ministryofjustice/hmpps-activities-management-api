@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.PostPersist
+import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,6 +26,18 @@ class ActivityScheduleEntityListener {
     }.onFailure {
       log.error(
         "Failed to send activity schedule creation event for activity schedule ${schedule.activityScheduleId}",
+        it,
+      )
+    }
+  }
+
+  @PostUpdate
+  fun onUpdate(schedule: ActivitySchedule) {
+    runCatching {
+      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, schedule.activityScheduleId)
+    }.onFailure {
+      log.error(
+        "Failed to send activity schedule updated event for activity schedule id ${schedule.activityScheduleId}",
         it,
       )
     }

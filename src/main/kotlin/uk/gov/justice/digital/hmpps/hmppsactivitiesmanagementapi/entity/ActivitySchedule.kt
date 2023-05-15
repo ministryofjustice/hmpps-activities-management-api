@@ -44,7 +44,7 @@ data class ActivitySchedule(
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
-  val description: String,
+  var description: String,
 
   var internalLocationId: Int? = null,
 
@@ -52,12 +52,15 @@ data class ActivitySchedule(
 
   var internalLocationDescription: String? = null,
 
-  val capacity: Int,
+  var capacity: Int,
 
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
-  val runsOnBankHoliday: Boolean = false,
+  var runsOnBankHoliday: Boolean = false,
 
+  var updatedTime: LocalDateTime? = null,
+
+  var updatedBy: String? = null,
 ) {
   init {
     failIfInvalidCapacity()
@@ -185,6 +188,10 @@ data class ActivitySchedule(
     if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
 
     slots.add(slot)
+  }
+
+  fun removeSlots() {
+    slots.clear()
   }
 
   fun allocatePrisoner(
