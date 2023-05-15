@@ -133,7 +133,7 @@ class AppointmentTest {
             occurrenceEntity.startTime,
             occurrenceEntity.endTime,
             "Appointment occurrence level comment",
-            isEdited = false,
+            isEdited = true,
             isCancelled = false,
             occurrenceEntity.updated,
             UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),

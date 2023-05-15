@@ -85,7 +85,7 @@ class AppointmentOccurrenceDetailsServiceTest {
         entity.endTime,
         entity.comment ?: appointment.comment,
         null,
-        false,
+        true,
         false,
         appointment.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),

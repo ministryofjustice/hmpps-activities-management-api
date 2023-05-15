@@ -77,7 +77,7 @@ class AppointmentOccurrenceTest {
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
         "Appointment occurrence level comment",
-        isEdited = false,
+        isEdited = true,
         isCancelled = false,
         updated = entity.updated,
         updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
@@ -102,7 +102,7 @@ class AppointmentOccurrenceTest {
           entity.startTime,
           entity.endTime,
           "Appointment occurrence level comment",
-          isEdited = false,
+          isEdited = true,
           isCancelled = false,
           entity.updated,
           updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
@@ -136,12 +136,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to summary mapping updated by null`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.updatedBy = null
+    val entity = appointmentEntity(updatedBy = null).occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
       assertThat(updatedBy).isNull()
+      assertThat(isEdited).isFalse
     }
   }
 
@@ -184,7 +184,7 @@ class AppointmentOccurrenceTest {
         LocalTime.of(10, 30),
         "Appointment occurrence level comment",
         repeat = null,
-        isEdited = false,
+        isEdited = true,
         isCancelled = false,
         created = appointment.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
@@ -244,6 +244,7 @@ class AppointmentOccurrenceTest {
     )
     with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
+      assertThat(isEdited).isFalse
     }
   }
 
@@ -287,18 +288,18 @@ class AppointmentOccurrenceTest {
   @Test
   fun `isCancelled is false when cancellation reason is false`() {
     val entity = appointmentEntity().occurrences().first()
-    assertThat(entity.isCancelled()).isFalse()
+    assertThat(entity.isCancelled()).isFalse
   }
 
   @Test
   fun `isCancelled is false when cancellation reason deleted is true`() {
     val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
-    assertThat(entity.isCancelled()).isFalse()
+    assertThat(entity.isCancelled()).isFalse
   }
 
   @Test
-  fun `isCancelled is false when cancellation reason deleted is false`() {
+  fun `isCancelled is true when cancellation reason deleted is false`() {
     val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
-    assertThat(entity.isCancelled()).isTrue()
+    assertThat(entity.isCancelled()).isTrue
   }
 }
