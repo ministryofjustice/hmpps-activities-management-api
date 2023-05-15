@@ -90,6 +90,8 @@ data class AppointmentOccurrence(
 
   fun prisonerCount() = prisonerNumbers().count()
 
+  fun isEdited() = updated != null
+
   fun isCancelled() = cancellationReason?.isDelete == false
 
   fun isDeleted() = cancellationReason?.isDelete == true
@@ -134,7 +136,7 @@ data class AppointmentOccurrence(
       startTime,
       endTime,
       comment ?: appointmentComment,
-      isEdited = false,
+      isEdited = isEdited(),
       isCancelled = isCancelled(),
       updated = updated,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
@@ -167,7 +169,7 @@ data class AppointmentOccurrence(
       endTime,
       comment ?: appointment.comment,
       appointment.schedule?.toRepeat(),
-      false,
+      isEdited(),
       isCancelled(),
       appointment.created,
       userMap[appointment.createdBy].toSummary(appointment.createdBy),
