@@ -87,6 +87,9 @@ generic-service:
       HMPPS_SQS_QUEUES_AUDIT_QUEUE_ACCESS_KEY_ID: "access_key_id"
       HMPPS_SQS_QUEUES_AUDIT_QUEUE_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_QUEUES_AUDIT_QUEUE_NAME: "sqs_queue_name"
+    digital-prison-reporting:
+      DPR_USER: "DPR_USER"
+      DPR_PASSWORD: "DPR_PASSWORD"
 
   allowlist:
     office: "217.33.148.210/32"

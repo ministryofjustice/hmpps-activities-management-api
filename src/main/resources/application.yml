@@ -64,6 +64,9 @@ spring:
 
   flyway:
     locations: classpath:/migrations/common,classpath:/migrations/prod
+    placeholders:
+      dpr_user: ${DPR_USER}
+      dpr_password: ${DPR_PASSWORD}
 
 server:
   port: 8080
@@ -108,3 +111,4 @@ jobs:
 online:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE}
+

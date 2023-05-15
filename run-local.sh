@@ -15,6 +15,8 @@ export DB_NAME=activities-management-db
 export DB_USER=activities-management
 export DB_PASS=activities-management
 export DB_SSL_MODE=prefer
+export DPR_USER=dpr_user
+export DPR_PASSWORD=dpr_password
 
 # Run the application with stdout and local profiles active
 SPRING_PROFILES_ACTIVE=stdout,local ./gradlew bootRun
