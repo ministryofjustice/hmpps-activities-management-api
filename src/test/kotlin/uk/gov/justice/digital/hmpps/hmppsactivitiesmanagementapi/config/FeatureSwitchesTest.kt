@@ -17,12 +17,28 @@ class FeatureSwitchesTest {
 
   @TestPropertySource(
     properties = [
+      "feature.audit.service.hmpps.enabled=true",
+      "feature.audit.service.local.enabled=true",
       "feature.events.sns.enabled=true",
       "feature.event.activities.activity-schedule.created=true",
       "feature.event.activities.prisoner.allocated=true",
       "feature.event.appointments.appointment-instance.created=true",
       "feature.event.prison-offender-events.prisoner.received=true",
       "feature.event.prison-offender-events.prisoner.released=true",
+      "feature.event.activities.activity-schedule.amended=true",
+      "feature.event.activities.scheduled-instance.amended=true",
+      "feature.event.activities.prisoner.allocation-amended=true",
+      "feature.event.activities.prisoner.attendance-created=true",
+      "feature.event.activities.prisoner.attendance-amended=true",
+      "feature.event.appointments.appointment-instance.updated=true",
+      "feature.event.appointments.appointment-instance.deleted=true",
+      "feature.event.appointments.appointment-instance.cancelled=true",
+      "feature.event.incentives.iep-review.inserted=true",
+      "feature.event.incentives.iep-review.updated=true",
+      "feature.event.incentives.iep-review.deleted=true",
+      "feature.event.prison-offender-events.prisoner.cell.move=true",
+      "feature.event.prison-offender-events.prisoner.non-association-detail.changed=true",
+      "feature.event.prison-offender-events.prisoner.activities-changed=true",
     ],
   )
   @Nested
@@ -30,30 +46,17 @@ class FeatureSwitchesTest {
   inner class EnabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are enabled`() {
-      assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED)).isTrue
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED)).isTrue
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED)).isTrue
-    }
-  }
+      Feature.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} not enabled").isTrue
+      }
 
-  @TestPropertySource(
-    properties = [
-      "feature.events.sns.enabled=true",
-      "feature.event.activities.prisoner.attendance-created=true",
-      "feature.event.activities.prisoner.attendance-amended=true",
-    ],
-  )
-  @Nested
-  @DisplayName("Attendance feature switches are enabled when set")
-  inner class AttendanceEventsEnabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
-    @Test
-    fun `features are enabled`() {
-      assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ATTENDANCE_CREATED)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ATTENDANCE_AMENDED)).isTrue
+      OutboundEvent.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
+      }
+
+      InboundEventType.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
+      }
     }
   }
 
@@ -62,12 +65,17 @@ class FeatureSwitchesTest {
   inner class DisabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are disabled by default`() {
-      assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED)).isFalse
-      assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED)).isFalse
-      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED)).isFalse
-      assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED)).isFalse
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED)).isFalse
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED)).isFalse
+      Feature.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} enabled").isFalse
+      }
+
+      OutboundEvent.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
+      }
+
+      InboundEventType.values().forEach {
+        assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
+      }
     }
   }
 
@@ -75,12 +83,9 @@ class FeatureSwitchesTest {
   @DisplayName("Features can be defaulted when not present")
   inner class DefaultedFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
-    fun `features are defaulted`() {
+    fun `feature types can be defaulted `() {
       assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, true)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.PRISONER_ALLOCATED, true)).isTrue
-      assertThat(featureSwitches.isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, true)).isTrue
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RECEIVED, true)).isTrue
       assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED, true)).isTrue
     }
   }

@@ -24,16 +24,29 @@ class EventListenerTest {
   private val eventListener = InboundEventsListener(objectMapper, inboundEventsService, featureSwitches)
 
   @Test
-  fun `inbound event is passed onto the inbound service`() {
+  fun `prisoner released event - transferred`() {
     featureSwitches.stub { on { isEnabled(InboundEventType.OFFENDER_RELEASED) } doReturn true }
 
-    val rawMessage = "/messages/prisonerReleasedReasonTransferred.json".readResourceAsText()
-
-    eventListener.onMessage(rawMessage)
+    eventListener.onMessage("/messages/prison-offender-events.prisoner.released.json".readRawMessage())
 
     verify(inboundEventsService).process(offenderTransferReleasedEvent(moorlandPrisonCode, "A1244AB"))
   }
 
-  private fun String.readResourceAsText() =
+  @Test
+  fun `prisoner activities changed event - end`() {
+    featureSwitches.stub { on { isEnabled(InboundEventType.ACTIVITIES_CHANGED) } doReturn true }
+
+    eventListener.onMessage("/messages/prison-offender-events.prisoner.activities-changed.json".readRawMessage())
+
+    verify(inboundEventsService).process(
+      activitiesChangedEvent(
+        prisonerNumber = "A5119DY",
+        action = Action.END,
+        prisonId = moorlandPrisonCode,
+      ),
+    )
+  }
+
+  private fun String.readRawMessage() =
     EventListenerTest::class.java.getResource(this)?.readText() ?: throw AssertionError("cannot find file $this")
 }
