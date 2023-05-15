@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -35,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime as ModelPrisonRegime
@@ -365,3 +367,20 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
 )
+
+fun transform(entityEventReview: EventReview) = ModelEventReview(
+  eventReviewId = entityEventReview.eventReviewId,
+  serviceIdentifier = entityEventReview.serviceIdentifier,
+  eventType = entityEventReview.eventType,
+  eventTime = entityEventReview.eventTime,
+  prisonCode = entityEventReview.prisonCode,
+  prisonerNumber = entityEventReview.prisonerNumber,
+  bookingId = entityEventReview.bookingId,
+  eventData = entityEventReview.eventData,
+  acknowledgedTime = entityEventReview.acknowledgedTime,
+  acknowledgedBy = entityEventReview.acknowledgedBy,
+)
+
+fun List<EventReview>.toModelEventReviewList() = map {
+  transform(it)
+}
