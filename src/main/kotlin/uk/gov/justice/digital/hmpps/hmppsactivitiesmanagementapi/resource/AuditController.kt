@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AuditRecordSearchFilters
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.LocalAuditSearchResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -37,12 +36,6 @@ class AuditController(
       ApiResponse(
         responseCode = "200",
         description = "Search performed successfully",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = Activity::class),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
