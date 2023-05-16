@@ -23,6 +23,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
@@ -582,6 +584,82 @@ class ActivityServiceTest {
         assertThat(code).isEqualTo("T1")
         assertThat(description).isEqualTo("Tier 1")
       }
+    }
+  }
+
+  @Test
+  fun `updateActivity - update end date`() {
+    val updatedBy = "SCH_ACTIVITY"
+
+    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-update-request-4.json"),
+      object : TypeReference<ActivityUpdateRequest>() {},
+    )
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+
+    val beforeActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/activity-entity-3.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
+
+    beforeActivityEntity.addSchedule(
+      description = "Woodwork",
+      internalLocation = Location(
+        locationId = 1,
+        internalLocationCode = "WW",
+        description = "The wood work room description",
+        locationType = "APP",
+        agencyId = "MDI",
+      ),
+      capacity = 10,
+      startDate = beforeActivityEntity.startDate,
+      endDate = beforeActivityEntity.endDate,
+      runsOnBankHoliday = true,
+    )
+
+    beforeActivityEntity.schedules().first().allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+    )
+
+    val afterActivityEntity: ActivityEntity = mapper.readValue(
+      this::class.java.getResource("/__files/activity/updated-activity-entity-2.json"),
+      object : TypeReference<ActivityEntity>() {},
+    )
+
+    whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
+
+    val activityArg: ActivityEntity = activityEntityCaptor.value
+
+    verify(activityRepository).saveAndFlush(activityArg)
+
+    with(activityArg) {
+      with(activityCategory) {
+        assertThat(activityCategoryId).isEqualTo(1)
+        assertThat(code).isEqualTo("category code")
+        assertThat(description).isEqualTo("category description")
+      }
+      with(activityTier) {
+        assertThat(activityTierId).isEqualTo(1)
+        assertThat(code).isEqualTo("T1")
+        assertThat(description).isEqualTo("Tier 1")
+      }
+      assertThat(endDate).isEqualTo("2023-12-31")
+      assertThat(schedules().first().endDate).isEqualTo("2023-12-31")
+      assertThat(schedules().first().allocations().first().endDate).isEqualTo("2023-12-31")
     }
   }
 
