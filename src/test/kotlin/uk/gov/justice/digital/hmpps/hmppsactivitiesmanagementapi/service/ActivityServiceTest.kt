@@ -534,7 +534,6 @@ class ActivityServiceTest {
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-4.json")
 
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
 
@@ -542,7 +541,6 @@ class ActivityServiceTest {
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-3.json")
-
 
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
 
