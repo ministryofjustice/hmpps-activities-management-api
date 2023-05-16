@@ -532,10 +532,8 @@ class ActivityServiceTest {
   fun `updateActivity - update end date`() {
     val updatedBy = "SCH_ACTIVITY"
 
-    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-update-request-4.json"),
-      object : TypeReference<ActivityUpdateRequest>() {},
-    )
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-4.json")
+
 
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
@@ -543,10 +541,8 @@ class ActivityServiceTest {
     val activityTier = activityTier()
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
 
-    val beforeActivityEntity: ActivityEntity = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-entity-3.json"),
-      object : TypeReference<ActivityEntity>() {},
-    )
+    val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-3.json")
+
 
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
 
@@ -572,10 +568,7 @@ class ActivityServiceTest {
       allocatedBy = "FRED",
     )
 
-    val afterActivityEntity: ActivityEntity = mapper.readValue(
-      this::class.java.getResource("/__files/activity/updated-activity-entity-2.json"),
-      object : TypeReference<ActivityEntity>() {},
-    )
+    val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-2.json")
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
