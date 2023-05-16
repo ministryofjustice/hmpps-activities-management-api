@@ -32,6 +32,10 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<NonAssociationsChangedEvent>(message)
   },
+  ACTIVITIES_CHANGED("prison-offender-events.prisoner.activities-changed") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<ActivitiesChangedEvent>(message)
+  },
   ;
 
   abstract fun toInboundEvent(mapper: ObjectMapper, message: String): InboundEvent
@@ -42,6 +46,8 @@ interface InboundEvent {
   fun eventType(): String
 }
 
+interface EventOfInterest
+
 // ------------ Offender released from prison events ------------------------------------------
 
 data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundEvent {
@@ -50,6 +56,7 @@ data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) 
   override fun eventType() = InboundEventType.OFFENDER_RELEASED.eventType
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "RELEASED_TO_HOSPITAL", "SENT_TO_COURT")
     .any { it == additionalInformation.reason }
+
   fun isPermanent() = listOf("RELEASED", "TRANSFERRED")
     .any { it == additionalInformation.reason }
 }
@@ -68,17 +75,17 @@ data class ReceivedInformation(val nomsNumber: String, val reason: String, val p
 
 // ------------ Incentives review events --------------------------------------------------------
 
-data class IncentivesInsertedEvent(val additionalInformation: IncentivesInformation) : InboundEvent {
+data class IncentivesInsertedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_INSERTED.eventType
 }
 
-data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformation) : InboundEvent {
+data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_UPDATED.eventType
 }
 
-data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformation) : InboundEvent {
+data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_DELETED.eventType
 }
@@ -87,7 +94,7 @@ data class IncentivesInformation(val nomsNumber: String, val reason: String?, va
 
 // ------------ Cell move events ------------------------------------------------------------------
 
-data class CellMoveEvent(val additionalInformation: CellMoveInformation) : InboundEvent {
+data class CellMoveEvent(val additionalInformation: CellMoveInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.CELL_MOVE.eventType
   fun bookingId() = additionalInformation.bookingId
@@ -97,12 +104,39 @@ data class CellMoveInformation(val nomsNumber: String, val livingUnitId: Long, v
 
 // ------------ Non associations changed events ----------------------------------------------------
 
-data class NonAssociationsChangedEvent(val additionalInformation: NonAssociationInformation) : InboundEvent {
+data class NonAssociationsChangedEvent(val additionalInformation: NonAssociationInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.NON_ASSOCIATIONS.eventType
   fun bookingId() = additionalInformation.bookingId
 }
 
 data class NonAssociationInformation(val nomsNumber: String, val bookingId: Long)
+
+// ------------ Activities changed prison events ------------------------------------------
+
+data class ActivitiesChangedEvent(
+  val personReference: PersonReference,
+  val additionalInformation: ActivitiesChangedInformation,
+) : InboundEvent {
+  fun prisonCode() = additionalInformation.prisonId
+
+  fun action() = Action.values().firstOrNull { it.name == additionalInformation.action }
+
+  override fun prisonerNumber(): String =
+    personReference.identifiers.first { it.type == "NOMS" }.value
+
+  override fun eventType() = InboundEventType.ACTIVITIES_CHANGED.eventType
+}
+
+data class PersonReference(val identifiers: List<Identifier>)
+
+data class Identifier(val type: String, val value: String)
+
+data class ActivitiesChangedInformation(val action: String, val prisonId: String, val user: String)
+
+enum class Action {
+  END,
+  SUSPEND,
+}
 
 // ------------ New event contents here -------------------------------------------------------------
