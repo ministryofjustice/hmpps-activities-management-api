@@ -63,3 +63,19 @@ fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? 
       reason = reason,
     ),
   )
+
+fun activitiesChangedEvent(
+  prisonerNumber: String,
+  action: Action,
+  prisonId: String,
+) =
+  ActivitiesChangedEvent(
+    personReference = PersonReference(
+      identifiers = listOf(Identifier("NOMS", prisonerNumber)),
+    ),
+    additionalInformation = ActivitiesChangedInformation(
+      action = action.name,
+      prisonId = prisonId,
+      user = "SOME_USER",
+    ),
+  )
