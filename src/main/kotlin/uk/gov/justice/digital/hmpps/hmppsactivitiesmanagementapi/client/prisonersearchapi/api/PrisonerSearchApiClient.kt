@@ -20,6 +20,7 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
     .bodyToMono(typeReference<PagedPrisoner>())
 
   fun findByPrisonerNumbers(prisonerNumbers: List<String>): Mono<List<Prisoner>> {
+    if (prisonerNumbers.isEmpty()) return Mono.just(emptyList())
     return prisonerSearchApiWebClient.post()
       .uri("/prisoner-search/prisoner-numbers")
       .bodyValue(PrisonerNumbers(prisonerNumbers))
@@ -27,10 +28,12 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
       .bodyToMono(typeReference<List<Prisoner>>())
   }
 
-  suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> =
-    prisonerSearchApiWebClient.post()
+  suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonerSearchApiWebClient.post()
       .uri("/prisoner-search/prisoner-numbers")
       .bodyValue(PrisonerNumbers(prisonerNumbers))
       .retrieve()
       .awaitBody()
+  }
 }
