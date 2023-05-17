@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
-import com.fasterxml.jackson.core.type.TypeReference
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
@@ -21,6 +20,7 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -51,15 +51,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - success`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-1.json")
 
-    val createActivityResponse: Activity = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-response-1.json"),
-      object : TypeReference<Activity>() {},
-    )
+    val createActivityResponse: Activity = mapper.read("activity/activity-create-response-1.json")
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -142,10 +136,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, required properties missing`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-invalid-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-1.json")
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -179,10 +170,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, rate 0 or negative`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-invalid-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-2.json")
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -214,10 +202,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, character lengths exceeded`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-invalid-3.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-3.json")
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -389,15 +374,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `updateActivity - success`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
-      object : TypeReference<ActivityUpdateRequest>() {},
-    )
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
-    val updateActivityResponse: Activity = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-update-response-1.json"),
-      object : TypeReference<Activity>() {},
-    )
+    val updateActivityResponse: Activity = mapper.read("activity/activity-update-response-1.json")
 
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
@@ -405,7 +384,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     whenever(activityService.updateActivity(any(), any(), any(), any())).thenReturn(updateActivityResponse)
 
     val response =
-      mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+      mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
         principal = mockPrincipal
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
@@ -428,7 +407,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
 
-    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+    mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -450,15 +429,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `404 response when get activity id not found`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
-      object : TypeReference<ActivityUpdateRequest>() {},
-    )
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
     whenever(activityService.updateActivity(any(), any(), any(), any())).thenThrow(EntityNotFoundException("not found"))
 
-    mockMvc.patch("/activities/" + pentonvillePrisonCode + "/activityId/17") {
+    mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
       principal = mockPrincipal
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON

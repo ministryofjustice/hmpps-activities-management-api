@@ -34,17 +34,17 @@ class ManageAllocationsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun deallocate(operation: DeallocateOperation) {
+  fun allocations(operation: AllocationOperation) {
     LocalDateTime.now().let { now ->
       when (operation) {
-        DeallocateOperation.ENDING -> {
+        AllocationOperation.DEALLOCATE_ENDING -> {
           log.info("Ending allocations due to end today.")
-          allocationsDueToEnd().deallocate(now, "Allocation end date reached")
+          allocationsDueToEnd().allocations(now, "Allocation end date reached")
         }
 
-        DeallocateOperation.EXPIRING -> {
+        AllocationOperation.DEALLOCATE_EXPIRING -> {
           log.info("Expiring allocations due to expire today.")
-          allocationsDueToExpire().deallocate(now, "Expired")
+          allocationsDueToExpire().allocations(now, "Expired")
         }
       }
     }
@@ -110,7 +110,7 @@ class ManageAllocationsService(
       false
     }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.deallocate(dateTime: LocalDateTime, reason: String) {
+  private fun Map<ActivitySchedule, List<Allocation>>.allocations(dateTime: LocalDateTime, reason: String) {
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
@@ -135,7 +135,7 @@ class ManageAllocationsService(
   }
 }
 
-enum class DeallocateOperation {
-  ENDING,
-  EXPIRING,
+enum class AllocationOperation {
+  DEALLOCATE_ENDING,
+  DEALLOCATE_EXPIRING,
 }

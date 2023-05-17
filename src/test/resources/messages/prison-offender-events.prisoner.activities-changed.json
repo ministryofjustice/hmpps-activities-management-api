@@ -1,0 +1,14 @@
+{
+  "Type" : "Notification",
+  "MessageId" : "59303feb-c3a6-568d-96ea-633f8213e573",
+  "TopicArn" : "arn:aws:sns:eu-west-2:754256621582:cloud-platform-Digital-Prison-Services-e29fb030a51b3576dd645aa5e460e573",
+  "Message" : "{\"version\":1,\"eventType\":\"prison-offender-events.prisoner.activities-changed\",\"description\":\"A prisoner's activities have been changed\",\"occurredAt\":\"2023-05-09T13:41:25+01:00\",\"publishedAt\":\"2023-05-09T13:41:25.688466232+01:00\",\"personReference\":{\"identifiers\":[{\"type\":\"NOMS\",\"value\":\"A5119DY\"}]},\"additionalInformation\":{\"action\":\"END\",\"prisonId\":\"MDI\",\"user\":\"SOME_USER\"}}",
+  "Timestamp" : "2023-05-09T12:41:25.712Z",
+  "SignatureVersion" : "1",
+  "Signature" : "f16xIMluPN4metoqOsmcYtidbS4U3lyFpCK+c+wDEpMLL9wFxbYsjjWywHvJiCyylrwMPT2cgygdPJIv+Nydb/7NyS7cik7f/v+d+5yR85pVkuI6nwaWwf5ptPvbIr2N2iQ304c/0ZpSBfXXMLr87AtiDd1S5l7In7VsAO45d1x2G4h79Mnpe62Okkah7PeASdmOsowtvE2h5yaLL3hIQ7c3t0xIcpgYbg8q1RIyctv1+kZQ+AZ8USOGxydgj1w0NamvnbDM9dbu7URzecsRep+q66ExdTsLJish41AaK9mGeCUjejIGpmkbSWkbwjRkRPvNVLieGZuCeQ8y0NXhZg==",
+  "SigningCertURL" : "https://sns.eu-west-2.amazonaws.com/SimpleNotificationService-56e67fcb41f6fec09b0196692625d385.pem",
+  "UnsubscribeURL" : "https://sns.eu-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-2:754256621582:cloud-platform-Digital-Prison-Services-e29fb030a51b3576dd645aa5e460e573:42f1c169-ee8d-4967-856c-a0b28c535751",
+  "MessageAttributes" : {
+    "eventType" : {"Type":"String","Value":"prison-offender-events.prisoner.activities-changed"}
+  }
+}

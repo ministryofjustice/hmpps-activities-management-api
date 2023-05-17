@@ -8,6 +8,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.ActivitiesChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
@@ -17,8 +18,9 @@ class InboundEventsServiceTest {
   private val receivedEventHandler: OffenderReceivedEventHandler = mock()
   private val releasedEventHandler: OffenderReleasedEventHandler = mock()
   private val interestingEventHandler: InterestingEventHandler = mock()
+  private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
 
-  private val service = InboundEventsService(releasedEventHandler, receivedEventHandler, interestingEventHandler)
+  private val service = InboundEventsService(releasedEventHandler, receivedEventHandler, interestingEventHandler, activitiesChangedEventHandler)
 
   @BeforeEach
   fun setupMocks() {

@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import com.fasterxml.jackson.core.type.TypeReference
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -18,6 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
@@ -83,10 +83,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-1.json")
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -129,10 +126,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - failed duplicate prison code - summary`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val activityCreateRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-2.json")
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -159,10 +153,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `createActivity - failed authorisation`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-2.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    )
+    val activityCreateRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-2.json")
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -575,10 +566,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     val today = LocalDate.now()
-    val createActivityRequest: ActivityCreateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-create-request-1.json"),
-      object : TypeReference<ActivityCreateRequest>() {},
-    ).copy(startDate = today)
+    val createActivityRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = today)
 
     prisonApiMockServer.stubGetLocation(
       locationId = 1,
@@ -619,10 +608,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-PVI.json",
     )
 
-    val updateActivityRequest: ActivityUpdateRequest = mapper.readValue(
-      this::class.java.getResource("/__files/activity/activity-update-request-1.json"),
-      object : TypeReference<ActivityUpdateRequest>() {},
-    )
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
     val activity = webTestClient.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest)
 

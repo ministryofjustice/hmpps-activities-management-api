@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
 // within the namespace without requiring authentication
@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAlloc
 @RequestMapping("/job", produces = [MediaType.TEXT_PLAIN_VALUE])
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
-  private val createAttendanceRecordsJob: CreateAttendanceRecordsJob,
+  private val manageAttendanceRecordsJob: ManageAttendanceRecordsJob,
   private val manageAllocationsJob: ManageAllocationsJob,
 ) {
 
@@ -35,16 +35,16 @@ class JobTriggerController(
     return "Create scheduled instances triggered"
   }
 
-  @PostMapping(value = ["/create-attendance-records"])
+  @PostMapping(value = ["/manage-attendance-records"])
   @Operation(
-    summary = "Trigger the job to create attendance records in advance",
+    summary = "Trigger the job to manage attendance records in advance",
     description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
-  fun triggerCreateAttendanceRecordsJob(): String {
-    createAttendanceRecordsJob.execute()
-    return "Create attendance records triggered"
+  fun triggerManageAttendanceRecordsJob(): String {
+    manageAttendanceRecordsJob.execute()
+    return "Manage attendance records triggered"
   }
 
   @PostMapping(value = ["/manage-allocations"])

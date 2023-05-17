@@ -259,8 +259,6 @@ class ActivityService(
 
     activityRepository.saveAndFlush(activity)
 
-    activity = activityRepository.findOrThrowNotFound(activityId)
-
     return transform(activity)
   }
 
@@ -319,7 +317,10 @@ class ActivityService(
   ) {
     request.endDate?.apply {
       activity.endDate = this
-      activity.schedules().forEach { it.endDate = this }
+      activity.schedules().forEach {
+        it.endDate = this
+        it.allocations().forEach { it.endDate = this }
+      }
     }
   }
 
