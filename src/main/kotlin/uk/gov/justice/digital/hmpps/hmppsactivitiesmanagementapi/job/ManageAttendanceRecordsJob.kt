@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
-import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceOperation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 
 /**
  * This job creates attendances on the date of execution for instances scheduled and allocations active on this date.
@@ -13,7 +13,7 @@ import java.time.LocalDate
  * more this will likely change the behaviour of this job.
  */
 @Component
-class CreateAttendanceRecordsJob(private val attendancesService: AttendancesService) {
+class ManageAttendanceRecordsJob(private val attendancesService: ManageAttendancesService) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -21,9 +21,7 @@ class CreateAttendanceRecordsJob(private val attendancesService: AttendancesServ
 
   @Async("asyncExecutor")
   fun execute() {
-    val today = LocalDate.now()
-
-    attendancesService.createAttendanceRecordsFor(today)
-    log.info("Created attendance records for date: $today")
+    attendancesService.attendances(AttendanceOperation.CREATE)
+    // TODO lock attendances
   }
 }
