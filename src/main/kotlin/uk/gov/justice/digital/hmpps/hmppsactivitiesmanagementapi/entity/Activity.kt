@@ -93,7 +93,7 @@ data class Activity(
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  private var schedules: MutableList<ActivitySchedule> = mutableListOf()
+  private val schedules: MutableList<ActivitySchedule> = mutableListOf()
 
   fun schedules() = schedules.toList()
 
