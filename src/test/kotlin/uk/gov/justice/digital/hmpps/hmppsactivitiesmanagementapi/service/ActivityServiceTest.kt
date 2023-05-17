@@ -542,8 +542,6 @@ class ActivityServiceTest {
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-3.json")
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
-
     beforeActivityEntity.addSchedule(
       description = "Woodwork",
       internalLocation = Location(
@@ -566,7 +564,9 @@ class ActivityServiceTest {
       allocatedBy = "FRED",
     )
 
-    val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-2.json")
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
+
+    val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
