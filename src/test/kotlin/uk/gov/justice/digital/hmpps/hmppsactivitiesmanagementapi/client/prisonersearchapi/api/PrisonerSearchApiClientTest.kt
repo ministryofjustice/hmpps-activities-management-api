@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -44,5 +45,20 @@ class PrisonerSearchApiClientTest {
 
     assertThat(prisoners).hasSize(1)
     assertThat(prisoners.first().prisonerNumber).isEqualTo(prisonerNumber)
+  }
+
+  @Test
+  fun `findByPrisonerNumbers no numbers - success`() {
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(emptyList()).block()!!
+
+    assertThat(prisoners).hasSize(0)
+  }
+
+  @Test
+  fun `findByPrisonerNumbersAsync no numbers - success`() {
+    runBlocking {
+      val prisoners = prisonerSearchApiClient.findByPrisonerNumbersAsync(emptyList())
+      assertThat(prisoners).hasSize(0)
+    }
   }
 }
