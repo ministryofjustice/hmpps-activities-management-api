@@ -5,14 +5,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceSummaryRepository
@@ -22,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
-import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary as ModelAllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -71,67 +64,6 @@ class AttendancesService(
     }
 
     attendanceRepository.saveAll(updatedAttendances)
-  }
-
-  /**
-   * Create attendances on the given date for instances scheduled and allocations active on that date
-   *
-   * We do not need to worry about cancellations (at present) to schedules.
-   */
-  fun createAttendanceRecordsFor(date: LocalDate) {
-    log.info("Creating attendance records for date: $date")
-
-    scheduledInstanceRepository.findAllBySessionDate(date)
-      .andAttendanceRequired()
-      .forEach { instance ->
-        instance.forEachInFlightAllocation { allocation ->
-          createAttendanceRecordIfNoPreExistingRecord(instance, allocation)
-        }
-      }
-  }
-
-  private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
-
-  private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
-  }
-
-  private fun createAttendanceRecordIfNoPreExistingRecord(
-    instance: ScheduledInstance,
-    allocation: Allocation,
-  ) {
-    if (attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)) {
-      return
-    }
-
-    val payAmount = instance.activitySchedule.activity.activityPayForBand(allocation.payBand).rate
-
-    if (allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED)) {
-      val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
-
-      attendanceRepository.saveAndFlush(
-        Attendance(
-          scheduledInstance = instance,
-          prisonerNumber = allocation.prisonerNumber,
-          attendanceReason = suspendedReason,
-          payAmount = payAmount,
-          issuePayment = false,
-          status = AttendanceStatus.COMPLETED,
-          recordedTime = LocalDateTime.now(),
-          recordedBy = ServiceName.SERVICE_NAME.value,
-        ),
-      )
-
-      return
-    }
-
-    attendanceRepository.saveAndFlush(
-      Attendance(
-        scheduledInstance = instance,
-        prisonerNumber = allocation.prisonerNumber,
-        payAmount = payAmount,
-      ),
-    )
   }
 
   fun getAttendanceById(id: Long): ModelAttendance =
