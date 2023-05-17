@@ -108,6 +108,8 @@ data class ScheduledInstance(
     comment = cancelComment
     if (attendances.isNotEmpty()) f(attendances)
   }
+
+  fun rateFor(band: PrisonPayBand) = activitySchedule.activity.activityPayForBand(band).rate
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

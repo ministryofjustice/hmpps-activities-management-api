@@ -59,7 +59,7 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
-    service.deallocate(DeallocateOperation.ENDING)
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
     allocation.verifyIsEnded()
 
@@ -76,7 +76,7 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
-    service.deallocate(DeallocateOperation.ENDING)
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
     allocation.verifyIsEnded()
 
@@ -93,7 +93,7 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
     whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
 
-    service.deallocate(DeallocateOperation.ENDING)
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
     allocation.verifyIsActive()
 
@@ -111,7 +111,7 @@ class ManageAllocationsServiceTest {
     whenever(activityRepo.getAllForPrisonAndDate(pentonville.code, today)).thenReturn(listOf(pentonvilleActivity))
     whenever(activityRepo.getAllForPrisonAndDate(moorland.code, today)).thenReturn(listOf(moorlandActivity))
 
-    service.deallocate(DeallocateOperation.ENDING)
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
     listOf(pentonvilleActivity, moorlandActivity).onEach { activity ->
       with(activity) {
@@ -140,7 +140,7 @@ class ManageAllocationsServiceTest {
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
 
-    service.deallocate(DeallocateOperation.EXPIRING)
+    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
 
     allocation.verifyIsExpired()
 
@@ -166,7 +166,7 @@ class ManageAllocationsServiceTest {
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
 
-    service.deallocate(DeallocateOperation.EXPIRING)
+    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
 
     allocation.verifyIsExpired()
 
@@ -193,7 +193,7 @@ class ManageAllocationsServiceTest {
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
 
-    service.deallocate(DeallocateOperation.EXPIRING)
+    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
 
     allocation.verifyIsExpired()
 

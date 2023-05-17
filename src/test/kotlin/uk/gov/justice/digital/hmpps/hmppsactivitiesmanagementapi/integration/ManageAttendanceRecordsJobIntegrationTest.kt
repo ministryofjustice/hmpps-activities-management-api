@@ -1,16 +1,36 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
-class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
+@TestPropertySource(
+  properties = [
+    "feature.events.sns.enabled=true",
+    "feature.event.activities.prisoner.attendance-created=true",
+  ],
+)
+class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
+  @MockBean
+  private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
@@ -20,7 +40,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-4.sql")
   @Test
-  fun `Four attendance records are created, 2 for Maths level 1 AM and 2 for Maths Level 1 PM`() {
+  fun `Four attendance records are created, 2 for Maths level 1 AM and 2 for Maths Level 1 PM and four create events are emitted`() {
     assertThat(attendanceRepository.count()).isZero
 
     with(activityRepository.findById(4).orElseThrow()) {
@@ -40,7 +60,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    webTestClient.createAttendanceRecords()
+    webTestClient.manageAttendanceRecords()
 
     with(activityRepository.findById(4).orElseThrow()) {
       with(schedules().findByDescription("Maths AM")) {
@@ -52,6 +72,14 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
 
     assertThat(attendanceRepository.count()).isEqualTo(4)
+
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    eventCaptor.allValues.map {
+      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
+      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
+    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-4.sql")
@@ -59,8 +87,8 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   fun `Multiple calls on same day does not result in duplicate attendances`() {
     assertThat(attendanceRepository.count()).isZero
 
-    webTestClient.createAttendanceRecords()
-    webTestClient.createAttendanceRecords()
+    webTestClient.manageAttendanceRecords()
+    webTestClient.manageAttendanceRecords()
 
     assertThat(attendanceRepository.count()).isEqualTo(4)
   }
@@ -81,7 +109,7 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    webTestClient.createAttendanceRecords()
+    webTestClient.manageAttendanceRecords()
 
     with(activityRepository.findById(5).orElseThrow()) {
       with(schedules().findByDescription("Gym induction AM")) {
@@ -95,9 +123,9 @@ class CreateAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   private fun List<ActivitySchedule>.findByDescription(description: String) =
     first { it.description.uppercase() == description.uppercase() }
 
-  private fun WebTestClient.createAttendanceRecords() {
+  private fun WebTestClient.manageAttendanceRecords() {
     post()
-      .uri("/job/create-attendance-records")
+      .uri("/job/manage-attendance-records")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated

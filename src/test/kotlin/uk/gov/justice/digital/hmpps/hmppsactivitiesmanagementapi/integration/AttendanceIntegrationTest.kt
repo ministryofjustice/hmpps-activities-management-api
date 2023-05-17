@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
@@ -45,7 +45,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   private lateinit var attendanceRepository: AttendanceRepository
 
   @Autowired
-  private lateinit var attendancesService: AttendancesService
+  private lateinit var attendancesService: ManageAttendancesService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -170,33 +170,6 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(PrisonerAttendanceInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner attendance has been amended in the activities management service")
-    }
-  }
-
-  @Sql(
-    "classpath:test_data/seed-activity-id-18.sql",
-  )
-  @Test
-  fun `attendance creation sync events are emitted`() {
-    val testDataDate = LocalDate.of(2022, 10, 10)
-
-    attendanceRepository.findAll().also { assertThat(it).hasSize(1) }
-    attendanceRepository.deleteAllInBatch()
-    attendanceRepository.flush()
-
-    // This calls the same service method as the attendance for the date specified
-    attendancesService.createAttendanceRecordsFor(testDataDate)
-
-    val attendances = webTestClient.getAttendancesForInstance(1)!!
-    assertThat(attendances.prisonerAttendanceReason("A11111A").attendanceReason).isNull()
-    assertThat(attendances.prisonerAttendanceReason("A22222A").attendanceReason).isNull()
-
-    // Should detect 4x creation events
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
     }
   }
 

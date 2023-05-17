@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DeallocateOperation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
 
 class ManageAllocationsJobTest {
@@ -14,6 +14,6 @@ class ManageAllocationsJobTest {
   fun `attendance records creation triggered for today`() {
     job.execute()
 
-    verify(offenderDeallocationService).deallocate(DeallocateOperation.ENDING)
+    verify(offenderDeallocationService).allocations(AllocationOperation.DEALLOCATE_ENDING)
   }
 }

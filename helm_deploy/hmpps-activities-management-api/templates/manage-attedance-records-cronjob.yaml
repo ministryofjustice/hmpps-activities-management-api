@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: create-attendance-records
+  name: manage-attendance-records
 spec:
   schedule: "0 4 * * *" # 4am every day
   concurrencyPolicy: Replace
@@ -16,9 +16,9 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-          - name: create-attendance-records-job
+          - name: manage-attendance-records-job
             image: ghcr.io/ministryofjustice/hmpps-devops-tools
             args:
               - /bin/sh
               - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/create-attendance-records
+              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-attendance-records
