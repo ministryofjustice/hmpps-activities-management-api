@@ -1,0 +1,1 @@
+ALTER TABLE activity_schedule ADD COLUMN instances_last_updated_time timestamp;
