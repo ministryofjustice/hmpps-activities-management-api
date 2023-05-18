@@ -1,7 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Schema(description = "Describes a top-level activity")
 data class ActivityLite(
@@ -47,4 +50,12 @@ data class ActivityLite(
 
   @Schema(description = "The list of minimum education levels that can apply to this activity")
   val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList(),
+
+  @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "2022-12-21")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val endDate: LocalDate? = null,
+
+  @Schema(description = "The date and time when this activity was created", example = "2022-09-01T09:01:02")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val createdTime: LocalDateTime,
 )

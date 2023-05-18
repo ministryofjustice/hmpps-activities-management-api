@@ -31,6 +31,7 @@ class ActivityScheduleTest : ModelTest() {
         description = "Some Desc",
         summary = "Blah",
         minimumIncentiveNomisCode = "N1",
+        createdTime = LocalDate.now().atStartOfDay(),
       ),
       description = "Some Desc",
       capacity = 10,

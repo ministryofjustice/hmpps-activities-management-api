@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @WebMvcTest(controllers = [ActivityController::class])
@@ -326,6 +327,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             name = "Education",
             description = "Such as classes in English, maths, construction and computer skills",
           ),
+          createdTime = LocalDateTime.now(),
         ),
         slots = listOf(
           ActivityScheduleSlot(

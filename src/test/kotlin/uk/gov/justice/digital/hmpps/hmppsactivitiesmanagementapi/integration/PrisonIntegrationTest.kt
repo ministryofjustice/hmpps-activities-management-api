@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class PrisonIntegrationTest : IntegrationTestBase() {
@@ -46,6 +47,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ),
         ),
         category = educationCategory,
+        createdTime = LocalDateTime.now(),
       ),
     )
   }
@@ -79,6 +81,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ),
         ),
         category = educationCategory,
+        createdTime = LocalDateTime.now(),
       ),
     )
   }
