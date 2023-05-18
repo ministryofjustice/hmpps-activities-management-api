@@ -209,7 +209,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ),
           ),
           category = educationCategory,
-          createdTime = LocalDateTime.now(),
+          createdTime = LocalDateTime.of(2022, 9, 21,0,0, 0),
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -254,7 +254,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ),
           ),
           category = educationCategory,
-          createdTime = LocalDateTime.now(),
+          createdTime = LocalDateTime.of(2022, 9, 21,0,0, 0),
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -303,7 +303,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           category = educationCategory,
-          createdTime = LocalDateTime.now(),
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         ),
         slots = listOf(
           ActivityScheduleSlot(

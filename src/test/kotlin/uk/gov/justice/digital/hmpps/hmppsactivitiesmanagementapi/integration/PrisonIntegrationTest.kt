@@ -47,7 +47,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ),
         ),
         category = educationCategory,
-        createdTime = LocalDateTime.now(),
+        createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
       ),
     )
   }
@@ -81,7 +81,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           ),
         ),
         category = educationCategory,
-        createdTime = LocalDateTime.now(),
+        createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
       ),
     )
   }
