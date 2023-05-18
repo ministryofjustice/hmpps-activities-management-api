@@ -209,7 +209,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ),
           ),
           category = educationCategory,
-          createdTime = LocalDateTime.of(2022, 9, 21,0,0, 0),
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -254,7 +254,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             ),
           ),
           category = educationCategory,
-          createdTime = LocalDateTime.of(2022, 9, 21,0,0, 0),
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         ),
         slots = listOf(
           ActivityScheduleSlot(
