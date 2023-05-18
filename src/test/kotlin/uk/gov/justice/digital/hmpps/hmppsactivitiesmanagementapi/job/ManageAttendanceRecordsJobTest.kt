@@ -11,9 +11,10 @@ class ManageAttendanceRecordsJobTest {
   private val job = ManageAttendanceRecordsJob(attendancesService)
 
   @Test
-  fun `attendance records creation triggered`() {
+  fun `desired attendance operations triggered`() {
     job.execute()
 
     verify(attendancesService).attendances(AttendanceOperation.CREATE)
+    verify(attendancesService).attendances(AttendanceOperation.LOCK)
   }
 }

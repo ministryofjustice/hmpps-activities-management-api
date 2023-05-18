@@ -199,7 +199,7 @@ class ScheduledInstanceServiceTest {
       assertThat(instance.comment).isEqualTo("Resume tomorrow")
 
       with(instance.attendances.find { it.prisonerNumber == "A1234AA" }!!) {
-        assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
@@ -207,7 +207,7 @@ class ScheduledInstanceServiceTest {
       }
 
       with(instance.attendances.find { it.prisonerNumber == "A1234AB" }!!) {
-        assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
         assertThat(comment).isEqualTo("Staff unavailable")
         assertThat(recordedBy).isEqualTo("USER1")
