@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -22,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 
 @Entity
 @Table(name = "scheduled_instance")
-@EntityListeners(ScheduledInstanceEntityListener::class)
 data class ScheduledInstance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

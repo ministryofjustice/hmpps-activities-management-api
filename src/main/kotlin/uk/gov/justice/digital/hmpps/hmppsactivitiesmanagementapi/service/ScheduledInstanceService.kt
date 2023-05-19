@@ -1,7 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -11,15 +12,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
 @Service
 class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
-  private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private var outboundEventsService: OutboundEventsService,
 ) {
-  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance =
-    repository.findOrThrowNotFound(id).toModel()
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
+  fun getActivityScheduleInstanceById(id: Long) = repository.findOrThrowNotFound(id).toModel()
 
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
@@ -42,7 +48,13 @@ class ScheduledInstanceService(
   fun uncancelScheduledInstance(id: Long) {
     val scheduledInstance = repository.findOrThrowNotFound(id)
     scheduledInstance.uncancel()
-    repository.save(scheduledInstance)
+
+    val uncancelledInstance = repository.saveAndFlush(scheduledInstance)
+
+    // Emit a sync event - manually
+    if (!uncancelledInstance.cancelled) {
+      send(uncancelledInstance.scheduledInstanceId)
+    }
   }
 
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
@@ -54,12 +66,24 @@ class ScheduledInstanceService(
       cancelComment = scheduleInstanceCancelRequest.comment,
     ) { attendanceList ->
       val attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
-
       attendanceList.forEach {
         it.cancel(attendanceReason)
       }
     }
 
-    repository.saveAndFlush(scheduledInstance)
+    val cancelledInstance = repository.saveAndFlush(scheduledInstance)
+
+    // Emit a sync event - manually
+    if (cancelledInstance.cancelled) {
+      send(cancelledInstance.scheduledInstanceId)
+    }
+  }
+
+  private fun send(instanceId: Long) {
+    runCatching {
+      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instanceId)
+    }.onFailure {
+      log.error("Failed to send scheduled instance amended event for ID $instanceId", it)
+    }
   }
 }

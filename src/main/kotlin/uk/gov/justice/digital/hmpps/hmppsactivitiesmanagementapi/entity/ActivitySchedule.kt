@@ -61,6 +61,8 @@ data class ActivitySchedule(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  var instancesLastUpdatedTime: LocalDateTime? = null,
 ) {
   init {
     failIfInvalidCapacity()
@@ -145,6 +147,9 @@ data class ActivitySchedule(
   fun isActiveOn(date: LocalDate): Boolean = date.between(startDate, endDate)
 
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
+
+  fun hasNoInstancesOnDate(day: LocalDate) =
+    this.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day }
 
   fun addInstance(
     sessionDate: LocalDate,
