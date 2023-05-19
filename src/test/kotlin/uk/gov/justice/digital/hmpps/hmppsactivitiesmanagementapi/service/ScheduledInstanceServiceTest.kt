@@ -180,7 +180,7 @@ class ScheduledInstanceServiceTest {
       assertThat(instance.comment).isEqualTo("Resume tomorrow")
 
       instance.attendances.forEach {
-        assertThat(it.status).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
         assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
         assertThat(it.comment).isEqualTo("Staff unavailable")
         assertThat(it.recordedBy).isEqualTo("USER1")

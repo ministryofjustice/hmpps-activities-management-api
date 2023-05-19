@@ -2,39 +2,69 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class ManageAttendancesServiceTest {
+
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
-  private val service =
-    ManageAttendancesService(scheduledInstanceRepository, attendanceRepository, attendanceReasonRepository)
-  private val activity = activityEntity()
-  private val activitySchedule = activity.schedules().first()
-  private val allocation = activitySchedule.allocations().first()
-  private val instance = activitySchedule.instances().first()
+  private val rolloutPrison: RolloutPrison = mock {
+    on { code } doReturn moorlandPrisonCode
+    on { isActivitiesRolledOut() } doReturn true
+  }
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
+    on { findAll() } doReturn listOf(rolloutPrison)
+  }
+  private val service = ManageAttendancesService(
+    scheduledInstanceRepository,
+    attendanceRepository,
+    attendanceReasonRepository,
+    rolloutPrisonRepository,
+  )
   private val today = LocalDate.now()
-
+  private val yesterday = today.minusDays(1)
   private val attendanceCaptor = argumentCaptor<Attendance>()
+
+  private lateinit var activity: Activity
+  private lateinit var activitySchedule: ActivitySchedule
+  private lateinit var allocation: Allocation
+  private lateinit var instance: ScheduledInstance
+  private lateinit var attendance: Attendance
+
+  @BeforeEach
+  fun beforeEach() {
+    setUpActivityWithAttendanceFor(today)
+  }
 
   @Test
   fun `attendance record is created when no pre-existing attendance record, attendance is required and allocation active`() {
@@ -82,7 +112,7 @@ class ManageAttendancesServiceTest {
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
       assertThat(recordedBy).isEqualTo("Activities Management Service")
-      assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }
 
@@ -102,7 +132,7 @@ class ManageAttendancesServiceTest {
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
       assertThat(recordedBy).isEqualTo("Activities Management Service")
-      assertThat(status).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
     }
   }
 
@@ -130,5 +160,103 @@ class ManageAttendancesServiceTest {
     service.attendances(AttendanceOperation.CREATE)
 
     verify(attendanceRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `attendance record not marked yesterday is not locked`() {
+    setUpActivityWithAttendanceFor(yesterday)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+
+    attendanceRepository.stub {
+      on {
+        findUnlockedAttendancesAtPrisonBetweenDates(
+          moorlandPrisonCode,
+          yesterday.minusMonths(1),
+          yesterday,
+        )
+      } doReturn listOf(attendance)
+    }
+
+    service.attendances(AttendanceOperation.LOCK)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+    verify(attendanceRepository, never()).saveAndFlush(attendance)
+  }
+
+  @Test
+  fun `attendance record not marked two weeks ago is not locked`() {
+    setUpActivityWithAttendanceFor(yesterday.minusWeeks(2))
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+
+    attendanceRepository.stub {
+      on {
+        findUnlockedAttendancesAtPrisonBetweenDates(
+          moorlandPrisonCode,
+          yesterday.minusMonths(1),
+          yesterday,
+        )
+      } doReturn listOf(attendance)
+    }
+
+    service.attendances(AttendanceOperation.LOCK)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+    verify(attendanceRepository, never()).saveAndFlush(attendance)
+  }
+
+  @Test
+  fun `attendance record not marked over two weeks ago is locked`() {
+    setUpActivityWithAttendanceFor(yesterday.minusDays(15))
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+
+    attendanceRepository.stub {
+      on {
+        findUnlockedAttendancesAtPrisonBetweenDates(
+          moorlandPrisonCode,
+          yesterday.minusMonths(1),
+          yesterday,
+        )
+      } doReturn listOf(attendance)
+    }
+
+    service.attendances(AttendanceOperation.LOCK)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
+    verify(attendanceRepository).saveAndFlush(attendance)
+  }
+
+  @Test
+  fun `attendance record marked yesterday is locked`() {
+    setUpActivityWithAttendanceFor(yesterday)
+
+    attendance.mark("me", attendanceReason(), AttendanceStatus.COMPLETED, null, null, null, null, null)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
+
+    attendanceRepository.stub {
+      on {
+        findUnlockedAttendancesAtPrisonBetweenDates(
+          moorlandPrisonCode,
+          yesterday.minusMonths(1),
+          yesterday,
+        )
+      } doReturn listOf(attendance)
+    }
+
+    service.attendances(AttendanceOperation.LOCK)
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
+    verify(attendanceRepository).saveAndFlush(attendance)
+  }
+
+  private fun setUpActivityWithAttendanceFor(activityStartDate: LocalDate) {
+    activity = activityEntity(startDate = activityStartDate, timestamp = activityStartDate.atStartOfDay())
+    activitySchedule = activity.schedules().first()
+    allocation = activitySchedule.allocations().first()
+    instance = activitySchedule.instances().first()
+    attendance = instance.attendances.first()
   }
 }

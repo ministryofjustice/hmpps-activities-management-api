@@ -47,7 +47,7 @@ data class Attendance(
   var recordedBy: String? = null,
 
   @Enumerated(EnumType.STRING)
-  var status: AttendanceStatus = AttendanceStatus.WAITING,
+  private var status: AttendanceStatus = AttendanceStatus.WAITING,
 
   var payAmount: Int? = null,
 
@@ -62,11 +62,13 @@ data class Attendance(
   var incentiveLevelWarningIssued: Boolean? = null,
 
   var otherAbsenceReason: String? = null,
-
 ) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
+
+  fun status() = status
+  fun status(vararg status: AttendanceStatus) = status.any { it == this.status }
 
   fun history() = attendanceHistory.toList()
 
@@ -149,6 +151,15 @@ data class Attendance(
     return this
   }
 
+  fun lock() =
+    this.apply {
+      if (status == AttendanceStatus.LOCKED) {
+        throw IllegalStateException("Cannot lock already locked attendance $attendanceId")
+      }
+
+      status = AttendanceStatus.LOCKED
+    }
+
   fun toModel(caseNotesApiClient: CaseNotesApiClient) = ModelAttendance(
     id = this.attendanceId,
     scheduleInstanceId = this.scheduledInstance.scheduledInstanceId,
@@ -179,7 +190,7 @@ data class Attendance(
     issuePayment = this.issuePayment,
     incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
     otherAbsenceReason = this.otherAbsenceReason,
-    caseNoteText = this.caseNoteId ?.let { caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text },
+    caseNoteText = this.caseNoteId?.let { caseNotesApiClient.getCaseNote(this.prisonerNumber, this.caseNoteId)?.text },
     attendanceHistory = this.attendanceHistory
       .sortedWith(compareBy { it.recordedTime })
       .reversed()
