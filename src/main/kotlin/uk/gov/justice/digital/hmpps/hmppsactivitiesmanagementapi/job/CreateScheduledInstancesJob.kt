@@ -31,17 +31,16 @@ class CreateScheduledInstancesJob(
   * the activities and schedules that are active between today and SCHEDULE_AHEAD_DAYS days,
   * a value that is set as an environment variable in helm configuration.
   *
-  * For each ACTIVITY_SCHEDULE it calls a @Transactional method to examine the days between now
-  * and SCHEDULE_AHEAD_DAYS to check the slots and determine which of these need a scheduled instance
-  * creating for them.
+  * For each ACTIVITY_SCHEDULE it calls a method to examine the days between now and SCHEDULE_AHEAD_DAYS
+  * to check the slots and determine which of these need a scheduled instance to be created.
   *
   * IMPORTANT: It will avoid duplicating scheduled instances for the same day if they already exist, so
   * it is safe to re-run for the same period (or overlapping periods). It will also avoid scheduling for
   * bank holidays, except for those activities that are marked as Ok to run on bank holidays.
   *
-  * It will avoid creating scheduled instances where an activity has been suspended between two dates i.e. where
-  * a row exists in the ACTIVITY_SCHEDULE_SUSPENSION table. However, there is no current way in the UI to populate
-  * this table, so its always empty at present.
+  * It will still create scheduled instances where an activity schedule has been suspended between two dates
+  * i.e. where a row exists in the ACTIVITY_SCHEDULE_SUSPENSION table because this table should always be
+  * empty - there is no current way in the UI to populate it.
   */
   @Async("asyncExecutor")
   fun execute() {
@@ -50,21 +49,18 @@ class CreateScheduledInstancesJob(
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
     log.info("Scheduling activities job running - from $today until $endDay")
 
-    // For all prisons that are rolled-out
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
       log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
       // Get the activities in this prison that are active between these dates
       val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
-
-      // Get a list of all the activity schedules related to these activities
       val activitySchedules = activities.map {
         it.schedules().filter { s ->
           s.startDate.isBefore(endDay) && (s.endDate == null || s.endDate!!.isAfter(today))
         }
       }.flatten()
 
-      // For each schedule, use a transactional method to add required instances and raise a single sync event
+      // For each active schedule add any new scheduled instances as required
       activitySchedules.forEach { schedule ->
         continueToRunOnFailure(
           block = { createInstancesForSchedule(prison, schedule.activityScheduleId, listOfDatesToSchedule) },
@@ -77,27 +73,23 @@ class CreateScheduledInstancesJob(
 
   fun createInstancesForSchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
     var instancesCreated = false
-    val scheduleEntity = activityScheduleRepository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("Activity ID $scheduleId not found")
+    val schedule = activityScheduleRepository.findById(scheduleId).orElseThrow {
+      EntityNotFoundException("Activity schedule ID $scheduleId not found")
     }
 
     days.forEach { day ->
-      if (
-        scheduleEntity.isActiveOn(day) &&
-        scheduleEntity.canBeScheduledOnDay(day) &&
-        scheduleEntity.hasNoInstancesOnDate(day)
-      ) {
-        val filteredSlots = scheduleEntity.slots().filter { day.dayOfWeek in it.getDaysOfWeek() }
+      if (schedule.isActiveOn(day) && schedule.canBeScheduledOnDay(day) && schedule.hasNoInstancesOnDate(day)) {
+        val filteredSlots = schedule.slots().filter { slot -> day.dayOfWeek in slot.getDaysOfWeek() }
         filteredSlots.forEach { slot ->
           continueToRunOnFailure(
-            block = { scheduleEntity.addInstance(sessionDate = day, slot = slot) },
-            success = "Scheduling session at ${prison.code} ${scheduleEntity.description} on $day at ${slot.startTime}",
-            failure = "Failed to schedule ${prison.code} ${scheduleEntity.description} on $day at ${slot.startTime}",
+            block = { schedule.addInstance(sessionDate = day, slot = slot) },
+            success = "Scheduling session at ${prison.code} ${schedule.description} on $day at ${slot.startTime}",
+            failure = "Failed to schedule ${prison.code} ${schedule.description} on $day at ${slot.startTime}",
           )
 
-          // Ignoring planned suspensions for now as there is no way to set them in the UI - just log it for interest
-          if (scheduleEntity.isSuspendedOn(day)) {
-            log.info("This instance was suspended ${scheduleEntity.description} on $day at ${slot.startTime}")
+          // Ignoring planned suspensions for now - logged for interest (no UI way to set these yet)
+          if (schedule.isSuspendedOn(day)) {
+            log.info("This instance was suspended ${schedule.description} on $day at ${slot.startTime}")
           }
 
           instancesCreated = true
@@ -106,9 +98,9 @@ class CreateScheduledInstancesJob(
     }
 
     if (instancesCreated) {
-      // This will trigger the single sync event for all instances added to this schedule
-      scheduleEntity.instancesLastUpdatedTime = LocalDateTime.now()
-      activityScheduleRepository.saveAndFlush(scheduleEntity)
+      // This will trigger the sync event
+      schedule.instancesLastUpdatedTime = LocalDateTime.now()
+      activityScheduleRepository.saveAndFlush(schedule)
     }
   }
 
