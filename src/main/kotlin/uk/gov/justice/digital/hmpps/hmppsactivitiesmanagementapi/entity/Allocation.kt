@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.Ser
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
 @Entity
 @Table(name = "allocation")
@@ -50,7 +51,8 @@ data class Allocation(
   var deallocatedBy: String? = null
     private set
 
-  var deallocatedReason: String? = null
+  @Enumerated(EnumType.STRING)
+  var deallocatedReason: DeallocationReason? = null
     private set
 
   var suspendedTime: LocalDateTime? = null
@@ -70,7 +72,7 @@ data class Allocation(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun deallocate(dateTime: LocalDateTime, reason: String) =
+  fun deallocate(dateTime: LocalDateTime, reason: DeallocationReason) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
@@ -79,8 +81,6 @@ data class Allocation(
       deallocatedBy = ServiceName.SERVICE_NAME.value
       deallocatedTime = dateTime
     }
-
-  fun isAllocated() = deallocatedTime == null
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
@@ -99,7 +99,7 @@ data class Allocation(
       scheduleDescription = activitySchedule.description,
       isUnemployment = activitySchedule.activity.isUnemployment(),
       deallocatedBy = deallocatedBy,
-      deallocatedReason = deallocatedReason,
+      deallocatedReason = deallocatedReason?.toModel(),
       deallocatedTime = deallocatedTime,
       suspendedBy = suspendedBy,
       suspendedReason = suspendedReason,
@@ -154,4 +154,22 @@ data class Allocation(
 
 enum class PrisonerStatus {
   ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
+}
+
+enum class DeallocationReason(val description: String) {
+  DIED("Deceased"),
+  ENDED("Allocation end date reached"),
+  EXPIRED("Expired"),
+  OTHER("Other"),
+  PERSONAL("Personal reason"),
+  RELEASED("Released from prison"),
+  REMOVED("Removed"),
+  SECURITY("Security"),
+  TEMPORARY_ABSENCE("Temporary absence"),
+  UNACCEPTABLE_ATTENDANCE("Unacceptable attendance"),
+  UNACCEPTABLE_BEHAVIOUR("Unacceptable behaviour"),
+  WITHDRAWN("Withdrawn"),
+  ;
+
+  fun toModel() = ModelDeallocationReason(name, description)
 }

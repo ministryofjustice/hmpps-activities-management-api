@@ -10,6 +10,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -35,7 +36,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     val deallocatedAllocations = allocationRepository.findAll()
 
     assertThat(deallocatedAllocations).hasSize(3)
-    deallocatedAllocations.forEach { it.assertIsDeallocated("Allocation end date reached") }
+    deallocatedAllocations.forEach { it.assertIsDeallocated(DeallocationReason.ENDED) }
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
@@ -54,7 +55,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     allocationRepository.findAll().let {
       assertThat(it).hasSize(3)
       it.prisoner("A11111A").assertIsActive()
-      it.prisoner("A22222A").assertIsDeallocated("Allocation end date reached")
+      it.prisoner("A22222A").assertIsDeallocated(DeallocationReason.ENDED)
       it.prisoner("A33333A").assertIsActive()
     }
   }
@@ -79,7 +80,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAllocations()
 
-    allocationRepository.findAll().prisoner("A11111A").assertIsDeallocated("Expired")
+    allocationRepository.findAll().prisoner("A11111A").assertIsDeallocated(DeallocationReason.EXPIRED)
   }
 
   private fun Allocation.assertIsActive() {
@@ -93,7 +94,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     assertThat(this.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
   }
 
-  private fun Allocation.assertIsDeallocated(reason: String) {
+  private fun Allocation.assertIsDeallocated(reason: DeallocationReason) {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(deallocatedReason).isEqualTo(reason)
