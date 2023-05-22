@@ -182,7 +182,7 @@ data class Activity(
   }
 
   fun removeMinimumEducationLevel() {
-    activityMinimumEducationLevel.removeAll(activityMinimumEducationLevel)
+    activityMinimumEducationLevel.clear()
   }
 
   fun addSchedule(
