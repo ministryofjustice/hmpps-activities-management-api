@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -58,4 +59,7 @@ data class ActivityLite(
   @Schema(description = "The date and time when this activity was created", example = "2022-09-01T09:01:02")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,
+
+  @Schema(description = "Whether the activity is live or archived", example = "live")
+  val activityState: ActivityState,
 )
