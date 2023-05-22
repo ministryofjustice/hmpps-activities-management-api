@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -32,7 +33,7 @@ class AttendanceTest {
 
     with(attendance) {
       assertThat(attendanceReason).isNull()
-      assertThat(status).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
       assertThat(recordedTime).isNull()
@@ -43,15 +44,19 @@ class AttendanceTest {
   @Test
   fun `can cancel attendance`() {
     val attendanceReason = attendanceReasons()["CANCELLED"]!!
-    val canceledInstance = instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
+    val canceledInstance =
+      instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
     val attendanceWithCanceledInstance = attendance.copy(scheduledInstance = canceledInstance)
 
     attendanceWithCanceledInstance.cancel(attendanceReason)
-    assertThat(attendanceWithCanceledInstance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
     assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReason)
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
-    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(LocalDateTime.now(), Assertions.within(1, ChronoUnit.SECONDS))
+    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
+      LocalDateTime.now(),
+      Assertions.within(1, ChronoUnit.SECONDS),
+    )
     assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
   }
 
@@ -84,5 +89,25 @@ class AttendanceTest {
       assertThat(this.issuePayment).isEqualTo(true)
       assertThat(this.otherAbsenceReason).isEqualTo("Other reason")
     }
+  }
+
+  @Test
+  fun `attendance record can be locked`() {
+    assertThat(attendance.status()).isNotEqualTo(AttendanceStatus.LOCKED)
+
+    attendance.lock()
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
+  }
+
+  @Test
+  fun `cannot lock attendance record already locked`() {
+    attendance.lock()
+
+    assertThatThrownBy {
+      attendance.lock()
+    }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Cannot lock already locked attendance ${attendance.attendanceId}")
   }
 }

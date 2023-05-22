@@ -6,14 +6,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -55,16 +53,12 @@ class AttendancesServiceTest {
     )
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
-  private val allocation = activitySchedule.allocations().first()
   private val instance = activitySchedule.instances().first()
   private val attendance = instance.attendances.first()
-  private val today = LocalDate.now()
-
-  private val attendanceCaptor = argumentCaptor<Attendance>()
 
   @Test
   fun `mark attendance record`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     assertThat(attendance.attendanceReason).isNull()
 
@@ -74,13 +68,13 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
   }
 
   @Test
   fun `mark attendance record with case note`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     assertThat(attendance.attendanceReason).isNull()
 
@@ -91,7 +85,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
     assertThat(attendance.incentiveLevelWarningIssued).isNull()
@@ -99,7 +93,7 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record with case note and incentive level warning not issued`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     assertThat(attendance.attendanceReason).isNull()
 
@@ -110,7 +104,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
     assertThat(attendance.incentiveLevelWarningIssued).isFalse
@@ -118,7 +112,7 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record with case note and incentive level warning issued`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
@@ -128,7 +122,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
     assertThat(attendance.incentiveLevelWarningIssued).isTrue
@@ -136,7 +130,7 @@ class AttendancesServiceTest {
 
   @Test
   fun `mark attendance record with other absence reason`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
     assertThat(attendance.attendanceReason).isNull()
     assertThat(attendance.otherAbsenceReason).isNull()
 
@@ -161,7 +155,7 @@ class AttendancesServiceTest {
     )
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.OTHER)
     }
@@ -169,8 +163,8 @@ class AttendancesServiceTest {
   }
 
   @Test
-  fun `other absence reason is not set when attendance reason does not equal "OTHER"`() {
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
+  fun `other absence reason is not set when attendance reason does not equal OTHER`() {
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
     assertThat(attendance.attendanceReason).isNull()
     assertThat(attendance.otherAbsenceReason).isNull()
 
@@ -195,7 +189,7 @@ class AttendancesServiceTest {
     )
 
     verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.REFUSED)
     }
@@ -204,8 +198,9 @@ class AttendancesServiceTest {
 
   @Test
   fun `remove attendance`() {
-    attendance.status = AttendanceStatus.COMPLETED
-    attendance.attendanceReason = AttendanceReason(
+    val completedAttendance = attendance.copy(status = AttendanceStatus.COMPLETED)
+
+    completedAttendance.attendanceReason = AttendanceReason(
       9,
       AttendanceReasonEnum.ATTENDED,
       "Attended",
@@ -219,18 +214,21 @@ class AttendancesServiceTest {
       1,
       "some note",
     )
-    attendance.issuePayment = true
+    completedAttendance.issuePayment = true
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
-    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+    whenever(attendanceRepository.findAllById(setOf(completedAttendance.attendanceId))).thenReturn(listOf(completedAttendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.WAITING, null, null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, moorlandPrisonCode, AttendanceStatus.WAITING, null, null, null, null, null, null)))
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
-    assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING)
-    assertThat(attendance.attendanceReason).isNull()
-    assertThat(attendance.issuePayment).isNull()
-    assertThat(attendance.payAmount).isNull()
+    verify(attendanceRepository).saveAll(listOf(completedAttendance))
+
+    with(completedAttendance) {
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(attendanceReason).isNull()
+      assertThat(issuePayment).isNull()
+      assertThat(payAmount).isNull()
+    }
   }
 
   private fun Allocation.starts(date: LocalDate) {
@@ -238,12 +236,13 @@ class AttendancesServiceTest {
   }
 
   @Test
-  fun `success`() {
+  fun `successful attendance transformation`() {
     whenever(attendanceRepository.findById(1)).thenReturn(
       Optional.of(
         attendance(),
       ),
     )
+
     assertThat(service.getAttendanceById(1)).isInstanceOf(ModelAttendance::class.java)
   }
 

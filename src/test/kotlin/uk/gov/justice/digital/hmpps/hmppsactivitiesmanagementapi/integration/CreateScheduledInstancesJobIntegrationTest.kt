@@ -67,6 +67,6 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
-    Thread.sleep(1000)
+    Thread.sleep(3000)
   }
 }
