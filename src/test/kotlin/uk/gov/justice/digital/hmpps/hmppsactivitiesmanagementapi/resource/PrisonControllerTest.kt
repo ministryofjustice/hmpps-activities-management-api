@@ -13,6 +13,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -105,6 +106,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           description = "Such as association, library time and social clubs, like music or art",
         ),
         createdTime = LocalDateTime.now(),
+        activityState = ActivityState.LIVE,
       ),
     )
 
@@ -165,6 +167,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           description = "Such as association, library time and social clubs, like music or art",
         ),
         createdTime = LocalDateTime.now(),
+        activityState = ActivityState.LIVE,
       ),
     )
 

@@ -62,6 +62,7 @@ class ActivityScheduleTest {
           description = "category description",
         ),
         createdTime = LocalDate.now().atStartOfDay(),
+        activityState = ActivityState.LIVE,
       ),
       slots = listOf(
         ActivityScheduleSlot(
@@ -124,6 +125,7 @@ class ActivityScheduleTest {
             description = "category description",
           ),
           createdTime = LocalDate.now().atStartOfDay(),
+          activityState = ActivityState.LIVE,
         ),
         slots = listOf(
           ActivityScheduleSlot(

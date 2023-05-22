@@ -270,11 +270,12 @@ data class Activity(
     return this::class.simpleName + "(activityId = $activityId )"
   }
 
-  private fun getActivityState(endDate: LocalDate?) : ActivityState {
-    return if (endDate != null && endDate < LocalDate.now())
+  private fun getActivityState(endDate: LocalDate?): ActivityState {
+    return if (endDate != null && endDate < LocalDate.now()) {
       ActivityState.ARCHIVED
-    else
+    } else {
       ActivityState.LIVE
+    }
   }
 }
 
