@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
@@ -107,14 +108,14 @@ class AllocationTest : ModelTest() {
     val now = LocalDateTime.now()
 
     val allocation = allocation().also {
-      it.deallocate(now, "deallocation reason")
+      it.deallocate(now, DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     }
 
     with(allocation.toModel()) {
       assertOnCommonModalTransformation(this, allocation)
       assertThat(deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(deallocatedReason).isEqualTo("deallocation reason")
+      assertThat(deallocatedReason).isEqualTo(DeallocationReason.ENDED.toModel())
       assertThat(deallocatedTime).isEqualTo(now)
       assertThat(suspendedBy).isNull()
       assertThat(suspendedReason).isNull()

@@ -44,19 +44,19 @@ class AllocationTest {
     assertThat(allocation.deallocatedBy).isNull()
     assertThat(allocation.deallocatedTime).isNull()
 
-    allocation.deallocate(dateTime, "Allocation end date reached")
+    allocation.deallocate(dateTime, DeallocationReason.ENDED)
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
-    assertThat(allocation.deallocatedReason).isEqualTo("Allocation end date reached")
+    assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(allocation.deallocatedTime).isEqualTo(dateTime)
   }
 
   @Test
   fun `check cannot deallocate if allocation already ended`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
 
-    assertThatThrownBy { allocation.deallocate(LocalDateTime.now(), "reason") }
+    assertThatThrownBy { allocation.deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '0' is already deallocated.")
   }
@@ -77,7 +77,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot auto-suspend an ended allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
@@ -134,7 +134,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot unsuspend an ended allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), "reason") }
+    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.reactivateAutoSuspensions() }
