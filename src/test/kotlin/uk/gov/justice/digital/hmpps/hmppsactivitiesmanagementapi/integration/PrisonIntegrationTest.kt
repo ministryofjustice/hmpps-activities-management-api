@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
@@ -48,6 +49,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         ),
         category = educationCategory,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+        activityState = ActivityState.LIVE,
       ),
     )
   }
@@ -82,6 +84,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         ),
         category = educationCategory,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+        activityState = ActivityState.LIVE,
       ),
     )
   }

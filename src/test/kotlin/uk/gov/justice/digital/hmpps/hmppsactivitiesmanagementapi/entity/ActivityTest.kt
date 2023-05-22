@@ -76,6 +76,7 @@ class ActivityTest {
         description = "category description",
       ),
       createdTime = LocalDate.now().atStartOfDay(),
+      activityState = ActivityState.LIVE,
     )
     assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
   }
@@ -110,6 +111,7 @@ class ActivityTest {
           description = "category description",
         ),
         createdTime = LocalDate.now().atStartOfDay(),
+        activityState = ActivityState.LIVE,
       ),
     )
 

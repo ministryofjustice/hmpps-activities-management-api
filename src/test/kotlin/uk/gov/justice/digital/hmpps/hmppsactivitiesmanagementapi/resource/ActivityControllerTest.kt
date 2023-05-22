@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -328,6 +329,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             description = "Such as classes in English, maths, construction and computer skills",
           ),
           createdTime = LocalDateTime.now(),
+          activityState = ActivityState.LIVE,
         ),
         slots = listOf(
           ActivityScheduleSlot(

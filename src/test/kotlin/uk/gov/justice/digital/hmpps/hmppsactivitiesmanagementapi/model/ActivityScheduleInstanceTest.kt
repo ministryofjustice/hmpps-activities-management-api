@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -50,6 +51,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
           summary = "Blah",
           minimumIncentiveNomisCode = "N1",
           createdTime = LocalDateTime.now(),
+          activityState = ActivityState.LIVE,
         ),
         description = "Some Desc",
         capacity = 10,

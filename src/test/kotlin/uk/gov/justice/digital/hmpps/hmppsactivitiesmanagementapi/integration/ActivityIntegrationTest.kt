@@ -16,6 +16,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
@@ -210,6 +211,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -255,6 +257,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -304,6 +307,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           minimumIncentiveLevel = "Basic",
           category = educationCategory,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
         ),
         slots = listOf(
           ActivityScheduleSlot(

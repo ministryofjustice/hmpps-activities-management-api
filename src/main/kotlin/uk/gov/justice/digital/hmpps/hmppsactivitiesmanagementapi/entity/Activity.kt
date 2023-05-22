@@ -262,14 +262,28 @@ data class Activity(
     minimumEducationLevel = activityMinimumEducationLevel().toModel(),
     endDate = endDate,
     createdTime = createdTime,
+    activityState = getActivityState(endDate),
   )
 
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(activityId = $activityId )"
   }
+
+  private fun getActivityState(endDate: LocalDate?): ActivityState {
+    return if (endDate != null && endDate < LocalDate.now()) {
+      ActivityState.ARCHIVED
+    } else {
+      ActivityState.LIVE
+    }
+  }
 }
 
 fun List<Activity>.toModelLite() = map { it.toModelLite() }
 
 enum class PayPerSession(val label: String) { H("Half day"), F("Full day") }
+
+enum class ActivityState {
+  ARCHIVED,
+  LIVE,
+}
