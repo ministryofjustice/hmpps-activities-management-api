@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ActivityScheduleLiteTest : ModelTest() {
 
@@ -30,6 +31,7 @@ class ActivityScheduleLiteTest : ModelTest() {
         description = "Some Desc",
         summary = "Blah",
         minimumIncentiveNomisCode = "N1",
+        createdTime = LocalDateTime.now(),
       ),
       description = "Some Desc",
       capacity = 10,

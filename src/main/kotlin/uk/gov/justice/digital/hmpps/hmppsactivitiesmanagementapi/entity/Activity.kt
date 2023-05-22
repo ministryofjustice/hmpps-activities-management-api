@@ -260,6 +260,8 @@ data class Activity(
     minimumIncentiveNomisCode = minimumIncentiveNomisCode,
     minimumIncentiveLevel = minimumIncentiveLevel,
     minimumEducationLevel = activityMinimumEducationLevel().toModel(),
+    endDate = endDate,
+    createdTime = createdTime,
   )
 
   @Override

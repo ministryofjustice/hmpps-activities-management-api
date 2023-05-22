@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [PrisonController::class])
 @ContextConfiguration(classes = [PrisonController::class])
@@ -103,6 +104,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           name = "Leisure and social",
           description = "Such as association, library time and social clubs, like music or art",
         ),
+        createdTime = LocalDateTime.now(),
       ),
     )
 
@@ -162,6 +164,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           name = "Leisure and social",
           description = "Such as association, library time and social clubs, like music or art",
         ),
+        createdTime = LocalDateTime.now(),
       ),
     )
 
