@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -39,12 +40,12 @@ class ManageAllocationsService(
       when (operation) {
         AllocationOperation.DEALLOCATE_ENDING -> {
           log.info("Ending allocations due to end today.")
-          allocationsDueToEnd().allocations(now, "Allocation end date reached")
+          allocationsDueToEnd().allocations(now, DeallocationReason.ENDED)
         }
 
         AllocationOperation.DEALLOCATE_EXPIRING -> {
           log.info("Expiring allocations due to expire today.")
-          allocationsDueToExpire().allocations(now, "Expired")
+          allocationsDueToExpire().allocations(now, DeallocationReason.EXPIRED)
         }
       }
     }
@@ -114,7 +115,7 @@ class ManageAllocationsService(
       false
     }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.allocations(dateTime: LocalDateTime, reason: String) {
+  private fun Map<ActivitySchedule, List<Allocation>>.allocations(dateTime: LocalDateTime, reason: DeallocationReason) {
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {

@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -76,7 +77,7 @@ class OffenderReceivedEventHandlerTest {
       allocation().copy(allocationId = 2, prisonerNumber = "123456").autoSuspend(now, "Auto Reason")
     val userSuspended =
       allocation().copy(allocationId = 3, prisonerNumber = "123456").userSuspend(now, "User reason", "username")
-    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocate(now, "Deallocate reason")
+    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocate(now, DeallocationReason.ENDED)
 
     val allocations = listOf(autoSuspendedOne, autoSuspendedTwo, userSuspended, ended)
 

@@ -55,11 +55,7 @@ data class Allocation(
   @Schema(description = "The person who deallocated the prisoner from the activity", example = "Mrs Blogs")
   val deallocatedBy: String? = null,
 
-  @Schema(
-    description = "The descriptive reason why this prisoner was deallocated from the activity",
-    example = "Not attending regularly",
-  )
-  val deallocatedReason: String? = null,
+  val deallocatedReason: DeallocationReason? = null,
 
   @Schema(description = "The date and time the allocation was suspended", example = "2022-09-02T09:00:00")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -76,4 +72,21 @@ data class Allocation(
 
   @Schema(description = "The status of the allocation", example = "ACTIVE")
   val status: PrisonerStatus,
+)
+
+@Schema(
+  description = "The code and descriptive reason why this prisoner was deallocated from the activity",
+)
+data class DeallocationReason(
+  @Schema(
+    description = "The code for the deallocation reason",
+    example = "RELEASED",
+  )
+  val code: String,
+
+  @Schema(
+    description = "The description for the deallocation reason",
+    example = "Released from prison",
+  )
+  val description: String,
 )

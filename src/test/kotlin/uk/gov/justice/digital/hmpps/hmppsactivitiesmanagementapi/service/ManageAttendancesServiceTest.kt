@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -87,7 +88,7 @@ class ManageAttendancesServiceTest {
   @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    allocation.deallocate(today.atStartOfDay(), "reason")
+    allocation.deallocate(today.atStartOfDay(), DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
