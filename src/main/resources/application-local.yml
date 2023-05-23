@@ -9,9 +9,9 @@ spring:
     locations: classpath:/migrations/common,classpath:/migrations/dev
 
   datasource:
-    url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
-    username: 'activities-management'
-    password: 'activities-management'
+    url: 'jdbc:postgresql://${DB_SERVER}/${DB_NAME}?sslmode=${DB_SSL_MODE}'
+    username: ${DB_USER}
+    password: ${DB_PASS}
 
   jpa:
     show-sql: true
@@ -24,8 +24,8 @@ spring:
 
 system:
   client:
-    id: activities-management-admin-1
-    secret: secret
+    id: ${SYSTEM_CLIENT_ID}
+    secret: ${SYSTEM_CLIENT_SECRET}
 
 # Container-provider local auth server
 hmpps:
