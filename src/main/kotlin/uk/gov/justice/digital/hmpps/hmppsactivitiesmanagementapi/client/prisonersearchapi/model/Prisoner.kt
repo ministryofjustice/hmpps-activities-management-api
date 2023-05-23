@@ -299,7 +299,8 @@ data class Prisoner(
    */
   enum class InOutStatus(val value: String) {
     @JsonProperty("IN") iN("IN"),
-    @JsonProperty("OUT") oUT("OUT")
+    @JsonProperty("OUT") oUT("OUT"),
+    @JsonProperty("TRN") tRN("TRN")
   }
 
   /**
