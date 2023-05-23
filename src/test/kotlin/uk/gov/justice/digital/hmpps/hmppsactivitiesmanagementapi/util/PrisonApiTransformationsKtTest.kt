@@ -26,6 +26,7 @@ class PrisonApiTransformationsKtTest {
         appointmentId = null,
         appointmentOccurrenceId = null,
         appointmentInstanceId = null,
+        appointmentDescription = null,
         scheduledInstanceId = null,
         oicHearingId = -1,
         comments = null,
