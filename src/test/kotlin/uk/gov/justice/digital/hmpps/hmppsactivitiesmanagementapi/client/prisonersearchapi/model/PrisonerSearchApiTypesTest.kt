@@ -58,4 +58,9 @@ class PrisonerSearchApiTypesTest {
 
     assertThat(field.returnType.isMarkedNullable).isTrue
   }
+
+  @Test
+  fun `FacialHair enum should include 'Not Asked'`() {
+    assertThat(Prisoner.FacialHair.NOT_ASKED.value).isEqualTo("Not Asked")
+  }
 }
