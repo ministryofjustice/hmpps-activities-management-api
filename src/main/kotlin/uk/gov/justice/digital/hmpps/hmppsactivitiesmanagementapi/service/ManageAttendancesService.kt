@@ -60,24 +60,33 @@ class ManageAttendancesService(
 
   private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
     if (!attendanceAlreadyExistsFor(instance, allocation)) {
-      val attendance = allocation
-        .takeIf { it.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) }
-        ?.let {
-          Attendance(
-            scheduledInstance = instance,
-            prisonerNumber = allocation.prisonerNumber,
-            attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
-            payAmount = instance.rateFor(allocation.payBand),
-            issuePayment = false,
-            status = AttendanceStatus.COMPLETED,
-            recordedTime = LocalDateTime.now(),
-            recordedBy = ServiceName.SERVICE_NAME.value,
-          )
-        } ?: Attendance(
-        scheduledInstance = instance,
-        prisonerNumber = allocation.prisonerNumber,
-        payAmount = instance.rateFor(allocation.payBand),
-      )
+      val attendance = when {
+        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> Attendance(
+          scheduledInstance = instance,
+          prisonerNumber = allocation.prisonerNumber,
+          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
+          payAmount = instance.rateFor(allocation.payBand),
+          issuePayment = false,
+          status = AttendanceStatus.COMPLETED,
+          recordedTime = LocalDateTime.now(),
+          recordedBy = ServiceName.SERVICE_NAME.value,
+        )
+        instance.cancelled -> Attendance(
+          scheduledInstance = instance,
+          prisonerNumber = allocation.prisonerNumber,
+          payAmount = instance.rateFor(allocation.payBand),
+          issuePayment = true,
+          status = AttendanceStatus.COMPLETED,
+          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED),
+          recordedTime = LocalDateTime.now(),
+          recordedBy = ServiceName.SERVICE_NAME.value,
+        )
+        else -> Attendance(
+          scheduledInstance = instance,
+          prisonerNumber = allocation.prisonerNumber,
+          payAmount = instance.rateFor(allocation.payBand),
+        )
+      }
 
       attendanceRepository.saveAndFlush(attendance)
     }

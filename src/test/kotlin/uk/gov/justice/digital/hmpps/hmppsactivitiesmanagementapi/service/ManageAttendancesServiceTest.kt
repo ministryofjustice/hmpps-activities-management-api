@@ -137,6 +137,52 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
+  fun `attendance record is created, paid and marked as not required when scheduled instance is cancelled`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+    instance.cancelSession("Cancel test", "user", "comment") {
+      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
+    }
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)).thenReturn(attendanceReasons()["NOT_REQUIRED"])
+
+    service.attendances(AttendanceOperation.CREATE)
+
+    verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
+    with(attendanceCaptor.firstValue) {
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["NOT_REQUIRED"])
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(payAmount).isEqualTo(30)
+      assertThat(issuePayment).isTrue
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+    }
+  }
+
+  @Test
+  fun `attendance record is created and marked as not attended when scheduled instance is cancelled but allocation suspended`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+    allocation.userSuspend(today.atStartOfDay(), "reason", "user")
+    instance.cancelSession("Cancel test", "user", "comment") {
+      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
+    }
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+
+    service.attendances(AttendanceOperation.CREATE)
+
+    verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
+    with(attendanceCaptor.firstValue) {
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(issuePayment).isFalse
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+    }
+  }
+
+  @Test
   fun `attendance record is not created when no pre-existing attendance record and attendance is not required`() {
     instance.activitySchedule.activity.attendanceRequired = false
 
