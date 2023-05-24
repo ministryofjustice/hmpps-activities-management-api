@@ -551,4 +551,39 @@ class ActivityScheduleTest {
       assertThat(inCell).isTrue
     }
   }
+
+  @Test
+  fun `prisoner is deallocated from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity())
+
+    val allocatedPrisoner = schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    val deallocatedPrisoner = schedule.deallocatePrisoner(allocatedPrisoner.prisonerNumber, DeallocationReason.RELEASED)
+
+    with(deallocatedPrisoner) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
+    }
+  }
+
+  @Test
+  fun `prisoner is not deallocated from inactive schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
+
+    val allocatedPrisoner = schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy {
+      schedule.deallocatePrisoner(allocatedPrisoner.prisonerNumber, DeallocationReason.RELEASED)
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Schedule ${schedule.activityScheduleId} must be active to deallocate prisoners.")
+  }
+
+  @Test
+  fun `fails to deallocate when prisoner not allocated to schedule`() {
+    val schedule = activitySchedule(activity = activityEntity())
+
+    assertThatThrownBy {
+      schedule.deallocatePrisoner("DOES NOT EXIST", DeallocationReason.RELEASED)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation not found for prisoner DOES NOT EXIST for schedule ${schedule.activityScheduleId}.")
+  }
 }

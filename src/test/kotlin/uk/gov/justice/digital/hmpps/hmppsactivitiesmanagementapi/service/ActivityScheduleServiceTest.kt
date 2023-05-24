@@ -4,13 +4,18 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -72,5 +77,55 @@ class ActivityScheduleServiceTest {
   fun `throws entity not found exception for unknown activity schedule`() {
     assertThatThrownBy { service.getAllocationsBy(-99) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule -99 not found")
+  }
+
+  @Test
+  fun `can deallocate a prisoner from activity schedule`() {
+    val schedule = mock<ActivitySchedule>()
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    service.deallocatePrisoners(
+      schedule.activityScheduleId,
+      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.RELEASED),
+      "by test",
+    )
+
+    verify(schedule).deallocatePrisoner("1", DeallocationReason.RELEASED)
+    verify(repository).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `can deallocate multiple prisoners from activity schedule`() {
+    val schedule = mock<ActivitySchedule>()
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    service.deallocatePrisoners(
+      schedule.activityScheduleId,
+      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.RELEASED),
+      "by test",
+    )
+
+    verify(schedule).deallocatePrisoner("1", DeallocationReason.RELEASED)
+    verify(schedule).deallocatePrisoner("2", DeallocationReason.RELEASED)
+    verify(repository).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `throws entity not found exception for unknown activity schedule when try and deallocate`() {
+    val schedule = activitySchedule(activityEntity())
+    val allocation = schedule.allocations().first()
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.empty())
+
+    assertThatThrownBy {
+      service.deallocatePrisoners(
+        schedule.activityScheduleId,
+        PrisonerDeallocationRequest(listOf(allocation.prisonerNumber), DeallocationReason.RELEASED),
+        "by test",
+      )
+    }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity Schedule ${schedule.activityScheduleId} not found")
   }
 }

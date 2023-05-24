@@ -15,8 +15,11 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
@@ -146,7 +149,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("THE USER NAME")
 
-    mockMvc.post(1, request)
+    mockMvc.allocate(1, request)
       .andExpect { status { isNoContent() } }
 
     verify(activityScheduleService).allocatePrisoner(1, request, "USERNAME")
@@ -155,7 +158,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @Test
   fun `400 response when allocate offender to a schedule request constraints are violated`() {
     with(
-      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = null, payBandId = null))
+      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = null, payBandId = null))
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
@@ -164,7 +167,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     }
 
     with(
-      mockMvc.post(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBandId = 1))
+      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBandId = 1))
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
@@ -174,8 +177,31 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())
   }
 
-  private fun MockMvc.post(scheduleId: Long, request: PrisonerAllocationRequest) =
+  @Test
+  fun `204 response when deallocate offender from a schedule`() {
+    val request = PrisonerDeallocationRequest(
+      prisonerNumbers = listOf("654321"),
+      reasonCode = DeallocationReason.RELEASED,
+    )
+
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("THE USER NAME")
+
+    mockMvc.deallocate(1, request)
+      .andExpect { status { isNoContent() } }
+
+    verify(activityScheduleService).deallocatePrisoners(1, request, "USERNAME")
+  }
+
+  private fun MockMvc.allocate(scheduleId: Long, request: PrisonerAllocationRequest) =
     post("/schedules/$scheduleId/allocations") {
+      principal = Principal { "USERNAME" }
+      content = mapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+    }
+
+  private fun MockMvc.deallocate(scheduleId: Long, request: PrisonerDeallocationRequest) =
+    put("/schedules/$scheduleId/deallocate") {
       principal = Principal { "USERNAME" }
       content = mapper.writeValueAsString(request)
       contentType = MediaType.APPLICATION_JSON

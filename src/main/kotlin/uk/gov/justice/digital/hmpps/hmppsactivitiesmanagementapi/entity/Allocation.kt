@@ -162,6 +162,7 @@ enum class DeallocationReason(val description: String) {
   EXPIRED("Expired"),
   OTHER("Other"),
   PERSONAL("Personal reason"),
+  PROBLEM("Problem understanding material"),
   RELEASED("Released from prison"),
   REMOVED("Removed"),
   SECURITY("Security"),
@@ -172,4 +173,8 @@ enum class DeallocationReason(val description: String) {
   ;
 
   fun toModel() = ModelDeallocationReason(name, description)
+
+  companion object {
+    fun toModelDeallocationReasons() = DeallocationReason.values().map(DeallocationReason::toModel)
+  }
 }
