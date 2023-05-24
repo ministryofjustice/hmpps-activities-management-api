@@ -28,7 +28,7 @@ class CandidatesService(
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
-        .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.dEAD }
+        .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD }
         .filter { p -> !schedule.allocations.map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }

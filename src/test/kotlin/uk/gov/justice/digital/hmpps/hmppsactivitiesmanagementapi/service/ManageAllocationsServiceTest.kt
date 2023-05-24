@@ -128,7 +128,7 @@ class ManageAllocationsServiceTest {
     val schedule = activity.schedules().first()
     val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
     val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.oUT
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
       on { lastMovementTypeCode } doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
     }
@@ -154,7 +154,7 @@ class ManageAllocationsServiceTest {
     val schedule = activity.schedules().first()
     val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
     val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.oUT
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
       on { lastMovementTypeCode } doReturn MovementType.TRANSFER.nomisShortCode
     }
@@ -180,7 +180,7 @@ class ManageAllocationsServiceTest {
     val schedule = activity.schedules().first()
     val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
     val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.oUT
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
       on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
       on { releaseDate } doReturn LocalDate.now().minusDays(5)

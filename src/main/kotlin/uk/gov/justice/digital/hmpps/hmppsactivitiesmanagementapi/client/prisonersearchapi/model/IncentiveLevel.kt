@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model
 
+import java.util.Objects
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -9,9 +10,13 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param code code
  */
 data class IncentiveLevel(
-  @Schema(example = "Standard", required = true, description = "description")
-  @get:JsonProperty("description", required = true) val description: kotlin.String,
 
-  @Schema(example = "STD", description = "code")
-  @get:JsonProperty("code") val code: kotlin.String? = null
-)
+    @Schema(example = "Standard", required = true, description = "description")
+    @get:JsonProperty("description", required = true) val description: kotlin.String,
+
+    @Schema(example = "STD", description = "code")
+    @get:JsonProperty("code") val code: kotlin.String? = null
+) {
+
+}
+

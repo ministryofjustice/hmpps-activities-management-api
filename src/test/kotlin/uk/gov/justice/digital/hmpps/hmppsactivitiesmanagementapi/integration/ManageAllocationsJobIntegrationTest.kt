@@ -64,7 +64,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   fun `deallocate offenders allocations due to expire`() {
     val prisoner = PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A11111A",
-      inOutStatus = Prisoner.InOutStatus.oUT,
+      inOutStatus = Prisoner.InOutStatus.OUT,
       lastMovementType = MovementType.RELEASE,
       releaseDate = LocalDate.now().minusDays(5),
     )
