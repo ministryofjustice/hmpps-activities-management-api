@@ -29,6 +29,9 @@ data class ScheduledEvent(
   @Schema(description = "For appointments from SAA the ID for the appointment instance, or null when from NOMIS", example = "9999")
   val appointmentInstanceId: Long?,
 
+  @Schema(description = "For appointments from SAA the optional appointment description", example = "Meeting with the governor")
+  val appointmentDescription: String?,
+
   @Schema(description = "For adjudication hearings from NOMIS the ID for the OIC hearing, or null for other types", example = "9999")
   val oicHearingId: Long?,
 

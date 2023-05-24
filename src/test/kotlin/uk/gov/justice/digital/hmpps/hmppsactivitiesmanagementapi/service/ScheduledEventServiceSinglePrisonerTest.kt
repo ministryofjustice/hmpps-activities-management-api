@@ -733,7 +733,11 @@ class ScheduledEventServiceSinglePrisonerTest {
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
-      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId)
+      val appointmentEntity = appointmentFromDbInstance(
+        prisonerNumber = prisonerNumber,
+        bookingId = bookingId,
+        appointmentDescription = "Meeting with the governor",
+      )
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
 
@@ -771,6 +775,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
+          assertThat(it.appointmentDescription).isEqualTo(appointmentEntity.appointmentDescription)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
