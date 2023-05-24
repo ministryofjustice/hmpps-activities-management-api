@@ -18,7 +18,7 @@ object PrisonerSearchPrisonerFixture {
     maritalStatus: String = "Test Marital Status",
     religion: String = "Test Religion",
     nationality: String = "Test Nationality",
-    inOutStatus: Prisoner.InOutStatus = Prisoner.InOutStatus.iN,
+    inOutStatus: Prisoner.InOutStatus = Prisoner.InOutStatus.IN,
     status: String = "IN",
     mostSeriousOffence: String = "Test Offence",
     restrictedPatient: Boolean = false,
