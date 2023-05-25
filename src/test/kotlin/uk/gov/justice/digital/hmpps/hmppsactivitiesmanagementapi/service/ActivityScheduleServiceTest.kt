@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -47,7 +48,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `ended allocations for a given schedule are not returned`() {
     val schedule = schedule().apply {
-      allocations().first().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
+      allocations().first().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
@@ -87,11 +88,11 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.RELEASED),
+      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.RELEASED, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisoner("1", DeallocationReason.RELEASED)
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -103,12 +104,12 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.RELEASED),
+      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.RELEASED, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisoner("1", DeallocationReason.RELEASED)
-    verify(schedule).deallocatePrisoner("2", DeallocationReason.RELEASED)
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -122,7 +123,7 @@ class ActivityScheduleServiceTest {
     assertThatThrownBy {
       service.deallocatePrisoners(
         schedule.activityScheduleId,
-        PrisonerDeallocationRequest(listOf(allocation.prisonerNumber), DeallocationReason.RELEASED),
+        PrisonerDeallocationRequest(listOf(allocation.prisonerNumber), DeallocationReason.RELEASED, TimeSource.tomorrow()),
         "by test",
       )
     }.isInstanceOf(EntityNotFoundException::class.java)

@@ -18,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
@@ -318,8 +319,17 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerDeallocationRequest(
         prisonerNumbers = listOf("G4793VF"),
         reasonCode = DeallocationReason.RELEASED,
+        endDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
+
+    repository.findById(1).orElseThrow().also {
+      with(it.allocations().first().plannedDeallocation!!) {
+        assertThat(plannedBy).isEqualTo("test-client")
+        assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
+        assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      }
+    }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 

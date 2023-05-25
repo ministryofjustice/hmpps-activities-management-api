@@ -367,8 +367,8 @@ class ActivityScheduleController(
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @PutMapping(value = ["/{scheduleId}/deallocate"])
   @Operation(
-    summary = "Deallocate offender",
-    description = "Deallocates offenders from an activity schedule. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    summary = "Deallocate offenders",
+    description = "Deallocates offenders from an activity schedule on a future date. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
   )
   @ApiResponses(
     value = [

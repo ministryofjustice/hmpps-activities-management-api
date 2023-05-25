@@ -119,7 +119,7 @@ class ManageAllocationsService(
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
-          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocate(dateTime, reason) }
+          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocateNow(dateTime, reason) }
             .let {
               if (it.isNotEmpty()) {
                 activityScheduleRepository.saveAndFlush(schedule)

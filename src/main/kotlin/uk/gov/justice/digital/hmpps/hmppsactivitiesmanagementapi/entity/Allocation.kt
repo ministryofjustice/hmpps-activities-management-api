@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
@@ -11,6 +12,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -45,6 +47,12 @@ data class Allocation(
 
   var allocatedBy: String,
 ) {
+
+  @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+  @JoinColumn(name = "planned_deallocation_id", nullable = true)
+  var plannedDeallocation: PlannedDeallocation? = null
+    private set
+
   var deallocatedTime: LocalDateTime? = null
     private set
 
@@ -72,7 +80,32 @@ data class Allocation(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun deallocate(dateTime: LocalDateTime, reason: DeallocationReason) =
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) {
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+      if (plannedDeallocation != null) throw IllegalStateException("Allocation with ID '$allocationId' is already planned.")
+      if (date.onOrBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must be in the future.")
+      if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
+
+      plannedDeallocation = PlannedDeallocation(
+        allocation = this,
+        plannedReason = reason,
+        plannedDate = date,
+        plannedBy = deallocatedBy,
+      )
+    }
+  }
+
+  private fun maybeEndDate() =
+    when {
+      endDate != null -> endDate
+      activitySchedule.endDate != null -> activitySchedule.endDate
+      activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
+      else -> null
+    }
+
+  // TODO remove date/time timestamp from function signature
+  fun deallocateNow(dateTime: LocalDateTime, reason: DeallocationReason) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 

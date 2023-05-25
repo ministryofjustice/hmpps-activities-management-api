@@ -122,7 +122,7 @@ class OffenderReleasedEventHandlerTest {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocate(LocalDateTime.now(), DeallocationReason.ENDED) },
+        .also { it.deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) },
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 
@@ -258,7 +258,7 @@ class OffenderReleasedEventHandlerTest {
     val yesterday = LocalDate.now().atStartOfDay()
 
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocate(yesterday, DeallocationReason.ENDED) }
+      .also { it.deallocateNow(yesterday, DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")

@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -182,6 +183,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     val request = PrisonerDeallocationRequest(
       prisonerNumbers = listOf("654321"),
       reasonCode = DeallocationReason.RELEASED,
+      endDate = TimeSource.tomorrow(),
     )
 
     val mockPrincipal: Principal = mock()

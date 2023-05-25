@@ -235,15 +235,14 @@ data class ActivitySchedule(
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
-  fun deallocatePrisoner(prisonerNumber: String, deallocationReason: DeallocationReason) =
-    LocalDateTime.now().let { now ->
-      if (isActiveOn(now.toLocalDate())) {
-        allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocate(now, deallocationReason)
-          ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
-      } else {
-        throw IllegalStateException("Schedule $activityScheduleId must be active to deallocate prisoners.")
-      }
+  fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String) {
+    if (isActiveOn(date)) {
+      allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
+        ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
+    } else {
+      throw IllegalStateException("Schedule $activityScheduleId is not active on the planned deallocated date $date.")
     }
+  }
 
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId,

@@ -108,7 +108,7 @@ class AllocationTest : ModelTest() {
     val now = LocalDateTime.now()
 
     val allocation = allocation().also {
-      it.deallocate(now, DeallocationReason.ENDED)
+      it.deallocateNow(now, DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     }
 

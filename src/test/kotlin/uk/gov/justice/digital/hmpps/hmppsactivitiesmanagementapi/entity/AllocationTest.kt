@@ -3,15 +3,17 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AllocationTest {
 
-  private val today = LocalDate.now()
-  private val yesterday = today.minusDays(1)
-  private val tomorrow = today.plusDays(1)
+  private val today = TimeSource.today()
+  private val yesterday = TimeSource.yesterday()
+  private val tomorrow = TimeSource.tomorrow()
 
   @Test
   fun `check allocation ends`() {
@@ -44,7 +46,7 @@ class AllocationTest {
     assertThat(allocation.deallocatedBy).isNull()
     assertThat(allocation.deallocatedTime).isNull()
 
-    allocation.deallocate(dateTime, DeallocationReason.ENDED)
+    allocation.deallocateNow(dateTime, DeallocationReason.ENDED)
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
@@ -54,9 +56,9 @@ class AllocationTest {
 
   @Test
   fun `check cannot deallocate if allocation already ended`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
 
-    assertThatThrownBy { allocation.deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
+    assertThatThrownBy { allocation.deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '0' is already deallocated.")
   }
@@ -77,7 +79,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot auto-suspend an ended allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
@@ -134,11 +136,72 @@ class AllocationTest {
 
   @Test
   fun `check cannot unsuspend an ended allocation`() {
-    val allocation = allocation().apply { deallocate(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.reactivateAutoSuspensions() }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("You can only reactivate auto-suspended allocations")
+  }
+
+//  If the activity (has an end date) the allocation is associated with then planned date cannot exceed this.
+
+  @Test
+  fun `planned deallocation must be in the future`() {
+    val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy {
+      allocation.deallocateOn(today, DeallocationReason.PERSONAL, "by test")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Planned deallocation date must be in the future.")
+  }
+
+  @Test
+  fun `planned deallocation must be on or before the allocation end date`() {
+    val allocationEndingToday =
+      allocation().copy(endDate = today).also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy {
+      allocationEndingToday.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Planned date cannot be after $today.")
+  }
+
+  @Test
+  fun `planned deallocation must be on or before the schedule end date`() {
+    val scheduleEndingToday: ActivitySchedule = mock { on { endDate } doReturn today }
+
+    val allocationNoEndDate = allocation().copy(endDate = null, activitySchedule = scheduleEndingToday)
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy {
+      allocationNoEndDate.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Planned date cannot be after $today.")
+  }
+
+  @Test
+  fun `cannot plan deallocation if already planned`() {
+    val allocation = allocation().copy(allocationId = 1, endDate = null)
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+
+    assertThatThrownBy {
+      allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Allocation with ID '1' is already planned.")
+  }
+
+  @Test
+  fun `cannot plan deallocation if already ended`() {
+    val allocation = allocation().copy(allocationId = 1, endDate = null)
+      .apply { deallocateNow(TimeSource.now(), DeallocationReason.ENDED) }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
+
+    assertThatThrownBy {
+      allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Allocation with ID '1' is already deallocated.")
   }
 }

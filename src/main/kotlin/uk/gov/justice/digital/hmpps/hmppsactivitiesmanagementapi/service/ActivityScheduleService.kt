@@ -127,8 +127,8 @@ class ActivityScheduleService(
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
     repository.findOrThrowNotFound(scheduleId).run {
       request.prisonerNumbers!!.distinct().forEach {
-        deallocatePrisoner(it, request.reasonCode!!)
-        log.info("Deallocated prisoner $it from activity schedule id ${this.activityScheduleId}")
+        deallocatePrisonerOn(it, request.endDate!!, request.reasonCode!!, deallocatedBy)
+        log.info("Planned deallocation of prisoner $it from activity schedule id ${this.activityScheduleId}")
       }
       repository.saveAndFlush(this)
     }
