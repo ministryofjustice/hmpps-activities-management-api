@@ -92,6 +92,7 @@ internal fun appointmentInstanceEntity(
   appointmentDate: LocalDate = LocalDate.now(),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
+  appointmentDescription: String? = null,
 ) =
   AppointmentInstance(
     appointmentInstanceId = 3,
@@ -103,7 +104,7 @@ internal fun appointmentInstanceEntity(
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     categoryCode = "TEST",
-    appointmentDescription = null,
+    appointmentDescription = appointmentDescription,
     internalLocationId = if (inCell) null else internalLocationId,
     inCell = inCell,
     appointmentDate = appointmentDate,

@@ -879,6 +879,8 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
+          assertThat(it.appointmentDescription).isNull()
+          assertThat(it.summary).isEqualTo("Test Category")
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.cancelled).isFalse
