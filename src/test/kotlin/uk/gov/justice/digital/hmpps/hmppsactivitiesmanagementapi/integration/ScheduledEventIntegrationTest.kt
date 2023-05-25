@@ -115,7 +115,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           assertThat(it.internalLocationDescription).isEqualTo("Unknown")
           assertThat(it.categoryCode).isEqualTo("AC1")
           assertThat(it.categoryDescription).isEqualTo("Appointment Category 1")
-          assertThat(it.summary).isEqualTo("Appointment")
+          assertThat(it.summary).isEqualTo("Appointment description")
           assertThat(it.comments).isEqualTo("Appointment occurrence level comment")
           assertThat(it.date).isEqualTo(LocalDate.of(2022, 10, 1))
           assertThat(it.startTime).isEqualTo(LocalTime.of(9, 0))

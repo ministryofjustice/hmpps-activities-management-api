@@ -1,14 +1,22 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -20,8 +28,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -35,10 +49,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
+  private val referenceCodeService: ReferenceCodeService = mock()
+  private val locationService: LocationService = mock()
 
   @Test
   fun `transformation of activity entity to the activity models`() {
@@ -192,6 +209,101 @@ class TransformFunctionsTest {
           educationLevelCode = "1",
           educationLevelDescription = "Reading Measure 1.0",
         ),
+      )
+    }
+  }
+
+  @Nested
+  @DisplayName("appointmentInstanceToScheduledEvents")
+  inner class appointmentInstanceToScheduledEvents {
+    @Test
+    fun `appointment instance to scheduled event`() {
+      val entity = appointmentInstanceEntity()
+      val scheduledEvents = transform(entity)
+
+      assertThat(scheduledEvents.first()).isEqualTo(
+        ModelScheduledEvent(
+          prisonCode = "TPR",
+          eventSource = "SAA",
+          eventType = EventType.APPOINTMENT.name,
+          scheduledInstanceId = null,
+          bookingId = entity.bookingId,
+          internalLocationId = entity.internalLocationId,
+          internalLocationCode = "LOC123",
+          internalLocationDescription = "User location desc",
+          eventId = null,
+          appointmentId = entity.appointmentId,
+          appointmentOccurrenceId = entity.appointmentOccurrenceId,
+          appointmentInstanceId = entity.appointmentInstanceId,
+          appointmentDescription = entity.appointmentDescription,
+          oicHearingId = null,
+          cancelled = entity.isCancelled,
+          suspended = false,
+          categoryCode = entity.categoryCode,
+          categoryDescription = "Test Category",
+          summary = "Test Category",
+          comments = entity.comment,
+          prisonerNumber = entity.prisonerNumber,
+          inCell = entity.inCell,
+          outsidePrison = false,
+          date = entity.appointmentDate,
+          startTime = entity.startTime,
+          endTime = entity.endTime,
+          priority = EventType.APPOINTMENT.defaultPriority,
+        ),
+      )
+    }
+
+    @Test
+    fun `appointment instance without appointmentDescription to scheduled event`() {
+      val entity = appointmentInstanceEntity(appointmentDescription = null)
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Test Category")
+      }
+    }
+
+    @Test
+    fun `appointment instance with appointmentDescription to scheduled event`() {
+      val entity = appointmentInstanceEntity(appointmentDescription = "Description of appointment")
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Description of appointment")
+      }
+    }
+
+    private fun transform(appointmentInstance: AppointmentInstance): List<ScheduledEvent> {
+      val eventPriorities = EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
+      val result = appointmentOccurrenceSearchEntity()
+
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+        .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
+      whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+        .thenReturn(
+          mapOf(
+            result.internalLocationId!! to Location(
+              locationId = 1,
+              internalLocationCode = "LOC123",
+              description = "An appointment location",
+              userDescription = "User location desc",
+              locationType = "APP",
+              agencyId = "TPR",
+            ),
+          ),
+        )
+
+      val referenceCodesForAppointmentsMap =
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+      val locationsForAppointmentsMap = locationService.getLocationsForAppointmentsMap(result.prisonCode)
+
+      return transformAppointmentInstanceToScheduledEvents(
+        "TPR",
+        eventPriorities,
+        referenceCodesForAppointmentsMap,
+        locationsForAppointmentsMap,
+        listOf(appointmentInstance),
       )
     }
   }
