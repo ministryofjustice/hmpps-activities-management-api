@@ -144,13 +144,13 @@ class ManageAttendancesServiceTest {
     }
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)).thenReturn(attendanceReasons()["NOT_REQUIRED"])
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
 
     service.attendances(AttendanceOperation.CREATE)
 
     verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
     with(attendanceCaptor.firstValue) {
-      assertThat(attendanceReason).isEqualTo(attendanceReasons()["NOT_REQUIRED"])
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(payAmount).isEqualTo(30)
       assertThat(issuePayment).isTrue
