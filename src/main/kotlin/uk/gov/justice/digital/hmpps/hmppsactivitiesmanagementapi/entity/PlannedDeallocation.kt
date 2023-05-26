@@ -21,14 +21,14 @@ data class PlannedDeallocation(
 
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = false)
-  val allocation: Allocation,
+  var allocation: Allocation,
 
-  val plannedDate: LocalDate,
+  var plannedDate: LocalDate,
 
-  val plannedBy: String,
+  var plannedBy: String,
 
   @Enumerated(EnumType.STRING)
-  val plannedReason: DeallocationReason,
+  var plannedReason: DeallocationReason,
 
-  val plannedAt: LocalDateTime = LocalDateTime.now(),
+  var plannedAt: LocalDateTime = LocalDateTime.now(),
 )

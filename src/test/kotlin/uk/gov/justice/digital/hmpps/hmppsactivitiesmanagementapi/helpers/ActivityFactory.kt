@@ -181,6 +181,7 @@ internal fun activitySchedule(
         bookingId = 10001,
         payBand = lowPayBand,
         allocatedBy = "Mr Blogs",
+        startDate = startDate ?: activity.startDate,
       )
     }
     if (!noSlots) {

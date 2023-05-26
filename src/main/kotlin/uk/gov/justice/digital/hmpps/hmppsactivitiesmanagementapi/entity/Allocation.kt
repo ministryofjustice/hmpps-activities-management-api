@@ -41,12 +41,12 @@ data class Allocation(
 
   var startDate: LocalDate,
 
-  var endDate: LocalDate? = null,
-
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
 ) {
+
+  var endDate: LocalDate? = null
 
   @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "planned_deallocation_id", nullable = true)
@@ -83,16 +83,24 @@ data class Allocation(
   fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) {
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
-      if (plannedDeallocation != null) throw IllegalStateException("Allocation with ID '$allocationId' is already planned.")
       if (date.onOrBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must be in the future.")
       if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
 
-      plannedDeallocation = PlannedDeallocation(
-        allocation = this,
-        plannedReason = reason,
-        plannedDate = date,
-        plannedBy = deallocatedBy,
-      )
+      if (plannedDeallocation == null) {
+        plannedDeallocation = PlannedDeallocation(
+          allocation = this,
+          plannedReason = reason,
+          plannedDate = date,
+          plannedBy = deallocatedBy,
+        )
+      } else {
+        plannedDeallocation?.apply {
+          plannedReason = reason
+          plannedDate = date
+          plannedBy = deallocatedBy
+          plannedAt = LocalDateTime.now()
+        }
+      }
     }
   }
 
@@ -124,7 +132,7 @@ data class Allocation(
       bookingId = bookingId,
       prisonPayBand = payBand.toModel(),
       startDate = startDate,
-      endDate = endDate,
+      endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,
       allocatedBy = allocatedBy,
       activitySummary = activitySummary(),

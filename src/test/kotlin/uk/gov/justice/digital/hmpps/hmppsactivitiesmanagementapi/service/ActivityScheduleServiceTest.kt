@@ -60,7 +60,8 @@ class ActivityScheduleServiceTest {
   fun `all current, future and ended allocations for a given schedule are returned`() {
     val active = activeAllocation.copy(allocationId = 1)
     val ended =
-      active.copy(allocationId = 2, startDate = active.startDate.minusDays(2), endDate = LocalDate.now().minusDays(1))
+      active.copy(allocationId = 2, startDate = active.startDate.minusDays(2))
+        .apply { endDate = LocalDate.now().minusDays(1) }
     val future = active.copy(allocationId = 3, startDate = active.startDate.plusDays(1))
     val schedule = mock<ActivitySchedule>()
 
@@ -123,7 +124,11 @@ class ActivityScheduleServiceTest {
     assertThatThrownBy {
       service.deallocatePrisoners(
         schedule.activityScheduleId,
-        PrisonerDeallocationRequest(listOf(allocation.prisonerNumber), DeallocationReason.RELEASED, TimeSource.tomorrow()),
+        PrisonerDeallocationRequest(
+          listOf(allocation.prisonerNumber),
+          DeallocationReason.RELEASED,
+          TimeSource.tomorrow(),
+        ),
         "by test",
       )
     }.isInstanceOf(EntityNotFoundException::class.java)

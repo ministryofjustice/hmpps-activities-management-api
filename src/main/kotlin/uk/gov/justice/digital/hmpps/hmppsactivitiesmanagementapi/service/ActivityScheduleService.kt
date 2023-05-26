@@ -125,6 +125,8 @@ class ActivityScheduleService(
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
+    log.info("Attempting to deallocate prisoners $request")
+
     repository.findOrThrowNotFound(scheduleId).run {
       request.prisonerNumbers!!.distinct().forEach {
         deallocatePrisonerOn(it, request.endDate!!, request.reasonCode!!, deallocatedBy)

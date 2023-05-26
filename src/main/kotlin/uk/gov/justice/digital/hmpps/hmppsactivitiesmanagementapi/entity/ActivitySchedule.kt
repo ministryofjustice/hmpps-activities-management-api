@@ -220,10 +220,11 @@ data class ActivitySchedule(
         payBand = payBand,
         // TODO not sure if this is supported in the UI
         startDate = startDate,
-        endDate = endDate,
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
-      ),
+      ).apply {
+        this.endDate = endDate
+      },
     )
   }
 

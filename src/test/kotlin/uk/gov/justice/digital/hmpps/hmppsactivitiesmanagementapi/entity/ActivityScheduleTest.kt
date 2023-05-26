@@ -80,13 +80,13 @@ class ActivityScheduleTest {
           sundayFlag = false,
         ),
       ),
-      startDate = LocalDate.now().plusDays(1),
+      startDate = LocalDate.now(),
     )
     assertThat(
       activitySchedule(
         activityEntity(),
         timestamp = LocalDate.now().atTime(10, 20),
-        startDate = LocalDate.now().plusDays(1),
+        startDate = LocalDate.now(),
       ).toModelLite(),
     ).isEqualTo(expectedModel)
   }
@@ -143,7 +143,7 @@ class ActivityScheduleTest {
             sundayFlag = false,
           ),
         ),
-        startDate = LocalDate.now().plusDays(1),
+        startDate = LocalDate.now(),
       ),
     )
 
@@ -152,7 +152,7 @@ class ActivityScheduleTest {
         activitySchedule(
           activityEntity(),
           timestamp = LocalDate.now().atTime(10, 20),
-          startDate = LocalDate.now().plusDays(1),
+          startDate = LocalDate.now(),
         ),
       ).toModelLite(),
     ).isEqualTo(
@@ -556,11 +556,17 @@ class ActivityScheduleTest {
   @Test
   fun `prisoner is deallocated from schedule`() {
     val schedule = activitySchedule(activity = activityEntity())
-    val allocation = schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+    val allocation =
+      schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThat(allocation.plannedDeallocation).isNull()
 
-    schedule.deallocatePrisonerOn(allocation.prisonerNumber, TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+    schedule.deallocatePrisonerOn(
+      allocation.prisonerNumber,
+      TimeSource.tomorrow(),
+      DeallocationReason.RELEASED,
+      "by test",
+    )
 
     with(allocation.plannedDeallocation!!) {
       assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
@@ -573,10 +579,16 @@ class ActivityScheduleTest {
   fun `prisoner is not deallocated from inactive schedule`() {
     val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
 
-    val allocation = schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+    val allocation =
+      schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy {
-      schedule.deallocatePrisonerOn(allocation.prisonerNumber, TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+      schedule.deallocatePrisonerOn(
+        allocation.prisonerNumber,
+        TimeSource.tomorrow(),
+        DeallocationReason.RELEASED,
+        "by test",
+      )
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Schedule ${schedule.activityScheduleId} is not active on the planned deallocated date ${TimeSource.tomorrow()}.")
   }
