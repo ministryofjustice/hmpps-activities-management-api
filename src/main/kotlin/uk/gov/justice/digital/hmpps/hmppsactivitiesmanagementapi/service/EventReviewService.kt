@@ -65,7 +65,7 @@ class EventReviewService(
       it.acknowledgedBy = name
       it.acknowledgedTime = LocalDateTime.now()
     }
-    eventReviewRepository.saveAll(updatedEvents)
+    eventReviewRepository.saveAllAndFlush(updatedEvents)
   }
 
   private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {

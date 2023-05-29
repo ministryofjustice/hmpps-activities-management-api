@@ -76,6 +76,6 @@ class EventReviewServiceTest {
 
     eventReviewService.acknowledgeEvents(prisonCode, request, "PRINCIPAL")
 
-    verify(eventReviewRepository).saveAll(results)
+    verify(eventReviewRepository).saveAllAndFlush(results)
   }
 }
