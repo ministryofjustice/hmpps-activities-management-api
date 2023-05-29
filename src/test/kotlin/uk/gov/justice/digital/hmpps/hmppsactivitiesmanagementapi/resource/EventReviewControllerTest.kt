@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -15,10 +16,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventReviewService
+import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -88,8 +92,31 @@ class EventReviewControllerTest : ControllerTestBase<EventReviewController>() {
     verify(eventReviewService).getFilteredEvents(0, 10, "ascending", request)
   }
 
+  @Test
+  fun `acknowledgeEvents - 204 OK`() {
+    val request = EventAcknowledgeRequest(eventReviewIds = listOf(1, 2, 3))
+
+    val mockPrincipal: Principal = mock()
+    whenever(mockPrincipal.name).thenReturn("THE USER NAME")
+
+    mockMvc.acknowledgeEvents(prisonCode, request).andExpect {
+      status {
+        isNoContent()
+      }
+    }
+
+    verify(eventReviewService).acknowledgeEvents(prisonCode, request, "USERNAME")
+  }
+
   private fun MockMvc.getEventsForReview(date: LocalDate, prisonCode: String, page: Int, size: Int, sort: String = "ascending") =
     get("/event-review/prison/{prisonCode}?date={date}&page={page}&size={size}&sort={sort}", prisonCode, date, page, size, sort)
+
+  private fun MockMvc.acknowledgeEvents(prison: String, request: EventAcknowledgeRequest) =
+    post("/event-review/prison/{prison}/acknowledge", prison) {
+      principal = Principal { "USERNAME" }
+      content = mapper.writeValueAsString(request)
+      contentType = MediaType.APPLICATION_JSON
+    }
 
   private fun buildEmptyResponse(): Page<EventReview> = Page.empty()
 

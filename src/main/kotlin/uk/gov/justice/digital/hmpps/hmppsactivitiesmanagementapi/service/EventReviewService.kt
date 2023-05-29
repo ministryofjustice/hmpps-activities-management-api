@@ -6,10 +6,12 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
 
 @Service
@@ -55,6 +57,15 @@ class EventReviewService(
       pageable,
       results.totalElements,
     )
+  }
+
+  fun acknowledgeEvents(prisonCode: String, req: EventAcknowledgeRequest, name: String) {
+    val updatedEvents = eventReviewRepository.findAllById(req.eventReviewIds)
+    updatedEvents.map {
+      it.acknowledgedBy = name
+      it.acknowledgedTime = LocalDateTime.now()
+    }
+    eventReviewRepository.saveAll(updatedEvents)
   }
 
   private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {

@@ -6,11 +6,13 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
@@ -57,5 +59,23 @@ class EventReviewServiceTest {
       assertThat(it.bookingId).isEqualTo(1)
       assertThat(it.eventData).isEqualTo("XYZ")
     }
+  }
+
+  @Test
+  fun `acknowledges events`() {
+    val prisonCode = "MDI"
+    val eventReviewIds = mutableListOf<Long>(1, 2, 3)
+    val request = EventAcknowledgeRequest(eventReviewIds)
+    val results = listOf(
+      EventReview(1, "service", "x.y.z", LocalDateTime.now(), prisonCode, "G1234FF", 1, "XYZ"),
+      EventReview(2, "service", "x.y.z", LocalDateTime.now(), prisonCode, "G1234FF", 1, "XYZ"),
+      EventReview(3, "service", "x.y.z", LocalDateTime.now(), prisonCode, "G1234FF", 1, "XYZ"),
+    )
+
+    whenever(eventReviewRepository.findAllById(eventReviewIds)).thenReturn(results)
+
+    eventReviewService.acknowledgeEvents(prisonCode, request, "PRINCIPAL")
+
+    verify(eventReviewRepository).saveAll(results)
   }
 }
