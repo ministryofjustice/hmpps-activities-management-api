@@ -29,6 +29,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.last().eventReviewId).isEqualTo(10)
       assertThat(content.first().eventTime).isBefore(content.last().eventTime)
       assertThat(totalPages).isEqualTo(2)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     // Should not include any acknowledged events
@@ -51,6 +52,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(2)
       assertThat(totalPages).isEqualTo(6)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     result = webTestClient.getEvents(page = 0, size = 5)
@@ -64,6 +66,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(5)
       assertThat(totalPages).isEqualTo(3)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     result = webTestClient.getEvents(page = 0, size = 12)
@@ -77,6 +80,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(12)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(12)
     }
   }
 
@@ -94,6 +98,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(13)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(13)
     }
   }
 
@@ -111,6 +116,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(5)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(5)
     }
   }
 
@@ -129,6 +135,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.first().eventReviewId).isEqualTo(12)
       assertThat(content.last().eventReviewId).isEqualTo(1)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(12)
     }
   }
 

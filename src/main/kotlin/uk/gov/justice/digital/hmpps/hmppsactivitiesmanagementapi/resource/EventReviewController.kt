@@ -103,6 +103,11 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
-    return EventReviewSearchResults(paginatedResults.content, paginatedResults.number, paginatedResults.totalPages)
+    return EventReviewSearchResults(
+      paginatedResults.content,
+      paginatedResults.number,
+      paginatedResults.totalElements,
+      paginatedResults.totalPages,
+    )
   }
 }

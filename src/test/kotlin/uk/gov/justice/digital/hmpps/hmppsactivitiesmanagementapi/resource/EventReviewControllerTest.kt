@@ -50,7 +50,7 @@ class EventReviewControllerTest : ControllerTestBase<EventReviewController>() {
 
     assertThat(result.contentAsString).isEqualTo(
       mapper.writeValueAsString(
-        EventReviewSearchResults(response.content, response.number, response.totalPages),
+        EventReviewSearchResults(response.content, response.number, response.totalElements, response.totalPages),
       ),
     )
 
@@ -81,7 +81,7 @@ class EventReviewControllerTest : ControllerTestBase<EventReviewController>() {
 
     assertThat(result.contentAsString).isEqualTo(
       mapper.writeValueAsString(
-        EventReviewSearchResults(response.content, response.number, response.totalPages),
+        EventReviewSearchResults(response.content, response.number, response.totalElements, response.totalPages),
       ),
     )
 
