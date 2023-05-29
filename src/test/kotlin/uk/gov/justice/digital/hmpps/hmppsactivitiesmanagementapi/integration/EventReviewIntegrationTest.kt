@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import java.time.LocalDate
 
@@ -148,6 +149,28 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
   }
 
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should acknowledge 3 events in the list`() {
+    // Acknowledge event IDs 1, 2, and 3
+    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), "ACTIVITY_HUB")
+      .exchange()
+      .expectStatus().is2xxSuccessful
+      .expectBody()
+
+    // Check that the 12 formerly unacknowledged items is now 9 items
+    val result = webTestClient.getEvents(page = 0, size = 12)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+    with(result!!) {
+      assertThat(content.size).isEqualTo(9)
+    }
+  }
+
   private fun WebTestClient.getEvents(
     date: LocalDate = LocalDate.of(2023, 5, 10),
     prisonCode: String? = "MDI",
@@ -171,4 +194,17 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(role)))
     .exchange()
+
+  private fun WebTestClient.acknowledge(
+    prisonCode: String? = "MDI",
+    eventIds: List<Long>,
+    role: String = "ROLE_ACTIVITY_ADMIN",
+  ) = post().uri { builder ->
+    builder
+      .path("/event-review/prison/$prisonCode/acknowledge")
+      .build()
+  }
+    .bodyValue(EventAcknowledgeRequest(eventReviewIds = eventIds))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(role)))
 }
