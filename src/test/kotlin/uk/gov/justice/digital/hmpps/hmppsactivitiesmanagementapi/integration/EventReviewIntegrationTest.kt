@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import java.time.LocalDate
 
@@ -29,6 +30,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.last().eventReviewId).isEqualTo(10)
       assertThat(content.first().eventTime).isBefore(content.last().eventTime)
       assertThat(totalPages).isEqualTo(2)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     // Should not include any acknowledged events
@@ -51,6 +53,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(2)
       assertThat(totalPages).isEqualTo(6)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     result = webTestClient.getEvents(page = 0, size = 5)
@@ -64,6 +67,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(5)
       assertThat(totalPages).isEqualTo(3)
+      assertThat(totalElements).isEqualTo(12)
     }
 
     result = webTestClient.getEvents(page = 0, size = 12)
@@ -77,6 +81,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(12)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(12)
     }
   }
 
@@ -94,6 +99,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(13)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(13)
     }
   }
 
@@ -111,6 +117,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     with(result!!) {
       assertThat(content.size).isEqualTo(5)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(5)
     }
   }
 
@@ -129,6 +136,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.first().eventReviewId).isEqualTo(12)
       assertThat(content.last().eventReviewId).isEqualTo(1)
       assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(12)
     }
   }
 
@@ -139,6 +147,28 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       .expectStatus().isForbidden
       .expectBody(ErrorResponse::class.java)
       .returnResult().responseBody
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should acknowledge 3 events in the list`() {
+    // Acknowledge event IDs 1, 2, and 3
+    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), "ACTIVITY_HUB")
+      .exchange()
+      .expectStatus().is2xxSuccessful
+      .expectBody()
+
+    // Check that the 12 formerly unacknowledged items is now 9 items
+    val result = webTestClient.getEvents(page = 0, size = 12)
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+    with(result!!) {
+      assertThat(content.size).isEqualTo(9)
+    }
   }
 
   private fun WebTestClient.getEvents(
@@ -164,4 +194,17 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(role)))
     .exchange()
+
+  private fun WebTestClient.acknowledge(
+    prisonCode: String? = "MDI",
+    eventIds: List<Long>,
+    role: String = "ROLE_ACTIVITY_ADMIN",
+  ) = post().uri { builder ->
+    builder
+      .path("/event-review/prison/$prisonCode/acknowledge")
+      .build()
+  }
+    .bodyValue(EventAcknowledgeRequest(eventReviewIds = eventIds))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(role)))
 }

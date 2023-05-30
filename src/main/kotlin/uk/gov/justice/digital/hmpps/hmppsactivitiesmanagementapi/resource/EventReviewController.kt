@@ -11,17 +11,22 @@ import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventReviewService
+import java.security.Principal
 import java.time.LocalDate
 
 @RestController
@@ -103,6 +108,64 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       acknowledgedEvents = includeAcknowledged,
     )
     val paginatedResults = eventReviewService.getFilteredEvents(page, size, sortDirection, filters)
-    return EventReviewSearchResults(paginatedResults.content, paginatedResults.number, paginatedResults.totalPages)
+    return EventReviewSearchResults(
+      paginatedResults.content,
+      paginatedResults.number,
+      paginatedResults.totalElements,
+      paginatedResults.totalPages,
+    )
   }
+
+  @PostMapping(
+    value = ["/prison/{prison}/acknowledge"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Acknowledge a list of change of circumstance events in the prison.",
+    description = "Used to indicate that a subset of change events have been acknowledged.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "The event IDS were acknowledged.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request body",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun acknowledgeEvents(
+    principal: Principal,
+
+    @PathVariable("prison", required = true)
+    @Parameter(description = "The prison code e.g. MDI")
+    @NotEmpty(message = "Prison code must be supplied")
+    prisonCode: String,
+
+    @Parameter(description = "The prisoner allocation request details", required = true)
+    @RequestBody
+    eventReviewAcknowledgeRequest: EventAcknowledgeRequest,
+  ): ResponseEntity<Any> =
+    eventReviewService.acknowledgeEvents(prisonCode, eventReviewAcknowledgeRequest, principal.name)
+      .let { ResponseEntity.noContent().build() }
 }
