@@ -11,6 +11,9 @@ data class EventReviewSearchResults(
   @Schema(description = "The current page number", example = "1")
   val pageNumber: Int,
 
+  @Schema(description = "The total number of elements", example = "20")
+  val totalElements: Long,
+
   @Schema(description = "The total number of pages", example = "5")
   val totalPages: Int,
 )

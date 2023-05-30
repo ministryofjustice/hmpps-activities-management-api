@@ -28,7 +28,7 @@ data class EventReview(
 
   val eventData: String? = null,
 
-  val acknowledgedTime: LocalDateTime? = null,
+  var acknowledgedTime: LocalDateTime? = null,
 
-  val acknowledgedBy: String? = null,
+  var acknowledgedBy: String? = null,
 )
