@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
@@ -24,7 +25,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-internal fun activityModel(activity: Activity) = transform(activity)
+internal fun activityModel(activity: Activity, caseNotesApiClient: CaseNotesApiClient) = transform(activity, caseNotesApiClient)
 
 const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"

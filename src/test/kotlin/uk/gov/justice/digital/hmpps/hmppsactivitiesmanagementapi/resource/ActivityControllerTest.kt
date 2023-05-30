@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
@@ -50,6 +51,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   private lateinit var capacityService: CapacityService
 
   override fun controller() = ActivityController(activityService, capacityService)
+
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   @Test
   fun `createActivity - success`() {
@@ -243,7 +246,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `200 response when get activity by ID found`() {
-    val activity = activityModel(activityEntity())
+    val activity = activityModel(activityEntity(), caseNotesApiClient)
 
     whenever(activityService.getActivityById(1)).thenReturn(activity)
 

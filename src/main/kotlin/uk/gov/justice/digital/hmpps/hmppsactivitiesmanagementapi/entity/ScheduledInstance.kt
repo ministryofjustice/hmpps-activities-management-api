@@ -12,6 +12,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
@@ -66,7 +67,7 @@ data class ScheduledInstance(
     attendances.forEach(Attendance::uncancel)
   }
 
-  fun toModel() = ModelScheduledInstance(
+  fun toModel(caseNotesApiClient: CaseNotesApiClient) = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId,
     date = this.sessionDate,
@@ -80,7 +81,7 @@ data class ScheduledInstance(
     previousScheduledInstanceDate = this.previous()?.sessionDate,
     nextScheduledInstanceId = this.next()?.scheduledInstanceId,
     nextScheduledInstanceDate = this.next()?.sessionDate,
-    attendances = this.attendances.map { attendance -> transform(attendance) },
+    attendances = this.attendances.map { attendance -> transform(attendance, caseNotesApiClient) },
   )
 
   private fun previous() = activitySchedule.previous(this)
@@ -110,4 +111,4 @@ data class ScheduledInstance(
   fun rateFor(band: PrisonPayBand) = activitySchedule.activity.activityPayForBand(band).rate
 }
 
-fun List<ScheduledInstance>.toModel() = map { it.toModel() }
+fun List<ScheduledInstance>.toModel(caseNotesApiClient: CaseNotesApiClient) = map { it.toModel(caseNotesApiClient) }

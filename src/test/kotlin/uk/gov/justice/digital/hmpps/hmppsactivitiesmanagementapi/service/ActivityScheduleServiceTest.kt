@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
@@ -22,7 +23,8 @@ class ActivityScheduleServiceTest {
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository)
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
+  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, caseNotesApiClient)
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {

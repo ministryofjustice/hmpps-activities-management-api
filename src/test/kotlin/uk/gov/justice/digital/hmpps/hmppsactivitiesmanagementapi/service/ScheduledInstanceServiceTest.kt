@@ -13,6 +13,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -37,7 +38,8 @@ class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val service = ScheduledInstanceService(repository, attendanceReasonRepository, outboundEventsService)
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
+  private val service = ScheduledInstanceService(repository, attendanceReasonRepository, outboundEventsService, caseNotesApiClient)
 
   @Nested
   @DisplayName("getActivityScheduleInstanceById")

@@ -194,7 +194,7 @@ data class Attendance(
     attendanceHistory = this.attendanceHistory
       .sortedWith(compareBy { it.recordedTime })
       .reversed()
-      .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
+      .map { attendanceHistoryRow -> transform(attendanceHistoryRow, this.prisonerNumber, caseNotesApiClient) },
   )
 }
 
