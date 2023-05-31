@@ -74,21 +74,25 @@ class ManageAllocationsService(
     forEachRolledOutPrison()
       .flatMap { prison ->
         val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
-          ?: throw IllegalStateException("Rolled out prison ${prison.code} is missing a prison regime.")
 
-        val candidateExpiredAllocations =
-          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)
-            .filter(regime::hasExpired)
+        if (regime != null) {
+          val candidateExpiredAllocations =
+            allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)
+              .filter(regime::hasExpired)
 
-        val expiredPrisoners = candidateExpiredAllocations.ifNotEmpty {
-          prisonerSearch.findByPrisonerNumbers(candidateExpiredAllocations.map { it.prisonerNumber }.distinct())
-            .block()
-            ?.filter { it.hasExpired(regime) }
-            ?.map { it.prisonerNumber }
-            ?.toSet() ?: emptySet()
+          val expiredPrisoners = candidateExpiredAllocations.ifNotEmpty {
+            prisonerSearch.findByPrisonerNumbers(candidateExpiredAllocations.map { it.prisonerNumber }.distinct())
+              .block()
+              ?.filter { it.hasExpired(regime) }
+              ?.map { it.prisonerNumber }
+              ?.toSet() ?: emptySet()
+          }
+
+          candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
+        } else {
+          log.warn("Rolled out prison ${prison.code} is missing a prison regime.")
+          emptyList()
         }
-
-        candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
       }.groupBy { it.activitySchedule }
 
   private fun <T, R> List<T>.ifNotEmpty(block: (List<T>) -> Set<R>) =
