@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -122,7 +123,7 @@ class OffenderReleasedEventHandlerTest {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) },
+        .also { it.deallocateNow(DeallocationReason.ENDED) },
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 
@@ -255,10 +256,8 @@ class OffenderReleasedEventHandlerTest {
 
   @Test
   fun `only un-ended allocations are ended on release of prisoner`() {
-    val yesterday = LocalDate.now().atStartOfDay()
-
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocateNow(yesterday, DeallocationReason.ENDED) }
+      .also { it.deallocateNow(DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
@@ -277,7 +276,7 @@ class OffenderReleasedEventHandlerTest {
 
     with(previouslyEndedAllocation) {
       assertThat(status(PrisonerStatus.ENDED)).isTrue
-      assertThat(deallocatedTime).isEqualTo(yesterday)
+      assertThat(deallocatedTime).isCloseTo(TimeSource.now(), within(2, ChronoUnit.SECONDS))
     }
 
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue

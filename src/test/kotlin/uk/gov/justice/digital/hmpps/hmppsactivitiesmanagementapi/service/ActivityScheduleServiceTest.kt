@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 
 class ActivityScheduleServiceTest {
@@ -48,7 +47,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `ended allocations for a given schedule are not returned`() {
     val schedule = schedule().apply {
-      allocations().first().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+      allocations().first().apply { deallocateNow(DeallocationReason.ENDED) }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))

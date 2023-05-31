@@ -55,9 +55,7 @@ class ActivitiesChangedEventHandler(
       }
 
   private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
-    LocalDateTime.now().let { now ->
-      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(now, reason) }
-    }.saveAffectedAllocations()
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(reason) }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
     allocationRepository.saveAllAndFlush(this).toList()
