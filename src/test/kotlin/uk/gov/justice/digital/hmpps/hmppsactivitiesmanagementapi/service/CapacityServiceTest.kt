@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -42,7 +43,7 @@ class CapacityServiceTest {
 
   @Test
   fun `getActivityCategoryCapacityAndAllocated excludes deallocations from summary for known category ID`() {
-    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocate(LocalDateTime.now(), "reason") }
+    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", activityCategory()))

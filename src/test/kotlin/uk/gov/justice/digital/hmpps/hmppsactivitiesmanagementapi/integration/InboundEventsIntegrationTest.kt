@@ -10,6 +10,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -129,7 +130,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
-      assertThat(it.deallocatedReason).isEqualTo("Released")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
@@ -149,7 +150,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
-      assertThat(it.deallocatedReason).isEqualTo("Released")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
@@ -169,7 +170,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
-      assertThat(it.deallocatedReason).isEqualTo("Dead")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)

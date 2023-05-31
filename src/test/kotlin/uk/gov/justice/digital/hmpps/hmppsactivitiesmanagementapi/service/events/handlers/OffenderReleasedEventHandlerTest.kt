@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.SentenceCalcDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -121,7 +122,7 @@ class OffenderReleasedEventHandlerTest {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocate(LocalDateTime.now(), "reason") },
+        .also { it.deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) },
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 
@@ -163,7 +164,7 @@ class OffenderReleasedEventHandlerTest {
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(it.deallocatedReason).isEqualTo("Dead")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -203,7 +204,7 @@ class OffenderReleasedEventHandlerTest {
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(it.deallocatedReason).isEqualTo("Released")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -244,7 +245,7 @@ class OffenderReleasedEventHandlerTest {
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(it.deallocatedReason).isEqualTo("Released")
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -257,7 +258,7 @@ class OffenderReleasedEventHandlerTest {
     val yesterday = LocalDate.now().atStartOfDay()
 
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocate(yesterday, "reason") }
+      .also { it.deallocateNow(yesterday, DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
