@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -12,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
 @RestController
 @RequestMapping("/allocations", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -71,4 +74,35 @@ class AllocationController(private val allocationsService: AllocationsService) {
   )
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)
+
+  @Operation(
+    summary = "Get the list of deallocation reasons",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Deallocation reasons found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ModelDeallocationReason::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @GetMapping(value = ["/deallocation-reasons"])
+  @ResponseBody
+  fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
 }
