@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity
@@ -84,6 +85,7 @@ data class AppointmentOccurrenceSearch(
     maxSequenceNumber,
     isEdited,
     isCancelled,
+    LocalDateTime.of(startDate, startTime) < LocalDateTime.now(),
   )
 }
 

@@ -135,7 +135,7 @@ internal fun appointmentOccurrenceSearchEntity(
     appointmentDescription = null,
     internalLocationId = if (inCell) null else internalLocationId,
     inCell = inCell,
-    startDate = startDate,
+    startDate = startDate.plusDays(1),
     startTime = LocalTime.of(9, 0),
     endTime = LocalTime.of(10, 30),
     isRepeat = false,
