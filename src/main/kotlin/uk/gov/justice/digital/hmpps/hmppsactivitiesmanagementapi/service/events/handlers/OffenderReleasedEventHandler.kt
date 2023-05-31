@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromRemand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedOnDeath
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -65,9 +66,9 @@ class OffenderReleasedEventHandler(
       extraInfo = true,
     ).block()?.let { prisoner ->
       when {
-        prisoner.isReleasedOnDeath() -> "Dead"
-        prisoner.isReleasedFromRemand() -> "Released"
-        prisoner.isReleasedFromCustodialSentence() -> "Released"
+        prisoner.isReleasedOnDeath() -> DeallocationReason.DIED
+        prisoner.isReleasedFromRemand() -> DeallocationReason.RELEASED
+        prisoner.isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
         else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
       }
     }?.let { reason ->
@@ -84,9 +85,9 @@ class OffenderReleasedEventHandler(
       this.filter { it.status(PrisonerStatus.ACTIVE) }.map { it.autoSuspend(now, "Temporarily released from prison") }
     }.saveAffectedAllocations()
 
-  private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: String = "Released from prison") =
+  private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
     LocalDateTime.now().let { now ->
-      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocate(now, reason) }
+      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(now, reason) }
     }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =

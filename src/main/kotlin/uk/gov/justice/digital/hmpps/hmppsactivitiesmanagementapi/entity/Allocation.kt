@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
@@ -11,10 +12,12 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
 @Entity
 @Table(name = "allocation")
@@ -38,19 +41,26 @@ data class Allocation(
 
   var startDate: LocalDate,
 
-  var endDate: LocalDate? = null,
-
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
 ) {
+
+  var endDate: LocalDate? = null
+
+  @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+  @JoinColumn(name = "planned_deallocation_id", nullable = true)
+  var plannedDeallocation: PlannedDeallocation? = null
+    private set
+
   var deallocatedTime: LocalDateTime? = null
     private set
 
   var deallocatedBy: String? = null
     private set
 
-  var deallocatedReason: String? = null
+  @Enumerated(EnumType.STRING)
+  var deallocatedReason: DeallocationReason? = null
     private set
 
   var suspendedTime: LocalDateTime? = null
@@ -70,7 +80,40 @@ data class Allocation(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun deallocate(dateTime: LocalDateTime, reason: String) =
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) {
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+      if (date.onOrBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must be in the future.")
+      if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
+
+      if (plannedDeallocation == null) {
+        plannedDeallocation = PlannedDeallocation(
+          allocation = this,
+          plannedReason = reason,
+          plannedDate = date,
+          plannedBy = deallocatedBy,
+        )
+      } else {
+        plannedDeallocation?.apply {
+          plannedReason = reason
+          plannedDate = date
+          plannedBy = deallocatedBy
+          plannedAt = LocalDateTime.now()
+        }
+      }
+    }
+  }
+
+  private fun maybeEndDate() =
+    when {
+      endDate != null -> endDate
+      activitySchedule.endDate != null -> activitySchedule.endDate
+      activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
+      else -> null
+    }
+
+  // TODO remove date/time timestamp from function signature
+  fun deallocateNow(dateTime: LocalDateTime, reason: DeallocationReason) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
@@ -79,8 +122,6 @@ data class Allocation(
       deallocatedBy = ServiceName.SERVICE_NAME.value
       deallocatedTime = dateTime
     }
-
-  fun isAllocated() = deallocatedTime == null
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
@@ -91,7 +132,7 @@ data class Allocation(
       bookingId = bookingId,
       prisonPayBand = payBand.toModel(),
       startDate = startDate,
-      endDate = endDate,
+      endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,
       allocatedBy = allocatedBy,
       activitySummary = activitySummary(),
@@ -99,7 +140,7 @@ data class Allocation(
       scheduleDescription = activitySchedule.description,
       isUnemployment = activitySchedule.activity.isUnemployment(),
       deallocatedBy = deallocatedBy,
-      deallocatedReason = deallocatedReason,
+      deallocatedReason = deallocatedReason?.toModel(),
       deallocatedTime = deallocatedTime,
       suspendedBy = suspendedBy,
       suspendedReason = suspendedReason,
@@ -154,4 +195,27 @@ data class Allocation(
 
 enum class PrisonerStatus {
   ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
+}
+
+enum class DeallocationReason(val description: String) {
+  DIED("Deceased"),
+  ENDED("Allocation end date reached"),
+  EXPIRED("Expired"),
+  OTHER("Other"),
+  PERSONAL("Personal reason"),
+  PROBLEM("Problem understanding material"),
+  RELEASED("Released from prison"),
+  REMOVED("Removed"),
+  SECURITY("Security"),
+  TEMPORARY_ABSENCE("Temporary absence"),
+  UNACCEPTABLE_ATTENDANCE("Unacceptable attendance"),
+  UNACCEPTABLE_BEHAVIOUR("Unacceptable behaviour"),
+  WITHDRAWN("Withdrawn"),
+  ;
+
+  fun toModel() = ModelDeallocationReason(name, description)
+
+  companion object {
+    fun toModelDeallocationReasons() = DeallocationReason.values().map(DeallocationReason::toModel)
+  }
 }

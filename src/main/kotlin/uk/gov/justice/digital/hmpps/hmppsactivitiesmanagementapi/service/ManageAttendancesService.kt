@@ -77,7 +77,7 @@ class ManageAttendancesService(
           payAmount = instance.rateFor(allocation.payBand),
           issuePayment = true,
           status = AttendanceStatus.COMPLETED,
-          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED),
+          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
           recordedTime = LocalDateTime.now(),
           recordedBy = ServiceName.SERVICE_NAME.value,
         )

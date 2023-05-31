@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
@@ -182,7 +183,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           allocatedBy = "MRS BLOGS",
           status = PrisonerStatus.ENDED,
           deallocatedBy = "SYSTEM",
-          deallocatedReason = "Allocation end date reached",
+          deallocatedReason = DeallocationReason.ENDED.toModel(),
           deallocatedTime = LocalDateTime.of(2022, 10, 11, 9, 0),
         ),
       )

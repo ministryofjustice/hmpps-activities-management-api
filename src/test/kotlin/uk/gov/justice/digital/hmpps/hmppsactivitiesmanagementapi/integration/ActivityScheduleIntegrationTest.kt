@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,11 +17,14 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
@@ -37,6 +41,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.activities.prisoner.allocated=true",
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
@@ -292,9 +297,57 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     assertThat(response["totalElements"]).isEqualTo(16)
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql",
+  )
+  fun `allocation followed by a deallocation of the same prisoner`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+      ),
+    ).expectStatus().isNoContent
+
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("G4793VF"),
+        reasonCode = DeallocationReason.RELEASED,
+        endDate = TimeSource.tomorrow(),
+      ),
+    ).expectStatus().isNoContent
+
+    repository.findById(1).orElseThrow().also {
+      with(it.allocations().first().plannedDeallocation!!) {
+        assertThat(plannedBy).isEqualTo("test-client")
+        assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
+        assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
+    assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+  }
+
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
     post()
       .uri("/schedules/$scheduleId/allocations")
+      .bodyValue(request)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .exchange()
+
+  private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) =
+    put()
+      .uri("/schedules/$scheduleId/deallocate")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))

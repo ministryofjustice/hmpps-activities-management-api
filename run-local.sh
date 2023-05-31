@@ -17,6 +17,7 @@ export DB_PASS=activities-management
 export DB_SSL_MODE=prefer
 export DPR_USER=dpr_user
 export DPR_PASSWORD=dpr_password
+export $(cat .env | xargs)  # If you want to set or update the current shell environment
 
 # Run the application with stdout and local profiles active
 SPRING_PROFILES_ACTIVE=stdout,local ./gradlew bootRun
