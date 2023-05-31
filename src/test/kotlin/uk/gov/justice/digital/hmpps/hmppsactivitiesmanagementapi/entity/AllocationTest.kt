@@ -42,19 +42,19 @@ class AllocationTest {
     assertThat(allocation.deallocatedBy).isNull()
     assertThat(allocation.deallocatedTime).isNull()
 
-    allocation.deallocateNow(dateTime, DeallocationReason.ENDED)
+    allocation.deallocateNow(DeallocationReason.ENDED)
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
-    assertThat(allocation.deallocatedTime).isEqualTo(dateTime)
+    assertThat(allocation.deallocatedTime).isCloseTo(dateTime, within(2, ChronoUnit.SECONDS))
   }
 
   @Test
   fun `check cannot deallocate if allocation already ended`() {
-    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(DeallocationReason.ENDED) }
 
-    assertThatThrownBy { allocation.deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+    assertThatThrownBy { allocation.deallocateNow(DeallocationReason.ENDED) }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '0' is already deallocated.")
   }
@@ -75,7 +75,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot auto-suspend an ended allocation`() {
-    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
@@ -132,7 +132,7 @@ class AllocationTest {
 
   @Test
   fun `check cannot unsuspend an ended allocation`() {
-    val allocation = allocation().apply { deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val allocation = allocation().apply { deallocateNow(DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.reactivateAutoSuspensions() }
@@ -178,7 +178,7 @@ class AllocationTest {
   }
 
   @Test
-  fun `can plan deallocation for personal reasons `() {
+  fun `can plan deallocation for personal reasons`() {
     val allocation = allocation().copy(allocationId = 1).apply { endDate = null }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
@@ -187,12 +187,16 @@ class AllocationTest {
 
     allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
 
+    assertThat(allocation.endDate).isNull()
+
     with(allocation.plannedDeallocation!!) {
       assertThat(plannedDate).isEqualTo(tomorrow)
       assertThat(plannedBy).isEqualTo("by test")
       assertThat(plannedReason).isEqualTo(DeallocationReason.PERSONAL)
       assertThat(plannedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
+
+    assertThat(allocation.ends(tomorrow))
   }
 
   @Test
@@ -213,12 +217,14 @@ class AllocationTest {
       assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
       assertThat(plannedAt).isCloseTo(LocalDateTime.now(), within(5, ChronoUnit.SECONDS))
     }
+
+    assertThat(allocation.ends(tomorrow.plusDays(1)))
   }
 
   @Test
   fun `cannot plan deallocation if already ended`() {
     val allocation = allocation().copy(allocationId = 1).apply { endDate = null }
-      .apply { deallocateNow(TimeSource.now(), DeallocationReason.ENDED) }
+      .apply { deallocateNow(DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy {
