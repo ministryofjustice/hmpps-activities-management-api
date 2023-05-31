@@ -107,6 +107,9 @@ data class Allocation(
       status = prisonerStatus,
     )
 
+  fun activate() =
+    this.apply { prisonerStatus = PrisonerStatus.ACTIVE }
+
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {
       failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
@@ -153,5 +156,5 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
+  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED
 }

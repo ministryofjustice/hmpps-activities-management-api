@@ -37,6 +37,11 @@ class ManageAllocationsService(
   fun allocations(operation: AllocationOperation) {
     LocalDateTime.now().let { now ->
       when (operation) {
+        AllocationOperation.STARTING_TODAY -> {
+          log.info("Activating allocations starting today.")
+          activatePendingAllocations()
+        }
+
         AllocationOperation.DEALLOCATE_ENDING -> {
           log.info("Ending allocations due to end today.")
           allocationsDueToEnd().allocations(now, "Allocation end date reached")
@@ -49,6 +54,17 @@ class ManageAllocationsService(
       }
     }
   }
+
+  private fun activatePendingAllocations() =
+
+    LocalDate.now().let { today ->
+      forEachRolledOutPrison()
+        .forEach { prison ->
+          activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
+            activity.schedules().flatMap { it.allocations() }.activatePending()
+          }
+        }
+    }
 
   private fun allocationsDueToEnd(): Map<ActivitySchedule, List<Allocation>> =
     LocalDate.now().let { today ->
@@ -66,6 +82,13 @@ class ManageAllocationsService(
 
   private fun forEachRolledOutPrison() =
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }
+
+  private fun List<Allocation>.activatePending() =
+    filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }
+      .forEach {
+        it.activate()
+        allocationRepository.saveAndFlush(it)
+      }
 
   private fun List<Allocation>.ending(date: LocalDate) =
     filter { it.ends(date) && !it.status(PrisonerStatus.ENDED) }
@@ -140,6 +163,7 @@ class ManageAllocationsService(
 }
 
 enum class AllocationOperation {
+  STARTING_TODAY,
   DEALLOCATE_ENDING,
   DEALLOCATE_EXPIRING,
 }

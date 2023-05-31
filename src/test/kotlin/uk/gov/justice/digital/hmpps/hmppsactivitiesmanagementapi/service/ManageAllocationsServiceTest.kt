@@ -8,14 +8,18 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -227,6 +231,35 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `pending allocations are correctly activated`() {
+    val prison = rolloutPrison()
+    val schedule = mock<ActivitySchedule>()
+    val activity = mock<Activity>()
+    val pendingAllocation: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.PENDING
+    }
+    val activeAllocation: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.ACTIVE
+    }
+
+    whenever(activity.schedules()).thenReturn(listOf(schedule))
+    whenever(schedule.allocations()).thenReturn(listOf(pendingAllocation, activeAllocation))
+    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
+    whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).doReturn(
+      listOf(activity),
+    )
+
+    service.allocations(AllocationOperation.STARTING_TODAY)
+
+    verify(pendingAllocation).activate()
+    verify(allocationRepository).saveAndFlush(pendingAllocation)
+    verifyNoMoreInteractions(allocationRepository)
+
+    verify(activeAllocation).prisonerStatus
+    verifyNoMoreInteractions(activeAllocation)
   }
 
   private fun Allocation.verifyIsActive() {
