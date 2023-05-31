@@ -18,7 +18,7 @@ internal fun appointmentEntity(
   appointmentType: AppointmentType? = null,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
-  startDate: LocalDate = LocalDate.now(),
+  startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   createdBy: String = "CREATE.USER",
