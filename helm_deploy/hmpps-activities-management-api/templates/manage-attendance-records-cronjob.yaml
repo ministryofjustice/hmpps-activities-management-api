@@ -21,4 +21,4 @@ spec:
             args:
               - /bin/sh
               - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-attendance-records
+              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-attendance-records?withExpiry=true
