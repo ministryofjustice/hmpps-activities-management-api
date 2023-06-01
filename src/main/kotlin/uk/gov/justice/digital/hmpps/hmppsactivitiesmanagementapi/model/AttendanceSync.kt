@@ -68,7 +68,7 @@ data class AttendanceSync(
   )
   var comment: String? = null,
 
-  @Schema(description = "WAITING, COMPLETED, LOCKED.", example = "WAITING")
+  @Schema(description = "WAITING, COMPLETED.", example = "WAITING")
   val status: String,
 
   @Schema(description = "The amount in pence to pay the prisoner for the activity", example = "100")

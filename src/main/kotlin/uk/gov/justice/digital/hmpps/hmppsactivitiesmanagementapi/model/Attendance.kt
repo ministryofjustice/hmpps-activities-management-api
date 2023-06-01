@@ -32,7 +32,7 @@ data class Attendance(
   @Schema(description = "The person who updated the attendance", example = "A.JONES")
   val recordedBy: String? = null,
 
-  @Schema(description = "WAITING, COMPLETED, LOCKED.", example = "WAITING")
+  @Schema(description = "WAITING or COMPLETED", example = "WAITING")
   val status: String,
 
   @Schema(description = "The amount in pence to pay the prisoner for the activity", example = "100")
@@ -63,4 +63,7 @@ data class Attendance(
 
   @Schema(description = "The attendance history records for this attendance")
   val attendanceHistory: List<AttendanceHistory> = emptyList(),
+
+  @Schema(description = "Flag to show whether this attendance is editable", example = "true")
+  val editable: Boolean = true,
 )

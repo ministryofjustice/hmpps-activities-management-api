@@ -9,19 +9,13 @@ import java.time.LocalDate
 interface AttendanceRepository : JpaRepository<Attendance, Long> {
   fun existsAttendanceByScheduledInstanceAndPrisonerNumber(scheduledInstance: ScheduledInstance, prisonerNumber: String): Boolean
 
-  /**
-   * Caution should be used with this query.
-   *
-   * Over time the number of attendance records will be significant so the date boundaries used should not be large.
-   */
   @Query(
     """
       SELECT a from Attendance a
       WHERE a.scheduledInstance.activitySchedule.activity.prisonCode = :prisonCode
-      AND a.status != 'LOCKED'
-      AND a.scheduledInstance.sessionDate >= :startDate
-      AND a.scheduledInstance.sessionDate <= :endDate
+      AND a.status = 'WAITING'
+      AND a.scheduledInstance.sessionDate = :sessionDate
     """,
   )
-  fun findUnlockedAttendancesAtPrisonBetweenDates(prisonCode: String, startDate: LocalDate, endDate: LocalDate): List<Attendance>
+  fun findWaitingAttendancesOnDate(prisonCode: String, sessionDate: LocalDate): List<Attendance>
 }

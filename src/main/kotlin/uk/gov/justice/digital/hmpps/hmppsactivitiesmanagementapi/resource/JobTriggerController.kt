@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -42,8 +44,12 @@ class JobTriggerController(
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
-  fun triggerManageAttendanceRecordsJob(): String {
-    manageAttendanceRecordsJob.execute()
+  fun triggerManageAttendanceRecordsJob(
+    @RequestParam(value = "withExpiry", required = false)
+    @Parameter(description = "If true will run the attendance expiry process in addition to other features. Defaults to false.")
+    withExpiry: Boolean = false,
+  ): String {
+    manageAttendanceRecordsJob.execute(withExpiry)
     return "Manage attendance records triggered"
   }
 

@@ -17,7 +17,7 @@ data class AttendanceUpdateRequest(
   val prisonCode: String,
 
   @field:NotEmpty(message = "Attendance status")
-  @Schema(description = "The status - WAITING, COMPLETED, LOCKED", example = "WAITING")
+  @Schema(description = "The status - WAITING, COMPLETED", example = "WAITING")
   val status: AttendanceStatus,
 
   @Schema(description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED", example = "ATTENDED")
