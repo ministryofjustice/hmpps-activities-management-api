@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
-import java.time.LocalDateTime
 import java.util.Optional
 
 class CapacityServiceTest {
@@ -43,7 +42,7 @@ class CapacityServiceTest {
 
   @Test
   fun `getActivityCategoryCapacityAndAllocated excludes deallocations from summary for known category ID`() {
-    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocateNow(LocalDateTime.now(), DeallocationReason.ENDED) }
+    val activity = activityEntity().also { it.schedules().first().allocations().first().deallocateNow(DeallocationReason.ENDED) }
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", activityCategory()))

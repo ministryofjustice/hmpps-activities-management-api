@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
@@ -78,7 +79,10 @@ data class Allocation(
 
   private fun activitySummary() = activitySchedule.activity.summary
 
-  fun ends(date: LocalDate) = date == endDate
+  /**
+   * This will also check the planned end date should the end date be different or null.
+   */
+  fun ends(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
   fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) {
     this.apply {
@@ -112,15 +116,15 @@ data class Allocation(
       else -> null
     }
 
-  // TODO remove date/time timestamp from function signature
-  fun deallocateNow(dateTime: LocalDateTime, reason: DeallocationReason) =
+  fun deallocateNow(reason: DeallocationReason) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
       prisonerStatus = PrisonerStatus.ENDED
       deallocatedReason = reason
       deallocatedBy = ServiceName.SERVICE_NAME.value
-      deallocatedTime = dateTime
+      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+      endDate = LocalDate.now()
     }
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }

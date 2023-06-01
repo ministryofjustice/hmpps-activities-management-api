@@ -77,7 +77,7 @@ class OffenderReceivedEventHandlerTest {
       allocation().copy(allocationId = 2, prisonerNumber = "123456").autoSuspend(now, "Auto Reason")
     val userSuspended =
       allocation().copy(allocationId = 3, prisonerNumber = "123456").userSuspend(now, "User reason", "username")
-    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocateNow(now, DeallocationReason.ENDED)
+    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocateNow(DeallocationReason.ENDED)
 
     val allocations = listOf(autoSuspendedOne, autoSuspendedTwo, userSuspended, ended)
 

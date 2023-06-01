@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 class ManageAllocationsService(
@@ -36,17 +35,15 @@ class ManageAllocationsService(
   }
 
   fun allocations(operation: AllocationOperation) {
-    LocalDateTime.now().let { now ->
-      when (operation) {
-        AllocationOperation.DEALLOCATE_ENDING -> {
-          log.info("Ending allocations due to end today.")
-          allocationsDueToEnd().allocations(now, DeallocationReason.ENDED)
-        }
+    when (operation) {
+      AllocationOperation.DEALLOCATE_ENDING -> {
+        log.info("Ending allocations due to end today.")
+        allocationsDueToEnd().allocations(DeallocationReason.ENDED)
+      }
 
-        AllocationOperation.DEALLOCATE_EXPIRING -> {
-          log.info("Expiring allocations due to expire today.")
-          allocationsDueToExpire().allocations(now, DeallocationReason.EXPIRED)
-        }
+      AllocationOperation.DEALLOCATE_EXPIRING -> {
+        log.info("Expiring allocations due to expire today.")
+        allocationsDueToExpire().allocations(DeallocationReason.EXPIRED)
       }
     }
   }
@@ -115,11 +112,11 @@ class ManageAllocationsService(
       false
     }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.allocations(dateTime: LocalDateTime, reason: DeallocationReason) {
+  private fun Map<ActivitySchedule, List<Allocation>>.allocations(reason: DeallocationReason) {
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
-          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocateNow(dateTime, reason) }
+          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocateNow(reason) }
             .let {
               if (it.isNotEmpty()) {
                 activityScheduleRepository.saveAndFlush(schedule)
