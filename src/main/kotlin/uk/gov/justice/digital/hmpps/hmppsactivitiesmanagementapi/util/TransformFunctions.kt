@@ -242,7 +242,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
-    attendances = it.attendances.map { attendance -> transform(attendance) },
+    attendances = it.attendances.map { attendance -> transform(attendance, null) },
   )
 }
 
@@ -286,7 +286,7 @@ fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
   appointmentsRolloutDate = prison.appointmentsRolloutDate,
 )
 
-fun transform(attendance: EntityAttendance): ModelAttendance =
+fun transform(attendance: EntityAttendance, caseNoteText: String?): ModelAttendance =
   ModelAttendance(
     id = attendance.attendanceId,
     scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
@@ -319,10 +319,10 @@ fun transform(attendance: EntityAttendance): ModelAttendance =
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory) },
+      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, caseNoteText) },
   )
 
-fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistory =
+fun transform(attendanceHistory: EntityAttendanceHistory, caseNoteText: String?): ModelAttendanceHistory =
   ModelAttendanceHistory(
     id = attendanceHistory.attendanceHistoryId,
     attendanceReason = attendanceHistory.attendanceReason?.let {
@@ -347,6 +347,7 @@ fun transform(attendanceHistory: EntityAttendanceHistory): ModelAttendanceHistor
     issuePayment = attendanceHistory.issuePayment,
     incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
     otherAbsenceReason = attendanceHistory.otherAbsenceReason,
+    caseNoteText = caseNoteText,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
