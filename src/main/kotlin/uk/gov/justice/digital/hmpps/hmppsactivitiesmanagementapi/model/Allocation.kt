@@ -28,15 +28,15 @@ data class Allocation(
   val isUnemployment: Boolean = false,
 
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
-  val prisonPayBand: PrisonPayBand,
+  var prisonPayBand: PrisonPayBand,
 
   @Schema(description = "The date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   @Schema(description = "The date and time the prisoner was allocated to the activity", example = "2022-09-01T09:00:00")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
