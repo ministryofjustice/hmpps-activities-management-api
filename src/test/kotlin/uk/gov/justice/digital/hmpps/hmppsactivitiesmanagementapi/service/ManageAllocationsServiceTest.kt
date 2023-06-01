@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
@@ -269,14 +270,14 @@ class ManageAllocationsServiceTest {
   private fun Allocation.verifyIsEnded() {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo("Allocation end date reached")
+    assertThat(deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(deallocatedBy).isNotNull
   }
 
   private fun Allocation.verifyIsExpired() {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo("Expired")
+    assertThat(deallocatedReason).isEqualTo(DeallocationReason.EXPIRED)
     assertThat(deallocatedBy).isNotNull
   }
 }

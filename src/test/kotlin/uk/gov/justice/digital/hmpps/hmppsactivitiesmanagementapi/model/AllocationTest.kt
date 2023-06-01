@@ -1,12 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 
 class AllocationTest : ModelTest() {
@@ -104,22 +107,34 @@ class AllocationTest : ModelTest() {
 
   @Test
   fun `check deallocated allocation transformation`() {
-    val now = LocalDateTime.now()
-
     val allocation = allocation().also {
-      it.deallocate(now, "deallocation reason")
+      it.deallocateNow(DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     }
 
     with(allocation.toModel()) {
       assertOnCommonModalTransformation(this, allocation)
       assertThat(deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(deallocatedReason).isEqualTo("deallocation reason")
-      assertThat(deallocatedTime).isEqualTo(now)
+      assertThat(deallocatedReason).isEqualTo(DeallocationReason.ENDED.toModel())
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(suspendedBy).isNull()
       assertThat(suspendedReason).isNull()
       assertThat(suspendedTime).isNull()
     }
+  }
+
+  @Test
+  fun `check displayable deallocation reasons`() {
+    assertThat(DeallocationReason.toModelDeallocationReasons()).containsExactlyInAnyOrder(
+      DeallocationReason.OTHER.toModel(),
+      DeallocationReason.PERSONAL.toModel(),
+      DeallocationReason.PROBLEM.toModel(),
+      DeallocationReason.REMOVED.toModel(),
+      DeallocationReason.SECURITY.toModel(),
+      DeallocationReason.UNACCEPTABLE_ATTENDANCE.toModel(),
+      DeallocationReason.UNACCEPTABLE_BEHAVIOUR.toModel(),
+      DeallocationReason.WITHDRAWN.toModel(),
+    )
   }
 
   private fun assertOnCommonModalTransformation(model: Allocation, entity: EntityAllocation) {

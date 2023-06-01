@@ -38,4 +38,10 @@ data class AttendanceHistory(
   )
   var otherAbsenceReason: String? = null,
 
+  @Schema(
+    description = "Free text for any case note entered against the attendance record",
+    example = "Prisoner has refused to attend the activity without a valid reason to miss the activity.",
+  )
+  val caseNoteText: String? = null,
+
 )

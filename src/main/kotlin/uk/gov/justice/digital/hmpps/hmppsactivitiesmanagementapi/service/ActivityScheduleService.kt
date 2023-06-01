@@ -10,10 +10,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -104,7 +106,8 @@ class ActivityScheduleService(
 
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
-      bookingId = prisonerDetails.bookingId ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
+      bookingId = prisonerDetails.bookingId
+        ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
       payBand = payBand,
       allocatedBy = allocatedBy,
     )
@@ -120,4 +123,22 @@ class ActivityScheduleService(
   private fun InmateDetail.failIfAtDifferentPrisonTo(activity: Activity) =
     takeIf { it.agencyId == activity.prisonCode }
       ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
+
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
+    log.info("Attempting to deallocate prisoners $request")
+
+    repository.findOrThrowNotFound(scheduleId).run {
+      request.prisonerNumbers!!.distinct().forEach {
+        deallocatePrisonerOn(it, request.endDate!!, request.reasonCode.toDeallocationReason(), deallocatedBy)
+        log.info("Planned deallocation of prisoner $it from activity schedule id ${this.activityScheduleId}")
+      }
+      repository.saveAndFlush(this)
+    }
+  }
+
+  private fun String?.toDeallocationReason() =
+    DeallocationReason.values()
+      .filter(DeallocationReason::displayed)
+      .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 }

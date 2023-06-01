@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -79,13 +80,13 @@ class ActivityScheduleTest {
           sundayFlag = false,
         ),
       ),
-      startDate = LocalDate.now().plusDays(1),
+      startDate = LocalDate.now(),
     )
     assertThat(
       activitySchedule(
         activityEntity(),
         timestamp = LocalDate.now().atTime(10, 20),
-        startDate = LocalDate.now().plusDays(1),
+        startDate = LocalDate.now(),
       ).toModelLite(),
     ).isEqualTo(expectedModel)
   }
@@ -142,7 +143,7 @@ class ActivityScheduleTest {
             sundayFlag = false,
           ),
         ),
-        startDate = LocalDate.now().plusDays(1),
+        startDate = LocalDate.now(),
       ),
     )
 
@@ -151,7 +152,7 @@ class ActivityScheduleTest {
         activitySchedule(
           activityEntity(),
           timestamp = LocalDate.now().atTime(10, 20),
-          startDate = LocalDate.now().plusDays(1),
+          startDate = LocalDate.now(),
         ),
       ).toModelLite(),
     ).isEqualTo(
@@ -580,5 +581,55 @@ class ActivityScheduleTest {
       assertThat(id).isEqualTo(1)
       assertThat(inCell).isTrue
     }
+  }
+
+  @Test
+  fun `prisoner is deallocated from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity())
+    val allocation =
+      schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThat(allocation.plannedDeallocation).isNull()
+
+    schedule.deallocatePrisonerOn(
+      allocation.prisonerNumber,
+      TimeSource.tomorrow(),
+      DeallocationReason.RELEASED,
+      "by test",
+    )
+
+    with(allocation.plannedDeallocation!!) {
+      assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      assertThat(plannedBy).isEqualTo("by test")
+      assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
+    }
+  }
+
+  @Test
+  fun `prisoner is not deallocated from inactive schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
+
+    val allocation =
+      schedule.allocations().first().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
+
+    assertThatThrownBy {
+      schedule.deallocatePrisonerOn(
+        allocation.prisonerNumber,
+        TimeSource.tomorrow(),
+        DeallocationReason.RELEASED,
+        "by test",
+      )
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Schedule ${schedule.activityScheduleId} is not active on the planned deallocated date ${TimeSource.tomorrow()}.")
+  }
+
+  @Test
+  fun `fails to deallocate when prisoner not allocated to schedule`() {
+    val schedule = activitySchedule(activity = activityEntity())
+
+    assertThatThrownBy {
+      schedule.deallocatePrisonerOn("DOES NOT EXIST", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation not found for prisoner DOES NOT EXIST for schedule ${schedule.activityScheduleId}.")
   }
 }

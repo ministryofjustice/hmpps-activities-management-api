@@ -9,6 +9,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -29,15 +31,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class ManageAttendancesServiceTest {
-
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val rolloutPrison: RolloutPrison = mock {
     on { code } doReturn moorlandPrisonCode
     on { isActivitiesRolledOut() } doReturn true
@@ -45,12 +49,15 @@ class ManageAttendancesServiceTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
     on { findAll() } doReturn listOf(rolloutPrison)
   }
+
   private val service = ManageAttendancesService(
     scheduledInstanceRepository,
     attendanceRepository,
     attendanceReasonRepository,
     rolloutPrisonRepository,
+    outboundEventsService,
   )
+
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
   private val attendanceCaptor = argumentCaptor<Attendance>()
@@ -64,6 +71,7 @@ class ManageAttendancesServiceTest {
   @BeforeEach
   fun beforeEach() {
     setUpActivityWithAttendanceFor(today)
+    reset(scheduledInstanceRepository, outboundEventsService, attendanceReasonRepository, attendanceRepository)
   }
 
   @Test
@@ -87,7 +95,7 @@ class ManageAttendancesServiceTest {
   @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    allocation.deallocate(today.atStartOfDay(), "reason")
+    allocation.deallocateNow(DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
@@ -144,13 +152,13 @@ class ManageAttendancesServiceTest {
     }
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)).thenReturn(attendanceReasons()["NOT_REQUIRED"])
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
 
     service.attendances(AttendanceOperation.CREATE)
 
     verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
     with(attendanceCaptor.firstValue) {
-      assertThat(attendanceReason).isEqualTo(attendanceReasons()["NOT_REQUIRED"])
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(payAmount).isEqualTo(30)
       assertThat(issuePayment).isTrue
@@ -209,93 +217,58 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance record not marked yesterday is not locked`() {
+  fun `an unmarked attendance record for yesterday triggers an expired sync event`() {
     setUpActivityWithAttendanceFor(yesterday)
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     attendanceRepository.stub {
       on {
-        findUnlockedAttendancesAtPrisonBetweenDates(
-          moorlandPrisonCode,
-          yesterday.minusMonths(1),
-          yesterday,
-        )
+        findWaitingAttendancesOnDate(moorlandPrisonCode, yesterday)
       } doReturn listOf(attendance)
     }
 
-    service.attendances(AttendanceOperation.LOCK)
+    service.attendances(AttendanceOperation.EXPIRE)
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-    verify(attendanceRepository, never()).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, attendance.attendanceId)
   }
 
   @Test
-  fun `attendance record not marked two weeks ago is not locked`() {
+  fun `an unmarked attendance two weeks ago does not trigger an expired sync event`() {
     setUpActivityWithAttendanceFor(yesterday.minusWeeks(2))
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     attendanceRepository.stub {
       on {
-        findUnlockedAttendancesAtPrisonBetweenDates(
-          moorlandPrisonCode,
-          yesterday.minusMonths(1),
-          yesterday,
-        )
-      } doReturn listOf(attendance)
+        findWaitingAttendancesOnDate(moorlandPrisonCode, yesterday)
+      } doReturn emptyList()
     }
 
-    service.attendances(AttendanceOperation.LOCK)
+    service.attendances(AttendanceOperation.EXPIRE)
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-    verify(attendanceRepository, never()).saveAndFlush(attendance)
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
-  fun `attendance record not marked over two weeks ago is locked`() {
-    setUpActivityWithAttendanceFor(yesterday.minusDays(15))
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-
-    attendanceRepository.stub {
-      on {
-        findUnlockedAttendancesAtPrisonBetweenDates(
-          moorlandPrisonCode,
-          yesterday.minusMonths(1),
-          yesterday,
-        )
-      } doReturn listOf(attendance)
-    }
-
-    service.attendances(AttendanceOperation.LOCK)
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
-    verify(attendanceRepository).saveAndFlush(attendance)
-  }
-
-  @Test
-  fun `attendance record marked yesterday is locked`() {
+  fun `a marked attendance from yesterday does not generate an expired event`() {
     setUpActivityWithAttendanceFor(yesterday)
 
     attendance.mark("me", attendanceReason(), AttendanceStatus.COMPLETED, null, null, null, null, null)
-
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
 
     attendanceRepository.stub {
       on {
-        findUnlockedAttendancesAtPrisonBetweenDates(
-          moorlandPrisonCode,
-          yesterday.minusMonths(1),
-          yesterday,
-        )
+        findWaitingAttendancesOnDate(moorlandPrisonCode, yesterday)
       } doReturn listOf(attendance)
     }
 
-    service.attendances(AttendanceOperation.LOCK)
+    service.attendances(AttendanceOperation.EXPIRE)
 
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
-    verify(attendanceRepository).saveAndFlush(attendance)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, attendance.attendanceId)
   }
 
   private fun setUpActivityWithAttendanceFor(activityStartDate: LocalDate) {
