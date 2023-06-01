@@ -107,8 +107,6 @@ class AllocationTest : ModelTest() {
 
   @Test
   fun `check deallocated allocation transformation`() {
-    val now = LocalDateTime.now()
-
     val allocation = allocation().also {
       it.deallocateNow(DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
@@ -123,6 +121,20 @@ class AllocationTest : ModelTest() {
       assertThat(suspendedReason).isNull()
       assertThat(suspendedTime).isNull()
     }
+  }
+
+  @Test
+  fun `check displayable deallocation reasons`() {
+    assertThat(DeallocationReason.toModelDeallocationReasons()).containsExactlyInAnyOrder(
+      DeallocationReason.OTHER.toModel(),
+      DeallocationReason.PERSONAL.toModel(),
+      DeallocationReason.PROBLEM.toModel(),
+      DeallocationReason.REMOVED.toModel(),
+      DeallocationReason.SECURITY.toModel(),
+      DeallocationReason.UNACCEPTABLE_ATTENDANCE.toModel(),
+      DeallocationReason.UNACCEPTABLE_BEHAVIOUR.toModel(),
+      DeallocationReason.WITHDRAWN.toModel(),
+    )
   }
 
   private fun assertOnCommonModalTransformation(model: Allocation, entity: EntityAllocation) {

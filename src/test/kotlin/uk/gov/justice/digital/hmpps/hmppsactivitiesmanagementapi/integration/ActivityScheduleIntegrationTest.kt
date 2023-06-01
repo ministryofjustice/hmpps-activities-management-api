@@ -39,6 +39,7 @@ import java.time.temporal.ChronoUnit
 @TestPropertySource(
   properties = [
     "feature.event.activities.prisoner.allocated=true",
+    "feature.event.activities.activity-schedule.amended=true",
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
     "feature.event.activities.prisoner.allocation-amended=true",
@@ -318,7 +319,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       1,
       PrisonerDeallocationRequest(
         prisonerNumbers = listOf("G4793VF"),
-        reasonCode = DeallocationReason.RELEASED,
+        reasonCode = DeallocationReason.WITHDRAWN.name,
         endDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
@@ -326,7 +327,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     repository.findById(1).orElseThrow().also {
       with(it.allocations().first().plannedDeallocation!!) {
         assertThat(plannedBy).isEqualTo("test-client")
-        assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
+        assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
       }
     }

@@ -88,11 +88,11 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.RELEASED, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.OTHER.name, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -104,12 +104,12 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.RELEASED, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.PERSONAL.name, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
-    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
+    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -125,12 +125,34 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerDeallocationRequest(
           listOf(allocation.prisonerNumber),
-          DeallocationReason.RELEASED,
+          DeallocationReason.RELEASED.name,
           TimeSource.tomorrow(),
         ),
         "by test",
       )
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule ${schedule.activityScheduleId} not found")
+  }
+
+  @Test
+  fun `throws exception for invalid reason codes on attempted deallocation`() {
+    val schedule = mock<ActivitySchedule>()
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    DeallocationReason.values().filter { !it.displayed }.map { it.name }.forEach { reasonCode ->
+      assertThatThrownBy {
+        service.deallocatePrisoners(
+          schedule.activityScheduleId,
+          PrisonerDeallocationRequest(
+            listOf("123456"),
+            reasonCode,
+            TimeSource.tomorrow(),
+          ),
+          "by test",
+        )
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Invalid deallocation reason specified '$reasonCode'")
+    }
   }
 }

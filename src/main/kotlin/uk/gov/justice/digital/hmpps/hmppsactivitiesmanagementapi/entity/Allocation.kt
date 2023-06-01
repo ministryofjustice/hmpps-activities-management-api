@@ -201,25 +201,26 @@ enum class PrisonerStatus {
   ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
 }
 
-enum class DeallocationReason(val description: String) {
+enum class DeallocationReason(val description: String, val displayed: Boolean = false) {
   DIED("Deceased"),
   ENDED("Allocation end date reached"),
   EXPIRED("Expired"),
-  OTHER("Other"),
-  PERSONAL("Personal reason"),
-  PROBLEM("Problem understanding material"),
+  OTHER("Other", true),
+  PERSONAL("Personal reason", true),
+  PROBLEM("Problem understanding material", true),
   RELEASED("Released from prison"),
-  REMOVED("Removed"),
-  SECURITY("Security"),
+  REMOVED("Removed", true),
+  SECURITY("Security", true),
   TEMPORARY_ABSENCE("Temporary absence"),
-  UNACCEPTABLE_ATTENDANCE("Unacceptable attendance"),
-  UNACCEPTABLE_BEHAVIOUR("Unacceptable behaviour"),
-  WITHDRAWN("Withdrawn"),
+  UNACCEPTABLE_ATTENDANCE("Unacceptable attendance", true),
+  UNACCEPTABLE_BEHAVIOUR("Unacceptable behaviour", true),
+  WITHDRAWN("Withdrawn", true),
   ;
 
   fun toModel() = ModelDeallocationReason(name, description)
 
   companion object {
-    fun toModelDeallocationReasons() = DeallocationReason.values().map(DeallocationReason::toModel)
+    fun toModelDeallocationReasons() =
+      DeallocationReason.values().filter(DeallocationReason::displayed).map(DeallocationReason::toModel)
   }
 }
