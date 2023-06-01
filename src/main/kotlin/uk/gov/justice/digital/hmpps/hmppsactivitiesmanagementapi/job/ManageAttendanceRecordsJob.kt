@@ -16,6 +16,6 @@ class ManageAttendanceRecordsJob(private val attendancesService: ManageAttendanc
   @Async("asyncExecutor")
   fun execute() {
     attendancesService.attendances(AttendanceOperation.CREATE)
-    attendancesService.attendances(AttendanceOperation.LOCK)
+    attendancesService.attendances(AttendanceOperation.EXPIRE)
   }
 }

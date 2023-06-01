@@ -2,11 +2,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -92,22 +92,88 @@ class AttendanceTest {
   }
 
   @Test
-  fun `attendance record can be locked`() {
-    assertThat(attendance.status()).isNotEqualTo(AttendanceStatus.LOCKED)
-
-    attendance.lock()
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.LOCKED)
+  fun `attendance is editable - WAITING, session was today`() {
+    val instanceToday = instance.copy(sessionDate = LocalDate.now())
+    val attendance = Attendance(
+      scheduledInstance = instanceToday,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.WAITING,
+    )
+    assertThat(attendance.editable()).isTrue
   }
 
   @Test
-  fun `cannot lock attendance record already locked`() {
-    attendance.lock()
+  fun `attendance is editable - WAITING, session was 10 days ago`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(10))
+    val attendance = Attendance(
+      scheduledInstance = instanceTenDaysAgo,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.WAITING,
+    )
+    assertThat(attendance.editable()).isTrue
+  }
 
-    assertThatThrownBy {
-      attendance.lock()
-    }
-      .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("Cannot lock already locked attendance ${attendance.attendanceId}")
+  @Test
+  fun `attendance is editable - COMPLETED, paid, session was today`() {
+    val instanceToday = instance.copy(sessionDate = LocalDate.now())
+    val attendance = Attendance(
+      scheduledInstance = instanceToday,
+      issuePayment = true,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now(),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
+  fun `attendance is editable - COMPLETED, paid, session 3 days ago, but was marked today`() {
+    val instanceThreeDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(3))
+    val attendance = Attendance(
+      scheduledInstance = instanceThreeDaysAgo,
+      issuePayment = true,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now(),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
+  fun `attendance is editable - COMPLETED, unpaid, session was 10 days ago`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(10))
+    val attendance = Attendance(
+      scheduledInstance = instanceTenDaysAgo,
+      issuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(10),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
+  fun `attendance is NOT editable - WAITING, session was 15 days ago`() {
+    val instanceFifteenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(15))
+    val attendance = Attendance(
+      scheduledInstance = instanceFifteenDaysAgo,
+      issuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.WAITING,
+    )
+    assertThat(attendance.editable()).isFalse
+  }
+
+  @Test
+  fun `attendance is NOT editable - COMPLETED, paid, session was yesterday and was marked yesterday`() {
+    val instanceYesterday = instance.copy(sessionDate = LocalDate.now().minusDays(1))
+    val attendance = Attendance(
+      scheduledInstance = instanceYesterday,
+      issuePayment = true,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(1),
+    )
+    assertThat(attendance.editable()).isFalse
   }
 }

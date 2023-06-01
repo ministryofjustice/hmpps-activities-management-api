@@ -111,6 +111,19 @@ class OutboundEventsServiceTest {
   }
 
   @Test
+  fun `prisoner attendance expired event with attendance id 1 is sent to the events publisher`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, 1L)
+
+    verify(
+      expectedEventType = "activities.prisoner.attendance-expired",
+      expectedAdditionalInformation = PrisonerAttendanceInformation(1),
+      expectedDescription = "An unmarked prisoner attendance has been expired in the activities management service",
+    )
+  }
+
+  @Test
   fun `appointment instance created event with id 1 is sent to the events publisher`() {
     featureSwitches.stub { on { isEnabled(OutboundEvent.APPOINTMENT_INSTANCE_CREATED) } doReturn true }
 

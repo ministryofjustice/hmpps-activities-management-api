@@ -15,6 +15,6 @@ class ManageAttendanceRecordsJobTest {
     job.execute()
 
     verify(attendancesService).attendances(AttendanceOperation.CREATE)
-    verify(attendancesService).attendances(AttendanceOperation.LOCK)
+    verify(attendancesService).attendances(AttendanceOperation.EXPIRE)
   }
 }

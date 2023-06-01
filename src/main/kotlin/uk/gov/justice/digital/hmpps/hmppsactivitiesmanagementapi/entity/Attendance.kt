@@ -18,6 +18,7 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
@@ -128,6 +129,7 @@ data class Attendance(
         ),
       )
     }
+
     if (newStatus == AttendanceStatus.WAITING) {
       attendanceReason = null
       comment = null
@@ -151,14 +153,28 @@ data class Attendance(
     return this
   }
 
-  fun lock() =
-    this.apply {
-      if (status == AttendanceStatus.LOCKED) {
-        throw IllegalStateException("Cannot lock already locked attendance $attendanceId")
-      }
-
-      status = AttendanceStatus.LOCKED
-    }
+  /*
+   Very simple rules for editable attendance initially. Attendance is editable if :
+   1. It has not been marked, and we are within 14 days of the session date.
+   2. It has been marked (paid or unpaid) and today is the date of the session.
+   3. It has been marked with an unpaid reason, and we are within 14 days of the session date.
+   4. It has been marked with a paid reason, it was marked today, and we are within 14 days of the session date.
+   */
+  fun editable(): Boolean {
+    return (
+      this.status() == AttendanceStatus.WAITING &&
+        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
+        this.status == AttendanceStatus.COMPLETED &&
+        this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) ||
+        this.status == AttendanceStatus.COMPLETED &&
+        this.issuePayment == false &&
+        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
+        this.status == AttendanceStatus.COMPLETED &&
+        this.issuePayment == true &&
+        this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) &&
+        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
+      )
+  }
 
   fun toModel(caseNotesApiClient: CaseNotesApiClient) = ModelAttendance(
     id = this.attendanceId,
@@ -195,11 +211,11 @@ data class Attendance(
       .sortedWith(compareBy { it.recordedTime })
       .reversed()
       .map { attendanceHistoryRow -> transform(attendanceHistoryRow) },
+    editable = this.editable(),
   )
 }
 
 enum class AttendanceStatus {
   WAITING,
   COMPLETED,
-  LOCKED,
 }

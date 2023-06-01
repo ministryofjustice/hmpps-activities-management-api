@@ -28,6 +28,7 @@ import java.time.temporal.ChronoUnit
     "feature.events.sns.enabled=true",
     "feature.event.activities.prisoner.attendance-created=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.event.activities.prisoner.attendance-expired=true",
   ],
 )
 class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
@@ -126,7 +127,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-completed.sql")
   @Test
-  fun `Yesterdays completed attendance records are locked`() {
+  fun `Yesterdays completed attendance records remain in status COMPLETED and no sync events are emitted`() {
     val yesterday = LocalDate.now().minusDays(1)
 
     attendanceRepository.findAll().forEach {
@@ -137,21 +138,15 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.manageAttendanceRecords()
 
     attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isEqualTo(AttendanceStatus.LOCKED)
+      assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-amended")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been amended in the activities management service")
-    }
+    verifyNoInteractions(eventsPublisher)
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-waiting.sql")
   @Test
-  fun `Yesterdays waiting attendance records are not locked`() {
+  fun `Yesterdays waiting attendance records emit an expired sync event and remain in WAITING status`() {
     val yesterday = LocalDate.now().minusDays(1)
 
     attendanceRepository.findAll().forEach {
@@ -165,67 +160,48 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
     }
 
-    verifyNoInteractions(eventsPublisher)
-  }
-
-  @Sql("classpath:test_data/seed-attendances-two-weeks-old-waiting.sql")
-  @Test
-  fun `Two week old waiting attendance records are not locked`() {
-    val twoWeeksAgo = LocalDate.now().minusDays(15)
-
-    attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
-      assertThat(it.scheduledInstance.sessionDate).isEqualTo(twoWeeksAgo)
-    }
-
-    webTestClient.manageAttendanceRecords()
-
-    attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
-    }
-
-    verifyNoInteractions(eventsPublisher)
-  }
-
-  @Sql("classpath:test_data/seed-attendances-over-two-weeks-old.sql")
-  @Test
-  fun `Waiting and completed attendance records over two weeks old are locked`() {
-    val overTwoWeeksAgo = LocalDate.now().minusDays(16)
-
-    attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isNotEqualTo(AttendanceStatus.LOCKED)
-      assertThat(it.scheduledInstance.sessionDate).isEqualTo(overTwoWeeksAgo)
-    }
-
-    webTestClient.manageAttendanceRecords()
-
-    attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isEqualTo(AttendanceStatus.LOCKED)
-    }
-
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
 
     eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-amended")
+      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-expired")
       assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been amended in the activities management service")
+      assertThat(it.description).isEqualTo("An unmarked prisoner attendance has been expired in the activities management service")
     }
+  }
+
+  @Sql("classpath:test_data/seed-attendances-two-days-old-waiting.sql")
+  @Test
+  fun `Two day old waiting attendance records do not emit an expired sync event`() {
+    val twoDaysAgo = LocalDate.now().minusDays(2)
+
+    attendanceRepository.findAll().forEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.scheduledInstance.sessionDate).isEqualTo(twoDaysAgo)
+    }
+
+    webTestClient.manageAttendanceRecords()
+
+    attendanceRepository.findAll().forEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+    }
+
+    verifyNoInteractions(eventsPublisher)
   }
 
   @Sql("classpath:test_data/seed-attendances-for-today.sql")
   @Test
-  fun `Today's attendance records are not locked`() {
+  fun `Attendance records for today will not emit an expired sync event - too early`() {
     val today = LocalDate.now()
 
     attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isNotEqualTo(AttendanceStatus.LOCKED)
+      assertThat(it.status()).isIn(AttendanceStatus.WAITING, AttendanceStatus.COMPLETED)
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(today)
     }
 
     webTestClient.manageAttendanceRecords()
 
     attendanceRepository.findAll().forEach {
-      assertThat(it.status()).isNotEqualTo(AttendanceStatus.LOCKED)
+      assertThat(it.status()).isIn(AttendanceStatus.WAITING, AttendanceStatus.COMPLETED)
     }
 
     verifyNoInteractions(eventsPublisher)

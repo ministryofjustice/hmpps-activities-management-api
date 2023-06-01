@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -15,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,6 +26,7 @@ class ManageAttendancesService(
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val outboundEventsService: OutboundEventsService,
 ) {
 
   companion object {
@@ -34,7 +36,7 @@ class ManageAttendancesService(
   fun attendances(operation: AttendanceOperation) {
     when (operation) {
       AttendanceOperation.CREATE -> createAttendanceRecordsForToday()
-      AttendanceOperation.LOCK -> lockAttendanceRecordsStartingFromYesterdayCountingBack()
+      AttendanceOperation.EXPIRE -> expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
     }
   }
 
@@ -95,43 +97,25 @@ class ManageAttendancesService(
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
     attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
 
-  private fun lockAttendanceRecordsStartingFromYesterdayCountingBack() {
-    log.info("Attempting to lock attendance records.")
+  private fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
+    log.info("Expiring WAITING attendances from yesterday.")
 
     LocalDate.now().minusDays(1).let { yesterday ->
       val counter = AtomicInteger(0)
-
-      // Note we are fetching a maximum of one months attendance records to avoid pulling back too much data.
-      // Anything beyond 15 days from date of execution if not locked will be locked. Extending the number of days
-      // retrieved to a month will help provide a recovery window should the job fail on a given day.
       forEachRolledOutPrison { prison ->
-        attendanceRepository.findUnlockedAttendancesAtPrisonBetweenDates(
-          prison.code,
-          yesterday.minusMonths(1),
-          yesterday,
-        )
-          .forEach { unlockedAttendance ->
-            val dateOfAttendance = unlockedAttendance.scheduledInstance.sessionDate
-
-            when {
-              dateOfAttendance.between(yesterday.minusWeeks(2), yesterday) -> {
-                unlockedAttendance.takeIf { it.status(AttendanceStatus.COMPLETED) }
-              }
-
-              else -> unlockedAttendance
-            }?.let {
-              runCatching {
-                attendanceRepository.saveAndFlush(unlockedAttendance.lock())
-              }.onFailure {
-                log.error("Failed to lock attendance record ${unlockedAttendance.attendanceId}", it)
-              }.onSuccess {
-                counter.incrementAndGet()
-              }
+        attendanceRepository.findWaitingAttendancesOnDate(prison.code, yesterday)
+          .forEach { waitingAttendance ->
+            runCatching {
+              outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, waitingAttendance.attendanceId)
+            }.onFailure {
+              log.error("Failed to send expire event for attendance ID ${waitingAttendance.attendanceId}", it)
+            }.onSuccess {
+              counter.incrementAndGet()
             }
           }
       }
 
-      log.info("${counter.get()} attendance record(s) locked.")
+      log.info("${counter.get()} attendance record(s) expired.")
     }
   }
 
@@ -141,5 +125,5 @@ class ManageAttendancesService(
 
 enum class AttendanceOperation {
   CREATE,
-  LOCK,
+  EXPIRE,
 }
