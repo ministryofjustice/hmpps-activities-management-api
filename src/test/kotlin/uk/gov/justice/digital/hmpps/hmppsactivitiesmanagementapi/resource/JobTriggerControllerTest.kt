@@ -47,7 +47,18 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute()
+    verify(manageAttendanceRecordsJob).execute(false)
+  }
+
+  @Test
+  fun `201 response when attendance job with expiry option is triggered`() {
+    val response = mockMvc.triggerJob("manage-attendance-records?withExpiry=true")
+      .andExpect { status { isCreated() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
+
+    verify(manageAttendanceRecordsJob).execute(true)
   }
 
   @Test

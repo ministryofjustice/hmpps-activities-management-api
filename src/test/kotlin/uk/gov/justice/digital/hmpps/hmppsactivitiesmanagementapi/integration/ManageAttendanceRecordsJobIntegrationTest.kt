@@ -135,7 +135,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(yesterday)
     }
 
-    webTestClient.manageAttendanceRecords()
+    webTestClient.manageAttendanceRecordsWithExpiry()
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
@@ -154,7 +154,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(yesterday)
     }
 
-    webTestClient.manageAttendanceRecords()
+    webTestClient.manageAttendanceRecordsWithExpiry()
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -179,7 +179,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(twoDaysAgo)
     }
 
-    webTestClient.manageAttendanceRecords()
+    webTestClient.manageAttendanceRecordsWithExpiry()
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -198,7 +198,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(today)
     }
 
-    webTestClient.manageAttendanceRecords()
+    webTestClient.manageAttendanceRecordsWithExpiry()
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isIn(AttendanceStatus.WAITING, AttendanceStatus.COMPLETED)
@@ -213,6 +213,15 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.manageAttendanceRecords() {
     post()
       .uri("/job/manage-attendance-records")
+      .accept(MediaType.TEXT_PLAIN)
+      .exchange()
+      .expectStatus().isCreated
+    Thread.sleep(1000)
+  }
+
+  private fun WebTestClient.manageAttendanceRecordsWithExpiry() {
+    post()
+      .uri("/job/manage-attendance-records?withExpiry=true")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated

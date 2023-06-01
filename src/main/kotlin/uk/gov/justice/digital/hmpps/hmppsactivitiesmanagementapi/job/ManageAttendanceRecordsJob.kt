@@ -6,16 +6,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 
 /**
- * This job is responsible for creating (new) daily attendance records and locking existing (old) attendance records.
+ * This job is responsible for creating daily attendance records and emitting expiry events for 1-day old unmarked attendances.
  *
- * At present, we do also create attendance records for suspended schedules but not for cancelled schedules. As we learn
+ * At present, we also create attendance records for suspended schedules but not for cancelled schedules. As we learn
  * more this will likely change the behaviour of this job.
  */
 @Component
 class ManageAttendanceRecordsJob(private val attendancesService: ManageAttendancesService) {
   @Async("asyncExecutor")
-  fun execute() {
+  fun execute(withExpiry: Boolean) {
     attendancesService.attendances(AttendanceOperation.CREATE)
-    attendancesService.attendances(AttendanceOperation.EXPIRE)
+    if (withExpiry) {
+      attendancesService.attendances(AttendanceOperation.EXPIRE)
+    }
   }
 }
