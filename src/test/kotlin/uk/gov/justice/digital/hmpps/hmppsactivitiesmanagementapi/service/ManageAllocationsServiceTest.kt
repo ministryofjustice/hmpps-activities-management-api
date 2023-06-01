@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -200,6 +201,35 @@ class ManageAllocationsServiceTest {
     verify(activityScheduleRepo).saveAndFlush(schedule)
   }
 
+  @Test
+  fun `prison is skipped if regime config is missing`() {
+    val prisonWithRegime = rolloutPrison()
+    val prisonWithoutRegime = rolloutPrison().copy(rolloutPrisonId = 2, code = moorlandPrisonCode)
+
+    val activity = activityEntity(startDate = yesterday, endDate = today)
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
+    val prisoner: Prisoner = mock {
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
+      on { prisonerNumber } doReturn allocation.prisonerNumber
+      on { lastMovementTypeCode } doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
+    }
+
+    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prisonWithRegime, prisonWithoutRegime))
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonWithRegime.code)).doReturn(prisonRegime())
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonWithoutRegime.code)).doReturn(null)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prisonWithRegime.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
+      listOf(allocation),
+    )
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
+
+    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+
+    allocation.verifyIsExpired()
+
+    verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
   private fun Allocation.verifyIsActive() {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
   }
@@ -207,14 +237,14 @@ class ManageAllocationsServiceTest {
   private fun Allocation.verifyIsEnded() {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo("Allocation end date reached")
+    assertThat(deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(deallocatedBy).isNotNull
   }
 
   private fun Allocation.verifyIsExpired() {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo("Expired")
+    assertThat(deallocatedReason).isEqualTo(DeallocationReason.EXPIRED)
     assertThat(deallocatedBy).isNotNull
   }
 }

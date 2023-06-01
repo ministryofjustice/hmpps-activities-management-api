@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -18,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 class ManageAllocationsService(
@@ -35,17 +35,15 @@ class ManageAllocationsService(
   }
 
   fun allocations(operation: AllocationOperation) {
-    LocalDateTime.now().let { now ->
-      when (operation) {
-        AllocationOperation.DEALLOCATE_ENDING -> {
-          log.info("Ending allocations due to end today.")
-          allocationsDueToEnd().allocations(now, "Allocation end date reached")
-        }
+    when (operation) {
+      AllocationOperation.DEALLOCATE_ENDING -> {
+        log.info("Ending allocations due to end today.")
+        allocationsDueToEnd().allocations(DeallocationReason.ENDED)
+      }
 
-        AllocationOperation.DEALLOCATE_EXPIRING -> {
-          log.info("Expiring allocations due to expire today.")
-          allocationsDueToExpire().allocations(now, "Expired")
-        }
+      AllocationOperation.DEALLOCATE_EXPIRING -> {
+        log.info("Expiring allocations due to expire today.")
+        allocationsDueToExpire().allocations(DeallocationReason.EXPIRED)
       }
     }
   }
@@ -74,21 +72,25 @@ class ManageAllocationsService(
     forEachRolledOutPrison()
       .flatMap { prison ->
         val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
-          ?: throw IllegalStateException("Rolled out prison ${prison.code} is missing a prison regime.")
 
-        val candidateExpiredAllocations =
-          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)
-            .filter(regime::hasExpired)
+        if (regime != null) {
+          val candidateExpiredAllocations =
+            allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)
+              .filter(regime::hasExpired)
 
-        val expiredPrisoners = candidateExpiredAllocations.ifNotEmpty {
-          prisonerSearch.findByPrisonerNumbers(candidateExpiredAllocations.map { it.prisonerNumber }.distinct())
-            .block()
-            ?.filter { it.hasExpired(regime) }
-            ?.map { it.prisonerNumber }
-            ?.toSet() ?: emptySet()
+          val expiredPrisoners = candidateExpiredAllocations.ifNotEmpty {
+            prisonerSearch.findByPrisonerNumbers(candidateExpiredAllocations.map { it.prisonerNumber }.distinct())
+              .block()
+              ?.filter { it.hasExpired(regime) }
+              ?.map { it.prisonerNumber }
+              ?.toSet() ?: emptySet()
+          }
+
+          candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
+        } else {
+          log.warn("Rolled out prison ${prison.code} is missing a prison regime.")
+          emptyList()
         }
-
-        candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
       }.groupBy { it.activitySchedule }
 
   private fun <T, R> List<T>.ifNotEmpty(block: (List<T>) -> Set<R>) =
@@ -110,11 +112,11 @@ class ManageAllocationsService(
       false
     }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.allocations(dateTime: LocalDateTime, reason: String) {
+  private fun Map<ActivitySchedule, List<Allocation>>.allocations(reason: DeallocationReason) {
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
-          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocate(dateTime, reason) }
+          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocateNow(reason) }
             .let {
               if (it.isNotEmpty()) {
                 activityScheduleRepository.saveAndFlush(schedule)
