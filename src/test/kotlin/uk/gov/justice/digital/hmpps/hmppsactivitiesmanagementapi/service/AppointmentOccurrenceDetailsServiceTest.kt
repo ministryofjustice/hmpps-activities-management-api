@@ -87,6 +87,7 @@ class AppointmentOccurrenceDetailsServiceTest {
         null,
         true,
         false,
+        false,
         appointment.created,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,

@@ -92,6 +92,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         null,
         false,
         false,
+        false,
         appointmentOccurrenceDetails.created,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
