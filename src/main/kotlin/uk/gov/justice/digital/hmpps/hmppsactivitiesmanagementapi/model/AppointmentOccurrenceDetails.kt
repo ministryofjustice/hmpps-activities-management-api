@@ -156,6 +156,15 @@ data class AppointmentOccurrenceDetails(
   val isCancelled: Boolean,
 
   @Schema(
+    description =
+    """
+    Indicates that this appointment occurrence has expired
+    """,
+    example = "false",
+  )
+  val isExpired: Boolean,
+
+  @Schema(
     description = "The date and time the parent appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
