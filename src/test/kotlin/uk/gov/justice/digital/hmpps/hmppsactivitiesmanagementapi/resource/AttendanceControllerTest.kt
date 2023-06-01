@@ -13,7 +13,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -36,8 +35,6 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
   private lateinit var attendancesService: AttendancesService
 
   override fun controller() = AttendanceController(attendancesService)
-
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   @Test
   fun `204 response when mark attendance records`() {
@@ -66,9 +63,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Test
   fun `200 response when get attendance by ID found`() {
-    whenever(caseNotesApiClient.getCaseNote("A1234AA", 1)).thenReturn(caseNote)
-
-    val attendance = attendance().toModel(caseNotesApiClient)
+    val attendance = attendance().toModel("Case Note Text")
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 

@@ -94,6 +94,8 @@ data class AppointmentOccurrence(
 
   fun isCancelled() = cancellationReason?.isDelete == false
 
+  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
+
   fun isDeleted() = cancellationReason?.isDelete == true
 
   fun toModel() = AppointmentOccurrenceModel(
@@ -171,6 +173,7 @@ data class AppointmentOccurrence(
       appointment.schedule?.toRepeat(),
       isEdited(),
       isCancelled(),
+      isExpired(),
       appointment.created,
       userMap[appointment.createdBy].toSummary(appointment.createdBy),
       updated,
