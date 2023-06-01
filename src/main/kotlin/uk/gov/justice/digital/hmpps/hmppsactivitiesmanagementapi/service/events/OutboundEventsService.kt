@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_CREATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_EXPIRED
 
 @Service
 class OutboundEventsService(private val publisher: OutboundEventsPublisher, private val featureSwitches: FeatureSwitches) {
@@ -32,6 +33,7 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ATTENDANCE_CREATED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
         PRISONER_ATTENDANCE_AMENDED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
+        PRISONER_ATTENDANCE_EXPIRED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
         APPOINTMENT_INSTANCE_CREATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))

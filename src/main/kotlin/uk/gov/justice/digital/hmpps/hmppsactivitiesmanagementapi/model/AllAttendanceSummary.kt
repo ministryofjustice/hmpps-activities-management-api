@@ -36,7 +36,7 @@ data class AllAttendanceSummary(
   @Schema(description = "AM, PM, ED.", example = "AM")
   val timeSlot: String,
 
-  @Schema(description = "WAITING, COMPLETED, LOCKED.", example = "WAITING")
+  @Schema(description = "WAITING, COMPLETED.", example = "WAITING")
   val status: String,
 
   @Schema(description = "The reason for attending or not")
