@@ -32,6 +32,9 @@ data class Allocation(
 
   val bookingId: Long,
 
+  @Enumerated(EnumType.STRING)
+  var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE,
+
   @OneToOne
   @JoinColumn(name = "prison_pay_band_id")
   var payBand: PrisonPayBand,
@@ -60,10 +63,6 @@ data class Allocation(
     private set
 
   var suspendedReason: String? = null
-    private set
-
-  @Enumerated(EnumType.STRING)
-  var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
     private set
 
   private fun activitySummary() = activitySchedule.activity.summary
