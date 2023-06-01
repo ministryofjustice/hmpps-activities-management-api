@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -87,7 +88,7 @@ class ManageAttendancesServiceTest {
   @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    allocation.deallocate(today.atStartOfDay(), "reason")
+    allocation.deallocateNow(today.atStartOfDay(), DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
@@ -144,13 +145,13 @@ class ManageAttendancesServiceTest {
     }
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)).thenReturn(attendanceReasons()["NOT_REQUIRED"])
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
 
     service.attendances(AttendanceOperation.CREATE)
 
     verify(attendanceRepository).saveAndFlush(attendanceCaptor.capture())
     with(attendanceCaptor.firstValue) {
-      assertThat(attendanceReason).isEqualTo(attendanceReasons()["NOT_REQUIRED"])
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(payAmount).isEqualTo(30)
       assertThat(issuePayment).isTrue
