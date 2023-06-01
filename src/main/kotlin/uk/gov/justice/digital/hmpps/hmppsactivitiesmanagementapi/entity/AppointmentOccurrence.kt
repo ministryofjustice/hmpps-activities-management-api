@@ -94,9 +94,7 @@ data class AppointmentOccurrence(
 
   fun isCancelled() = cancellationReason?.isDelete == false
 
-  fun isExpired(): Boolean {
-    return LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
-  }
+  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
 
   fun isDeleted() = cancellationReason?.isDelete == true
 

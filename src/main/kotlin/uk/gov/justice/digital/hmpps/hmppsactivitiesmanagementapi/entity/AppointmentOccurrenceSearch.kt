@@ -85,8 +85,10 @@ data class AppointmentOccurrenceSearch(
     maxSequenceNumber,
     isEdited,
     isCancelled,
-    LocalDateTime.of(startDate, startTime) < LocalDateTime.now(),
+    isExpired(),
   )
+
+  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
 }
 
 fun List<AppointmentOccurrenceSearch>.toResults(
