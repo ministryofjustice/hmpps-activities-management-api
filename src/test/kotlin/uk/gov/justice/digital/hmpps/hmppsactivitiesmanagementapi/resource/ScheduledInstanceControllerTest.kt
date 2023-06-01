@@ -62,7 +62,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Test
   fun `200 response when get attendances by schedule ID found`() {
-    val attendances = activityEntity().schedules().first().instances().first().attendances.map { transform(it) }
+    val attendances = activityEntity().schedules().first().instances().first().attendances.map { transform(it, null) }
 
     whenever(attendancesService.findAttendancesByScheduledInstance(1)).thenReturn(attendances)
 
