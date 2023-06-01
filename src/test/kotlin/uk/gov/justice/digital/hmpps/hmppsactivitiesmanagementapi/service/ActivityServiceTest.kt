@@ -19,7 +19,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -61,7 +60,6 @@ class ActivityServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val bankHolidayService: BankHolidayService = mock()
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -98,7 +96,6 @@ class ActivityServiceTest {
     prisonApiClient,
     prisonRegimeService,
     bankHolidayService,
-    caseNotesApiClient,
   )
   private val location = Location(
     locationId = 1,

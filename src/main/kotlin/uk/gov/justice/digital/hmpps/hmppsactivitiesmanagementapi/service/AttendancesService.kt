@@ -35,7 +35,7 @@ class AttendancesService(
   }
 
   fun findAttendancesByScheduledInstance(instanceId: Long) =
-    scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, caseNotesApiClient) }
+    scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, null) }
 
   // TODO this is a very thin slice when updating.
   // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
@@ -66,8 +66,10 @@ class AttendancesService(
     attendanceRepository.saveAll(updatedAttendances)
   }
 
-  fun getAttendanceById(id: Long): ModelAttendance =
-    attendanceRepository.findOrThrowNotFound(id).toModel(caseNotesApiClient)
+  fun getAttendanceById(id: Long): ModelAttendance {
+    val attendance = attendanceRepository.findOrThrowNotFound(id)
+    return attendance.toModel(attendance.caseNoteId?.let { caseNotesApiClient.getCaseNote(attendance.prisonerNumber, attendance.caseNoteId)?.text })
+  }
 
   fun getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendanceSummary> =
     allAttendanceSummaryRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()

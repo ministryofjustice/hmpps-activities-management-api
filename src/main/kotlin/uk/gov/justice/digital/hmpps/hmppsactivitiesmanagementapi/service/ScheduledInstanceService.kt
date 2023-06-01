@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -21,13 +20,12 @@ class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private var outboundEventsService: OutboundEventsService,
-  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getActivityScheduleInstanceById(id: Long) = repository.findOrThrowNotFound(id).toModel(caseNotesApiClient)
+  fun getActivityScheduleInstanceById(id: Long) = repository.findOrThrowNotFound(id).toModel()
 
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
@@ -38,7 +36,7 @@ class ScheduledInstanceService(
       prisonCode,
       dateRange.start,
       dateRange.endInclusive,
-    ).toModel(caseNotesApiClient)
+    ).toModel()
 
     return if (slot != null) {
       activities.filter { TimeSlot.slot(it.startTime) == slot }

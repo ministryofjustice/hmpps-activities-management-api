@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -47,14 +46,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
-fun transform(activity: EntityActivity, caseNotesApiClient: CaseNotesApiClient) =
+fun transform(activity: EntityActivity) =
   ModelActivity(
     id = activity.activityId,
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
-    schedules = activity.schedules().toModelSchedules(caseNotesApiClient),
+    schedules = activity.schedules().toModelSchedules(),
     waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
@@ -180,13 +179,13 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   )
 }
 
-fun transform(scheduleEntities: List<EntityActivitySchedule>, caseNotesApiClient: CaseNotesApiClient) = scheduleEntities.toModelSchedules(caseNotesApiClient)
+fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>, caseNotesApiClient: CaseNotesApiClient) =
+fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
   scheduleAndInstances.map {
     ModelActivitySchedule(
       id = it.key.activityScheduleId,
-      instances = it.value.toModelScheduledInstances(caseNotesApiClient),
+      instances = it.value.toModelScheduledInstances(),
       allocations = it.key.allocations().toModelAllocations(),
       description = it.key.description,
       suspensions = it.key.suspensions.toModelSuspensions(),
@@ -202,12 +201,12 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
     )
   }
 
-fun List<EntityActivitySchedule>.toModelSchedules(caseNotesApiClient: CaseNotesApiClient) = map { it.toModelSchedule(caseNotesApiClient) }
+fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
 
-fun EntityActivitySchedule.toModelSchedule(caseNotesApiClient: CaseNotesApiClient) =
+fun EntityActivitySchedule.toModelSchedule() =
   ModelActivitySchedule(
     id = this.activityScheduleId,
-    instances = this.instances().toModelScheduledInstances(caseNotesApiClient),
+    instances = this.instances().toModelScheduledInstances(),
     allocations = this.allocations().toModelAllocations(),
     description = this.description,
     suspensions = this.suspensions.toModelSuspensions(),
@@ -234,7 +233,7 @@ private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
 
 private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map { it.toModel() }
 
-private fun List<EntityScheduledInstance>.toModelScheduledInstances(caseNotesApiClient: CaseNotesApiClient) = map {
+private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
   ModelScheduledInstance(
     id = it.scheduledInstanceId,
     date = it.sessionDate,
@@ -243,7 +242,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances(caseNotesApi
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
-    attendances = it.attendances.map { attendance -> transform(attendance, caseNotesApiClient) },
+    attendances = it.attendances.map { attendance -> transform(attendance, null) },
   )
 }
 
@@ -287,7 +286,7 @@ fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
   appointmentsRolloutDate = prison.appointmentsRolloutDate,
 )
 
-fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient): ModelAttendance =
+fun transform(attendance: EntityAttendance, caseNoteText: String?): ModelAttendance =
   ModelAttendance(
     id = attendance.attendanceId,
     scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
@@ -320,10 +319,10 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, attendance.prisonerNumber, caseNotesApiClient) },
+      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, caseNoteText) },
   )
 
-fun transform(attendanceHistory: EntityAttendanceHistory, prisonerNumber: String, caseNotesApiClient: CaseNotesApiClient): ModelAttendanceHistory =
+fun transform(attendanceHistory: EntityAttendanceHistory, caseNoteText: String?): ModelAttendanceHistory =
   ModelAttendanceHistory(
     id = attendanceHistory.attendanceHistoryId,
     attendanceReason = attendanceHistory.attendanceReason?.let {
@@ -342,13 +341,13 @@ fun transform(attendanceHistory: EntityAttendanceHistory, prisonerNumber: String
         notes = it.notes,
       )
     },
-    caseNoteText = attendanceHistory.caseNoteId?.let { caseNotesApiClient.getCaseNote(prisonerNumber, attendanceHistory.caseNoteId)?.text },
     comment = attendanceHistory.comment,
     recordedTime = attendanceHistory.recordedTime,
     recordedBy = attendanceHistory.recordedBy,
     issuePayment = attendanceHistory.issuePayment,
     incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
     otherAbsenceReason = attendanceHistory.otherAbsenceReason,
+    caseNoteText = caseNoteText,
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =

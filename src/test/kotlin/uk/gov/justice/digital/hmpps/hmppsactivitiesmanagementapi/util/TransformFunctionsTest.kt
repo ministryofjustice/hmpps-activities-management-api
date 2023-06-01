@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -57,14 +56,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 class TransformFunctionsTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   @Test
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     val activity = activityEntity(timestamp = timestamp).apply { attendanceRequired = false }
 
-    with(transform(activity, caseNotesApiClient)) {
+    with(transform(activity)) {
       assertThat(id).isEqualTo(1)
       assertThat(prisonCode).isEqualTo("123")
       assertThat(attendanceRequired).isFalse

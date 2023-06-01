@@ -8,7 +8,6 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -29,8 +28,7 @@ class ActivityScheduleServiceTest {
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
-  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, caseNotesApiClient)
+  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository)
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {

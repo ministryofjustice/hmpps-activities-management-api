@@ -15,7 +15,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -44,8 +43,6 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   private lateinit var capacityService: CapacityService
 
   override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, capacityService)
-
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   @Test
   fun `200 response when get schedule capacity`() {
@@ -113,7 +110,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `200 response when get schedule lite by schedule identifier`() {
-    val expected = activityEntity().schedules().first().toModelSchedule(caseNotesApiClient)
+    val expected = activityEntity().schedules().first().toModelSchedule()
 
     whenever(activityScheduleService.getScheduleById(1)).thenReturn(expected)
 

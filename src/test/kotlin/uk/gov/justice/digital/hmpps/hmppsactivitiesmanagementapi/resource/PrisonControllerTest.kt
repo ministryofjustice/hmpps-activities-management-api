@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -13,7 +12,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -50,8 +48,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   @MockBean
   private lateinit var prisonRegimeService: PrisonRegimeService
-
-  private val caseNotesApiClient: CaseNotesApiClient = mock()
 
   override fun controller() = PrisonController(capacityService, activityService, scheduleService, prisonRegimeService)
 
@@ -193,7 +189,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   @Test
   fun `200 response when get schedule by prison code and search criteria found`() {
-    val schedules = activityModel(activityEntity(), caseNotesApiClient).schedules
+    val schedules = activityModel(activityEntity()).schedules
 
     whenever(
       scheduleService.getActivitySchedulesByPrisonCode(

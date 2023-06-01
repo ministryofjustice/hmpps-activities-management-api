@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -42,13 +41,11 @@ class ActivityService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
-  private val caseNotesApiClient: CaseNotesApiClient,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),
-      caseNotesApiClient,
     )
 
   fun getActivitiesByCategoryInPrison(
@@ -142,7 +139,7 @@ class ActivityService(
         schedule.addSlots(request.slots!!, timeSlots)
         schedule.addInstances(activity, schedule.slots())
 
-        return transform(activityRepository.saveAndFlush(activity), caseNotesApiClient)
+        return transform(activityRepository.saveAndFlush(activity))
       }
     }
   }
@@ -262,7 +259,7 @@ class ActivityService(
 
     activityRepository.saveAndFlush(activity)
 
-    return transform(activity, caseNotesApiClient)
+    return transform(activity)
   }
 
   private fun ActivitySchedule.markAsUpdated(

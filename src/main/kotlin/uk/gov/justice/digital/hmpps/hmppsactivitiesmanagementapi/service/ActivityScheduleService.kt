@@ -4,7 +4,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -31,7 +30,6 @@ class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
-  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
 
   companion object {
@@ -43,7 +41,7 @@ class ActivityScheduleService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<InternalLocation> =
-    transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot), caseNotesApiClient).mapNotNull { it.internalLocation }
+    transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot)).mapNotNull { it.internalLocation }
       .distinct()
 
   fun getActivitySchedulesByPrisonCode(
@@ -51,7 +49,7 @@ class ActivityScheduleService(
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     locationId: Long? = null,
-  ): List<ModelActivitySchedule> = transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot, locationId), caseNotesApiClient)
+  ): List<ModelActivitySchedule> = transformFilteredInstances(schedulesMatching(prisonCode, date, timeSlot, locationId))
 
   private fun schedulesMatching(
     prisonCode: String,
@@ -83,7 +81,7 @@ class ActivityScheduleService(
       .filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
       .toModelAllocations()
 
-  fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule(caseNotesApiClient)
+  fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
