@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import java.time.LocalDate
 
 @Schema(
@@ -24,9 +23,13 @@ data class PrisonerDeallocationRequest(
   @field:NotEmpty(message = "One or more prisoner numbers for the deallocation request must be supplied.")
   val prisonerNumbers: List<String>?,
 
-  @Schema(description = "The reason code for the deallocation", example = "RELEASED")
-  @field:NotNull(message = "The reason code for the deallocation request must supplied.")
-  val reasonCode: DeallocationReason?,
+  @Schema(
+    description = "The reason code for the deallocation",
+    example = "RELEASED",
+    allowableValues = ["OTHER", "PERSONAL", "PROBLEM", "REMOVED", "SECURITY", "UNACCEPTABLE_ATTENDANCE", "UNACCEPTABLE_BEHAVIOUR", "WITHDRAWN"],
+  )
+  @field:NotEmpty(message = "The reason code for the deallocation request must supplied.")
+  val reasonCode: String?,
 
   @Schema(
     description =

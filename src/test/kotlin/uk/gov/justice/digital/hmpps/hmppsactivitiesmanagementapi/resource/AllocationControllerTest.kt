@@ -12,6 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
 
@@ -47,6 +48,28 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
     mockMvc.getAllocationById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
+  }
+
+  @Test
+  fun `200 response when get deallocation reasons`() {
+    val response = mockMvc.get("/allocations/deallocation-reasons")
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains(DeallocationReason.OTHER.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.PERSONAL.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.PROBLEM.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.REMOVED.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.SECURITY.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.UNACCEPTABLE_ATTENDANCE.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.UNACCEPTABLE_BEHAVIOUR.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.WITHDRAWN.name)
+
+    assertThat(response.contentAsString).doesNotContain(DeallocationReason.DIED.name)
+    assertThat(response.contentAsString).doesNotContain(DeallocationReason.ENDED.name)
+    assertThat(response.contentAsString).doesNotContain(DeallocationReason.EXPIRED.name)
+    assertThat(response.contentAsString).doesNotContain(DeallocationReason.RELEASED.name)
+    assertThat(response.contentAsString).doesNotContain(DeallocationReason.TEMPORARY_ABSENCE.name)
   }
 
   private fun MockMvc.getAllocationById(id: Long) = get("/allocations/id/{allocationId}", id)
