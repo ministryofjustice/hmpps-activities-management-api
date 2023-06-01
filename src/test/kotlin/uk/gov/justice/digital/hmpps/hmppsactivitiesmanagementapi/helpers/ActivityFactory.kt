@@ -158,6 +158,7 @@ internal fun activitySchedule(
   sunday: Boolean = false,
   runsOnBankHolidays: Boolean = false,
   startDate: LocalDate? = null,
+  endDate: LocalDate? = null,
   noSlots: Boolean = false,
   noAllocations: Boolean = false,
   noInstances: Boolean = false,
@@ -173,12 +174,14 @@ internal fun activitySchedule(
     startDate = startDate ?: activity.startDate,
     runsOnBankHoliday = runsOnBankHolidays,
   ).apply {
+    this.endDate = endDate ?: activity.endDate
     if (!noAllocations) {
       this.allocatePrisoner(
         prisonerNumber = "A1234AA".toPrisonerNumber(),
         bookingId = 10001,
         payBand = lowPayBand,
         allocatedBy = "Mr Blogs",
+        startDate = startDate ?: activity.startDate,
       )
     }
     if (!noSlots) {

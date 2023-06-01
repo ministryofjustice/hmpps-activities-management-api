@@ -220,10 +220,11 @@ data class ActivitySchedule(
         payBand = payBand,
         // TODO not sure if this is supported in the UI
         startDate = startDate,
-        endDate = endDate,
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
-      ),
+      ).apply {
+        this.endDate = endDate
+      },
     )
   }
 
@@ -234,6 +235,15 @@ data class ActivitySchedule(
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
+
+  fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String) {
+    if (isActiveOn(date)) {
+      allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
+        ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
+    } else {
+      throw IllegalStateException("Schedule $activityScheduleId is not active on the planned deallocated date $date.")
+    }
+  }
 
   fun toModelLite() = ActivityScheduleLite(
     id = this.activityScheduleId,

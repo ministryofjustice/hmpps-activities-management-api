@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -48,15 +49,13 @@ class ActivitiesChangedEventHandler(
 
   private fun deallocateOffenderAllocations(event: ActivitiesChangedEvent) =
     allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .deallocateAndSaveAffectedAllocations("Temporary absence")
+      .deallocateAndSaveAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE)
       .also {
         log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
       }
 
-  private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: String = "Released from prison") =
-    LocalDateTime.now().let { now ->
-      this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocate(now, reason) }
-    }.saveAffectedAllocations()
+  private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(reason) }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
     allocationRepository.saveAllAndFlush(this).toList()
