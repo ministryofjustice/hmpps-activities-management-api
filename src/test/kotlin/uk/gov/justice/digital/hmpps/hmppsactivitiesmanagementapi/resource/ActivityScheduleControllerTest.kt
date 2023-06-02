@@ -182,7 +182,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   fun `204 response when deallocate offender from a schedule`() {
     val request = PrisonerDeallocationRequest(
       prisonerNumbers = listOf("654321"),
-      reasonCode = DeallocationReason.RELEASED,
+      reasonCode = DeallocationReason.RELEASED.name,
       endDate = TimeSource.tomorrow(),
     )
 
