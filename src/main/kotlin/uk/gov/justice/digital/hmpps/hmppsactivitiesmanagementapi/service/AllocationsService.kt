@@ -41,10 +41,12 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     allocation: Allocation,
   ) {
     request.startDate?.apply {
-      if (allocation.startDate <= LocalDate.now())
+      if (allocation.startDate <= LocalDate.now()) {
         throw IllegalArgumentException("Start date cannot be updated once allocation has started")
-      if (this < allocation.activitySchedule.activity.startDate)
+      }
+      if (this < allocation.activitySchedule.activity.startDate) {
         throw IllegalArgumentException("Allocation start date cannot be before activity start date")
+      }
       allocation.startDate = this
     }
   }
@@ -54,8 +56,9 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     allocation: Allocation,
   ) {
     request.endDate?.apply {
-      if (allocation.activitySchedule.activity.endDate !== null && this > allocation.activitySchedule.activity.endDate)
+      if (allocation.activitySchedule.activity.endDate !== null && this > allocation.activitySchedule.activity.endDate) {
         throw IllegalArgumentException("Allocation end date cannot be after activity end date")
+      }
       allocation.endDate = this
     }
   }
