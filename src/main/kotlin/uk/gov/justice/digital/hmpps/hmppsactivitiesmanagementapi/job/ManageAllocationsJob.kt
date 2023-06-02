@@ -10,6 +10,7 @@ class ManageAllocationsJob(private val service: ManageAllocationsService) {
 
   @Async("asyncExecutor")
   fun execute() {
+    service.allocations(AllocationOperation.STARTING_TODAY)
     service.allocations(AllocationOperation.DEALLOCATE_ENDING)
     service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
   }

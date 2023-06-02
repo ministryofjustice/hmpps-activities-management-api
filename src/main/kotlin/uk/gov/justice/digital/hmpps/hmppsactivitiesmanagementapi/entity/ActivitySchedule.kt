@@ -216,6 +216,7 @@ data class ActivitySchedule(
       Allocation(
         activitySchedule = this,
         prisonerNumber = prisonerNumber.toString(),
+        prisonerStatus = if (startDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE,
         bookingId = bookingId,
         payBand = payBand,
         // TODO not sure if this is supported in the UI
