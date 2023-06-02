@@ -36,6 +36,9 @@ data class Allocation(
 
   val bookingId: Long,
 
+  @Enumerated(EnumType.STRING)
+  var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE,
+
   @OneToOne
   @JoinColumn(name = "prison_pay_band_id")
   var payBand: PrisonPayBand,
@@ -71,10 +74,6 @@ data class Allocation(
     private set
 
   var suspendedReason: String? = null
-    private set
-
-  @Enumerated(EnumType.STRING)
-  var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE
     private set
 
   private fun activitySummary() = activitySchedule.activity.summary
@@ -152,6 +151,9 @@ data class Allocation(
       status = prisonerStatus,
     )
 
+  fun activate() =
+    this.apply { prisonerStatus = PrisonerStatus.ACTIVE }
+
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {
       failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
@@ -198,7 +200,7 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, SUSPENDED, AUTO_SUSPENDED, ENDED
+  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED
 }
 
 enum class DeallocationReason(val description: String, val displayed: Boolean = false) {

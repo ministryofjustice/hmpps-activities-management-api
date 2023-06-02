@@ -176,6 +176,7 @@ class ActivityScheduleTest {
     with(schedule.allocations().first()) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("123456")
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
       assertThat(allocatedBy).isEqualTo("FRED")
@@ -200,9 +201,38 @@ class ActivityScheduleTest {
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
       assertThat(prisonerNumber).isEqualTo("654321")
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
       assertThat(bookingId).isEqualTo(10001)
       assertThat(payBand).isEqualTo(lowPayBand)
       assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(allocatedBy).isEqualTo("FREDDIE")
+      assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(payBand).isEqualTo(lowPayBand)
+    }
+  }
+
+  @Test
+  fun `allocated prisoner status is set to PENDING when start date is in the future`() {
+    val schedule = activitySchedule(activity = activityEntity())
+      .also { assertThat(it.allocations()).hasSize(1) }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "654321".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FREDDIE",
+      startDate = LocalDate.now().plusDays(1),
+    )
+
+    assertThat(schedule.allocations()).hasSize(2)
+
+    with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
+      assertThat(activitySchedule).isEqualTo(schedule)
+      assertThat(prisonerNumber).isEqualTo("654321")
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+      assertThat(bookingId).isEqualTo(10001)
+      assertThat(payBand).isEqualTo(lowPayBand)
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(allocatedBy).isEqualTo("FREDDIE")
       assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(payBand).isEqualTo(lowPayBand)
