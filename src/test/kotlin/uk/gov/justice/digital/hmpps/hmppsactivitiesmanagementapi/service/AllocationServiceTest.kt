@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
+import java.time.LocalDate
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as AllocationEntity
 
@@ -87,6 +88,8 @@ class AllocationServiceTest {
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    allocationEntity.startDate = LocalDate.now().plusDays(1)
 
     service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode)
 
@@ -157,5 +160,59 @@ class AllocationServiceTest {
     assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison Pay Band 14 not found")
+  }
+
+  @Test
+  fun `updateAllocation - update start date - allocation started`() {
+    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-1.json")
+
+    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
+
+    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+
+    whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Start date cannot be updated once allocation has started")
+  }
+
+  @Test
+  fun `updateAllocation - update start date - allocation start date before activity start date`() {
+    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-1.json")
+
+    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
+
+    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+
+    whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    allocationEntity.startDate = LocalDate.now().plusDays(1)
+    allocationEntity.activitySchedule.activity.startDate = LocalDate.now().plusDays(2)
+
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be before activity start date")
+  }
+
+  @Test
+  fun `updateAllocation - update end date - allocation end date after activity end date`() {
+    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-2.json")
+
+    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
+
+    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+
+    whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    allocationEntity.endDate = LocalDate.now().plusDays(2)
+    allocationEntity.activitySchedule.activity.endDate = LocalDate.now().plusDays(1)
+
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date cannot be after activity end date")
   }
 }
