@@ -319,7 +319,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       1,
       PrisonerDeallocationRequest(
         prisonerNumbers = listOf("G4793VF"),
-        reasonCode = DeallocationReason.WITHDRAWN.name,
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
         endDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
@@ -327,7 +327,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     repository.findById(1).orElseThrow().also {
       with(it.allocations().first().plannedDeallocation!!) {
         assertThat(plannedBy).isEqualTo("test-client")
-        assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN)
+        assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
       }
     }

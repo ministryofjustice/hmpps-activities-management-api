@@ -56,14 +56,13 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       .andExpect { status { isOk() } }
       .andReturn().response
 
+    assertThat(response.contentAsString).contains(DeallocationReason.COMPLETED.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.HEALTH.name)
     assertThat(response.contentAsString).contains(DeallocationReason.OTHER.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.PERSONAL.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.PROBLEM.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.REMOVED.name)
     assertThat(response.contentAsString).contains(DeallocationReason.SECURITY.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.UNACCEPTABLE_ATTENDANCE.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.UNACCEPTABLE_BEHAVIOUR.name)
-    assertThat(response.contentAsString).contains(DeallocationReason.WITHDRAWN.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.TRANSFERRED.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.WITHDRAWN_OWN.name)
+    assertThat(response.contentAsString).contains(DeallocationReason.WITHDRAWN_STAFF.name)
 
     assertThat(response.contentAsString).doesNotContain(DeallocationReason.DIED.name)
     assertThat(response.contentAsString).doesNotContain(DeallocationReason.ENDED.name)

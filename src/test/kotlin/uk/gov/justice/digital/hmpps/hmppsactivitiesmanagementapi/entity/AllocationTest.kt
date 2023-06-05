@@ -145,7 +145,7 @@ class AllocationTest {
     val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy {
-      allocation.deallocateOn(today, DeallocationReason.PERSONAL, "by test")
+      allocation.deallocateOn(today, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Planned deallocation date must be in the future.")
   }
@@ -156,7 +156,7 @@ class AllocationTest {
       allocation().apply { endDate = today }.also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy {
-      allocationEndingToday.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+      allocationEndingToday.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Planned date cannot be after $today.")
   }
@@ -172,7 +172,7 @@ class AllocationTest {
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy {
-      allocationNoEndDate.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+      allocationNoEndDate.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Planned date cannot be after $today.")
   }
@@ -185,14 +185,14 @@ class AllocationTest {
     assertThat(allocation.plannedDeallocation).isNull()
     assertThat(allocation.endDate).isNull()
 
-    allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    allocation.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
 
     assertThat(allocation.endDate).isNull()
 
     with(allocation.plannedDeallocation!!) {
       assertThat(plannedDate).isEqualTo(tomorrow)
       assertThat(plannedBy).isEqualTo("by test")
-      assertThat(plannedReason).isEqualTo(DeallocationReason.PERSONAL)
+      assertThat(plannedReason).isEqualTo(DeallocationReason.TRANSFERRED)
       assertThat(plannedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
 
@@ -208,7 +208,7 @@ class AllocationTest {
     val allocation = allocation().copy(activitySchedule = schedule).apply { endDate = null }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
-    allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+    allocation.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     allocation.deallocateOn(tomorrow.plusDays(1), DeallocationReason.RELEASED, "by another test")
 
     with(allocation.plannedDeallocation!!) {
@@ -228,7 +228,7 @@ class AllocationTest {
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy {
-      allocation.deallocateOn(tomorrow, DeallocationReason.PERSONAL, "by test")
+      allocation.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '1' is already deallocated.")
   }
