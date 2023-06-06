@@ -31,9 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -46,10 +44,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @MockBean
   private lateinit var activityService: ActivityService
 
-  @MockBean
-  private lateinit var capacityService: CapacityService
-
-  override fun controller() = ActivityController(activityService, capacityService)
+  override fun controller() = ActivityController(activityService)
 
   @Test
   fun `createActivity - success`() {
@@ -272,36 +267,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
-  fun `200 response when get activity capacity`() {
-    val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
-
-    whenever(capacityService.getActivityCapacityAndAllocated(1)).thenReturn(expectedModel)
-
-    val response = mockMvc.getActivityCapacity(1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
-
-    verify(capacityService).getActivityCapacityAndAllocated(1)
-  }
-
-  @Test
-  fun `404 response when get activity capacity and activity id not found`() {
-    whenever(capacityService.getActivityCapacityAndAllocated(2)).thenThrow(EntityNotFoundException("not found"))
-
-    val response = mockMvc.getActivityCapacity(2)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(capacityService).getActivityCapacityAndAllocated(2)
-  }
-
-  @Test
   fun `200 response when get activity schedules`() {
     val expectedModel = listOf(
       ActivityScheduleLite(
@@ -328,6 +293,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             name = "Education",
             description = "Such as classes in English, maths, construction and computer skills",
           ),
+          capacity = 20,
+          allocated = 10,
           createdTime = LocalDateTime.now(),
           activityState = ActivityState.LIVE,
         ),
