@@ -313,6 +313,69 @@ class ActivityScheduleController(
     )
   }
 
+  @GetMapping(value = ["/{scheduleId}/suitability"])
+  @Operation(
+    summary = "Gets the suitability details of a candidate for an activity",
+    description = "Returns candidate suitability details considering factors such as, workplace risk assessment," +
+      " incentive level, education levels, earliest release date and non-associations" +
+      " Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Candidate suitability details.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity schedule for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun allocationSuitability(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(value = "prisonerNumber", required = true)
+    @Parameter(description = "Prisoner number (required). Format A9999AA.")
+    prisonerNumber: String,
+  ) = candidatesService.candidateSuitability(scheduleId, prisonerNumber)
+
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @PutMapping(value = ["/{scheduleId}/deallocate"])
   @Operation(
