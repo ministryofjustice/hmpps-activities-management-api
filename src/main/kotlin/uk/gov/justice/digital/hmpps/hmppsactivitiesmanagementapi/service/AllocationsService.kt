@@ -69,8 +69,9 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     allocation: Allocation,
   ) {
     request.removeEndDate?.apply {
-      if (this)
+      if (this) {
         allocation.endDate = null
+      }
     }
   }
 
