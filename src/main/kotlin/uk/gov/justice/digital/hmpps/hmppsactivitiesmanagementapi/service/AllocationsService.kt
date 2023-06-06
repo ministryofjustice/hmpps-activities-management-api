@@ -29,6 +29,7 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
 
     applyStartDateUpdate(request, allocation)
     applyEndDateUpdate(request, allocation)
+    applyRemoveEndDateUpdate(request, allocation)
     applyPayBandUpdate(request, allocation)
 
     allocationRepository.saveAndFlush(allocation)
@@ -60,6 +61,16 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
         throw IllegalArgumentException("Allocation end date cannot be after activity end date")
       }
       allocation.endDate = this
+    }
+  }
+
+  private fun applyRemoveEndDateUpdate(
+    request: AllocationUpdateRequest,
+    allocation: Allocation,
+  ) {
+    request.removeEndDate?.apply {
+      if (this)
+        allocation.endDate = null
     }
   }
 

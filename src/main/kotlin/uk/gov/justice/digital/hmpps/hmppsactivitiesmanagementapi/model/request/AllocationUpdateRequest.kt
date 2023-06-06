@@ -15,6 +15,9 @@ data class AllocationUpdateRequest(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
+  @Schema(description = "A flag to indicate that the allocation end date is to be removed", example = "true")
+  val removeEndDate: Boolean? = null,
+
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
   val payBandId: Long? = null,
 )
