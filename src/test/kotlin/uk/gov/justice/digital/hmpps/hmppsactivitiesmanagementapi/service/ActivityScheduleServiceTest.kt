@@ -104,12 +104,12 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.PERSONAL.name, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.OTHER.name, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
-    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
+    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 

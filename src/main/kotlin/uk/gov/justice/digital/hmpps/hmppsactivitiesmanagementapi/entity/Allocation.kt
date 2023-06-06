@@ -204,19 +204,21 @@ enum class PrisonerStatus {
 }
 
 enum class DeallocationReason(val description: String, val displayed: Boolean = false) {
+  // System reasons
   DIED("Deceased"),
   ENDED("Allocation end date reached"),
   EXPIRED("Expired"),
-  OTHER("Other", true),
-  PERSONAL("Personal reason", true),
-  PROBLEM("Problem understanding material", true),
   RELEASED("Released from prison"),
-  REMOVED("Removed", true),
-  SECURITY("Security", true),
   TEMPORARY_ABSENCE("Temporary absence"),
-  UNACCEPTABLE_ATTENDANCE("Unacceptable attendance", true),
-  UNACCEPTABLE_BEHAVIOUR("Unacceptable behaviour", true),
-  WITHDRAWN("Withdrawn", true),
+
+  // Displayed reasons
+  COMPLETED("Completed course or task", true),
+  TRANSFERRED("Transferred to another activity", true),
+  WITHDRAWN_STAFF("Withdrawn by staff", true),
+  WITHDRAWN_OWN("Withdrawn at own request", true),
+  HEALTH("Health", true),
+  SECURITY("Security", true),
+  OTHER("Other", true),
   ;
 
   fun toModel() = ModelDeallocationReason(name, description)
