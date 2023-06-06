@@ -240,10 +240,10 @@ class ManageAllocationsServiceTest {
     val schedule = mock<ActivitySchedule>()
     val activity = mock<Activity>()
     val pendingAllocation: Allocation = mock {
-      on { prisonerStatus } doReturn PrisonerStatus.PENDING
+      on { status(PrisonerStatus.PENDING) } doReturn true
     }
     val activeAllocation: Allocation = mock {
-      on { prisonerStatus } doReturn PrisonerStatus.ACTIVE
+      on { status(PrisonerStatus.ACTIVE) } doReturn true
     }
 
     whenever(activity.schedules()).thenReturn(listOf(schedule))
@@ -258,9 +258,6 @@ class ManageAllocationsServiceTest {
     verify(pendingAllocation).activate()
     verify(allocationRepository).saveAndFlush(pendingAllocation)
     verifyNoMoreInteractions(allocationRepository)
-
-    verify(activeAllocation).prisonerStatus
-    verifyNoMoreInteractions(activeAllocation)
   }
 
   private fun Allocation.verifyIsActive() {

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: deallocate-offenders
+  name: deallocate-allocations
 spec:
   schedule: "0 22 * * *" # 10pm every day
   concurrencyPolicy: Replace
@@ -16,9 +16,9 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-          - name: deallocate-offenders-job
+          - name: deallocate-allocations-job
             image: ghcr.io/ministryofjustice/hmpps-devops-tools
             args:
               - /bin/sh
               - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-allocations
+              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-allocations -H "Content-Type: application/json" -d '["DEALLOCATE_ENDING","DEALLOCATE_EXPIRING"]'

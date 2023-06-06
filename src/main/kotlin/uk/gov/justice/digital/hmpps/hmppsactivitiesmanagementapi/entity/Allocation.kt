@@ -152,7 +152,11 @@ data class Allocation(
     )
 
   fun activate() =
-    this.apply { prisonerStatus = PrisonerStatus.ACTIVE }
+    this.apply {
+      failWithMessageIfAllocationsIsNot("You can only activate pending allocations", PrisonerStatus.PENDING)
+
+      prisonerStatus = PrisonerStatus.ACTIVE
+    }
 
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {

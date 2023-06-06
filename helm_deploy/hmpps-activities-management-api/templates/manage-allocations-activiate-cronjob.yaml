@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: activate-allocations
+spec:
+  schedule: "0 2 * * *" # 2am every day
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 43200
+  successfulJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 3600
+          containers:
+          - name: activate-allocations-job
+            image: ghcr.io/ministryofjustice/hmpps-devops-tools
+            args:
+              - /bin/sh
+              - -c
+              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-allocations -H "Content-Type: application/json" -d '["STARTING_TODAY"]'
