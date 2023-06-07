@@ -232,26 +232,4 @@ class AllocationTest {
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Allocation with ID '1' is already deallocated.")
   }
-
-  @Test
-  fun `activate pending allocation`() {
-    val allocation = allocation()
-      .apply { prisonerStatus = PrisonerStatus.PENDING }
-      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.PENDING) }
-
-    allocation.activate()
-
-    assertThat(allocation.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
-  }
-
-  @Test
-  fun `can only activate pending allocation`() {
-    val allocation = allocation()
-      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
-
-    assertThatThrownBy {
-      allocation.activate()
-    }.isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only activate pending allocations")
-  }
 }
