@@ -14,4 +14,9 @@ data class ActivityMinimumEducationLevel(
   @Schema(description = "The education level description", example = "Basic")
   val educationLevelDescription: String,
 
+  @Schema(description = "The study area code", example = "ENGLA")
+  val studyAreaCode: String,
+
+  @Schema(description = "The study area description", example = "English Language")
+  val studyAreaDescription: String,
 )

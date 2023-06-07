@@ -79,6 +79,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/education-level-code-1.json",
     )
 
+    prisonApiMockServer.stubGetStudyArea(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
     prisonApiMockServer.stubGetLocation(
       1L,
       "prisonapi/location-id-1.json",
@@ -207,6 +213,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
               id = 1,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
+              studyAreaCode = "ENGLA",
+              studyAreaDescription = "English Language",
             ),
           ),
           category = educationCategory,
@@ -255,6 +263,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
               id = 1,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
+              studyAreaCode = "ENGLA",
+              studyAreaDescription = "English Language",
             ),
           ),
           category = educationCategory,
@@ -578,6 +588,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/education-level-code-1.json",
     )
 
+    prisonApiMockServer.stubGetStudyArea(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
     val today = LocalDate.now()
     val createActivityRequest =
       mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = today)
@@ -614,6 +630,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetStudyArea(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
     )
 
     prisonApiMockServer.stubGetLocation(

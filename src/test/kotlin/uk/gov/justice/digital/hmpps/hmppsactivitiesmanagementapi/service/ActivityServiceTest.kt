@@ -71,6 +71,15 @@ class ActivityServiceTest {
     systemDataFlag = "N",
   )
 
+  private val studyArea = ReferenceCode(
+    domain = "STUDY_AREA",
+    code = "ENGLA",
+    description = "English Language",
+    activeFlag = "Y",
+    listSeq = 99,
+    systemDataFlag = "N",
+  )
+
   private val inactiveEducationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
     code = "1",
@@ -130,6 +139,7 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     service.createActivity(createActivityRequest, createdBy)
 
@@ -234,6 +244,7 @@ class ActivityServiceTest {
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     assertThatThrownBy {
       service.createActivity(createActivityRequest, createdBy)
@@ -329,6 +340,7 @@ class ActivityServiceTest {
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
@@ -367,6 +379,7 @@ class ActivityServiceTest {
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
@@ -407,6 +420,7 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
 
@@ -571,6 +585,7 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy)
 
@@ -614,6 +629,7 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 0))
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
     service.updateActivity(moorlandPrisonCode, 17, updateActivityRequest, updatedBy)
 

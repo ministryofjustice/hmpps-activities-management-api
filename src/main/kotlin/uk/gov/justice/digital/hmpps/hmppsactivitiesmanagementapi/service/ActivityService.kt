@@ -114,6 +114,8 @@ class ActivityService(
         this.addMinimumEducationLevel(
           educationLevelCode = it.educationLevelCode!!,
           educationLevelDescription = it.educationLevelDescription!!,
+          studyAreaCode = it.studyAreaCode!!,
+          studyAreaDescription = it.studyAreaDescription!!,
         )
       }
     }
@@ -152,6 +154,14 @@ class ActivityService(
         throw IllegalArgumentException("The education level code '$educationLevelCode' is not active in NOMIS")
       } else {
         failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      }
+
+      val studyAreaCode = it.studyAreaCode!!
+      val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
+      if (studyArea.activeFlag != "Y") {
+        throw IllegalArgumentException("The study area code '$studyAreaCode' is not active in NOMIS")
+      } else {
+        failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
       }
     }
   }
@@ -226,7 +236,7 @@ class ActivityService(
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
-    var activity = activityRepository.findOrThrowNotFound(activityId)
+    val activity = activityRepository.findOrThrowNotFound(activityId)
     val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
@@ -406,11 +416,25 @@ class ActivityService(
     activity: Activity,
   ) {
     checkEducationLevels(minimumEducationLevel)
-    activity.removeMinimumEducationLevel()
-    minimumEducationLevel.forEach {
+
+    // Remove any unneeded education
+    activity.activityMinimumEducationLevel().filter {
+      minimumEducationLevel.any { newEducation ->
+        it.studyAreaCode != newEducation.studyAreaCode || it.educationLevelCode != newEducation.educationLevelCode
+      }
+    }.forEach { activity.removeMinimumEducationLevel(it) }
+
+    // Add new education
+    minimumEducationLevel.filter {
+      activity.activityMinimumEducationLevel().any { activityEducation ->
+        it.studyAreaCode != activityEducation.studyAreaCode || it.educationLevelCode != activityEducation.educationLevelCode
+      }
+    }.forEach {
       activity.addMinimumEducationLevel(
         educationLevelCode = it.educationLevelCode!!,
         educationLevelDescription = it.educationLevelDescription!!,
+        studyAreaCode = it.studyAreaCode!!,
+        studyAreaDescription = it.studyAreaDescription!!,
       )
     }
   }
