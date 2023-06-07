@@ -82,7 +82,7 @@ class ManageAllocationsService(
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }
 
   private fun List<Allocation>.activatePending() =
-    filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }
+    filter { it.status(PrisonerStatus.PENDING) }
       .forEach {
         it.activate()
         allocationRepository.saveAndFlush(it)
