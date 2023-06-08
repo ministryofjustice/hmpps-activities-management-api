@@ -150,19 +150,13 @@ class ActivityService(
     minimumEducationLevels.forEach {
       val educationLevelCode = it.educationLevelCode!!
       val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
-      if (educationLevel.activeFlag != "Y") {
-        throw IllegalArgumentException("The education level code '$educationLevelCode' is not active in NOMIS")
-      } else {
-        failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
-      }
+      require(educationLevel.isActive()) { "The education level code '$educationLevelCode' is not active in NOMIS" }
+      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
 
       val studyAreaCode = it.studyAreaCode!!
       val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
-      if (studyArea.activeFlag != "Y") {
-        throw IllegalArgumentException("The study area code '$studyAreaCode' is not active in NOMIS")
-      } else {
-        failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
-      }
+      require(studyArea.isActive()) { "The study area code '$studyAreaCode' is not active in NOMIS" }
+      failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
     }
   }
 
