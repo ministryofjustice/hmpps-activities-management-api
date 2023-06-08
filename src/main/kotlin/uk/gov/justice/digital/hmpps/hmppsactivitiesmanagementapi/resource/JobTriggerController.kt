@@ -56,12 +56,24 @@ class JobTriggerController(
   @PostMapping(value = ["/manage-allocations"])
   @Operation(
     summary = "Trigger the job to manage allocations",
-    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
+    description = """
+        One or more operations to trigger for managing allocations.
+        
+        Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
+    """,
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
-  fun triggerManageAllocationsJob(): String {
-    manageAllocationsJob.execute()
-    return "Manage allocations triggered"
+  fun triggerManageAllocationsJob(
+    @RequestParam(value = "withActivate", required = false)
+    @Parameter(description = "If true will run the activate pending allocations process. Defaults to false.")
+    withActivate: Boolean = false,
+    @RequestParam(value = "withDeallocate", required = false)
+    @Parameter(description = "If true will run the deallocate allocations process. Defaults to false.")
+    withDeallocate: Boolean = false,
+  ): String {
+    manageAllocationsJob.execute(withActivate = withActivate, withDeallocate = withDeallocate)
+
+    return "Manage allocations triggered operations"
   }
 }
