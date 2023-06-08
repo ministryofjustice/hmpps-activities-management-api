@@ -22,10 +22,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import java.time.LocalDate
 
@@ -34,7 +32,6 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
 class PrisonController(
-  private val capacityService: CapacityService,
   private val activityService: ActivityService,
   private val scheduleService: ActivityScheduleService,
   private val prisonRegimeService: PrisonRegimeService,
@@ -58,12 +55,22 @@ class PrisonController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )
@@ -91,17 +98,32 @@ class PrisonController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
         description = "Category ID not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )
@@ -111,45 +133,6 @@ class PrisonController(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("categoryId") categoryId: Long,
   ): List<ActivityLite> = activityService.getActivitiesByCategoryInPrison(prisonCode, categoryId)
-
-  @Operation(
-    summary = "Get the capacity and number of allocated slots in an activity category within a prison",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity category capacity",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CapacityAndAllocated::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Category ID not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/capacity"])
-  @ResponseBody
-  fun getActivityCategoryCapacity(
-    @PathVariable("prisonCode") prisonCode: String,
-    @PathVariable("categoryId") categoryId: Long,
-  ): CapacityAndAllocated = capacityService.getActivityCategoryCapacityAndAllocated(prisonCode, categoryId)
 
   @GetMapping(value = ["/{prisonCode}/locations"])
   @ResponseBody
@@ -172,12 +155,22 @@ class PrisonController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )

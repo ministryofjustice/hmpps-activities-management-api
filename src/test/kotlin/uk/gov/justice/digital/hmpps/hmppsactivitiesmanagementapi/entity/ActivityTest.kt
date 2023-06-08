@@ -75,6 +75,8 @@ class ActivityTest {
         name = "category name",
         description = "category description",
       ),
+      capacity = 0,
+      allocated = 0,
       createdTime = LocalDate.now().atStartOfDay(),
       activityState = ActivityState.LIVE,
     )
@@ -110,6 +112,8 @@ class ActivityTest {
           name = "category name",
           description = "category description",
         ),
+        capacity = 1,
+        allocated = 1,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),

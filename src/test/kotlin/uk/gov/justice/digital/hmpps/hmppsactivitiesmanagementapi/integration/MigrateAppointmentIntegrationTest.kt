@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -32,6 +33,29 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var appointmentRepository: AppointmentRepository
+
+  @Test
+  fun `migrate appointment forbidden`() {
+    val request = appointmentMigrateRequest(categoryCode = "AC1")
+
+    val error = webTestClient.post()
+      .uri("/migrate-appointment")
+      .bodyValue(request)
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isForbidden
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(403)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
+      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(moreInfo).isNull()
+    }
+  }
 
   @Test
   fun `migrate appointment success`() {
@@ -90,7 +114,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     post()
       .uri("/migrate-appointment")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf("NOMIS_APPOINTMENTS")))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
