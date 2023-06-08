@@ -92,7 +92,7 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  @Filters(Filter(name = "AllocationEndDateFilter", condition = "(prisonerStatus != 'ENDED' or endDate >= :earliestEndDate"))
+  @Filters(Filter(name = "AllocationEndDateFilter", condition = "(prisonerStatus != 'ENDED' or endDate >= :earliestEndDate)"))
   private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
