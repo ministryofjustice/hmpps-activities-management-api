@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -43,6 +44,18 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
+  // The filtered replacement for the method below
+  fun getActivityByIdWithFilters(
+    activityId: Long,
+    earliestSessionDate: LocalDate,
+    earliestAllocationEndDate: LocalDate,
+  ) =
+    transform(
+      activityRepository.getActivityByIdWithFilters(activityId, earliestSessionDate, earliestAllocationEndDate)
+        .orElseThrow { EntityNotFoundException("Activity $activityId not found") },
+    )
+
+  // Will have problems with a large object graph over time
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),
@@ -319,7 +332,7 @@ class ActivityService(
       activity.endDate = this
       activity.schedules().forEach {
         it.endDate = this
-        it.allocations().forEach { it.endDate = this }
+        it.allocations().forEach { allocation -> allocation.endDate = this }
       }
     }
   }

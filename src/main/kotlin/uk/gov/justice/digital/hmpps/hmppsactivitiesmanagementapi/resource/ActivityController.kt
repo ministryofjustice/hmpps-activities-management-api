@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
+import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -92,6 +94,69 @@ class ActivityController(
   )
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
+
+  @GetMapping(value = ["/{activityId}/filtered"])
+  @ResponseBody
+  @Operation(
+    summary = "Get an activity by its id but filtered by query parameters",
+    description = "Returns a single activity and its filtered details by activity ID.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivityByIdWithFilters(
+    @PathVariable("activityId") activityId: Long,
+
+    @RequestParam(value = "earliestSessionDate", required = false)
+    @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
+    earliestSessionDate: LocalDate = LocalDate.now().minusMonths(1),
+
+    @RequestParam(value = "earliestAllocationEndDate", required = false)
+    @Parameter(description = "The date of the earliest ended allocations to include. Defaults to newer than 1 week ago.")
+    earliestAllocationEndDate: LocalDate = LocalDate.now().minusWeeks(1),
+  ): Activity =
+    activityService.getActivityByIdWithFilters(activityId, earliestSessionDate, earliestAllocationEndDate)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping
