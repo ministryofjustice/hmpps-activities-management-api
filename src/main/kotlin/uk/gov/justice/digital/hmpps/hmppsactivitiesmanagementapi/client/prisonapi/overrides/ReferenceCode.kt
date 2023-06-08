@@ -50,4 +50,6 @@ data class ReferenceCode(
   @Schema(example = "null", description = "List of subordinate reference data items associated with this reference data item. Not returned by default")
   @get:JsonProperty("subCodes")
   val subCodes: List<ReferenceCode>? = null,
-)
+) {
+  fun isActive() = this.activeFlag == "Y"
+}

@@ -54,6 +54,8 @@ class ActivityScheduleTest {
             id = 0,
             educationLevelCode = "1",
             educationLevelDescription = "Reading Measure 1.0",
+            studyAreaCode = "ENGLA",
+            studyAreaDescription = "English Language",
           ),
         ),
         category = ModelActivityCategory(
@@ -119,6 +121,8 @@ class ActivityScheduleTest {
               id = 0,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
+              studyAreaCode = "ENGLA",
+              studyAreaDescription = "English Language",
             ),
           ),
           category = ModelActivityCategory(

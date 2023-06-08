@@ -284,6 +284,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
     getReferenceCode("EDU_LEVEL", educationLevelCode)
 
+  fun getStudyArea(studyAreaCode: String): Mono<ReferenceCode> =
+    getReferenceCode("STUDY_AREA", studyAreaCode)
+
   fun getUserDetailsList(usernames: List<String>): List<UserDetail> {
     return prisonApiWebClient.post()
       .uri("/api/users/list")

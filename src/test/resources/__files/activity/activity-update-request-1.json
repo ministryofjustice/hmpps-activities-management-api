@@ -5,6 +5,12 @@
   "tierId": 1,
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",
+  "minimumEducationLevel": [{
+    "educationLevelCode": "1",
+    "educationLevelDescription": "Reading Measure 1.0",
+    "studyAreaCode": "ENGLA",
+    "studyAreaDescription": "English Language"
+  }],
   "riskLevel": "high",
   "startDate": "2023-03-31",
   "locationId": 1,
