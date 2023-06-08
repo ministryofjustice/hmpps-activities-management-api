@@ -171,18 +171,22 @@ data class Activity(
   fun addMinimumEducationLevel(
     educationLevelCode: String,
     educationLevelDescription: String,
+    studyAreaCode: String,
+    studyAreaDescription: String,
   ) {
     activityMinimumEducationLevel.add(
       ActivityMinimumEducationLevel(
         activity = this,
         educationLevelCode = educationLevelCode,
         educationLevelDescription = educationLevelDescription,
+        studyAreaCode = studyAreaCode,
+        studyAreaDescription = studyAreaDescription,
       ),
     )
   }
 
-  fun removeMinimumEducationLevel() {
-    activityMinimumEducationLevel.clear()
+  fun removeMinimumEducationLevel(minimumEducationLevel: ActivityMinimumEducationLevel) {
+    activityMinimumEducationLevel.remove(minimumEducationLevel)
   }
 
   fun addSchedule(
