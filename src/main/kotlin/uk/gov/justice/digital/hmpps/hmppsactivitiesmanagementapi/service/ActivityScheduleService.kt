@@ -104,11 +104,26 @@ class ActivityScheduleService(
       .failIfNotActive()
       .failIfAtDifferentPrisonTo(schedule.activity)
 
+    if (request.startDate!! < LocalDate.now()) {
+      throw IllegalArgumentException("Allocation start date cannot be before today")
+    }
+    if (request.startDate < schedule.activity.startDate) {
+      throw IllegalArgumentException("Allocation start date cannot be before activity start date")
+    }
+    if (request.endDate !== null && schedule.activity.endDate !== null && request.endDate > schedule.activity.endDate) {
+      throw IllegalArgumentException("Allocation end date cannot be after activity end date")
+    }
+    if (request.endDate !== null && request.endDate < request.startDate) {
+      throw IllegalArgumentException("Allocation end date cannot be before allocation start date")
+    }
+
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
       bookingId = prisonerDetails.bookingId
         ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
       payBand = payBand,
+      startDate = request.startDate,
+      endDate = request.endDate,
       allocatedBy = allocatedBy,
     )
 

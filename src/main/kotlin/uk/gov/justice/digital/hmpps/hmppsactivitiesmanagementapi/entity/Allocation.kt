@@ -207,6 +207,7 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   // System reasons
   DIED("Deceased"),
   ENDED("Allocation end date reached"),
+  PLANNED("Allocation end date entered on initial allocation"),
   EXPIRED("Expired"),
   RELEASED("Released from prison"),
   TEMPORARY_ABSENCE("Temporary absence"),

@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Candida
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
@@ -110,6 +111,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     val request = PrisonerAllocationRequest(
       prisonerNumber = "654321",
       payBandId = 1,
+      startDate = LocalDate.now(),
     )
 
     val mockPrincipal: Principal = mock()

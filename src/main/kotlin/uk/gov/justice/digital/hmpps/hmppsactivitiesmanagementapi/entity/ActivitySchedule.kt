@@ -219,12 +219,14 @@ data class ActivitySchedule(
         prisonerStatus = if (startDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE,
         bookingId = bookingId,
         payBand = payBand,
-        // TODO not sure if this is supported in the UI
         startDate = startDate,
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
       ).apply {
         this.endDate = endDate
+        if (this.endDate !== null) {
+          this.deallocateOn(this.endDate!!, DeallocationReason.PLANNED, allocatedBy)
+        }
       },
     )
   }
