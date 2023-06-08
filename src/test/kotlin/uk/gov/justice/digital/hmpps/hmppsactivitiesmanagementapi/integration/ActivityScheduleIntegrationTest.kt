@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -140,6 +141,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
+        startDate = LocalDate.now(),
       ),
     ).expectStatus().isNoContent
 
@@ -191,7 +193,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-      ),
+        startDate = LocalDate.now(),
+        ),
     ).expectStatus().isNoContent
 
     webTestClient.allocatePrisoner(
@@ -218,7 +221,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         PrisonerAllocationRequest(
           prisonerNumber = "G4793VF",
           payBandId = 11,
-        ),
+          startDate = LocalDate.now(),
+          ),
       )
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
@@ -253,7 +257,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-      ),
+        startDate = LocalDate.now(),
+        ),
     ).expectStatus().isNoContent
 
     with(repository.findById(1).orElseThrow().allocations().first()) {
@@ -312,7 +317,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-      ),
+        startDate = LocalDate.now(),
+        ),
     ).expectStatus().isNoContent
 
     webTestClient.deallocatePrisoners(
