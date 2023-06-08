@@ -411,14 +411,12 @@ class ActivityService(
   ) {
     checkEducationLevels(minimumEducationLevel)
 
-    // Remove any unneeded education
     activity.activityMinimumEducationLevel().filter {
       minimumEducationLevel.any { newEducation ->
         it.studyAreaCode != newEducation.studyAreaCode || it.educationLevelCode != newEducation.educationLevelCode
       }
     }.forEach { activity.removeMinimumEducationLevel(it) }
 
-    // Add new education
     minimumEducationLevel.filter {
       activity.activityMinimumEducationLevel().any { activityEducation ->
         it.studyAreaCode != activityEducation.studyAreaCode || it.educationLevelCode != activityEducation.educationLevelCode

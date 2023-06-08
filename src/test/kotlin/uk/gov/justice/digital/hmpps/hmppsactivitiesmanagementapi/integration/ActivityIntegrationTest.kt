@@ -73,13 +73,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/clear-local-audit.sql")
   fun `createActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
     )
 
-    prisonApiMockServer.stubGetStudyArea(
+    prisonApiMockServer.stubGetReferenceCode(
       "STUDY_AREA",
       "ENGLA",
       "prisonapi/study-area-code-ENGLA.json",
@@ -582,13 +582,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/clear-local-audit.sql")
   fun `the activity should be persisted even if the subsequent event notification fails`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
     )
 
-    prisonApiMockServer.stubGetStudyArea(
+    prisonApiMockServer.stubGetReferenceCode(
       "STUDY_AREA",
       "ENGLA",
       "prisonapi/study-area-code-ENGLA.json",
@@ -626,13 +626,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
     )
 
-    prisonApiMockServer.stubGetStudyArea(
+    prisonApiMockServer.stubGetReferenceCode(
       "STUDY_AREA",
       "ENGLA",
       "prisonapi/study-area-code-ENGLA.json",

@@ -299,7 +299,7 @@ class PrisonApiClientTest {
 
   @Test
   fun `getStudyArea - success`() {
-    prisonApiMockServer.stubGetStudyArea("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json")
+    prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json")
 
     assertThat(prisonApiClient.getStudyArea("ENGLA").block()!!).isEqualTo(
       ReferenceCode(
@@ -315,7 +315,7 @@ class PrisonApiClientTest {
 
   @Test
   fun `getEducationLevel - success`() {
-    prisonApiMockServer.stubGetEducationLevel("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
+    prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json")
 
     assertThat(prisonApiClient.getEducationLevel("1").block()!!).isEqualTo(
       ReferenceCode(
