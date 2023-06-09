@@ -188,18 +188,18 @@ class ActivityScheduleServiceTest {
         PrisonerAllocationRequest(
           "123456",
           11,
-          TimeSource.yesterday(),
+          TimeSource.today(),
         ),
         "by test",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation start date cannot be before today")
+      .hasMessage("Allocation start date must be in the future")
   }
 
   @Test
   fun `allocate throws exception for start date before activity start date`() {
     var schedule = activitySchedule(activityEntity())
-    schedule.activity.startDate = TimeSource.tomorrow()
+    schedule.activity.startDate = LocalDate.now().plusDays(2)
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
     whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
@@ -211,7 +211,7 @@ class ActivityScheduleServiceTest {
         PrisonerAllocationRequest(
           "123456",
           11,
-          TimeSource.today(),
+          TimeSource.tomorrow(),
         ),
         "by test",
       )
@@ -222,7 +222,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `allocate throws exception for end date after activity end date`() {
     var schedule = activitySchedule(activityEntity())
-    schedule.activity.endDate = TimeSource.today()
+    schedule.activity.endDate = TimeSource.tomorrow()
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
     whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
@@ -234,8 +234,8 @@ class ActivityScheduleServiceTest {
         PrisonerAllocationRequest(
           "123456",
           11,
-          TimeSource.today(),
           TimeSource.tomorrow(),
+          TimeSource.tomorrow().plusDays(1),
         ),
         "by test",
       )
@@ -257,8 +257,8 @@ class ActivityScheduleServiceTest {
         PrisonerAllocationRequest(
           "123456",
           11,
+          TimeSource.tomorrow(),
           TimeSource.today(),
-          TimeSource.yesterday(),
         ),
         "by test",
       )

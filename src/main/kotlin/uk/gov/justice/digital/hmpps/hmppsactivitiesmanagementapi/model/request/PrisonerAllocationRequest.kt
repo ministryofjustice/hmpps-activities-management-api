@@ -21,7 +21,7 @@ data class PrisonerAllocationRequest(
   @field:NotNull(message = "Pay band must be supplied")
   val payBandId: Long? = null,
 
-  @Schema(description = "The date when the prisoner will start the activity", example = "2022-09-10")
+  @Schema(description = "The future date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
   @field:NotNull(message = "Start date must be supplied")
   val startDate: LocalDate? = null,

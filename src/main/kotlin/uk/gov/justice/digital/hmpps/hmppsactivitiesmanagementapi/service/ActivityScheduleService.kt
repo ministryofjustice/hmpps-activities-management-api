@@ -104,17 +104,17 @@ class ActivityScheduleService(
       .failIfNotActive()
       .failIfAtDifferentPrisonTo(schedule.activity)
 
-    if (request.startDate!! < LocalDate.now()) {
-      throw IllegalArgumentException("Allocation start date cannot be before today")
+    require(request.startDate!! > LocalDate.now()) {
+      "Allocation start date must be in the future"
     }
-    if (request.startDate < schedule.activity.startDate) {
-      throw IllegalArgumentException("Allocation start date cannot be before activity start date")
+    require(request.startDate >= schedule.activity.startDate) {
+      "Allocation start date cannot be before activity start date"
     }
-    if (request.endDate !== null && schedule.activity.endDate !== null && request.endDate > schedule.activity.endDate) {
-      throw IllegalArgumentException("Allocation end date cannot be after activity end date")
+    require(request.endDate === null || schedule.activity.endDate === null || request.endDate <= schedule.activity.endDate) {
+      "Allocation end date cannot be after activity end date"
     }
-    if (request.endDate !== null && request.endDate < request.startDate) {
-      throw IllegalArgumentException("Allocation end date cannot be before allocation start date")
+    require(request.endDate === null || request.endDate >= request.startDate) {
+      "Allocation end date cannot be before allocation start date"
     }
 
     schedule.allocatePrisoner(
