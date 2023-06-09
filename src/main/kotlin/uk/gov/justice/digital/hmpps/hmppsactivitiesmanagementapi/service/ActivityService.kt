@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
@@ -58,9 +59,9 @@ class ActivityService(
 
   fun getActivitiesInPrison(
     prisonCode: String,
-    activeOnly: Boolean,
+    excludeArchived: Boolean,
   ) = activityRepository.getAllByPrisonCode(prisonCode)
-    .filter { !activeOnly || it.isActive(LocalDate.now()) }
+    .filter { !excludeArchived || !it.state(ActivityState.ARCHIVED) }
     .toModelLite()
 
   fun getSchedulesForActivity(activityId: Long) =
