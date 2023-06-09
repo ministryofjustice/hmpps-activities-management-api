@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -32,6 +33,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 @Service
+@Transactional
 class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -44,7 +46,6 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
-  // The filtered replacement for the method below
   fun getActivityByIdWithFilters(
     activityId: Long,
     earliestSessionDate: LocalDate,
@@ -55,7 +56,6 @@ class ActivityService(
         .orElseThrow { EntityNotFoundException("Activity $activityId not found") },
     )
 
-  // Will have problems with a large object graph over time
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),

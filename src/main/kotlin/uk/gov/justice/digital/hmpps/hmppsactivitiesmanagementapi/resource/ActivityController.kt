@@ -147,13 +147,16 @@ class ActivityController(
 
     @RequestParam(value = "earliestSessionDate", required = false)
     @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
-    earliestSessionDate: LocalDate = LocalDate.now().minusMonths(1),
+    earliestSessionDate: LocalDate?,
 
     @RequestParam(value = "earliestAllocationEndDate", required = false)
     @Parameter(description = "The date of the earliest ended allocations to include. Defaults to newer than 1 week ago.")
-    earliestAllocationEndDate: LocalDate = LocalDate.now().minusWeeks(1),
-  ): Activity =
-    activityService.getActivityByIdWithFilters(activityId, earliestSessionDate, earliestAllocationEndDate)
+    earliestAllocationEndDate: LocalDate?,
+  ): Activity {
+    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
+    val earliestEnd = earliestAllocationEndDate ?: LocalDate.now().minusWeeks(1)
+    return activityService.getActivityByIdWithFilters(activityId, earliestSession, earliestEnd)
+  }
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

@@ -34,12 +34,12 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
     val session = entityManager.unwrap(Session::class.java)
 
     // Enable the session date filter to limit the scheduled instances returned
-    log.info("Enabling filter SessionDateFilter")
+    log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
     val sessionDateFilter = session.enableFilter("SessionDateFilter")
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
     // Enable the allocation end date filter to limit the allocations returned
-    log.info("Enabling filter AllocationEndDateFilter")
+    log.info("Enabling filter AllocationEndDateFilter with earliestEndDate: $earliestAllocationEndDate")
     val endDateFilter = session.enableFilter("AllocationEndDateFilter")
     endDateFilter.setParameter("earliestEndDate", earliestAllocationEndDate)
 
@@ -47,8 +47,14 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
     val query: TypedQuery<Activity> = entityManager.createQuery(hql, Activity::class.java)
     query.setParameter("activityId", activityId)
 
-    return Optional.of(query.singleResult)
+    try {
+      val activity = query.singleResult
+      return Optional.of(activity)
+    } catch (e: Exception) {
+      log.error("Activity by ID failed ${e.message}")
+    }
 
+    return Optional.empty()
     // May not apply filters if the em.find method is used - but try it.
     // return Optional.of(entityManager.find(Activity::class.java, activityId))
   }

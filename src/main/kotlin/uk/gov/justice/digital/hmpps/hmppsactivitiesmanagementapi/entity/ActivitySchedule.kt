@@ -37,7 +37,7 @@ import java.time.temporal.ChronoUnit
   ],
 )
 @FilterDef(
-  name = "StatusAndDateFilter",
+  name = "AllocationEndDateFilter",
   parameters = [
     ParamDef(name = "earliestEndDate", type = LocalDate::class),
   ],
@@ -85,14 +85,16 @@ data class ActivitySchedule(
     }
   }
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  // Fetch mode EAGER rules out filtering
+  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  @Filters(Filter(name = "SessionDateFilter", condition = "sessionDate >= :earliestSessionDate"))
+  @Filters(Filter(name = "SessionDateFilter", condition = "session_date >= :earliestSessionDate"))
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  // Fetch mode EAGER rules out filtering
+  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  @Filters(Filter(name = "AllocationEndDateFilter", condition = "(prisonerStatus != 'ENDED' or endDate >= :earliestEndDate)"))
+  @Filters(Filter(name = "AllocationEndDateFilter", condition = "prisoner_status != 'ENDED' or (prisoner_status = 'ENDED' and end_date >= :earliestEndDate)"))
   private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
