@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -266,6 +267,29 @@ class ActivityScheduleTest {
         allocatedBy = "NOT FREDDIE",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
+  }
+
+  @Test
+  fun `can re-allocate prisoner providing previous allocation is ended`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "654321".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FREDDIE",
+    )
+
+    allocation.deallocateNow(DeallocationReason.OTHER)
+
+    assertDoesNotThrow {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 10001,
+        allocatedBy = "NOT FREDDIE",
+      )
+    }
   }
 
   @Test
