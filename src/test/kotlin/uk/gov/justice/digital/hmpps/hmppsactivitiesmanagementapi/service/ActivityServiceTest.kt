@@ -45,6 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalDate
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule as EligibilityRuleEntity
@@ -293,9 +294,9 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `getActivitiesInPrison returns list of activities`() {
+  fun `getActivitiesInPrison only returns list of active activities`() {
     whenever(activityRepository.getAllByPrisonCode("MDI"))
-      .thenReturn(listOf(activityEntity()))
+      .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
 
     assertThat(
       service.getActivitiesInPrison(

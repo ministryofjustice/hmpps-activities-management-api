@@ -38,7 +38,7 @@ class PrisonController(
 ) {
 
   @Operation(
-    summary = "Get list of activities at a specified prison",
+    summary = "Get list of activities currently running at a specified prison",
   )
   @ApiResponses(
     value = [
