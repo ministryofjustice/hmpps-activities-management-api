@@ -58,8 +58,9 @@ class ActivityService(
 
   fun getActivitiesInPrison(
     prisonCode: String,
+    activeOnly: Boolean,
   ) = activityRepository.getAllByPrisonCode(prisonCode)
-    .filter { it.isActive(LocalDate.now()) }
+    .filter { !activeOnly || it.isActive(LocalDate.now()) }
     .toModelLite()
 
   fun getSchedulesForActivity(activityId: Long) =

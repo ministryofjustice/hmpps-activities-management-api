@@ -38,7 +38,8 @@ class PrisonController(
 ) {
 
   @Operation(
-    summary = "Get list of activities currently running at a specified prison",
+    summary = "Get list of activities running at a specified prison. " +
+      "Optionally and by default, only currently active activities are returned",
   )
   @ApiResponses(
     value = [
@@ -78,7 +79,8 @@ class PrisonController(
   @ResponseBody
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
-  ): List<ActivityLite> = activityService.getActivitiesInPrison(prisonCode)
+    @RequestParam(value = "activeOnly", required = false, defaultValue = "true") activeOnly: Boolean,
+  ): List<ActivityLite> = activityService.getActivitiesInPrison(prisonCode, activeOnly)
 
   @Operation(
     summary = "Get list of activities within a category at a specified prison",

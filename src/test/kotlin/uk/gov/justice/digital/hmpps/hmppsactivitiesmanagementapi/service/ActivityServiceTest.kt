@@ -301,8 +301,24 @@ class ActivityServiceTest {
     assertThat(
       service.getActivitiesInPrison(
         "MDI",
+        true,
       ),
     ).isEqualTo(listOf(activityEntity()).toModelLite())
+
+    verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
+  }
+
+  @Test
+  fun `getActivitiesInPrison returns all activities including ended activities`() {
+    whenever(activityRepository.getAllByPrisonCode("MDI"))
+      .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
+
+    assertThat(
+      service.getActivitiesInPrison(
+        "MDI",
+        false,
+      ),
+    ).isEqualTo(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))).toModelLite())
 
     verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
   }
