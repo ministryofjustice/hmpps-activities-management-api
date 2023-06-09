@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
-import java.time.LocalDateTime
 
 @Component
 class OffenderReleasedEventHandler(
@@ -31,7 +30,7 @@ class OffenderReleasedEventHandler(
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when {
         event.isTemporary() -> {
-          suspendOffenderAllocations(event)
+          log.info("Ignoring temporary release $event")
           Outcome.success()
         }
 
@@ -51,13 +50,6 @@ class OffenderReleasedEventHandler(
 
     return Outcome.success()
   }
-
-  private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .suspendAndSaveAffectedAllocations()
-      .let {
-        log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
-      }
 
   private fun deallocateOffenderAllocations(event: OffenderReleasedEvent) =
     prisonApiClient.getPrisonerDetails(
@@ -79,11 +71,6 @@ class OffenderReleasedEventHandler(
         }
       true
     } ?: log.warn("Prisoner for $event not found").let { false }
-
-  private fun List<Allocation>.suspendAndSaveAffectedAllocations() =
-    LocalDateTime.now().let { now ->
-      this.filter { it.status(PrisonerStatus.ACTIVE) }.map { it.autoSuspend(now, "Temporarily released from prison") }
-    }.saveAffectedAllocations()
 
   private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
     this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(reason) }.saveAffectedAllocations()

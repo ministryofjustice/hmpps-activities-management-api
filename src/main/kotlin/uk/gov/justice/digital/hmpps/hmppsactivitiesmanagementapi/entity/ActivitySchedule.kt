@@ -235,6 +235,7 @@ data class ActivitySchedule(
     if (allocatedBy.isBlank()) throw IllegalArgumentException("Allocated by cannot be blank.")
   }
 
+  // TODO if the allocation is ended then should be able to re-allocate ...
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
