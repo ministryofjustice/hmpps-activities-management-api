@@ -206,7 +206,7 @@ data class ActivitySchedule(
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
     allocatedBy: String,
-  ) {
+  ): Allocation {
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
 
@@ -227,6 +227,8 @@ data class ActivitySchedule(
         this.endDate = endDate
       },
     )
+
+    return allocations.last()
   }
 
   private fun failIfAllocatedByIsBlank(allocatedBy: String) {
@@ -234,7 +236,7 @@ data class ActivitySchedule(
   }
 
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
-    allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber }
+    allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
   fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String) {

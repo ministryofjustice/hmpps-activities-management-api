@@ -71,7 +71,10 @@ class ActivityService(
 
   fun getActivitiesInPrison(
     prisonCode: String,
-  ) = activityRepository.getAllByPrisonCode(prisonCode).toModelLite()
+    activeOnly: Boolean,
+  ) = activityRepository.getAllByPrisonCode(prisonCode)
+    .filter { !activeOnly || it.isActive(LocalDate.now()) }
+    .toModelLite()
 
   fun getSchedulesForActivity(activityId: Long) =
     activityRepository.findOrThrowNotFound(activityId)
@@ -127,6 +130,8 @@ class ActivityService(
         this.addMinimumEducationLevel(
           educationLevelCode = it.educationLevelCode!!,
           educationLevelDescription = it.educationLevelDescription!!,
+          studyAreaCode = it.studyAreaCode!!,
+          studyAreaDescription = it.studyAreaDescription!!,
         )
       }
     }
@@ -161,11 +166,13 @@ class ActivityService(
     minimumEducationLevels.forEach {
       val educationLevelCode = it.educationLevelCode!!
       val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
-      if (educationLevel.activeFlag != "Y") {
-        throw IllegalArgumentException("The education level code '$educationLevelCode' is not active in NOMIS")
-      } else {
-        failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
-      }
+      require(educationLevel.isActive()) { "The education level code '$educationLevelCode' is not active in NOMIS" }
+      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+
+      val studyAreaCode = it.studyAreaCode!!
+      val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
+      require(studyArea.isActive()) { "The study area code '$studyAreaCode' is not active in NOMIS" }
+      failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
     }
   }
 
@@ -239,7 +246,7 @@ class ActivityService(
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
-    var activity = activityRepository.findOrThrowNotFound(activityId)
+    val activity = activityRepository.findOrThrowNotFound(activityId)
     val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
@@ -419,11 +426,23 @@ class ActivityService(
     activity: Activity,
   ) {
     checkEducationLevels(minimumEducationLevel)
-    activity.removeMinimumEducationLevel()
-    minimumEducationLevel.forEach {
+
+    activity.activityMinimumEducationLevel().filter {
+      minimumEducationLevel.any { newEducation ->
+        it.studyAreaCode != newEducation.studyAreaCode || it.educationLevelCode != newEducation.educationLevelCode
+      }
+    }.forEach { activity.removeMinimumEducationLevel(it) }
+
+    minimumEducationLevel.filter {
+      activity.activityMinimumEducationLevel().any { activityEducation ->
+        it.studyAreaCode != activityEducation.studyAreaCode || it.educationLevelCode != activityEducation.educationLevelCode
+      }
+    }.forEach {
       activity.addMinimumEducationLevel(
         educationLevelCode = it.educationLevelCode!!,
         educationLevelDescription = it.educationLevelDescription!!,
+        studyAreaCode = it.studyAreaCode!!,
+        studyAreaDescription = it.studyAreaDescription!!,
       )
     }
   }
