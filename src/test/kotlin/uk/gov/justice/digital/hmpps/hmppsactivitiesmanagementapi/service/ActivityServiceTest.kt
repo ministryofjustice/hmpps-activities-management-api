@@ -294,7 +294,7 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `getActivitiesInPrison only returns list of active activities`() {
+  fun `getActivitiesInPrison only returns list of live activities`() {
     whenever(activityRepository.getAllByPrisonCode("MDI"))
       .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
 
@@ -309,7 +309,7 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `getActivitiesInPrison returns all activities including ended activities`() {
+  fun `getActivitiesInPrison returns all activities including archived activities`() {
     whenever(activityRepository.getAllByPrisonCode("MDI"))
       .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
 
