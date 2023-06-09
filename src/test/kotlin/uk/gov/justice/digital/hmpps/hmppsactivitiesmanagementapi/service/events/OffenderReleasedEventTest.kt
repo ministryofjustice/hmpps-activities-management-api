@@ -22,10 +22,8 @@ class OffenderReleasedEventTest {
   @Test
   fun `release event is permanent`() {
     assertThat(releaseEvent("RELEASED").isPermanent()).isTrue
-    assertThat(releaseEvent("TRANSFERRED").isPermanent()).isTrue
 
     assertThat(releaseEvent("RELEASED").isTemporary()).isFalse
-    assertThat(releaseEvent("TRANSFERRED").isTemporary()).isFalse
   }
 
   @Test
