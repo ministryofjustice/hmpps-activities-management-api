@@ -104,25 +104,12 @@ class ActivityScheduleService(
       .failIfNotActive()
       .failIfAtDifferentPrisonTo(schedule.activity)
 
-    require(request.startDate!! > LocalDate.now()) {
-      "Allocation start date must be in the future"
-    }
-    require(request.startDate >= schedule.activity.startDate) {
-      "Allocation start date cannot be before activity start date"
-    }
-    require(request.endDate == null || schedule.activity.endDate == null || request.endDate <= schedule.activity.endDate) {
-      "Allocation end date cannot be after activity end date"
-    }
-    require(request.endDate === null || request.endDate >= request.startDate) {
-      "Allocation end date cannot be before allocation start date"
-    }
-
     schedule.allocatePrisoner(
       prisonerNumber = prisonerNumber,
       bookingId = prisonerDetails.bookingId
         ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
       payBand = payBand,
-      startDate = request.startDate,
+      startDate = request.startDate!!,
       endDate = request.endDate,
       allocatedBy = allocatedBy,
     )

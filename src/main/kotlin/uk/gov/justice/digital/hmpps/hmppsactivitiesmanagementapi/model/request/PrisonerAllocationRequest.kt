@@ -25,7 +25,7 @@ data class PrisonerAllocationRequest(
   @Schema(description = "The future date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
   @field:NotNull(message = "Start date must be supplied")
-  @Future
+  @field:Future(message = "Start date must be in the future")
   val startDate: LocalDate? = null,
 
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")

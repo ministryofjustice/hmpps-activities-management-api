@@ -210,6 +210,16 @@ data class ActivitySchedule(
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
 
+    require(startDate >= this.activity.startDate) {
+      "Allocation start date cannot be before activity start date"
+    }
+    require(endDate == null || this.activity.endDate == null || endDate <= this.activity.endDate) {
+      "Allocation end date cannot be after activity end date"
+    }
+    require(endDate == null || endDate >= startDate) {
+      "Allocation end date cannot be before allocation start date"
+    }
+
     // TODO you should only be able to allocate if schedule is active (the end date has not passed) !!!
 
     allocations.add(
