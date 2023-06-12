@@ -595,6 +595,15 @@ class ActivityServiceTest {
       allocatedBy = "FRED",
     )
 
+    beforeActivityEntity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+    )
+
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")

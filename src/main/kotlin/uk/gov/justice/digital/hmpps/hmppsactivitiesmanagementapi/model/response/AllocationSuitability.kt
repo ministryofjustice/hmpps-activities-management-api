@@ -22,5 +22,5 @@ data class AllocationSuitability(
   val releaseDate: ReleaseDateSuitability? = null,
 
   @Schema(description = "The prisoner's non-association suitability")
-  val nonAssociation:  NonAssociationSuitability? = null,
+  val nonAssociation: NonAssociationSuitability? = null,
 )

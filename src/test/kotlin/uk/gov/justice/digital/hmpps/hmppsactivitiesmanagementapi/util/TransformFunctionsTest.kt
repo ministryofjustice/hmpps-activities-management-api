@@ -20,12 +20,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
@@ -137,13 +137,14 @@ class TransformFunctionsTest {
               id = 0,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              prisonPayBand = PrisonPayBand(
-                id = lowPayBand.prisonPayBandId,
-                displaySequence = lowPayBand.displaySequence,
-                alias = lowPayBand.payBandAlias,
-                description = lowPayBand.payBandDescription,
-                prisonCode = lowPayBand.prisonCode,
-                nomisPayBand = lowPayBand.nomisPayBand,
+              payRate = ActivityPay(
+                id = 0,
+                incentiveNomisCode = "BAS",
+                incentiveLevel = "Basic",
+                rate = 30,
+                pieceRate = 40,
+                pieceRateItems = 50,
+                prisonPayBand = lowPayBand.toModel(),
               ),
               startDate = timestamp.toLocalDate(),
               endDate = null,

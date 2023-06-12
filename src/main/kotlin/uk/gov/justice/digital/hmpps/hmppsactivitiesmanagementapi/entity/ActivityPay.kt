@@ -9,6 +9,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 
 @Entity
 @Table(name = "activity_pay")
@@ -49,4 +51,14 @@ data class ActivityPay(
   override fun toString(): String {
     return this::class.simpleName + "(activityPayId = $activityPayId )"
   }
+
+  fun toModel() = ModelActivityPay(
+    id = activityPayId,
+    incentiveNomisCode = incentiveNomisCode,
+    incentiveLevel = incentiveLevel,
+    prisonPayBand = payBand.toModelPrisonPayBand(),
+    rate = rate,
+    pieceRate = pieceRate,
+    pieceRateItems = pieceRateItems,
+  )
 }

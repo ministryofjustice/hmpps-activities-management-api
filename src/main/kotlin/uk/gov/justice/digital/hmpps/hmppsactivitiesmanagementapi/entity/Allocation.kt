@@ -141,7 +141,7 @@ data class Allocation(
       id = allocationId,
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
-      prisonPayBand = payBand.toModel(),
+      payRate = activitySchedule.activity.activityPayForBand(payBand)?.toModel(),
       startDate = startDate,
       endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,

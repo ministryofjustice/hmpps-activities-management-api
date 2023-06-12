@@ -27,11 +27,9 @@ import java.time.LocalDate
 class CandidatesService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val activityScheduleService: ActivityScheduleService,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationsService: AllocationsService,
 ) {
-
   fun candidateSuitability(scheduleId: Long, prisonerNumber: String): AllocationSuitability {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
 
@@ -62,14 +60,14 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
     searchString: String?,
   ): List<ActivityCandidate> {
-    val schedule = activityScheduleService.getScheduleById(scheduleId)
+    val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     val prisonCode = schedule.activity.prisonCode
 
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
         .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD }
-        .filter { p -> !schedule.allocations.map { it.prisonerNumber }.contains(p.prisonerNumber) }
+        .filter { p -> !schedule.allocations().map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
@@ -156,7 +154,7 @@ class CandidatesService(
     prisonerAlerts: List<PrisonerAlert>?,
   ): WRASuitability {
     val prisonerRiskCodes = prisonerAlerts
-      ?.filter{ it.active }
+      ?.filter { it.active }
       ?.filter { arrayOf("RLO", "RME", "RHI").contains(it.alertCode) }
       ?.map { it.alertCode }
 
@@ -183,7 +181,7 @@ class CandidatesService(
     activityPay: List<ActivityPay>,
     prisonerIncentiveLevel: CurrentIncentive?,
   ) = IncentiveLevelSuitability(
-    suitable = activityPay.any{ it.incentiveNomisCode == prisonerIncentiveLevel?.level?.code },
+    suitable = activityPay.any { it.incentiveNomisCode == prisonerIncentiveLevel?.level?.code },
     incentiveLevel = prisonerIncentiveLevel?.level?.description,
   )
 
@@ -192,8 +190,14 @@ class CandidatesService(
     prisonerEducations: List<Education>?,
   ): EducationSuitability {
     val suitable = activityEducations.all { activityEducation ->
+      // TODO:
+      // We should be comparing against education codes here instead of matching against descriptions which could be
+      // outdated / unreliable, however currently the prison API endpoint doesn't return education codes to do this.
+      // The API endpoint (GET /api/education/prisoner/{offenderNo}) will need be updated to include this, then this
+      // method should be updated
       prisonerEducations?.any {
-        it.educationLevel == activityEducation.educationLevelCode && it.studyArea == activityEducation.studyAreaCode
+        it.educationLevel == activityEducation.educationLevelDescription &&
+          it.studyArea == activityEducation.studyAreaDescription
       } ?: false
     }
 
@@ -223,6 +227,7 @@ class CandidatesService(
     activityStartDate: LocalDate,
     prisonerDetail: Prisoner,
   ) = ReleaseDateSuitability(
+    // TODO: More logic needed to determine actual earliest release date
     suitable = prisonerDetail.releaseDate?.isAfter(activityStartDate) ?: false,
     earliestReleaseDate = prisonerDetail.releaseDate,
   )
