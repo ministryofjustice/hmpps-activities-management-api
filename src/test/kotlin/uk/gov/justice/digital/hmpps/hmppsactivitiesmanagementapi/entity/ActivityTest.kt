@@ -104,6 +104,8 @@ class ActivityTest {
             id = 0,
             educationLevelCode = "1",
             educationLevelDescription = "Reading Measure 1.0",
+            studyAreaCode = "ENGLA",
+            studyAreaDescription = "English Language",
           ),
         ),
         category = ActivityCategory(
@@ -484,6 +486,8 @@ class ActivityTest {
     activity.addMinimumEducationLevel(
       educationLevelCode = "1",
       educationLevelDescription = "Reading Measure 1.0",
+      studyAreaCode = "ENGLA",
+      studyAreaDescription = "English Language",
     )
 
     assertThat(activity.activityMinimumEducationLevel()).containsExactlyInAnyOrder(
@@ -491,6 +495,8 @@ class ActivityTest {
         educationLevelCode = "1",
         educationLevelDescription = "Reading Measure 1.0",
         activity = activity,
+        studyAreaCode = "ENGLA",
+        studyAreaDescription = "English Language",
       ),
     )
   }

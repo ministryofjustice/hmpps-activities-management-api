@@ -28,7 +28,9 @@
   "minimumEducationLevel": [
     {
       "educationLevelCode": "1",
-      "educationLevelDescription": "Reading Measure 1.0"
+      "educationLevelDescription": "Reading Measure 1.0",
+      "studyAreaCode": "ENGLA",
+      "studyAreaDescription": "English Language"
     }
   ],
   "startDate": "2023-03-31",

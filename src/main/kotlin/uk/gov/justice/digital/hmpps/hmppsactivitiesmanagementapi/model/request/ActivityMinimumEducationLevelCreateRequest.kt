@@ -16,4 +16,14 @@ data class ActivityMinimumEducationLevelCreateRequest(
   @field:Size(max = 60, message = "Education level description should not exceed {max} characters")
   @Schema(description = "The Education level description", example = "Reading Measure 1.0")
   val educationLevelDescription: String? = null,
+
+  @field:NotNull(message = "Study area code must be supplied")
+  @field:Size(max = 10, message = "Study area code should not exceed {max} characters")
+  @Schema(description = "The study area code", example = "ENGLA")
+  val studyAreaCode: String? = null,
+
+  @field:NotNull(message = "Study area description must be supplied")
+  @field:Size(max = 60, message = "Study area description should not exceed {max} characters")
+  @Schema(description = "The study area description", example = "English Language")
+  val studyAreaDescription: String? = null,
 )

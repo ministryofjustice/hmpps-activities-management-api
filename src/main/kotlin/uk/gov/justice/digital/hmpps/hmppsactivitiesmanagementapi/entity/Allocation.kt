@@ -193,6 +193,8 @@ data class Allocation(
     }
   }
 
+  fun isEnded() = status(PrisonerStatus.ENDED)
+
   @Override
   override fun toString(): String {
     return this::class.simpleName + "(allocationId = $allocationId )"

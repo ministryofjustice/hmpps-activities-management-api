@@ -73,10 +73,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/clear-local-audit.sql")
   fun `createActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
     )
 
     prisonApiMockServer.stubGetLocation(
@@ -207,6 +213,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
               id = 1,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
+              studyAreaCode = "ENGLA",
+              studyAreaDescription = "English Language",
             ),
           ),
           category = educationCategory,
@@ -255,6 +263,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
               id = 1,
               educationLevelCode = "1",
               educationLevelDescription = "Reading Measure 1.0",
+              studyAreaCode = "ENGLA",
+              studyAreaDescription = "English Language",
             ),
           ),
           category = educationCategory,
@@ -572,10 +582,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/clear-local-audit.sql")
   fun `the activity should be persisted even if the subsequent event notification fails`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
     )
 
     val today = LocalDate.now()
@@ -610,10 +626,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity - is successful`() {
-    prisonApiMockServer.stubGetEducationLevel(
+    prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
       "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
     )
 
     prisonApiMockServer.stubGetLocation(

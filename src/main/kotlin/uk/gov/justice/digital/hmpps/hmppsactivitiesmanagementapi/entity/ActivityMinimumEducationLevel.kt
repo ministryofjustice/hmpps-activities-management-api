@@ -25,6 +25,9 @@ data class ActivityMinimumEducationLevel(
 
   val educationLevelDescription: String,
 
+  val studyAreaCode: String,
+
+  val studyAreaDescription: String,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -45,6 +48,8 @@ data class ActivityMinimumEducationLevel(
     id = activityMinimumEducationLevelId,
     educationLevelCode = educationLevelCode,
     educationLevelDescription = educationLevelDescription,
+    studyAreaCode = studyAreaCode,
+    studyAreaDescription = studyAreaDescription,
   )
 }
 

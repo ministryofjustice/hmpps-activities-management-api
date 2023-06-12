@@ -108,6 +108,8 @@ data class Activity(
   fun isActive(date: LocalDate): Boolean =
     if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
+  fun state(vararg status: ActivityState) = status.any { it == getActivityState() }
+
   fun isUnemployment() = activityCategory.isNotInWork()
 
   fun getSchedulesOnDay(day: LocalDate, includeSuspended: Boolean = true): List<ActivitySchedule> {
@@ -171,18 +173,22 @@ data class Activity(
   fun addMinimumEducationLevel(
     educationLevelCode: String,
     educationLevelDescription: String,
+    studyAreaCode: String,
+    studyAreaDescription: String,
   ) {
     activityMinimumEducationLevel.add(
       ActivityMinimumEducationLevel(
         activity = this,
         educationLevelCode = educationLevelCode,
         educationLevelDescription = educationLevelDescription,
+        studyAreaCode = studyAreaCode,
+        studyAreaDescription = studyAreaDescription,
       ),
     )
   }
 
-  fun removeMinimumEducationLevel() {
-    activityMinimumEducationLevel.clear()
+  fun removeMinimumEducationLevel(minimumEducationLevel: ActivityMinimumEducationLevel) {
+    activityMinimumEducationLevel.remove(minimumEducationLevel)
   }
 
   fun addSchedule(
@@ -266,7 +272,7 @@ data class Activity(
     },
     endDate = endDate,
     createdTime = createdTime,
-    activityState = getActivityState(endDate),
+    activityState = getActivityState(),
   )
 
   @Override
@@ -274,8 +280,8 @@ data class Activity(
     return this::class.simpleName + "(activityId = $activityId )"
   }
 
-  private fun getActivityState(endDate: LocalDate?): ActivityState {
-    return if (endDate != null && endDate < LocalDate.now()) {
+  private fun getActivityState(): ActivityState {
+    return if (endDate != null && endDate!! < LocalDate.now()) {
       ActivityState.ARCHIVED
     } else {
       ActivityState.LIVE

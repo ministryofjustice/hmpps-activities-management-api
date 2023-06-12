@@ -138,7 +138,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       ),
     )
 
-    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode)).thenReturn(
+    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode, true)).thenReturn(
       expectedModel,
     )
 
@@ -148,7 +148,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode)
+    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode, true)
   }
 
   private fun MockMvc.getActivities(prisonCode: String) =
