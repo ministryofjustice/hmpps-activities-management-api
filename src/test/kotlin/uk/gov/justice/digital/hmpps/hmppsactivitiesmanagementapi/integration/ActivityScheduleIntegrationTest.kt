@@ -140,6 +140,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -191,6 +192,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -218,6 +220,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         PrisonerAllocationRequest(
           prisonerNumber = "G4793VF",
           payBandId = 11,
+          startDate = TimeSource.tomorrow(),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -253,6 +256,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -312,6 +316,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 

@@ -109,6 +109,8 @@ class ActivityScheduleService(
       bookingId = prisonerDetails.bookingId
         ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
       payBand = payBand,
+      startDate = request.startDate!!,
+      endDate = request.endDate,
       allocatedBy = allocatedBy,
     )
 
