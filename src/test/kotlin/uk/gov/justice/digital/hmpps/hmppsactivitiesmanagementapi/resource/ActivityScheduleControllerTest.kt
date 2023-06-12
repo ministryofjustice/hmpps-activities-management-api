@@ -111,7 +111,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     val request = PrisonerAllocationRequest(
       prisonerNumber = "654321",
       payBandId = 1,
-      startDate = LocalDate.now(),
+      startDate = TimeSource.tomorrow(),
     )
 
     val mockPrincipal: Principal = mock()
