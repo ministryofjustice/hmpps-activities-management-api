@@ -54,7 +54,6 @@ class ManageAllocationsService(
   }
 
   private fun activatePendingAllocations() =
-
     LocalDate.now().let { today ->
       forEachRolledOutPrison()
         .forEach { prison ->
@@ -70,7 +69,7 @@ class ManageAllocationsService(
         .flatMap { prison ->
           activityRepository.getAllForPrisonAndDate(prison.code, today).flatMap { activity ->
             if (activity.ends(today)) {
-              activity.schedules().flatMap { it.allocations() }
+              activity.schedules().flatMap { it.allocations().filterNot(Allocation::isEnded) }
             } else {
               activity.schedules().flatMap { it.allocations().ending(today) }
             }

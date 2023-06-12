@@ -26,14 +26,14 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending today`() {
-    val activeAllocations = allocationRepository.findAll()
+    val activeAllocations = allocationRepository.findAll().filterNot(Allocation::isEnded)
 
     assertThat(activeAllocations).hasSize(3)
     activeAllocations.forEach { it.assertIs(PrisonerStatus.ACTIVE) }
 
     webTestClient.manageAllocations(withDeallocate = true)
 
-    val deallocatedAllocations = allocationRepository.findAll()
+    val deallocatedAllocations = allocationRepository.findAllById(activeAllocations.map { it.allocationId })
 
     assertThat(deallocatedAllocations).hasSize(3)
     deallocatedAllocations.forEach { it.assertIsDeallocated(DeallocationReason.ENDED) }
