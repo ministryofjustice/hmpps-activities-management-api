@@ -42,7 +42,6 @@ data class Activity(
   var activityTier: ActivityTier?,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
   var attendanceRequired: Boolean = true,

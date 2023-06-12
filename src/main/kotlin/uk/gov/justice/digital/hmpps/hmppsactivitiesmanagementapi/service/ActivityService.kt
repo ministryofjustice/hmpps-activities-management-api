@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -44,6 +47,23 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
+  @Transactional(readOnly = true)
+  fun getActivityByIdOptimised(
+    activityId: Long,
+    earliestSessionDate: LocalDate,
+    earliestAllocationEndDate: LocalDate,
+  ): ModelActivity {
+    log.info("ActivityByIdOptimised:  Params $activityId earliestSessionDate $earliestSessionDate earliestAllocationEndDate $earliestAllocationEndDate")
+    val activity = activityRepository.findByIdOptimised(activityId, earliestSessionDate, earliestAllocationEndDate)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    log.info("Activity retrieved with ${activity.activityId} instances ${activity.schedules().first().instances().size}")
+    return transform(activity)
+  }
+
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),
@@ -327,7 +347,7 @@ class ActivityService(
       activity.endDate = this
       activity.schedules().forEach {
         it.endDate = this
-        it.allocations().forEach { it.endDate = this }
+        it.allocations().forEach { alloc -> alloc.endDate = this }
       }
     }
   }

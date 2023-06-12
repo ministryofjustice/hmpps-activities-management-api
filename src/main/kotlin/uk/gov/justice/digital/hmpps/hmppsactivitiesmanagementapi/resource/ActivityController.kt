@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import java.security.Principal
+import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -36,6 +38,73 @@ import java.security.Principal
 class ActivityController(
   private val activityService: ActivityService,
 ) {
+
+  @GetMapping(value = ["/{activityId}/optimised"])
+  @ResponseBody
+  @Operation(
+    summary = "Get an activity by its id (optimised)",
+    description = "Returns a single activity and its details by its unique identifier (optimised).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivityByIdOptimised(
+    @PathVariable("activityId")
+    activityId: Long,
+
+    @RequestParam(value = "earliestSessionDate", required = false)
+    @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
+    earliestSessionDate: LocalDate?,
+
+    @RequestParam(value = "earliestAllocationEndDate", required = false)
+    @Parameter(description = "The date of the earliest ended allocations to include. Defaults to newer than 1 week ago.")
+    earliestAllocationEndDate: LocalDate?,
+  ): Activity {
+    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
+    val earliestAllocationEnd = earliestAllocationEndDate ?: LocalDate.now().minusWeeks(1)
+    return activityService.getActivityByIdOptimised(activityId, earliestSession, earliestAllocationEnd)
+  }
 
   @GetMapping(value = ["/{activityId}"])
   @ResponseBody
