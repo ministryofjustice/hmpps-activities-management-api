@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 
@@ -15,13 +16,12 @@ class ResourceServerConfiguration {
 
   @Bean
   fun filterChain(http: HttpSecurity): SecurityFilterChain {
-    return http
-      .sessionManagement()
-      .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-      .and().headers().frameOptions().sameOrigin()
-      .and().csrf().disable()
-      .authorizeHttpRequests { auth ->
-        auth.requestMatchers(
+    http {
+      sessionManagement { SessionCreationPolicy.STATELESS }
+      headers { frameOptions { sameOrigin = true } }
+      csrf { disable() }
+      authorizeHttpRequests {
+        listOf(
           "/webjars/**",
           "favicon.ico",
           "/health/**",
@@ -32,7 +32,12 @@ class ResourceServerConfiguration {
           "/swagger-ui.html",
           "/h2-console/**",
           "/job/**", // This endpoint is secured in the ingress rather than the app so that it can be called from within the namespace without requiring authentication
-        ).permitAll().anyRequest().authenticated()
-      }.also { it.oauth2ResourceServer().jwt().jwtAuthenticationConverter(AuthAwareTokenConverter()) }.build()
+        ).forEach { authorize(it, permitAll) }
+        authorize(anyRequest, authenticated)
+      }
+      oauth2ResourceServer { jwt { jwtAuthenticationConverter = AuthAwareTokenConverter() } }
+    }
+
+    return http.build()
   }
 }
