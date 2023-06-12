@@ -57,8 +57,7 @@ data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) 
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "RELEASED_TO_HOSPITAL", "SENT_TO_COURT")
     .any { it == additionalInformation.reason }
 
-  fun isPermanent() = listOf("RELEASED", "TRANSFERRED")
-    .any { it == additionalInformation.reason }
+  fun isPermanent() = "RELEASED" == additionalInformation.reason
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
