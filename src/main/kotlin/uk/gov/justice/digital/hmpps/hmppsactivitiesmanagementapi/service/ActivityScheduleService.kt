@@ -110,7 +110,7 @@ class ActivityScheduleService(
     require(request.startDate >= schedule.activity.startDate) {
       "Allocation start date cannot be before activity start date"
     }
-    require(request.endDate === null || schedule.activity.endDate === null || request.endDate <= schedule.activity.endDate) {
+    require(request.endDate == null || schedule.activity.endDate == null || request.endDate <= schedule.activity.endDate) {
       "Allocation end date cannot be after activity end date"
     }
     require(request.endDate === null || request.endDate >= request.startDate) {

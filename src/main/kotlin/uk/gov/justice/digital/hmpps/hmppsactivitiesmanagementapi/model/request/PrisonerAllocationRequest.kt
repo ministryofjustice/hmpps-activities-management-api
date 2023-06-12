@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
@@ -24,6 +25,7 @@ data class PrisonerAllocationRequest(
   @Schema(description = "The future date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
   @field:NotNull(message = "Start date must be supplied")
+  @Future
   val startDate: LocalDate? = null,
 
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")

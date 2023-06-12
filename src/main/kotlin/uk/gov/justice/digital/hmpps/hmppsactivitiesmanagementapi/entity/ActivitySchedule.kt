@@ -223,10 +223,7 @@ data class ActivitySchedule(
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
       ).apply {
-        this.endDate = endDate
-        if (this.endDate !== null) {
-          this.deallocateOn(this.endDate!!, DeallocationReason.PLANNED, allocatedBy)
-        }
+        this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
       },
     )
 

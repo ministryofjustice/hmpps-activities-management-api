@@ -33,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -141,7 +140,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-        startDate = LocalDate.now().plusDays(1),
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -193,7 +192,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-        startDate = LocalDate.now().plusDays(1),
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -221,7 +220,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         PrisonerAllocationRequest(
           prisonerNumber = "G4793VF",
           payBandId = 11,
-          startDate = LocalDate.now().plusDays(1),
+          startDate = TimeSource.tomorrow(),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -257,7 +256,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-        startDate = LocalDate.now().plusDays(1),
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
@@ -317,7 +316,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       PrisonerAllocationRequest(
         prisonerNumber = "G4793VF",
         payBandId = 11,
-        startDate = LocalDate.now().plusDays(1),
+        startDate = TimeSource.tomorrow(),
       ),
     ).expectStatus().isNoContent
 
