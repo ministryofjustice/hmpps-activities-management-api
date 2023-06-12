@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Candida
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
-import java.time.LocalDate
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
