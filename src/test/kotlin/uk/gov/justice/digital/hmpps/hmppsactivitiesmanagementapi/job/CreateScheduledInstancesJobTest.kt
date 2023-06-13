@@ -9,20 +9,24 @@ import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import java.time.DayOfWeek
@@ -38,12 +42,16 @@ class CreateScheduledInstancesJobTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
   private val bankHolidayService: BankHolidayService = mock { on { isEnglishBankHoliday(any()) } doReturn (false) }
+  private val jobRepository: JobRepository = mock()
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
+  private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 
   private val job = CreateScheduledInstancesJob(
     activityRepository,
     activityScheduleRepository,
     rolloutPrisonRepository,
     bankHolidayService,
+    safeJobRunner,
     7L,
   )
   private val today = LocalDate.now()
@@ -68,6 +76,9 @@ class CreateScheduledInstancesJobTest {
     whenever(activityScheduleRepository.findById(6L)).thenReturn(Optional.of(leedsActivities.last().schedules().first()))
 
     job.execute()
+
+    verify(safeJobRunner).runSafe(jobDefinitionCaptor.capture())
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.SCHEDULES)
 
     // Creates 6 scheduled instances for 3 activities in Moorland and 3 activities in Leeds
     verify(activityScheduleRepository, times(6)).findById(anyLong())
