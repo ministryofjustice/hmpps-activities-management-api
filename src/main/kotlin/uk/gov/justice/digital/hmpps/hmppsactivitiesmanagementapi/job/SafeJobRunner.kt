@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import java.time.LocalDateTime
 
 @Component
 class SafeJobRunner(private val jobRepository: JobRepository) {
@@ -14,19 +15,21 @@ class SafeJobRunner(private val jobRepository: JobRepository) {
   }
 
   fun runSafe(vararg jobDefinitions: JobDefinition) {
-    jobDefinitions.forEach(this::runSafe)
+    jobDefinitions.forEach(::runSafe)
   }
 
   fun runSafe(jobDefinition: JobDefinition) {
-    val job = Job.start(jobDefinition.jobType)
+    val startedAt = LocalDateTime.now()
 
     runCatching {
       jobDefinition.block()
     }
-      .onSuccess { job.succeeded() }
-      .onFailure { log.error("Failed to run ${jobDefinition.jobType} job", it) }
+      .onSuccess { jobRepository.saveAndFlush(Job.successful(jobDefinition.jobType, startedAt)) }
+      .onFailure {
+        log.error("Failed to run ${jobDefinition.jobType} job", it)
 
-    jobRepository.saveAndFlush(job)
+        jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt))
+      }
   }
 }
 

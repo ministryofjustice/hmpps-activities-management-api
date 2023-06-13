@@ -21,7 +21,7 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs safe job without error`() {
-    runner.runSafe(JobDefinition(JobType.ATTENDANCE) {})
+    runner.runSafe(JobDefinition(JobType.ATTENDANCE_CREATE) {})
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
@@ -34,8 +34,8 @@ class SafeJobRunnerTest {
   @Test
   fun `runs safe multiple jobs without error`() {
     runner.runSafe(
-      JobDefinition(JobType.ATTENDANCE) {},
-      JobDefinition(JobType.DEALLOCATION) {},
+      JobDefinition(JobType.ATTENDANCE_CREATE) {},
+      JobDefinition(JobType.DEALLOCATE_ENDING) {},
     )
 
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
@@ -53,12 +53,12 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs safe job with error`() {
-    runner.runSafe(JobDefinition(JobType.ATTENDANCE) { throw RuntimeException("it failed") })
+    runner.runSafe(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      assertThat(endedAt).isNull()
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isFalse
     }
   }
@@ -66,14 +66,14 @@ class SafeJobRunnerTest {
   @Test
   fun `runs safe multiple jobs with error on first job`() {
     runner.runSafe(
-      JobDefinition(JobType.ATTENDANCE) { throw RuntimeException("first job failed") },
-      JobDefinition(JobType.DEALLOCATION) {},
+      JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
+      JobDefinition(JobType.DEALLOCATE_ENDING) {},
     )
 
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      assertThat(endedAt).isNull()
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isFalse
     }
 

@@ -9,25 +9,25 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageA
 @Component
 class ManageAllocationsJob(
   private val service: ManageAllocationsService,
-  private val safeJobRunner: SafeJobRunner,
+  private val jobRunner: SafeJobRunner,
 ) {
 
   @Async("asyncExecutor")
   fun execute(withActivate: Boolean = false, withDeallocate: Boolean = false) {
     if (withActivate) {
-      safeJobRunner.runSafe(
-        JobDefinition(JobType.ALLOCATION) {
+      jobRunner.runSafe(
+        JobDefinition(JobType.ALLOCATE) {
           service.allocations(AllocationOperation.STARTING_TODAY)
         },
       )
     }
 
     if (withDeallocate) {
-      safeJobRunner.runSafe(
-        JobDefinition(jobType = JobType.DEALLOCATION) {
+      jobRunner.runSafe(
+        JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
           service.allocations(AllocationOperation.DEALLOCATE_ENDING)
         },
-        JobDefinition(jobType = JobType.DEALLOCATION) {
+        JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
           service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
         },
       )

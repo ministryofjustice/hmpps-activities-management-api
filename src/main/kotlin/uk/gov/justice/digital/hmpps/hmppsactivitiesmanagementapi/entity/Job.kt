@@ -18,11 +18,12 @@ data class Job(
 
   @Enumerated(EnumType.STRING)
   val jobType: JobType,
+
+  val startedAt: LocalDateTime,
 ) {
-  var startedAt: LocalDateTime = LocalDateTime.now()
-    private set
 
   var endedAt: LocalDateTime? = null
+    private set
 
   var successful: Boolean = false
     private set
@@ -36,14 +37,28 @@ data class Job(
     successful = true
   }
 
+  fun failed() = this.apply {
+    if (endedAt != null) {
+      throw IllegalStateException("Job is already ended.")
+    }
+
+    endedAt = LocalDateTime.now()
+    successful = false
+  }
+
   companion object {
-    fun start(jobType: JobType) = Job(jobType = jobType)
+    fun successful(jobType: JobType, start: LocalDateTime) = Job(jobType = jobType, startedAt = start).succeeded()
+
+    fun failed(jobType: JobType, start: LocalDateTime) = Job(jobType = jobType, startedAt = start).failed()
   }
 }
 
 enum class JobType {
-  ALLOCATION,
-  ATTENDANCE,
-  DEALLOCATION,
+  ALLOCATE,
+  ATTENDANCE_CREATE,
+  ATTENDANCE_EXPIRE,
+  DEALLOCATE_ENDING,
+  DEALLOCATE_EXPIRING,
+  SCHEDULES,
   ;
 }

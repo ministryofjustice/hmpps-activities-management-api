@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -20,6 +21,7 @@ class CreateScheduledInstancesJob(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val bankHolidayService: BankHolidayService,
+  private val jobRunner: SafeJobRunner,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
 ) {
   companion object {
@@ -44,31 +46,37 @@ class CreateScheduledInstancesJob(
   */
   @Async("asyncExecutor")
   fun execute() {
-    val today = LocalDate.now()
-    val endDay = today.plusDays(daysInAdvance!!)
-    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
-    log.info("Scheduling activities job running - from $today until $endDay")
+    jobRunner.runSafe(
+      JobDefinition(
+        JobType.SCHEDULES,
+      ) {
+        val today = LocalDate.now()
+        val endDay = today.plusDays(daysInAdvance!!)
+        val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+        log.info("Scheduling activities job running - from $today until $endDay")
 
-    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
-      log.info("Scheduling activities for prison ${prison.description} until $endDay")
+        rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
+          log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
-      // Get the activities in this prison that are active between these dates
-      val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
-      val activitySchedules = activities.map {
-        it.schedules().filter { s ->
-          s.startDate.isBefore(endDay) && (s.endDate == null || s.endDate!!.isAfter(today))
+          // Get the activities in this prison that are active between these dates
+          val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
+          val activitySchedules = activities.map {
+            it.schedules().filter { s ->
+              s.startDate.isBefore(endDay) && (s.endDate == null || s.endDate!!.isAfter(today))
+            }
+          }.flatten()
+
+          // For each active schedule add any new scheduled instances as required
+          activitySchedules.forEach { schedule ->
+            continueToRunOnFailure(
+              block = { createInstancesForSchedule(prison, schedule.activityScheduleId, listOfDatesToSchedule) },
+              success = "Scheduling sessions of ${prison.code} ${schedule.description}",
+              failure = "Failed to schedule ${prison.code} ${schedule.description}",
+            )
+          }
         }
-      }.flatten()
-
-      // For each active schedule add any new scheduled instances as required
-      activitySchedules.forEach { schedule ->
-        continueToRunOnFailure(
-          block = { createInstancesForSchedule(prison, schedule.activityScheduleId, listOfDatesToSchedule) },
-          success = "Scheduling sessions of ${prison.code} ${schedule.description}",
-          failure = "Failed to schedule ${prison.code} ${schedule.description}",
-        )
-      }
-    }
+      },
+    )
   }
 
   fun createInstancesForSchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
