@@ -40,7 +40,9 @@ class AppointmentService(
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
     createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
       BulkAppointmentEntity(
-        appointments = request.appointments.map {
+        createdBy = principal.name,
+      ).apply {
+        request.appointments.map {
           buildValidAppointmentEntity(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode,
@@ -56,9 +58,8 @@ class AppointmentService(
             comment = it.comment,
             createdBy = principal.name,
           )
-        }.toList(),
-        createdBy = principal.name,
-      ).let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+        }.forEach { appointment -> this.addAppointment(appointment) }
+      }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
     }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =

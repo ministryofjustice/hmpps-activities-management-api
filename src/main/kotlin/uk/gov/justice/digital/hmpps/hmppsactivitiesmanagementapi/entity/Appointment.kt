@@ -148,6 +148,13 @@ data class Appointment(
 
 fun List<Appointment>.toModel() = map { it.toModel() }
 
+fun List<Appointment>.toDetails(
+  prisoners: List<Prisoner>,
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+) = map { it.toDetails(prisoners, referenceCodeMap, locationMap, userMap) }
+
 enum class AppointmentType {
   INDIVIDUAL,
   GROUP,
