@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 @Schema(
   description = "Describes a set of appointments created as part of a single bulk operation",
 )
-data class BulkAppointment(
+data class BulkAppointmentDetails(
 
   @Schema(
     description = "The internally generated identifier for this set of appointments",
@@ -16,12 +16,12 @@ data class BulkAppointment(
   val bulkAppointmentId: Long,
 
   @Schema(
-    description = "The set of appointments created in bulk",
+    description = "The details of the set of appointments created in bulk",
   )
-  val appointments: List<Appointment>,
+  val appointments: List<AppointmentDetails>,
 
   @Schema(
-    description = "The date and time this set of appointment was created in bulk. Will not change",
+    description = "The date and time this set of appointments was created in bulk. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val created: LocalDateTime,
@@ -29,10 +29,8 @@ data class BulkAppointment(
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that created this set of appointments in bulk.
-    Usually a NOMIS username
+    The summary of the user that created this set of appointments in bulk
     """,
-    example = "AAA01U",
   )
-  val createdBy: String,
+  val createdBy: UserSummary,
 )

@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BulkAppointmentDetailsService
 
 @RestController
 @RequestMapping("/bulk-appointment-details", produces = [MediaType.APPLICATION_JSON_VALUE])
 class BulkAppointmentDetailsController(
-  private val appointmentService: AppointmentService,
+  private val bulkAppointmentDetailsService: BulkAppointmentDetailsService,
 ) {
   @GetMapping(value = ["/{bulkAppointmentId}"])
   @ResponseBody
