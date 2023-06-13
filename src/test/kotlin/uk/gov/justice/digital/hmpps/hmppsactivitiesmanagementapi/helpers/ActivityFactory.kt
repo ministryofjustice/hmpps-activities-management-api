@@ -92,6 +92,8 @@ internal fun activityEntity(
       this.addMinimumEducationLevel(
         educationLevelCode = "1",
         educationLevelDescription = "Reading Measure 1.0",
+        studyAreaCode = "ENGLA",
+        studyAreaDescription = "English Language",
       )
     }
   }
