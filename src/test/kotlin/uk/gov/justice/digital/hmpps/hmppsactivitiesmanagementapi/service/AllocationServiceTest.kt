@@ -215,4 +215,20 @@ class AllocationServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation end date cannot be after activity end date")
   }
+
+  @Test
+  fun `updateAllocation - update end date - allocation ended`() {
+    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-2.json")
+
+    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-2.json")
+
+    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+
+    whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Ended allocations cannot be updated")
+  }
 }

@@ -1,0 +1,52 @@
+{
+  "allocationId": 1,
+  "activitySchedule": {
+    "activityScheduleId": 1,
+    "activity": {
+      "activityId": 1,
+      "prisonCode": "MDI",
+      "activityCategory": {
+        "activityCategoryId": 1,
+        "code": "EDUCATION",
+        "name": "Education",
+        "description": "Such as classes in English, maths, construction and computer skills"
+      },
+      "activityTier": {
+        "activityTierId": 1,
+        "code": "Tier1",
+        "description": "Work, education and maintenance"
+      },
+      "attendanceRequired": false,
+      "payPerSession": "H",
+      "summary": "IT level 1",
+      "description": "A basic IT course suitable for introduction to the subject",
+      "startDate": "2022-06-25",
+      "endDate": null,
+      "minimumIncentiveNomisCode": "BAS",
+      "minimumIncentiveLevel": "Basic",
+      "riskLevel": "high",
+      "createdTime": "2022-06-26T14:38:00",
+      "createdBy": "activities-management-admin-1"
+    },
+    "description": "description",
+    "capacity": 10,
+    "startDate": "2023-01-01",
+    "endDate": null,
+    "runsOnBankHoliday": false
+  },
+  "prisonerNumber": "AA12345",
+  "bookingId": 1,
+  "payBand": {
+    "prisonPayBandId": 13,
+    "displaySequence": 3,
+    "payBandAlias": "High",
+    "payBandDescription": "Pay band 3 (highest)",
+    "nomisPayBand": 3,
+    "prisonCode": "MDI"
+  },
+  "startDate": "2023-02-01",
+  "endDate": "2023-11-30",
+  "allocatedTime": "2023-05-23T10:02:00",
+  "allocatedBy": "SCH_ACTIVITY",
+  "prisonerStatus": "ENDED"
+}

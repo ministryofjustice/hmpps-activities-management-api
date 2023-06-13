@@ -28,6 +28,10 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     var allocation = allocationRepository.findOrThrowNotFound(allocationId)
 
+    if (allocation.status(PrisonerStatus.ENDED)) {
+      throw IllegalArgumentException("Ended allocations cannot be updated")
+    }
+
     applyStartDateUpdate(request, allocation)
     applyEndDateUpdate(request, allocation, updatedBy)
     applyRemoveEndDateUpdate(request, allocation)
@@ -63,7 +67,7 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
         "Reason code must be supplied when setting the allocation end date"
       }
       require(allocation.activitySchedule.activity.endDate == null || this <= allocation.activitySchedule.activity.endDate) {
-        throw IllegalArgumentException("Allocation end date cannot be after activity end date")
+        "Allocation end date cannot be after activity end date"
       }
       if (allocation.endDate == null) {
         allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, this, request.reasonCode.toDeallocationReason(), updatedBy)
