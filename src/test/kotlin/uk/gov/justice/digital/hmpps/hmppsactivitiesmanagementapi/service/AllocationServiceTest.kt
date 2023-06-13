@@ -91,7 +91,7 @@ class AllocationServiceTest {
 
     allocationEntity.startDate = LocalDate.now().plusDays(1)
 
-    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode)
+    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
 
     val allocationArg: AllocationEntity = allocationEntityCaptor.value
 
@@ -113,7 +113,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
 
-    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode)
+    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
 
     val allocationArg: AllocationEntity = allocationEntityCaptor.value
 
@@ -135,7 +135,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findById(12)).thenReturn(Optional.of(prisonPayBandsLowMediumHigh(moorlandPrisonCode, 10)[1]))
 
-    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode)
+    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
 
     val allocationArg: AllocationEntity = allocationEntityCaptor.value
 
@@ -157,7 +157,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findById(14)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison Pay Band 14 not found")
   }
@@ -173,7 +173,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
 
-    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Start date cannot be updated once allocation has started")
   }
@@ -192,7 +192,7 @@ class AllocationServiceTest {
     allocationEntity.startDate = LocalDate.now().plusDays(1)
     allocationEntity.activitySchedule.activity.startDate = LocalDate.now().plusDays(2)
 
-    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date cannot be before activity start date")
   }
@@ -211,7 +211,7 @@ class AllocationServiceTest {
     allocationEntity.endDate = LocalDate.now().plusDays(2)
     allocationEntity.activitySchedule.activity.endDate = LocalDate.now().plusDays(1)
 
-    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode) }
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation end date cannot be after activity end date")
   }

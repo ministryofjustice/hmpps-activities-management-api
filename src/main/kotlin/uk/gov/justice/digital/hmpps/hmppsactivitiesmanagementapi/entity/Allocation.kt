@@ -51,6 +51,14 @@ data class Allocation(
 ) {
 
   var endDate: LocalDate? = null
+    set(value) {
+      field = if (value == null) {
+        plannedDeallocation = null
+        null
+      } else {
+        value
+      }
+    }
 
   @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "planned_deallocation_id", nullable = true)

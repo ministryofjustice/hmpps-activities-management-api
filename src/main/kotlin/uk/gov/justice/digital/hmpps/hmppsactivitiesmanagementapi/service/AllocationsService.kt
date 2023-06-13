@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -24,11 +25,11 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
   fun getAllocationById(id: Long) = allocationRepository.findOrThrowNotFound(id).toModel()
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String): ModelAllocation {
+  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     var allocation = allocationRepository.findOrThrowNotFound(allocationId)
 
     applyStartDateUpdate(request, allocation)
-    applyEndDateUpdate(request, allocation)
+    applyEndDateUpdate(request, allocation, updatedBy)
     applyRemoveEndDateUpdate(request, allocation)
     applyPayBandUpdate(request, allocation)
 
@@ -42,11 +43,11 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     allocation: Allocation,
   ) {
     request.startDate?.apply {
-      if (allocation.startDate <= LocalDate.now()) {
-        throw IllegalArgumentException("Start date cannot be updated once allocation has started")
+      require(allocation.startDate > LocalDate.now()) {
+        "Start date cannot be updated once allocation has started"
       }
-      if (this < allocation.activitySchedule.activity.startDate) {
-        throw IllegalArgumentException("Allocation start date cannot be before activity start date")
+      require(this >= allocation.activitySchedule.activity.startDate) {
+        "Allocation start date cannot be before activity start date"
       }
       allocation.startDate = this
     }
@@ -55,10 +56,17 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
   private fun applyEndDateUpdate(
     request: AllocationUpdateRequest,
     allocation: Allocation,
+    updatedBy: String,
   ) {
     request.endDate?.apply {
-      if (allocation.activitySchedule.activity.endDate !== null && this > allocation.activitySchedule.activity.endDate) {
+      require(allocation.endDate !== null || request.reasonCode !== null) {
+        "Reason code must be supplied when setting the allocation end date"
+      }
+      require(allocation.activitySchedule.activity.endDate == null || this <= allocation.activitySchedule.activity.endDate) {
         throw IllegalArgumentException("Allocation end date cannot be after activity end date")
+      }
+      if (allocation.endDate == null) {
+        allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, this, request.reasonCode.toDeallocationReason(), updatedBy)
       }
       allocation.endDate = this
     }
@@ -83,4 +91,9 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
       allocation.payBand = prisonPayBandRepository.findOrThrowIllegalArgument(this)
     }
   }
+
+  private fun String?.toDeallocationReason() =
+    DeallocationReason.values()
+      .filter(DeallocationReason::displayed)
+      .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 }

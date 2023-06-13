@@ -172,5 +172,5 @@ class AllocationController(private val allocationsService: AllocationsService) {
       required = true,
     )
     allocation: AllocationUpdateRequest,
-  ): Allocation = allocationsService.updateAllocation(allocationId, allocation, prisonCode)
+  ): Allocation = allocationsService.updateAllocation(allocationId, allocation, prisonCode, principal.name)
 }
