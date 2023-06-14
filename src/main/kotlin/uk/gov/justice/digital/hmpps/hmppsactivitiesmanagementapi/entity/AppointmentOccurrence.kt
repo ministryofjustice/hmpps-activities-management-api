@@ -146,7 +146,7 @@ data class AppointmentOccurrence(
 
   fun toDetails(
     prisonCode: String,
-    prisoners: List<Prisoner>,
+    prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
@@ -157,7 +157,7 @@ data class AppointmentOccurrence(
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,
-      prisoners.toSummary(),
+      allocations().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
       referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       appointment.appointmentDescription,
       if (inCell) {
@@ -199,3 +199,11 @@ fun List<AppointmentOccurrence>.toSummary(
   userMap: Map<String, UserDetail>,
   appointmentComment: String,
 ) = map { it.toSummary(prisonCode, locationMap, userMap, appointmentComment) }
+
+fun List<AppointmentOccurrence>.toDetails(
+  prisonCode: String,
+  prisonerMap: Map<String, Prisoner>,
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+) = map { it.toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap) }

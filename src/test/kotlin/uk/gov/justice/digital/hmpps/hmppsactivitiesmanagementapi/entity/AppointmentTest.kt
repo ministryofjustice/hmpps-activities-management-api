@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -141,6 +144,87 @@ class AppointmentTest {
         ),
       ),
     )
+  }
+
+  @Test
+  fun `entity to details mapping reference code not found`() {
+    val entity = appointmentEntity()
+    val referenceCodeMap = emptyMap<String, ReferenceCode>()
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+      assertThat(category.code).isEqualTo(entity.categoryCode)
+      assertThat(category.description).isEqualTo("UNKNOWN")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping location not found`() {
+    val entity = appointmentEntity()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val locationMap = emptyMap<Long, Location>()
+    val userMap = mapOf(
+      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+      assertThat(internalLocation).isNotNull
+      assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
+      assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
+      assertThat(internalLocation!!.description).isEqualTo("UNKNOWN")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping users not found`() {
+    val entity = appointmentEntity()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = emptyMap<String, UserDetail>()
+    val prisoners = listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+      assertThat(createdBy.id).isEqualTo(-1)
+      assertThat(createdBy.username).isEqualTo("CREATE.USER")
+      assertThat(createdBy.firstName).isEqualTo("UNKNOWN")
+      assertThat(createdBy.lastName).isEqualTo("UNKNOWN")
+      assertThat(updatedBy).isNotNull
+      assertThat(updatedBy!!.id).isEqualTo(-1)
+      assertThat(updatedBy!!.username).isEqualTo("UPDATE.USER")
+      assertThat(updatedBy!!.firstName).isEqualTo("UNKNOWN")
+      assertThat(updatedBy!!.lastName).isEqualTo("UNKNOWN")
+    }
   }
 
   @Test

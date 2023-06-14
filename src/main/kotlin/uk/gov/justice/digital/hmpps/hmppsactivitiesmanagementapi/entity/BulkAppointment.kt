@@ -51,6 +51,8 @@ data class BulkAppointment(
 
   fun usernames() = listOf(createdBy).union(appointments().map { appointment -> appointment.usernames() }.flatten()).distinct()
 
+  fun occurrences() = appointments().map { appointment -> appointment.occurrences() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
+
   fun toModel() = BulkAppointmentModel(
     bulkAppointmentId = this.bulkAppointmentId,
     appointments = this.appointments.toModel(),
@@ -59,13 +61,13 @@ data class BulkAppointment(
   )
 
   fun toDetails(
-    prisoners: List<Prisoner>,
+    prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) = BulkAppointmentDetails(
     bulkAppointmentId,
-    appointments().toDetails(prisoners, referenceCodeMap, locationMap, userMap),
+    appointments().map { it.occurrenceDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
     created,
     userMap[createdBy].toSummary(createdBy),
   )

@@ -3,6 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -155,8 +159,8 @@ class AppointmentOccurrenceTest {
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         bookingId = 456,
         firstName = "TEST",
@@ -165,7 +169,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
@@ -196,6 +200,155 @@ class AppointmentOccurrenceTest {
   }
 
   @Test
+  fun `entity to details mapping prisoner not found`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = emptyMap<String, Prisoner>()
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).prisoners) {
+      assertThat(size).isEqualTo(1)
+      with(first()) {
+        assertThat(prisonerNumber).isEqualTo("A1234BC")
+        assertThat(bookingId).isEqualTo(456)
+        assertThat(firstName).isEqualTo("UNKNOWN")
+        assertThat(lastName).isEqualTo("UNKNOWN")
+        assertThat(prisonCode).isEqualTo("TPR")
+        assertThat(cellLocation).isEqualTo("UNKNOWN")
+      }
+    }
+  }
+
+  @Test
+  fun `entity to details mapping map single prisoner`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonersMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST01",
+        lastName = "PRISONER01",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+      "B2345CD" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "B2345CD",
+        bookingId = 789,
+        firstName = "TEST02",
+        lastName = "PRISONER02",
+        prisonId = "TPR",
+        cellLocation = "4-5-6",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonersMap, referenceCodeMap, locationMap, userMap).prisoners) {
+      assertThat(size).isEqualTo(1)
+      with(first()) {
+        assertThat(prisonerNumber).isEqualTo("A1234BC")
+        assertThat(bookingId).isEqualTo(456)
+        assertThat(firstName).isEqualTo("TEST01")
+        assertThat(lastName).isEqualTo("PRISONER01")
+        assertThat(prisonCode).isEqualTo("TPR")
+        assertThat(cellLocation).isEqualTo("1-2-3")
+      }
+    }
+  }
+
+  @Test
+  fun `entity to details mapping reference code not found`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = emptyMap<String, ReferenceCode>()
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(category.code).isEqualTo(appointment.categoryCode)
+      assertThat(category.description).isEqualTo("UNKNOWN")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping location not found`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = emptyMap<Long, Location>()
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(internalLocation).isNotNull
+      assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
+      assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
+      assertThat(internalLocation!!.description).isEqualTo("UNKNOWN")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping users not found`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = emptyMap<String, UserDetail>()
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(createdBy.id).isEqualTo(-1)
+      assertThat(createdBy.username).isEqualTo("CREATE.USER")
+      assertThat(createdBy.firstName).isEqualTo("UNKNOWN")
+      assertThat(createdBy.lastName).isEqualTo("UNKNOWN")
+      assertThat(updatedBy).isNotNull
+      assertThat(updatedBy!!.id).isEqualTo(-1)
+      assertThat(updatedBy!!.username).isEqualTo("UPDATE.USER")
+      assertThat(updatedBy!!.firstName).isEqualTo("UNKNOWN")
+      assertThat(updatedBy!!.lastName).isEqualTo("UNKNOWN")
+    }
+  }
+
+  @Test
   fun `entity to details mapping in cell nullifies internal location`() {
     val appointment = appointmentEntity(inCell = true)
     appointment.internalLocationId = 123
@@ -207,8 +360,8 @@ class AppointmentOccurrenceTest {
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         bookingId = 456,
         firstName = "TEST",
@@ -217,7 +370,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -233,8 +386,8 @@ class AppointmentOccurrenceTest {
     val userMap = mapOf(
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         bookingId = 456,
         firstName = "TEST",
@@ -243,7 +396,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
     }
@@ -259,8 +412,8 @@ class AppointmentOccurrenceTest {
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         bookingId = 456,
         firstName = "TEST",
@@ -269,7 +422,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriod.WEEKLY, 4))
     }
   }

@@ -6,7 +6,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -52,17 +51,15 @@ class AppointmentOccurrenceDetailsServiceTest {
         userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(entity.prisonerNumbers())).thenReturn(
-      Mono.just(
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(
-            prisonerNumber = "A1234BC",
-            bookingId = 456,
-            firstName = "TEST",
-            lastName = "PRISONER",
-            prisonId = "TPR",
-            cellLocation = "1-2-3",
-          ),
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
+      mapOf(
+        "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 456,
+          firstName = "TEST",
+          lastName = "PRISONER",
+          prisonId = "TPR",
+          cellLocation = "1-2-3",
         ),
       ),
     )

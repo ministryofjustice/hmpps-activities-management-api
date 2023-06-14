@@ -81,6 +81,13 @@ data class Appointment(
 
   fun occurrences() = occurrences.toList()
 
+  fun occurrenceDetails(
+    prisonerMap: Map<String, Prisoner>,
+    referenceCodeMap: Map<String, ReferenceCode>,
+    locationMap: Map<Long, Location>,
+    userMap: Map<String, UserDetail>,
+  ) = occurrences().toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
+
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
   fun internalLocationIds() =
@@ -147,13 +154,6 @@ data class Appointment(
 }
 
 fun List<Appointment>.toModel() = map { it.toModel() }
-
-fun List<Appointment>.toDetails(
-  prisoners: List<Prisoner>,
-  referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
-  userMap: Map<String, UserDetail>,
-) = map { it.toDetails(prisoners, referenceCodeMap, locationMap, userMap) }
 
 enum class AppointmentType {
   INDIVIDUAL,

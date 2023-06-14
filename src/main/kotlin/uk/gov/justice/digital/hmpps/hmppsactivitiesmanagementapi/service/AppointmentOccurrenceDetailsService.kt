@@ -19,7 +19,7 @@ class AppointmentOccurrenceDetailsService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointmentOccurrence.prisonerNumbers()).block()!!
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentOccurrence.prisonerNumbers())
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
@@ -27,6 +27,6 @@ class AppointmentOccurrenceDetailsService(
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 
-    return appointmentOccurrence.toDetails(appointment.prisonCode, prisoners, referenceCodeMap, locationMap, userMap)
+    return appointmentOccurrence.toDetails(appointment.prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
   }
 }

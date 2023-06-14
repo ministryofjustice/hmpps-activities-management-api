@@ -18,7 +18,7 @@ class BulkAppointmentDetailsService(
   fun getBulkAppointmentDetailsById(appointmentId: Long): BulkAppointmentDetails {
     val bulkAppointment = bulkAppointmentRepository.findOrThrowNotFound(appointmentId)
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(bulkAppointment.prisonerNumbers()).block()!!
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(bulkAppointment.prisonerNumbers())
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
@@ -26,6 +26,6 @@ class BulkAppointmentDetailsService(
 
     val userMap = prisonApiClient.getUserDetailsList(bulkAppointment.usernames()).associateBy { it.username }
 
-    return bulkAppointment.toDetails(prisoners, referenceCodeMap, locationMap, userMap)
+    return bulkAppointment.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
   }
 }

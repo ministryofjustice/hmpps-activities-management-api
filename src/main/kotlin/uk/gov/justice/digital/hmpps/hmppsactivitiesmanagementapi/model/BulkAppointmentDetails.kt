@@ -16,9 +16,9 @@ data class BulkAppointmentDetails(
   val bulkAppointmentId: Long,
 
   @Schema(
-    description = "The details of the set of appointments created in bulk",
+    description = "The details of the set of appointment occurrences created in bulk",
   )
-  val appointments: List<AppointmentDetails>,
+  val occurrences: List<AppointmentOccurrenceDetails>,
 
   @Schema(
     description = "The date and time this set of appointments was created in bulk. Will not change",
