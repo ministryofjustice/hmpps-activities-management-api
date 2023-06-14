@@ -280,7 +280,7 @@ class ActivityScheduleTest {
       allocatedBy = "FREDDIE",
     )
 
-    allocation.deallocateNow(DeallocationReason.OTHER)
+    allocation.deallocateNowWithReason(DeallocationReason.OTHER)
 
     assertDoesNotThrow {
       schedule.allocatePrisoner(

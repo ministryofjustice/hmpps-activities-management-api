@@ -95,7 +95,7 @@ class ManageAttendancesServiceTest {
   @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    allocation.deallocateNow(DeallocationReason.ENDED)
+    allocation.deallocateNowWithReason(DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
 
