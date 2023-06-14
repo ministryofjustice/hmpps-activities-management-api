@@ -6,7 +6,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 
 class AppointmentOccurrenceAllocationServiceTest {
 
-  private val prisonApiClient = mock<PrisonApiClient>()
+  private val prisonApiClient = mock<PrisonApiApplicationClient>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentOccurrenceAllocationRepository = mock<AppointmentOccurrenceAllocationRepository>()
   private val appointmentOccurrenceAllocationService = AppointmentOccurrenceAllocationService(

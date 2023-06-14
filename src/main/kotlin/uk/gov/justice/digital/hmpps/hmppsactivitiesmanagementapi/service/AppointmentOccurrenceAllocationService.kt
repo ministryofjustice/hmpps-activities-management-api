@@ -2,13 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
 
 @Service
 class AppointmentOccurrenceAllocationService(
-  private val prisonApiClient: PrisonApiClient,
+  private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
 ) {
