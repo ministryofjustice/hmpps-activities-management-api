@@ -12,7 +12,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -91,10 +90,10 @@ data class Allocation(
    */
   fun ends(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
-  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) {
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
-      if (date.onOrBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must be in the future.")
+      if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
       if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
 
       if (plannedDeallocation == null) {
@@ -113,7 +112,6 @@ data class Allocation(
         }
       }
     }
-  }
 
   private fun maybeEndDate() =
     when {
@@ -123,7 +121,7 @@ data class Allocation(
       else -> null
     }
 
-  fun deallocateNow(reason: DeallocationReason) =
+  fun deallocateNowWithReason(reason: DeallocationReason) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
@@ -132,6 +130,30 @@ data class Allocation(
       deallocatedBy = ServiceName.SERVICE_NAME.value
       deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
       endDate = LocalDate.now()
+    }
+
+  /**
+   * This will default to ENDED for the reason unless there is planned deallocation that matches now which overrides it.
+   */
+  fun deallocateNow() =
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+
+      val today = LocalDate.now()
+
+      if (plannedDeallocation != null && plannedDeallocation?.plannedDate == today) {
+        prisonerStatus = PrisonerStatus.ENDED
+        deallocatedReason = plannedDeallocation?.plannedReason
+        deallocatedBy = plannedDeallocation?.plannedBy
+        deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+        endDate = today
+      } else {
+        prisonerStatus = PrisonerStatus.ENDED
+        deallocatedReason = DeallocationReason.ENDED
+        deallocatedBy = ServiceName.SERVICE_NAME.value
+        deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+        endDate = today
+      }
     }
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
@@ -162,7 +184,11 @@ data class Allocation(
     )
 
   fun activate() =
-    this.apply { prisonerStatus = PrisonerStatus.ACTIVE }
+    this.apply {
+      failWithMessageIfAllocationsIsNot("You can only activate pending allocations", PrisonerStatus.PENDING)
+
+      prisonerStatus = PrisonerStatus.ACTIVE
+    }
 
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {

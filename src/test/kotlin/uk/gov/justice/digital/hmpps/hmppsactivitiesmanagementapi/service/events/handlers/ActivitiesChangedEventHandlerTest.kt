@@ -91,7 +91,7 @@ class ActivitiesChangedEventHandlerTest {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocateNow(DeallocationReason.ENDED) },
+        .also { it.deallocateNowWithReason(DeallocationReason.ENDED) },
       allocation().copy(allocationId = 3, prisonerNumber = "123456"),
     )
 

@@ -123,7 +123,7 @@ class AllocationTest : ModelTest() {
   @Test
   fun `check deallocated allocation transformation`() {
     val allocation = allocation().also {
-      it.deallocateNow(DeallocationReason.ENDED)
+      it.deallocateNowWithReason(DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     }
 
