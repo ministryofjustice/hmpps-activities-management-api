@@ -2,7 +2,13 @@ insert into activity(activity_id, prison_code, activity_category_id, activity_ti
 values (2, 'PVI', 1, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-10-21', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER');
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (2, 2, 'BAS', 'Basic', 1, 75, 0, 0);
+values (1, 2, 'BAS', 'Basic', 1, 125, 150, 1);
+
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (2, 2, 'BAS', 'Basic', 2, 225, 250, 1);
+
+insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
+values (3, 2, 'BAS', 'Basic', 3, 325, 350, 1);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (3, 2, 'English AM', 3, 'L3', 'Location 3', 10, '2022-10-21');

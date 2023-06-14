@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import java.time.LocalDate
 
 object PrisonerSearchPrisonerFixture {
@@ -34,6 +35,7 @@ object PrisonerSearchPrisonerFixture {
     ),
     lastMovementType: MovementType? = null,
     releaseDate: LocalDate? = null,
+    alerts: List<PrisonerAlert> = emptyList(),
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -58,5 +60,6 @@ object PrisonerSearchPrisonerFixture {
       currentIncentive = currentIncentive,
       lastMovementTypeCode = lastMovementType?.nomisShortCode,
       releaseDate = releaseDate,
+      alerts = alerts,
     )
 }
