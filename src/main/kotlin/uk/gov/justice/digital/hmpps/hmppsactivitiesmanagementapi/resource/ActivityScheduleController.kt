@@ -33,10 +33,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import java.security.Principal
 
 // TODO add pre-auth annotations to enforce roles when we have them
@@ -46,60 +45,7 @@ import java.security.Principal
 class ActivityScheduleController(
   private val scheduleService: ActivityScheduleService,
   private val candidatesService: CandidatesService,
-  private val capacityService: CapacityService,
 ) {
-
-  @Operation(
-    summary = "Get the capacity and number of allocated slots in an activity schedule",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity schedule capacity",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CapacityAndAllocated::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Schedule ID not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @GetMapping(value = ["/{activityScheduleId}/capacity"])
-  @ResponseBody
-  fun getActivityScheduleCapacity(@PathVariable("activityScheduleId") activityScheduleId: Long): CapacityAndAllocated =
-    capacityService.getActivityScheduleCapacityAndAllocated(activityScheduleId)
 
   @GetMapping(value = ["/{scheduleId}/allocations"])
   @ResponseBody
@@ -361,8 +307,81 @@ class ActivityScheduleController(
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(candidates.size)
 
-    return PageImpl(candidates.subList(start.coerceAtMost(end), end), pageable, candidates.size.toLong())
+    return PageImpl(
+      candidates.subList(start.coerceAtMost(end), end),
+      pageable,
+      candidates.size.toLong(),
+    )
   }
+
+  @GetMapping(value = ["/{scheduleId}/suitability"])
+  @Operation(
+    summary = "Gets the suitability details of a candidate for an activity",
+    description = "Returns candidate suitability details considering factors such as, workplace risk assessment," +
+      " incentive level, education levels, earliest release date and non-associations" +
+      " Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Candidate suitability details.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = AllocationSuitability::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity schedule for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun allocationSuitability(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(value = "prisonerNumber", required = true)
+    @Parameter(description = "Prisoner number (required). Format A9999AA.")
+    prisonerNumber: String,
+  ) = candidatesService.candidateSuitability(scheduleId, prisonerNumber)
 
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @PutMapping(value = ["/{scheduleId}/deallocate"])

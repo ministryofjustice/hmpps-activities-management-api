@@ -23,10 +23,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.CapacityAndAllocated
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CapacityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -38,9 +36,6 @@ import java.time.LocalDateTime
 class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   @MockBean
-  private lateinit var capacityService: CapacityService
-
-  @MockBean
   private lateinit var activityService: ActivityService
 
   @MockBean
@@ -49,39 +44,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   @MockBean
   private lateinit var prisonRegimeService: PrisonRegimeService
 
-  override fun controller() = PrisonController(capacityService, activityService, scheduleService, prisonRegimeService)
-
-  @Test
-  fun `200 response when get category capacity`() {
-    val expectedModel = CapacityAndAllocated(capacity = 200, allocated = 100)
-
-    whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 1)).thenReturn(
-      expectedModel,
-    )
-
-    val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }.andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
-
-    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 1)
-  }
-
-  @Test
-  fun `404 response when get category capacity and category does not exist`() {
-    whenever(capacityService.getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 2)).thenThrow(
-      EntityNotFoundException("not found"),
-    )
-
-    val response = mockMvc.getCategoryCapacity(moorlandPrisonCode, 2)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }.andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(capacityService, times(1)).getActivityCategoryCapacityAndAllocated(moorlandPrisonCode, 2)
-  }
+  override fun controller() = PrisonController(activityService, scheduleService, prisonRegimeService)
 
   @Test
   fun `200 response when get category activities`() {
@@ -105,6 +68,8 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           name = "Leisure and social",
           description = "Such as association, library time and social clubs, like music or art",
         ),
+        capacity = 20,
+        allocated = 10,
         createdTime = LocalDateTime.now(),
         activityState = ActivityState.LIVE,
       ),
@@ -166,12 +131,14 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
           name = "Leisure and social",
           description = "Such as association, library time and social clubs, like music or art",
         ),
+        capacity = 20,
+        allocated = 10,
         createdTime = LocalDateTime.now(),
         activityState = ActivityState.LIVE,
       ),
     )
 
-    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode)).thenReturn(
+    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode, true)).thenReturn(
       expectedModel,
     )
 
@@ -181,7 +148,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode)
+    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode, true)
   }
 
   private fun MockMvc.getActivities(prisonCode: String) =

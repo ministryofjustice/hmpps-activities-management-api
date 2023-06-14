@@ -66,7 +66,7 @@ class ActivityTest {
       prisonCode = "123",
       summary = "Maths",
       description = "Maths basic",
-      riskLevel = "High",
+      riskLevel = "high",
       minimumIncentiveNomisCode = "BAS",
       minimumIncentiveLevel = "Basic",
       category = ActivityCategory(
@@ -75,6 +75,8 @@ class ActivityTest {
         name = "category name",
         description = "category description",
       ),
+      capacity = 0,
+      allocated = 0,
       createdTime = LocalDate.now().atStartOfDay(),
       activityState = ActivityState.LIVE,
     )
@@ -94,7 +96,7 @@ class ActivityTest {
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
-        riskLevel = "High",
+        riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
@@ -102,6 +104,8 @@ class ActivityTest {
             id = 0,
             educationLevelCode = "1",
             educationLevelDescription = "Reading Measure 1.0",
+            studyAreaCode = "ENGLA",
+            studyAreaDescription = "English Language",
           ),
         ),
         category = ActivityCategory(
@@ -110,6 +114,8 @@ class ActivityTest {
           name = "category name",
           description = "category description",
         ),
+        capacity = 1,
+        allocated = 1,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),
@@ -480,6 +486,8 @@ class ActivityTest {
     activity.addMinimumEducationLevel(
       educationLevelCode = "1",
       educationLevelDescription = "Reading Measure 1.0",
+      studyAreaCode = "ENGLA",
+      studyAreaDescription = "English Language",
     )
 
     assertThat(activity.activityMinimumEducationLevel()).containsExactlyInAnyOrder(
@@ -487,6 +495,8 @@ class ActivityTest {
         educationLevelCode = "1",
         educationLevelDescription = "Reading Measure 1.0",
         activity = activity,
+        studyAreaCode = "ENGLA",
+        studyAreaDescription = "English Language",
       ),
     )
   }

@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
-import java.time.LocalDateTime
 
 @Component
 class OffenderReleasedEventHandler(
@@ -33,7 +32,7 @@ class OffenderReleasedEventHandler(
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when {
         event.isTemporary() -> {
-          suspendOffenderAllocations(event)
+          log.info("Ignoring temporary release $event")
           Outcome.success()
         }
 
@@ -57,13 +56,6 @@ class OffenderReleasedEventHandler(
     return Outcome.success()
   }
 
-  private fun suspendOffenderAllocations(event: OffenderReleasedEvent) =
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .suspendAndSaveAffectedAllocations()
-      .let {
-        log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
-      }
-
   private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(
       event.prisonCode(),
@@ -80,8 +72,7 @@ class OffenderReleasedEventHandler(
         prisoner.isReleasedOnDeath() -> DeallocationReason.DIED
         prisoner.isReleasedFromRemand() -> DeallocationReason.RELEASED
         prisoner.isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
-        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
-          .let { null }
+        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
       }
     }?.let { reason ->
       allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
@@ -92,14 +83,8 @@ class OffenderReleasedEventHandler(
       true
     } ?: log.warn("Prisoner for $event not found").let { false }
 
-  private fun List<Allocation>.suspendAndSaveAffectedAllocations() =
-    LocalDateTime.now().let { now ->
-      this.filter { it.status(PrisonerStatus.ACTIVE) }
-        .map { it.autoSuspend(now, "Temporarily released from prison") }
-    }.saveAffectedAllocations()
-
   private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
-    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(reason) }.saveAffectedAllocations()
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNowWithReason(reason) }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
     allocationRepository.saveAllAndFlush(this).toList()

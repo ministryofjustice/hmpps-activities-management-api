@@ -2,16 +2,35 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
 
 @Component
-class ManageAllocationsJob(private val service: ManageAllocationsService) {
+class ManageAllocationsJob(
+  private val service: ManageAllocationsService,
+  private val jobRunner: SafeJobRunner,
+) {
 
   @Async("asyncExecutor")
-  fun execute() {
-    service.allocations(AllocationOperation.STARTING_TODAY)
-    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
-    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+  fun execute(withActivate: Boolean = false, withDeallocate: Boolean = false) {
+    if (withActivate) {
+      jobRunner.runSafe(
+        JobDefinition(JobType.ALLOCATE) {
+          service.allocations(AllocationOperation.STARTING_TODAY)
+        },
+      )
+    }
+
+    if (withDeallocate) {
+      jobRunner.runSafe(
+        JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
+          service.allocations(AllocationOperation.DEALLOCATE_ENDING)
+        },
+        JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
+          service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+        },
+      )
+    }
   }
 }

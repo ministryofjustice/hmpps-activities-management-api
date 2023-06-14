@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -34,7 +34,22 @@ class AllocationTest : ModelTest() {
       deallocatedTime = originalDeallocatedTime,
       activitySummary = "Blah",
       bookingId = 123,
-      prisonPayBand = PrisonPayBand(1, 1, "Alias", "Desc", 1, "PVI"),
+      payRate = ActivityPay(
+        id = 1,
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+        prisonPayBand = PrisonPayBand(
+          id = lowPayBand.prisonPayBandId,
+          displaySequence = lowPayBand.displaySequence,
+          alias = lowPayBand.payBandAlias,
+          description = lowPayBand.payBandDescription,
+          prisonCode = lowPayBand.prisonCode,
+          nomisPayBand = lowPayBand.nomisPayBand,
+        ),
+      ),
       prisonerNumber = "1234",
       scheduleDescription = "Blah blah",
       scheduleId = 123,
@@ -108,7 +123,7 @@ class AllocationTest : ModelTest() {
   @Test
   fun `check deallocated allocation transformation`() {
     val allocation = allocation().also {
-      it.deallocateNow(DeallocationReason.ENDED)
+      it.deallocateNowWithReason(DeallocationReason.ENDED)
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     }
 
@@ -125,15 +140,16 @@ class AllocationTest : ModelTest() {
 
   @Test
   fun `check displayable deallocation reasons`() {
+    assertThat(DeallocationReason.toModelDeallocationReasons()).hasSize(7)
+
     assertThat(DeallocationReason.toModelDeallocationReasons()).containsExactlyInAnyOrder(
+      DeallocationReason.COMPLETED.toModel(),
+      DeallocationReason.HEALTH.toModel(),
       DeallocationReason.OTHER.toModel(),
-      DeallocationReason.PERSONAL.toModel(),
-      DeallocationReason.PROBLEM.toModel(),
-      DeallocationReason.REMOVED.toModel(),
       DeallocationReason.SECURITY.toModel(),
-      DeallocationReason.UNACCEPTABLE_ATTENDANCE.toModel(),
-      DeallocationReason.UNACCEPTABLE_BEHAVIOUR.toModel(),
-      DeallocationReason.WITHDRAWN.toModel(),
+      DeallocationReason.TRANSFERRED.toModel(),
+      DeallocationReason.WITHDRAWN_OWN.toModel(),
+      DeallocationReason.WITHDRAWN_STAFF.toModel(),
     )
   }
 
@@ -146,11 +162,11 @@ class AllocationTest : ModelTest() {
       assertThat(scheduleId).isEqualTo(entity.activitySchedule.activityScheduleId)
       assertThat(scheduleDescription).isEqualTo(entity.activitySchedule.description)
       assertThat(isUnemployment).isEqualTo(entity.activitySchedule.activity.isUnemployment())
-      assertThat(prisonPayBand).isEqualTo(entity.payBand.toModelPrisonPayBand())
       assertThat(startDate).isEqualTo(entity.startDate)
       assertThat(endDate).isEqualTo(entity.endDate)
       assertThat(allocatedTime).isEqualTo(entity.allocatedTime)
       assertThat(allocatedBy).isEqualTo(entity.allocatedBy)
+      assertThat(payRate).isEqualTo(entity.allocationPay()?.toModel())
     }
   }
 }

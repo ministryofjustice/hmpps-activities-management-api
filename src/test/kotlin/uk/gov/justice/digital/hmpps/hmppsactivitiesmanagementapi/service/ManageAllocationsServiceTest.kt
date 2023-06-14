@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -55,7 +54,7 @@ class ManageAllocationsServiceTest {
   private val today = yesterday.plusDays(1)
 
   @Test
-  fun `deallocate offenders from activity ending today`() {
+  fun `deallocate offenders from activity ending today without pending deallocation`() {
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = yesterday, endDate = today)
     val schedule = activity.schedules().first()
@@ -67,6 +66,24 @@ class ManageAllocationsServiceTest {
     service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
     allocation.verifyIsEnded()
+
+    verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `deallocate offenders from activity ending today with pending deallocation`() {
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = yesterday, endDate = today)
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
+    allocation.deallocateOn(today, DeallocationReason.OTHER, "by test")
+
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
+    whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
+
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
+
+    allocation.verifyIsEnded(DeallocationReason.OTHER)
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
   }
@@ -222,7 +239,12 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prisonWithRegime, prisonWithoutRegime))
     whenever(prisonRegimeRepository.findByPrisonCode(prisonWithRegime.code)).doReturn(prisonRegime())
     whenever(prisonRegimeRepository.findByPrisonCode(prisonWithoutRegime.code)).doReturn(null)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prisonWithRegime.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerStatus(
+        prisonWithRegime.code,
+        PrisonerStatus.AUTO_SUSPENDED,
+      ),
+    ).doReturn(
       listOf(allocation),
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
@@ -267,10 +289,10 @@ class ManageAllocationsServiceTest {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
   }
 
-  private fun Allocation.verifyIsEnded() {
+  private fun Allocation.verifyIsEnded(reason: DeallocationReason = DeallocationReason.ENDED) {
     assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
     assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo(DeallocationReason.ENDED)
+    assertThat(deallocatedReason).isEqualTo(reason)
     assertThat(deallocatedBy).isNotNull
   }
 

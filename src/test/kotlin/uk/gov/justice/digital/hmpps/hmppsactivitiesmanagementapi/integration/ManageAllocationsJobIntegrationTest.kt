@@ -26,14 +26,14 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending today`() {
-    val activeAllocations = allocationRepository.findAll()
+    val activeAllocations = allocationRepository.findAll().filterNot(Allocation::isEnded)
 
     assertThat(activeAllocations).hasSize(3)
-    activeAllocations.forEach { it.assertIsActive() }
+    activeAllocations.forEach { it.assertIs(PrisonerStatus.ACTIVE) }
 
-    webTestClient.manageAllocations()
+    webTestClient.manageAllocations(withDeallocate = true)
 
-    val deallocatedAllocations = allocationRepository.findAll()
+    val deallocatedAllocations = allocationRepository.findAllById(activeAllocations.map { it.allocationId })
 
     assertThat(deallocatedAllocations).hasSize(3)
     deallocatedAllocations.forEach { it.assertIsDeallocated(DeallocationReason.ENDED) }
@@ -43,20 +43,20 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Test
   fun `deallocate offenders for activity with no end date`() {
     val allocations = allocationRepository.findAll().also {
-      it.prisoner("A11111A").assertIsActive()
-      it.prisoner("A22222A").assertIsActive()
-      it.prisoner("A33333A").assertIsActive()
+      it.prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
+      it.prisoner("A22222A").assertIs(PrisonerStatus.ACTIVE)
+      it.prisoner("A33333A").assertIs(PrisonerStatus.ACTIVE)
     }
 
     assertThat(allocations).hasSize(3)
 
-    webTestClient.manageAllocations()
+    webTestClient.manageAllocations(withDeallocate = true)
 
     allocationRepository.findAll().let {
       assertThat(it).hasSize(3)
-      it.prisoner("A11111A").assertIsActive()
+      it.prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
       it.prisoner("A22222A").assertIsDeallocated(DeallocationReason.ENDED)
-      it.prisoner("A33333A").assertIsActive()
+      it.prisoner("A33333A").assertIs(PrisonerStatus.ACTIVE)
     }
   }
 
@@ -78,16 +78,27 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     assertThat(allocations).hasSize(1)
 
-    webTestClient.manageAllocations()
+    webTestClient.manageAllocations(withDeallocate = true)
 
     allocationRepository.findAll().prisoner("A11111A").assertIsDeallocated(DeallocationReason.EXPIRED)
   }
 
-  private fun Allocation.assertIsActive() {
-    assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
-    assertThat(deallocatedBy).isNull()
-    assertThat(deallocatedReason).isNull()
-    assertThat(deallocatedTime).isNull()
+  @Sql("classpath:test_data/seed-allocations-pending.sql")
+  @Test
+  fun `pending allocation is activated`() {
+    val allocations = allocationRepository.findAll().also {
+      it.prisoner("A11111A").assertIs(PrisonerStatus.PENDING)
+    }
+
+    assertThat(allocations).hasSize(1)
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    allocationRepository.findAll().prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
+  }
+
+  private fun Allocation.assertIs(status: PrisonerStatus) {
+    assertThat(this.prisonerStatus).isEqualTo(status)
   }
 
   private fun Allocation.assertIsAutoSuspended() {
@@ -103,9 +114,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private fun List<Allocation>.prisoner(number: String) = first { it.prisonerNumber == number }
 
-  private fun WebTestClient.manageAllocations() {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocate: Boolean = false) {
     post()
-      .uri("/job/manage-allocations")
+      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocate=$withDeallocate")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated

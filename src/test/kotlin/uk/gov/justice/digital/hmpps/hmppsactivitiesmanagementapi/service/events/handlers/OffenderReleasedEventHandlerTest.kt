@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -91,7 +92,7 @@ class OffenderReleasedEventHandlerTest {
   }
 
   @Test
-  fun `active allocations are auto-suspended on temporary release of prisoner`() {
+  fun `active allocations are unchanged on temporary release of prisoner`() {
     val previouslyActiveAllocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456"),
@@ -110,69 +111,9 @@ class OffenderReleasedEventHandlerTest {
 
     assertThat(outcome.isSuccess()).isTrue
 
-    previouslyActiveAllocations.forEach {
-      assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
-      assertThat(it.suspendedReason).isEqualTo("Temporarily released from prison")
-      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    }
+    previouslyActiveAllocations.forEach { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue }
 
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
-  }
-
-  @Test
-  fun `only active allocations are auto-suspended on temporary release of prisoner`() {
-    val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocateNow(DeallocationReason.ENDED) },
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    )
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
-
-    val outcome = handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
-
-    assertThat(outcome.isSuccess()).isTrue
-    assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-    assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue
-    assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-  }
-
-  @Test
-  fun `un-ended allocations are ended on release from death of prisoner`() {
-    val previouslyActiveAllocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    ).onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-      assertThat(it.deallocatedBy).isNull()
-      assertThat(it.deallocatedReason).isNull()
-      assertThat(it.deallocatedTime).isNull()
-    }
-
-    whenever(prisoner.legalStatus).doReturn(InmateDetail.LegalStatus.DEAD)
-
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
-      .doReturn(Mono.just(prisoner))
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(previouslyActiveAllocations)
-
-    val outcome = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
-
-    assertThat(outcome.isSuccess()).isTrue
-
-    previouslyActiveAllocations.forEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
-      assertThat(it.deallocatedTime)
-        .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    }
-
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
+    verify(allocationRepository, never()).saveAllAndFlush(any<List<Allocation>>())
   }
 
   @Test
@@ -259,7 +200,7 @@ class OffenderReleasedEventHandlerTest {
   @Test
   fun `only un-ended allocations are ended on release of prisoner`() {
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocateNow(DeallocationReason.ENDED) }
+      .also { it.deallocateNowWithReason(DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")

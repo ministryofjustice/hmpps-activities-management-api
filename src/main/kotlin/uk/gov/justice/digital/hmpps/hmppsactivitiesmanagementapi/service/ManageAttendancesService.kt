@@ -67,7 +67,7 @@ class ManageAttendancesService(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
           attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
-          payAmount = instance.rateFor(allocation.payBand),
+          payAmount = allocation.allocationPay()?.rate,
           issuePayment = false,
           status = AttendanceStatus.COMPLETED,
           recordedTime = LocalDateTime.now(),
@@ -76,7 +76,7 @@ class ManageAttendancesService(
         instance.cancelled -> Attendance(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
-          payAmount = instance.rateFor(allocation.payBand),
+          payAmount = allocation.allocationPay()?.rate,
           issuePayment = true,
           status = AttendanceStatus.COMPLETED,
           attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
@@ -86,7 +86,7 @@ class ManageAttendancesService(
         else -> Attendance(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
-          payAmount = instance.rateFor(allocation.payBand),
+          payAmount = allocation.allocationPay()?.rate,
         )
       }
 

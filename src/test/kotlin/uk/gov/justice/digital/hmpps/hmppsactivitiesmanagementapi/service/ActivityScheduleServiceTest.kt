@@ -8,14 +8,18 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
@@ -29,6 +33,20 @@ class ActivityScheduleServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository)
+
+  private val prisoner = InmateDetail(
+    agencyId = "123",
+    offenderNo = "123456",
+    inOutStatus = "IN",
+    firstName = "Bob",
+    lastName = "Bobson",
+    activeFlag = true,
+    offenderId = 1L,
+    rootOffenderId = 1L,
+    status = "IN",
+    dateOfBirth = LocalDate.of(2001, 10, 1),
+    bookingId = 1,
+  )
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
@@ -47,7 +65,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `ended allocations for a given schedule are not returned`() {
     val schedule = schedule().apply {
-      allocations().first().apply { deallocateNow(DeallocationReason.ENDED) }
+      allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
@@ -104,12 +122,12 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.PERSONAL.name, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.OTHER.name, TimeSource.tomorrow()),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
-    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.PERSONAL, "by test")
+    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
+    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -154,5 +172,75 @@ class ActivityScheduleServiceTest {
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Invalid deallocation reason specified '$reasonCode'")
     }
+  }
+
+  @Test
+  fun `allocate throws exception for start date before activity start date`() {
+    var schedule = activitySchedule(activityEntity())
+    schedule.activity.startDate = LocalDate.now().plusDays(2)
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          11,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be before activity start date")
+  }
+
+  @Test
+  fun `allocate throws exception for end date after activity end date`() {
+    var schedule = activitySchedule(activityEntity())
+    schedule.activity.endDate = TimeSource.tomorrow()
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          11,
+          TimeSource.tomorrow(),
+          TimeSource.tomorrow().plusDays(1),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date cannot be after activity end date")
+  }
+
+  @Test
+  fun `allocate throws exception for end date before activity start date`() {
+    var schedule = activitySchedule(activityEntity())
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          11,
+          TimeSource.tomorrow(),
+          TimeSource.today(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date cannot be before allocation start date")
   }
 }
