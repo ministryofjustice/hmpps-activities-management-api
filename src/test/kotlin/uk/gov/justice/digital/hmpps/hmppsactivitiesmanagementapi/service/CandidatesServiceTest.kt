@@ -53,14 +53,11 @@ class CandidatesServiceTest {
 
     fun candidateSuitabilitySetup(activity: Activity, candidate: Prisoner) {
       val schedule = activity.schedules().first()
-      val allocatedPrisoners = schedule.allocations().map {
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = it.prisonerNumber)
-      }.toMutableList()
-      allocatedPrisoners.add(candidate)
 
       whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(allocatedPrisoners.map { it.prisonerNumber }))
-        .thenReturn(Mono.just((allocatedPrisoners)))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(candidate.prisonerNumber))).thenReturn(
+        Mono.just(listOf(candidate)),
+      )
       whenever(prisonApiClient.getEducationLevels(listOf(candidate.prisonerNumber))).thenReturn(
         listOf(candidateEducation),
       )

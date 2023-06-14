@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderNonAssociationDetail
@@ -22,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 class CandidatesService(
@@ -33,23 +33,18 @@ class CandidatesService(
   fun candidateSuitability(scheduleId: Long, prisonerNumber: String): AllocationSuitability {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
 
-    val prisonerNumbers = schedule.allocations().map { it.prisonerNumber }.toMutableList()
-    prisonerNumbers.add(prisonerNumber)
+    val candidateDetails = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()!!.first()
 
-    val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
-      .associateBy { it.prisonerNumber }
-    val candidateDetails = prisonerDetails[prisonerNumber]
-      ?: throw EntityNotFoundException("Prisoner '$prisonerNumber' not found")
-
-    val prisonerEducation = this.prisonApiClient.getEducationLevels(listOf(prisonerNumber))
-    val prisonerNonAssociations = this.prisonApiClient.getOffenderNonAssociations(prisonerNumber)
+    val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))
+    val prisonerNonAssociations = prisonApiClient.getOffenderNonAssociations(prisonerNumber)
+    val prisonerNumbers = schedule.allocations(true).map { it.prisonerNumber }
 
     return AllocationSuitability(
       workplaceRiskAssessment = wraSuitability(schedule.activity.riskLevel, candidateDetails.alerts),
       incentiveLevel = incentiveLevelSuitability(schedule.activity.activityPay(), candidateDetails.currentIncentive),
       education = educationSuitability(schedule.activity.activityMinimumEducationLevel(), prisonerEducation),
       releaseDate = releaseDateSuitability(schedule.startDate, candidateDetails),
-      nonAssociation = nonAssociationSuitability(prisonerDetails.values.toList(), prisonerNonAssociations),
+      nonAssociation = nonAssociationSuitability(prisonerNumbers, prisonerNonAssociations),
     )
   }
 
@@ -67,7 +62,7 @@ class CandidatesService(
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
         .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD }
-        .filter { p -> !schedule.allocations().map { it.prisonerNumber }.contains(p.prisonerNumber) }
+        .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
@@ -155,13 +150,13 @@ class CandidatesService(
   ): WRASuitability {
     val prisonerRiskCodes = prisonerAlerts
       ?.filter { it.active }
-      ?.filter { arrayOf("RLO", "RME", "RHI").contains(it.alertCode) }
-      ?.map { it.alertCode }
+      ?.filter { WORKPLACE_RISK_LEVELS.contains(it.alertCode) }
+      ?.map { it.alertCode } ?: emptyList()
 
     val prisonerHighestRiskLevel = when {
-      prisonerRiskCodes?.contains("RHI") == true -> "high"
-      prisonerRiskCodes?.contains("RME") == true -> "medium"
-      prisonerRiskCodes?.contains("RLO") == true -> "low"
+      prisonerRiskCodes.contains(WORKPLACE_RISK_LEVEL_HIGH) -> "high"
+      prisonerRiskCodes.contains(WORKPLACE_RISK_LEVEL_MEDIUM) -> "medium"
+      prisonerRiskCodes.contains(WORKPLACE_RISK_LEVEL_LOW) -> "low"
       else -> "none"
     }
 
@@ -187,7 +182,7 @@ class CandidatesService(
 
   private fun educationSuitability(
     activityEducations: List<ActivityMinimumEducationLevel>,
-    prisonerEducations: List<Education>?,
+    prisonerEducations: List<Education>,
   ): EducationSuitability {
     val suitable = activityEducations.all { activityEducation ->
       // TODO:
@@ -195,10 +190,10 @@ class CandidatesService(
       // outdated / unreliable, however currently the prison API endpoint doesn't return education codes to do this.
       // The API endpoint (GET /api/education/prisoner/{offenderNo}) will need be updated to include this, then this
       // method should be updated
-      prisonerEducations?.any {
+      prisonerEducations.any {
         it.educationLevel == activityEducation.educationLevelDescription &&
           it.studyArea == activityEducation.studyAreaDescription
-      } ?: false
+      }
     }
 
     return EducationSuitability(
@@ -208,14 +203,18 @@ class CandidatesService(
   }
 
   private fun nonAssociationSuitability(
-    allocatedPrisoners: List<Prisoner>,
+    allocatedPrisoners: List<String>,
     nonAssociations: List<OffenderNonAssociationDetail>?,
   ): NonAssociationSuitability {
-    val allocatedPrisonerNumbers = allocatedPrisoners.map { it.prisonerNumber }
-
-    val allocationNonAssociations = nonAssociations?.filter {
-      allocatedPrisonerNumbers.contains(it.offenderNonAssociation.offenderNo)
-    }
+    val allocationNonAssociations = nonAssociations
+      ?.filter {
+        it.effectiveDate.isNullOrEmpty() || LocalDateTime.parse(it.effectiveDate).isBefore(LocalDateTime.now())
+      }
+      ?.filter {
+        it.expiryDate.isNullOrEmpty() || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
+      }
+      ?.filter { allocatedPrisoners.contains(it.offenderNonAssociation.offenderNo) }
+      ?: emptyList()
 
     return NonAssociationSuitability(
       allocationNonAssociations.isNullOrEmpty(),
@@ -231,4 +230,15 @@ class CandidatesService(
     suitable = prisonerDetail.releaseDate?.isAfter(activityStartDate) ?: false,
     earliestReleaseDate = prisonerDetail.releaseDate,
   )
+
+  companion object {
+    const val WORKPLACE_RISK_LEVEL_LOW = "RLO"
+    const val WORKPLACE_RISK_LEVEL_MEDIUM = "RME"
+    const val WORKPLACE_RISK_LEVEL_HIGH = "RHI"
+    val WORKPLACE_RISK_LEVELS = listOf(
+      WORKPLACE_RISK_LEVEL_LOW,
+      WORKPLACE_RISK_LEVEL_MEDIUM,
+      WORKPLACE_RISK_LEVEL_HIGH,
+    )
+  }
 }

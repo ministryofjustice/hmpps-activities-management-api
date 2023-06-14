@@ -8,5 +8,5 @@ data class EducationSuitability(
   @Schema(description = "The prisoner's suitability", example = "True")
   val suitable: Boolean,
   @Schema(description = "The prisoner's education levels")
-  val education: List<Education>?,
+  val education: List<Education>,
 )

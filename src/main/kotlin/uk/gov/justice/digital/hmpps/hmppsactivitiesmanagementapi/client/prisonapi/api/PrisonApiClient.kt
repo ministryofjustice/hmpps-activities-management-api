@@ -348,7 +348,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .block()
 
     return nonAssociationDetails?.nonAssociations?.filter {
-      !excludeExpired || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
+      !excludeExpired || it.expiryDate == null || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
     }
   }
 }

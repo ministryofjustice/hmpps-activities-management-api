@@ -8,5 +8,5 @@ data class NonAssociationSuitability(
   @Schema(description = "The prisoner's suitability", example = "True")
   val suitable: Boolean,
   @Schema(description = "The prisoner's non-associations")
-  val nonAssociations: List<OffenderNonAssociationDetail>?,
+  val nonAssociations: List<OffenderNonAssociationDetail>,
 )
