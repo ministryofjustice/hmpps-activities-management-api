@@ -158,12 +158,14 @@ data class Allocation(
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
+  fun allocationPay() = activitySchedule.activityPayForBand(payBand)
+
   fun toModel() =
     ModelAllocation(
       id = allocationId,
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
-      prisonPayBand = payBand.toModel(),
+      payRate = allocationPay()?.toModel(),
       startDate = startDate,
       endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,

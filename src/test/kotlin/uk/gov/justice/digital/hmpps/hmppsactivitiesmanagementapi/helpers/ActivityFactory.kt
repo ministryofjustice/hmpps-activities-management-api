@@ -54,6 +54,7 @@ internal fun activityEntity(
   noPayBands: Boolean = false,
   noMinimumEducationLevels: Boolean = false,
   inCell: Boolean = false,
+  riskLevel: String = "high",
 ) =
   Activity(
     activityId = activityId,
@@ -62,7 +63,7 @@ internal fun activityEntity(
     activityTier = tier,
     summary = summary,
     description = description,
-    riskLevel = "High",
+    riskLevel = riskLevel,
     minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",
     startDate = startDate,

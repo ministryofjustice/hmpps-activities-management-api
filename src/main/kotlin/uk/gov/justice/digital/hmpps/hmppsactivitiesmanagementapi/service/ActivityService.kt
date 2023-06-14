@@ -416,14 +416,14 @@ class ActivityService(
     checkEducationLevels(minimumEducationLevel)
 
     activity.activityMinimumEducationLevel().filter {
-      minimumEducationLevel.any { newEducation ->
-        it.studyAreaCode != newEducation.studyAreaCode || it.educationLevelCode != newEducation.educationLevelCode
+      minimumEducationLevel.none { newEducation ->
+        it.studyAreaCode == newEducation.studyAreaCode && it.educationLevelCode == newEducation.educationLevelCode
       }
     }.forEach { activity.removeMinimumEducationLevel(it) }
 
     minimumEducationLevel.filter {
-      activity.activityMinimumEducationLevel().any { activityEducation ->
-        it.studyAreaCode != activityEducation.studyAreaCode || it.educationLevelCode != activityEducation.educationLevelCode
+      activity.activityMinimumEducationLevel().none { activityEducation ->
+        it.studyAreaCode == activityEducation.studyAreaCode && it.educationLevelCode == activityEducation.educationLevelCode
       }
     }.forEach {
       activity.addMinimumEducationLevel(

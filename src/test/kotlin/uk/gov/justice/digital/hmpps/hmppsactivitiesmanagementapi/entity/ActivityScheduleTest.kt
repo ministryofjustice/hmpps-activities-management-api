@@ -47,7 +47,7 @@ class ActivityScheduleTest {
         prisonCode = "123",
         summary = "Maths",
         description = "Maths basic",
-        riskLevel = "High",
+        riskLevel = "high",
         minimumIncentiveNomisCode = "BAS",
         minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
@@ -114,7 +114,7 @@ class ActivityScheduleTest {
           prisonCode = "123",
           summary = "Maths",
           description = "Maths basic",
-          riskLevel = "High",
+          riskLevel = "high",
           minimumIncentiveNomisCode = "BAS",
           minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
