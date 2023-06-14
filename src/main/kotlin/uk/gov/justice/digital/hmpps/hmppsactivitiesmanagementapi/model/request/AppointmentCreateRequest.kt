@@ -115,6 +115,7 @@ data class AppointmentCreateRequest(
   )
   val repeat: AppointmentRepeat? = null,
 
+  @field:Size(max = 4000, message = "Appointment comment must not exceed {max} characters")
   @Schema(
     description =
     """
