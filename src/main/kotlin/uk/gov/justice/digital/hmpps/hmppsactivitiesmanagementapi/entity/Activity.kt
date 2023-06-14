@@ -16,6 +16,10 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import org.hibernate.annotations.Filter
+import org.hibernate.annotations.FilterDef
+import org.hibernate.annotations.Filters
+import org.hibernate.annotations.ParamDef
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -26,6 +30,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 @Entity
 @Table(name = "activity")
 @EntityListeners(AuditableListener::class)
+@FilterDef(
+  name = "ScheduledInstanceByDateFilter",
+  parameters = [
+    ParamDef(name = "earliestStartDate", type = LocalDate::class),
+  ],
+)
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -91,8 +101,9 @@ data class Activity(
   @Fetch(FetchMode.SUBSELECT)
   private val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf()
 
-  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  // @Fetch(FetchMode.SUBSELECT)
+  @Filters(Filter(name = "ScheduledInstanceByDateFilter", condition = "start_date > :earliestStartDate"))
   private val schedules: MutableList<ActivitySchedule> = mutableListOf()
 
   fun schedules() = schedules.toList()

@@ -21,6 +21,9 @@ spring:
     console:
       enabled: true
 
+  jpa:
+    show-sql: true
+
 server:
   shutdown: immediate
 

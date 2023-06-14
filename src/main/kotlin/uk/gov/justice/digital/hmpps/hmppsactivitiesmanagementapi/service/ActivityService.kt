@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -31,6 +34,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 @Service
+@Transactional
 class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -43,6 +47,21 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
+
+  @PersistenceContext
+  private lateinit var entityManager: EntityManager
+
+  fun getLimitedActivityById(activityId: Long, earliestScheduledStartDate: LocalDate = LocalDate.now().minusDays(28)): ModelActivity {
+    /*println("*** Earliest date is $earliestScheduledStartDate ***")
+    val session: Session = entityManager.unwrap(Session::class.java)
+    val filter = session.enableFilter("ScheduledInstanceByDateFilter")
+    filter.setParameter("earliestStartDate", earliestScheduledStartDate)
+
+    return transform(activityRepository.findAll().firstOrNull { it.activityId == activityId } ?: throw AccountNotFoundException())*/
+
+    return transform(activityRepository.getLimited(activityId, earliestScheduledStartDate))
+  }
+
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),

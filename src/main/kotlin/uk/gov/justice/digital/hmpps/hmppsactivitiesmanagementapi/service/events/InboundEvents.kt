@@ -36,6 +36,10 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<ActivitiesChangedEvent>(message)
   },
+  APPOINTMENTS_CHANGED("prison-offender-events.prisoner.appointments-changed") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<ActivitiesChangedEvent>(message)
+  },
   ;
 
   abstract fun toInboundEvent(mapper: ObjectMapper, message: String): InboundEvent
@@ -59,6 +63,8 @@ data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) 
 
   fun isPermanent() = listOf("RELEASED", "TRANSFERRED")
     .any { it == additionalInformation.reason }
+
+  fun isReleased() = additionalInformation.reason == "RELEASED"
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -114,6 +120,20 @@ data class NonAssociationInformation(val nomsNumber: String, val bookingId: Long
 
 // ------------ Activities changed prison events ------------------------------------------
 
+data class AppointmentsChangedEvent(
+  val personReference: PersonReference,
+  val additionalInformation: AppointmentsChangedInformation,
+) : InboundEvent {
+  override fun prisonerNumber(): String =
+    personReference.identifiers.first { it.type == "NOMS" }.value
+
+  override fun eventType() = InboundEventType.APPOINTMENTS_CHANGED.eventType
+
+  fun prisonCode() = additionalInformation.prisonId
+
+  fun cancelAppointments() = additionalInformation.cancelAppointments == "YES"
+}
+
 data class ActivitiesChangedEvent(
   val personReference: PersonReference,
   val additionalInformation: ActivitiesChangedInformation,
@@ -133,6 +153,8 @@ data class PersonReference(val identifiers: List<Identifier>)
 data class Identifier(val type: String, val value: String)
 
 data class ActivitiesChangedInformation(val action: String, val prisonId: String, val user: String)
+
+data class AppointmentsChangedInformation(val prisonId: String, val cancelAppointments: String)
 
 enum class Action {
   END,

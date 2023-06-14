@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -38,6 +39,9 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
+  private lateinit var activityService: ActivityService
+
+  @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
 
   @Autowired
@@ -47,6 +51,8 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Test
   fun `Four attendance records are created, 2 for Maths level 1 AM and 2 for Maths Level 1 PM and four create events are emitted`() {
     assertThat(attendanceRepository.count()).isZero
+
+    assertThat(activityService.getLimitedActivityById(4).schedules).hasSize(1)
 
     with(activityRepository.findById(4).orElseThrow()) {
       assertThat(description).isEqualTo("Maths Level 1")
