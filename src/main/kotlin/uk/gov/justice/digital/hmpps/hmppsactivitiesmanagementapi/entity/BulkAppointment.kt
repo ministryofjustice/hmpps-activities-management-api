@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
@@ -52,9 +53,14 @@ data class BulkAppointment(
 
   fun toModel() = BulkAppointmentModel(
     bulkAppointmentId = this.bulkAppointmentId,
-    appointments = this.appointments.toModel(),
+    appointments = this.appointments().toModel(),
     created = created,
     createdBy = createdBy,
+  )
+
+  fun toSummary() = BulkAppointmentSummary(
+    bulkAppointmentId = this.bulkAppointmentId,
+    appointmentCount = this.appointments().size,
   )
 
   fun toDetails(

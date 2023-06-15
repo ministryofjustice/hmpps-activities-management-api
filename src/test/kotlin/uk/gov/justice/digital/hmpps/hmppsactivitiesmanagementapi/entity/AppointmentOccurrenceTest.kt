@@ -220,7 +220,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointmentId).isEqualTo(3)
+    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(3)
   }
 
   @Test

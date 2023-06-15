@@ -104,7 +104,7 @@ data class AppointmentOccurrence(
     cancelledBy = cancelledBy,
     updated = updated,
     updatedBy = updatedBy,
-    allocations = allocations.toModel(),
+    allocations = allocations().toModel(),
   )
 
   fun toSummary(
@@ -146,7 +146,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
-      appointment.bulkAppointment?.bulkAppointmentId,
+      appointment.bulkAppointment?.toSummary(),
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,
@@ -178,7 +178,7 @@ data class AppointmentOccurrence(
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {
-    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations.isNotEmpty()) {
+    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
     }
   }
