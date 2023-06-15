@@ -479,6 +479,7 @@ class AppointmentServiceTest {
         assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
         assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
+        assertThat(it.comment).isEqualTo("Test comment")
         assertThat(it.appointmentDescription).isEqualTo("Appointment description")
       }
     }

@@ -77,7 +77,7 @@ class CreateScheduledInstancesJobTest {
 
     job.execute()
 
-    verify(safeJobRunner).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.SCHEDULES)
 
     // Creates 6 scheduled instances for 3 activities in Moorland and 3 activities in Leeds

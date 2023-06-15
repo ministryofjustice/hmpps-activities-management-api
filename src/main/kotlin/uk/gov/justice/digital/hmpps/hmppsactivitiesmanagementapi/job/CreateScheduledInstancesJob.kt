@@ -46,7 +46,7 @@ class CreateScheduledInstancesJob(
   */
   @Async("asyncExecutor")
   fun execute() {
-    jobRunner.runSafe(
+    jobRunner.runJob(
       JobDefinition(
         JobType.SCHEDULES,
       ) {

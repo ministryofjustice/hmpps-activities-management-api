@@ -24,7 +24,7 @@ class ManageAllocationsJobTest {
     job.execute(withActivate = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
-    verify(safeJobRunner).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ALLOCATE)
   }
@@ -35,7 +35,7 @@ class ManageAllocationsJobTest {
 
     verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_ENDING)
     verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_EXPIRING)
-    verify(safeJobRunner, times(2)).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
     assertThat(jobDefinitionCaptor.secondValue.jobType).isEqualTo(JobType.DEALLOCATE_EXPIRING)
@@ -48,7 +48,7 @@ class ManageAllocationsJobTest {
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
     verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_ENDING)
     verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_EXPIRING)
-    verify(safeJobRunner, times(3)).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner, times(3)).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ALLOCATE)
     assertThat(jobDefinitionCaptor.secondValue.jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
