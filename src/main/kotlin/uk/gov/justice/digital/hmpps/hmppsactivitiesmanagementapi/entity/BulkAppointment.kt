@@ -62,10 +62,19 @@ data class BulkAppointment(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ) = BulkAppointmentDetails(
-    bulkAppointmentId,
-    appointments().map { it.occurrenceDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
-    created,
-    userMap[createdBy].toSummary(createdBy),
-  )
+  ): BulkAppointmentDetails {
+    val appointment = appointments().first().toDetails(emptyList(), referenceCodeMap, locationMap, userMap)
+    return BulkAppointmentDetails(
+      bulkAppointmentId,
+      // TODO: add these as new properties and columns in the database
+      appointment.category,
+      appointment.appointmentDescription,
+      appointment.internalLocation,
+      appointment.inCell,
+      appointment.startDate,
+      appointments().map { it.occurrenceDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
+      created,
+      userMap[createdBy].toSummary(createdBy),
+    )
+  }
 }
