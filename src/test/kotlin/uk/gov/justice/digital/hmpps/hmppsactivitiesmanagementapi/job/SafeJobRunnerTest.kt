@@ -26,6 +26,7 @@ class SafeJobRunnerTest {
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isTrue
     }
@@ -41,11 +42,13 @@ class SafeJobRunnerTest {
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isTrue()
     }
 
     with(jobEntityCaptor.secondValue) {
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isTrue()
     }
@@ -58,6 +61,7 @@ class SafeJobRunnerTest {
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isFalse
     }
@@ -70,9 +74,38 @@ class SafeJobRunnerTest {
       JobDefinition(JobType.DEALLOCATE_ENDING) {},
     )
 
-    verify(jobRepository, times(1)).saveAndFlush(jobEntityCaptor.capture())
+    verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
+    }
+
+    with(jobEntityCaptor.secondValue) {
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
+    }
+  }
+
+  @Test
+  fun `runs dependent jobs with error on second job`() {
+    runner.runDependentJobs(
+      JobDefinition(JobType.ATTENDANCE_CREATE) { },
+      JobDefinition(JobType.DEALLOCATE_ENDING) { throw RuntimeException("first job failed") },
+    )
+
+    verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
+
+    with(jobEntityCaptor.firstValue) {
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isTrue
+    }
+
+    with(jobEntityCaptor.secondValue) {
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isFalse
     }

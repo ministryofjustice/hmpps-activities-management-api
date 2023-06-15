@@ -37,6 +37,8 @@ class SafeJobRunner(private val jobRepository: JobRepository) {
           }
       } else {
         log.warn("Ignoring job ${job.jobType} due to failure in a dependent job.")
+
+        jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now()))
       }
     }
   }
