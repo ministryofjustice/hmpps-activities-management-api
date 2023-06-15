@@ -11,7 +11,7 @@ data class BulkAppointmentSummary(
     description = "The internally generated identifier for this set of appointments",
     example = "12345",
   )
-  val bulkAppointmentId: Long,
+  val id: Long,
 
   @Schema(
     description =

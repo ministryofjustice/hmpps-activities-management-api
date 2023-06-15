@@ -52,14 +52,14 @@ data class BulkAppointment(
   fun occurrences() = appointments().map { appointment -> appointment.occurrences() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
 
   fun toModel() = BulkAppointmentModel(
-    bulkAppointmentId = this.bulkAppointmentId,
+    id = this.bulkAppointmentId,
     appointments = this.appointments().toModel(),
     created = created,
     createdBy = createdBy,
   )
 
   fun toSummary() = BulkAppointmentSummary(
-    bulkAppointmentId = this.bulkAppointmentId,
+    id = this.bulkAppointmentId,
     appointmentCount = this.appointments().size,
   )
 

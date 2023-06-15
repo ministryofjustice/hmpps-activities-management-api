@@ -72,7 +72,7 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   private fun verifyBulkAppointment(response: BulkAppointment) {
-    assertThat(response.bulkAppointmentId).isNotNull
+    assertThat(response.id).isNotNull
     assertThat(response.appointments).hasSize(2)
     assertThat(response.createdBy).isEqualTo("test-client")
     assertThat(response.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
