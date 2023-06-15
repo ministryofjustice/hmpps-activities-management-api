@@ -5,11 +5,13 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 
 @Service
 class AppointmentOccurrenceAllocationService(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
+  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
   private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
 ) {
   companion object {
@@ -24,6 +26,14 @@ class AppointmentOccurrenceAllocationService(
     ).block()?.let {
       appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromToday(prisonCode, prisonerNumber)
         .forEach {
+          appointmentOccurrenceAllocationRepository.findById(it.appointmentOccurrenceAllocationId).ifPresent { allocation ->
+            if (allocation.appointmentOccurrence.allocations()
+              .none { currentAllocation -> currentAllocation.appointmentOccurrenceAllocationId != it.appointmentOccurrenceAllocationId }
+            ) {
+              appointmentOccurrenceRepository.delete(allocation.appointmentOccurrence)
+              log.info("Removed appointment occurrence'${allocation.appointmentOccurrence.appointmentOccurrenceId}' as it is now orphaned")
+            }
+          }
           appointmentOccurrenceAllocationRepository.deleteById(it.appointmentOccurrenceAllocationId)
           log.info("Removed appointment '${it.appointmentDescription}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
         }
