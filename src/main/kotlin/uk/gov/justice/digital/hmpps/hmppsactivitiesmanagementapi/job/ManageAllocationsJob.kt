@@ -15,7 +15,7 @@ class ManageAllocationsJob(
   @Async("asyncExecutor")
   fun execute(withActivate: Boolean = false, withDeallocate: Boolean = false) {
     if (withActivate) {
-      jobRunner.runSafe(
+      jobRunner.runJob(
         JobDefinition(JobType.ALLOCATE) {
           service.allocations(AllocationOperation.STARTING_TODAY)
         },
@@ -23,10 +23,13 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocate) {
-      jobRunner.runSafe(
+      jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
           service.allocations(AllocationOperation.DEALLOCATE_ENDING)
         },
+      )
+
+      jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
           service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
         },
