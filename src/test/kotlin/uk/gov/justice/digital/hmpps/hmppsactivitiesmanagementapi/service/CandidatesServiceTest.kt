@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -444,7 +445,7 @@ class CandidatesServiceTest {
       assertThat(suitability.nonAssociation).isEqualTo(
         NonAssociationSuitability(
           suitable = false,
-          nonAssociations = listOf(offenderNonAssociation),
+          nonAssociations = listOf(transformOffenderNonAssociationDetail(offenderNonAssociation)),
         ),
       )
     }

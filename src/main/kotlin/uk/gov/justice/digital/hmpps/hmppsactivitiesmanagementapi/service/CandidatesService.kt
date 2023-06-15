@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -218,7 +219,9 @@ class CandidatesService(
 
     return NonAssociationSuitability(
       allocationNonAssociations.isNullOrEmpty(),
-      allocationNonAssociations,
+      allocationNonAssociations.map {
+        transformOffenderNonAssociationDetail(it)
+      },
     )
   }
 
