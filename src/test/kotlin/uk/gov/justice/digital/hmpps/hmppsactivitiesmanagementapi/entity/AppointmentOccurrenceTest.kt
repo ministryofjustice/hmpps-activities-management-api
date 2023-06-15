@@ -202,7 +202,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping bulk appointment id`() {
-    val appointment = appointmentEntity()
+    val appointment = appointmentEntity(bulkAppointmentId = 3)
     val entity = appointment.occurrences().first()
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))

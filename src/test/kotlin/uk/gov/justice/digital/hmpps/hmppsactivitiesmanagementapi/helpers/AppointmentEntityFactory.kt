@@ -9,12 +9,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 internal fun appointmentEntity(
   appointmentId: Long = 1,
+  bulkAppointmentId: Long? = null,
   appointmentType: AppointmentType? = null,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
@@ -28,6 +30,7 @@ internal fun appointmentEntity(
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = appointmentId,
+  bulkAppointment = bulkAppointmentId?.let { BulkAppointment(bulkAppointmentId = bulkAppointmentId, createdBy = "TEST.USER") },
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
   categoryCode = "TEST",
@@ -43,6 +46,8 @@ internal fun appointmentEntity(
   updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
 ).apply {
+  bulkAppointment?.addAppointment(this)
+
   repeatPeriod?.let {
     this.schedule = AppointmentSchedule(
       appointment = this,
