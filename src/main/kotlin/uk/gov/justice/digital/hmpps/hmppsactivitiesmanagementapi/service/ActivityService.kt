@@ -143,7 +143,7 @@ class ActivityService(
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(activity, schedule.slots())
+        schedule.addInstances(activity, schedule.slots(), null, null)
 
         return transform(activityRepository.saveAndFlush(activity))
       }
@@ -180,7 +180,7 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>) {
+  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, fromDate: LocalDate?, toDate: LocalDate?) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
@@ -203,7 +203,9 @@ class ActivityService(
         if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
           (
             runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
-            )
+            ) &&
+          (fromDate == null || day >= fromDate) &&
+          (toDate == null || day <= toDate)
         ) {
           this.addInstance(sessionDate = day, slot = slot)
         }
@@ -315,7 +317,15 @@ class ActivityService(
   ) {
     request.startDate?.apply {
       activity.startDate = this
-      activity.schedules().forEach { it.startDate = this }
+      activity.schedules().forEach {
+        if (it.startDate < this) {
+          it.removeInstances(it.startDate, this.minusDays(1))
+        }
+        else if (this < it.startDate) {
+          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
+        }
+        it.startDate = this
+      }
     }
   }
 
@@ -326,6 +336,12 @@ class ActivityService(
     request.endDate?.apply {
       activity.endDate = this
       activity.schedules().forEach {
+        if (it.endDate == null || it.endDate!! > this) {
+          (it.endDate)?.let { it1 -> it.removeInstances(this.plusDays(1), it1) }
+        }
+        else if (it.endDate !== null && it.endDate!! < this) {
+          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), this)
+        }
         it.endDate = this
         it.allocations().forEach { it.endDate = this }
       }
