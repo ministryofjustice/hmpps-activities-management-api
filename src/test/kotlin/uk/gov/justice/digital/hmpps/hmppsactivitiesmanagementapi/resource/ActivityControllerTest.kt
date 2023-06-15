@@ -345,7 +345,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `updateActivity - success`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-2.json")
 
     val updateActivityResponse: Activity = mapper.read("activity/activity-update-response-1.json")
 
@@ -400,7 +400,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `404 response when get activity id not found`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-2.json")
+
     val mockPrincipal: Principal = mock()
     whenever(mockPrincipal.name).thenReturn("USER")
     whenever(activityService.updateActivity(any(), any(), any(), any())).thenThrow(EntityNotFoundException("not found"))

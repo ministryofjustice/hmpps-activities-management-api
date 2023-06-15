@@ -665,7 +665,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
       assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
-      assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2023-03-31 at prison PVI was updated")
+      assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
     }
   }
 }
