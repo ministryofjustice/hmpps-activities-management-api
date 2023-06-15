@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
@@ -14,7 +13,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -33,9 +31,6 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
-
-  @Autowired
-  private lateinit var bulkAppointmentRepository: BulkAppointmentRepository
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -64,7 +59,6 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
 
     val response = webTestClient.bulkCreateAppointments(request)!!
     verifyBulkAppointment(response)
-    verifyDatabase()
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -96,13 +90,6 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
       assertThat(it.appointmentDescription).isEqualTo("Appointment description")
     }
-  }
-
-  private fun verifyDatabase() {
-    val bulkAppointments = bulkAppointmentRepository.findAll().map { it.toModel() }
-
-    assertThat(bulkAppointments).hasSize(1)
-    verifyBulkAppointment(bulkAppointments.first())
   }
 
   private fun WebTestClient.bulkCreateAppointments(

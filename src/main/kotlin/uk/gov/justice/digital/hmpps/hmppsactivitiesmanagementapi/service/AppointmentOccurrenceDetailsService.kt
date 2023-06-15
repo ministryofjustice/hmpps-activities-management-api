@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 
 @Service
+@Transactional(readOnly = true)
 class AppointmentOccurrenceDetailsService(
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
   private val referenceCodeService: ReferenceCodeService,
@@ -16,7 +17,6 @@ class AppointmentOccurrenceDetailsService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
 ) {
-  @Transactional(readOnly = true)
   fun getAppointmentOccurrenceDetailsById(appointmentOccurrenceId: Long): AppointmentOccurrenceDetails {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
