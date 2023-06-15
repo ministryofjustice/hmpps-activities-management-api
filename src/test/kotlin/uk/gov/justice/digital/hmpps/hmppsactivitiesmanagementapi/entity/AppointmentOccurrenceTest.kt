@@ -173,6 +173,7 @@ class AppointmentOccurrenceTest {
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
+        null,
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
@@ -197,6 +198,29 @@ class AppointmentOccurrenceTest {
         updatedBy = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
+  }
+
+  @Test
+  fun `entity to details mapping bulk appointment id`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointmentId).isEqualTo(3)
   }
 
   @Test

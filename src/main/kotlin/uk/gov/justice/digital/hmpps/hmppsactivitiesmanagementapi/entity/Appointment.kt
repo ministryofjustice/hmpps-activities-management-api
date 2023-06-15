@@ -9,12 +9,12 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -34,6 +34,14 @@ data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentId: Long = 0,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinTable(
+    name = "bulk_appointment_appointment",
+    joinColumns = [JoinColumn(name = "appointmentId")],
+    inverseJoinColumns = [JoinColumn(name = "bulkAppointmentId")],
+  )
+  val bulkAppointment: BulkAppointment? = null,
 
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,
@@ -74,8 +82,7 @@ data class Appointment(
     schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) }
       ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
-  @OneToMany(mappedBy = "appointment", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 

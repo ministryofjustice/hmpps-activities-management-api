@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -19,7 +20,7 @@ data class AppointmentSchedule(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentScheduleId: Long = 0,
 
-  @OneToOne(mappedBy = "schedule")
+  @OneToOne(mappedBy = "schedule", fetch = FetchType.EAGER)
   val appointment: Appointment,
 
   @Enumerated(EnumType.STRING)

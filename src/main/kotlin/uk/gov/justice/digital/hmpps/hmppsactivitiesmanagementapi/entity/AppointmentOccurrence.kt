@@ -11,8 +11,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -36,7 +34,7 @@ data class AppointmentOccurrence(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentOccurrenceId: Long = 0,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointment: Appointment,
 
@@ -60,7 +58,7 @@ data class AppointmentOccurrence(
 ) {
   var cancelled: LocalDateTime? = null
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "cancellation_reason_id")
   var cancellationReason: AppointmentCancellationReason? = null
 
@@ -68,13 +66,7 @@ data class AppointmentOccurrence(
 
   var deleted: Boolean = false
 
-  @OneToMany(
-    mappedBy = "appointmentOccurrence",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true,
-  )
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 
   fun allocations() = allocations.toList()
@@ -154,6 +146,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
+      appointment.bulkAppointment?.bulkAppointmentId,
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,

@@ -75,6 +75,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       AppointmentOccurrenceDetails(
         2,
         1,
+        null,
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",

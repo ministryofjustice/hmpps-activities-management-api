@@ -225,6 +225,7 @@ fun appointmentDetails() = AppointmentDetails(
 fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
   1,
   2,
+  null,
   AppointmentType.INDIVIDUAL,
   3,
   "TPR",

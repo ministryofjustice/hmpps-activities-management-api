@@ -67,6 +67,7 @@ class AppointmentOccurrenceDetailsServiceTest {
       AppointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
+        null,
         AppointmentType.INDIVIDUAL,
         entity.sequenceNumber,
         appointment.prisonCode,
