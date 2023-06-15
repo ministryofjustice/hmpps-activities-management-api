@@ -20,8 +20,8 @@ class SafeJobRunnerTest {
   private val jobEntityCaptor = argumentCaptor<Job>()
 
   @Test
-  fun `runs safe job without error`() {
-    runner.runSafe(JobDefinition(JobType.ATTENDANCE_CREATE) {})
+  fun `runs job without error`() {
+    runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) {})
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
@@ -32,8 +32,8 @@ class SafeJobRunnerTest {
   }
 
   @Test
-  fun `runs safe multiple jobs without error`() {
-    runner.runSafe(
+  fun `runs all dependent jobs without error`() {
+    runner.runDependentJobs(
       JobDefinition(JobType.ATTENDANCE_CREATE) {},
       JobDefinition(JobType.DEALLOCATE_ENDING) {},
     )
@@ -52,8 +52,8 @@ class SafeJobRunnerTest {
   }
 
   @Test
-  fun `runs safe job with error`() {
-    runner.runSafe(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
+  fun `runs job with error`() {
+    runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
@@ -64,22 +64,17 @@ class SafeJobRunnerTest {
   }
 
   @Test
-  fun `runs safe multiple jobs with error on first job`() {
-    runner.runSafe(
+  fun `runs dependent jobs with error on first job`() {
+    runner.runDependentJobs(
       JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
       JobDefinition(JobType.DEALLOCATE_ENDING) {},
     )
 
-    verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
+    verify(jobRepository, times(1)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
       assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(successful).isFalse
-    }
-
-    with(jobEntityCaptor.secondValue) {
-      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
-      assertThat(successful).isTrue()
     }
   }
 }
