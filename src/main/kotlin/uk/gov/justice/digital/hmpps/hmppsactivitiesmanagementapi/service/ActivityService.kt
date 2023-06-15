@@ -320,8 +320,7 @@ class ActivityService(
       activity.schedules().forEach {
         if (it.startDate < this) {
           it.removeInstances(it.startDate, this.minusDays(1))
-        }
-        else if (this < it.startDate) {
+        } else if (this < it.startDate) {
           it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
         }
         it.startDate = this
@@ -338,8 +337,7 @@ class ActivityService(
       activity.schedules().forEach {
         if (it.endDate == null || it.endDate!! > this) {
           (it.endDate)?.let { it1 -> it.removeInstances(this.plusDays(1), it1) }
-        }
-        else if (it.endDate !== null && it.endDate!! < this) {
+        } else if (it.endDate !== null && it.endDate!! < this) {
           it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), this)
         }
         it.endDate = this
