@@ -104,6 +104,54 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
+  @Sql(
+    "classpath:test_data/seed-bulk-appointment-id-6.sql",
+  )
+  @Test
+  fun `get occurrence details from a set of appointments created in bulk`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A1234BC"),
+      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
+    )
+
+    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(6)!!
+
+    assertThat(appointmentOccurrenceDetails).isEqualTo(
+      AppointmentOccurrenceDetails(
+        6,
+        6,
+        6,
+        AppointmentType.INDIVIDUAL,
+        1,
+        "TPR",
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        "Appointment description",
+        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(9, 15),
+        "Medical appointment for A1234BC",
+        null,
+        false,
+        false,
+        false,
+        appointmentOccurrenceDetails.created,
+        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        null,
+        null,
+      ),
+    )
+
+    assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+  }
+
   private fun WebTestClient.getAppointmentOccurrenceDetailsById(id: Long) =
     get()
       .uri("/appointment-occurrence-details/$id")
