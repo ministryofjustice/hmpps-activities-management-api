@@ -43,12 +43,12 @@ class ManageAllocationsService(
 
       AllocationOperation.DEALLOCATE_ENDING -> {
         log.info("Ending allocations due to end today.")
-        allocationsDueToEnd().allocations(DeallocationReason.ENDED)
+        allocationsDueToEnd().deallocate()
       }
 
       AllocationOperation.DEALLOCATE_EXPIRING -> {
         log.info("Expiring allocations due to expire today.")
-        allocationsDueToExpire().allocations(DeallocationReason.EXPIRED)
+        allocationsDueToExpire().deallocate(DeallocationReason.EXPIRED)
       }
     }
   }
@@ -82,13 +82,14 @@ class ManageAllocationsService(
 
   private fun List<Allocation>.activatePending() =
     filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }
-      .forEach {
+      .onEach {
         it.activate()
+
         allocationRepository.saveAndFlush(it)
-      }
+      }.also { log.info("Activated ${it.size} pending allocation(s).") }
 
   private fun List<Allocation>.ending(date: LocalDate) =
-    filter { it.ends(date) && !it.status(PrisonerStatus.ENDED) }
+    filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.ends(date) }
 
   private fun allocationsDueToExpire(): Map<ActivitySchedule, List<Allocation>> =
     forEachRolledOutPrison()
@@ -134,11 +135,13 @@ class ManageAllocationsService(
       false
     }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.allocations(reason: DeallocationReason) {
+  private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason? = null) {
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
-          getOrDefault(schedule, emptyList()).map { allocation -> allocation.deallocateNow(reason) }
+          getOrDefault(schedule, emptyList()).map { allocation ->
+            reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNow()
+          }
             .let {
               if (it.isNotEmpty()) {
                 activityScheduleRepository.saveAndFlush(schedule)

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 
@@ -12,12 +13,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageA
  * more this will likely change the behaviour of this job.
  */
 @Component
-class ManageAttendanceRecordsJob(private val attendancesService: ManageAttendancesService) {
+class ManageAttendanceRecordsJob(
+  private val attendancesService: ManageAttendancesService,
+  private val jobRunner: SafeJobRunner,
+) {
   @Async("asyncExecutor")
   fun execute(withExpiry: Boolean) {
-    attendancesService.attendances(AttendanceOperation.CREATE)
+    jobRunner.runJob(
+      JobDefinition(
+        JobType.ATTENDANCE_CREATE,
+      ) { attendancesService.attendances(AttendanceOperation.CREATE) },
+    )
+
     if (withExpiry) {
-      attendancesService.attendances(AttendanceOperation.EXPIRE)
+      jobRunner.runJob(
+        JobDefinition(
+          JobType.ATTENDANCE_EXPIRE,
+        ) { attendancesService.attendances(AttendanceOperation.EXPIRE) },
+      )
     }
   }
 }

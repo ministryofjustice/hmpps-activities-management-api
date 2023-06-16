@@ -114,7 +114,11 @@ data class ActivitySchedule(
 
   fun slots() = slots.toList()
 
-  fun allocations() = allocations.toList()
+  fun allocations(excludeEnded: Boolean = false): List<Allocation> =
+    allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
+
+  fun activityPayForBand(payBand: PrisonPayBand) =
+    activity.activityPay().firstOrNull { it.payBand == payBand }
 
   companion object {
     fun valueOf(
@@ -210,6 +214,16 @@ data class ActivitySchedule(
     failIfAlreadyAllocated(prisonerNumber)
     failIfAllocatedByIsBlank(allocatedBy)
 
+    require(startDate >= this.activity.startDate) {
+      "Allocation start date cannot be before activity start date"
+    }
+    require(endDate == null || this.activity.endDate == null || endDate <= this.activity.endDate) {
+      "Allocation end date cannot be after activity end date"
+    }
+    require(endDate == null || endDate >= startDate) {
+      "Allocation end date cannot be before allocation start date"
+    }
+
     // TODO you should only be able to allocate if schedule is active (the end date has not passed) !!!
 
     allocations.add(
@@ -219,12 +233,11 @@ data class ActivitySchedule(
         prisonerStatus = if (startDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE,
         bookingId = bookingId,
         payBand = payBand,
-        // TODO not sure if this is supported in the UI
         startDate = startDate,
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
       ).apply {
-        this.endDate = endDate
+        this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
       },
     )
 

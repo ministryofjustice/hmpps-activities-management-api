@@ -198,7 +198,7 @@ class OffenderReleasedEventHandlerTest {
   @Test
   fun `only un-ended allocations are ended on release of prisoner`() {
     val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocateNow(DeallocationReason.ENDED) }
+      .also { it.deallocateNowWithReason(DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
