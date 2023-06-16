@@ -75,16 +75,10 @@ class CandidatesService(
     prisoners =
       prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
 
-    val educationLevels =
-      this.prisonApiClient.getEducationLevels(prisoners.map { it.prisonerNumber })
-
     return prisoners.map {
       val thisPersonsAllocations =
         prisonerAllocations.find { a -> it.prisonerNumber == a.prisonerNumber }?.allocations
           ?: emptyList()
-
-      val thisPersonsEducationLevels =
-        educationLevels.filter { e -> e.bookingId.toString() == it.bookingId }
 
       ActivityCandidate(
         name = "${it.firstName} ${it.lastName}",
@@ -92,7 +86,6 @@ class CandidatesService(
         cellLocation = it.cellLocation,
         otherAllocations = thisPersonsAllocations,
         releaseDate = it.releaseDate,
-        educationLevels = thisPersonsEducationLevels,
       )
     }
   }
