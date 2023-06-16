@@ -42,6 +42,32 @@ class AttendanceTest {
   }
 
   @Test
+  fun `uncancel does not alter the attendance reason of a suspended prisoner`() {
+    val recordedTime = LocalDateTime.now()
+    val recordedBy = "Old User"
+    val attendance = Attendance(
+      scheduledInstance = mock(),
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReasons()["SUSPENDED"]!!,
+      status = AttendanceStatus.COMPLETED,
+      comment = "Some Comment",
+      recordedBy = recordedBy,
+      recordedTime = recordedTime,
+    )
+
+    attendance.uncancel()
+
+    with(attendance) {
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(comment).isNull()
+      assertThat(recordedBy).isEqualTo(recordedBy)
+      assertThat(recordedTime).isEqualTo(recordedTime)
+      assertThat(otherAbsenceReason).isNull()
+    }
+  }
+
+  @Test
   fun `can cancel attendance`() {
     val attendanceReason = attendanceReasons()["CANCELLED"]!!
     val canceledInstance =
@@ -52,6 +78,25 @@ class AttendanceTest {
     assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
     assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReason)
+    assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
+    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
+      LocalDateTime.now(),
+      Assertions.within(1, ChronoUnit.SECONDS),
+    )
+    assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
+  }
+
+  @Test
+  fun `cancel does not alter the attendance reason of a suspended prisoner`() {
+    val attendanceReason = attendanceReasons()["CANCELLED"]!!
+    val canceledInstance =
+      instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
+    val attendanceWithCanceledInstance = attendance.copy(attendanceReason = attendanceReasons()["SUSPENDED"], scheduledInstance = canceledInstance)
+
+    attendanceWithCanceledInstance.cancel(attendanceReason)
+    assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(false)
+    assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
     assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
       LocalDateTime.now(),

@@ -53,6 +53,7 @@ class AppointmentService(
             startDate = request.startDate,
             startTime = it.startTime,
             endTime = it.endTime,
+            comment = it.comment,
             createdBy = principal.name,
           )
         }.toList(),

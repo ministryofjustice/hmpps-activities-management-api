@@ -117,6 +117,12 @@ class AppointmentCreateRequestTest {
     assertSingleValidationError(validator.validate(request), "appointmentDescription", "Appointment description should not exceed 40 characters")
   }
 
+  @Test
+  fun `appointment comment must not be more than 4,000 characters`() {
+    val request = appointmentCreateRequest(comment = "a".repeat(4001))
+    assertSingleValidationError(validator.validate(request), "comment", "Appointment comment must not exceed 4000 characters")
+  }
+
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentCreateRequest>>, propertyName: String, message: String) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)

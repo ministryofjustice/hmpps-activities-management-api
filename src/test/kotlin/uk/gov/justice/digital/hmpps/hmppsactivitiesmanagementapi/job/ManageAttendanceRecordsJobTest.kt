@@ -26,7 +26,7 @@ class ManageAttendanceRecordsJobTest {
 
     verify(attendancesService).attendances(AttendanceOperation.CREATE)
     verify(attendancesService, never()).attendances(AttendanceOperation.EXPIRE)
-    verify(safeJobRunner).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
   }
@@ -37,7 +37,7 @@ class ManageAttendanceRecordsJobTest {
 
     verify(attendancesService).attendances(AttendanceOperation.CREATE)
     verify(attendancesService).attendances(AttendanceOperation.EXPIRE)
-    verify(safeJobRunner, times(2)).runSafe(jobDefinitionCaptor.capture())
+    verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
     assertThat(jobDefinitionCaptor.secondValue.jobType).isEqualTo(JobType.ATTENDANCE_EXPIRE)
