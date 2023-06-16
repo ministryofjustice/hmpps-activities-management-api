@@ -1,19 +1,5 @@
 {
-  "attendanceRequired": false,
   "summary": "IT level 1 - updated",
   "categoryId": 1,
-  "tierId": 1,
-  "minimumIncentiveNomisCode": "BAS",
-  "minimumIncentiveLevel": "Basic",
-  "minimumEducationLevel": [{
-    "educationLevelCode": "1",
-    "educationLevelDescription": "Reading Measure 1.0",
-    "studyAreaCode": "ENGLA",
-    "studyAreaDescription": "English Language"
-  }],
-  "riskLevel": "high",
-  "startDate": "2023-03-31",
-  "locationId": 1,
-  "capacity": 20,
-  "runsOnBankHoliday": false
+  "tierId": 1
 }
