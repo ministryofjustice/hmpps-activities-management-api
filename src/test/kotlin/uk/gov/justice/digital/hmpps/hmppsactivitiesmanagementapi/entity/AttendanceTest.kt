@@ -57,10 +57,10 @@ class AttendanceTest {
 
     with(attendance) {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
-      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
-      assertThat(recordedTime).isNull()
+      assertThat(recordedTime).isEqualTo(attendance.recordedTime)
       assertThat(otherAbsenceReason).isNull()
     }
   }

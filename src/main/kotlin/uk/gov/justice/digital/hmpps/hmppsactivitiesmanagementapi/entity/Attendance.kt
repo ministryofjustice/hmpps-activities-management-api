@@ -95,7 +95,7 @@ data class Attendance(
   fun uncancel() = mark(
     principalName = null,
     reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.attendanceReason,
-    newStatus = AttendanceStatus.WAITING,
+    newStatus = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) AttendanceStatus.WAITING else this.status,
     newComment = null,
     newIssuePayment = null,
     newIncentiveLevelWarningIssued = null,
