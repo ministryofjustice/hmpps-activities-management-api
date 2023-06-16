@@ -93,7 +93,7 @@ class AttendanceTest {
 
     attendanceWithCanceledInstance.cancel(attendanceReason)
     assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
+    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(false)
     assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
     assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(

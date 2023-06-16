@@ -86,7 +86,7 @@ data class Attendance(
     reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else this.attendanceReason,
     newStatus = AttendanceStatus.COMPLETED,
     newComment = scheduledInstance.cancelledReason,
-    newIssuePayment = true,
+    newIssuePayment = this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED,
     newIncentiveLevelWarningIssued = null,
     newCaseNoteId = null,
     newOtherAbsenceReason = null,
