@@ -91,4 +91,7 @@ data class ScheduledEvent(
 
   @Schema(description = "The event priority - configurable by prison, or via defaults.")
   val priority: Int,
+
+  @Schema(description = "Set to true if this event has been deleted", example = "false")
+  val deleted: Boolean = false,
 )

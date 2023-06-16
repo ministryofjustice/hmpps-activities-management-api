@@ -154,6 +154,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     startTime = it.startTime,
     endTime = it.endTime,
     priority = priorities.getOrDefault(EventType.APPOINTMENT),
+    deleted = it.deleted,
   )
 }
 
