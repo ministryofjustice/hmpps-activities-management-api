@@ -9,8 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
+import org.hibernate.annotations.BatchSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
@@ -30,7 +29,7 @@ data class ScheduledInstance(
   val activitySchedule: ActivitySchedule,
 
   @OneToMany(mappedBy = "scheduledInstance", cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @BatchSize(size = 20)
   val attendances: MutableList<Attendance> = mutableListOf(),
 
   val sessionDate: LocalDate,

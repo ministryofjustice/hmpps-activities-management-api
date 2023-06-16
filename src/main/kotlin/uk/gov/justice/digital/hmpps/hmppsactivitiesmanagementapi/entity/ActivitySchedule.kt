@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -11,8 +10,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
+import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -35,8 +34,8 @@ data class ActivitySchedule(
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @BatchSize(size = 1)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
   var description: String,
@@ -70,15 +69,17 @@ data class ActivitySchedule(
   }
 
   @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @Where(clause = "session_date > (current_date - interval '1 month')")
+  @BatchSize(size = 30)
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @Where(clause = "prisoner_status <> 'ENDED' or (prisoner_status = 'ENDED' and end_date >= (current_date - interval '1 month'))")
+  @BatchSize(size = 30)
   private val allocations: MutableList<Allocation> = mutableListOf()
 
-  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @BatchSize(size = 5)
   private val slots: MutableList<ActivityScheduleSlot> = mutableListOf()
 
   var endDate: LocalDate? = null

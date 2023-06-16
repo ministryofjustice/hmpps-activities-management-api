@@ -35,6 +35,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 @Service
+@Transactional(readOnly = true)
 class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -51,23 +52,15 @@ class ActivityService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional(readOnly = true)
-  fun getActivityByIdOptimised(
-    activityId: Long,
-    earliestSessionDate: LocalDate,
-    earliestAllocationEndDate: LocalDate,
-  ): ModelActivity {
-    log.info("ActivityByIdOptimised:  Params $activityId earliestSessionDate $earliestSessionDate earliestAllocationEndDate $earliestAllocationEndDate")
-    val activity = activityRepository.findByIdOptimised(activityId, earliestSessionDate, earliestAllocationEndDate)
+  fun getActivityByIdWithLimitedCollections(activityId: Long): ModelActivity {
+    log.info("getActivityByIdWithLimitedCollections called:  ID = $activityId")
+    val activity = activityRepository.findByIdWithLimitedCollections(activityId)
       .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-    log.info("Activity retrieved with ${activity.activityId} instances ${activity.schedules().first().instances().size}")
     return transform(activity)
   }
 
   fun getActivityById(activityId: Long) =
-    transform(
-      activityRepository.findOrThrowNotFound(activityId),
-    )
+    transform(activityRepository.findOrThrowNotFound(activityId))
 
   fun getActivitiesByCategoryInPrison(
     prisonCode: String,
@@ -95,6 +88,7 @@ class ActivityService(
     }
   }
 
+  @Transactional()
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
@@ -252,6 +246,7 @@ class ActivityService(
     )
   }
 
+  @Transactional()
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
     val activity = activityRepository.findOrThrowNotFound(activityId)

@@ -13,8 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
+import org.hibernate.annotations.BatchSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -63,7 +62,7 @@ data class Attendance(
   var otherAbsenceReason: String? = null,
 ) {
   @OneToMany(mappedBy = "attendance", cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @BatchSize(size = 5)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun status() = status
