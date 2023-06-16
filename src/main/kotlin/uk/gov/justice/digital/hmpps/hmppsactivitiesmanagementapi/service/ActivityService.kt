@@ -143,7 +143,7 @@ class ActivityService(
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(activity, schedule.slots())
+        schedule.addInstances(activity, schedule.slots(), null, null)
 
         return transform(activityRepository.saveAndFlush(activity))
       }
@@ -180,7 +180,7 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>) {
+  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, fromDate: LocalDate?, toDate: LocalDate?) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
@@ -203,7 +203,9 @@ class ActivityService(
         if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
           (
             runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
-            )
+            ) &&
+          (fromDate == null || day >= fromDate) &&
+          (toDate == null || day <= toDate)
         ) {
           this.addInstance(sessionDate = day, slot = slot)
         }
@@ -315,7 +317,16 @@ class ActivityService(
   ) {
     request.startDate?.apply {
       activity.startDate = this
-      activity.schedules().forEach { it.startDate = this }
+      activity.schedules().forEach {
+        if (it.startDate < this) {
+          // start date has been moved later so remove all instances between the original start date and the day before the new start date
+          it.removeInstances(it.startDate, this.minusDays(1))
+        } else if (this < it.startDate) {
+          // start date has been moved earlier so create new instances between the new start date and the day before the original start date
+          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
+        }
+        it.startDate = this
+      }
     }
   }
 
@@ -326,6 +337,13 @@ class ActivityService(
     request.endDate?.apply {
       activity.endDate = this
       activity.schedules().forEach {
+        if (it.endDate == null || it.endDate!! > this) {
+          // end date has been set or moved earlier so remove all instances from the day after the new end date
+          (it.endDate)?.let { it1 -> it.removeInstances(this.plusDays(1), it1) }
+        } else if (it.endDate !== null && it.endDate!! < this) {
+          // end date has been moved later so add new instances from the day after the original end date up to the new end date
+          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), this)
+        }
         it.endDate = this
         it.allocations().forEach { it.endDate = this }
       }

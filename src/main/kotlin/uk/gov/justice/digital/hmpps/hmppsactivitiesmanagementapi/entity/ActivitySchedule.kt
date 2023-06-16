@@ -294,6 +294,10 @@ data class ActivitySchedule(
     instances()
       .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
       .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
+
+  fun removeInstances(fromDate: LocalDate, toDate: LocalDate) {
+    instances.removeAll(instances().filter { it.sessionDate.between(fromDate, toDate) })
+  }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
