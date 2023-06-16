@@ -129,6 +129,7 @@ fun bulkAppointmentRequest(
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(13, 0),
   endTime: LocalTime = LocalTime.of(14, 30),
+  comment: String = "Test comment",
   appointmentDescription: String = "Appointment description",
   prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
 ) =
@@ -144,6 +145,7 @@ fun bulkAppointmentRequest(
         prisonerNumber = it,
         startTime = startTime,
         endTime = endTime,
+        comment = comment,
       )
     }.toList(),
   )

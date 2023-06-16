@@ -19,14 +19,14 @@ class ManageAttendanceRecordsJob(
 ) {
   @Async("asyncExecutor")
   fun execute(withExpiry: Boolean) {
-    jobRunner.runSafe(
+    jobRunner.runJob(
       JobDefinition(
         JobType.ATTENDANCE_CREATE,
       ) { attendancesService.attendances(AttendanceOperation.CREATE) },
     )
 
     if (withExpiry) {
-      jobRunner.runSafe(
+      jobRunner.runJob(
         JobDefinition(
           JobType.ATTENDANCE_EXPIRE,
         ) { attendancesService.attendances(AttendanceOperation.EXPIRE) },
