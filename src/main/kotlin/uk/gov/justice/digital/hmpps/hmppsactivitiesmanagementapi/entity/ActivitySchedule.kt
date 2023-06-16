@@ -95,7 +95,11 @@ data class ActivitySchedule(
 
   fun slots() = slots.toList()
 
-  fun allocations() = allocations.toList()
+  fun allocations(excludeEnded: Boolean = false): List<Allocation> =
+    allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
+
+  fun activityPayForBand(payBand: PrisonPayBand) =
+    activity.activityPay().firstOrNull { it.payBand == payBand }
 
   companion object {
     fun valueOf(
@@ -271,6 +275,10 @@ data class ActivitySchedule(
     instances()
       .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
       .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
+
+  fun removeInstances(fromDate: LocalDate, toDate: LocalDate) {
+    instances.removeAll(instances().filter { it.sessionDate.between(fromDate, toDate) })
+  }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }

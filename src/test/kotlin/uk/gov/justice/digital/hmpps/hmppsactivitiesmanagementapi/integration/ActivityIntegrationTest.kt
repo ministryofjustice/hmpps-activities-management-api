@@ -20,9 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand2
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand3
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
@@ -370,15 +370,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(description).isEqualTo("Maths Level 1")
       assertThat(category).isEqualTo(educationCategory)
       assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
-      assertThat(pay).hasSize(1)
-      pay.map {
-        assertThat(it.incentiveNomisCode).isEqualTo("BAS")
-        assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.prisonPayBand).isEqualTo(testPentonvillePayBandOne)
-        assertThat(it.rate).isEqualTo(125)
-        assertThat(it.pieceRate).isEqualTo(150)
-        assertThat(it.pieceRateItems).isEqualTo(1)
-      }
+      assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(createdBy).isEqualTo("SEED USER")
@@ -398,7 +390,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.allocatedPrisoner("A11111A")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandOne)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand1)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -406,7 +398,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsMorning.allocatedPrisoner("A22222A")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandTwo)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand2)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -424,7 +416,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.allocatedPrisoner("A11111A")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -432,7 +424,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(mathsAfternoon.allocatedPrisoner("A22222A")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -451,14 +443,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(educationCategory)
       assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
-      pay.map {
-        assertThat(it.incentiveNomisCode).isEqualTo("BAS")
-        assertThat(it.incentiveLevel).isEqualTo("Basic")
-        assertThat(it.prisonPayBand).isEqualTo(testPentonvillePayBandOne)
-        assertThat(it.rate).isEqualTo(75)
-        assertThat(it.pieceRate).isEqualTo(0)
-        assertThat(it.pieceRateItems).isEqualTo(0)
-      }
+      assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(createdBy).isEqualTo("SEED USER")
@@ -478,7 +463,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.allocatedPrisoner("B11111B")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandOne)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand1)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -486,7 +471,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishMorning.allocatedPrisoner("B22222B")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandTwo)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand2)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -505,7 +490,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.allocatedPrisoner("B11111B")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -513,7 +498,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
 
     with(englishAfternoon.allocatedPrisoner("B22222B")) {
-      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
+      assertThat(payRate).isEqualTo(testActivityPayRateBand3)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
@@ -680,7 +665,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
       assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
-      assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2023-03-31 at prison PVI was updated")
+      assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
     }
   }
 }

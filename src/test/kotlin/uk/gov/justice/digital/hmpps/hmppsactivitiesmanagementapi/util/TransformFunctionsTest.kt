@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -20,16 +21,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
@@ -39,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Referen
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociation as PrisonApiOffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -137,13 +141,14 @@ class TransformFunctionsTest {
               id = 0,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              prisonPayBand = PrisonPayBand(
-                id = lowPayBand.prisonPayBandId,
-                displaySequence = lowPayBand.displaySequence,
-                alias = lowPayBand.payBandAlias,
-                description = lowPayBand.payBandDescription,
-                prisonCode = lowPayBand.prisonCode,
-                nomisPayBand = lowPayBand.nomisPayBand,
+              payRate = ActivityPay(
+                id = 0,
+                incentiveNomisCode = "BAS",
+                incentiveLevel = "Basic",
+                rate = 30,
+                pieceRate = 40,
+                pieceRateItems = 50,
+                prisonPayBand = lowPayBand.toModel(),
               ),
               startDate = timestamp.toLocalDate(),
               endDate = null,
@@ -319,6 +324,53 @@ class TransformFunctionsTest {
         activitiesRolloutDate = LocalDate.of(2022, 12, 22),
         appointmentsRolledOut = true,
         appointmentsRolloutDate = LocalDate.of(2022, 12, 23),
+      ),
+    )
+  }
+
+  @Test
+  fun `transformation of OffenderNonAssociationDetail to NonAssociationDetails`() {
+    val nonAssociationDetail = OffenderNonAssociationDetail(
+      reasonCode = "VIC",
+      reasonDescription = "Victim",
+      typeCode = "WING",
+      typeDescription = "Do Not Locate on Same Wing",
+      effectiveDate = "2021-07-05T10:35:17",
+      expiryDate = "2024-07-05T10:35:17",
+      offenderNonAssociation = PrisonApiOffenderNonAssociation(
+        offenderNo = "G0135GA",
+        firstName = "Joseph",
+        lastName = "Bloggs",
+        reasonCode = "PER",
+        reasonDescription = "Perpetrator",
+        agencyDescription = "Pentonville",
+        assignedLivingUnitDescription = "PVI-1-2-4",
+        assignedLivingUnitId = 123,
+      ),
+      authorisedBy = "Test user",
+      comments = "A comment",
+    )
+
+    assertThat(transformOffenderNonAssociationDetail(nonAssociationDetail)).isEqualTo(
+      NonAssociationDetails(
+        reasonCode = "VIC",
+        reasonDescription = "Victim",
+        typeCode = "WING",
+        typeDescription = "Do Not Locate on Same Wing",
+        effectiveDate = LocalDateTime.parse("2021-07-05T10:35:17"),
+        expiryDate = LocalDateTime.parse("2024-07-05T10:35:17"),
+        offenderNonAssociation = OffenderNonAssociation(
+          offenderNo = "G0135GA",
+          firstName = "Joseph",
+          lastName = "Bloggs",
+          reasonCode = "PER",
+          reasonDescription = "Perpetrator",
+          agencyDescription = "Pentonville",
+          assignedLivingUnitDescription = "PVI-1-2-4",
+          assignedLivingUnitId = 123,
+        ),
+        authorisedBy = "Test user",
+        comments = "A comment",
       ),
     )
   }

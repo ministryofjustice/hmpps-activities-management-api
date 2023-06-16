@@ -27,8 +27,8 @@ data class Allocation(
   @Schema(description = "Indicates whether this allocation is to an activity within the 'Not in work' category")
   val isUnemployment: Boolean = false,
 
-  @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
-  val prisonPayBand: PrisonPayBand,
+  @Schema(description = "The activity pay assigned to this allocation")
+  val payRate: ActivityPay? = null,
 
   @Schema(description = "The date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")

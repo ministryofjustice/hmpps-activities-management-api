@@ -73,7 +73,7 @@ class OffenderReleasedEventHandler(
     } ?: log.warn("Prisoner for $event not found").let { false }
 
   private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
-    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNow(reason) }.saveAffectedAllocations()
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNowWithReason(reason) }.saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
     allocationRepository.saveAllAndFlush(this).toList()

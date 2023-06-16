@@ -103,4 +103,14 @@ data class IndividualAppointment(
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
+
+  @field:Size(max = 4000, message = "Appointment comment must not exceed {max} characters")
+  @Schema(
+    description =
+    """
+    Notes relating to the appointment.
+    """,
+    example = "This appointment will help adjusting to life outside of prison",
+  )
+  val comment: String = "",
 )

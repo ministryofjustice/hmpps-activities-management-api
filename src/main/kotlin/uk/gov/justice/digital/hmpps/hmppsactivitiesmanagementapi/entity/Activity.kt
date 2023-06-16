@@ -102,7 +102,7 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
-  fun activityPayForBand(payBand: PrisonPayBand) = activityPay().find { it.payBand == payBand }!!
+  fun activityPayForBand(payBand: PrisonPayBand) = activityPay().find { it.payBand == payBand }
 
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
