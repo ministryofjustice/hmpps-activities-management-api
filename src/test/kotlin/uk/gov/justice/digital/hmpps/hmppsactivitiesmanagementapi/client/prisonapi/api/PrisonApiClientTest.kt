@@ -11,6 +11,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -19,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
+import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.typeOf
 
 class PrisonApiClientTest {
 
@@ -403,5 +406,12 @@ class PrisonApiClientTest {
       assertThat(offenderNo).isEqualTo("B4793VX")
       assertThat(hearingId).isEqualTo(1)
     }
+  }
+
+  @Test
+  fun `verify overridden return type for non-associations`() {
+    val function = PrisonApiClient::class.declaredFunctions.first { it.name == "getOffenderNonAssociations" }
+
+    assertThat(function.returnType).isEqualTo(typeOf<List<OffenderNonAssociationDetail>?>())
   }
 }

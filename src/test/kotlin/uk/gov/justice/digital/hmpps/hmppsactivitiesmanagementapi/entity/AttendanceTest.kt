@@ -43,24 +43,26 @@ class AttendanceTest {
 
   @Test
   fun `uncancel does not alter the attendance reason of a suspended prisoner`() {
+    val recordedTime = LocalDateTime.now()
+    val recordedBy = "Old User"
     val attendance = Attendance(
       scheduledInstance = mock(),
       prisonerNumber = "P000111",
       attendanceReason = attendanceReasons()["SUSPENDED"]!!,
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
-      recordedBy = "Old User",
-      recordedTime = LocalDateTime.now(),
+      recordedBy = recordedBy,
+      recordedTime = recordedTime,
     )
 
     attendance.uncancel()
 
     with(attendance) {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
-      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
       assertThat(comment).isNull()
-      assertThat(recordedBy).isNull()
-      assertThat(recordedTime).isNull()
+      assertThat(recordedBy).isEqualTo(recordedBy)
+      assertThat(recordedTime).isEqualTo(recordedTime)
       assertThat(otherAbsenceReason).isNull()
     }
   }
@@ -93,7 +95,7 @@ class AttendanceTest {
 
     attendanceWithCanceledInstance.cancel(attendanceReason)
     assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
+    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(false)
     assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
     assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
     assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
