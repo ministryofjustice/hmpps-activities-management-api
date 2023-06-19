@@ -93,7 +93,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           allocatedBy = "MRS BLOGS",
           suspendedTime = LocalDateTime.of(2022, 10, 11, 10, 0),
           suspendedBy = "SYSTEM",
-          suspendedReason="Temporary absence",
+          suspendedReason = "Temporary absence",
           status = PrisonerStatus.AUTO_SUSPENDED,
         ),
       )
