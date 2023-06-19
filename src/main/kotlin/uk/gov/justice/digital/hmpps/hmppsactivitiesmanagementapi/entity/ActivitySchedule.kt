@@ -189,8 +189,10 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
+  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
     addSlot(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
+
+    return slots.last()
   }
 
   fun addSlot(slot: ActivityScheduleSlot) {
@@ -199,8 +201,15 @@ data class ActivitySchedule(
     slots.add(slot)
   }
 
+  /**
+   * Removing all slots will remove all scheduled instances (without attendances) from today onwards (if there are any).
+   */
   fun removeSlots() {
     slots.clear()
+
+    val today = LocalDate.now()
+
+    instances.removeAll(instances().filter { it.sessionDate >= today && it.attendances.isEmpty() })
   }
 
   fun allocatePrisoner(

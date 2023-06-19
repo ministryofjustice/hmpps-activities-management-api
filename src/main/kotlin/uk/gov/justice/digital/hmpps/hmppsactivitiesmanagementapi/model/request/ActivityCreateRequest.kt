@@ -108,13 +108,13 @@ data class ActivityCreateRequest(
     e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
   """,
 )
-
 data class Slot(
 
   @field:NotNull(message = "The time slot must supplied")
   @Schema(
     description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
     example = "AM",
+    allowableValues = ["AM", "PM", "ED"],
   )
   val timeSlot: String?,
 

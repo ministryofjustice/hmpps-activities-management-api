@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -40,7 +42,7 @@ class ActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonRegimeService: PrisonRegimeService,
+  private val prisonRegimeRepository: PrisonRegimeRepository,
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
@@ -126,13 +128,7 @@ class ActivityService(
 
     activity.let {
       val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request.locationId!!)
-      val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
-      val timeSlots =
-        mapOf(
-          TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
-          TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
-        )
+      val prisonRegime = prisonRegimeRepository.findByPrisonCode(activity.prisonCode) ?: throw EntityNotFoundException(activity.prisonCode)
 
       activity.addSchedule(
         description = request.description!!,
@@ -142,7 +138,7 @@ class ActivityService(
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
-        schedule.addSlots(request.slots!!, timeSlots)
+        schedule.addSlots(request.slots!!, prisonRegime.timeSlots())
         schedule.addInstances(activity, schedule.slots(), null, null)
 
         return transform(activityRepository.saveAndFlush(activity))
@@ -207,7 +203,9 @@ class ActivityService(
           (fromDate == null || day >= fromDate) &&
           (toDate == null || day <= toDate)
         ) {
-          this.addInstance(sessionDate = day, slot = slot)
+          if (this.hasNoInstancesOnDate(day)) {
+            this.addInstance(sessionDate = day, slot = slot)
+          }
         }
       }
     }
@@ -252,15 +250,10 @@ class ActivityService(
     applyLocationUpdate(request, activity)
     applyInCellUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
-    if (request.minimumEducationLevel != null) {
-      applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
-    }
-    if (request.pay != null) {
-      applyPayUpdate(prisonCode, request.pay, activity)
-    }
-    if (request.slots != null) {
-      applySlotsUpdate(request.slots, activity)
-    }
+
+    request.minimumEducationLevel?.let { applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity) }
+    request.pay?.let { applyPayUpdate(prisonCode, request.pay, activity) }
+    request.slots?.let { applySlotsUpdate(request.slots, activity) }
 
     activity.updatedTime = now
     activity.updatedBy = updatedBy
@@ -315,17 +308,19 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.startDate?.apply {
-      activity.startDate = this
-      activity.schedules().forEach {
-        if (it.startDate < this) {
+    request.startDate?.let { newStartDate ->
+      activity.startDate = newStartDate
+      activity.schedules().forEach { schedule ->
+        val currentStartDate = schedule.startDate
+
+        if (newStartDate.isAfter(currentStartDate)) {
           // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          it.removeInstances(it.startDate, this.minusDays(1))
-        } else if (this < it.startDate) {
+          schedule.removeInstances(currentStartDate, newStartDate.minusDays(1))
+        } else if (newStartDate.isBefore(currentStartDate)) {
           // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
+          schedule.addInstances(activity, schedule.slots(), newStartDate, currentStartDate.minusDays(1))
         }
-        it.startDate = this
+        schedule.startDate = newStartDate
       }
     }
   }
@@ -479,16 +474,13 @@ class ActivityService(
     slots: List<Slot>,
     activity: Activity,
   ) {
-    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
-    val timeSlots =
-      mapOf(
-        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
-        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
-      )
+    val prisonRegime = prisonRegimeRepository.findByPrisonCode(activity.prisonCode) ?: throw EntityNotFoundException(activity.prisonCode)
+    val today = LocalDate.now()
+
     activity.schedules().forEach {
       it.removeSlots()
-      it.addSlots(slots, timeSlots)
+      it.addSlots(slots, prisonRegime.timeSlots())
+      it.addInstances(it.activity, it.slots(), today, today.plusDays(daysInAdvance))
     }
   }
 }

@@ -44,7 +44,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import java.time.LocalDate
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
@@ -59,7 +59,7 @@ class ActivityServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
-  private val prisonRegimeService: PrisonRegimeService = mock()
+  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
   private val bankHolidayService: BankHolidayService = mock()
 
   private val educationLevel = ReferenceCode(
@@ -104,7 +104,7 @@ class ActivityServiceTest {
     activityScheduleRepository,
     prisonPayBandRepository,
     prisonApiClient,
-    prisonRegimeService,
+    prisonRegimeRepository,
     bankHolidayService,
   )
   private val location = Location(
@@ -118,7 +118,7 @@ class ActivityServiceTest {
   fun setUp() {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("MDI")).thenReturn(transform(prisonRegime()))
+    whenever(prisonRegimeRepository.findByPrisonCode("MDI")).thenReturn(prisonRegime())
   }
 
   @Test
