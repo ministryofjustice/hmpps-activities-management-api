@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import java.time.LocalDate
 
@@ -21,7 +20,4 @@ data class ActivityCandidate(
 
   @Schema(description = "The candidate's earliest release date", example = "2027-01-24")
   val releaseDate: LocalDate?,
-
-  @Schema(description = "The qualifications this candidate holds")
-  val educationLevels: List<Education>,
 )

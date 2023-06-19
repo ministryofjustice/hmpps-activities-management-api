@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
@@ -10,7 +11,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -359,6 +363,30 @@ fun EntityPrisonPayBand.toModelPrisonPayBand() =
     displaySequence = this.displaySequence,
     nomisPayBand = this.nomisPayBand,
     prisonCode = this.prisonCode,
+  )
+
+fun transformOffenderNonAssociationDetail(offenderNonAssociationDetail: OffenderNonAssociationDetail) =
+  NonAssociationDetails(
+    reasonCode = offenderNonAssociationDetail.reasonCode,
+    reasonDescription = offenderNonAssociationDetail.reasonDescription,
+    typeCode = offenderNonAssociationDetail.typeCode,
+    typeDescription = offenderNonAssociationDetail.typeDescription,
+    effectiveDate = LocalDateTime.parse(offenderNonAssociationDetail.effectiveDate),
+    expiryDate = offenderNonAssociationDetail.expiryDate?.let { LocalDateTime.parse(offenderNonAssociationDetail.expiryDate) },
+    offenderNonAssociation = with(offenderNonAssociationDetail.offenderNonAssociation) {
+      OffenderNonAssociation(
+        offenderNo = this.offenderNo,
+        firstName = this.firstName,
+        lastName = this.lastName,
+        reasonCode = this.reasonCode,
+        reasonDescription = this.reasonDescription,
+        agencyDescription = this.agencyDescription,
+        assignedLivingUnitDescription = this.assignedLivingUnitDescription,
+        assignedLivingUnitId = this.assignedLivingUnitId,
+      )
+    },
+    authorisedBy = offenderNonAssociationDetail.authorisedBy,
+    comments = offenderNonAssociationDetail.comments,
   )
 
 fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
