@@ -13,6 +13,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -63,7 +64,8 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Test
   fun `200 response when get attendance by ID found`() {
-    val attendance = attendance().toModel("Case Note Text")
+    val caseNotesApiClient: CaseNotesApiClient = mock()
+    val attendance = attendance().toModel(caseNotesApiClient)
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 
