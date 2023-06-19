@@ -15,6 +15,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -35,6 +36,8 @@ class AllocationServiceTest {
 
   val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
+  val activeAllocation = activityEntity().schedules().first().allocations().first()
+
   @Captor
   private lateinit var allocationEntityCaptor: ArgumentCaptor<AllocationEntity>
 
@@ -45,17 +48,30 @@ class AllocationServiceTest {
 
   @Test
   fun `find allocations for collection of prisoners`() {
-    val allocations = activityEntity().schedules().flatMap { it.allocations() }.also { assertThat(it).isNotEmpty }
-    val prisonNumbers = allocations.map { it.prisonerNumber }
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", prisonNumbers)).thenReturn(allocations)
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", listOf("ABC123")))
+      .thenReturn(listOf(activeAllocation))
 
     assertThat(
       service.findByPrisonCodeAndPrisonerNumbers(
         "MDI",
-        prisonNumbers.toSet(),
+        setOf("ABC123"),
       ),
-    ).isEqualTo(allocations.toModelPrisonerAllocations())
+    ).isEqualTo(listOf(activeAllocation).toModelPrisonerAllocations())
+  }
+
+  @Test
+  fun `find allocations does not return ended allocations`() {
+    val endedAllocation = activeAllocation.copy(prisonerStatus = PrisonerStatus.ENDED)
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", listOf("ABC123", "CAB321")))
+      .thenReturn(listOf(activeAllocation, endedAllocation))
+
+    assertThat(
+      service.findByPrisonCodeAndPrisonerNumbers(
+        "MDI",
+        setOf("ABC123", "CAB321"),
+      ),
+    ).isEqualTo(listOf(activeAllocation).toModelPrisonerAllocations())
   }
 
   @Test
