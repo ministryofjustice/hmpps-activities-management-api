@@ -78,6 +78,24 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           allocatedBy = "MRS BLOGS",
           status = PrisonerStatus.ACTIVE,
         ),
+        Allocation(
+          id = 5,
+          prisonerNumber = "A22222A",
+          bookingId = 10002,
+          activitySummary = "Retirement",
+          scheduleId = 2,
+          scheduleDescription = "Retirement PM",
+          payRate = testActivityPayRateBand3,
+          isUnemployment = true,
+          startDate = LocalDate.of(2022, 10, 10),
+          endDate = null,
+          allocatedTime = LocalDateTime.of(2022, 10, 10, 10, 0),
+          allocatedBy = "MRS BLOGS",
+          suspendedTime = LocalDateTime.of(2022, 10, 11, 10, 0),
+          suspendedBy = "SYSTEM",
+          suspendedReason = "Temporary absence",
+          status = PrisonerStatus.AUTO_SUSPENDED,
+        ),
       )
     }
 
