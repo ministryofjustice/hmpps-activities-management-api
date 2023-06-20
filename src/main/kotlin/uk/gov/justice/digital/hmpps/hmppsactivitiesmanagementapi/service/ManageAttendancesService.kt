@@ -59,7 +59,7 @@ class ManageAttendancesService(
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
   private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.forEach { f(it) }
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }.forEach { f(it) }
   }
 
   private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {

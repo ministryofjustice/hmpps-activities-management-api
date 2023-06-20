@@ -81,7 +81,7 @@ class ActivityScheduleService(
 
   fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true) =
     repository.findOrThrowNotFound(scheduleId).allocations()
-      .filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
+      .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
 
   fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()

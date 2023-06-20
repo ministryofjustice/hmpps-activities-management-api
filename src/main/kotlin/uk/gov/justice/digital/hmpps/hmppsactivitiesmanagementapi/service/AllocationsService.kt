@@ -19,23 +19,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 @Service
 @Transactional(readOnly = true)
 class AllocationsService(private val allocationRepository: AllocationRepository, private val prisonPayBandRepository: PrisonPayBandRepository) {
-
-  fun findByPrisonCodeAndPrisonerNumbers(
-    prisonCode: String,
-    prisonNumbers: Set<String>,
-    activeOnly: Boolean = true,
-  ): List<PrisonerAllocations> {
-    val allocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
-    val filteredAllocations = allocations.filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
-    return filteredAllocations.toModelPrisonerAllocations()
-  }
+  fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
+    allocationRepository
+      .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
+      .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
+      .toModelPrisonerAllocations()
 
   fun getAllocationById(id: Long) = allocationRepository.findOrThrowNotFound(id).toModel()
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
-    var allocation = allocationRepository.findOrThrowNotFound(allocationId)
+    val allocation = allocationRepository.findOrThrowNotFound(allocationId)
 
     if (allocation.status(PrisonerStatus.ENDED)) {
       throw IllegalArgumentException("Ended allocations cannot be updated")
