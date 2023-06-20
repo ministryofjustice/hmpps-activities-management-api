@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -76,19 +77,20 @@ class ActivityScheduleServiceTest {
   @Test
   fun `all current, future and ended allocations for a given schedule are returned`() {
     val active = activeAllocation.copy(allocationId = 1)
+    val suspended = activeAllocation.copy(allocationId = 1).apply { prisonerStatus = PrisonerStatus.SUSPENDED }
     val ended =
       active.copy(allocationId = 2, startDate = active.startDate.minusDays(2))
         .apply { endDate = LocalDate.now().minusDays(1) }
     val future = active.copy(allocationId = 3, startDate = active.startDate.plusDays(1))
     val schedule = mock<ActivitySchedule>()
 
-    whenever(schedule.allocations()).thenReturn(listOf(active, ended, future))
+    whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
     val allocations = service.getAllocationsBy(1, false)
-    assertThat(allocations).hasSize(3)
+    assertThat(allocations).hasSize(4)
     assertThat(allocations).containsExactlyInAnyOrder(
-      *listOf(active, ended, future).toModelAllocations().toTypedArray(),
+      *listOf(active, suspended, ended, future).toModelAllocations().toTypedArray(),
     )
   }
 
