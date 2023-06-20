@@ -80,6 +80,40 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-17.sql",
   )
   @Test
+  fun `should return attendance sync where prisoner has been deallocated and reallocated`() {
+    val attendanceSync =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/3")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync) {
+      assertThat(attendanceId).isEqualTo(3)
+      assertThat(scheduledInstanceId).isEqualTo(1)
+      assertThat(activityScheduleId).isEqualTo(1)
+      assertThat(sessionDate).isEqualTo(LocalDate.now())
+      assertThat(sessionStartTime).isEqualTo("10:00")
+      assertThat(sessionEndTime).isEqualTo("11:00")
+      assertThat(prisonerNumber).isEqualTo("A33333A")
+      assertThat(bookingId).isEqualTo(10003)
+      assertThat(attendanceReasonCode).isEqualTo("SICK")
+      assertThat(comment).isNull()
+      assertThat(status).isEqualTo("COMPLETED")
+      assertThat(payAmount).isEqualTo(200)
+      assertThat(bonusAmount).isNull()
+      assertThat(issuePayment).isNull()
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-17.sql",
+  )
+  @Test
   fun `should return unauthorised`() {
     webTestClient.get()
       .uri("/synchronisation/attendance/1")
