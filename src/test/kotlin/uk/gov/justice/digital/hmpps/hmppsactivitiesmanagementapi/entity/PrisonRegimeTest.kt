@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import java.time.LocalDate
@@ -41,8 +40,7 @@ class PrisonRegimeTest {
 
   @Test
   fun `user suspended allocation 5 days old has not expired`() {
-    val userSuspendedAllocation =
-      allocation().userSuspend(LocalDateTime.now().minusDays(fiveDaysToExpiry.toLong()), "reason", "by test")
+    val userSuspendedAllocation = allocation().userSuspend(LocalDateTime.now().minusDays(fiveDaysToExpiry.toLong()), "reason", "by test")
 
     assertThat(regime.hasExpired(userSuspendedAllocation)).isFalse
   }
@@ -70,16 +68,5 @@ class PrisonRegimeTest {
   @Test
   fun `date has expired`() {
     assertThat(regime.hasExpired { LocalDate.now().minusDays(fiveDaysToExpiry.toLong()) }).isTrue
-  }
-
-  @Test
-  fun `get time slots`() {
-    assertThat(regime.timeSlots()).containsExactlyInAnyOrderEntriesOf(
-      mapOf(
-        TimeSlot.AM to Pair(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1)),
-        TimeSlot.PM to Pair(LocalTime.NOON, LocalTime.NOON.plusHours(1)),
-        TimeSlot.ED to Pair(LocalTime.NOON.plusHours(5), LocalTime.NOON.plusHours(10)),
-      ),
-    )
   }
 }
