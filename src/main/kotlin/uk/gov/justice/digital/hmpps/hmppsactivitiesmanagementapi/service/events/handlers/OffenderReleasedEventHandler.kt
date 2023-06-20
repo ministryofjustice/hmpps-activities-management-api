@@ -38,6 +38,7 @@ class OffenderReleasedEventHandler(
 
         event.isPermanent() -> {
           if (event.isReleased()) {
+            log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
             cancelFutureOffenderAppointments(event)
           }
           deallocateOffenderAllocations(event)
