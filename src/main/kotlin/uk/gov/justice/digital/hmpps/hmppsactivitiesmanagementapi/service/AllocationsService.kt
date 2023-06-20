@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
@@ -15,15 +17,22 @@ import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
+@Transactional(readOnly = true)
 class AllocationsService(private val allocationRepository: AllocationRepository, private val prisonPayBandRepository: PrisonPayBandRepository) {
-  fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
-    allocationRepository
-      .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
-      .filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
-      .toModelPrisonerAllocations()
+
+  fun findByPrisonCodeAndPrisonerNumbers(
+    prisonCode: String,
+    prisonNumbers: Set<String>,
+    activeOnly: Boolean = true,
+  ): List<PrisonerAllocations> {
+    val allocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
+    val filteredAllocations = allocations.filter { !activeOnly || it.status(PrisonerStatus.ACTIVE) }
+    return filteredAllocations.toModelPrisonerAllocations()
+  }
 
   fun getAllocationById(id: Long) = allocationRepository.findOrThrowNotFound(id).toModel()
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     var allocation = allocationRepository.findOrThrowNotFound(allocationId)

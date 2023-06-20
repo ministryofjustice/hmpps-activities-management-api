@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
@@ -34,7 +35,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -57,10 +58,11 @@ class ActivityService(
         .orElseThrow { EntityNotFoundException("Activity $activityId not found") },
     )
 
-  fun getActivityById(activityId: Long) =
-    transform(
-      activityRepository.findOrThrowNotFound(activityId),
-    )
+  fun getActivityById(activityId: Long): ModelActivity {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    return transform(activity)
+  }
 
   fun getActivitiesByCategoryInPrison(
     prisonCode: String,
@@ -77,9 +79,11 @@ class ActivityService(
     .filter { !excludeArchived || !it.state(ActivityState.ARCHIVED) }
     .toModelLite()
 
-  fun getSchedulesForActivity(activityId: Long) =
-    activityRepository.findOrThrowNotFound(activityId)
-      .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
+  fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    return activityScheduleRepository.getAllByActivity(activity).toModelLite()
+  }
 
   private fun failDuplicateActivity(prisonCode: String, summary: String) {
     val duplicateActivity = activityRepository.existsActivityByPrisonCodeAndSummary(prisonCode, summary)
@@ -88,6 +92,7 @@ class ActivityService(
     }
   }
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
@@ -247,9 +252,12 @@ class ActivityService(
     )
   }
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
-    val activity = activityRepository.findOrThrowNotFound(activityId)
+    val activity = activityRepository.findByIdQuery(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+
     val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)

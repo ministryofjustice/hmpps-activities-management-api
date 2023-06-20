@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -14,6 +15,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       "WHERE a.prisonerNumber IN (:prisonerNumbers) " +
       "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
+  @EntityGraph(attributePaths = ["activitySchedule.activity.activityPay"], type = EntityGraph.EntityGraphType.LOAD)
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonerNumbers: List<String>): List<Allocation>
 
   @Query(

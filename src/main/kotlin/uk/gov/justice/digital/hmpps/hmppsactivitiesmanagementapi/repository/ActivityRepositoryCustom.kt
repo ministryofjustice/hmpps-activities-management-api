@@ -33,11 +33,13 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
   ): Optional<Activity> {
     val session = entityManager.unwrap(Session::class.java)
 
+    // NOTE: This filter is enabled because the "instances" collection is marked as FetchType.LAZY.
     // Enable the session date filter to limit the scheduled instances returned
     log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
     val sessionDateFilter = session.enableFilter("SessionDateFilter")
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
+    // NOTE: This filter is not enabled because the "allocations" collection is marked as FetchType.EAGER.
     // Enable the allocation end date filter to limit the allocations returned
     log.info("Enabling filter AllocationEndDateFilter with earliestEndDate: $earliestAllocationEndDate")
     val endDateFilter = session.enableFilter("AllocationEndDateFilter")
@@ -55,7 +57,5 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
     }
 
     return Optional.empty()
-    // May not apply filters if the em.find method is used - but try it.
-    // return Optional.of(entityManager.find(Activity::class.java, activityId))
   }
 }
