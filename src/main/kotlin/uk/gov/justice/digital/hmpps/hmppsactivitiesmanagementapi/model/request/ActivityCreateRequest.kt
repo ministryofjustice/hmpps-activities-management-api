@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Schema(description = "Describes a top-level activity to be created")
@@ -18,7 +19,10 @@ data class ActivityCreateRequest(
   @Schema(description = "The prison code where this activity takes place", example = "PVI")
   val prisonCode: String?,
 
-  @Schema(description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance", example = "false")
+  @Schema(
+    description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance",
+    example = "false",
+  )
   val attendanceRequired: Boolean = true,
 
   @Schema(description = "Flag to indicate if the location of the activity is in cell", example = "false")
@@ -30,16 +34,25 @@ data class ActivityCreateRequest(
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
 
-  @Schema(description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ", example = "H")
+  @Schema(
+    description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ",
+    example = "H",
+  )
   var payPerSession: PayPerSession?,
 
   @field:NotEmpty(message = "Activity summary must be supplied")
   @field:Size(max = 50, message = "Summary should not exceed {max} characters")
-  @Schema(description = "A brief summary description of this activity for use in forms and lists", example = "Maths level 1")
+  @Schema(
+    description = "A brief summary description of this activity for use in forms and lists",
+    example = "Maths level 1",
+  )
   val summary: String?,
 
   @field:Size(max = 300, message = "Description should not exceed {max} characters")
-  @Schema(description = "A detailed description for this activity", example = "A basic maths course suitable for introduction to the subject")
+  @Schema(
+    description = "A detailed description for this activity",
+    example = "A basic maths course suitable for introduction to the subject",
+  )
   val description: String?,
 
   @field:NotNull(message = "Category ID must be supplied")
@@ -63,7 +76,10 @@ data class ActivityCreateRequest(
 
   @field:NotEmpty(message = "Minimum incentive level NOMIS code must be supplied")
   @field:Size(max = 3, message = "Minimum incentive level NOMIS code should not exceed {max} characters")
-  @Schema(description = "The NOMIS code for the minimum incentive/earned privilege level for this activity", example = "BAS")
+  @Schema(
+    description = "The NOMIS code for the minimum incentive/earned privilege level for this activity",
+    example = "BAS",
+  )
   val minimumIncentiveNomisCode: String?,
 
   @field:NotEmpty(message = "Minimum incentive level must be supplied")
@@ -71,11 +87,17 @@ data class ActivityCreateRequest(
   @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
   val minimumIncentiveLevel: String?,
 
-  @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "2022-12-23")
+  @Schema(
+    description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances",
+    example = "2022-12-23",
+  )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val startDate: LocalDate? = null,
 
-  @Schema(description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.", example = "2022-12-23")
+  @Schema(
+    description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.",
+    example = "2022-12-23",
+  )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
@@ -108,13 +130,13 @@ data class ActivityCreateRequest(
     e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
   """,
 )
-
 data class Slot(
 
   @field:NotNull(message = "The time slot must supplied")
   @Schema(
     description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
     example = "AM",
+    allowableValues = ["AM", "PM", "ED"],
   )
   val timeSlot: String?,
 
@@ -131,4 +153,17 @@ data class Slot(
   val saturday: Boolean = false,
 
   val sunday: Boolean = false,
-)
+) {
+
+  fun getDaysOfWeek(): Set<DayOfWeek> {
+    return setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { monday },
+      DayOfWeek.TUESDAY.takeIf { tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { wednesday },
+      DayOfWeek.THURSDAY.takeIf { thursday },
+      DayOfWeek.FRIDAY.takeIf { friday },
+      DayOfWeek.SATURDAY.takeIf { saturday },
+      DayOfWeek.SUNDAY.takeIf { sunday },
+    )
+  }
+}
