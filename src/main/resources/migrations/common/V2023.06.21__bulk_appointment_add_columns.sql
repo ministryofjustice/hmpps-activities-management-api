@@ -3,6 +3,7 @@ CREATE INDEX idx_appointment_appointment_description ON appointment (appointment
 CREATE TABLE bulk_appointment_new
 (
     bulk_appointment_id     bigserial       NOT NULL CONSTRAINT bulk_appointment_new_pk PRIMARY KEY,
+    prison_code             varchar(6)      NOT NULL,
     category_code           varchar(12)     NOT NULL,
     appointment_description varchar(40),
     internal_location_id    bigint,
@@ -15,6 +16,7 @@ CREATE TABLE bulk_appointment_new
 INSERT INTO bulk_appointment_new
 SELECT
     bulk_appointment_id,
+    (SELECT prison_code FROM appointment WHERE appointment_id = (SELECT appointment_id FROM bulk_appointment_appointment baa WHERE baa.bulk_appointment_id = ba.bulk_appointment_id LIMIT 1)),
     (SELECT category_code FROM appointment WHERE appointment_id = (SELECT appointment_id FROM bulk_appointment_appointment baa WHERE baa.bulk_appointment_id = ba.bulk_appointment_id LIMIT 1)),
     (SELECT appointment_description FROM appointment WHERE appointment_id = (SELECT appointment_id FROM bulk_appointment_appointment baa WHERE baa.bulk_appointment_id = ba.bulk_appointment_id LIMIT 1)),
     (SELECT internal_location_id FROM appointment WHERE appointment_id = (SELECT appointment_id FROM bulk_appointment_appointment baa WHERE baa.bulk_appointment_id = ba.bulk_appointment_id LIMIT 1)),

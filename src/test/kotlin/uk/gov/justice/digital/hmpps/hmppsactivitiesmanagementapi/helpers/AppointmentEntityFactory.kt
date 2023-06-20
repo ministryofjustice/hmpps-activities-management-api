@@ -30,7 +30,18 @@ internal fun appointmentEntity(
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = appointmentId,
-  bulkAppointment = bulkAppointmentId?.let { BulkAppointment(bulkAppointmentId = bulkAppointmentId, createdBy = "TEST.USER") },
+  bulkAppointment = bulkAppointmentId?.let {
+    BulkAppointment(
+      bulkAppointmentId = bulkAppointmentId,
+      prisonCode = "TPR",
+      categoryCode = "TEST",
+      appointmentDescription = "Appointment description",
+      internalLocationId = if (inCell) null else internalLocationId,
+      inCell = inCell,
+      startDate = startDate,
+      createdBy = "TEST.USER",
+    )
+  },
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
   categoryCode = "TEST",

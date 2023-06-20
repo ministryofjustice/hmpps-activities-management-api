@@ -19,8 +19,8 @@ VALUES (7, 7, 'B2345CD', 457);
 INSERT INTO appointment_occurrence_allocation (appointment_occurrence_allocation_id, appointment_occurrence_id, prisoner_number, booking_id)
 VALUES (8, 8, 'C3456DE', 458);
 
-INSERT INTO bulk_appointment (bulk_appointment_id, created, created_by)
-VALUES (6, now()::timestamp, 'TEST.USER');
+INSERT INTO bulk_appointment (bulk_appointment_id, prison_code, category_code, appointment_description, internal_location_id, in_cell, start_date, created, created_by)
+VALUES (6, 'TPR', 'AC1', 'Appointment description', 123, false, now()::date + 1, now()::timestamp, 'TEST.USER');
 
 INSERT INTO bulk_appointment_appointment (bulk_appointment_appointment_id, bulk_appointment_id, appointment_id)
 VALUES (6, 6, 6);

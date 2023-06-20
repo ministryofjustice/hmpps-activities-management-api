@@ -42,6 +42,12 @@ class AppointmentService(
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
     createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
       BulkAppointmentEntity(
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
+        startDate = request.startDate,
         createdBy = principal.name,
       ).apply {
         request.appointments.map {

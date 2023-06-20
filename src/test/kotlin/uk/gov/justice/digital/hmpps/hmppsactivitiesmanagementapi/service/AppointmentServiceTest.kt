@@ -461,11 +461,19 @@ class AppointmentServiceTest {
       )
 
     whenever(bulkAppointmentRepository.saveAndFlush(bulkAppointmentEntityCaptor.capture())).thenReturn(
-      BulkAppointment(bulkAppointmentId = 1, createdBy = "TEST.USER")
-        .apply {
-          this.addAppointment(appointmentEntity(appointmentId = 1))
-          this.addAppointment(appointmentEntity(appointmentId = 2))
-        },
+      BulkAppointment(
+        bulkAppointmentId = 1,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
+        startDate = request.startDate,
+        createdBy = "TEST.USER",
+      ).apply {
+        this.addAppointment(appointmentEntity(appointmentId = 1))
+        this.addAppointment(appointmentEntity(appointmentId = 2))
+      },
     )
 
     service.bulkCreateAppointments(request, principal)

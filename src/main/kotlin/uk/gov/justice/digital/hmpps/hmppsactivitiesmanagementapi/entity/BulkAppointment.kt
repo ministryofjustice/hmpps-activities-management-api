@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
 
@@ -26,6 +27,18 @@ data class BulkAppointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val bulkAppointmentId: Long = 0,
+
+  val prisonCode: String,
+
+  var categoryCode: String,
+
+  var appointmentDescription: String?,
+
+  var internalLocationId: Long?,
+
+  var inCell: Boolean,
+
+  var startDate: LocalDate,
 
   val created: LocalDateTime = LocalDateTime.now(),
 
