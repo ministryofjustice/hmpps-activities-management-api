@@ -267,6 +267,23 @@ class ActivityScheduleTest {
         allocatedBy = "NOT FREDDIE",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Prisoner '654321' is already allocated to schedule ${schedule.description}.")
+  }
+
+  @Test
+  fun `cannot start allocation beyond the end date of the schedule or activity`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = today), noAllocations = true)
+
+    assertThatThrownBy {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 10001,
+        allocatedBy = "NOT FREDDIE",
+        startDate = tomorrow,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be after the activity end date.")
   }
 
   @Test
@@ -304,6 +321,7 @@ class ActivityScheduleTest {
         allocatedBy = " ",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocated by cannot be blank.")
   }
 
   @Test
