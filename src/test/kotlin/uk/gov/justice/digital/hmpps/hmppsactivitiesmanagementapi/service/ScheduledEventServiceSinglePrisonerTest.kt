@@ -255,7 +255,6 @@ class ScheduledEventServiceSinglePrisonerTest {
     isCancelled = false,
     updated = updated,
     updatedBy = updatedBy,
-    deleted = false,
   )
 
   @Nested

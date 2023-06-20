@@ -23,11 +23,11 @@ SELECT aoa.appointment_occurrence_allocation_id                                 
        a.created,
        a.created_by,
        ao.updated,
-       ao.updated_by,
-       ao.deleted
+       ao.updated_by
 FROM appointment_occurrence_allocation aoa
          JOIN appointment_occurrence ao
               on aoa.appointment_occurrence_id = ao.appointment_occurrence_id
          JOIN appointment a on a.appointment_id = ao.appointment_id
          LEFT JOIN appointment_cancellation_reason acr
-                   on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id;
+                   on ao.cancellation_reason_id = acr.appointment_cancellation_reason_id
+WHERE NOT ao.deleted;

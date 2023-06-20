@@ -116,7 +116,6 @@ internal fun appointmentInstanceEntity(
     isCancelled = false,
     updated = LocalDateTime.now(),
     updatedBy = updatedBy,
-    deleted = false,
   )
 
 internal fun appointmentOccurrenceSearchEntity(

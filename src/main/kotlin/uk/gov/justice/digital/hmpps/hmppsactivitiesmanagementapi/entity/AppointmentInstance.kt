@@ -58,8 +58,6 @@ data class AppointmentInstance(
   val updated: LocalDateTime? = null,
 
   val updatedBy: String? = null,
-
-  val deleted: Boolean,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,
