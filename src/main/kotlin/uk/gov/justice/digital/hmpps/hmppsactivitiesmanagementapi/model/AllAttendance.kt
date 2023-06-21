@@ -39,6 +39,12 @@ data class AllAttendance(
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
 
-  @Schema(description = "The prisoner number this attendance record is for", example = "A1234AA")
+  @Schema(description = "The prisoner number for this attendance record", example = "A1234AA")
   val prisonerNumber: String,
+
+  @Schema(description = "The title of the activity for this attendance record", example = "Math Level 1")
+  val activitySummary: String,
+
+  @Schema(description = "The name of the activity category for this attendance record", example = "Education")
+  val categoryName: String,
 )

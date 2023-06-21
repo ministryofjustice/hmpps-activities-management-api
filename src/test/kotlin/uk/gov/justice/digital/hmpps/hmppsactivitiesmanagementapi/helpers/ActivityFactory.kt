@@ -354,5 +354,7 @@ internal fun attendanceList() = listOf(
     attendanceReasonCode = null,
     issuePayment = null,
     prisonerNumber = "A11111A",
+    summary = "Maths Level 1",
+    categoryName = "Education",
   ),
 )

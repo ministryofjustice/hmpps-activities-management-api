@@ -27,6 +27,10 @@ data class `AllAttendance`(
   val issuePayment: Boolean?,
 
   val prisonerNumber: String,
+
+  val summary: String,
+
+  val categoryName: String,
 ) {
   fun toModel() =
     AllAttendanceModel(
@@ -38,6 +42,8 @@ data class `AllAttendance`(
       attendanceReasonCode = attendanceReasonCode,
       issuePayment = issuePayment,
       prisonerNumber = prisonerNumber,
+      activitySummary = summary,
+      categoryName = categoryName,
     )
 }
 
