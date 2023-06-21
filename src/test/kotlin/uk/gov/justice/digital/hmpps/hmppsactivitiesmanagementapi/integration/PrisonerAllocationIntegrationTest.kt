@@ -85,7 +85,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
-          payRate = testActivityPayRateBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,

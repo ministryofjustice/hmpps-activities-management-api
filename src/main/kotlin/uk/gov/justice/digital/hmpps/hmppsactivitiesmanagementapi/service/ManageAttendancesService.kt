@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -29,7 +29,7 @@ class ManageAttendancesService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val outboundEventsService: OutboundEventsService,
-  private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
 ) {
 
   companion object {

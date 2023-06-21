@@ -15,7 +15,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -45,7 +45,7 @@ class ManageAttendancesServiceTest {
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val rolloutPrison: RolloutPrison = mock {
     on { code } doReturn moorlandPrisonCode
     on { isActivitiesRolledOut() } doReturn true
@@ -110,6 +110,7 @@ class ManageAttendancesServiceTest {
     allocation.prisonerStatus = PrisonerStatus.PENDING
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(Mono.just(emptyList()))
 
     service.attendances(AttendanceOperation.CREATE)
 
