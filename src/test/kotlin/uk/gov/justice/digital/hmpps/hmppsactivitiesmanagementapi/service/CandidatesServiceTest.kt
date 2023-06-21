@@ -20,12 +20,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,13 +38,13 @@ class CandidatesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
-  private val allocationsService: AllocationsService = mock()
+  private val allocationRepository: AllocationRepository = mock()
 
   private val service = CandidatesService(
     prisonApiClient,
     prisonerSearchApiClient,
     activityScheduleRepository,
-    allocationsService,
+    allocationRepository,
   )
 
   @Nested
@@ -63,6 +66,15 @@ class CandidatesServiceTest {
         listOf(candidateEducation),
       )
       whenever(prisonApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(emptyList())
+
+      whenever(
+        allocationRepository.findByPrisonCodeAndPrisonerNumber(
+          candidate.prisonId!!,
+          candidate.prisonerNumber,
+        ),
+      ).thenReturn(
+        listOf(allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber)),
+      )
     }
 
     @Test
@@ -446,6 +458,32 @@ class CandidatesServiceTest {
         NonAssociationSuitability(
           suitable = false,
           nonAssociations = listOf(transformOffenderNonAssociationDetail(offenderNonAssociation)),
+        ),
+      )
+    }
+
+    @Test
+    fun `prisoner allocations`() {
+      val activity = activityEntity()
+      val candidate = PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+      )
+
+      candidateSuitabilitySetup(activity, candidate)
+
+      val suitability = service.candidateSuitability(
+        activity.schedules().first().activityScheduleId,
+        candidate.prisonerNumber,
+      )
+
+      val candidateAllocation = allocation().copy(allocationId = 1, prisonerNumber = "A1234BC")
+
+      assertThat(suitability.allocations).isEqualTo(
+        listOf(
+          AllocationPayRate(
+            allocation = candidateAllocation.toModel(),
+            payRate = candidateAllocation.allocationPay("BAS")?.toModelLite(),
+          ),
         ),
       )
     }
