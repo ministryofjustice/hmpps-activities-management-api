@@ -719,7 +719,7 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `multiple slots are updated`() {
+  fun `multiple slots are updated and new slot added`() {
     val schedule =
       activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
 
@@ -731,7 +731,9 @@ class ActivityScheduleTest {
       setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
     )
     val slotTwo =
-      schedule.addSlot(LocalTime.NOON, LocalTime.MIDNIGHT.minusMinutes(1), setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
+      schedule.addSlot(LocalTime.NOON, LocalTime.NOON.plusMinutes(1), setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
+
+    val slotThree = Pair(LocalTime.NOON.minusMinutes(5), LocalTime.NOON.plusMinutes(10)) to setOf(DayOfWeek.SUNDAY)
 
     assertThat(slotOne.mondayFlag).isTrue
     assertThat(slotOne.tuesdayFlag).isTrue
@@ -752,7 +754,10 @@ class ActivityScheduleTest {
     val updates = mapOf(
       Pair(slotOne.startTime, slotOne.endTime) to setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
       Pair(slotTwo.startTime, slotTwo.endTime) to setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+      slotThree,
     )
+
+    assertThat(schedule.slots()).containsExactly(slotOne, slotTwo)
 
     schedule.updateSlots(updates)
 
@@ -771,6 +776,16 @@ class ActivityScheduleTest {
     assertThat(slotTwo.fridayFlag).isFalse
     assertThat(slotTwo.saturdayFlag).isFalse
     assertThat(slotTwo.sundayFlag).isFalse
+
+    with(schedule.slots()[2]) {
+      assertThat(mondayFlag).isFalse
+      assertThat(tuesdayFlag).isFalse
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isTrue
+    }
   }
 
   @Test

@@ -298,9 +298,27 @@ data class ActivitySchedule(
   }
 
   fun updateSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
-    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.startTime, it.endTime)) })
+    removeRedundantSlots(updates)
+    updateMatchingSlots(updates)
+    addNewSlots(updates)
+  }
 
-    slots.forEach { slot -> updates[slot.startTime to slot.endTime]?.let(slot::update) }
+  private fun removeRedundantSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.startTime, it.endTime)) })
+  }
+
+  private fun updateMatchingSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.forEach { slot ->
+      updates[slot.startTime to slot.endTime]?.let(slot::update)
+    }
+  }
+
+  private fun addNewSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    updates.keys.filterNot { key ->
+      slots.map { Pair(it.startTime, it.endTime) }.contains(key)
+    }.forEach {
+      addSlot(it.first, it.second, updates[it]!!)
+    }
   }
 }
 
