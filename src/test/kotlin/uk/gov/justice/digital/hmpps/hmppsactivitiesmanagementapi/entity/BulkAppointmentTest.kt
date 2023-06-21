@@ -7,17 +7,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
 
 class BulkAppointmentTest {
@@ -92,46 +86,7 @@ class BulkAppointmentTest {
     val bulkAppointmentSummary = BulkAppointmentSummary(1, 3)
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      BulkAppointmentDetails(
-        entity.bulkAppointmentId,
-        entity.prisonCode,
-        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
-        null,
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-        entity.inCell,
-        entity.startDate,
-        occurrences = listOf(
-          appointmentOccurrenceDetails(
-            1, 1, bulkAppointmentSummary, 1,
-            listOf(
-              PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
-            ),
-            null,
-            LocalTime.of(9, 0),
-            LocalTime.of(10, 30), null, null, entity.created,
-          ),
-          appointmentOccurrenceDetails(
-            2, 2, bulkAppointmentSummary, 1,
-            listOf(
-              PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
-            ),
-            null,
-            LocalTime.of(9, 30),
-            LocalTime.of(11, 0), null, null, entity.created,
-          ),
-          appointmentOccurrenceDetails(
-            3, 3, bulkAppointmentSummary, 1,
-            listOf(
-              PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
-            ),
-            null,
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 30), null, null, entity.created,
-          ),
-        ),
-        entity.created,
-        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-      ),
+      bulkAppointmentDetails(entity.created),
     )
   }
 
