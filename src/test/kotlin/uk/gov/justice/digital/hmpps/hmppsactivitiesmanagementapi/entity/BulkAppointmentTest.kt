@@ -38,6 +38,7 @@ class BulkAppointmentTest {
     )
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
+
   @Test
   fun `entity to summary mapping`() {
     val entity = bulkAppointmentEntity()

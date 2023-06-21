@@ -37,6 +37,15 @@ class AppointmentTest {
   }
 
   @Test
+  fun `occurrences filters out soft deleted occurrences`() {
+    val entity = appointmentEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3).apply { occurrences().first().deleted = true }
+    with(entity.occurrences()) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
   fun `internal location ids includes occurrence ids`() {
     val entity = appointmentEntity(123).apply { occurrences().first().internalLocationId = 124 }
     assertThat(entity.internalLocationIds()).containsExactly(123, 124)

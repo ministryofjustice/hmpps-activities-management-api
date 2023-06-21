@@ -479,6 +479,13 @@ class AppointmentServiceTest {
     service.bulkCreateAppointments(request, principal)
 
     with(bulkAppointmentEntityCaptor.value) {
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(appointmentDescription).isEqualTo(request.appointmentDescription)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(inCell).isEqualTo(request.inCell)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(createdBy).isEqualTo("TEST.USER")
       assertThat(appointments()).hasSize(2)
       assertThat(appointments()[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
       assertThat(appointments()[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")

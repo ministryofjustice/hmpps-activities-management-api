@@ -59,7 +59,7 @@ internal fun appointmentEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, (appointmentId * (it.index + 1L)) + it.index, it.index + 1, it.value, updatedBy, prisonerNumberToBookingIdMap))
+    this.addOccurrence(appointmentOccurrenceEntity(this, appointmentId * (it.index + 1L), it.index + 1, it.value, updatedBy, prisonerNumberToBookingIdMap))
   }
 }
 

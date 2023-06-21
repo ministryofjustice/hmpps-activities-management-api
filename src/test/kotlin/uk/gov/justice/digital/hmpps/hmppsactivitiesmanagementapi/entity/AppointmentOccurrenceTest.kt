@@ -182,7 +182,41 @@ class AppointmentOccurrenceTest {
   }
 
   @Test
-  fun `entity to details mapping bulk appointment id`() {
+  fun `entity list to details list mapping`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    assertThat(listOf(entity).toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
+      listOf(
+        appointmentOccurrenceDetails(
+          entity.appointmentOccurrenceId,
+          appointment.appointmentId,
+          sequenceNumber = 1,
+          appointmentDescription = appointment.appointmentDescription,
+          created = appointment.created,
+          updated = entity.updated,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun `entity to details mapping bulk appointment`() {
     val appointment = bulkAppointmentEntity().appointments().first()
     val entity = appointment.occurrences().first()
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
