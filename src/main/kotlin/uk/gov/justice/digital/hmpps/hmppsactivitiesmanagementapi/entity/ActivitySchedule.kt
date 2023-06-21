@@ -226,7 +226,9 @@ data class ActivitySchedule(
       "Allocation end date cannot be before allocation start date"
     }
 
-    // TODO you should only be able to allocate if schedule is active (the end date has not passed) !!!
+    require(activity.endDate == null || startDate <= activity.endDate) {
+      "Allocation start date cannot be after the activity end date."
+    }
 
     allocations.add(
       Allocation(
@@ -250,7 +252,6 @@ data class ActivitySchedule(
     if (allocatedBy.isBlank()) throw IllegalArgumentException("Allocated by cannot be blank.")
   }
 
-  // TODO if the allocation is ended then should be able to re-allocate ...
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }

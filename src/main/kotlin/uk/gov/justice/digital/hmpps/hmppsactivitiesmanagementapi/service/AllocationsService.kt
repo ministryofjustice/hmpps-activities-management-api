@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -49,14 +50,17 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     request: AllocationUpdateRequest,
     allocation: Allocation,
   ) {
-    request.startDate?.apply {
+    request.startDate?.let { newStartDate ->
+      val (start, end) = allocation.activitySchedule.activity.startDate to allocation.activitySchedule.activity.endDate
+
       require(allocation.startDate > LocalDate.now()) {
         "Start date cannot be updated once allocation has started"
       }
-      require(this >= allocation.activitySchedule.activity.startDate) {
-        "Allocation start date cannot be before activity start date"
+      require(newStartDate.between(start, end)) {
+        "Allocation start date cannot be before the activity start date or after the activity end date."
       }
-      allocation.startDate = this
+
+      allocation.startDate = newStartDate
     }
   }
 
