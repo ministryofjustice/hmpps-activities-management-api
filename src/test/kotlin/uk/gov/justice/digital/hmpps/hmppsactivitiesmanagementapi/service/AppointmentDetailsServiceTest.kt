@@ -61,7 +61,11 @@ class AppointmentDetailsServiceTest {
       ),
     )
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
-      appointmentDetails(),
+      appointmentDetails(
+        "Appointment description",
+        entity.created,
+        entity.updated,
+      ),
     )
   }
 
