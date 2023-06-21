@@ -1,8 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -25,10 +22,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -43,15 +40,10 @@ class ActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val prisonApiClient: PrisonApiClient,
-  private val prisonRegimeRepository: PrisonRegimeRepository,
+  private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
-
-  companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),
@@ -134,7 +126,13 @@ class ActivityService(
 
     activity.let {
       val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request.locationId!!)
-      val prisonRegime = prisonRegimeRepository.findByPrisonCode(activity.prisonCode) ?: throw EntityNotFoundException(activity.prisonCode)
+      val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
+      val timeSlots =
+        mapOf(
+          TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
+          TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
+          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
+        )
 
       activity.addSchedule(
         description = request.description!!,
@@ -144,12 +142,10 @@ class ActivityService(
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->
-        schedule.addSlots(request.slots!!, prisonRegime.timeSlots())
+        schedule.addSlots(request.slots!!, timeSlots)
         schedule.addInstances(activity, schedule.slots(), null, null)
 
-        return transform(activityRepository.saveAndFlush(activity)).also {
-          log.info("Created activity ${activity.description}.")
-        }
+        return transform(activityRepository.saveAndFlush(activity))
       }
     }
   }
@@ -178,7 +174,9 @@ class ActivityService(
     slots.forEach { slot ->
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
-      this.addSlot(start, end, slot.getDaysOfWeek())
+      val daysOfWeek = getDaysOfWeek(slot)
+
+      this.addSlot(start, end, daysOfWeek)
     }
   }
 
@@ -189,18 +187,27 @@ class ActivityService(
 
     listOfDatesToSchedule.forEach { day ->
       slots.forEach { slot ->
-        if (activity.isActive(day) && day.dayOfWeek in slot.getDaysOfWeek() &&
+        val daysOfWeek = getDaysOfWeek(
+          Slot(
+            timeSlot = "",
+            monday = slot.mondayFlag,
+            tuesday = slot.tuesdayFlag,
+            wednesday = slot.wednesdayFlag,
+            thursday = slot.thursdayFlag,
+            friday = slot.fridayFlag,
+            saturday = slot.saturdayFlag,
+            sunday = slot.sundayFlag,
+          ),
+        )
+
+        if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
           (
             runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
             ) &&
           (fromDate == null || day >= fromDate) &&
           (toDate == null || day <= toDate)
         ) {
-          if (this.hasNoInstancesOnDate(day)) {
-            this.addInstance(sessionDate = day, slot = slot)
-          } else {
-            log.info("Instance already exists for ${activity.description} on day $day.")
-          }
+          this.addInstance(sessionDate = day, slot = slot)
         }
       }
     }
@@ -213,6 +220,18 @@ class ActivityService(
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
+  }
+
+  private fun getDaysOfWeek(slot: Slot): Set<DayOfWeek> {
+    return setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { slot.monday },
+      DayOfWeek.TUESDAY.takeIf { slot.tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
+      DayOfWeek.THURSDAY.takeIf { slot.thursday },
+      DayOfWeek.FRIDAY.takeIf { slot.friday },
+      DayOfWeek.SATURDAY.takeIf { slot.saturday },
+      DayOfWeek.SUNDAY.takeIf { slot.sunday },
+    )
   }
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
@@ -233,10 +252,15 @@ class ActivityService(
     applyLocationUpdate(request, activity)
     applyInCellUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
-
-    request.minimumEducationLevel?.let { applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity) }
-    request.pay?.let { applyPayUpdate(prisonCode, request.pay, activity) }
-    request.slots?.let { applySlotsUpdate(request.slots, activity) }
+    if (request.minimumEducationLevel != null) {
+      applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
+    }
+    if (request.pay != null) {
+      applyPayUpdate(prisonCode, request.pay, activity)
+    }
+    if (request.slots != null) {
+      applySlotsUpdate(request.slots, activity)
+    }
 
     activity.updatedTime = now
     activity.updatedBy = updatedBy
@@ -245,7 +269,7 @@ class ActivityService(
 
     activityRepository.saveAndFlush(activity)
 
-    return transform(activity).also { log.info("Updated activity ${activity.description}.") }
+    return transform(activity)
   }
 
   private fun ActivitySchedule.markAsUpdated(
@@ -291,19 +315,17 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.startDate?.let { newStartDate ->
-      activity.startDate = newStartDate
-      activity.schedules().forEach { schedule ->
-        val currentStartDate = schedule.startDate
-
-        if (newStartDate.isAfter(currentStartDate)) {
+    request.startDate?.apply {
+      activity.startDate = this
+      activity.schedules().forEach {
+        if (it.startDate < this) {
           // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          schedule.removeInstances(currentStartDate, newStartDate.minusDays(1))
-        } else if (newStartDate.isBefore(currentStartDate)) {
+          it.removeInstances(it.startDate, this.minusDays(1))
+        } else if (this < it.startDate) {
           // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          schedule.addInstances(activity, schedule.slots(), newStartDate, currentStartDate.minusDays(1))
+          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
         }
-        schedule.startDate = newStartDate
+        it.startDate = this
       }
     }
   }
@@ -457,13 +479,16 @@ class ActivityService(
     slots: List<Slot>,
     activity: Activity,
   ) {
-    val prisonRegime = prisonRegimeRepository.findByPrisonCode(activity.prisonCode) ?: throw EntityNotFoundException(activity.prisonCode)
-    val today = LocalDate.now()
-
+    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
+    val timeSlots =
+      mapOf(
+        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
+        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
+        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
+      )
     activity.schedules().forEach {
-      it.removeSlotsAndInstances()
-      it.addSlots(slots, prisonRegime.timeSlots())
-      it.addInstances(it.activity, it.slots(), today, today.plusDays(daysInAdvance))
+      it.removeSlots()
+      it.addSlots(slots, timeSlots)
     }
   }
 }
