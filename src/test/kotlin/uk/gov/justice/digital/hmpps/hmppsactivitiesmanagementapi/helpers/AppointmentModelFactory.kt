@@ -185,7 +185,12 @@ fun appointmentMigrateRequest(
     updatedBy,
   )
 
-fun appointmentDetails() = AppointmentDetails(
+fun appointmentDetails(
+  appointmentDescription: String? = null,
+  created: LocalDateTime = LocalDateTime.now(),
+  updated: LocalDateTime? = LocalDateTime.now(),
+  userSummary: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+) = AppointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
@@ -193,7 +198,7 @@ fun appointmentDetails() = AppointmentDetails(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
   appointmentCategorySummary(),
-  null,
+  appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
@@ -201,10 +206,10 @@ fun appointmentDetails() = AppointmentDetails(
   LocalTime.of(10, 30),
   null,
   "Appointment level comment",
-  LocalDateTime.now(),
+  created,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  LocalDateTime.now(),
-  UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updated,
+  userSummary,
   occurrences = listOf(
     AppointmentOccurrenceSummary(
       1,
@@ -216,10 +221,10 @@ fun appointmentDetails() = AppointmentDetails(
       LocalTime.of(9, 0),
       LocalTime.of(10, 30),
       "Appointment occurrence level comment",
-      isEdited = false,
+      isEdited = updated != null,
       isCancelled = false,
-      LocalDateTime.now(),
-      UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+      updated,
+      userSummary,
     ),
   ),
 )
@@ -235,9 +240,9 @@ fun appointmentOccurrenceDetails(
   appointmentDescription: String? = null,
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
+  created: LocalDateTime = LocalDateTime.now(),
   updated: LocalDateTime? = LocalDateTime.now(),
   userSummary: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-  created: LocalDateTime = LocalDateTime.now(),
 ) = AppointmentOccurrenceDetails(
   appointmentOccurrenceId,
   appointmentId,
@@ -255,7 +260,7 @@ fun appointmentOccurrenceDetails(
   endTime,
   "Appointment occurrence level comment",
   null,
-  userSummary != null,
+  updated != null,
   false,
   false,
   created,
@@ -303,7 +308,7 @@ fun bulkAppointmentDetails(
       ),
       null,
       LocalTime.of(9, 0),
-      LocalTime.of(10, 30), null, null, created,
+      LocalTime.of(10, 30), created, null, null,
     ),
     appointmentOccurrenceDetails(
       2, 2, BulkAppointmentSummary(1, 3), 1,
@@ -312,7 +317,7 @@ fun bulkAppointmentDetails(
       ),
       null,
       LocalTime.of(9, 30),
-      LocalTime.of(11, 0), null, null, created,
+      LocalTime.of(11, 0), created, null, null,
     ),
     appointmentOccurrenceDetails(
       3, 3, BulkAppointmentSummary(1, 3), 1,
@@ -321,7 +326,7 @@ fun bulkAppointmentDetails(
       ),
       null,
       LocalTime.of(10, 0),
-      LocalTime.of(11, 30), null, null, created,
+      LocalTime.of(11, 30), created, null, null,
     ),
   ),
   created,

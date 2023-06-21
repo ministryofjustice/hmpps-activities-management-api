@@ -6,16 +6,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
@@ -114,43 +110,11 @@ class AppointmentTest {
       ),
     )
     assertThat(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      AppointmentDetails(
-        entity.appointmentId,
-        entity.appointmentType,
-        entity.prisonCode,
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
-        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
+      appointmentDetails(
         "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-        entity.inCell,
-        entity.startDate,
-        entity.startTime,
-        entity.endTime,
-        null,
-        entity.comment,
         entity.created,
-        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        occurrences = listOf(
-          AppointmentOccurrenceSummary(
-            occurrenceEntity.appointmentOccurrenceId,
-            occurrenceEntity.sequenceNumber,
-            1,
-            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-            occurrenceEntity.inCell,
-            occurrenceEntity.startDate,
-            occurrenceEntity.startTime,
-            occurrenceEntity.endTime,
-            "Appointment occurrence level comment",
-            isEdited = true,
-            isCancelled = false,
-            occurrenceEntity.updated,
-            UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-          ),
-        ),
       ),
     )
   }
