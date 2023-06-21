@@ -19,6 +19,16 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
+    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
+    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
+    """,
+    example = "SKI",
+  )
+  val prisonCode: String,
+
+  @Schema(
+    description =
+    """
     The summary of the category used to create the set of appointments in bulk
     """,
   )

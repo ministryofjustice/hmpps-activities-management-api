@@ -471,8 +471,8 @@ class AppointmentServiceTest {
         startDate = request.startDate,
         createdBy = "TEST.USER",
       ).apply {
-        this.addAppointment(appointmentEntity(appointmentId = 1))
-        this.addAppointment(appointmentEntity(appointmentId = 2))
+        this.addAppointment(appointmentEntity(appointmentId = 1, bulkAppointment = this))
+        this.addAppointment(appointmentEntity(appointmentId = 2, bulkAppointment = this))
       },
     )
 

@@ -16,6 +16,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -56,8 +58,6 @@ data class BulkAppointment(
 
   fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
-  fun prisonCode() = appointments().map { appointment -> appointment.prisonCode }.distinct().first()
-
   fun prisonerNumbers() = appointments().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
 
   fun usernames() = listOf(createdBy).union(appointments().map { appointment -> appointment.usernames() }.flatten()).distinct()
@@ -66,6 +66,12 @@ data class BulkAppointment(
 
   fun toModel() = BulkAppointmentModel(
     id = this.bulkAppointmentId,
+    prisonCode = prisonCode,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
+    internalLocationId = internalLocationId,
+    inCell = inCell,
+    startDate = startDate,
     appointments = this.appointments().toModel(),
     created = created,
     createdBy = createdBy,
@@ -82,15 +88,18 @@ data class BulkAppointment(
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ): BulkAppointmentDetails {
-    val appointment = appointments().first().toDetails(emptyList(), referenceCodeMap, locationMap, userMap)
     return BulkAppointmentDetails(
       bulkAppointmentId,
-      // TODO: add these as new properties and columns in the database
-      appointment.category,
-      appointment.appointmentDescription,
-      appointment.internalLocation,
-      appointment.inCell,
-      appointment.startDate,
+      prisonCode,
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
+      if (inCell) {
+        null
+      } else {
+        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      },
+      inCell,
+      startDate,
       appointments().map { it.occurrenceDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
       created,
       userMap[createdBy].toSummary(createdBy),

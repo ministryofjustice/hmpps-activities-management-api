@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
@@ -82,7 +83,7 @@ fun appointmentInstanceModel(
   null,
   123,
   false,
-  LocalDate.now(),
+  LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment instance level comment",
@@ -194,7 +195,7 @@ fun appointmentDetails() = AppointmentDetails(
   null,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
-  LocalDate.now(),
+  LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   null,
@@ -210,7 +211,7 @@ fun appointmentDetails() = AppointmentDetails(
       1,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
-      LocalDate.now(),
+      LocalDate.now().plusDays(1),
       LocalTime.of(9, 0),
       LocalTime.of(10, 30),
       "Appointment occurrence level comment",
@@ -222,32 +223,44 @@ fun appointmentDetails() = AppointmentDetails(
   ),
 )
 
-fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
-  1,
-  2,
-  null,
-  AppointmentType.INDIVIDUAL,
-  3,
-  "TPR",
-  prisoners = listOf(
+fun appointmentOccurrenceDetails(
+  appointmentOccurrenceId: Long = 1,
+  appointmentId: Long = 2,
+  bulkAppointmentSummary: BulkAppointmentSummary? = null,
+  sequenceNumber: Int = 3,
+  prisoners: List<PrisonerSummary> = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
+  appointmentDescription: String? = null,
+  startTime: LocalTime = LocalTime.of(9, 0),
+  endTime: LocalTime = LocalTime.of(10, 30),
+  updated: LocalDateTime? = LocalDateTime.now(),
+  userSummary: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  created: LocalDateTime = LocalDateTime.now(),
+) = AppointmentOccurrenceDetails(
+  appointmentOccurrenceId,
+  appointmentId,
+  bulkAppointmentSummary,
+  AppointmentType.INDIVIDUAL,
+  sequenceNumber,
+  "TPR",
+  prisoners,
   appointmentCategorySummary(),
-  null,
+  appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
-  LocalDate.now(),
-  LocalTime.of(9, 0),
-  LocalTime.of(10, 30),
-  "Appointment level comment",
+  LocalDate.now().plusDays(1),
+  startTime,
+  endTime,
+  "Appointment occurrence level comment",
   null,
+  userSummary != null,
   false,
   false,
-  false,
-  LocalDateTime.now(),
+  created,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  LocalDateTime.now(),
-  UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updated,
+  userSummary,
 )
 
 fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(

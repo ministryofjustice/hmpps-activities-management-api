@@ -10,16 +10,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
@@ -171,45 +170,25 @@ class AppointmentOccurrenceTest {
       ),
     )
     assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      AppointmentOccurrenceDetails(
+      appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
-        null,
-        AppointmentType.INDIVIDUAL,
-        1,
-        "TPR",
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
-        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
-        "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-        false,
-        LocalDate.now().plusDays(1),
-        LocalTime.of(9, 0),
-        LocalTime.of(10, 30),
-        "Appointment occurrence level comment",
-        repeat = null,
-        isEdited = true,
-        isCancelled = false,
-        isExpired = false,
+        sequenceNumber = 1,
+        appointmentDescription = appointment.appointmentDescription,
         created = appointment.created,
-        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         updated = entity.updated,
-        updatedBy = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
   }
 
   @Test
   fun `entity to details mapping bulk appointment id`() {
-    val appointment = appointmentEntity(bulkAppointmentId = 3)
+    val appointment = bulkAppointmentEntity().appointments().first()
     val entity = appointment.occurrences().first()
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
       appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -221,7 +200,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(3, 1))
+    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(1, 3))
   }
 
   @Test

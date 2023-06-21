@@ -16,13 +16,15 @@ import java.time.LocalTime
 
 internal fun appointmentEntity(
   appointmentId: Long = 1,
-  bulkAppointmentId: Long? = null,
+  bulkAppointment: BulkAppointment? = null,
   appointmentType: AppointmentType? = null,
+  appointmentDescription: String? = "Appointment description",
   internalLocationId: Long = 123,
   inCell: Boolean = false,
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
+  created: LocalDateTime = LocalDateTime.now().minusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
@@ -30,29 +32,18 @@ internal fun appointmentEntity(
   numberOfOccurrences: Int = 1,
 ) = Appointment(
   appointmentId = appointmentId,
-  bulkAppointment = bulkAppointmentId?.let {
-    BulkAppointment(
-      bulkAppointmentId = bulkAppointmentId,
-      prisonCode = "TPR",
-      categoryCode = "TEST",
-      appointmentDescription = "Appointment description",
-      internalLocationId = if (inCell) null else internalLocationId,
-      inCell = inCell,
-      startDate = startDate,
-      createdBy = "TEST.USER",
-    )
-  },
+  bulkAppointment = bulkAppointment,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
   categoryCode = "TEST",
+  appointmentDescription = appointmentDescription,
   internalLocationId = if (inCell) null else internalLocationId,
   inCell = inCell,
   startDate = startDate,
   startTime = startTime,
   endTime = endTime,
   comment = "Appointment level comment",
-  appointmentDescription = "Appointment description",
-  created = LocalDateTime.now().minusDays(1),
+  created = created,
   createdBy = createdBy,
   updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
@@ -68,11 +59,11 @@ internal fun appointmentEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, it.index + 1L, it.index + 1, it.value, updatedBy, prisonerNumberToBookingIdMap))
+    this.addOccurrence(appointmentOccurrenceEntity(this, (appointmentId * (it.index + 1L)) + it.index, it.index + 1, it.value, updatedBy, prisonerNumberToBookingIdMap))
   }
 }
 
-private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointment = appointment,
@@ -105,7 +96,7 @@ internal fun appointmentInstanceEntity(
   bookingId: Long = 456,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
-  appointmentDate: LocalDate = LocalDate.now(),
+  appointmentDate: LocalDate = LocalDate.now().plusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   appointmentDescription: String? = null,
@@ -169,6 +160,41 @@ internal fun appointmentOccurrenceSearchEntity(
         bookingId = bookingId,
       ),
     )
+  }
+
+internal fun bulkAppointmentEntity(
+  bulkAppointmentId: Long = 1,
+  inCell: Boolean = false,
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = LocalTime.of(9, 0),
+  endTime: LocalTime = LocalTime.of(10, 30),
+  prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
+) =
+  BulkAppointment(
+    bulkAppointmentId = bulkAppointmentId,
+    prisonCode = "TPR",
+    categoryCode = "TEST",
+    appointmentDescription = null,
+    internalLocationId = if (inCell) null else 123,
+    inCell = inCell,
+    startDate = startDate,
+    created = LocalDateTime.now().minusDays(1),
+    createdBy = "CREATE.USER",
+  ).apply {
+    var count = 0L
+    prisonerNumberToBookingIdMap.forEach {
+      appointmentEntity(
+        count + 1,
+        this,
+        appointmentDescription = appointmentDescription,
+        startTime = startTime.plusMinutes(30 * count),
+        endTime = endTime.plusMinutes(30 * count),
+        prisonerNumberToBookingIdMap = mapOf(it.toPair()),
+        updatedBy = null,
+        created = created,
+      )
+      count++
+    }
   }
 
 private fun appointmentOccurrenceAllocationSearchEntity(appointmentOccurrenceSearch: AppointmentOccurrenceSearch, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =

@@ -24,7 +24,7 @@ class BulkAppointmentDetailsService(
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(bulkAppointment.prisonCode())
+    val locationMap = locationService.getLocationsForAppointmentsMap(bulkAppointment.prisonCode)
 
     val userMap = prisonApiClient.getUserDetailsList(bulkAppointment.usernames()).associateBy { it.username }
 
