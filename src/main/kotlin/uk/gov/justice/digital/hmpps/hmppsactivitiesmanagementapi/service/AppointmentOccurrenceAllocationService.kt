@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
@@ -9,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 
 @Service
+@Transactional
 class AppointmentOccurrenceAllocationService(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
@@ -18,6 +20,7 @@ class AppointmentOccurrenceAllocationService(
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
+
 
   fun cancelFutureOffenderAppointments(prisonCode: String, prisonerNumber: String) {
     prisonApiClient.getPrisonerDetails(
@@ -30,15 +33,17 @@ class AppointmentOccurrenceAllocationService(
           appointmentOccurrenceAllocationRepository.findById(it.appointmentOccurrenceAllocationId)
             .ifPresent { allocation ->
               if (allocation.appointmentOccurrence.appointment.appointmentType == AppointmentType.INDIVIDUAL) {
-                appointmentOccurrenceRepository.delete(allocation.appointmentOccurrence)
+
+                allocation.appointmentOccurrence.appointment.removeOccurrence(allocation.appointmentOccurrence)
+                
                 log.info(
-                  "Removed appointment occurrence'${allocation.appointmentOccurrence.appointmentOccurrenceId}' " +
+                  "Removed appointment occurrence '${allocation.appointmentOccurrence.appointmentOccurrenceId}' " +
                     "as it is part of an individual appointment. This will also remove allocation '${allocation.appointmentOccurrenceAllocationId}' " +
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
-                appointmentOccurrenceAllocationRepository.deleteById(it.appointmentOccurrenceAllocationId)
-                log.info("Removed appointment occurrence allocation '${it.appointmentOccurrenceAllocationId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
+                allocation.appointmentOccurrence.removeAllocation(allocation)
+                log.info("Removed the appointment occurrence allocation '${it.appointmentOccurrenceAllocationId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
             }
         }
