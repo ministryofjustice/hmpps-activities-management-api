@@ -42,6 +42,9 @@ data class AllAttendance(
   @Schema(description = "The prisoner number for this attendance record", example = "A1234AA")
   val prisonerNumber: String,
 
+  @Schema(description = "The id of the activity for this attendance record", example = "1")
+  val activityId: Long,
+
   @Schema(description = "The title of the activity for this attendance record", example = "Math Level 1")
   val activitySummary: String,
 
