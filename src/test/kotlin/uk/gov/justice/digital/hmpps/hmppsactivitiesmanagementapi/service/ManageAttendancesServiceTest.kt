@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -93,8 +94,22 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
+  fun `attendance record is not created when allocation is pending`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    allocation.prisonerStatus = PrisonerStatus.PENDING
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+
+    service.attendances(AttendanceOperation.CREATE)
+
+    verifyNoInteractions(attendanceRepository)
+  }
+
+  @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
+
     allocation.deallocateNowWithReason(DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))

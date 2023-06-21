@@ -86,16 +86,16 @@ data class Attendance(
     reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else this.attendanceReason,
     newStatus = AttendanceStatus.COMPLETED,
     newComment = scheduledInstance.cancelledReason,
-    newIssuePayment = true,
+    newIssuePayment = this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED,
     newIncentiveLevelWarningIssued = null,
     newCaseNoteId = null,
     newOtherAbsenceReason = null,
   )
 
   fun uncancel() = mark(
-    principalName = null,
+    principalName = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.recordedBy,
     reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.attendanceReason,
-    newStatus = AttendanceStatus.WAITING,
+    newStatus = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) AttendanceStatus.WAITING else this.status,
     newComment = null,
     newIssuePayment = null,
     newIncentiveLevelWarningIssued = null,

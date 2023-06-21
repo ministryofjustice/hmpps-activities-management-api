@@ -9,9 +9,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderNonAssociation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -444,7 +445,7 @@ class CandidatesServiceTest {
       assertThat(suitability.nonAssociation).isEqualTo(
         NonAssociationSuitability(
           suitable = false,
-          nonAssociations = listOf(offenderNonAssociation),
+          nonAssociations = listOf(transformOffenderNonAssociationDetail(offenderNonAssociation)),
         ),
       )
     }

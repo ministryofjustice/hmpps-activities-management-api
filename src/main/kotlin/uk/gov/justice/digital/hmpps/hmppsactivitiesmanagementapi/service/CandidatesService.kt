@@ -2,8 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -75,16 +76,10 @@ class CandidatesService(
     prisoners =
       prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
 
-    val educationLevels =
-      this.prisonApiClient.getEducationLevels(prisoners.map { it.prisonerNumber })
-
     return prisoners.map {
       val thisPersonsAllocations =
         prisonerAllocations.find { a -> it.prisonerNumber == a.prisonerNumber }?.allocations
           ?: emptyList()
-
-      val thisPersonsEducationLevels =
-        educationLevels.filter { e -> e.bookingId.toString() == it.bookingId }
 
       ActivityCandidate(
         name = "${it.firstName} ${it.lastName}",
@@ -92,7 +87,6 @@ class CandidatesService(
         cellLocation = it.cellLocation,
         otherAllocations = thisPersonsAllocations,
         releaseDate = it.releaseDate,
-        educationLevels = thisPersonsEducationLevels,
       )
     }
   }
@@ -218,7 +212,9 @@ class CandidatesService(
 
     return NonAssociationSuitability(
       allocationNonAssociations.isNullOrEmpty(),
-      allocationNonAssociations,
+      allocationNonAssociations.map {
+        transformOffenderNonAssociationDetail(it)
+      },
     )
   }
 
