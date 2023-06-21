@@ -8,6 +8,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -279,5 +280,24 @@ class AllocationTest {
       allocation.activate()
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("You can only activate pending allocations")
+  }
+
+  @Test
+  fun `is able to get allocation pay`() {
+    val allocation = allocation()
+
+    val allocationPay = allocation.allocationPay("BAS")
+
+    assertThat(allocationPay).isEqualTo(
+      ActivityPay(
+        activity = allocation.activitySchedule.activity,
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+      ),
+    )
   }
 }
