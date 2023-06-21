@@ -9,11 +9,17 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.util.Optional
 
@@ -35,6 +41,7 @@ class AppointmentDetailsServiceTest {
   @Test
   fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {
     val entity = appointmentEntity()
+    val occurrenceEntity = entity.occurrences().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
@@ -61,10 +68,43 @@ class AppointmentDetailsServiceTest {
       ),
     )
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
-      appointmentDetails(
+      AppointmentDetails(
+        entity.appointmentId,
+        AppointmentType.INDIVIDUAL,
+        entity.prisonCode,
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         "Appointment description",
+        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
+        entity.inCell,
+        entity.startDate,
+        entity.startTime,
+        entity.endTime,
+        null,
+        entity.comment,
         entity.created,
+        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updated,
+        UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+        occurrences = listOf(
+          AppointmentOccurrenceSummary(
+            occurrenceEntity.appointmentOccurrenceId,
+            1,
+            1,
+            AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
+            occurrenceEntity.inCell,
+            occurrenceEntity.startDate,
+            occurrenceEntity.startTime,
+            occurrenceEntity.endTime,
+            "Appointment occurrence level comment",
+            isEdited = true,
+            isCancelled = false,
+            occurrenceEntity.updated,
+            UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+          ),
+        ),
       ),
     )
   }

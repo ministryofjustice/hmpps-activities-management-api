@@ -6,10 +6,17 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
@@ -46,7 +53,44 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     val appointmentDetails = webTestClient.getAppointmentDetailsById(1)!!
 
     assertThat(appointmentDetails).isEqualTo(
-      appointmentDetails(),
+      AppointmentDetails(
+        1,
+        AppointmentType.INDIVIDUAL,
+        "TPR",
+        prisoners = listOf(
+          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+        ),
+        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        "Appointment description",
+        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        null,
+        "Appointment level comment",
+        appointmentDetails.created,
+        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        null,
+        null,
+        occurrences = listOf(
+          AppointmentOccurrenceSummary(
+            2,
+            1,
+            1,
+            AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+            false,
+            LocalDate.now().plusDays(1),
+            LocalTime.of(9, 0),
+            LocalTime.of(10, 30),
+            "Appointment occurrence level comment",
+            isEdited = false,
+            isCancelled = false,
+            null,
+            null,
+          ),
+        ),
+      ),
     )
 
     assertThat(appointmentDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

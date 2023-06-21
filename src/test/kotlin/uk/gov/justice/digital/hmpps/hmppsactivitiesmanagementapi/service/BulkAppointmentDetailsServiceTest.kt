@@ -75,7 +75,7 @@ class BulkAppointmentDetailsServiceTest {
     )
     assertThat(service.getBulkAppointmentDetailsById(1)).isEqualTo(
       bulkAppointmentDetails(
-        entity.created,
+        created = entity.created,
       ),
     )
   }

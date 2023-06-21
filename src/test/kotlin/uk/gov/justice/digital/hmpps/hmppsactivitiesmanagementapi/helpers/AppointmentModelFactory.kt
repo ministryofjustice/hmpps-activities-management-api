@@ -189,7 +189,7 @@ fun appointmentDetails(
   appointmentDescription: String? = null,
   created: LocalDateTime = LocalDateTime.now(),
   updated: LocalDateTime? = LocalDateTime.now(),
-  userSummary: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
 ) = AppointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
@@ -209,7 +209,7 @@ fun appointmentDetails(
   created,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   updated,
-  userSummary,
+  updatedBy,
   occurrences = listOf(
     AppointmentOccurrenceSummary(
       1,
@@ -224,7 +224,7 @@ fun appointmentDetails(
       isEdited = updated != null,
       isCancelled = false,
       updated,
-      userSummary,
+      updatedBy,
     ),
   ),
 )
@@ -237,12 +237,15 @@ fun appointmentOccurrenceDetails(
   prisoners: List<PrisonerSummary> = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
   appointmentDescription: String? = null,
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
+  comment: String = "Appointment occurrence level comment",
   created: LocalDateTime = LocalDateTime.now(),
+  createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   updated: LocalDateTime? = LocalDateTime.now(),
-  userSummary: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
 ) = AppointmentOccurrenceDetails(
   appointmentOccurrenceId,
   appointmentId,
@@ -251,22 +254,22 @@ fun appointmentOccurrenceDetails(
   sequenceNumber,
   "TPR",
   prisoners,
-  appointmentCategorySummary(),
+  category,
   appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
   startTime,
   endTime,
-  "Appointment occurrence level comment",
+  comment,
   null,
   updated != null,
   false,
   false,
   created,
-  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  createdBy,
   updated,
-  userSummary,
+  updatedBy,
 )
 
 fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(
@@ -291,12 +294,15 @@ fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult
 )
 
 fun bulkAppointmentDetails(
+  bulkAppointmentId: Long = 1,
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
+  appointmentDescription: String? = null,
   created: LocalDateTime = LocalDateTime.now(),
 ) = BulkAppointmentDetails(
-  1,
+  bulkAppointmentId,
   "TPR",
-  appointmentCategorySummary(),
-  null,
+  category,
+  appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
@@ -306,27 +312,27 @@ fun bulkAppointmentDetails(
       listOf(
         PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
       ),
-      null,
+      category, appointmentDescription,
       LocalTime.of(9, 0),
-      LocalTime.of(10, 30), created, null, null,
+      LocalTime.of(10, 30), created = created, updated = null, updatedBy = null,
     ),
     appointmentOccurrenceDetails(
       2, 2, BulkAppointmentSummary(1, 3), 1,
       listOf(
         PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
       ),
-      null,
+      category, appointmentDescription,
       LocalTime.of(9, 30),
-      LocalTime.of(11, 0), created, null, null,
+      LocalTime.of(11, 0), created = created, updated = null, updatedBy = null,
     ),
     appointmentOccurrenceDetails(
       3, 3, BulkAppointmentSummary(1, 3), 1,
       listOf(
         PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
       ),
-      null,
+      category, appointmentDescription,
       LocalTime.of(10, 0),
-      LocalTime.of(11, 30), created, null, null,
+      LocalTime.of(11, 30), created = created, updated = null, updatedBy = null,
     ),
   ),
   created,

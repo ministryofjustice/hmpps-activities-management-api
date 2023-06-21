@@ -83,10 +83,9 @@ class BulkAppointmentTest {
       "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = getPrisonerMap()
-    val bulkAppointmentSummary = BulkAppointmentSummary(1, 3)
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      bulkAppointmentDetails(entity.created),
+      bulkAppointmentDetails(created = entity.created),
     )
   }
 
