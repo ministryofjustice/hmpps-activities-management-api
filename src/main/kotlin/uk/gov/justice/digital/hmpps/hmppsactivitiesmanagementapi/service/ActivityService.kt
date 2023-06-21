@@ -486,9 +486,10 @@ class ActivityService(
         TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
         TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
       )
-    activity.schedules().forEach {
-      it.removeSlots()
-      it.addSlots(slots, timeSlots)
-    }
+
+    activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
   }
+
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) =
+    associate { regimeTimeSlots[it.timeSlot()]!! to it.getDaysOfWeek() }
 }
