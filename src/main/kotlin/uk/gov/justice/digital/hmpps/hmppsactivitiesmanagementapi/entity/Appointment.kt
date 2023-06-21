@@ -83,7 +83,7 @@ data class Appointment(
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
-  fun removeOccurrence (occurrence: AppointmentOccurrence) = occurrences.remove(occurrence)
+  fun removeOccurrence(occurrence: AppointmentOccurrence) = occurrences.remove(occurrence)
 
   fun internalLocationIds() =
     listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()

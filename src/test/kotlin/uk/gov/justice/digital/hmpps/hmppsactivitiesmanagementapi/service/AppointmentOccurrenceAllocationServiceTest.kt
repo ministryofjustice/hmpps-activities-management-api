@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import java.util.Optional
 
 class AppointmentOccurrenceAllocationServiceTest {
@@ -23,11 +22,10 @@ class AppointmentOccurrenceAllocationServiceTest {
   private val prisonApiClient = mock<PrisonApiApplicationClient>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentOccurrenceAllocationRepository = mock<AppointmentOccurrenceAllocationRepository>()
-  private val appointmentOccurrenceRepository = mock<AppointmentOccurrenceRepository>()
+
   private val appointmentOccurrenceAllocationService = AppointmentOccurrenceAllocationService(
     prisonApiClient,
     appointmentInstanceRepository,
-    appointmentOccurrenceRepository,
     appointmentOccurrenceAllocationRepository,
   )
 
@@ -63,7 +61,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(appointmentOccurrenceAllocationRepository).delete(parentAllocation)
+    verify(parentOccurrence).removeAllocation(parentAllocation)
   }
 
   @Test
@@ -98,7 +96,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(appointmentOccurrenceRepository).delete(parentOccurrence)
+    verify(parentAppointment).removeOccurrence(parentOccurrence)
   }
 
   @Test
