@@ -31,6 +31,14 @@ data class AppointmentOccurrenceAllocation(
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
   )
+
+  fun isIndividualAppointment() = appointmentOccurrence.appointment.appointmentType == AppointmentType.INDIVIDUAL
+
+  fun isGroupAppointment() = appointmentOccurrence.appointment.appointmentType == AppointmentType.GROUP
+
+  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointment.removeOccurrence(occurrence)
+
+  fun removeFromAppointmentOccurrence() = appointmentOccurrence.removeAllocation(this)
 }
 
 fun List<AppointmentOccurrenceAllocation>.toModel() = map { it.toModel() }

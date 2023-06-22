@@ -37,10 +37,9 @@ class OffenderReleasedEventHandler(
         }
 
         event.isPermanent() -> {
-          if (event.isReleased()) {
-            log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
-            cancelFutureOffenderAppointments(event)
-          }
+          log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
+          cancelFutureOffenderAppointments(event)
+
           deallocateOffenderAllocations(event)
           Outcome.success()
         }
@@ -73,7 +72,8 @@ class OffenderReleasedEventHandler(
         prisoner.isReleasedOnDeath() -> DeallocationReason.DIED
         prisoner.isReleasedFromRemand() -> DeallocationReason.RELEASED
         prisoner.isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
-        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
+        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
+          .let { null }
       }
     }?.let { reason ->
       allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
@@ -85,7 +85,8 @@ class OffenderReleasedEventHandler(
     } ?: log.warn("Prisoner for $event not found").let { false }
 
   private fun List<Allocation>.deallocateAndSaveAffectedAllocations(reason: DeallocationReason) =
-    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNowWithReason(reason) }.saveAffectedAllocations()
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.map { it.deallocateNowWithReason(reason) }
+      .saveAffectedAllocations()
 
   private fun List<Allocation>.saveAffectedAllocations() =
     allocationRepository.saveAllAndFlush(this).toList()

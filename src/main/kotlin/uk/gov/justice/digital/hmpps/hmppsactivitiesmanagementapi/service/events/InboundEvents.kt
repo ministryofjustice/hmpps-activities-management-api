@@ -38,7 +38,7 @@ enum class InboundEventType(val eventType: String) {
   },
   APPOINTMENTS_CHANGED("prison-offender-events.prisoner.appointments-changed") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
-      mapper.readValue<ActivitiesChangedEvent>(message)
+      mapper.readValue<AppointmentsChangedEvent>(message)
   },
   ;
 
@@ -62,8 +62,6 @@ data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) 
     .any { it == additionalInformation.reason }
 
   fun isPermanent() = "RELEASED" == additionalInformation.reason
-
-  fun isReleased() = additionalInformation.reason == "RELEASED"
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)

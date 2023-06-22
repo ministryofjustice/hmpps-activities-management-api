@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
 
@@ -29,8 +28,8 @@ class AppointmentOccurrenceAllocationService(
         .forEach {
           appointmentOccurrenceAllocationRepository.findById(it.appointmentOccurrenceAllocationId)
             .ifPresent { allocation ->
-              if (allocation.appointmentOccurrence.appointment.appointmentType == AppointmentType.INDIVIDUAL) {
-                allocation.appointmentOccurrence.appointment.removeOccurrence(allocation.appointmentOccurrence)
+              if (allocation.isIndividualAppointment()) {
+                allocation.removeOccurrence(allocation.appointmentOccurrence)
 
                 log.info(
                   "Removed appointment occurrence '${allocation.appointmentOccurrence.appointmentOccurrenceId}' " +
@@ -38,7 +37,7 @@ class AppointmentOccurrenceAllocationService(
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
-                allocation.appointmentOccurrence.removeAllocation(allocation)
+                allocation.removeFromAppointmentOccurrence()
                 log.info("Removed the appointment occurrence allocation '${it.appointmentOccurrenceAllocationId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
             }

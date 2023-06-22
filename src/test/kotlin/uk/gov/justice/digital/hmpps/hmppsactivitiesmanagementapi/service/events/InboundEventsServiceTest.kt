@@ -9,6 +9,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.ActivitiesChangedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
@@ -19,8 +20,15 @@ class InboundEventsServiceTest {
   private val releasedEventHandler: OffenderReleasedEventHandler = mock()
   private val interestingEventHandler: InterestingEventHandler = mock()
   private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
+  private val appointmentsChangedEventHandler: AppointmentChangedEventHandler = mock()
 
-  private val service = InboundEventsService(releasedEventHandler, receivedEventHandler, interestingEventHandler, activitiesChangedEventHandler)
+  private val service = InboundEventsService(
+    releasedEventHandler,
+    receivedEventHandler,
+    interestingEventHandler,
+    activitiesChangedEventHandler,
+    appointmentsChangedEventHandler,
+  )
 
   @BeforeEach
   fun setupMocks() {
@@ -67,5 +75,12 @@ class InboundEventsServiceTest {
     val inboundEvent = cellMoveEvent("123456")
     service.process(inboundEvent)
     verify(interestingEventHandler).handle(inboundEvent)
+  }
+
+  @Test
+  fun `inbound appointments changed event is processed by appointments changed event handler`() {
+    val inboundEvent = appointmentsChangedEvent("123456")
+    service.process(inboundEvent)
+    verify(appointmentsChangedEventHandler).handle(inboundEvent)
   }
 }

@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
 import java.util.Optional
@@ -57,11 +56,11 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(parentAllocation.appointmentOccurrence).thenReturn(parentOccurrence)
     whenever(parentAllocation.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointment).thenReturn(parentAppointment)
-    whenever(parentAppointment.appointmentType).thenReturn(AppointmentType.GROUP)
+    whenever(parentAllocation.isIndividualAppointment()).thenReturn(false)
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentOccurrence).removeAllocation(parentAllocation)
+    verify(parentAllocation).removeFromAppointmentOccurrence()
   }
 
   @Test
@@ -92,11 +91,11 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(parentAllocation.appointmentOccurrence).thenReturn(parentOccurrence)
     whenever(parentAllocation.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointment).thenReturn(parentAppointment)
-    whenever(parentAppointment.appointmentType).thenReturn(AppointmentType.INDIVIDUAL)
+    whenever(parentAllocation.isIndividualAppointment()).thenReturn(true)
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAppointment).removeOccurrence(parentOccurrence)
+    verify(parentAllocation).removeOccurrence(parentOccurrence)
   }
 
   @Test
