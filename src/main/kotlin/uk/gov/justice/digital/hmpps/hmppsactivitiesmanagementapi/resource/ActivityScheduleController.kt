@@ -329,7 +329,7 @@ class ActivityScheduleController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = AllocationSuitability::class)),
+            schema = Schema(implementation = AllocationSuitability::class),
           ),
         ],
       ),

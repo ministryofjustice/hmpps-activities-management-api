@@ -117,9 +117,6 @@ data class ActivitySchedule(
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
 
-  fun activityPayForBand(payBand: PrisonPayBand) =
-    activity.activityPay().firstOrNull { it.payBand == payBand }
-
   companion object {
     fun valueOf(
       activity: Activity,
