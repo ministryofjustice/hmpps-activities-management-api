@@ -150,7 +150,14 @@ data class ActivitySchedule(
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
 
   fun hasNoInstancesOnDate(day: LocalDate) =
-    this.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day }
+    instances.none { instance -> instance.sessionDate == day }
+
+  fun hasNoInstancesOnDate(day: LocalDate, startEndTime: Pair<LocalTime, LocalTime>) =
+    instances.none { instance ->
+      instance.sessionDate == day &&
+        instance.startTime == startEndTime.first &&
+        instance.endTime == startEndTime.second
+    }
 
   fun addInstance(
     sessionDate: LocalDate,
@@ -294,10 +301,18 @@ data class ActivitySchedule(
     instances.removeAll(instances().filter { it.sessionDate.between(fromDate, toDate) })
   }
 
-  fun updateSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+  fun updateSlotsAndRemoveRedundantInstances(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
     removeRedundantSlots(updates)
     updateMatchingSlots(updates)
     addNewSlots(updates)
+
+    val instancesToKeep = instances
+      .filter {
+        it.sessionDate >= LocalDate.now() &&
+          (it.attendances.isNotEmpty() || updates[it.startTime to it.endTime]?.contains(it.dayOfWeek()) == true)
+      }
+
+    instances.removeIf { instancesToKeep.contains(it).not() }
   }
 
   private fun removeRedundantSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {

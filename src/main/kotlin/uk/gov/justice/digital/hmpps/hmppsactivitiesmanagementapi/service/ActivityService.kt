@@ -190,8 +190,8 @@ class ActivityService(
   private fun ActivitySchedule.addInstances(
     activity: Activity,
     slots: List<ActivityScheduleSlot>,
-    fromDate: LocalDate?,
-    toDate: LocalDate?,
+    fromDate: LocalDate? = null,
+    toDate: LocalDate? = null,
   ) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
@@ -219,7 +219,9 @@ class ActivityService(
           (fromDate == null || day >= fromDate) &&
           (toDate == null || day <= toDate)
         ) {
-          this.addInstance(sessionDate = day, slot = slot)
+          if (this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime)) {
+            this.addInstance(sessionDate = day, slot = slot)
+          }
         }
       }
     }
@@ -496,8 +498,6 @@ class ActivityService(
     slots: List<Slot>,
     activity: Activity,
   ) {
-    log.info("slots changes - $slots")
-
     val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
     val timeSlots =
       mapOf(
@@ -506,9 +506,10 @@ class ActivityService(
         TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
       )
 
-    activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
-
-    log.info("updated slots - ${activity.schedules().first().slots()}")
+    activity.schedules().forEach {
+      it.updateSlotsAndRemoveRedundantInstances(slots.toMap(timeSlots))
+      it.addInstances(activity, it.slots())
+    }
   }
 
   private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) =
