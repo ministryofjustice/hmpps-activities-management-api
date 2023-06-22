@@ -189,18 +189,15 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
+  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) =
     addSlot(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
-  }
 
-  fun addSlot(slot: ActivityScheduleSlot) {
+  fun addSlot(slot: ActivityScheduleSlot): ActivityScheduleSlot {
     if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
 
     slots.add(slot)
-  }
 
-  fun removeSlots() {
-    slots.clear()
+    return slots.last()
   }
 
   fun allocatePrisoner(
@@ -298,6 +295,30 @@ data class ActivitySchedule(
 
   fun removeInstances(fromDate: LocalDate, toDate: LocalDate) {
     instances.removeAll(instances().filter { it.sessionDate.between(fromDate, toDate) })
+  }
+
+  fun updateSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    removeRedundantSlots(updates)
+    updateMatchingSlots(updates)
+    addNewSlots(updates)
+  }
+
+  private fun removeRedundantSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.startTime, it.endTime)) })
+  }
+
+  private fun updateMatchingSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.forEach { slot ->
+      updates[slot.startTime to slot.endTime]?.let(slot::update)
+    }
+  }
+
+  private fun addNewSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    updates.keys.filterNot { key ->
+      slots.map { Pair(it.startTime, it.endTime) }.contains(key)
+    }.forEach {
+      addSlot(it.first, it.second, updates[it]!!)
+    }
   }
 }
 

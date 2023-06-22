@@ -1,11 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -36,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
@@ -108,7 +110,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
     }
 
@@ -363,7 +365,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get scheduled maths activities with morning and afternoon`() {
-    val mathsLevelOneActivity = with(webTestClient.getActivityById(1)!!) {
+    val mathsLevelOneActivity = with(webTestClient.getActivityById(1)) {
       assertThat(prisonCode).isEqualTo("PVI")
       assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("Maths")
@@ -437,7 +439,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get scheduled english activities for morning and afternoon`() {
-    val englishLevelTwoActivity = with(webTestClient.getActivityById(2)!!) {
+    val englishLevelTwoActivity = with(webTestClient.getActivityById(2)) {
       assertThat(attendanceRequired).isTrue
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
@@ -526,7 +528,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Activity::class.java)
-      .returnResult().responseBody
+      .returnResult().responseBody!!
 
   private fun WebTestClient.createActivity(
     activityCreateRequest: ActivityCreateRequest,
@@ -556,7 +558,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Activity::class.java)
-      .returnResult().responseBody
+      .returnResult().responseBody!!
 
   private fun Activity.schedule(description: String) = schedules.schedule(description)
 
@@ -632,7 +634,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val activity = webTestClient.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest)
 
-    with(activity!!) {
+    with(activity) {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
       assertThat(summary).isEqualTo("IT level 1 - updated")
@@ -647,7 +649,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
     }
 
@@ -666,6 +668,45 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
       assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
       assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-update-slot.sql")
+  fun `updateActivity slot - is successful`() {
+    with(webTestClient.getActivityById(1).schedules.first()) {
+      assertThat(slots).hasSize(1)
+      assertThat(slots.first().daysOfWeek).containsExactly("Mon")
+    }
+
+    val mondayTuesdaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", monday = true, tuesday = true)))
+
+    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+      assertThat(slots).hasSize(1)
+      assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
+    }
+
+    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", thursday = true, friday = true)))
+
+    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdayFridaySlot).schedules.first()) {
+      assertThat(slots).hasSize(1)
+      assertThat(slots.first().daysOfWeek).containsExactly("Thu", "Fri")
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+
+    with(eventCaptor.secondValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
     }
   }
 }
