@@ -34,21 +34,13 @@ class AllocationTest : ModelTest() {
       deallocatedTime = originalDeallocatedTime,
       activitySummary = "Blah",
       bookingId = 123,
-      payRate = ActivityPay(
-        id = 1,
-        incentiveNomisCode = "BAS",
-        incentiveLevel = "Basic",
-        rate = 30,
-        pieceRate = 40,
-        pieceRateItems = 50,
-        prisonPayBand = PrisonPayBand(
-          id = lowPayBand.prisonPayBandId,
-          displaySequence = lowPayBand.displaySequence,
-          alias = lowPayBand.payBandAlias,
-          description = lowPayBand.payBandDescription,
-          prisonCode = lowPayBand.prisonCode,
-          nomisPayBand = lowPayBand.nomisPayBand,
-        ),
+      prisonPayBand = PrisonPayBand(
+        id = lowPayBand.prisonPayBandId,
+        displaySequence = lowPayBand.displaySequence,
+        alias = lowPayBand.payBandAlias,
+        description = lowPayBand.payBandDescription,
+        prisonCode = lowPayBand.prisonCode,
+        nomisPayBand = lowPayBand.nomisPayBand,
       ),
       prisonerNumber = "1234",
       scheduleDescription = "Blah blah",
@@ -166,7 +158,7 @@ class AllocationTest : ModelTest() {
       assertThat(endDate).isEqualTo(entity.endDate)
       assertThat(allocatedTime).isEqualTo(entity.allocatedTime)
       assertThat(allocatedBy).isEqualTo(entity.allocatedBy)
-      assertThat(payRate).isEqualTo(entity.allocationPay()?.toModel())
+      assertThat(prisonPayBand).isEqualTo(entity.payBand.toModel())
     }
   }
 }

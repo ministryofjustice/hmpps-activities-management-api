@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -141,15 +140,7 @@ class TransformFunctionsTest {
               id = 0,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
-              payRate = ActivityPay(
-                id = 0,
-                incentiveNomisCode = "BAS",
-                incentiveLevel = "Basic",
-                rate = 30,
-                pieceRate = 40,
-                pieceRateItems = 50,
-                prisonPayBand = lowPayBand.toModel(),
-              ),
+              prisonPayBand = lowPayBand.toModel(),
               startDate = timestamp.toLocalDate(),
               endDate = null,
               allocatedTime = timestamp,

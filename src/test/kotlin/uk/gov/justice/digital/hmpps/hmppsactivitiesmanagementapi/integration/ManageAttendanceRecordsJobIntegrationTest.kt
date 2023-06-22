@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -61,6 +62,16 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-4.sql")
   @Test
   fun `Four attendance records are created, 2 for Maths level 1 AM and 2 for Maths Level 1 PM and four create events are emitted`() {
+    val allocatedPrisoners = listOf(listOf("A22222A", "A11111A"), listOf("A44444A", "A33333A"))
+    allocatedPrisoners.forEach {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        prisonerNumbers = it,
+        prisoners = it.map { prisonNumber ->
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonNumber, prisonId = "PVI")
+        },
+      )
+    }
+
     assertThat(attendanceRepository.count()).isZero
     val activity = activityRepository.findByIdQuery(4).orElseThrow()
     val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
@@ -121,6 +132,16 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-4.sql")
   @Test
   fun `Multiple calls on same day does not result in duplicate attendances`() {
+    val allocatedPrisoners = listOf(listOf("A22222A", "A11111A"), listOf("A44444A", "A33333A"))
+    allocatedPrisoners.forEach {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        prisonerNumbers = it,
+        prisoners = it.map { prisonNumber ->
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonNumber, prisonId = "PVI")
+        },
+      )
+    }
+
     assertThat(attendanceRepository.count()).isZero
 
     webTestClient.manageAttendanceRecords()

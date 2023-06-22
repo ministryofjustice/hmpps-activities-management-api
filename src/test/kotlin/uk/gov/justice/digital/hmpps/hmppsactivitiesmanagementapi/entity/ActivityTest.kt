@@ -463,10 +463,10 @@ class ActivityTest {
   }
 
   @Test
-  fun `can fetch activity pay for a particular band`() {
-    val activity = activityEntity(noMinimumEducationLevels = true).also { assertThat(it.activityMinimumEducationLevel()).isEmpty() }
+  fun `can fetch activity pay for a particular band and incentive code`() {
+    val activity = activityEntity()
 
-    assertThat(activity.activityPayForBand(lowPayBand)).isEqualTo(
+    assertThat(activity.activityPayFor(lowPayBand, "BAS")).isEqualTo(
       ActivityPay(
         activity = activity,
         incentiveNomisCode = "BAS",

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
@@ -23,6 +24,7 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Service
+@Transactional
 class AppointmentOccurrenceService(
   private val appointmentRepository: AppointmentRepository,
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
@@ -76,7 +78,6 @@ class AppointmentOccurrenceService(
   fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
-    val appointmentId = appointmentOccurrence.appointment.appointmentId
 
     val now = LocalDateTime.now()
     if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
@@ -92,10 +93,7 @@ class AppointmentOccurrenceService(
       it.deleted = cancellationReason.isDelete
     }
 
-    appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
-
-    // The return value of saveAndFlush bypasses the JPA annotations that filter out deleted records, hence this reload
-    val updatedAppointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    val updatedAppointment = appointmentRepository.saveAndFlush(appointmentOccurrence.appointment)
 
     occurrencesToUpdate.filter { it.isDeleted() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
@@ -105,7 +103,7 @@ class AppointmentOccurrenceService(
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
       .forEach { publishCancellation(it) }
 
-    return updatedAppointment
+    return updatedAppointment.toModel()
   }
 
   private fun applyCategoryCodeUpdate(

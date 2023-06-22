@@ -85,7 +85,7 @@ data class Attendance(
 
   fun cancel(reason: AttendanceReason) = mark(
     principalName = scheduledInstance.cancelledBy,
-    reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else this.attendanceReason,
+    reason = if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else attendanceReason,
     newStatus = AttendanceStatus.COMPLETED,
     newComment = scheduledInstance.cancelledReason,
     newIssuePayment = this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED,
@@ -115,31 +115,10 @@ data class Attendance(
     newCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
-    if (status != AttendanceStatus.WAITING) {
-      this.addHistory(
-        AttendanceHistory(
-          attendance = this,
-          attendanceReason = attendanceReason,
-          comment = comment,
-          recordedTime = recordedTime!!,
-          recordedBy = recordedBy!!,
-          issuePayment = issuePayment,
-          caseNoteId = caseNoteId,
-          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
-        ),
-      )
-    }
+    if (status != AttendanceStatus.WAITING) addAttendanceToHistory()
 
     if (newStatus == AttendanceStatus.WAITING) {
-      attendanceReason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else attendanceReason
-      comment = null
-      issuePayment = null
-      incentiveLevelWarningIssued = null
-      bonusAmount = null
-      pieces = null
-      caseNoteId = null
-      otherAbsenceReason = null
+      resetAttendance()
     } else {
       attendanceReason = reason
       comment = newComment
@@ -147,11 +126,39 @@ data class Attendance(
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
       caseNoteId = newCaseNoteId?.toLong()
       otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
+      recordedTime = LocalDateTime.now()
     }
     status = newStatus
     recordedBy = principalName
-    recordedTime = if (newStatus != AttendanceStatus.WAITING) LocalDateTime.now() else null
     return this
+  }
+
+  private fun addAttendanceToHistory() {
+    this.addHistory(
+      AttendanceHistory(
+        attendance = this,
+        attendanceReason = attendanceReason,
+        comment = comment,
+        recordedTime = recordedTime!!,
+        recordedBy = recordedBy!!,
+        issuePayment = issuePayment,
+        caseNoteId = caseNoteId,
+        incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+        otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
+      ),
+    )
+  }
+
+  private fun resetAttendance() {
+    if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) attendanceReason = null
+    comment = null
+    issuePayment = null
+    incentiveLevelWarningIssued = null
+    bonusAmount = null
+    pieces = null
+    caseNoteId = null
+    otherAbsenceReason = null
+    recordedTime = null
   }
 
   /*

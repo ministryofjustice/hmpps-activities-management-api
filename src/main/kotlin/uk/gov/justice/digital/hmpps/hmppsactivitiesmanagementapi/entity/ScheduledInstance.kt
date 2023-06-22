@@ -68,6 +68,8 @@ data class ScheduledInstance(
     attendances.forEach(Attendance::uncancel)
   }
 
+  fun dayOfWeek() = sessionDate.dayOfWeek
+
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId,

@@ -461,17 +461,36 @@ class AppointmentServiceTest {
       )
 
     whenever(bulkAppointmentRepository.saveAndFlush(bulkAppointmentEntityCaptor.capture())).thenReturn(
-      BulkAppointment(bulkAppointmentId = 1, appointments = listOf(appointmentEntity(appointmentId = 1), appointmentEntity(appointmentId = 2)), createdBy = "TEST.USER"),
+      BulkAppointment(
+        bulkAppointmentId = 1,
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
+        startDate = request.startDate,
+        createdBy = "TEST.USER",
+      ).apply {
+        this.addAppointment(appointmentEntity(appointmentId = 1, bulkAppointment = this))
+        this.addAppointment(appointmentEntity(appointmentId = 2, bulkAppointment = this))
+      },
     )
 
     service.bulkCreateAppointments(request, principal)
 
     with(bulkAppointmentEntityCaptor.value) {
-      assertThat(appointments).hasSize(2)
-      assertThat(appointments[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(appointments[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(appointmentDescription).isEqualTo(request.appointmentDescription)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(inCell).isEqualTo(request.inCell)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(appointments()).hasSize(2)
+      assertThat(appointments()[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(appointments()[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
 
-      appointments.forEach {
+      appointments().forEach {
         assertThat(it.categoryCode).isEqualTo("TEST")
         assertThat(it.prisonCode).isEqualTo("TPR")
         assertThat(it.internalLocationId).isEqualTo(123)

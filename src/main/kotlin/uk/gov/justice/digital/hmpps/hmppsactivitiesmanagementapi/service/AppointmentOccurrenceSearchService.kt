@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
@@ -9,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import java.security.Principal
 
 @Service
+@Transactional(readOnly = true)
 class AppointmentOccurrenceSearchService(
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository,
   private val appointmentOccurrenceSearchSpecification: AppointmentOccurrenceSearchSpecification,
