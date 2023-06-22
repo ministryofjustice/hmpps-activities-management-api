@@ -59,6 +59,7 @@ class ManageScheduledInstancesService(
         rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
           log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
+          // TODO: It only needs to get the activity ID, start, end dates, and associated schedule IDs
           // Get the activities in this prison that are active between these dates
           val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
           val activitySchedules = activities.map {
@@ -82,6 +83,8 @@ class ManageScheduledInstancesService(
 
   private fun createInstancesForSchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
     var instancesCreated = false
+
+    // TODO: Only needs to get schedule Id, start, end, slots, description
     val schedule = activityScheduleRepository.findById(scheduleId).orElseThrow {
       EntityNotFoundException("Activity schedule ID $scheduleId not found")
     }
@@ -107,7 +110,7 @@ class ManageScheduledInstancesService(
     }
 
     if (instancesCreated) {
-      // This will trigger the sync event
+      // This will trigger the sync event - findById to update
       schedule.instancesLastUpdatedTime = LocalDateTime.now()
       activityScheduleRepository.saveAndFlush(schedule)
     }

@@ -37,12 +37,6 @@ import java.time.temporal.ChronoUnit
     ParamDef(name = "earliestSessionDate", type = LocalDate::class),
   ],
 )
-@FilterDef(
-  name = "AllocationEndDateFilter",
-  parameters = [
-    ParamDef(name = "earliestEndDate", type = LocalDate::class),
-  ],
-)
 data class ActivitySchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,7 +87,6 @@ data class ActivitySchedule(
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Filters(Filter(name = "AllocationEndDateFilter", condition = "prisoner_status != 'ENDED' or (prisoner_status = 'ENDED' and end_date >= :earliestEndDate)"))
   @BatchSize(size = 10)
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<Allocation> = mutableListOf()

@@ -95,8 +95,8 @@ class ActivityController(
   @GetMapping(value = ["/{activityId}/filtered"])
   @ResponseBody
   @Operation(
-    summary = "Get an activity by its id but filtered by query parameters",
-    description = "Returns a single activity and its filtered details by activity ID.",
+    summary = "Get an activity by its ID with limited instances (by date)",
+    description = "Returns a single activity by activity ID with limited instances.",
   )
   @ApiResponses(
     value = [
@@ -144,19 +144,10 @@ class ActivityController(
   )
   fun getActivityByIdWithFilters(
     @PathVariable("activityId") activityId: Long,
-
     @RequestParam(value = "earliestSessionDate", required = false)
     @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
     earliestSessionDate: LocalDate?,
-
-    @RequestParam(value = "earliestAllocationEndDate", required = false)
-    @Parameter(description = "The date of the earliest ended allocations to include. Defaults to newer than 1 week ago.")
-    earliestAllocationEndDate: LocalDate?,
-  ): Activity {
-    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
-    val earliestEnd = earliestAllocationEndDate ?: LocalDate.now().minusWeeks(1)
-    return activityService.getActivityByIdWithFilters(activityId, earliestSession, earliestEnd)
-  }
+  ) = activityService.getActivityByIdWithFilters(activityId, earliestSessionDate)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

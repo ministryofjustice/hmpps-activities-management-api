@@ -48,15 +48,13 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
-  fun getActivityByIdWithFilters(
-    activityId: Long,
-    earliestSessionDate: LocalDate,
-    earliestAllocationEndDate: LocalDate,
-  ) =
-    transform(
-      activityRepository.getActivityByIdWithFilters(activityId, earliestSessionDate, earliestAllocationEndDate)
+  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
+    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
+    return transform(
+      activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
         .orElseThrow { EntityNotFoundException("Activity $activityId not found") },
     )
+  }
 
   fun getActivityById(activityId: Long): ModelActivity {
     val activity = activityRepository.findById(activityId)
