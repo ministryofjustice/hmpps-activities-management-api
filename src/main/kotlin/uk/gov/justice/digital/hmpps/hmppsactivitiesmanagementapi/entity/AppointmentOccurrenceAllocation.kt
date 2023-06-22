@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -18,7 +19,7 @@ data class AppointmentOccurrenceAllocation(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentOccurrenceAllocationId: Long = 0,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_occurrence_id", nullable = false)
   val appointmentOccurrence: AppointmentOccurrence,
 

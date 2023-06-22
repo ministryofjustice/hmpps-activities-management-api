@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand2
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -20,7 +20,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
   fun `get allocation by id`() {
     with(webTestClient.getAllocationBy(1)!!) {
       assertThat(prisonerNumber).isEqualTo("A11111A")
-      assertThat(payRate).isEqualTo(testActivityPayRateBand1)
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandOne)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
@@ -29,7 +29,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     with(webTestClient.getAllocationBy(2)!!) {
       assertThat(prisonerNumber).isEqualTo("A22222A")
-      assertThat(payRate).isEqualTo(testActivityPayRateBand2)
+      assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandTwo)
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")

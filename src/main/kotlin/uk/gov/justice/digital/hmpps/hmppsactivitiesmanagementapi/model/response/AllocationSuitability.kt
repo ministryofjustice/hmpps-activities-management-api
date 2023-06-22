@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
@@ -23,4 +24,7 @@ data class AllocationSuitability(
 
   @Schema(description = "The prisoner's non-association suitability")
   val nonAssociation: NonAssociationSuitability? = null,
+
+  @Schema(description = "The prisoner's allocations with pay rates")
+  val allocations: List<AllocationPayRate> = emptyList(),
 )
