@@ -5,6 +5,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import java.time.LocalDate
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as AllAttendanceModel
 
 @Entity
@@ -33,6 +34,8 @@ data class `AllAttendance`(
   val summary: String,
 
   val categoryName: String,
+
+  val recordedTime: LocalDateTime?
 ) {
   fun toModel() =
     AllAttendanceModel(
@@ -47,6 +50,7 @@ data class `AllAttendance`(
       activityId = activityId,
       activitySummary = summary,
       categoryName = categoryName,
+      recordedTime = recordedTime,
     )
 }
 

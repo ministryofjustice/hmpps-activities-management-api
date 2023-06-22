@@ -51,7 +51,8 @@ SELECT a.attendance_id,
        ts.activity_id,
        ts.summary,
        ts.name AS category_name,
-       a.prisoner_number
+       a.prisoner_number,
+       a.recorded_time
 FROM scheduled_instance si
          JOIN attendance a ON si.scheduled_instance_id = a.scheduled_instance_id
          JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id
