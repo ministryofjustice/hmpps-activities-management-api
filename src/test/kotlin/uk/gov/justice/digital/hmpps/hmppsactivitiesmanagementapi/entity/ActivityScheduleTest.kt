@@ -272,7 +272,8 @@ class ActivityScheduleTest {
 
   @Test
   fun `cannot start allocation beyond the end date of the schedule or activity`() {
-    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = today), noAllocations = true)
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = today), noAllocations = true)
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
@@ -681,5 +682,148 @@ class ActivityScheduleTest {
       schedule.deallocatePrisonerOn("DOES NOT EXIST", TimeSource.tomorrow(), DeallocationReason.RELEASED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation not found for prisoner DOES NOT EXIST for schedule ${schedule.activityScheduleId}.")
+  }
+
+  @Test
+  fun `single slot is updated`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+
+    assertThat(schedule.slots()).isEmpty()
+
+    val slot = schedule.addSlot(
+      LocalTime.MIDNIGHT,
+      LocalTime.NOON,
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+    )
+
+    val updates = mapOf(Pair(LocalTime.MIDNIGHT, LocalTime.NOON) to setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+
+    assertThat(slot.mondayFlag).isTrue
+    assertThat(slot.tuesdayFlag).isTrue
+    assertThat(slot.wednesdayFlag).isTrue
+    assertThat(slot.thursdayFlag).isFalse
+    assertThat(slot.fridayFlag).isFalse
+    assertThat(slot.saturdayFlag).isFalse
+    assertThat(slot.sundayFlag).isFalse
+
+    schedule.updateSlots(updates)
+
+    assertThat(slot.mondayFlag).isTrue
+    assertThat(slot.tuesdayFlag).isFalse
+    assertThat(slot.wednesdayFlag).isTrue
+    assertThat(slot.thursdayFlag).isFalse
+    assertThat(slot.fridayFlag).isFalse
+    assertThat(slot.saturdayFlag).isFalse
+    assertThat(slot.sundayFlag).isFalse
+  }
+
+  @Test
+  fun `multiple slots are updated and new slot added`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+
+    assertThat(schedule.slots()).isEmpty()
+
+    val slotOne = schedule.addSlot(
+      LocalTime.MIDNIGHT,
+      LocalTime.NOON,
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+    )
+    val slotTwo =
+      schedule.addSlot(LocalTime.NOON, LocalTime.NOON.plusMinutes(1), setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
+
+    val slotThree = Pair(LocalTime.NOON.minusMinutes(5), LocalTime.NOON.plusMinutes(10)) to setOf(DayOfWeek.SUNDAY)
+
+    assertThat(slotOne.mondayFlag).isTrue
+    assertThat(slotOne.tuesdayFlag).isTrue
+    assertThat(slotOne.wednesdayFlag).isTrue
+    assertThat(slotOne.thursdayFlag).isFalse
+    assertThat(slotOne.fridayFlag).isFalse
+    assertThat(slotOne.saturdayFlag).isFalse
+    assertThat(slotOne.sundayFlag).isFalse
+
+    assertThat(slotTwo.mondayFlag).isFalse
+    assertThat(slotTwo.tuesdayFlag).isFalse
+    assertThat(slotTwo.wednesdayFlag).isFalse
+    assertThat(slotTwo.thursdayFlag).isFalse
+    assertThat(slotTwo.fridayFlag).isFalse
+    assertThat(slotTwo.saturdayFlag).isTrue
+    assertThat(slotTwo.sundayFlag).isTrue
+
+    val updates = mapOf(
+      Pair(slotOne.startTime, slotOne.endTime) to setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+      Pair(slotTwo.startTime, slotTwo.endTime) to setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+      slotThree,
+    )
+
+    assertThat(schedule.slots()).containsExactly(slotOne, slotTwo)
+
+    schedule.updateSlots(updates)
+
+    assertThat(slotOne.mondayFlag).isTrue
+    assertThat(slotOne.tuesdayFlag).isFalse
+    assertThat(slotOne.wednesdayFlag).isTrue
+    assertThat(slotOne.thursdayFlag).isFalse
+    assertThat(slotOne.fridayFlag).isFalse
+    assertThat(slotOne.saturdayFlag).isFalse
+    assertThat(slotOne.sundayFlag).isFalse
+
+    assertThat(slotTwo.mondayFlag).isTrue
+    assertThat(slotTwo.tuesdayFlag).isTrue
+    assertThat(slotTwo.wednesdayFlag).isFalse
+    assertThat(slotTwo.thursdayFlag).isFalse
+    assertThat(slotTwo.fridayFlag).isFalse
+    assertThat(slotTwo.saturdayFlag).isFalse
+    assertThat(slotTwo.sundayFlag).isFalse
+
+    with(schedule.slots()[2]) {
+      assertThat(mondayFlag).isFalse
+      assertThat(tuesdayFlag).isFalse
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isTrue
+    }
+  }
+
+  @Test
+  fun `slot removed on update`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+
+    assertThat(schedule.slots()).isEmpty()
+
+    val slot = schedule.addSlot(
+      LocalTime.MIDNIGHT,
+      LocalTime.NOON,
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+    )
+
+    assertThat(schedule.slots()).contains(slot)
+
+    schedule.updateSlots(emptyMap())
+
+    assertThat(schedule.slots()).doesNotContain(slot)
+  }
+
+  @Test
+  fun `one slot removed and one slot updated`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+
+    assertThat(schedule.slots()).isEmpty()
+
+    val slotOne = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(DayOfWeek.MONDAY))
+    val slotTwo = schedule.addSlot(LocalTime.NOON, LocalTime.NOON.plusMinutes(1), setOf(DayOfWeek.SATURDAY))
+
+    assertThat(schedule.slots()).contains(slotOne, slotTwo)
+
+    val updates = mapOf(Pair(slotOne.startTime, slotOne.endTime) to setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+
+    schedule.updateSlots(updates)
+
+    assertThat(schedule.slots()).containsOnly(slotOne)
   }
 }

@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -44,6 +46,11 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
+
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   fun getActivityById(activityId: Long) =
     transform(
       activityRepository.findOrThrowNotFound(activityId),
@@ -180,7 +187,12 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, fromDate: LocalDate?, toDate: LocalDate?) {
+  private fun ActivitySchedule.addInstances(
+    activity: Activity,
+    slots: List<ActivityScheduleSlot>,
+    fromDate: LocalDate?,
+    toDate: LocalDate?,
+  ) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
@@ -235,7 +247,12 @@ class ActivityService(
   }
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
+  fun updateActivity(
+    prisonCode: String,
+    activityId: Long,
+    request: ActivityUpdateRequest,
+    updatedBy: String,
+  ): ModelActivity {
     val activity = activityRepository.findOrThrowNotFound(activityId)
     val now = LocalDateTime.now()
 
@@ -479,6 +496,8 @@ class ActivityService(
     slots: List<Slot>,
     activity: Activity,
   ) {
+    log.info("slots changes - $slots")
+
     val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
     val timeSlots =
       mapOf(
@@ -486,9 +505,12 @@ class ActivityService(
         TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
         TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
       )
-    activity.schedules().forEach {
-      it.removeSlots()
-      it.addSlots(slots, timeSlots)
-    }
+
+    activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+
+    log.info("updated slots - ${activity.schedules().first().slots()}")
   }
+
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) =
+    associate { regimeTimeSlots[it.timeSlot()]!! to it.getDaysOfWeek() }
 }
