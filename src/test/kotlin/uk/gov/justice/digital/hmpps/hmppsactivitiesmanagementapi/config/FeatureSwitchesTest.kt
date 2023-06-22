@@ -40,6 +40,7 @@ class FeatureSwitchesTest {
       "feature.event.prison-offender-events.prisoner.cell.move=true",
       "feature.event.prison-offender-events.prisoner.non-association-detail.changed=true",
       "feature.event.prison-offender-events.prisoner.activities-changed=true",
+      "feature.event.prison-offender-events.prisoner.appointments-changed=true",
     ],
   )
   @Nested
