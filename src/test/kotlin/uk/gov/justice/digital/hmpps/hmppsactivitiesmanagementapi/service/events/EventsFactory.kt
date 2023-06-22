@@ -55,6 +55,17 @@ fun cellMoveEvent(prisonerNumber: String = "XXXXXX") =
     ),
   )
 
+fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String = "MDI") =
+  AppointmentsChangedEvent(
+    personReference = PersonReference(
+      identifiers = listOf(Identifier("NOMS", prisonerNumber)),
+    ),
+    AppointmentsChangedInformation(
+      prisonId,
+      "YES",
+    ),
+  )
+
 fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
   IncentivesInsertedEvent(
     IncentivesInformation(
