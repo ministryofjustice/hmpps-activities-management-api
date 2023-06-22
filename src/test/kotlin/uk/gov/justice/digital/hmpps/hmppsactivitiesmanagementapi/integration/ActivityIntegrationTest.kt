@@ -676,10 +676,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-update-slot.sql")
-  fun `updateActivity slot - is successful`() {
+  fun `updateActivity slot and instances - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon")
+      assertThat(instances).isEmpty()
     }
 
     val mondayTuesdaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", monday = true, tuesday = true)))
@@ -687,13 +688,15 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
+      assertThat(instances).hasSize(4)
     }
 
-    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", thursday = true, friday = true)))
+    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", friday = true)))
 
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdayFridaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
-      assertThat(slots.first().daysOfWeek).containsExactly("Thu", "Fri")
+      assertThat(slots.first().daysOfWeek).containsExactly("Fri")
+      assertThat(instances).hasSize(2)
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
