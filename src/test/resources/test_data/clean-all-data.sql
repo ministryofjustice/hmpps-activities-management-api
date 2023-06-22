@@ -28,5 +28,7 @@ truncate table appointment_occurrence_allocation;
 truncate table appointment_occurrence;
 truncate table appointment_schedule;
 truncate table appointment;
+truncate table bulk_appointment_appointment;
+truncate table bulk_appointment;
 
 SET REFERENTIAL_INTEGRITY TRUE;
