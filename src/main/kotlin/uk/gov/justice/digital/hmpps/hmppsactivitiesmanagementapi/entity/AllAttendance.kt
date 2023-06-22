@@ -35,7 +35,7 @@ data class `AllAttendance`(
 
   val categoryName: String,
 
-  val recordedTime: LocalDateTime?
+  val recordedTime: LocalDateTime?,
 ) {
   fun toModel() =
     AllAttendanceModel(
