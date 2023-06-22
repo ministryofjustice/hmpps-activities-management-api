@@ -14,7 +14,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -65,7 +64,6 @@ data class Attendance(
   var otherAbsenceReason: String? = null,
 ) {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 5)
   @Fetch(FetchMode.SUBSELECT)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 

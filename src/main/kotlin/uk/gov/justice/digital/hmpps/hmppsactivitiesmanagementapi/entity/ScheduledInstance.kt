@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -32,7 +31,6 @@ data class ScheduledInstance(
   val activitySchedule: ActivitySchedule,
 
   @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 10)
   @Fetch(FetchMode.SUBSELECT)
   val attendances: MutableList<Attendance> = mutableListOf(),
 

@@ -14,7 +14,6 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -43,7 +42,6 @@ data class Activity(
   var activityTier: ActivityTier?,
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 1)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
   var attendanceRequired: Boolean = true,
@@ -81,22 +79,18 @@ data class Activity(
 ) {
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 5)
   @Fetch(FetchMode.SUBSELECT)
   private val activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 5)
   @Fetch(FetchMode.SUBSELECT)
   private val activityPay: MutableList<ActivityPay> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 1)
   @Fetch(FetchMode.SUBSELECT)
   private val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf()
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 1)
   @Fetch(FetchMode.SUBSELECT)
   private val schedules: MutableList<ActivitySchedule> = mutableListOf()
 

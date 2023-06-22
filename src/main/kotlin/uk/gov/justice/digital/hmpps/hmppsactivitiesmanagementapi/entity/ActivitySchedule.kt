@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Filter
@@ -47,7 +46,6 @@ data class ActivitySchedule(
   val activity: Activity,
 
   @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 1)
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 
@@ -83,16 +81,13 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
   @Filters(Filter(name = "SessionDateFilter", condition = "session_date >= :earliestSessionDate"))
-  @BatchSize(size = 30)
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 10)
   @Fetch(FetchMode.SUBSELECT)
   private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @BatchSize(size = 5)
   @Fetch(FetchMode.SUBSELECT)
   private val slots: MutableList<ActivityScheduleSlot> = mutableListOf()
 
