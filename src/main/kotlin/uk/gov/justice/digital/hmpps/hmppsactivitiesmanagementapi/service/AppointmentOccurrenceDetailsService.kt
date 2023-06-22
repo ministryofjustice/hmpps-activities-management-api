@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 
 @Service
+@Transactional(readOnly = true)
 class AppointmentOccurrenceDetailsService(
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
   private val referenceCodeService: ReferenceCodeService,
@@ -19,7 +21,7 @@ class AppointmentOccurrenceDetailsService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointmentOccurrence.prisonerNumbers()).block()!!
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentOccurrence.prisonerNumbers())
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
@@ -27,6 +29,6 @@ class AppointmentOccurrenceDetailsService(
 
     val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
 
-    return appointmentOccurrence.toDetails(appointment.prisonCode, prisoners, referenceCodeMap, locationMap, userMap)
+    return appointmentOccurrence.toDetails(appointment.prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
   }
 }

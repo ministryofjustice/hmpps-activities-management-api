@@ -7,8 +7,6 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
@@ -59,8 +57,7 @@ data class AppointmentOccurrenceSearch(
 
   val isCancelled: Boolean,
 ) {
-  @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.EAGER)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.LAZY)
   var allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
 
   fun toResult(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>) = AppointmentOccurrenceSearchResult(

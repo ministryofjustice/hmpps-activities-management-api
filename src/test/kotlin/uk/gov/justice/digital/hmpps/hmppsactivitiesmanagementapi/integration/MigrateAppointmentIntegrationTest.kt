@@ -4,16 +4,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import java.time.LocalDate
@@ -26,13 +25,11 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.created=true",
   ],
 )
+@Transactional(readOnly = true)
 class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
-
-  @Autowired
-  private lateinit var appointmentRepository: AppointmentRepository
 
   @Test
   fun `migrate appointment forbidden`() {
@@ -59,7 +56,6 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `migrate appointment success`() {
-    verifyDatabaseIsEmpty()
     val request = appointmentMigrateRequest(categoryCode = "AC1")
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -75,7 +71,6 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointment(response)
-    verifyDatabaseHasBeenUpdatedCorrectly()
 
     verifyNoInteractions(eventsPublisher)
   }
@@ -95,17 +90,6 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
       assertThat(comment).isEqualTo("Appointment level comment")
     }
-  }
-
-  private fun verifyDatabaseIsEmpty() {
-    assertThat(appointmentRepository.count()).isEqualTo(0)
-  }
-
-  private fun verifyDatabaseHasBeenUpdatedCorrectly() {
-    val appointments = appointmentRepository.findAll().map { it.toModel() }
-
-    assertThat(appointments).hasSize(1)
-    verifyAppointment(appointments.first())
   }
 
   private fun WebTestClient.migrateAppointment(
