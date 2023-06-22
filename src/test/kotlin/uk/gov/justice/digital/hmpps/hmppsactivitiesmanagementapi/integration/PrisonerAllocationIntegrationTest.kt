@@ -7,9 +7,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand2
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand3
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandThree
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import java.time.LocalDate
@@ -35,7 +35,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
-          payRate = testActivityPayRateBand1,
+          prisonPayBand = testPentonvillePayBandOne,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -50,7 +50,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
-          payRate = testActivityPayRateBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -70,7 +70,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
-          payRate = testActivityPayRateBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -85,7 +85,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
-          payRate = testActivityPayRateBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -120,7 +120,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
-          payRate = testActivityPayRateBand1,
+          prisonPayBand = testPentonvillePayBandOne,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -135,7 +135,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
-          payRate = testActivityPayRateBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -155,7 +155,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
-          payRate = testActivityPayRateBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -170,7 +170,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
-          payRate = testActivityPayRateBand3,
+          prisonPayBand = testPentonvillePayBandThree,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = null,
@@ -193,7 +193,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           activitySummary = "Retirement",
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
-          payRate = testActivityPayRateBand2,
+          prisonPayBand = testPentonvillePayBandTwo,
           isUnemployment = true,
           startDate = LocalDate.of(2022, 10, 10),
           endDate = LocalDate.of(2022, 10, 11),
