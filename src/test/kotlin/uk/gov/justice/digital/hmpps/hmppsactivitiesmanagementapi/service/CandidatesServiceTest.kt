@@ -478,12 +478,10 @@ class CandidatesServiceTest {
 
       val candidateAllocation = allocation().copy(allocationId = 1, prisonerNumber = "A1234BC")
 
-      assertThat(suitability.allocations).isEqualTo(
-        listOf(
-          AllocationPayRate(
-            allocation = candidateAllocation.toModel(),
-            payRate = candidateAllocation.allocationPay("BAS")?.toModelLite(),
-          ),
+      assertThat(suitability.allocations).containsOnly(
+        AllocationPayRate(
+          allocation = candidateAllocation.toModel(),
+          payRate = candidateAllocation.allocationPay("BAS")?.toModelLite(),
         ),
       )
     }
