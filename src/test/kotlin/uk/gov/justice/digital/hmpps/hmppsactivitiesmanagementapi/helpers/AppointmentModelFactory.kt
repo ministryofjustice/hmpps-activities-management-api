@@ -214,7 +214,6 @@ fun appointmentDetails(
     AppointmentOccurrenceSummary(
       1,
       1,
-      1,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
       LocalDate.now().plusDays(1),

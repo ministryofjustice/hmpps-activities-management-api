@@ -80,8 +80,6 @@ data class AppointmentOccurrence(
 
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
-  fun prisonerCount() = prisonerNumbers().count()
-
   fun isEdited() = updated != null
 
   fun isCancelled() = cancellationReason?.isDelete == false
@@ -116,7 +114,6 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
-      prisonerCount = prisonerCount(),
       if (inCell) {
         null
       } else {
