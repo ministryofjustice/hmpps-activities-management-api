@@ -61,7 +61,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
+    "classpath:test_data/seed-activity-for-attendance-marking.sql",
   )
   @Test
   fun `morning attendances are marked for an activity with attendance records`() {

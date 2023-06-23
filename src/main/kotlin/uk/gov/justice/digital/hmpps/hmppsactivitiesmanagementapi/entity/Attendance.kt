@@ -110,6 +110,8 @@ data class Attendance(
     newCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
+    if (!editable()) throw IllegalArgumentException("Attendance record for prisoner '$prisonerNumber' can no longer be modified")
+
     if (status != AttendanceStatus.WAITING) addAttendanceToHistory()
 
     if (newStatus == AttendanceStatus.WAITING) {
