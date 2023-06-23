@@ -320,10 +320,12 @@ fun transform(attendance: EntityAttendance, caseNoteText: String?): ModelAttenda
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
+    caseNoteText = caseNoteText,
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
       .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, caseNoteText) },
+    editable = attendance.editable(),
   )
 
 fun transform(attendanceHistory: EntityAttendanceHistory, caseNoteText: String?): ModelAttendanceHistory =

@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -63,7 +64,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Test
   fun `200 response when get attendance by ID found`() {
-    val attendance = attendance().toModel("Case Note Text")
+    val attendance = transform(attendance(), "Case Note Text")
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 

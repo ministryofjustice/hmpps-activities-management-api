@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
@@ -38,8 +39,9 @@ class OffenderReleasedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
 
-  private val handler = OffenderReleasedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient)
+  private val handler = OffenderReleasedEventHandler(rolloutPrisonRepository, allocationRepository, appointmentOccurrenceAllocationService, prisonApiClient)
 
   private val prisoner: InmateDetail = mock {
     on { status } doReturn "INACTIVE OUT"
@@ -248,5 +250,25 @@ class OffenderReleasedEventHandlerTest {
     assertThat(outcome.isSuccess()).isFalse
     assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
     verifyNoInteractions(allocationRepository)
+  }
+
+  @Test
+  fun `all future allocations are cancelled for a released event`() {
+    val prisonerNumber = "12345"
+    whenever(prisonApiClient.getPrisonerDetails(prisonerNumber, fullInfo = true, extraInfo = true))
+      .doReturn(Mono.just(prisoner))
+
+    val outcome = handler.handle(
+      OffenderReleasedEvent(
+        ReleaseInformation(
+          nomsNumber = prisonerNumber,
+          reason = "RELEASED",
+          prisonId = moorlandPrisonCode,
+        ),
+      ),
+    )
+
+    assertThat(outcome.isSuccess()).isTrue()
+    verify(appointmentOccurrenceAllocationService).cancelFutureOffenderAppointments(moorlandPrisonCode, "12345")
   }
 }

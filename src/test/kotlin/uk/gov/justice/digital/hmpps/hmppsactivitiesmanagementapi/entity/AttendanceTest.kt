@@ -2,8 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDate
@@ -20,7 +20,7 @@ class AttendanceTest {
   @Test
   fun `uncancel method sets the state correctly`() {
     val attendance = Attendance(
-      scheduledInstance = mock(),
+      scheduledInstance = instance,
       prisonerNumber = "P000111",
       attendanceReason = attendanceReasons()["ATTENDED"]!!,
       status = AttendanceStatus.COMPLETED,
@@ -46,7 +46,7 @@ class AttendanceTest {
     val recordedTime = LocalDateTime.now()
     val recordedBy = "Old User"
     val attendance = Attendance(
-      scheduledInstance = mock(),
+      scheduledInstance = instance,
       prisonerNumber = "P000111",
       attendanceReason = attendanceReasons()["SUSPENDED"]!!,
       status = AttendanceStatus.COMPLETED,
@@ -220,5 +220,30 @@ class AttendanceTest {
       recordedTime = LocalDateTime.now().minusDays(1),
     )
     assertThat(attendance.editable()).isFalse
+  }
+
+  @Test
+  fun `marking attendance should fail if record isn't editable`() {
+    val expiredInstance = instance.copy(sessionDate = LocalDate.now().minusDays(15))
+    val attendance = Attendance(
+      scheduledInstance = expiredInstance,
+      issuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.WAITING,
+    )
+
+    assertThatThrownBy {
+      attendance.mark(
+        principalName = "New user",
+        reason = attendanceReasons()["ATTENDED"]!!,
+        newStatus = AttendanceStatus.COMPLETED,
+        newComment = null,
+        newIssuePayment = null,
+        newIncentiveLevelWarningIssued = null,
+        newCaseNoteId = null,
+        newOtherAbsenceReason = null,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance record for prisoner 'A1234AA' can no longer be modified")
   }
 }

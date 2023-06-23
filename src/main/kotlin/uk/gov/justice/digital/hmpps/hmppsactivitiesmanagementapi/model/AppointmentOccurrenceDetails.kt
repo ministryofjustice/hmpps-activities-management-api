@@ -29,6 +29,11 @@ data class AppointmentOccurrenceDetails(
   val appointmentId: Long,
 
   @Schema(
+    description = "Summary of the parent set of appointments created in bulk",
+  )
+  val bulkAppointment: BulkAppointmentSummary?,
+
+  @Schema(
     description = "The appointment type (INDIVIDUAL or GROUP)",
     example = "INDIVIDUAL",
   )

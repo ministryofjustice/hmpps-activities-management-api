@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
@@ -194,7 +195,12 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addInstances(activity: Activity, slots: List<ActivityScheduleSlot>, fromDate: LocalDate?, toDate: LocalDate?) {
+  private fun ActivitySchedule.addInstances(
+    activity: Activity,
+    slots: List<ActivityScheduleSlot>,
+    fromDate: LocalDate? = null,
+    toDate: LocalDate? = null,
+  ) {
     val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
@@ -221,7 +227,9 @@ class ActivityService(
           (fromDate == null || day >= fromDate) &&
           (toDate == null || day <= toDate)
         ) {
-          this.addInstance(sessionDate = day, slot = slot)
+          if (this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime)) {
+            this.addInstance(sessionDate = day, slot = slot)
+          }
         }
       }
     }
@@ -250,7 +258,12 @@ class ActivityService(
 
   @Transactional()
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
+  fun updateActivity(
+    prisonCode: String,
+    activityId: Long,
+    request: ActivityUpdateRequest,
+    updatedBy: String,
+  ): ModelActivity {
     val activity = activityRepository.findOrThrowNotFound(activityId)
     val now = LocalDateTime.now()
 
@@ -501,9 +514,13 @@ class ActivityService(
         TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
         TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
       )
+
     activity.schedules().forEach {
-      it.removeSlots()
-      it.addSlots(slots, timeSlots)
+      it.updateSlotsAndRemoveRedundantInstances(slots.toMap(timeSlots))
+      it.addInstances(activity, it.slots())
     }
   }
+
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) =
+    associate { regimeTimeSlots[it.timeSlot()]!! to it.getDaysOfWeek() }
 }

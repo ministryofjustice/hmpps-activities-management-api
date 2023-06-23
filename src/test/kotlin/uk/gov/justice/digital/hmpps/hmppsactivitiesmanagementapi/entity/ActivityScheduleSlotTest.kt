@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import java.time.DayOfWeek
 import java.time.LocalTime
 
 class ActivityScheduleSlotTest {
@@ -184,5 +186,56 @@ class ActivityScheduleSlotTest {
       assertThat(sundayFlag).isTrue
       assertThat(daysOfWeek).containsExactly("Sun")
     }
+  }
+
+  @Test
+  fun `change day of slot`() {
+    val slot = ActivityScheduleSlot(
+      activityScheduleSlotId = 1,
+      activitySchedule = mock(),
+      startTime = LocalTime.now(),
+      endTime = LocalTime.now(),
+      mondayFlag = true,
+      sundayFlag = true,
+    )
+
+    with(slot) {
+      assertThat(mondayFlag).isTrue
+      assertThat(tuesdayFlag).isFalse
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isTrue
+    }
+
+    slot.update(setOf(DayOfWeek.TUESDAY))
+
+    with(slot) {
+      assertThat(mondayFlag).isFalse
+      assertThat(tuesdayFlag).isTrue
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isFalse
+    }
+  }
+
+  @Test
+  fun `must provide at least one day on update`() {
+    val slot = ActivityScheduleSlot(
+      activityScheduleSlotId = 1,
+      activitySchedule = mock(),
+      startTime = LocalTime.now(),
+      endTime = LocalTime.now(),
+      mondayFlag = true,
+      sundayFlag = true,
+    )
+
+    assertThatThrownBy {
+      slot.update(emptySet())
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("A slot must run on at least one day.")
   }
 }

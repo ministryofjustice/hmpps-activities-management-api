@@ -14,11 +14,8 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.BatchSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 
 @Entity
 @Table(name = "attendance")
@@ -81,7 +78,7 @@ data class Attendance(
 
   fun cancel(reason: AttendanceReason) = mark(
     principalName = scheduledInstance.cancelledBy,
-    reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else this.attendanceReason,
+    reason = if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else attendanceReason,
     newStatus = AttendanceStatus.COMPLETED,
     newComment = scheduledInstance.cancelledReason,
     newIssuePayment = this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED,
@@ -111,31 +108,12 @@ data class Attendance(
     newCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
-    if (status != AttendanceStatus.WAITING) {
-      this.addHistory(
-        AttendanceHistory(
-          attendance = this,
-          attendanceReason = attendanceReason,
-          comment = comment,
-          recordedTime = recordedTime!!,
-          recordedBy = recordedBy!!,
-          issuePayment = issuePayment,
-          caseNoteId = caseNoteId,
-          incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-          otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
-        ),
-      )
-    }
+    if (!editable()) throw IllegalArgumentException("Attendance record for prisoner '$prisonerNumber' can no longer be modified")
+
+    if (status != AttendanceStatus.WAITING) addAttendanceToHistory()
 
     if (newStatus == AttendanceStatus.WAITING) {
-      attendanceReason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else attendanceReason
-      comment = null
-      issuePayment = null
-      incentiveLevelWarningIssued = null
-      bonusAmount = null
-      pieces = null
-      caseNoteId = null
-      otherAbsenceReason = null
+      resetAttendance()
     } else {
       attendanceReason = reason
       comment = newComment
@@ -143,11 +121,39 @@ data class Attendance(
       incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
       caseNoteId = newCaseNoteId?.toLong()
       otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
+      recordedTime = LocalDateTime.now()
     }
     status = newStatus
     recordedBy = principalName
-    recordedTime = if (newStatus != AttendanceStatus.WAITING) LocalDateTime.now() else null
     return this
+  }
+
+  private fun addAttendanceToHistory() {
+    this.addHistory(
+      AttendanceHistory(
+        attendance = this,
+        attendanceReason = attendanceReason,
+        comment = comment,
+        recordedTime = recordedTime!!,
+        recordedBy = recordedBy!!,
+        issuePayment = issuePayment,
+        caseNoteId = caseNoteId,
+        incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+        otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
+      ),
+    )
+  }
+
+  private fun resetAttendance() {
+    if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) attendanceReason = null
+    comment = null
+    issuePayment = null
+    incentiveLevelWarningIssued = null
+    bonusAmount = null
+    pieces = null
+    caseNoteId = null
+    otherAbsenceReason = null
+    recordedTime = null
   }
 
   /*
@@ -172,44 +178,6 @@ data class Attendance(
         this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
       )
   }
-
-  fun toModel(caseNoteText: String?) = ModelAttendance(
-    id = this.attendanceId,
-    scheduleInstanceId = this.scheduledInstance.scheduledInstanceId,
-    prisonerNumber = this.prisonerNumber,
-    attendanceReason = this.attendanceReason?.let {
-      ModelAttendanceReason(
-        id = it.attendanceReasonId,
-        code = it.code.toString(),
-        description = it.description,
-        attended = it.attended,
-        capturePay = it.capturePay,
-        captureMoreDetail = it.captureMoreDetail,
-        captureCaseNote = it.captureCaseNote,
-        captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
-        captureOtherText = it.captureOtherText,
-        displayInAbsence = it.displayInAbsence,
-        displaySequence = it.displaySequence,
-        notes = it.notes,
-      )
-    },
-    comment = this.comment,
-    recordedTime = this.recordedTime,
-    recordedBy = this.recordedBy,
-    status = this.status.name,
-    payAmount = this.payAmount,
-    bonusAmount = this.bonusAmount,
-    pieces = this.pieces,
-    issuePayment = this.issuePayment,
-    incentiveLevelWarningIssued = this.incentiveLevelWarningIssued,
-    otherAbsenceReason = this.otherAbsenceReason,
-    caseNoteText = caseNoteText,
-    attendanceHistory = this.attendanceHistory
-      .sortedWith(compareBy { it.recordedTime })
-      .reversed()
-      .map { attendanceHistoryRow -> transform(attendanceHistoryRow, caseNoteText) },
-    editable = this.editable(),
-  )
 }
 
 enum class AttendanceStatus {

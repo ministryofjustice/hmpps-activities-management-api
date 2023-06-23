@@ -17,4 +17,14 @@ fun PrisonerSearchApiPrisoner.toSummary() =
     cellLocation ?: "UNKNOWN",
   )
 
+fun PrisonerSearchApiPrisoner?.toSummary(prisonCode: String, prisonNumber: String, bookingId: Long) =
+  this?.toSummary() ?: ModelPrisonerSummary(
+    prisonNumber,
+    bookingId,
+    "UNKNOWN",
+    "UNKNOWN",
+    prisonCode,
+    "UNKNOWN",
+  )
+
 fun List<PrisonerSearchApiPrisoner>.toSummary() = map { it.toSummary() }

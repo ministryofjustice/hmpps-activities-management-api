@@ -15,6 +15,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -32,8 +34,8 @@ class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository)
-
-  val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+  private val activeAllocation = activityEntity().schedules().first().allocations().first()
 
   @Captor
   private lateinit var allocationEntityCaptor: ArgumentCaptor<AllocationEntity>
@@ -45,17 +47,30 @@ class AllocationServiceTest {
 
   @Test
   fun `find allocations for collection of prisoners`() {
-    val allocations = activityEntity().schedules().flatMap { it.allocations() }.also { assertThat(it).isNotEmpty }
-    val prisonNumbers = allocations.map { it.prisonerNumber }
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", prisonNumbers)).thenReturn(allocations)
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", listOf("ABC123")))
+      .thenReturn(listOf(activeAllocation))
 
     assertThat(
       service.findByPrisonCodeAndPrisonerNumbers(
         "MDI",
-        prisonNumbers.toSet(),
+        setOf("ABC123"),
       ),
-    ).isEqualTo(allocations.toModelPrisonerAllocations())
+    ).isEqualTo(listOf(activeAllocation).toModelPrisonerAllocations())
+  }
+
+  @Test
+  fun `find allocations does not return ended allocations`() {
+    val endedAllocation = activeAllocation.copy(prisonerStatus = PrisonerStatus.ENDED)
+
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers("MDI", listOf("ABC123", "CAB321")))
+      .thenReturn(listOf(activeAllocation, endedAllocation))
+
+    assertThat(
+      service.findByPrisonCodeAndPrisonerNumbers(
+        "MDI",
+        setOf("ABC123", "CAB321"),
+      ),
+    ).isEqualTo(listOf(activeAllocation).toModelPrisonerAllocations())
   }
 
   @Test
@@ -180,7 +195,26 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update start date - allocation start date before activity start date`() {
-    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-1.json")
+    val updateAllocationRequest = AllocationUpdateRequest(startDate = TimeSource.yesterday())
+
+    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
+
+    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+
+    whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+
+    allocationEntity.startDate = TimeSource.tomorrow()
+    allocationEntity.activitySchedule.activity.startDate = TimeSource.tomorrow()
+
+    assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be before the activity start date or after the activity end date.")
+  }
+
+  @Test
+  fun `updateAllocation - update start date - allocation start date cannot be after the activity end date`() {
+    val updateAllocationRequest = AllocationUpdateRequest(startDate = TimeSource.tomorrow())
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
@@ -190,11 +224,15 @@ class AllocationServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
 
     allocationEntity.startDate = LocalDate.now().plusDays(1)
-    allocationEntity.activitySchedule.activity.startDate = LocalDate.now().plusDays(2)
+
+    allocationEntity.activitySchedule.activity.apply {
+      startDate = TimeSource.yesterday()
+      endDate = TimeSource.today()
+    }
 
     assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation start date cannot be before activity start date")
+      .hasMessage("Allocation start date cannot be before the activity start date or after the activity end date.")
   }
 
   @Test
