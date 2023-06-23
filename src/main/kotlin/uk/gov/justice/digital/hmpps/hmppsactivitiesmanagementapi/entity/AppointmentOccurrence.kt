@@ -80,11 +80,13 @@ data class AppointmentOccurrence(
 
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
+  fun startDateTime() = LocalDateTime.of(startDate, startTime)
+
   fun isEdited() = updated != null
 
   fun isCancelled() = cancellationReason?.isDelete == false
 
-  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
+  fun isExpired() = startDateTime() < LocalDateTime.now()
 
   fun isDeleted() = cancellationReason?.isDelete == true
 

@@ -89,7 +89,7 @@ data class AppointmentOccurrenceSearch(
     isExpired(),
   )
 
-  private fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
+  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
 }
 
 fun List<AppointmentOccurrenceSearch>.toResults(

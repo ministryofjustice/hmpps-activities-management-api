@@ -59,11 +59,11 @@ internal fun appointmentEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, appointmentId * (it.index + 1L), it.index + 1, it.value, updated, updatedBy, prisonerNumberToBookingIdMap))
+    this.addOccurrence(appointmentOccurrenceEntity(this, appointmentId * (it.index + 1L), it.index + 1, it.value, this.startTime, updated, updatedBy, prisonerNumberToBookingIdMap))
   }
 }
 
-private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointment.startTime, updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointment = appointment,
@@ -71,7 +71,7 @@ private fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOcc
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
     startDate = startDate,
-    startTime = appointment.startTime,
+    startTime = startTime,
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
     updated = updated,
