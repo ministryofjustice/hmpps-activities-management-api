@@ -6,19 +6,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import java.util.Optional
 
@@ -52,46 +46,26 @@ class AppointmentOccurrenceDetailsServiceTest {
         userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(entity.prisonerNumbers())).thenReturn(
-      Mono.just(
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(
-            prisonerNumber = "A1234BC",
-            bookingId = 456,
-            firstName = "TEST",
-            lastName = "PRISONER",
-            prisonId = "TPR",
-            cellLocation = "1-2-3",
-          ),
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
+      mapOf(
+        "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 456,
+          firstName = "TEST",
+          lastName = "PRISONER",
+          prisonId = "TPR",
+          cellLocation = "1-2-3",
         ),
       ),
     )
     assertThat(service.getAppointmentOccurrenceDetailsById(1)).isEqualTo(
-      AppointmentOccurrenceDetails(
+      appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
-        AppointmentType.INDIVIDUAL,
-        entity.sequenceNumber,
-        appointment.prisonCode,
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
-        AppointmentCategorySummary(appointment.categoryCode, "Test Category"),
-        "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, appointment.prisonCode, "Test Appointment Location User Description"),
-        entity.inCell,
-        entity.startDate,
-        entity.startTime,
-        entity.endTime,
-        entity.comment ?: appointment.comment,
-        null,
-        true,
-        false,
-        false,
-        appointment.created,
-        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-        entity.updated,
-        UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+        sequenceNumber = entity.sequenceNumber,
+        appointmentDescription = "Appointment description",
+        created = appointment.created,
+        updated = entity.updated,
       ),
     )
   }

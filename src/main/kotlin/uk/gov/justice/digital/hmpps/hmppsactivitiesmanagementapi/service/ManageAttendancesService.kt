@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -27,6 +29,7 @@ class ManageAttendancesService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val outboundEventsService: OutboundEventsService,
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
 ) {
 
   companion object {
@@ -47,8 +50,14 @@ class ManageAttendancesService(
       scheduledInstanceRepository.findAllBySessionDate(today)
         .andAttendanceRequired()
         .forEach { instance ->
-          instance.forEachInFlightAllocation { allocation ->
-            createAttendanceRecordIfNoPreExistingRecord(instance, allocation)
+          val allocations = instance.getInFlightAllocations()
+          val allocatedPrisoners = allocations.map { it.prisonerNumber }
+          val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumbers(allocatedPrisoners)
+            .block()!!
+            .associateBy { it.prisonerNumber }
+
+          allocations.forEach { allocation ->
+            createAttendanceRecordIfNoPreExistingRecord(instance, allocation, prisonerDetails[allocation.prisonerNumber])
           }
         }
     }
@@ -56,43 +65,53 @@ class ManageAttendancesService(
 
   private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
 
-  private fun ScheduledInstance.forEachInFlightAllocation(f: (allocation: Allocation) -> Unit) {
-    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }.forEach { f(it) }
-  }
+  private fun ScheduledInstance.getInFlightAllocations() =
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
 
-  private fun createAttendanceRecordIfNoPreExistingRecord(instance: ScheduledInstance, allocation: Allocation) {
+  private fun createAttendanceRecordIfNoPreExistingRecord(
+    instance: ScheduledInstance,
+    allocation: Allocation,
+    prisonerDetails: Prisoner?,
+  ) {
     if (!attendanceAlreadyExistsFor(instance, allocation)) {
       val attendance = when {
-        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> Attendance(
-          scheduledInstance = instance,
-          prisonerNumber = allocation.prisonerNumber,
-          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
-          payAmount = allocation.allocationPay()?.rate,
-          issuePayment = false,
-          status = AttendanceStatus.COMPLETED,
-          recordedTime = LocalDateTime.now(),
-          recordedBy = ServiceName.SERVICE_NAME.value,
+        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> suspendedAttendance(
+          instance,
+          allocation,
         )
-        instance.cancelled -> Attendance(
-          scheduledInstance = instance,
-          prisonerNumber = allocation.prisonerNumber,
-          payAmount = allocation.allocationPay()?.rate,
-          issuePayment = true,
-          status = AttendanceStatus.COMPLETED,
-          attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
-          recordedTime = LocalDateTime.now(),
-          recordedBy = ServiceName.SERVICE_NAME.value,
-        )
+        instance.cancelled -> cancelledAttendance(instance, allocation)
         else -> Attendance(
           scheduledInstance = instance,
           prisonerNumber = allocation.prisonerNumber,
-          payAmount = allocation.allocationPay()?.rate,
         )
+      }.apply {
+        val incentiveLevelCode = prisonerDetails?.currentIncentive?.level?.code
+        payAmount = incentiveLevelCode ?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
       }
 
       attendanceRepository.saveAndFlush(attendance)
     }
   }
+
+  private fun suspendedAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
+    scheduledInstance = instance,
+    prisonerNumber = allocation.prisonerNumber,
+    attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
+    issuePayment = false,
+    status = AttendanceStatus.COMPLETED,
+    recordedTime = LocalDateTime.now(),
+    recordedBy = ServiceName.SERVICE_NAME.value,
+  )
+
+  private fun cancelledAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
+    scheduledInstance = instance,
+    prisonerNumber = allocation.prisonerNumber,
+    issuePayment = true,
+    status = AttendanceStatus.COMPLETED,
+    attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+    recordedTime = LocalDateTime.now(),
+    recordedBy = ServiceName.SERVICE_NAME.value,
+  )
 
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
     attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)

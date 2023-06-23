@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 
@@ -57,6 +58,16 @@ data class ActivityPay(
     incentiveNomisCode = incentiveNomisCode,
     incentiveLevel = incentiveLevel,
     prisonPayBand = payBand.toModelPrisonPayBand(),
+    rate = rate,
+    pieceRate = pieceRate,
+    pieceRateItems = pieceRateItems,
+  )
+
+  fun toModelLite() = ActivityPayLite(
+    id = activityPayId,
+    incentiveNomisCode = incentiveNomisCode,
+    incentiveLevel = incentiveLevel,
+    prisonPayBandId = payBand.prisonPayBandId,
     rate = rate,
     pieceRate = pieceRate,
     pieceRateItems = pieceRateItems,

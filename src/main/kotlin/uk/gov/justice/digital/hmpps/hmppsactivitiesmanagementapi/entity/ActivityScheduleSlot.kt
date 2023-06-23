@@ -28,19 +28,19 @@ data class ActivityScheduleSlot(
 
   val endTime: LocalTime,
 
-  val mondayFlag: Boolean = false,
+  var mondayFlag: Boolean = false,
 
-  val tuesdayFlag: Boolean = false,
+  var tuesdayFlag: Boolean = false,
 
-  val wednesdayFlag: Boolean = false,
+  var wednesdayFlag: Boolean = false,
 
-  val thursdayFlag: Boolean = false,
+  var thursdayFlag: Boolean = false,
 
-  val fridayFlag: Boolean = false,
+  var fridayFlag: Boolean = false,
 
-  val saturdayFlag: Boolean = false,
+  var saturdayFlag: Boolean = false,
 
-  val sundayFlag: Boolean = false,
+  var sundayFlag: Boolean = false,
 
 ) {
   init {
@@ -78,6 +78,20 @@ data class ActivityScheduleSlot(
       saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
       sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
     )
+  }
+
+  fun update(daysOfWeek: Set<DayOfWeek>) {
+    require(daysOfWeek.isNotEmpty()) {
+      "A slot must run on at least one day."
+    }
+
+    mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY)
+    tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY)
+    wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY)
+    thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY)
+    fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY)
+    saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY)
+    sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
   }
 
   fun toModel() = ModelActivityScheduleSlot(

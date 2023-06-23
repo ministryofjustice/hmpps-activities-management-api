@@ -11,8 +11,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -36,7 +34,7 @@ data class AppointmentOccurrence(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val appointmentOccurrenceId: Long = 0,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_id", nullable = false)
   val appointment: Appointment,
 
@@ -60,7 +58,7 @@ data class AppointmentOccurrence(
 ) {
   var cancelled: LocalDateTime? = null
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "cancellation_reason_id")
   var cancellationReason: AppointmentCancellationReason? = null
 
@@ -68,13 +66,7 @@ data class AppointmentOccurrence(
 
   var deleted: Boolean = false
 
-  @OneToMany(
-    mappedBy = "appointmentOccurrence",
-    fetch = FetchType.EAGER,
-    cascade = [CascadeType.ALL],
-    orphanRemoval = true,
-  )
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 
   fun allocations() = allocations.toList()
@@ -112,7 +104,7 @@ data class AppointmentOccurrence(
     cancelledBy = cancelledBy,
     updated = updated,
     updatedBy = updatedBy,
-    allocations = allocations.toModel(),
+    allocations = allocations().toModel(),
   )
 
   fun toSummary(
@@ -146,7 +138,7 @@ data class AppointmentOccurrence(
 
   fun toDetails(
     prisonCode: String,
-    prisoners: List<Prisoner>,
+    prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
@@ -154,10 +146,11 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointment.appointmentId,
+      appointment.bulkAppointment?.toSummary(),
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,
-      prisoners.toSummary(),
+      allocations().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
       referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
       appointment.appointmentDescription,
       if (inCell) {
@@ -185,7 +178,7 @@ data class AppointmentOccurrence(
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {
-    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations.isNotEmpty()) {
+    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
     }
   }
@@ -199,3 +192,11 @@ fun List<AppointmentOccurrence>.toSummary(
   userMap: Map<String, UserDetail>,
   appointmentComment: String,
 ) = map { it.toSummary(prisonCode, locationMap, userMap, appointmentComment) }
+
+fun List<AppointmentOccurrence>.toDetails(
+  prisonCode: String,
+  prisonerMap: Map<String, Prisoner>,
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+) = map { it.toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap) }
