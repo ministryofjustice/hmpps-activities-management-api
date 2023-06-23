@@ -73,7 +73,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
 
     assertThat(attendanceRepository.count()).isZero
-    val activity = activityRepository.findByIdQuery(4).orElseThrow()
+    val activity = activityRepository.findById(4).orElseThrow()
     val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
 
     with(activity) {
@@ -85,7 +85,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     with(activitySchedules.findByDescription("Maths AM")) {
       assertThat(allocations()).hasSize(2)
       assertThat(instances()).hasSize(1)
-      val scheduledInstance = scheduledInstanceRepository.findByIdQuery(instances().first().scheduledInstanceId)
+      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
       assertThat(scheduledInstance.attendances).isEmpty()
     }
@@ -93,26 +93,26 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     with(activitySchedules.findByDescription("Maths PM")) {
       assertThat(allocations()).hasSize(2)
       assertThat(instances()).hasSize(1)
-      val scheduledInstance = scheduledInstanceRepository.findByIdQuery(instances().first().scheduledInstanceId)
+      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
       assertThat(scheduledInstance.attendances).isEmpty()
     }
 
     webTestClient.manageAttendanceRecords()
 
-    val activityAfter = activityRepository.findByIdQuery(4).orElseThrow()
+    val activityAfter = activityRepository.findById(4).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
     log.info("ActivitySchedulesAfter count = ${activitySchedulesAfter.size}")
 
     with(activitySchedulesAfter.findByDescription("Maths AM")) {
-      val scheduledInstance = scheduledInstanceRepository.findByIdQuery(instances().first().scheduledInstanceId)
+      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${instances().first().scheduledInstanceId} not found") }
       log.info("ScheduledInstanceId (Maths AM) = ${scheduledInstance.scheduledInstanceId} attendances ${scheduledInstance.attendances.size}")
       assertThat(scheduledInstance.attendances).hasSize(2)
     }
 
     with(activitySchedulesAfter.findByDescription("Maths PM")) {
-      val scheduledInstance = scheduledInstanceRepository.findByIdQuery(instances().first().scheduledInstanceId)
+      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${instances().first().scheduledInstanceId} not found") }
       log.info("ScheduledInstanceId (Maths PM) = ${scheduledInstance.scheduledInstanceId} attendances ${scheduledInstance.attendances.size}")
       assertThat(scheduledInstance.attendances).hasSize(2)
@@ -154,7 +154,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Test
   fun `No attendance records are created for gym induction AM when attendance not required on activity`() {
     assertThat(attendanceRepository.count()).isZero
-    val activity = activityRepository.findByIdQuery(5).orElseThrow()
+    val activity = activityRepository.findById(5).orElseThrow()
     val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
 
     with(activity) {
@@ -171,7 +171,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAttendanceRecords()
 
-    val activityAfter = activityRepository.findByIdQuery(5).orElseThrow()
+    val activityAfter = activityRepository.findById(5).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
 
     with(activitySchedulesAfter.findByDescription("Gym induction AM")) {

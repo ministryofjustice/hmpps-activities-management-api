@@ -28,7 +28,7 @@ class ScheduledInstanceService(
   }
 
   fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance {
-    val activityScheduleInstance = repository.findByIdQuery(id)
+    val activityScheduleInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
     return activityScheduleInstance.toModel()
   }
@@ -53,7 +53,7 @@ class ScheduledInstanceService(
 
   @Transactional
   fun uncancelScheduledInstance(id: Long) {
-    val scheduledInstance = repository.findByIdQuery(id)
+    val scheduledInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
     scheduledInstance.uncancel()
@@ -68,7 +68,7 @@ class ScheduledInstanceService(
 
   @Transactional
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
-    val scheduledInstance = repository.findByIdQuery(instanceId)
+    val scheduledInstance = repository.findById(instanceId)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
     scheduledInstance.cancelSession(

@@ -432,7 +432,7 @@ class ActivityServiceTest {
 
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -467,7 +467,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
@@ -485,7 +485,7 @@ class ActivityServiceTest {
   fun `updateActivity - category id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -500,7 +500,7 @@ class ActivityServiceTest {
   fun `updateActivity - tier id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -530,7 +530,7 @@ class ActivityServiceTest {
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(beforeActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -604,7 +604,7 @@ class ActivityServiceTest {
       pieceRateItems = 50,
     )
 
-    whenever(activityRepository.findByIdQuery(1)).thenReturn(Optional.of(beforeActivityEntity))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -650,7 +650,7 @@ class ActivityServiceTest {
 
     val activityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByIdQuery(17)).thenReturn(Optional.of(activityEntity))
+    whenever(activityRepository.findById(17)).thenReturn(Optional.of(activityEntity))
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 0))

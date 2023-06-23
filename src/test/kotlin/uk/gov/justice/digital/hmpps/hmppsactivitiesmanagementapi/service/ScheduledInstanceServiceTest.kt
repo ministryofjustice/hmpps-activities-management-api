@@ -45,7 +45,7 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `scheduled instance found - success`() {
-      whenever(repository.findByIdQuery(1))
+      whenever(repository.findById(1))
         .thenReturn(Optional.of(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
       assertThat(service.getActivityScheduleInstanceById(1))
@@ -54,7 +54,7 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `scheduled instance not found`() {
-      whenever(repository.findByIdQuery(1)).thenReturn(Optional.empty())
+      whenever(repository.findById(1)).thenReturn(Optional.empty())
       assertThatThrownBy { service.getActivityScheduleInstanceById(-1) }
         .isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Scheduled Instance -1 not found")
@@ -108,7 +108,7 @@ class ScheduledInstanceServiceTest {
       val instance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
       instance.cancelled = true
 
-      whenever(repository.findByIdQuery(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
       whenever(repository.saveAndFlush(instance)).thenReturn(instance)
 
       service.uncancelScheduledInstance(instance.scheduledInstanceId)
@@ -120,7 +120,7 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `throws exception when scheduled instance ID is not found`() {
-      whenever(repository.findByIdQuery(1)).thenReturn(Optional.empty())
+      whenever(repository.findById(1)).thenReturn(Optional.empty())
       val exception = assertThrows<EntityNotFoundException> {
         service.uncancelScheduledInstance(1)
       }
@@ -164,7 +164,7 @@ class ScheduledInstanceServiceTest {
         )
       }
 
-      whenever(repository.findByIdQuery(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
       whenever(repository.saveAndFlush(instance)).thenReturn(instance)
       whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED))
         .thenReturn(attendanceReasons()["CANCELLED"])
@@ -198,7 +198,7 @@ class ScheduledInstanceServiceTest {
       val instance = schedule.instances().first()
       instance.cancelled = true
 
-      whenever(repository.findByIdQuery(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
 
       assertThrows<IllegalArgumentException> {
         service.cancelScheduledInstance(

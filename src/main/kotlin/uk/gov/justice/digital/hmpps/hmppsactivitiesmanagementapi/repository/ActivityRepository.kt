@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
-import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import java.time.LocalDate
-import java.util.Optional
 
 @Repository
 interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepositoryCustom {
@@ -29,14 +27,6 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
     @Param("fromDate") fromDate: LocalDate,
     @Param("toDate") toDate: LocalDate,
   ): List<Activity>
-
-  @Query(
-    """
-    FROM Activity a WHERE a.activityId = :id
-    """,
-  )
-  @EntityGraph(attributePaths = ["activityPay"], type = EntityGraph.EntityGraphType.LOAD)
-  fun findByIdQuery(id: Long): Optional<Activity>
 
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
   fun getAllByPrisonCode(prisonCode: String): List<Activity>
