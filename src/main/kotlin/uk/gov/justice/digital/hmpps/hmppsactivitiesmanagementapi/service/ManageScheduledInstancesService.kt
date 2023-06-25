@@ -59,21 +59,13 @@ class ManageScheduledInstancesService(
         rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
           log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
-          // TODO: It only needs to get the activity ID, start, end dates, and associated schedule IDs
-          // Get the activities in this prison that are active between these dates
-          val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
-          val activitySchedules = activities.map {
-            it.schedules().filter { s ->
-              s.startDate.isBefore(endDay) && (s.endDate == null || s.endDate!!.isAfter(today))
-            }
-          }.flatten()
-
-          // For each active schedule add any new scheduled instances as required
-          activitySchedules.forEach { schedule ->
+          // Get the activities (basic) in this prison that are active between these dates
+          val activities = activityRepository.getBasicForPrisonBetweenDates(prison.code, today, endDay)
+          activities.forEach { basic ->
             continueToRunOnFailure(
-              block = { createInstancesForSchedule(prison, schedule.activityScheduleId, listOfDatesToSchedule) },
-              success = "Scheduling sessions of ${prison.code} ${schedule.description}",
-              failure = "Failed to schedule ${prison.code} ${schedule.description}",
+              block = { createInstancesForActivitySchedule(prison, basic.activityScheduleId, listOfDatesToSchedule) },
+              success = "Scheduling sessions of ${prison.code} ${basic.summary}",
+              failure = "Failed to schedule ${prison.code} ${basic.summary}",
             )
           }
         }
@@ -81,13 +73,14 @@ class ManageScheduledInstancesService(
     )
   }
 
-  private fun createInstancesForSchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
+  private fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
     var instancesCreated = false
 
-    // TODO: Only needs to get schedule Id, start, end, slots, description
-    val schedule = activityScheduleRepository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("Activity schedule ID $scheduleId not found")
-    }
+    // Only retrieve instances which are for today, or in the future - avoids the past full-entity object maps
+    val earliestSession = LocalDate.now()
+
+    val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
+      .orElseThrow { EntityNotFoundException("Activity schedule ID $scheduleId not found") }
 
     days.forEach { day ->
       if (schedule.isActiveOn(day) && schedule.canBeScheduledOnDay(day) && schedule.hasNoInstancesOnDate(day)) {
@@ -110,7 +103,7 @@ class ManageScheduledInstancesService(
     }
 
     if (instancesCreated) {
-      // This will trigger the sync event - findById to update
+      // This triggers the sync event, adds new instances but does not delete the earlier ones
       schedule.instancesLastUpdatedTime = LocalDateTime.now()
       activityScheduleRepository.saveAndFlush(schedule)
     }

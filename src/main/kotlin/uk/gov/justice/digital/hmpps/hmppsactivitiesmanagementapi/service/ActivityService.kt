@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -65,6 +66,14 @@ class ActivityService(
     val activity = activityRepository.findById(activityId)
       .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
     return transform(activity)
+  }
+
+  fun getActivityBasicById(activityId: Long): ActivityBasic {
+    return activityRepository.getActivityBasicById(activityId)
+  }
+
+  fun getActivityBasicByPrisonCode(prisonCode: String): List<ActivityBasic> {
+    return activityRepository.getActivityBasicByPrisonCode(prisonCode)
   }
 
   fun getActivitiesByCategoryInPrison(

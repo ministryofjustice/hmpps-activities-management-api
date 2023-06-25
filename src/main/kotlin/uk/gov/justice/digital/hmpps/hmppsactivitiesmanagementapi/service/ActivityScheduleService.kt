@@ -60,7 +60,6 @@ class ActivityScheduleService(
     timeSlot: TimeSlot? = null,
     locationId: Long? = null,
   ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
-    // TODO consider pushing some/all of the filtering logic into a repository query (perhaps using a JPA Specification)
     val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
       .selectSchedulesAtLocation(locationId)
       .selectSchedulesWithActiveActivitiesOn(date)

@@ -79,7 +79,7 @@ data class ActivitySchedule(
     }
   }
 
-  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Filters(Filter(name = "SessionDateFilter", condition = "session_date >= :earliestSessionDate"))
   private val instances: MutableList<ScheduledInstance> = mutableListOf()
 
