@@ -60,12 +60,6 @@ class AppointmentOccurrenceTest {
   }
 
   @Test
-  fun `prisoner count counts prisoners`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789)).occurrences().first()
-    assertThat(entity.prisonerCount()).isEqualTo(2)
-  }
-
-  @Test
   fun `entity to summary mapping`() {
     val entity = appointmentEntity().occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
@@ -74,7 +68,6 @@ class AppointmentOccurrenceTest {
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
         1,
-        prisonerCount = 1,
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now().plusDays(1),
@@ -98,7 +91,6 @@ class AppointmentOccurrenceTest {
       listOf(
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
-          1,
           1,
           AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
           entity.inCell,

@@ -92,7 +92,6 @@ class AppointmentDetailsServiceTest {
           AppointmentOccurrenceSummary(
             occurrenceEntity.appointmentOccurrenceId,
             1,
-            1,
             AppointmentLocationSummary(occurrenceEntity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
             occurrenceEntity.inCell,
             occurrenceEntity.startDate,
