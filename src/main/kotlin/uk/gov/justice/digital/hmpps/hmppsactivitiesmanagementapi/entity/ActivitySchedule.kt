@@ -27,11 +27,13 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
+const val SESSION_DATE_FILTER = "SessionDateFilter"
+
 @Entity
 @Table(name = "activity_schedule")
 @EntityListeners(ActivityScheduleEntityListener::class)
 @FilterDef(
-  name = "SessionDateFilter",
+  name = SESSION_DATE_FILTER,
   parameters = [
     ParamDef(name = "earliestSessionDate", type = LocalDate::class),
   ],
@@ -45,7 +47,7 @@ data class ActivitySchedule(
   @JoinColumn(name = "activity_id", nullable = false)
   val activity: Activity,
 
-  @OneToMany(mappedBy = "activitySchedule", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   val suspensions: MutableList<ActivityScheduleSuspension> = mutableListOf(),
 

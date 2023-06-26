@@ -2,16 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import jakarta.persistence.PersistenceException
 import jakarta.persistence.TypedQuery
 import org.hibernate.Session
 import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SESSION_DATE_FILTER
 import java.time.LocalDate
-import java.util.Optional
 
 interface ActivityScheduleRepositoryCustom {
-  fun getActivityScheduleByIdWithFilters(activityScheduleId: Long, earliestSessionDate: LocalDate): Optional<ActivitySchedule>
+  fun getActivityScheduleByIdWithFilters(activityScheduleId: Long, earliestSessionDate: LocalDate): ActivitySchedule?
 }
 
 class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
@@ -27,25 +26,20 @@ class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
   override fun getActivityScheduleByIdWithFilters(
     activityScheduleId: Long,
     earliestSessionDate: LocalDate,
-  ): Optional<ActivitySchedule> {
+  ): ActivitySchedule? {
     val session = entityManager.unwrap(Session::class.java)
 
-    // Enable the session date filter to limit the scheduled instances returned
     log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
-    val sessionDateFilter = session.enableFilter("SessionDateFilter")
+    val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
     val hql = "SELECT s from ActivitySchedule s where s.activityScheduleId = :activityScheduleId"
     val query: TypedQuery<ActivitySchedule> = entityManager.createQuery(hql, ActivitySchedule::class.java)
     query.setParameter("activityScheduleId", activityScheduleId)
 
-    try {
-      val activitySchedule = query.singleResult
-      return Optional.of(activitySchedule)
-    } catch (e: PersistenceException) {
-      log.error("ActivitySchedule by ID failed ${e.message}")
-    }
-
-    return Optional.empty()
+    return runCatching {
+      query.singleResult
+    }.onFailure { log.error("ActivitySchedule by ID with filters ${it.message}") }
+      .getOrNull()
   }
 }

@@ -58,7 +58,7 @@ class ActivityService(
   fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
     val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+      ?: throw (EntityNotFoundException("Activity $activityId not found"))
     return transform(activity)
   }
 

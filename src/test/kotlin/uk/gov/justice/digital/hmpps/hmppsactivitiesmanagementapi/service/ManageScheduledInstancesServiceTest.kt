@@ -36,7 +36,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
 class ManageScheduledInstancesServiceTest {
@@ -70,22 +69,22 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(leedsBasic)
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(moorlandActivities.first().schedules().first()))
+      .thenReturn(moorlandActivities.first().schedules().first())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(2L, today))
-      .thenReturn(Optional.of(moorlandActivities[1].schedules().first()))
+      .thenReturn(moorlandActivities[1].schedules().first())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today))
-      .thenReturn(Optional.of(moorlandActivities.last().schedules().first()))
+      .thenReturn(moorlandActivities.last().schedules().first())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(4L, today))
-      .thenReturn(Optional.of(leedsActivities.first().schedules().first()))
+      .thenReturn(leedsActivities.first().schedules().first())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(5L, today))
-      .thenReturn(Optional.of(leedsActivities[1].schedules().first()))
+      .thenReturn(leedsActivities[1].schedules().first())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(6L, today))
-      .thenReturn(Optional.of(leedsActivities.last().schedules().first()))
+      .thenReturn(leedsActivities.last().schedules().first())
 
     job.create()
 
@@ -112,7 +111,7 @@ class ManageScheduledInstancesServiceTest {
       .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(activityWithMultipleSlots.first().schedules().first()))
+      .thenReturn(activityWithMultipleSlots.first().schedules().first())
 
     job.create()
 
@@ -139,7 +138,7 @@ class ManageScheduledInstancesServiceTest {
       .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(activityWithExistingInstance.first().schedules().first()))
+      .thenReturn(activityWithExistingInstance.first().schedules().first())
 
     job.create()
 
@@ -157,7 +156,7 @@ class ManageScheduledInstancesServiceTest {
       .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(activityWithSuspension.first().schedules().first()))
+      .thenReturn(activityWithSuspension.first().schedules().first())
 
     job.create()
 
@@ -179,7 +178,7 @@ class ManageScheduledInstancesServiceTest {
       .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(activityDoesNotRunOnABankHoliday.first().schedules().first()))
+      .thenReturn(activityDoesNotRunOnABankHoliday.first().schedules().first())
 
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
@@ -198,7 +197,7 @@ class ManageScheduledInstancesServiceTest {
       .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
-      .thenReturn(Optional.of(activityRunsOnABankHoliday.first().schedules().first()))
+      .thenReturn(activityRunsOnABankHoliday.first().schedules().first())
 
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 

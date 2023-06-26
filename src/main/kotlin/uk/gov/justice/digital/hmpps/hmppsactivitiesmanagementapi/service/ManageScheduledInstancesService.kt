@@ -76,11 +76,11 @@ class ManageScheduledInstancesService(
   private fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
     var instancesCreated = false
 
-    // Only retrieve instances which are for today, or in the future - avoids the past full-entity object maps
+    // Retrieve instances which are for today, or in the future when creating sessions - avoid full-entity object maps
     val earliestSession = LocalDate.now()
 
     val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
-      .orElseThrow { EntityNotFoundException("Activity schedule ID $scheduleId not found") }
+      ?: throw(EntityNotFoundException("Activity schedule ID $scheduleId not found"))
 
     days.forEach { day ->
       if (schedule.isActiveOn(day) && schedule.canBeScheduledOnDay(day) && schedule.hasNoInstancesOnDate(day)) {

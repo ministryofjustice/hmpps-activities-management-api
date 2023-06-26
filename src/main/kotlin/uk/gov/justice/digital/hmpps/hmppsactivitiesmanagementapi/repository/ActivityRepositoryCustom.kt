@@ -2,16 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import jakarta.persistence.PersistenceException
 import jakarta.persistence.TypedQuery
 import org.hibernate.Session
 import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SESSION_DATE_FILTER
 import java.time.LocalDate
-import java.util.Optional
 
 interface ActivityRepositoryCustom {
-  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Optional<Activity>
+  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Activity?
 }
 
 class ActivityRepositoryImpl : ActivityRepositoryCustom {
@@ -23,25 +22,20 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
   }
 
   @Override
-  override fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Optional<Activity> {
+  override fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Activity? {
     val session = entityManager.unwrap(Session::class.java)
 
-    // Enable the session date filter to limit the scheduled instances returned
     log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
-    val sessionDateFilter = session.enableFilter("SessionDateFilter")
+    val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
     val hql = "select a from Activity a where a.activityId = :activityId"
     val query: TypedQuery<Activity> = entityManager.createQuery(hql, Activity::class.java)
     query.setParameter("activityId", activityId)
 
-    try {
-      val activity = query.singleResult
-      return Optional.of(activity)
-    } catch (e: PersistenceException) {
-      log.error("Activity by ID failed ${e.message}")
-    }
-
-    return Optional.empty()
+    return runCatching {
+      query.singleResult
+    }.onFailure { log.error("Activity by ID with filters ${it.message}") }
+      .getOrNull()
   }
 }
