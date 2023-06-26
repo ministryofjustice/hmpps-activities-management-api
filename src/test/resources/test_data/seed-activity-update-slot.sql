@@ -10,8 +10,8 @@ values (1, 1, 'BAS', 'Basic', 1, 125, 150, 1);
 insert into activity_minimum_education_level(activity_minimum_education_level_id, activity_id, education_level_code, education_level_description, study_area_code, study_area_description)
 values (1, 1, '1', 'Reading Measure 1.0', 'ENGLA', 'English Language');
 
-insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
-values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, current_date);
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, runs_on_bank_holiday)
+values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, current_date, true);
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
 values (1, 1, '10:00:00', '11:00:00', true);
