@@ -10,11 +10,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 class AppointmentTest {
@@ -66,9 +68,34 @@ class AppointmentTest {
   }
 
   @Test
-  fun `prisoner numbers removes duplicates`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456), numberOfOccurrences = 2)
-    assertThat(entity.prisonerNumbers()).containsExactly("A1234BC")
+  fun `prisoner numbers uses prisoners allocated to the first future occurrence`() {
+    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
+    entity.occurrences().first().let {
+      it.startDate = LocalDate.now()
+      it.startTime = LocalTime.now().minusMinutes(1)
+    }
+    entity.addOccurrence(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().plusMinutes(1), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
+    entity.addOccurrence(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().plusMinutes(2), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
+    assertThat(entity.prisonerNumbers()).containsExactly("B2345CD")
+  }
+
+  @Test
+  fun `prisoner numbers uses prisoners allocated to the last occurrence if all occurrences have past`() {
+    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
+    entity.occurrences().first().let {
+      it.startDate = LocalDate.now()
+      it.startTime = LocalTime.now().minusMinutes(3)
+    }
+    entity.addOccurrence(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().minusMinutes(2), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
+    entity.addOccurrence(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().minusMinutes(1), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
+    assertThat(entity.prisonerNumbers()).containsExactly("C3456DE")
+  }
+
+  @Test
+  fun `prisoner numbers uses empty list if there are no occurrences`() {
+    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
+    entity.removeOccurrence(entity.occurrences().first())
+    assertThat(entity.prisonerNumbers()).isEmpty()
   }
 
   @Test

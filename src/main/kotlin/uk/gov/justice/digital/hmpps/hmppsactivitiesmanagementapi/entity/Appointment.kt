@@ -102,7 +102,11 @@ data class Appointment(
   fun internalLocationIds() =
     listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
 
-  fun prisonerNumbers() = occurrences().map { occurrence -> occurrence.prisonerNumbers() }.flatten().distinct()
+  fun prisonerNumbers(): List<String> {
+    val orderedOccurrences = occurrences().sortedBy { it.startDateTime() }
+    if (orderedOccurrences.isEmpty()) return emptyList()
+    return (orderedOccurrences.firstOrNull { !it.isExpired() } ?: orderedOccurrences.last()).prisonerNumbers()
+  }
 
   fun usernames() =
     listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()

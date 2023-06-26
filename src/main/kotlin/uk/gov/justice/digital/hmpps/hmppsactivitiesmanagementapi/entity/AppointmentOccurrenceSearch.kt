@@ -60,7 +60,11 @@ data class AppointmentOccurrenceSearch(
   @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.LAZY)
   var allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
 
-  fun toResult(referenceCodeMap: Map<String, ReferenceCode>, locationMap: Map<Long, Location>) = AppointmentOccurrenceSearchResult(
+  fun toResult(
+    allocations: List<AppointmentOccurrenceAllocationSearch>,
+    referenceCodeMap: Map<String, ReferenceCode>,
+    locationMap: Map<Long, Location>,
+  ) = AppointmentOccurrenceSearchResult(
     appointmentId,
     appointmentOccurrenceId,
     appointmentType,
@@ -89,6 +93,7 @@ data class AppointmentOccurrenceSearch(
 }
 
 fun List<AppointmentOccurrenceSearch>.toResults(
+  allocationsMap: Map<Long, List<AppointmentOccurrenceAllocationSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-) = map { it.toResult(referenceCodeMap, locationMap) }
+) = map { it.toResult(allocationsMap[it.appointmentOccurrenceId] ?: emptyList(), referenceCodeMap, locationMap) }
