@@ -925,4 +925,34 @@ class ActivityScheduleTest {
       assertThat(hasNoInstancesOnDate(tomorrow, slotOne.startTime to slotOne.endTime)).isTrue
     }
   }
+
+  @Test
+  fun `change to schedule end date is applied to allocations`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(), noAllocations = true, startDate = yesterday, endDate = tomorrow)
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "1111111".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      endDate = tomorrow,
+    )
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "2222222".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 20002,
+      allocatedBy = "BILL",
+      endDate = tomorrow,
+    )
+
+    assertThat(schedule.allocations()).hasSize(2)
+
+    schedule.allocations().forEach { allocation -> assertThat(allocation.endDate).isEqualTo(tomorrow) }
+
+    schedule.endDate = today
+
+    schedule.allocations().forEach { allocation -> assertThat(allocation.endDate).isEqualTo(today) }
+  }
 }
