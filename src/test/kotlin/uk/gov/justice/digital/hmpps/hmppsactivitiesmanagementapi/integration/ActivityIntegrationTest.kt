@@ -691,11 +691,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(instances).hasSize(4)
     }
 
-    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", friday = true)))
+    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", thursday = true)))
 
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdayFridaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
-      assertThat(slots.first().daysOfWeek).containsExactly("Fri")
+      assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSize(2)
     }
 
