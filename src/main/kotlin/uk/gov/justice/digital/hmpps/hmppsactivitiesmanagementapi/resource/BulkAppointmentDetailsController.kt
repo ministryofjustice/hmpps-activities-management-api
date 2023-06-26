@@ -23,12 +23,8 @@ class BulkAppointmentDetailsController(
   @GetMapping(value = ["/{bulkAppointmentId}"])
   @ResponseBody
   @Operation(
-    summary = "Bulk create a set of appointments",
-    description =
-    """
-    Create a list of appointments and allocate the supplied prisoner or prisoners to them.
-    Does not require any specific roles
-    """,
+    summary = "Gets the details of a set of appointments created as part of a single bulk operation for display purposes",
+    description = "Returns the displayable details of a set of appointments created as part of a single bulk operation by its unique identifier.",
   )
   @ApiResponses(
     value = [

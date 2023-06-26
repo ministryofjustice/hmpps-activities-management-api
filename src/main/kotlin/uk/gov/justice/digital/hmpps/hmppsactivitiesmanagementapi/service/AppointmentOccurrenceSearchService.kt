@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
 import java.security.Principal
@@ -13,6 +14,7 @@ import java.security.Principal
 @Transactional(readOnly = true)
 class AppointmentOccurrenceSearchService(
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository,
+  private val appointmentOccurrenceAllocationSearchRepository: AppointmentOccurrenceAllocationSearchRepository,
   private val appointmentOccurrenceSearchSpecification: AppointmentOccurrenceSearchSpecification,
   private val prisonRegimeService: PrisonRegimeService,
   private val referenceCodeService: ReferenceCodeService,
@@ -69,10 +71,13 @@ class AppointmentOccurrenceSearchService(
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
 
+    val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentOccurrenceId })
+      .groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
-    return results.toResults(referenceCodeMap, locationMap)
+    return results.toResults(allocationsMap, referenceCodeMap, locationMap)
   }
 }
