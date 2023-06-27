@@ -300,4 +300,36 @@ class AllocationTest {
       ),
     )
   }
+
+  @Test
+  fun `planned deallocation is updated when new end date is before planned`() {
+    val allocation = allocation().apply {
+      endDate = null
+    }.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
+
+    assertThat(allocation.plannedDeallocation?.plannedDate).isEqualTo(tomorrow)
+
+    allocation.apply {
+      endDate = today
+    }
+
+    assertThat(allocation.endDate).isEqualTo(today)
+    assertThat(allocation.plannedDeallocation?.plannedDate).isEqualTo(today)
+  }
+
+  @Test
+  fun `planned deallocation is not updated when new end date is after planned date`() {
+    val allocation = allocation().apply {
+      endDate = null
+    }.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
+
+    assertThat(allocation.plannedDeallocation?.plannedDate).isEqualTo(tomorrow)
+
+    allocation.apply {
+      endDate = tomorrow.plusDays(1)
+    }
+
+    assertThat(allocation.endDate).isEqualTo(tomorrow.plusDays(1))
+    assertThat(allocation.plannedDeallocation?.plannedDate).isEqualTo(tomorrow)
+  }
 }
