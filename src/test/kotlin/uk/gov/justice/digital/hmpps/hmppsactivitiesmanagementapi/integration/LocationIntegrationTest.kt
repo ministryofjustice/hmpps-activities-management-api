@@ -3,8 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 
 class LocationIntegrationTest : IntegrationTestBase() {
 
@@ -166,52 +168,28 @@ class LocationIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `get location prefix by group`() {
-    val prisonCode = "MDI"
-    val groupName = "Houseblock 1"
-
-    val result = this::class.java.getResource("/__files/prisonapi/MDI_location-prefix.json")?.readText()
-
-    webTestClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefix")
-          .queryParam("groupName", groupName)
-          .build(prisonCode)
-      }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody()
-      .json(result!!)
+  fun `get location prefix by group pattern`() {
+    assertThat(webTestClient.getLocationPrefix("MDI", "Houseblock 1"))
+      .isEqualTo(LocationPrefixDto("MDI-1-"))
   }
 
   @Test
-  fun `get location prefix by group - 404 if no prefix found`() {
-    val prisonCode = "MDI"
-    val groupName = "IDONTEXIST"
+  fun `get location prefix by group default`() {
+    assertThat(webTestClient.getLocationPrefix("LDI", "A_B"))
+      .isEqualTo(LocationPrefixDto("LDI-A-B-"))
+  }
 
-    val errorResponse = webTestClient.get()
+  private fun WebTestClient.getLocationPrefix(prisonCode: String, groupName: String) =
+    get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/locations/prison/{prisonCode}/location-prefix")
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
-      .expectStatus().isNotFound
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ErrorResponse::class.java)
+      .expectStatus().isOk
+      .expectBody(LocationPrefixDto::class.java)
       .returnResult().responseBody
-
-    with(errorResponse!!) {
-      assertThat(errorCode).isNull()
-      assertThat(developerMessage).isEqualTo("No location prefix found for prison $prisonCode and group name '$groupName'")
-      assertThat(moreInfo).isNull()
-      assertThat(status).isEqualTo(404)
-      assertThat(userMessage).isEqualTo("Not found: No location prefix found for prison $prisonCode and group name '$groupName'")
-    }
-  }
 }
