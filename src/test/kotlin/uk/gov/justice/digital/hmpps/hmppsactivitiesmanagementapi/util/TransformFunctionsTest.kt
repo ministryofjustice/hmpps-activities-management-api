@@ -263,12 +263,45 @@ class TransformFunctionsTest {
     }
 
     @Test
+    fun `appointment instance with empty appointmentDescription to scheduled event`() {
+      val entity = appointmentInstanceEntity(appointmentDescription = "")
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Test Category")
+      }
+    }
+
+    @Test
+    fun `appointment instance with unknown appointment category to scheduled event`() {
+      val entity = appointmentInstanceEntity(categoryCode = "UNKOWN")
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("UNKOWN")
+      }
+    }
+
+    @Test
     fun `appointment instance with appointmentDescription to scheduled event`() {
       val entity = appointmentInstanceEntity(appointmentDescription = "Description of appointment")
       val scheduledEvents = transform(entity)
 
       with(scheduledEvents.first()) {
-        assertThat(summary).isEqualTo("Description of appointment")
+        assertThat(summary).isEqualTo("Description of appointment (Test Category)")
+      }
+    }
+
+    @Test
+    fun `appointment instance with appointmentDescription and unknown category code to scheduled event`() {
+      val entity = appointmentInstanceEntity(
+        appointmentDescription = "Description of appointment",
+        categoryCode = "UNKOWN",
+      )
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Description of appointment (UNKOWN)")
       }
     }
 

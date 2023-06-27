@@ -149,7 +149,9 @@ fun transformAppointmentInstanceToScheduledEvents(
     suspended = false,
     categoryCode = it.categoryCode,
     categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode]?.description ?: "Unknown",
-    summary = it.appointmentDescription ?: referenceCodesForAppointmentsMap[it.categoryCode]?.description,
+    summary = (referenceCodesForAppointmentsMap[it.categoryCode]?.description ?: it.categoryCode).let { category ->
+      if (!it.appointmentDescription.isNullOrEmpty()) "${it.appointmentDescription} ($category)" else category
+    },
     comments = it.comment,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
