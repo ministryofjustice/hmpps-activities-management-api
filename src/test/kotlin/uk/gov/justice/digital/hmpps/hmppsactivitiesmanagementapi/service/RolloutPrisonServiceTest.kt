@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -15,15 +13,20 @@ class RolloutPrisonServiceTest {
   private val service = RolloutPrisonService(repository)
 
   @Test
-  fun `returns an rollout prison for known prison code`() {
+  fun `returns an rollout prison plan for known prison code`() {
     whenever(repository.findByCode("PVI")).thenReturn(rolloutPrison())
 
     assertThat(service.getByPrisonCode("PVI")).isInstanceOf(RolloutPrisonPlan::class.java)
   }
 
   @Test
-  fun `throws entity not found exception for unknown prison code`() {
-    assertThatThrownBy { service.getByPrisonCode("PVX") }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("PVX")
+  fun `returns a default rollout prison plan for an unknown prison code`() {
+    whenever(repository.findByCode("PVX")).thenReturn(null)
+
+    assertThat(service.getByPrisonCode("PVX"))
+      .isInstanceOf(RolloutPrisonPlan::class.java)
+      .hasFieldOrPropertyWithValue("prisonCode", "PVX")
+      .hasFieldOrPropertyWithValue("activitiesRolledOut", false)
+      .hasFieldOrPropertyWithValue("appointmentsRolledOut", false)
   }
 }
