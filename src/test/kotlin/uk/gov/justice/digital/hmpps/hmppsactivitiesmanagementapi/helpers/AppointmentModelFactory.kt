@@ -194,6 +194,9 @@ fun appointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
+  appointmentCategorySummary().description.let { category ->
+    if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription ($category)" else category
+  },
   prisoners = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
@@ -252,6 +255,7 @@ fun appointmentOccurrenceDetails(
   AppointmentType.INDIVIDUAL,
   sequenceNumber,
   "TPR",
+  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   prisoners,
   category,
   appointmentDescription,
@@ -276,6 +280,7 @@ fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult
   2,
   AppointmentType.INDIVIDUAL,
   "TPR",
+  appointmentCategorySummary().description,
   listOf(appointmentOccurrenceAllocationModel()),
   appointmentCategorySummary(),
   null,

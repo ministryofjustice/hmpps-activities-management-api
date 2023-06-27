@@ -100,6 +100,7 @@ internal fun appointmentInstanceEntity(
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   appointmentDescription: String? = null,
+  categoryCode: String = "TEST",
 ) =
   AppointmentInstance(
     appointmentInstanceId = 3,
@@ -110,7 +111,7 @@ internal fun appointmentInstanceEntity(
     prisonCode = "TPR",
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
-    categoryCode = "TEST",
+    categoryCode = categoryCode,
     appointmentDescription = appointmentDescription,
     internalLocationId = if (inCell) null else internalLocationId,
     inCell = inCell,

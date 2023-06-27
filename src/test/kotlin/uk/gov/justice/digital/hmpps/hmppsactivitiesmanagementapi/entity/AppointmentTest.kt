@@ -119,7 +119,6 @@ class AppointmentTest {
   @Test
   fun `entity to details mapping`() {
     val entity = appointmentEntity()
-    val occurrenceEntity = entity.occurrences().first()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
