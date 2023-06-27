@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
@@ -82,7 +84,7 @@ fun appointmentInstanceModel(
   null,
   123,
   false,
-  LocalDate.now(),
+  LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment instance level comment",
@@ -183,7 +185,12 @@ fun appointmentMigrateRequest(
     updatedBy,
   )
 
-fun appointmentDetails() = AppointmentDetails(
+fun appointmentDetails(
+  appointmentDescription: String? = null,
+  created: LocalDateTime = LocalDateTime.now(),
+  updated: LocalDateTime? = LocalDateTime.now(),
+  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+) = AppointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
@@ -191,62 +198,77 @@ fun appointmentDetails() = AppointmentDetails(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
   appointmentCategorySummary(),
-  null,
+  appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
-  LocalDate.now(),
+  LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   null,
   "Appointment level comment",
-  LocalDateTime.now(),
+  created,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  LocalDateTime.now(),
-  UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updated,
+  updatedBy,
   occurrences = listOf(
     AppointmentOccurrenceSummary(
       1,
       1,
-      1,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
-      LocalDate.now(),
+      LocalDate.now().plusDays(1),
       LocalTime.of(9, 0),
       LocalTime.of(10, 30),
       "Appointment occurrence level comment",
-      isEdited = false,
+      isEdited = updated != null,
       isCancelled = false,
-      LocalDateTime.now(),
-      UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+      updated,
+      updatedBy,
     ),
   ),
 )
 
-fun appointmentOccurrenceDetails() = AppointmentOccurrenceDetails(
-  1,
-  2,
-  AppointmentType.INDIVIDUAL,
-  3,
-  "TPR",
-  prisoners = listOf(
+fun appointmentOccurrenceDetails(
+  appointmentOccurrenceId: Long = 1,
+  appointmentId: Long = 2,
+  bulkAppointmentSummary: BulkAppointmentSummary? = null,
+  sequenceNumber: Int = 3,
+  prisoners: List<PrisonerSummary> = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
-  appointmentCategorySummary(),
-  null,
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
+  appointmentDescription: String? = null,
+  startTime: LocalTime = LocalTime.of(9, 0),
+  endTime: LocalTime = LocalTime.of(10, 30),
+  comment: String = "Appointment occurrence level comment",
+  created: LocalDateTime = LocalDateTime.now(),
+  createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  updated: LocalDateTime? = LocalDateTime.now(),
+  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+) = AppointmentOccurrenceDetails(
+  appointmentOccurrenceId,
+  appointmentId,
+  bulkAppointmentSummary,
+  AppointmentType.INDIVIDUAL,
+  sequenceNumber,
+  "TPR",
+  prisoners,
+  category,
+  appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
-  LocalDate.now(),
-  LocalTime.of(9, 0),
-  LocalTime.of(10, 30),
-  "Appointment level comment",
+  LocalDate.now().plusDays(1),
+  startTime,
+  endTime,
+  comment,
   null,
+  updated != null,
   false,
   false,
-  false,
-  LocalDateTime.now(),
-  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  LocalDateTime.now(),
-  UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  created,
+  createdBy,
+  updated,
+  updatedBy,
 )
 
 fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(
@@ -268,4 +290,50 @@ fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult
   false,
   false,
   false,
+)
+
+fun bulkAppointmentDetails(
+  bulkAppointmentId: Long = 1,
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
+  appointmentDescription: String? = null,
+  created: LocalDateTime = LocalDateTime.now(),
+) = BulkAppointmentDetails(
+  bulkAppointmentId,
+  "TPR",
+  category,
+  appointmentDescription,
+  AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+  false,
+  LocalDate.now().plusDays(1),
+  occurrences = listOf(
+    appointmentOccurrenceDetails(
+      1, 1, BulkAppointmentSummary(1, 3), 1,
+      listOf(
+        PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
+      ),
+      category, appointmentDescription,
+      LocalTime.of(9, 0),
+      LocalTime.of(10, 30), created = created, updated = null, updatedBy = null,
+    ),
+    appointmentOccurrenceDetails(
+      2, 2, BulkAppointmentSummary(1, 3), 1,
+      listOf(
+        PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
+      ),
+      category, appointmentDescription,
+      LocalTime.of(9, 30),
+      LocalTime.of(11, 0), created = created, updated = null, updatedBy = null,
+    ),
+    appointmentOccurrenceDetails(
+      3, 3, BulkAppointmentSummary(1, 3), 1,
+      listOf(
+        PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
+      ),
+      category, appointmentDescription,
+      LocalTime.of(10, 0),
+      LocalTime.of(11, 30), created = created, updated = null, updatedBy = null,
+    ),
+  ),
+  created,
+  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
 )

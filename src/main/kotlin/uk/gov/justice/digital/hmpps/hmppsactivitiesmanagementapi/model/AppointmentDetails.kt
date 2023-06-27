@@ -42,8 +42,8 @@ data class AppointmentDetails(
     """
     Summary of the prisoner or prisoners allocated to the first future occurrence (or most recent past occurrence if all
     occurrences are in the past) of this appointment. Prisoners are allocated at the occurrence level to allow for per
-    occurrence allocation changes. The occurrence summary contains a count of allocated prisoners rather than the full
-    list as the expected usage is to show a summary of the occurrences then a link to display the full occurrence details.
+    occurrence allocation changes. The occurrence summary does not contain any information on the allocated prisoners
+    as the expected usage is to show a summary of the occurrences then a link to display the full occurrence details.
     """,
   )
   val prisoners: List<PrisonerSummary> = emptyList(),

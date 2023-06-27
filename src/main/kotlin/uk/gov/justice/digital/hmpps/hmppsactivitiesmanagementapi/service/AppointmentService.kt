@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
@@ -34,13 +35,22 @@ class AppointmentService(
   private val prisonApiUserClient: PrisonApiUserClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
+  @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long) =
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
     createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
       BulkAppointmentEntity(
-        appointments = request.appointments.map {
+        prisonCode = request.prisonCode,
+        categoryCode = request.categoryCode,
+        appointmentDescription = request.appointmentDescription,
+        internalLocationId = request.internalLocationId,
+        inCell = request.inCell,
+        startDate = request.startDate,
+        createdBy = principal.name,
+      ).apply {
+        request.appointments.map {
           buildValidAppointmentEntity(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode,
@@ -56,9 +66,8 @@ class AppointmentService(
             comment = it.comment,
             createdBy = principal.name,
           )
-        }.toList(),
-        createdBy = principal.name,
-      ).let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+        }.forEach { appointment -> this.addAppointment(appointment) }
+      }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
     }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =

@@ -14,6 +14,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -21,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -42,6 +45,7 @@ class ManageAttendancesServiceTest {
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val rolloutPrison: RolloutPrison = mock {
     on { code } doReturn moorlandPrisonCode
     on { isActivitiesRolledOut() } doReturn true
@@ -56,6 +60,7 @@ class ManageAttendancesServiceTest {
     attendanceReasonRepository,
     rolloutPrisonRepository,
     outboundEventsService,
+    prisonerSearchApiClient,
   )
 
   private val today = LocalDate.now()
@@ -79,6 +84,12 @@ class ManageAttendancesServiceTest {
     instance.activitySchedule.activity.attendanceRequired = true
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees)).thenReturn(
+      Mono.just(
+        attendees.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) },
+      ),
+    )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -93,11 +104,27 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
+  fun `attendance record is not created when allocation is pending`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    allocation.prisonerStatus = PrisonerStatus.PENDING
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(Mono.just(emptyList()))
+
+    service.attendances(AttendanceOperation.CREATE)
+
+    verifyNoInteractions(attendanceRepository)
+  }
+
+  @Test
   fun `attendance record is not created when allocation has ended`() {
     instance.activitySchedule.activity.attendanceRequired = true
+
     allocation.deallocateNowWithReason(DeallocationReason.ENDED)
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(Mono.just(emptyList()))
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -111,6 +138,15 @@ class ManageAttendancesServiceTest {
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -131,6 +167,15 @@ class ManageAttendancesServiceTest {
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -153,6 +198,16 @@ class ManageAttendancesServiceTest {
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
+
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -177,6 +232,15 @@ class ManageAttendancesServiceTest {
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -195,6 +259,15 @@ class ManageAttendancesServiceTest {
     instance.activitySchedule.activity.attendanceRequired = false
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -210,6 +283,15 @@ class ManageAttendancesServiceTest {
         allocation.prisonerNumber,
       ),
     ).thenReturn(true)
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        Mono.just(
+          attendees.map {
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+          },
+        ),
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 

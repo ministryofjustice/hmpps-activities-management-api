@@ -66,6 +66,8 @@ data class ScheduledInstance(
     attendances.forEach(Attendance::uncancel)
   }
 
+  fun dayOfWeek() = sessionDate.dayOfWeek
+
   fun toModel() = ModelScheduledInstance(
     activitySchedule = this.activitySchedule.toModelLite(),
     id = this.scheduledInstanceId,
@@ -76,6 +78,7 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
+    comment = this.comment,
     previousScheduledInstanceId = this.previous()?.scheduledInstanceId,
     previousScheduledInstanceDate = this.previous()?.sessionDate,
     nextScheduledInstanceId = this.next()?.scheduledInstanceId,

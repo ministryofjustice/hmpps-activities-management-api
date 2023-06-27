@@ -14,7 +14,7 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
 
   fun stubGetAllPrisonersInPrison(prisonCode: String) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/prisoner-search/prison/$prisonCode?size=2000"))
+      WireMock.get(WireMock.urlEqualTo("/prison/$prisonCode/prisoners?size=2000"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

@@ -14,7 +14,7 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
 
   fun getAllPrisonersInPrison(prisonCode: String) = prisonerSearchApiWebClient
     .get()
-    .uri("/prisoner-search/prison/$prisonCode?size=2000")
+    .uri("/prison/$prisonCode/prisoners?size=2000")
     .header("Content-Type", "application/json")
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())
@@ -27,6 +27,9 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
       .retrieve()
       .bodyToMono(typeReference<List<Prisoner>>())
   }
+
+  fun findByPrisonerNumbersMap(prisonerNumbers: List<String>): Map<String, Prisoner> =
+    findByPrisonerNumbers(prisonerNumbers).block()!!.associateBy { it.prisonerNumber }
 
   suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> {
     if (prisonerNumbers.isEmpty()) return emptyList()

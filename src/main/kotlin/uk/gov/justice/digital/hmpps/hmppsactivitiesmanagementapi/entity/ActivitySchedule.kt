@@ -117,9 +117,6 @@ data class ActivitySchedule(
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
 
-  fun activityPayForBand(payBand: PrisonPayBand) =
-    activity.activityPay().firstOrNull { it.payBand == payBand }
-
   companion object {
     fun valueOf(
       activity: Activity,
@@ -153,7 +150,14 @@ data class ActivitySchedule(
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
 
   fun hasNoInstancesOnDate(day: LocalDate) =
-    this.instances.none { scheduledInstance -> scheduledInstance.sessionDate == day }
+    instances.none { instance -> instance.sessionDate == day }
+
+  fun hasNoInstancesOnDate(day: LocalDate, startEndTime: Pair<LocalTime, LocalTime>) =
+    instances.none { instance ->
+      instance.sessionDate == day &&
+        instance.startTime == startEndTime.first &&
+        instance.endTime == startEndTime.second
+    }
 
   fun addInstance(
     sessionDate: LocalDate,
@@ -189,18 +193,15 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) {
+  fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) =
     addSlot(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
-  }
 
-  fun addSlot(slot: ActivityScheduleSlot) {
+  fun addSlot(slot: ActivityScheduleSlot): ActivityScheduleSlot {
     if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
 
     slots.add(slot)
-  }
 
-  fun removeSlots() {
-    slots.clear()
+    return slots.last()
   }
 
   fun allocatePrisoner(
@@ -224,7 +225,9 @@ data class ActivitySchedule(
       "Allocation end date cannot be before allocation start date"
     }
 
-    // TODO you should only be able to allocate if schedule is active (the end date has not passed) !!!
+    require(activity.endDate == null || startDate <= activity.endDate) {
+      "Allocation start date cannot be after the activity end date."
+    }
 
     allocations.add(
       Allocation(
@@ -248,7 +251,6 @@ data class ActivitySchedule(
     if (allocatedBy.isBlank()) throw IllegalArgumentException("Allocated by cannot be blank.")
   }
 
-  // TODO if the allocation is ended then should be able to re-allocate ...
   private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
@@ -297,6 +299,38 @@ data class ActivitySchedule(
 
   fun removeInstances(fromDate: LocalDate, toDate: LocalDate) {
     instances.removeAll(instances().filter { it.sessionDate.between(fromDate, toDate) })
+  }
+
+  fun updateSlotsAndRemoveRedundantInstances(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    removeRedundantSlots(updates)
+    updateMatchingSlots(updates)
+    addNewSlots(updates)
+
+    val instancesToKeep = instances
+      .filter {
+        it.sessionDate >= LocalDate.now() &&
+          (it.attendances.isNotEmpty() || updates[it.startTime to it.endTime]?.contains(it.dayOfWeek()) == true)
+      }
+
+    instances.removeIf { instancesToKeep.contains(it).not() }
+  }
+
+  private fun removeRedundantSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.startTime, it.endTime)) })
+  }
+
+  private fun updateMatchingSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    slots.forEach { slot ->
+      updates[slot.startTime to slot.endTime]?.let(slot::update)
+    }
+  }
+
+  private fun addNewSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {
+    updates.keys.filterNot { key ->
+      slots.map { Pair(it.startTime, it.endTime) }.contains(key)
+    }.forEach {
+      addSlot(it.first, it.second, updates[it]!!)
+    }
   }
 }
 

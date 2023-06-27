@@ -13,13 +13,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,16 +32,29 @@ class CandidatesService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val activityScheduleRepository: ActivityScheduleRepository,
-  private val allocationsService: AllocationsService,
+  private val allocationRepository: AllocationRepository,
 ) {
   fun candidateSuitability(scheduleId: Long, prisonerNumber: String): AllocationSuitability {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
 
-    val candidateDetails = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()!!.first()
+    val candidateDetails = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.first()
+      ?: throw IllegalArgumentException("Prisoner number '$prisonerNumber' not found")
 
     val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))
     val prisonerNonAssociations = prisonApiClient.getOffenderNonAssociations(prisonerNumber)
     val prisonerNumbers = schedule.allocations(true).map { it.prisonerNumber }
+
+    val candidateAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(
+      candidateDetails.prisonId!!,
+      candidateDetails.prisonerNumber,
+    ).map { allocation ->
+      AllocationPayRate(
+        allocation = allocation.toModel(),
+        payRate = candidateDetails.currentIncentive?.level?.code ?.let {
+          allocation.allocationPay(it)
+        }?.toModelLite(),
+      )
+    }
 
     return AllocationSuitability(
       workplaceRiskAssessment = wraSuitability(schedule.activity.riskLevel, candidateDetails.alerts),
@@ -46,6 +62,7 @@ class CandidatesService(
       education = educationSuitability(schedule.activity.activityMinimumEducationLevel(), prisonerEducation),
       releaseDate = releaseDateSuitability(schedule.startDate, candidateDetails),
       nonAssociation = nonAssociationSuitability(prisonerNumbers, prisonerNonAssociations),
+      allocations = candidateAllocations,
     )
   }
 
@@ -68,10 +85,10 @@ class CandidatesService(
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
 
-    val prisonerAllocations = allocationsService.findByPrisonCodeAndPrisonerNumbers(
+    val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
       prisonCode,
-      prisoners.map { it.prisonerNumber }.toSet(),
-    )
+      prisoners.map { it.prisonerNumber },
+    ).toModelPrisonerAllocations()
 
     prisoners =
       prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }

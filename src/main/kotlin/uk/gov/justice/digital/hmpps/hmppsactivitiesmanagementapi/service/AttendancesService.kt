@@ -68,7 +68,10 @@ class AttendancesService(
 
   fun getAttendanceById(id: Long): ModelAttendance {
     val attendance = attendanceRepository.findOrThrowNotFound(id)
-    return attendance.toModel(caseNotesApiClient)
+    return transform(
+      attendance,
+      caseNotesApiClient,
+    )
   }
 
   fun getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendanceSummary> =

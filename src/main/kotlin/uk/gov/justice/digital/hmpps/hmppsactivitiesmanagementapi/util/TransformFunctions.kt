@@ -321,6 +321,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
+    caseNoteText = attendance.caseNoteId?.let { caseNotesApiClient?.getCaseNote(attendance.prisonerNumber, attendance.caseNoteId)?.text },
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
