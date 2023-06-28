@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
 import org.apache.commons.text.WordUtils
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
@@ -20,11 +19,8 @@ class LocationService(
   fun getLocationPrefixFromGroup(agencyId: String, group: String): LocationPrefixDto {
     val agencyGroupKey = "${agencyId}_$group"
     val pattern = groupsProperties.getProperty(agencyGroupKey)
-      ?: throw EntityNotFoundException("No location prefix found for prison $agencyId and group name '$group'")
 
-    val locationPrefix = pattern
-      .replace(".", "")
-      .replace("+", "")
+    val locationPrefix = pattern?.replace(".", "")?.replace("+", "") ?: "$agencyId-${group.replace('_', '-')}-"
 
     return LocationPrefixDto(locationPrefix)
   }
