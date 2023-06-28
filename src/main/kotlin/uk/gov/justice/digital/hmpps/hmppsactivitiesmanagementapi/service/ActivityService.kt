@@ -195,8 +195,8 @@ class ActivityService(
   }
 
   private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String?) {
-    if (requestDescription != apiDescription) {
-      throw IllegalArgumentException("The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'")
+    require(requestDescription == apiDescription) {
+      "The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'"
     }
   }
 
@@ -355,17 +355,17 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.startDate?.apply {
-      activity.startDate = this
+    request.startDate?.let { newStartDate ->
+      activity.startDate = newStartDate
       activity.schedules().forEach {
-        if (it.startDate < this) {
+        if (it.startDate < newStartDate) {
           // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          it.removeInstances(it.startDate, this.minusDays(1))
-        } else if (this < it.startDate) {
+          it.removeInstances(it.startDate, newStartDate.minusDays(1))
+        } else if (newStartDate < it.startDate) {
           // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
+          it.addInstances(activity, it.slots(), newStartDate, it.startDate.minusDays(1))
         }
-        it.startDate = this
+        it.startDate = newStartDate
       }
     }
   }
@@ -374,18 +374,17 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.endDate?.apply {
-      activity.endDate = this
+    request.endDate?.let { newEndDate ->
+      activity.endDate = newEndDate
       activity.schedules().forEach {
-        if (it.endDate == null || it.endDate!! > this) {
+        if (it.endDate == null || it.endDate!! > newEndDate) {
           // end date has been set or moved earlier so remove all instances from the day after the new end date
-          (it.endDate)?.let { it1 -> it.removeInstances(this.plusDays(1), it1) }
-        } else if (it.endDate !== null && it.endDate!! < this) {
+          (it.endDate)?.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
+        } else if (it.endDate !== null && it.endDate!! < newEndDate) {
           // end date has been moved later so add new instances from the day after the original end date up to the new end date
-          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), this)
+          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), newEndDate)
         }
-        it.endDate = this
-        it.allocations().forEach { allocation -> allocation.endDate = this }
+        it.endDate = newEndDate
       }
     }
   }

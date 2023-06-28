@@ -51,13 +51,24 @@ data class Allocation(
 
   var endDate: LocalDate? = null
     set(value) {
-      field = if (value == null) {
-        plannedDeallocation = null
-        null
-      } else {
-        value
+      require(value == null || value >= startDate) {
+        "Allocation end date for prisoner $prisonerNumber cannot be before allocation start date."
+      }
+
+      field = value.also { updatePlannedDeallocation(it) }
+    }
+
+  private fun updatePlannedDeallocation(newEndDate: LocalDate?) {
+    if (newEndDate == null) {
+      plannedDeallocation = null
+    } else {
+      plannedDeallocation?.apply {
+        if (plannedDate.isAfter(newEndDate)) {
+          plannedDate = newEndDate
+        }
       }
     }
+  }
 
   @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "planned_deallocation_id", nullable = true)

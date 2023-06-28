@@ -99,8 +99,17 @@ data class ActivitySchedule(
         throw IllegalArgumentException("End date must be after the start date")
       } else {
         value
-      }
+      }.also { updateImpactedAllocations(it) }
     }
+
+  private fun updateImpactedAllocations(newEndDate: LocalDate?) {
+    newEndDate?.let {
+      allocations
+        .filterNot { allocation -> allocation.status(PrisonerStatus.ENDED) }
+        .filter { allocation -> allocation.endDate == null || allocation.endDate?.isAfter(newEndDate) == true }
+        .forEach { allocation -> allocation.endDate = newEndDate }
+    }
+  }
 
   fun instances() = instances.toList()
 
