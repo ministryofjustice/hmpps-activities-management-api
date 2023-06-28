@@ -318,7 +318,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
     val appointments = async {
-      if (rolloutPrison.isAppointmentsRolledOut()) {
+      if (rolloutPrison.isAppointmentsRolledOut() || prisonerNumbers.isEmpty()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -331,7 +331,7 @@ class ScheduledEventService(
     }
 
     val activities = async {
-      if (rolloutPrison.isActivitiesRolledOut()) {
+      if (rolloutPrison.isActivitiesRolledOut() || prisonerNumbers.isEmpty()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(
@@ -344,21 +344,29 @@ class ScheduledEventService(
     }
 
     val courtEvents = async {
-      prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(
-        rolloutPrison.code,
-        prisonerNumbers,
-        date,
-        timeSlot,
-      )
+      if (prisonerNumbers.isEmpty()) {
+        emptyList()
+      } else {
+        prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(
+          rolloutPrison.code,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
+      }
     }
 
     val visits = async {
-      prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(
-        rolloutPrison.code,
-        prisonerNumbers,
-        date,
-        timeSlot,
-      )
+      if (prisonerNumbers.isEmpty()) {
+        emptyList()
+      } else {
+        prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(
+          rolloutPrison.code,
+          prisonerNumbers,
+          date,
+          timeSlot,
+        )
+      }
     }
 
     val transfers = async {
@@ -366,12 +374,16 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      prisonApiClient.getOffenderAdjudications(
-        rolloutPrison.code,
-        date.rangeTo(date.plusDays(1)),
-        prisonerNumbers,
-        timeSlot,
-      )
+      if (prisonerNumbers.isEmpty()) {
+        emptyList()
+      } else {
+        prisonApiClient.getOffenderAdjudications(
+          rolloutPrison.code,
+          date.rangeTo(date.plusDays(1)),
+          prisonerNumbers,
+          timeSlot,
+        )
+      }
     }
 
     MultiPrisonerSchedules(
@@ -388,7 +400,7 @@ class ScheduledEventService(
     date: LocalDate,
     prisonCode: String,
     prisonerNumbers: Set<String>,
-  ) = if (date == LocalDate.now()) {
+  ) = if (date == LocalDate.now() && prisonerNumbers.isNotEmpty()) {
     prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
       .map { transfers -> transfers.redacted() }
   } else {
