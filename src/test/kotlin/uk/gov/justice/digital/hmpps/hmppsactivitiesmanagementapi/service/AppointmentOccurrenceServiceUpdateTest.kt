@@ -20,7 +20,9 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -61,15 +63,28 @@ class AppointmentOccurrenceServiceUpdateTest {
   @DisplayName("update appointment occurrence validation")
   inner class UpdateAppointmentOccurrenceValidation {
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
-    private val appointmentOccurrence = appointment.occurrences().first()
 
     @BeforeEach
     fun setUp() {
       whenever(principal.name).thenReturn("TEST.USER")
+    }
+
+    fun expectGroupAppointment(): AppointmentOccurrence {
+      val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.GROUP)
+      val appointmentOccurrence = appointment.occurrences().first()
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
+      return appointmentOccurrence
+    }
+
+    fun expectIndividualAppointment(): AppointmentOccurrence {
+      val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+      return appointmentOccurrence
     }
 
     @Test
@@ -101,6 +116,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update category code throws illegal argument exception when requested category code is not found`() {
+      val appointmentOccurrence = expectGroupAppointment()
       val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NOT_FOUND")
 
       whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
@@ -114,6 +130,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update internal location throws illegal argument exception when inCell = false and requested internal location id is not found`() {
+      val appointmentOccurrence = expectGroupAppointment()
+      val appointment = appointmentOccurrence.appointment
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = -1)
 
       whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode)).thenReturn(emptyMap())
@@ -127,12 +145,13 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list throws illegal argument exception when prisoner is not found`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("NOT_FOUND"))
+      val appointmentOccurrence = expectGroupAppointment()
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("NOT_FOUND"))
 
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!)).thenReturn(Mono.just(emptyList()))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(emptyList()))
 
       assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
+        .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
       verifyNoInteractions(outboundEventsService)
@@ -140,13 +159,14 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list throws illegal argument exception when prisoner is not a resident of requested prison code`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("DIFFERENT_PRISON"))
+      val appointmentOccurrence = expectGroupAppointment()
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
 
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
-        .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
+        .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
 
       assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
+        .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
       verifyNoInteractions(outboundEventsService)
@@ -154,10 +174,11 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list throws illegal argument exception when adding prisoner to individual appointment`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("A1234BC", "BC2345D"))
+      val appointmentOccurrence = expectIndividualAppointment()
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("A1234BC", "BC2345D"))
 
       assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Cannot allocate more than one prisoner to an individual appointment occurrence")
+        .hasMessage("Cannot add prisoners to an individual appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
       verifyNoInteractions(outboundEventsService)
@@ -168,7 +189,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   @DisplayName("update individual appointment")
   inner class UpdateIndividualAppointment {
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
+    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
     private val appointmentOccurrence = appointment.occurrences().first()
     private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
 
@@ -340,13 +361,13 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner with no changes success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = appointmentOccurrence.prisonerNumbers())
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = emptyList())
 
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -369,38 +390,6 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
-    }
-
-    @Test
-    fun `update prisoner success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("B2345CD"))
-
-      var index = 1L
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
-        .thenReturn(
-          Mono.just(
-            request.prisonerNumbers!!.map {
-              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = index++, prisonId = appointment.prisonCode)
-            },
-          ),
-        )
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
-        with(occurrences.single()) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
-          with(allocations.single()) {
-            assertThat(prisonerNumber).isEqualTo("B2345CD")
-            assertThat(bookingId).isEqualTo(1)
-          }
-        }
-      }
-
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -412,7 +401,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         startTime = LocalTime.of(13, 30),
         endTime = LocalTime.of(15, 0),
         comment = "Updated appointment occurrence level comment",
-        prisonerNumbers = appointmentOccurrence.prisonerNumbers(),
+        addPrisonerNumbers = emptyList(),
       )
 
       whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -420,10 +409,10 @@ class AppointmentOccurrenceServiceUpdateTest {
       whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
         .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -460,64 +449,6 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
-    }
-
-    @Test
-    fun `update all properties and change prisoner success`() {
-      val request = AppointmentOccurrenceUpdateRequest(
-        categoryCode = "NEW",
-        internalLocationId = 456,
-        startDate = LocalDate.now().plusDays(3),
-        startTime = LocalTime.of(13, 30),
-        endTime = LocalTime.of(15, 0),
-        comment = "Updated appointment occurrence level comment",
-        prisonerNumbers = listOf("B2345CD"),
-      )
-
-      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
-      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
-        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
-      var index = 1L
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
-        .thenReturn(
-          Mono.just(
-            request.prisonerNumbers!!.map {
-              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = index++, prisonId = appointment.prisonCode)
-            },
-          ),
-        )
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(internalLocationId).isEqualTo(123)
-        assertThat(inCell).isFalse
-        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(comment).isEqualTo("Appointment level comment")
-        assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(occurrences.single()) {
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(inCell).isFalse
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isEqualTo(request.comment)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
-          with(allocations.single()) {
-            assertThat(prisonerNumber).isEqualTo("B2345CD")
-            assertThat(bookingId).isEqualTo(1)
-          }
-        }
-      }
-
-      verifyNoInteractions(outboundEventsService)
     }
   }
 
@@ -531,6 +462,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457),
       repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
       numberOfOccurrences = 4,
+      appointmentType = AppointmentType.GROUP,
     )
     private val appointmentOccurrence = appointment.occurrences()[2]
 
@@ -1116,13 +1048,13 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list with no changes success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = appointmentOccurrence.prisonerNumbers(), applyTo = ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = appointmentOccurrence.prisonerNumbers(), applyTo = ApplyTo.THIS_OCCURRENCE)
 
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -1159,13 +1091,17 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list remove one prisoner add one prisoner apply to this occurrence success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("B2345CD", "C3456DE"), applyTo = ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentOccurrenceUpdateRequest(
+        addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+        removePrisonerNumbers = listOf("A1234BC"),
+        applyTo = ApplyTo.THIS_OCCURRENCE,
+      )
 
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 457L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -1208,13 +1144,17 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list remove one prisoner add one prisoner apply to this and all future occurrences success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("B2345CD", "C3456DE"), applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentOccurrenceUpdateRequest(
+        addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+        removePrisonerNumbers = listOf("A1234BC"),
+        applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+      )
 
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 457L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -1251,13 +1191,17 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update prisoner list remove one prisoner add one prisoner apply to all future occurrences success success`() {
-      val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf("B2345CD", "C3456DE"), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentOccurrenceUpdateRequest(
+        addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+        removePrisonerNumbers = listOf("A1234BC"),
+        applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      )
 
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 457L + index++, prisonId = appointment.prisonCode)
             },
           ),
@@ -1301,7 +1245,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         startTime = LocalTime.of(13, 30),
         endTime = LocalTime.of(15, 0),
         comment = "Updated appointment occurrence level comment",
-        prisonerNumbers = listOf("B2345CD", "C3456DE"),
+        addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+        removePrisonerNumbers = listOf("A1234BC"),
         applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
       )
 
@@ -1310,10 +1255,10 @@ class AppointmentOccurrenceServiceUpdateTest {
       whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
         .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
       var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers!!))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
         .thenReturn(
           Mono.just(
-            request.prisonerNumbers!!.map {
+            request.addPrisonerNumbers!!.map {
               PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 457L + index++, prisonId = appointment.prisonCode)
             },
           ),
