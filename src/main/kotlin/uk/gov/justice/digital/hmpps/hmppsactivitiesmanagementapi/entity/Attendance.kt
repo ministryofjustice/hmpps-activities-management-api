@@ -112,7 +112,7 @@ data class Attendance(
   ): Attendance {
     if (!editable()) throw IllegalArgumentException("Attendance record for prisoner '$prisonerNumber' can no longer be modified")
 
-    if (status != AttendanceStatus.WAITING) addAttendanceToHistory()
+    if (status != AttendanceStatus.WAITING || history().isNotEmpty()) addAttendanceToHistory()
 
     if (newStatus == AttendanceStatus.WAITING) {
       resetAttendance()
@@ -136,7 +136,7 @@ data class Attendance(
         attendance = this,
         attendanceReason = attendanceReason,
         comment = comment,
-        recordedTime = recordedTime!!,
+        recordedTime = recordedTime ?: LocalDateTime.now(),
         recordedBy = recordedBy!!,
         issuePayment = issuePayment,
         caseNoteId = caseNoteId,
