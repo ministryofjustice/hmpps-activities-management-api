@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.mock
@@ -127,18 +125,17 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `should throw entity not found error when trying to load the location prefix`() {
-    whenever(groupsProperties.getProperty(anyString())).thenReturn(null)
-    Assertions.assertThrows(EntityNotFoundException::class.java) {
-      locationService.getLocationPrefixFromGroup("XXX", "1")
-    }
-  }
-
-  @Test
-  fun `should return location prefix for group`() {
+  fun `should return location prefix for prisons using pattern for group`() {
     whenever(groupsProperties.getProperty(anyString())).thenReturn("MDI-2-")
     val locationPrefixDto = locationService.getLocationPrefixFromGroup("MDI", "Houseblock 7")
     assertThat(locationPrefixDto.locationPrefix).isEqualTo("MDI-2-")
+  }
+
+  @Test
+  fun `should return location prefix for prisons using default for group`() {
+    whenever(groupsProperties.getProperty(anyString())).thenReturn(null)
+    val locationPrefixDto = locationService.getLocationPrefixFromGroup("LDI", "A_B")
+    assertThat(locationPrefixDto.locationPrefix).isEqualTo("LDI-A-B-")
   }
 
   @Test
