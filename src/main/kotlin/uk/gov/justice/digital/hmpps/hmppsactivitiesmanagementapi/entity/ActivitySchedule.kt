@@ -64,14 +64,9 @@ data class ActivitySchedule(
 
   var instancesLastUpdatedTime: LocalDateTime? = null,
 ) {
-  init {
-    failIfInvalidCapacity()
-  }
 
-  private fun failIfInvalidCapacity() {
-    if (capacity < 1) {
-      throw IllegalArgumentException("The schedule capacity must be greater than zero.")
-    }
+  init {
+    require(capacity > 0) { "The schedule capacity must be greater than zero." }
   }
 
   @OneToMany(
@@ -103,11 +98,11 @@ data class ActivitySchedule(
 
   var endDate: LocalDate? = null
     set(value) {
-      field = if (value != null && value.isAfter(startDate).not()) {
-        throw IllegalArgumentException("End date must be after the start date")
-      } else {
-        value
-      }.also { updateImpactedAllocations(it) }
+      require(value == null || value >= startDate) {
+        "Activity schedule end date cannot be before activity schedule start date."
+      }
+
+      field = value.also { updateImpactedAllocations(it) }
     }
 
   private fun updateImpactedAllocations(newEndDate: LocalDate?) {
@@ -115,7 +110,9 @@ data class ActivitySchedule(
       allocations
         .filterNot { allocation -> allocation.status(PrisonerStatus.ENDED) }
         .filter { allocation -> allocation.endDate == null || allocation.endDate?.isAfter(newEndDate) == true }
-        .forEach { allocation -> allocation.endDate = newEndDate }
+        .forEach { allocation ->
+          allocation.endDate = newEndDate
+        }
     }
   }
 
