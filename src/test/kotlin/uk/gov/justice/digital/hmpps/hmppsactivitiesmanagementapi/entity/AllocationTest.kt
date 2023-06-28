@@ -332,4 +332,16 @@ class AllocationTest {
     assertThat(allocation.endDate).isEqualTo(tomorrow.plusDays(1))
     assertThat(allocation.plannedDeallocation?.plannedDate).isEqualTo(tomorrow)
   }
+
+  @Test
+  fun `allocation end date cannot be before start date`() {
+    val allocation = allocation().copy(prisonerNumber = "123456")
+
+    allocation.endDate = allocation.startDate
+
+    assertThatThrownBy {
+      allocation.endDate = allocation.startDate.minusDays(1)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation end date for prisoner 123456 cannot be before allocation start date.")
+  }
 }
