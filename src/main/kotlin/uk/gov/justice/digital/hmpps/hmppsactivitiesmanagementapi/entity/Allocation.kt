@@ -51,6 +51,10 @@ data class Allocation(
 
   var endDate: LocalDate? = null
     set(value) {
+      require(value == null || value >= startDate) {
+        "Allocation end date for prisoner $prisonerNumber cannot be before allocation start date."
+      }
+
       field = value.also { updatePlannedDeallocation(it) }
     }
 
