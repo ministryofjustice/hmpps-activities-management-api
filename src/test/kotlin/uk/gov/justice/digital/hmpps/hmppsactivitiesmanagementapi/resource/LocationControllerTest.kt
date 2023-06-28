@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
-import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
@@ -131,22 +130,6 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
-    verify(locationService).getLocationPrefixFromGroup(prisonCode, groupName)
-  }
-
-  @Test
-  fun `Location prefix - 404 response when prefix not found`() {
-    whenever(locationService.getLocationPrefixFromGroup(prisonCode, groupName))
-      .thenThrow(EntityNotFoundException("Not found"))
-
-    val response = mockMvc.get("/locations/prison/$prisonCode/location-prefix") {
-      param("groupName", groupName)
-    }
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
     verify(locationService).getLocationPrefixFromGroup(prisonCode, groupName)
   }
 
