@@ -137,7 +137,7 @@ data class Attendance(
         attendanceReason = attendanceReason,
         comment = comment,
         recordedTime = recordedTime ?: LocalDateTime.now(),
-        recordedBy = recordedBy!!,
+        recordedBy = recordedBy ?: "",
         issuePayment = issuePayment,
         caseNoteId = caseNoteId,
         incentiveLevelWarningIssued = incentiveLevelWarningIssued,
