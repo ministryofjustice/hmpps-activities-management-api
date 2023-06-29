@@ -61,8 +61,10 @@ fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String
       identifiers = listOf(Identifier("NOMS", prisonerNumber)),
     ),
     AppointmentsChangedInformation(
-      prisonId,
       "YES",
+      prisonId = prisonId,
+      user = "SOME_USER",
+
     ),
   )
 
