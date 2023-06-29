@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -676,5 +677,53 @@ class ActivityServiceTest {
         assertThat(description).isEqualTo("Tier 1")
       }
     }
+  }
+
+  @Test
+  fun `updateActivity - update start date fails if new date not in future`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity start date cannot be changed. Start date must be in the future.")
+  }
+
+  @Test
+  fun `updateActivity - update start date fails if new date after end date`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity start date cannot be changed. Start date cannot be after the end date.")
+  }
+
+  @Test
+  fun `updateActivity - update start date fails if activity has already started`() {
+    val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity start date cannot be changed. Activity already started.")
+  }
+
+  @Test
+  fun `updateActivity - update start date fails if activity has allocations already started`() {
+    val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
 }

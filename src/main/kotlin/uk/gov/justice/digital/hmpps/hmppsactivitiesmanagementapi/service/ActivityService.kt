@@ -102,13 +102,13 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       startDate = request.startDate ?: LocalDate.now(),
-      endDate = request.endDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
@@ -335,6 +335,21 @@ class ActivityService(
     activity: Activity,
   ) {
     request.startDate?.let { newStartDate ->
+      val now = LocalDate.now()
+
+      require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
+      require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
+      require(activity.endDate == null || newStartDate <= activity.endDate) {
+        "Activity start date cannot be changed. Start date cannot be after the end date."
+      }
+      require(
+        activity.schedules()
+          .flatMap { it.allocations(excludeEnded = true) }
+          .none { allocation -> newStartDate.isAfter(allocation.startDate) },
+      ) {
+        "Activity start date cannot be changed. One or more allocations start before the new start date."
+      }
+
       activity.startDate = newStartDate
       activity.schedules().forEach {
         if (it.startDate < newStartDate) {
