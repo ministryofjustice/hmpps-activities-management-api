@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -255,12 +256,14 @@ class ActivityService(
     request: ActivityUpdateRequest,
     updatedBy: String,
   ): ModelActivity {
-    val activity = activityRepository.findOrThrowNotFound(activityId)
-    val now = LocalDateTime.now()
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
 
     require(activity.state(ActivityState.ARCHIVED).not()) {
       "Activity cannot be updated because it is now archived."
     }
+
+    val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
     applyTierUpdate(request, activity)
