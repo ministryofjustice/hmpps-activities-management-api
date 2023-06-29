@@ -726,4 +726,16 @@ class ActivityServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
+
+  @Test
+  fun `updateActivity - fails if activity has already ended (archived)`() {
+    val activity = activityEntity(startDate = TimeSource.yesterday().minusDays(1), endDate = TimeSource.yesterday())
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity cannot be updated because it is now archived.")
+  }
 }
