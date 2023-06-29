@@ -80,6 +80,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
+        "Appointment description (Appointment Category 1)",
         prisoners = listOf(
           PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
         ),
@@ -128,6 +129,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
+        "Appointment description (Appointment Category 1)",
         prisoners = listOf(
           PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
         ),

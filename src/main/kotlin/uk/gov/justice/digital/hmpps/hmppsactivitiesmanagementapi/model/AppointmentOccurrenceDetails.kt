@@ -58,6 +58,14 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
+    The appointment name
+    """,
+  )
+  val appointmentName: String,
+
+  @Schema(
+    description =
+    """
     Summary of the prisoner or prisoners allocated to this appointment occurrence. Prisoners are allocated at the
     occurrence level to allow for per occurrence allocation changes.
     """,
