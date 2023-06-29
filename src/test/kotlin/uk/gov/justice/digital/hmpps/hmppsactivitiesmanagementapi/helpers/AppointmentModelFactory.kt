@@ -187,6 +187,7 @@ fun appointmentMigrateRequest(
 
 fun appointmentDetails(
   appointmentDescription: String? = null,
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
   created: LocalDateTime = LocalDateTime.now(),
   updated: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
@@ -194,13 +195,11 @@ fun appointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
-  appointmentCategorySummary().description.let { category ->
-    if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription ($category)" else category
-  },
+  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   prisoners = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
-  appointmentCategorySummary(),
+  category = category,
   appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
@@ -305,6 +304,7 @@ fun bulkAppointmentDetails(
 ) = BulkAppointmentDetails(
   bulkAppointmentId,
   "TPR",
+  appointmentName = if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   category,
   appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),

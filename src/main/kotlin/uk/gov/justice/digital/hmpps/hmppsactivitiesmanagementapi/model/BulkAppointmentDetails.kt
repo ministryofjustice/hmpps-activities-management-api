@@ -29,6 +29,14 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
+    The appointment name
+    """,
+  )
+  val appointmentName: String,
+
+  @Schema(
+    description =
+    """
     The summary of the category used to create the set of appointments in bulk
     """,
   )

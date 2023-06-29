@@ -166,6 +166,7 @@ internal fun appointmentOccurrenceSearchEntity(
 internal fun bulkAppointmentEntity(
   bulkAppointmentId: Long = 1,
   inCell: Boolean = false,
+  appointmentDescription: String? = null,
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
@@ -175,7 +176,7 @@ internal fun bulkAppointmentEntity(
     bulkAppointmentId = bulkAppointmentId,
     prisonCode = "TPR",
     categoryCode = "TEST",
-    appointmentDescription = null,
+    appointmentDescription = appointmentDescription,
     internalLocationId = if (inCell) null else 123,
     inCell = inCell,
     startDate = startDate,
