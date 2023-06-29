@@ -133,7 +133,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(status).isEqualTo("WAITING")
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
-          assertThat(recordedTime).isNull()
+
         }
       }
 

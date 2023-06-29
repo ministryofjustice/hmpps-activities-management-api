@@ -155,7 +155,6 @@ data class Attendance(
     pieces = null
     caseNoteId = null
     otherAbsenceReason = null
-    recordedTime = null
   }
 
   /*
