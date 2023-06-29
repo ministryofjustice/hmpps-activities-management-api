@@ -258,6 +258,10 @@ class ActivityService(
     val activity = activityRepository.findOrThrowNotFound(activityId)
     val now = LocalDateTime.now()
 
+    require(activity.state(ActivityState.ARCHIVED).not()) {
+      "Activity cannot be updated because it is now archived."
+    }
+
     applyCategoryUpdate(request, activity)
     applyTierUpdate(request, activity)
     applySummaryUpdate(prisonCode, request, activity)
