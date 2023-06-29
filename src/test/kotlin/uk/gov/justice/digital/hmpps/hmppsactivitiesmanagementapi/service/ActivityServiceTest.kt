@@ -433,7 +433,7 @@ class ActivityServiceTest {
 
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -468,7 +468,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
@@ -486,7 +486,7 @@ class ActivityServiceTest {
   fun `updateActivity - category id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, pentonvillePrisonCode)).thenReturn(savedActivityEntity)
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -501,7 +501,7 @@ class ActivityServiceTest {
   fun `updateActivity - tier id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(savedActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, pentonvillePrisonCode)).thenReturn(savedActivityEntity)
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -531,7 +531,7 @@ class ActivityServiceTest {
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(beforeActivityEntity)
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -605,7 +605,7 @@ class ActivityServiceTest {
       pieceRateItems = 50,
     )
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(beforeActivityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(beforeActivityEntity)
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -651,7 +651,7 @@ class ActivityServiceTest {
 
     val activityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findById(17)).thenReturn(Optional.of(activityEntity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(17, moorlandPrisonCode)).thenReturn(activityEntity)
 
     whenever(activityRepository.saveAndFlush(activityEntityCaptor.capture())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 0))
@@ -683,7 +683,7 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if new date not in future`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
       service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
@@ -695,7 +695,7 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if new date after end date`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
       service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)), "TEST")
@@ -707,7 +707,7 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if activity has already started`() {
     val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
       service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
@@ -719,7 +719,7 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if activity has allocations already started`() {
     val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
       service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
@@ -731,11 +731,21 @@ class ActivityServiceTest {
   fun `updateActivity - fails if activity has already ended (archived)`() {
     val activity = activityEntity(startDate = TimeSource.yesterday().minusDays(1), endDate = TimeSource.yesterday())
 
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
       service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity cannot be updated because it is now archived.")
+  }
+
+  @Test
+  fun `updateActivity - fails if activity not found`() {
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
+
+    assertThatThrownBy {
+      service.updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+    }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity 1 not found.")
   }
 }
