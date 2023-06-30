@@ -57,6 +57,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         1,
         AppointmentType.INDIVIDUAL,
         "TPR",
+        "Appointment description (Appointment Category 1)",
         prisoners = listOf(
           PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
         ),

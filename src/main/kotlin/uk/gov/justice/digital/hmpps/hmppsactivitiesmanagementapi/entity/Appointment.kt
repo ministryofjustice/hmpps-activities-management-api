@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -140,6 +141,7 @@ data class Appointment(
       appointmentId,
       appointmentType,
       prisonCode,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
       prisoners.toSummary(),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       appointmentDescription,

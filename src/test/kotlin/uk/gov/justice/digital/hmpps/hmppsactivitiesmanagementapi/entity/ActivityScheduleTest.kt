@@ -421,18 +421,17 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `end date must be after the start date`() {
+  fun `end date must be on or after the start date`() {
     val schedule = activityEntity().schedules().first().apply { endDate = null }
 
     assertThat(schedule.endDate).isNull()
 
     schedule.endDate = schedule.startDate.plusDays(1)
 
-    assertThatThrownBy { schedule.endDate = schedule.startDate }.isInstanceOf(IllegalArgumentException::class.java)
     assertThatThrownBy {
       schedule.endDate = schedule.startDate.minusDays(1)
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("End date must be after the start date")
+      .hasMessage("Activity schedule end date cannot be before activity schedule start date.")
   }
 
   @Test
