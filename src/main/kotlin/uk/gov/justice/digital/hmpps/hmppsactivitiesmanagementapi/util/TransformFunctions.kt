@@ -149,8 +149,11 @@ fun transformAppointmentInstanceToScheduledEvents(
     cancelled = it.isCancelled,
     suspended = false,
     categoryCode = it.categoryCode,
-    categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode]?.description ?: "Unknown",
-    summary = it.appointmentDescription ?: referenceCodesForAppointmentsMap[it.categoryCode]?.description,
+    categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode).description,
+    summary = referenceCodesForAppointmentsMap[it.categoryCode].toAppointmentName(
+      it.categoryCode,
+      it.appointmentDescription,
+    ),
     comments = it.comment,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,

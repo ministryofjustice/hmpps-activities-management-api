@@ -272,6 +272,11 @@ fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) =
     ModelAppointmentCategorySummary(this.code, this.description)
   }
 
+fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?) =
+  this.toAppointmentCategorySummary(code).description.let { category ->
+    if (!description.isNullOrEmpty()) "$description ($category)" else category
+  }
+
 fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
 
 fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =

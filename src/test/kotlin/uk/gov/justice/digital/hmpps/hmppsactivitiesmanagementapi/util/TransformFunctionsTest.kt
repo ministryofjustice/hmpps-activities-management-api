@@ -263,12 +263,45 @@ class TransformFunctionsTest {
     }
 
     @Test
+    fun `appointment instance with empty appointmentDescription to scheduled event`() {
+      val entity = appointmentInstanceEntity(appointmentDescription = "")
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Test Category")
+      }
+    }
+
+    @Test
+    fun `appointment instance with unknown appointment category to scheduled event`() {
+      val entity = appointmentInstanceEntity(categoryCode = "UNKNOWN")
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("UNKNOWN")
+      }
+    }
+
+    @Test
     fun `appointment instance with appointmentDescription to scheduled event`() {
       val entity = appointmentInstanceEntity(appointmentDescription = "Description of appointment")
       val scheduledEvents = transform(entity)
 
       with(scheduledEvents.first()) {
-        assertThat(summary).isEqualTo("Description of appointment")
+        assertThat(summary).isEqualTo("Description of appointment (Test Category)")
+      }
+    }
+
+    @Test
+    fun `appointment instance with appointmentDescription and unknown category code to scheduled event`() {
+      val entity = appointmentInstanceEntity(
+        appointmentDescription = "Description of appointment",
+        categoryCode = "UNKNOWN",
+      )
+      val scheduledEvents = transform(entity)
+
+      with(scheduledEvents.first()) {
+        assertThat(summary).isEqualTo("Description of appointment (UNKNOWN)")
       }
     }
 
@@ -385,6 +418,33 @@ class TransformFunctionsTest {
     assertThat(listOf(appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")).toAppointmentCategorySummary()).isEqualTo(
       listOf(AppointmentCategorySummary("MEDO", "Medical - Doctor")),
     )
+  }
+
+  @Test
+  fun `reference code to appointment name mapping`() {
+    assertThat(
+      appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")
+        .toAppointmentName("MEDO", "John's doctor appointment"),
+    ).isEqualTo("John's doctor appointment (Medical - Doctor)")
+  }
+
+  @Test
+  fun `reference code to appointment name mapping for null reference code`() {
+    assertThat(null.toAppointmentName("MEDO", "John's doctor appointment"))
+      .isEqualTo("John's doctor appointment (UNKNOWN)")
+  }
+
+  @Test
+  fun `reference code to appointment name mapping with no description`() {
+    assertThat(
+      appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")
+        .toAppointmentName("MEDO", null),
+    ).isEqualTo("Medical - Doctor")
+  }
+
+  @Test
+  fun `reference code to appointment name mapping for null reference code and no description`() {
+    assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("UNKNOWN")
   }
 
   @Test

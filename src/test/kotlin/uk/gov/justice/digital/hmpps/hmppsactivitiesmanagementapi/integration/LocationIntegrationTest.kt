@@ -170,7 +170,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get location prefix by group pattern`() {
     assertThat(webTestClient.getLocationPrefix("MDI", "Houseblock 1"))
-      .isEqualTo(LocationPrefixDto("MDI-1-"))
+      .isEqualTo(LocationPrefixDto("MDI-1-.+"))
   }
 
   @Test

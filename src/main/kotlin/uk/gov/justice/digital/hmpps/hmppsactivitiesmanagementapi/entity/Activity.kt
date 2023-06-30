@@ -62,8 +62,6 @@ data class Activity(
 
   var startDate: LocalDate,
 
-  var endDate: LocalDate? = null,
-
   var riskLevel: String,
 
   var minimumIncentiveNomisCode: String,
@@ -78,6 +76,13 @@ data class Activity(
 
   var updatedBy: String? = null,
 ) {
+
+  var endDate: LocalDate? = null
+    set(value) {
+      require(value == null || value >= startDate) { "Activity end date cannot be before activity start date." }
+
+      field = value
+    }
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)

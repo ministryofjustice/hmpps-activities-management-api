@@ -458,6 +458,64 @@ class AppointmentOccurrenceTest {
   }
 
   @Test
+  fun `entity to details mapping includes appointment description in name`() {
+    val appointment = appointmentEntity(appointmentDescription = "appointment name")
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(
+      appointment.categoryCode to appointmentCategoryReferenceCode(
+        appointment.categoryCode,
+        "test category",
+      ),
+    )
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(appointmentName).isEqualTo("appointment name (test category)")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping does not include appointment description in name`() {
+    val appointment = appointmentEntity(appointmentDescription = null)
+    val entity = appointment.occurrences().first()
+    val referenceCodeMap = mapOf(
+      appointment.categoryCode to appointmentCategoryReferenceCode(
+        appointment.categoryCode,
+        "test category",
+      ),
+    )
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(appointmentName).isEqualTo("test category")
+    }
+  }
+
+  @Test
   fun `cannot allocate multiple prisoners to individual appointment`() {
     assertThrows<IllegalArgumentException>(
       "Cannot allocate multiple prisoners to an individual appointment",
