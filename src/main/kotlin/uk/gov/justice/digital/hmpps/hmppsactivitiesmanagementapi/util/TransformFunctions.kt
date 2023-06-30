@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -293,7 +294,7 @@ fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
   appointmentsRolloutDate = prison.appointmentsRolloutDate,
 )
 
-fun transform(attendance: EntityAttendance, caseNoteText: String?): ModelAttendance =
+fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
   ModelAttendance(
     id = attendance.attendanceId,
     scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
@@ -323,15 +324,14 @@ fun transform(attendance: EntityAttendance, caseNoteText: String?): ModelAttenda
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
-    caseNoteText = caseNoteText,
+    caseNoteText = attendance.caseNoteId?.let { caseNotesApiClient?.getCaseNote(attendance.prisonerNumber, attendance.caseNoteId)?.text },
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, caseNoteText) },
-    editable = attendance.editable(),
+      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, attendance.prisonerNumber, caseNotesApiClient) },
   )
 
-fun transform(attendanceHistory: EntityAttendanceHistory, caseNoteText: String?): ModelAttendanceHistory =
+fun transform(attendanceHistory: EntityAttendanceHistory, prisonerNumber: String, caseNotesApiClient: CaseNotesApiClient?): ModelAttendanceHistory =
   ModelAttendanceHistory(
     id = attendanceHistory.attendanceHistoryId,
     attendanceReason = attendanceHistory.attendanceReason?.let {
@@ -356,7 +356,7 @@ fun transform(attendanceHistory: EntityAttendanceHistory, caseNoteText: String?)
     issuePayment = attendanceHistory.issuePayment,
     incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
     otherAbsenceReason = attendanceHistory.otherAbsenceReason,
-    caseNoteText = caseNoteText,
+    caseNoteText = attendanceHistory.caseNoteId?.let { caseNotesApiClient?.getCaseNote(prisonerNumber, attendanceHistory.caseNoteId)?.text },
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =

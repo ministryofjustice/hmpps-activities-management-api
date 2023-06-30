@@ -99,7 +99,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -123,7 +123,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -145,7 +145,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findById(12)).thenReturn(Optional.of(prisonPayBandsLowMediumHigh(moorlandPrisonCode, 10)[1]))
@@ -167,7 +167,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findById(14)).thenReturn(Optional.empty())
@@ -183,7 +183,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -199,7 +199,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -218,7 +218,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -241,7 +241,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -260,7 +260,7 @@ class AllocationServiceTest {
 
     val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-2.json")
 
-    whenever(allocationRepository.findById(1)).thenReturn(Optional.of(allocationEntity))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
@@ -268,5 +268,14 @@ class AllocationServiceTest {
     assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Ended allocations cannot be updated")
+  }
+
+  @Test
+  fun `updateAllocation - fails if allocation not found`() {
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
+
+    assertThatThrownBy { service.updateAllocation(1, AllocationUpdateRequest(startDate = null), moorlandPrisonCode, "user") }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Allocation 1 not found.")
   }
 }
