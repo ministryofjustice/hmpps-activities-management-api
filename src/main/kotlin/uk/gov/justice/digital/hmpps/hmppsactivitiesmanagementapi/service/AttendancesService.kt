@@ -73,7 +73,7 @@ class AttendancesService(
     val attendance = attendanceRepository.findOrThrowNotFound(id)
     return transform(
       attendance,
-      attendance.caseNoteId?.let { caseNotesApiClient.getCaseNote(attendance.prisonerNumber, attendance.caseNoteId)?.text },
+      caseNotesApiClient,
     )
   }
 

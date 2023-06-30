@@ -125,13 +125,13 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       startDate = request.startDate ?: LocalDate.now(),
-      endDate = request.endDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
@@ -182,21 +182,19 @@ class ActivityService(
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
-      val educationLevelCode = it.educationLevelCode!!
-      val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
-      require(educationLevel.isActive()) { "The education level code '$educationLevelCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      prisonApiClient.getEducationLevel(it.educationLevelCode!!).block()!!.also { educationLevel ->
+        require(educationLevel.isActive()) { "The education level code '${educationLevel.code}' is not active in NOMIS" }
+        require(it.educationLevelDescription!! == educationLevel.description) {
+          "The education level description '${it.educationLevelDescription}' does not match the NOMIS education level '${educationLevel.description}'"
+        }
+      }
 
-      val studyAreaCode = it.studyAreaCode!!
-      val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
-      require(studyArea.isActive()) { "The study area code '$studyAreaCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
-    }
-  }
-
-  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String?) {
-    require(requestDescription == apiDescription) {
-      "The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'"
+      prisonApiClient.getStudyArea(it.studyAreaCode!!).block()!!.also { studyArea ->
+        require(studyArea.isActive()) { "The study area code '${studyArea.code}' is not active in NOMIS" }
+        require(it.studyAreaDescription!! == studyArea.description) {
+          "The study area description '${it.studyAreaDescription}' does not match the NOMIS study area '${studyArea.description}'"
+        }
+      }
     }
   }
 
@@ -273,9 +271,18 @@ class ActivityService(
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  fun updateActivity(prisonCode: String, activityId: Long, request: ActivityUpdateRequest, updatedBy: String): ModelActivity {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+  fun updateActivity(
+    prisonCode: String,
+    activityId: Long,
+    request: ActivityUpdateRequest,
+    updatedBy: String,
+  ): ModelActivity {
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
+
+    require(activity.state(ActivityState.ARCHIVED).not()) {
+      "Activity cannot be updated because it is now archived."
+    }
 
     val now = LocalDateTime.now()
 
@@ -356,6 +363,21 @@ class ActivityService(
     activity: Activity,
   ) {
     request.startDate?.let { newStartDate ->
+      val now = LocalDate.now()
+
+      require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
+      require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
+      require(activity.endDate == null || newStartDate <= activity.endDate) {
+        "Activity start date cannot be changed. Start date cannot be after the end date."
+      }
+      require(
+        activity.schedules()
+          .flatMap { it.allocations(excludeEnded = true) }
+          .none { allocation -> newStartDate.isAfter(allocation.startDate) },
+      ) {
+        "Activity start date cannot be changed. One or more allocations start before the new start date."
+      }
+
       activity.startDate = newStartDate
       activity.schedules().forEach {
         if (it.startDate < newStartDate) {

@@ -33,4 +33,12 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
   fun findByPrisonCodePrisonerStatus(prisonCode: String, prisonerStatus: PrisonerStatus): List<Allocation>
+
+  @Query(
+    value =
+    "FROM Allocation a " +
+      "WHERE a.allocationId = :allocationId " +
+      "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
+  )
+  fun findByAllocationIdAndPrisonCode(allocationId: Long, prisonCode: String): Allocation?
 }

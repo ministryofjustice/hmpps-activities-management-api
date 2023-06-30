@@ -32,6 +32,7 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
   fun getAllByPrisonCode(prisonCode: String): List<Activity>
   fun existsActivityByPrisonCodeAndSummary(prisonCode: String, summary: String): Boolean
+  fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
   // Assumes a 1-to-1 between activity and activity schedule
   @Query(

@@ -20,7 +20,7 @@ class LocationService(
     val agencyGroupKey = "${agencyId}_$group"
     val pattern = groupsProperties.getProperty(agencyGroupKey)
 
-    val locationPrefix = pattern?.replace(".", "")?.replace("+", "") ?: "$agencyId-${group.replace('_', '-')}-"
+    val locationPrefix = pattern ?: "$agencyId-${group.replace('_', '-')}-"
 
     return LocationPrefixDto(locationPrefix)
   }

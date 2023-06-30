@@ -72,6 +72,7 @@ class AppointmentDetailsServiceTest {
         entity.appointmentId,
         AppointmentType.INDIVIDUAL,
         entity.prisonCode,
+        "Appointment description (Test Category)",
         prisoners = listOf(
           PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
         ),

@@ -334,10 +334,11 @@ class AllocationTest {
   }
 
   @Test
-  fun `allocation end date cannot be before start date`() {
+  fun `allocation end date must be on or after the start date`() {
     val allocation = allocation().copy(prisonerNumber = "123456")
 
     allocation.endDate = allocation.startDate
+    allocation.endDate = null
 
     assertThatThrownBy {
       allocation.endDate = allocation.startDate.minusDays(1)
