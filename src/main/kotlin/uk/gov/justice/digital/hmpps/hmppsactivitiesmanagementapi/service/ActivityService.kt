@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -102,13 +103,13 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       startDate = request.startDate ?: LocalDate.now(),
-      endDate = request.endDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
@@ -255,7 +256,13 @@ class ActivityService(
     request: ActivityUpdateRequest,
     updatedBy: String,
   ): ModelActivity {
-    val activity = activityRepository.findOrThrowNotFound(activityId)
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
+
+    require(activity.state(ActivityState.ARCHIVED).not()) {
+      "Activity cannot be updated because it is now archived."
+    }
+
     val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
@@ -335,6 +342,21 @@ class ActivityService(
     activity: Activity,
   ) {
     request.startDate?.let { newStartDate ->
+      val now = LocalDate.now()
+
+      require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
+      require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
+      require(activity.endDate == null || newStartDate <= activity.endDate) {
+        "Activity start date cannot be changed. Start date cannot be after the end date."
+      }
+      require(
+        activity.schedules()
+          .flatMap { it.allocations(excludeEnded = true) }
+          .none { allocation -> newStartDate.isAfter(allocation.startDate) },
+      ) {
+        "Activity start date cannot be changed. One or more allocations start before the new start date."
+      }
+
       activity.startDate = newStartDate
       activity.schedules().forEach {
         if (it.startDate < newStartDate) {

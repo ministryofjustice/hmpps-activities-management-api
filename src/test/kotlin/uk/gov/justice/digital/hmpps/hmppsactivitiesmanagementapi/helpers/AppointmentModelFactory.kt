@@ -187,6 +187,7 @@ fun appointmentMigrateRequest(
 
 fun appointmentDetails(
   appointmentDescription: String? = null,
+  category: AppointmentCategorySummary = appointmentCategorySummary(),
   created: LocalDateTime = LocalDateTime.now(),
   updated: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
@@ -194,10 +195,11 @@ fun appointmentDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
+  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   prisoners = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
-  appointmentCategorySummary(),
+  category = category,
   appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
@@ -252,6 +254,7 @@ fun appointmentOccurrenceDetails(
   AppointmentType.INDIVIDUAL,
   sequenceNumber,
   "TPR",
+  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   prisoners,
   category,
   appointmentDescription,
@@ -276,6 +279,7 @@ fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult
   2,
   AppointmentType.INDIVIDUAL,
   "TPR",
+  appointmentCategorySummary().description,
   listOf(appointmentOccurrenceAllocationModel()),
   appointmentCategorySummary(),
   null,
@@ -300,6 +304,7 @@ fun bulkAppointmentDetails(
 ) = BulkAppointmentDetails(
   bulkAppointmentId,
   "TPR",
+  appointmentName = if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
   category,
   appointmentDescription,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),

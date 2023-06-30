@@ -67,11 +67,11 @@ internal fun activityEntity(
     minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",
     startDate = startDate,
-    endDate = endDate,
     createdTime = timestamp,
     createdBy = "test",
     inCell = inCell,
   ).apply {
+    this.endDate = endDate
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)
     }
