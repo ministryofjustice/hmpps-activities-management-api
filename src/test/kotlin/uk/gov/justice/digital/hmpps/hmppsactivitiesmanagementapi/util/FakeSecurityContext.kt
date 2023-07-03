@@ -13,7 +13,10 @@ const val DEFAULT_USERNAME = "Bob"
 
 class FakeSecurityContext(val username: String = DEFAULT_USERNAME) : BeforeEachCallback, AfterEachCallback {
 
-  private val authentication: Authentication = mock { on { principal } doReturn username }
+  private val authentication: Authentication = mock {
+    on { principal } doReturn username
+    on { name } doReturn username
+  }
   private val securityContext: SecurityContext = mock { on { authentication } doReturn authentication }
 
   override fun beforeEach(context: ExtensionContext?) {
