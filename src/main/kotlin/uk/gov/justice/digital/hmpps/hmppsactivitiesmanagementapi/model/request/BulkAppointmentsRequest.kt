@@ -70,6 +70,7 @@ data class BulkAppointmentsRequest(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
+  @field:NotEmpty(message = "One or more appointments must be supplied")
   @Schema(
     description =
     """
