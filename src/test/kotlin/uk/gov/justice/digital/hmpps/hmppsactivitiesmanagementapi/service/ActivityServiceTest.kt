@@ -362,7 +362,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The education level description 'Reading Measure 2.0' does not match that of the NOMIS education level 'Reading Measure 1.0'")
+      .hasMessage("The education level description 'Reading Measure 2.0' does not match the NOMIS education level 'Reading Measure 1.0'")
   }
 
   @Test
@@ -381,6 +381,38 @@ class ActivityServiceTest {
     assertThatThrownBy { service.createActivity(createActivityRequest, createdBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The education level code '1' is not active in NOMIS")
+  }
+
+  @Test
+  fun `createActivity - study area description does not match NOMIS`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+
+    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel(any())).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea(any())).thenReturn(Mono.just(studyArea.copy(description = "DOES NOT MATCH")))
+    whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, "SCH_ACTIVITY") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The study area description 'English Language' does not match the NOMIS study area 'DOES NOT MATCH'")
+  }
+
+  @Test
+  fun `createActivity - study area is not active in NOMIS`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+
+    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel(any())).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea(any())).thenReturn(Mono.just(studyArea.copy(activeFlag = "N")))
+    whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
+
+    assertThatThrownBy { service.createActivity(createActivityRequest, "SCH_ACTIVITY") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The study area code 'ENGLA' is not active in NOMIS")
   }
 
   @Test

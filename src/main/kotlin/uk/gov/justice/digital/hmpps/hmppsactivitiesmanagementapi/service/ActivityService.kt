@@ -160,21 +160,19 @@ class ActivityService(
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
-      val educationLevelCode = it.educationLevelCode!!
-      val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
-      require(educationLevel.isActive()) { "The education level code '$educationLevelCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      prisonApiClient.getEducationLevel(it.educationLevelCode!!).block()!!.also { educationLevel ->
+        require(educationLevel.isActive()) { "The education level code '${educationLevel.code}' is not active in NOMIS" }
+        require(it.educationLevelDescription!! == educationLevel.description) {
+          "The education level description '${it.educationLevelDescription}' does not match the NOMIS education level '${educationLevel.description}'"
+        }
+      }
 
-      val studyAreaCode = it.studyAreaCode!!
-      val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
-      require(studyArea.isActive()) { "The study area code '$studyAreaCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
-    }
-  }
-
-  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String?) {
-    require(requestDescription == apiDescription) {
-      "The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'"
+      prisonApiClient.getStudyArea(it.studyAreaCode!!).block()!!.also { studyArea ->
+        require(studyArea.isActive()) { "The study area code '${studyArea.code}' is not active in NOMIS" }
+        require(it.studyAreaDescription!! == studyArea.description) {
+          "The study area description '${it.studyAreaDescription}' does not match the NOMIS study area '${studyArea.description}'"
+        }
+      }
     }
   }
 
