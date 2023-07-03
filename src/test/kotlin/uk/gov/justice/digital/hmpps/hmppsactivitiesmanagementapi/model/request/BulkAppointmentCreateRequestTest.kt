@@ -23,10 +23,29 @@ class BulkAppointmentCreateRequestTest {
   @Test
   fun `appointment comment must not be more than 4,000 characters`() {
     val request = bulkAppointmentRequest(comment = "a".repeat(4001)).appointments.first()
-    assertSingleValidationError(validator.validate(request), "comment", "Appointment comment must not exceed 4000 characters")
+    assertSingleValidationError(
+      validator.validate(request),
+      "comment",
+      "Appointment comment must not exceed 4000 characters",
+    )
   }
 
-  private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<IndividualAppointment>>, propertyName: String, message: String) {
+  @Test
+  fun `request must have at least one appointment`() {
+    val requestWithNoAppointments = bulkAppointmentRequest().copy(appointments = emptyList())
+
+    assertSingleValidationError(
+      validator.validate(requestWithNoAppointments),
+      "appointments",
+      "One or more appointments must be supplied",
+    )
+  }
+
+  private fun <T> assertSingleValidationError(
+    validate: MutableSet<ConstraintViolation<T>>,
+    propertyName: String,
+    message: String,
+  ) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)
     assertThat(validate.first().message).isEqualTo(message)
