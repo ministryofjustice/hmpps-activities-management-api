@@ -55,13 +55,13 @@ fun cellMoveEvent(prisonerNumber: String = "XXXXXX") =
     ),
   )
 
-fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String = "MDI") =
+fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String = "MDI", action: String = "YES") =
   AppointmentsChangedEvent(
     personReference = PersonReference(
       identifiers = listOf(Identifier("NOMS", prisonerNumber)),
     ),
     AppointmentsChangedInformation(
-      "YES",
+      action,
       prisonId = prisonId,
       user = "SOME_USER",
 

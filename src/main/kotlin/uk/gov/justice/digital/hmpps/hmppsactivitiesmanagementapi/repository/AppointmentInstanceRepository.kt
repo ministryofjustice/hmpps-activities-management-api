@@ -38,7 +38,7 @@ interface AppointmentInstanceRepository : ReadOnlyRepository<AppointmentInstance
       "WHERE ai.prisonCode = :prisonCode" +
       "  AND ai.prisonerNumber = :prisonerNumber" +
       "  AND ai.appointmentDate >= CURRENT_DATE " +
-      "  AND ai.startTime > CURRENT_TIME",
+      "  AND ((ai.appointmentDate > CURRENT_DATE) OR ai.startTime > CURRENT_TIME)",
   )
   fun findByPrisonCodeAndPrisonerNumberFromNow(
     prisonCode: String,
