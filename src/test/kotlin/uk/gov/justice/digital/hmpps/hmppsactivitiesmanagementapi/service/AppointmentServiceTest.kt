@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.MockitoAnnotations
@@ -15,6 +16,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.security.core.context.SecurityContextHolder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -36,6 +38,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_USERNAME
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -44,6 +48,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
+@ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
@@ -52,6 +57,7 @@ class AppointmentServiceTest {
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private lateinit var principal: Principal
 
   @Captor
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
@@ -72,6 +78,7 @@ class AppointmentServiceTest {
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
+    principal = SecurityContextHolder.getContext().authentication
   }
 
   @Test
@@ -90,8 +97,6 @@ class AppointmentServiceTest {
   @Test
   fun `buildValidAppointmentEntity throws illegal argument exception when requested prison code is not in user's case load`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(emptyList()))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
@@ -122,8 +127,6 @@ class AppointmentServiceTest {
   @Test
   fun `buildValidAppointmentEntity throws illegal argument exception when requested category code is not found`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
@@ -154,8 +157,6 @@ class AppointmentServiceTest {
   @Test
   fun `buildValidAppointmentEntity throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -188,8 +189,6 @@ class AppointmentServiceTest {
   @Test
   fun `buildValidAppointmentEntity throws illegal argument exception when prisoner is not found`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -224,8 +223,6 @@ class AppointmentServiceTest {
   @Test
   fun`buildValidAppointmentEntity does not perform any validation if the appointment is a migration`() {
     val request = appointmentMigrateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     service.buildValidAppointmentEntity(
       appointmentType = AppointmentType.INDIVIDUAL,
@@ -250,8 +247,6 @@ class AppointmentServiceTest {
   @Test
   fun`buildValidAppointmentEntity converts a blank appointment description to null`() {
     val request = appointmentCreateRequest(appointmentDescription = "    ")
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
@@ -279,8 +274,6 @@ class AppointmentServiceTest {
   @Test
   fun `createAppointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("test.user")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -301,8 +294,6 @@ class AppointmentServiceTest {
   @Test
   fun `createAppointment single appointment single prisoner success`() {
     val request = appointmentCreateRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -331,7 +322,7 @@ class AppointmentServiceTest {
       assertThat(endTime).isEqualTo(request.endTime)
       assertThat(comment).isEqualTo(request.comment)
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
       with(occurrences()) {
@@ -346,7 +337,7 @@ class AppointmentServiceTest {
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(comment).isNull()
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo("TEST.USER")
+          assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
           assertThat(updated).isNull()
           assertThat(updatedBy).isNull()
           assertThat(deleted).isFalse
@@ -368,8 +359,6 @@ class AppointmentServiceTest {
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
     )
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -405,8 +394,6 @@ class AppointmentServiceTest {
   @Test
   fun `createAppointment individual repeat appointment success`() {
     val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.WEEKLY, 3))
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -434,9 +421,6 @@ class AppointmentServiceTest {
   @Test
   fun `create bulk appointment success`() {
     val request = bulkAppointmentRequest()
-    val principal: Principal = mock()
-
-    whenever(principal.name).thenReturn("TEST.USER")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -485,7 +469,7 @@ class AppointmentServiceTest {
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
       assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(createdBy).isEqualTo("TEST.USER")
+      assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
       assertThat(appointments()).hasSize(2)
       assertThat(appointments()[0].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
       assertThat(appointments()[1].occurrences()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
@@ -507,8 +491,6 @@ class AppointmentServiceTest {
   @Test
   fun `create bulk appointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = bulkAppointmentRequest()
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("test.user")
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -541,9 +523,20 @@ class AppointmentServiceTest {
   }
 
   @Test
+  fun `create bulk appointment fails if no appointments provided`() {
+    val request = bulkAppointmentRequest().copy(appointments = emptyList())
+
+    assertThatThrownBy {
+      service.bulkCreateAppointments(request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("One or more appointments must be supplied.")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
   fun `migrateAppointment with comment under 40 characters success`() {
     val request = appointmentMigrateRequest()
-    val principal: Principal = mock()
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -592,8 +585,6 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment with comment over 40 characters success`() {
     val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
-    val principal: Principal = mock()
-    whenever(principal.name).thenReturn("TEST.USER")
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -645,7 +636,6 @@ class AppointmentServiceTest {
       created = LocalDateTime.of(2022, 10, 23, 10, 30),
       createdBy = "DPS.USER",
     )
-    val principal: Principal = mock()
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -662,7 +652,6 @@ class AppointmentServiceTest {
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    val principal: Principal = mock()
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -680,7 +669,7 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment isCancelled defaults to false`() {
     val request = appointmentMigrateRequest(isCancelled = null)
-    val principal: Principal = mock()
+
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
 
     service.migrateAppointment(request, principal)
@@ -697,7 +686,6 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment with isCancelled = true success`() {
     val request = appointmentMigrateRequest(isCancelled = true)
-    val principal: Principal = mock()
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
@@ -720,7 +708,6 @@ class AppointmentServiceTest {
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    val principal: Principal = mock()
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
@@ -745,7 +732,6 @@ class AppointmentServiceTest {
       updated = null,
       updatedBy = null,
     )
-    val principal: Principal = mock()
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
