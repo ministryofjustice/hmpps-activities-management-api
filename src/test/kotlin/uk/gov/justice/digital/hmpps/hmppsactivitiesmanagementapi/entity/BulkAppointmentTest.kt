@@ -90,6 +90,48 @@ class BulkAppointmentTest {
   }
 
   @Test
+  fun `entity to details mapping includes appointment description in name`() {
+    val entity = bulkAppointmentEntity(appointmentDescription = "appointment name")
+    val referenceCodeMap = mapOf(
+      entity.categoryCode to appointmentCategoryReferenceCode(
+        entity.categoryCode,
+        "test category",
+      ),
+    )
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = getPrisonerMap()
+
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(appointmentName).isEqualTo("appointment name (test category)")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping does not include appointment description in name`() {
+    val entity = bulkAppointmentEntity()
+    val referenceCodeMap = mapOf(
+      entity.categoryCode to appointmentCategoryReferenceCode(
+        entity.categoryCode,
+        "test category",
+      ),
+    )
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = getPrisonerMap()
+
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(appointmentName).isEqualTo("test category")
+    }
+  }
+
+  @Test
   fun `entity to details mapping reference code not found`() {
     val entity = bulkAppointmentEntity()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
