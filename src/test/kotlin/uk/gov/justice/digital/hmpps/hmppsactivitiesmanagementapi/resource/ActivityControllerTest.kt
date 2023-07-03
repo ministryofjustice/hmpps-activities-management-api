@@ -279,6 +279,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           prisonCode = "MDI",
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,

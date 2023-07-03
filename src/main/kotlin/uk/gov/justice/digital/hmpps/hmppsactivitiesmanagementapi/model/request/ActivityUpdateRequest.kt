@@ -70,6 +70,9 @@ data class ActivityUpdateRequest(
   @Schema(description = "Flag to indicate if the location of the activity is in cell", example = "false")
   var inCell: Boolean? = null,
 
+  @Schema(description = "Flag to indicate if the location of the activity is on wing", example = "false")
+  var onWing: Boolean? = null,
+
   @Schema(
     description = "Flag to indicate if attendance is required for this activity, e.g. gym induction might not be mandatory attendance",
     example = "false",
