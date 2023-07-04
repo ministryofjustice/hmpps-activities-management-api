@@ -127,6 +127,7 @@ class ActivityService(
       summary = request.summary,
       description = request.description,
       inCell = request.inCell,
+      onWing = request.onWing,
       startDate = request.startDate ?: LocalDate.now(),
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
@@ -158,7 +159,7 @@ class ActivityService(
     }
 
     activity.let {
-      val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request.locationId!!)
+      val scheduleLocation = if (request.inCell || request.onWing) null else getLocationForSchedule(it, request.locationId!!)
       val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
       val timeSlots =
         mapOf(
@@ -301,6 +302,7 @@ class ActivityService(
     applyRiskLevelUpdate(request, activity)
     applyLocationUpdate(request, activity)
     applyInCellUpdate(request, activity)
+    applyOnWingUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
     if (request.minimumEducationLevel != null) {
       applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
@@ -479,6 +481,15 @@ class ActivityService(
   ) {
     request.inCell?.apply {
       activity.inCell = this
+    }
+  }
+
+  private fun applyOnWingUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.onWing?.apply {
+      activity.onWing = this
     }
   }
 

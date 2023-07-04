@@ -48,6 +48,8 @@ data class Activity(
 
   var inCell: Boolean = false,
 
+  var onWing: Boolean = false,
+
   var pieceWork: Boolean = false,
 
   var outsideWork: Boolean = false,
@@ -261,6 +263,7 @@ data class Activity(
     prisonCode = prisonCode,
     attendanceRequired = attendanceRequired,
     inCell = inCell,
+    onWing = onWing,
     pieceWork = pieceWork,
     outsideWork = outsideWork,
     payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
