@@ -61,7 +61,7 @@ class AppointmentOccurrenceService(
     applyInternalLocationUpdate(request, appointment, occurrencesToUpdate, now, principal.name, updatedIds)
     applyStartEndTimeUpdate(request, occurrencesToUpdate, now, principal.name, updatedIds)
     applyCommentUpdate(request, occurrencesToUpdate, now, principal.name, updatedIds)
-    applyAllocationUpdate(request, appointment, occurrencesToUpdate, now, principal.name, updatedIds)
+    applyAllocationUpdate(request, appointment, occurrencesToUpdate, now, principal.name)
 
     val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
 
@@ -213,7 +213,6 @@ class AppointmentOccurrenceService(
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
   ) {
     occurrencesToUpdate.forEach { occurrenceToUpdate ->
 
@@ -226,8 +225,9 @@ class AppointmentOccurrenceService(
           .filter { it.prisonerNumber == prisonerToRemove }
           .forEach {
             occurrenceToUpdate.removeAllocation(it)
-            updatedIds.remove(it.appointmentOccurrenceAllocationId)
           }
+        occurrenceToUpdate.updated = updated
+        occurrenceToUpdate.updatedBy = updatedBy
       }
 
       request.addPrisonerNumbers?.apply {
@@ -241,8 +241,6 @@ class AppointmentOccurrenceService(
 
         failIfMissingPrisoners(this, prisonerMap)
 
-        occurrenceToUpdate.markAsUpdated(updated, updatedBy, updatedIds)
-
         val prisonerAllocationMap = occurrenceToUpdate.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
 
@@ -255,6 +253,9 @@ class AppointmentOccurrenceService(
             ),
           )
         }
+
+        occurrenceToUpdate.updated = updated
+        occurrenceToUpdate.updatedBy = updatedBy
       }
     }
   }
