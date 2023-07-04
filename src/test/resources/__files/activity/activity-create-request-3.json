@@ -9,14 +9,14 @@
   "pay": [
     {
       "incentiveLevel": "Basic",
-      "payBandId": 11,
+      "payBandId": 1,
       "rate": 125,
       "pieceRate": 150,
       "pieceRateItems": 10
     },
     {
       "incentiveLevel": "Standard",
-      "payBandId": 12,
+      "payBandId": 2,
       "rate": 160,
       "pieceRate": 180,
       "pieceRateItems": 15

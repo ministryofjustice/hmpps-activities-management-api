@@ -41,8 +41,7 @@ data class Activity(
   @JoinColumn(name = "activity_tier_id")
   var activityTier: ActivityTier?,
 
-  @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val waitingList: MutableList<PrisonerWaiting> = mutableListOf(),
 
   var attendanceRequired: Boolean = true,

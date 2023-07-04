@@ -182,7 +182,7 @@ class ActivityScheduleServiceTest {
     schedule.activity.startDate = LocalDate.now().plusDays(2)
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -190,7 +190,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
         ),
         "by test",
@@ -205,7 +205,7 @@ class ActivityScheduleServiceTest {
     schedule.activity.endDate = TimeSource.tomorrow()
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -213,7 +213,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
           TimeSource.tomorrow().plusDays(1),
         ),
@@ -228,7 +228,7 @@ class ActivityScheduleServiceTest {
     var schedule = activitySchedule(activityEntity())
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -236,7 +236,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
           TimeSource.today(),
         ),

@@ -102,7 +102,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     allocationEntity.startDate = LocalDate.now().plusDays(1)
 
@@ -126,7 +126,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
 
@@ -148,7 +148,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findById(12)).thenReturn(Optional.of(prisonPayBandsLowMediumHigh(moorlandPrisonCode, 10)[1]))
+    whenever(prisonPayBandRepository.findById(12)).thenReturn(Optional.of(prisonPayBandsLowMediumHigh(moorlandPrisonCode)[1]))
 
     service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
 
@@ -157,7 +157,7 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationArg)
 
     with(allocationArg) {
-      assertThat(payBand.prisonPayBandId).isEqualTo(12)
+      assertThat(payBand.prisonPayBandId).isEqualTo(2)
     }
   }
 
@@ -186,7 +186,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)
@@ -202,7 +202,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     allocationEntity.startDate = TimeSource.tomorrow()
     allocationEntity.activitySchedule.activity.startDate = TimeSource.tomorrow()
@@ -221,7 +221,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     allocationEntity.startDate = LocalDate.now().plusDays(1)
 
@@ -244,7 +244,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     allocationEntity.endDate = LocalDate.now().plusDays(2)
     allocationEntity.activitySchedule.activity.endDate = LocalDate.now().plusDays(1)
@@ -263,7 +263,7 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
 
     whenever(allocationRepository.saveAndFlush(allocationEntityCaptor.capture())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     assertThatThrownBy { service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user") }
       .isInstanceOf(IllegalArgumentException::class.java)

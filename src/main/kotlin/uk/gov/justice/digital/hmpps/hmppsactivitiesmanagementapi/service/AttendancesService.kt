@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
+@Transactional(readOnly = true)
 class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val allAttendanceRepository: AllAttendanceRepository,
@@ -37,9 +39,7 @@ class AttendancesService(
   fun findAttendancesByScheduledInstance(instanceId: Long) =
     scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, null) }
 
-  // TODO this is a very thin slice when updating.
-  // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
-  // TODO also there is no validation checking.
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     val attendanceUpdatesById = attendances.associateBy { it.id }

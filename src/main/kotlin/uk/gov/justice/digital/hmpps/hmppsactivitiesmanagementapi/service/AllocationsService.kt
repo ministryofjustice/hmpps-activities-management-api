@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -17,6 +18,7 @@ import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
+@Transactional(readOnly = true)
 class AllocationsService(private val allocationRepository: AllocationRepository, private val prisonPayBandRepository: PrisonPayBandRepository) {
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
     allocationRepository
@@ -26,6 +28,7 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
 
   fun getAllocationById(id: Long) = allocationRepository.findOrThrowNotFound(id).toModel()
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)

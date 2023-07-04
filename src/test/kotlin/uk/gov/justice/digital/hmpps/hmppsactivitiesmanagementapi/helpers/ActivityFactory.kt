@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
@@ -289,10 +288,9 @@ fun prisonRegime() = PrisonRegime(
   1,
 )
 
-// TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
-fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset: Long = 0) = listOf(
+fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listOf(
   PrisonPayBand(
-    prisonPayBandId = 1 + offset,
+    prisonPayBandId = 1,
     prisonCode = prisonCode,
     displaySequence = 1,
     payBandAlias = "Low",
@@ -300,7 +298,7 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     nomisPayBand = 1,
   ),
   PrisonPayBand(
-    prisonPayBandId = 2 + offset,
+    prisonPayBandId = 2,
     prisonCode = prisonCode,
     displaySequence = 2,
     payBandAlias = "Medium",
@@ -308,25 +306,13 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     nomisPayBand = 2,
   ),
   PrisonPayBand(
-    prisonPayBandId = 3 + offset,
+    prisonPayBandId = 3,
     prisonCode = prisonCode,
     displaySequence = 3,
     payBandAlias = "High",
     payBandDescription = "Pay band 3 $prisonCode description (highest)",
     nomisPayBand = 2,
   ),
-)
-
-fun completedAttendance() = Attendance(
-  attendanceId = 1,
-  scheduledInstance = activityEntity().schedules().first().instances().first(),
-  prisonerNumber = "A1234AA",
-  status = AttendanceStatus.COMPLETED,
-  attendanceReason = attendanceReasons()["ATTENDED"],
-  recordedBy = "Joe Bloggs",
-  recordedTime = LocalDate.now().atStartOfDay(),
-  comment = "previous comment",
-  caseNoteId = 1,
 )
 
 internal fun attendance() = schedule().instances().first().attendances.first()
