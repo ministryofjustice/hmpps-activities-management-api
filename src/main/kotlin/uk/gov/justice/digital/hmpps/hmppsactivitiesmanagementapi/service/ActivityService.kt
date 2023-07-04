@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -14,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
@@ -27,14 +29,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
 @Service
+@Transactional(readOnly = true)
 class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -47,15 +52,32 @@ class ActivityService(
   private val bankHolidayService: BankHolidayService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
-
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getActivityById(activityId: Long) =
-    transform(
-      activityRepository.findOrThrowNotFound(activityId),
-    )
+  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
+    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
+    val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
+      ?: throw (EntityNotFoundException("Activity $activityId not found"))
+    return transform(activity)
+  }
+
+  fun getActivityById(activityId: Long): ModelActivity {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    return transform(activity)
+  }
+
+  fun getActivityBasicById(activityId: Long): ModelActivityBasic {
+    val activityBasic = activityRepository.getActivityBasicById(activityId)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
+    return transform(activityBasic)
+  }
+
+  fun getActivityBasicByPrisonCode(prisonCode: String): List<ModelActivityBasic> {
+    return activityRepository.getActivityBasicByPrisonCode(prisonCode).toActivityBasicList()
+  }
 
   fun getActivitiesByCategoryInPrison(
     prisonCode: String,
@@ -72,9 +94,11 @@ class ActivityService(
     .filter { !excludeArchived || !it.state(ActivityState.ARCHIVED) }
     .toModelLite()
 
-  fun getSchedulesForActivity(activityId: Long) =
-    activityRepository.findOrThrowNotFound(activityId)
-      .let { activityScheduleRepository.getAllByActivity(it).toModelLite() }
+  fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    return activityScheduleRepository.getAllByActivity(activity).toModelLite()
+  }
 
   private fun failDuplicateActivity(prisonCode: String, summary: String) {
     val duplicateActivity = activityRepository.existsActivityByPrisonCodeAndSummary(prisonCode, summary)
@@ -83,6 +107,7 @@ class ActivityService(
     }
   }
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
@@ -248,6 +273,7 @@ class ActivityService(
     )
   }
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(
     prisonCode: String,

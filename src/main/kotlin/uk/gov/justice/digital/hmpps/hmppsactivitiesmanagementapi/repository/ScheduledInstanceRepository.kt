@@ -8,8 +8,6 @@ import java.time.LocalDate
 interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   fun findAllBySessionDate(date: LocalDate): List<ScheduledInstance>
 
-  // TODO - should it check for suspensions? Or done in the client? (I added the allocation date checks)
-
   @Query(
     """
     SELECT si FROM ScheduledInstance si 

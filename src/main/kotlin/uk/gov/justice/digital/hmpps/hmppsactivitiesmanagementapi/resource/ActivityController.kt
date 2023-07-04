@@ -17,16 +17,19 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import java.security.Principal
+import java.time.LocalDate
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -89,6 +92,172 @@ class ActivityController(
   )
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
+
+  @GetMapping(value = ["/{activityId}/filtered"])
+  @ResponseBody
+  @Operation(
+    summary = "Get an activity by its ID with limited instances (by date)",
+    description = "Returns a single activity by activity ID with limited instances.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivityByIdWithFilters(
+    @PathVariable("activityId") activityId: Long,
+    @RequestParam(value = "earliestSessionDate", required = false)
+    @Parameter(description = "The date of the earliest scheduled instances to include. Defaults to newer than 1 month ago.")
+    earliestSessionDate: LocalDate?,
+  ) = activityService.getActivityByIdWithFilters(activityId, earliestSessionDate)
+
+  @GetMapping(value = ["/{activityId}/basic"])
+  @ResponseBody
+  @Operation(
+    summary = "DO NOT USE:  Get an activity key ids - testing only",
+    description = "DO NOT USEL: Returns keys ids - testing only",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ActivityBasic::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivityKeyIds(
+    @PathVariable("activityId") activityId: Long,
+  ) = activityService.getActivityBasicById(activityId)
+
+  @GetMapping(value = ["/{prisonCode}/basic-list"])
+  @ResponseBody
+  @Operation(
+    summary = "DO NOT USE: Testing use only - Get a list of basic activity details by prison code",
+    description = "DO NOT USE: Testing use only - Get a list of basic activity details by prison code",
+    hidden = true,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ActivityBasic::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivityBasicByPrisonCode(
+    @PathVariable("prisonCode") prisonCode: String,
+  ) = activityService.getActivityBasicByPrisonCode(prisonCode)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

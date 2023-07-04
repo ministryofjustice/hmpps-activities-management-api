@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
@@ -15,6 +16,7 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
 
 @Service
+@Transactional(readOnly = true)
 class EventReviewService(
   private val eventReviewRepository: EventReviewRepository,
   private val eventReviewSearchSpecification: EventReviewSearchSpecification,
@@ -59,6 +61,7 @@ class EventReviewService(
     )
   }
 
+  @Transactional
   fun acknowledgeEvents(prisonCode: String, req: EventAcknowledgeRequest, name: String) {
     val updatedEvents = eventReviewRepository.findAllById(req.eventReviewIds)
     updatedEvents.map {
