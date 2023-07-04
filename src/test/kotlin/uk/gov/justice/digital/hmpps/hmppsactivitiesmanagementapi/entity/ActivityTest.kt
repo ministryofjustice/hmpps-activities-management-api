@@ -24,9 +24,9 @@ class ActivityTest {
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
 
-  private val activityWithNoEndDate = activityEntity().copy(startDate = today, endDate = null)
+  private val activityWithNoEndDate = activityEntity(startDate = today, endDate = null)
 
-  private val activityWithEndDate = activityWithNoEndDate.copy(endDate = tomorrow)
+  private val activityWithEndDate = activityWithNoEndDate.copy().apply { endDate = tomorrow }
 
   @Test
   fun `check activity active status that starts today with open end date`() {
@@ -60,6 +60,7 @@ class ActivityTest {
       id = 1,
       attendanceRequired = false,
       inCell = false,
+      onWing = false,
       pieceWork = false,
       outsideWork = false,
       payPerSession = PayPerSession.H,
@@ -90,6 +91,7 @@ class ActivityTest {
         id = 1,
         attendanceRequired = true,
         inCell = false,
+        onWing = false,
         pieceWork = false,
         outsideWork = false,
         payPerSession = PayPerSession.H,
@@ -183,7 +185,7 @@ class ActivityTest {
   @Test
   fun `cannot add schedule when start date is not before end date of the activity`() {
     val activity =
-      activityEntity(noSchedules = true).copy(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
+      activityEntity(noSchedules = true).copy(startDate = LocalDate.now()).apply { endDate = LocalDate.now().plusDays(1) }
     assertThat(activity.schedules()).isEmpty()
 
     assertThatThrownBy {
@@ -207,7 +209,7 @@ class ActivityTest {
   @Test
   fun `cannot add schedule when end date is after the end date of the activity`() {
     val activity =
-      activityEntity(noSchedules = true).copy(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
+      activityEntity(noSchedules = true).copy(startDate = LocalDate.now()).apply { endDate = LocalDate.now().plusDays(1) }
     assertThat(activity.schedules()).isEmpty()
 
     assertThatThrownBy {
@@ -514,5 +516,19 @@ class ActivityTest {
     with(activityWithEndDate) {
       assertThat(isUnemployment()).isFalse
     }
+  }
+
+  @Test
+  fun `end date must be on or after the start date`() {
+    val activity = activityEntity(startDate = today, endDate = tomorrow)
+
+    activity.endDate = null
+    activity.endDate = today
+
+    assertThatThrownBy {
+      activity.endDate = yesterday
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity end date cannot be before activity start date.")
   }
 }

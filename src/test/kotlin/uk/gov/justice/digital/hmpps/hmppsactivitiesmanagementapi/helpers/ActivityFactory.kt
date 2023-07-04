@@ -54,6 +54,7 @@ internal fun activityEntity(
   noPayBands: Boolean = false,
   noMinimumEducationLevels: Boolean = false,
   inCell: Boolean = false,
+  onWing: Boolean = false,
   riskLevel: String = "high",
 ) =
   Activity(
@@ -67,11 +68,12 @@ internal fun activityEntity(
     minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",
     startDate = startDate,
-    endDate = endDate,
     createdTime = timestamp,
     createdBy = "test",
     inCell = inCell,
+    onWing = onWing,
   ).apply {
+    this.endDate = endDate
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)
     }
@@ -354,5 +356,9 @@ internal fun attendanceList() = listOf(
     attendanceReasonCode = null,
     issuePayment = null,
     prisonerNumber = "A11111A",
+    activityId = 1,
+    summary = "Maths Level 1",
+    categoryName = "Education",
+    recordedTime = null,
   ),
 )

@@ -49,6 +49,8 @@ data class Activity(
 
   var inCell: Boolean = false,
 
+  var onWing: Boolean = false,
+
   var pieceWork: Boolean = false,
 
   var outsideWork: Boolean = false,
@@ -61,8 +63,6 @@ data class Activity(
   var description: String?,
 
   var startDate: LocalDate,
-
-  var endDate: LocalDate? = null,
 
   var riskLevel: String,
 
@@ -78,6 +78,13 @@ data class Activity(
 
   var updatedBy: String? = null,
 ) {
+
+  var endDate: LocalDate? = null
+    set(value) {
+      require(value == null || value >= startDate) { "Activity end date cannot be before activity start date." }
+
+      field = value
+    }
 
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
@@ -257,6 +264,7 @@ data class Activity(
     prisonCode = prisonCode,
     attendanceRequired = attendanceRequired,
     inCell = inCell,
+    onWing = onWing,
     pieceWork = pieceWork,
     outsideWork = outsideWork,
     payPerSession = ModelPayPerSession.valueOf(payPerSession.name),

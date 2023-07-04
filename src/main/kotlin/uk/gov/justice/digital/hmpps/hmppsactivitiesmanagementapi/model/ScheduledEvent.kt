@@ -65,6 +65,9 @@ data class ScheduledEvent(
   @Schema(description = "Set to true if this event will take place in the prisoner's cell", example = "false")
   val inCell: Boolean = false,
 
+  @Schema(description = "Flag to indicate if the location of the activity is on wing", example = "false")
+  var onWing: Boolean = false,
+
   @Schema(description = "Set to true if this event takes place outside the prison", example = "false")
   val outsidePrison: Boolean = false,
 

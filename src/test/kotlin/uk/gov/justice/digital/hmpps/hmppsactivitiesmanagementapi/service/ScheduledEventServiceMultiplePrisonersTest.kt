@@ -174,6 +174,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     prisonerNumber: String = "G4793VF",
     bookingId: Int = 900001,
     inCell: Boolean = false,
+    onWing: Boolean = false,
     internalLocationId: Int? = 1,
     internalLocationCode: String? = "MDI-EDU_ROOM1",
     internalLocationDescription: String? = "Education room 1",
@@ -193,6 +194,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     inCell = inCell,
+    onWing = onWing,
     internalLocationId = internalLocationId,
     internalLocationCode = internalLocationCode,
     internalLocationDescription = internalLocationDescription,
@@ -499,6 +501,40 @@ class ScheduledEventServiceMultiplePrisonersTest {
         }
 
         assertThat(externalTransfers).isEmpty()
+      }
+    }
+
+    @Test
+    fun `Events - empty prisoner number list`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = emptySet<String>()
+      val today = LocalDate.now()
+      val timeSlot: TimeSlot = TimeSlot.AM
+
+      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
+
+      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+
+      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        today,
+        timeSlot,
+        appointmentCategoryMap(),
+        appointmentLocationMap(),
+      )
+
+      verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
+      verifyBlocking(prisonApiClient, never()) { getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
+
+      with(scheduledEvents!!) {
+        assertThat(appointments).isEmpty()
+        assertThat(visits).isEmpty()
+        assertThat(courtHearings).isEmpty()
+        assertThat(activities).isEmpty()
+        assertThat(externalTransfers).isEmpty()
+        assertThat(adjudications).isEmpty()
       }
     }
   }

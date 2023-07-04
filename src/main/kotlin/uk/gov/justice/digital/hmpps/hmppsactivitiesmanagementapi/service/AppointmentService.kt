@@ -40,34 +40,36 @@ class AppointmentService(
     appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
-    createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
-      BulkAppointmentEntity(
-        prisonCode = request.prisonCode,
-        categoryCode = request.categoryCode,
-        appointmentDescription = request.appointmentDescription,
-        internalLocationId = request.internalLocationId,
-        inCell = request.inCell,
-        startDate = request.startDate,
-        createdBy = principal.name,
-      ).apply {
-        request.appointments.map {
-          buildValidAppointmentEntity(
-            appointmentType = AppointmentType.INDIVIDUAL,
-            prisonCode = request.prisonCode,
-            prisonerNumbers = listOf(it.prisonerNumber),
-            prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
-            categoryCode = request.categoryCode,
-            appointmentDescription = request.appointmentDescription,
-            internalLocationId = request.internalLocationId,
-            inCell = request.inCell,
-            startDate = request.startDate,
-            startTime = it.startTime,
-            endTime = it.endTime,
-            comment = it.comment,
-            createdBy = principal.name,
-          )
-        }.forEach { appointment -> this.addAppointment(appointment) }
-      }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+    require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
+      createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
+        BulkAppointmentEntity(
+          prisonCode = request.prisonCode,
+          categoryCode = request.categoryCode,
+          appointmentDescription = request.appointmentDescription,
+          internalLocationId = request.internalLocationId,
+          inCell = request.inCell,
+          startDate = request.startDate,
+          createdBy = principal.name,
+        ).apply {
+          request.appointments.map {
+            buildValidAppointmentEntity(
+              appointmentType = AppointmentType.INDIVIDUAL,
+              prisonCode = request.prisonCode,
+              prisonerNumbers = listOf(it.prisonerNumber),
+              prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
+              categoryCode = request.categoryCode,
+              appointmentDescription = request.appointmentDescription,
+              internalLocationId = request.internalLocationId,
+              inCell = request.inCell,
+              startDate = request.startDate,
+              startTime = it.startTime,
+              endTime = it.endTime,
+              comment = it.comment,
+              createdBy = principal.name,
+            )
+          }.forEach { appointment -> this.addAppointment(appointment) }
+        }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+      }
     }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
@@ -217,7 +219,8 @@ class AppointmentService(
             }
             if (isCancelled) {
               cancelled = updated ?: created
-              cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
+              cancellationReason =
+                appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
               cancelledBy = updatedBy ?: createdBy
             }
           },

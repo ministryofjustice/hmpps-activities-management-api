@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -91,6 +92,7 @@ data class BulkAppointment(
     return BulkAppointmentDetails(
       bulkAppointmentId,
       prisonCode,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       appointmentDescription,
       if (inCell) {

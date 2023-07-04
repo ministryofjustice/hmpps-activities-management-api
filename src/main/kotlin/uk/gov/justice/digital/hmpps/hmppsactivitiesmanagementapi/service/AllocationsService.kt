@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
@@ -27,11 +28,10 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
-    val allocation = allocationRepository.findOrThrowNotFound(allocationId)
+    val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
+      ?: throw EntityNotFoundException("Allocation $allocationId not found.")
 
-    if (allocation.status(PrisonerStatus.ENDED)) {
-      throw IllegalArgumentException("Ended allocations cannot be updated")
-    }
+    require(allocation.status(PrisonerStatus.ENDED).not()) { "Ended allocations cannot be updated" }
 
     applyStartDateUpdate(request, allocation)
     applyEndDateUpdate(request, allocation, updatedBy)

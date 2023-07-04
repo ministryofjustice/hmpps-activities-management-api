@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -101,14 +102,15 @@ class ActivityService(
       summary = request.summary,
       description = request.description,
       inCell = request.inCell,
+      onWing = request.onWing,
       startDate = request.startDate ?: LocalDate.now(),
-      endDate = request.endDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
         this.addPay(
@@ -132,7 +134,7 @@ class ActivityService(
     }
 
     activity.let {
-      val scheduleLocation = if (request.inCell) null else getLocationForSchedule(it, request.locationId!!)
+      val scheduleLocation = if (request.inCell || request.onWing) null else getLocationForSchedule(it, request.locationId!!)
       val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
       val timeSlots =
         mapOf(
@@ -159,21 +161,19 @@ class ActivityService(
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
-      val educationLevelCode = it.educationLevelCode!!
-      val educationLevel = prisonApiClient.getEducationLevel(educationLevelCode).block()!!
-      require(educationLevel.isActive()) { "The education level code '$educationLevelCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.educationLevelDescription!!, educationLevel.description)
+      prisonApiClient.getEducationLevel(it.educationLevelCode!!).block()!!.also { educationLevel ->
+        require(educationLevel.isActive()) { "The education level code '${educationLevel.code}' is not active in NOMIS" }
+        require(it.educationLevelDescription!! == educationLevel.description) {
+          "The education level description '${it.educationLevelDescription}' does not match the NOMIS education level '${educationLevel.description}'"
+        }
+      }
 
-      val studyAreaCode = it.studyAreaCode!!
-      val studyArea = prisonApiClient.getStudyArea(studyAreaCode).block()!!
-      require(studyArea.isActive()) { "The study area code '$studyAreaCode' is not active in NOMIS" }
-      failIfDescriptionDiffers(it.studyAreaDescription!!, studyArea.description)
-    }
-  }
-
-  private fun failIfDescriptionDiffers(requestDescription: String, apiDescription: String?) {
-    if (requestDescription != apiDescription) {
-      throw IllegalArgumentException("The education level description '$requestDescription' does not match that of the NOMIS education level '$apiDescription'")
+      prisonApiClient.getStudyArea(it.studyAreaCode!!).block()!!.also { studyArea ->
+        require(studyArea.isActive()) { "The study area code '${studyArea.code}' is not active in NOMIS" }
+        require(it.studyAreaDescription!! == studyArea.description) {
+          "The study area description '${it.studyAreaDescription}' does not match the NOMIS study area '${studyArea.description}'"
+        }
+      }
     }
   }
 
@@ -255,7 +255,13 @@ class ActivityService(
     request: ActivityUpdateRequest,
     updatedBy: String,
   ): ModelActivity {
-    val activity = activityRepository.findOrThrowNotFound(activityId)
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
+
+    require(activity.state(ActivityState.ARCHIVED).not()) {
+      "Activity cannot be updated because it is now archived."
+    }
+
     val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
@@ -270,6 +276,7 @@ class ActivityService(
     applyRiskLevelUpdate(request, activity)
     applyLocationUpdate(request, activity)
     applyInCellUpdate(request, activity)
+    applyOnWingUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
     if (request.minimumEducationLevel != null) {
       applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
@@ -334,17 +341,32 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.startDate?.apply {
-      activity.startDate = this
+    request.startDate?.let { newStartDate ->
+      val now = LocalDate.now()
+
+      require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
+      require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
+      require(activity.endDate == null || newStartDate <= activity.endDate) {
+        "Activity start date cannot be changed. Start date cannot be after the end date."
+      }
+      require(
+        activity.schedules()
+          .flatMap { it.allocations(excludeEnded = true) }
+          .none { allocation -> newStartDate.isAfter(allocation.startDate) },
+      ) {
+        "Activity start date cannot be changed. One or more allocations start before the new start date."
+      }
+
+      activity.startDate = newStartDate
       activity.schedules().forEach {
-        if (it.startDate < this) {
+        if (it.startDate < newStartDate) {
           // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          it.removeInstances(it.startDate, this.minusDays(1))
-        } else if (this < it.startDate) {
+          it.removeInstances(it.startDate, newStartDate.minusDays(1))
+        } else if (newStartDate < it.startDate) {
           // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addInstances(activity, it.slots(), this, it.startDate.minusDays(1))
+          it.addInstances(activity, it.slots(), newStartDate, it.startDate.minusDays(1))
         }
-        it.startDate = this
+        it.startDate = newStartDate
       }
     }
   }
@@ -353,18 +375,17 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.endDate?.apply {
-      activity.endDate = this
+    request.endDate?.let { newEndDate ->
+      activity.endDate = newEndDate
       activity.schedules().forEach {
-        if (it.endDate == null || it.endDate!! > this) {
+        if (it.endDate == null || it.endDate!! > newEndDate) {
           // end date has been set or moved earlier so remove all instances from the day after the new end date
-          (it.endDate)?.let { it1 -> it.removeInstances(this.plusDays(1), it1) }
-        } else if (it.endDate !== null && it.endDate!! < this) {
+          (it.endDate)?.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
+        } else if (it.endDate !== null && it.endDate!! < newEndDate) {
           // end date has been moved later so add new instances from the day after the original end date up to the new end date
-          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), this)
+          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), newEndDate)
         }
-        it.endDate = this
-        it.allocations().forEach { it.endDate = this }
+        it.endDate = newEndDate
       }
     }
   }
@@ -434,6 +455,15 @@ class ActivityService(
   ) {
     request.inCell?.apply {
       activity.inCell = this
+    }
+  }
+
+  private fun applyOnWingUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.onWing?.apply {
+      activity.onWing = this
     }
   }
 

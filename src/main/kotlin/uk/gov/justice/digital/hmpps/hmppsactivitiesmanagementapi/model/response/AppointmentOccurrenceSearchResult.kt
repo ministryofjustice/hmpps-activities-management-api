@@ -49,6 +49,14 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
+    The appointment name
+    """,
+  )
+  val appointmentName: String,
+
+  @Schema(
+    description =
+    """
     The prisoner or prisoners attending this appointment occurrence. Appointments of type INDIVIDUAL will have one
     prisoner allocated to each appointment occurrence. Appointments of type GROUP can have more than one prisoner
     allocated to each appointment occurrence

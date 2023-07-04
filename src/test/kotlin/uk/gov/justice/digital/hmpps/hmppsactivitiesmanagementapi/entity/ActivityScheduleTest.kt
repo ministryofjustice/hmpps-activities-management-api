@@ -42,6 +42,7 @@ class ActivityScheduleTest {
         id = 1L,
         attendanceRequired = true,
         inCell = false,
+        onWing = false,
         pieceWork = false,
         outsideWork = false,
         payPerSession = PayPerSession.H,
@@ -109,6 +110,7 @@ class ActivityScheduleTest {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -421,18 +423,17 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `end date must be after the start date`() {
+  fun `end date must be on or after the start date`() {
     val schedule = activityEntity().schedules().first().apply { endDate = null }
 
     assertThat(schedule.endDate).isNull()
 
     schedule.endDate = schedule.startDate.plusDays(1)
 
-    assertThatThrownBy { schedule.endDate = schedule.startDate }.isInstanceOf(IllegalArgumentException::class.java)
     assertThatThrownBy {
       schedule.endDate = schedule.startDate.minusDays(1)
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("End date must be after the start date")
+      .hasMessage("Activity schedule end date cannot be before activity schedule start date.")
   }
 
   @Test
@@ -632,6 +633,25 @@ class ActivityScheduleTest {
     with(activitySchedule.activity) {
       assertThat(id).isEqualTo(1)
       assertThat(inCell).isTrue
+      assertThat(onWing).isFalse
+    }
+  }
+
+  @Test
+  fun `on-wing activity should not contain internal location`() {
+    val activitySchedule = activitySchedule(
+      activityEntity(
+        onWing = true,
+      ),
+    ).toModelLite()
+
+    assertThat(activitySchedule.id).isEqualTo(1)
+    assertThat(activitySchedule.internalLocation).isNull()
+
+    with(activitySchedule.activity) {
+      assertThat(id).isEqualTo(1)
+      assertThat(inCell).isFalse
+      assertThat(onWing).isTrue
     }
   }
 
@@ -924,5 +944,69 @@ class ActivityScheduleTest {
       assertThat(hasNoInstancesOnDate(today, slotTwo.startTime to slotTwo.endTime)).isTrue
       assertThat(hasNoInstancesOnDate(tomorrow, slotOne.startTime to slotOne.endTime)).isTrue
     }
+  }
+
+  @Test
+  fun `change to schedule end date is applied to allocations`() {
+    val schedule =
+      activitySchedule(activity = activityEntity(), noAllocations = true, startDate = yesterday, endDate = tomorrow)
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "1111111".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      endDate = tomorrow,
+    )
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "2222222".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 20002,
+      allocatedBy = "BILL",
+      endDate = tomorrow,
+    )
+
+    assertThat(schedule.allocations()).hasSize(2)
+
+    schedule.allocations().forEach { allocation -> assertThat(allocation.endDate).isEqualTo(tomorrow) }
+
+    schedule.endDate = today
+
+    schedule.allocations().forEach { allocation -> assertThat(allocation.endDate).isEqualTo(today) }
+  }
+
+  @Test
+  fun `change to schedule end date is is not applied to ended allocations`() {
+    val schedule =
+      activitySchedule(
+        activity = activityEntity(),
+        noAllocations = true,
+        startDate = yesterday,
+        endDate = tomorrow.plusDays(1),
+      )
+
+    val activeAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "1111111".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      endDate = tomorrow.plusDays(1),
+    )
+
+    val endedAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "2222222".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 20002,
+      allocatedBy = "BILL",
+      endDate = tomorrow.plusDays(1),
+    ).deallocateNow()
+
+    assertThat(schedule.allocations()).hasSize(2)
+
+    schedule.endDate = tomorrow
+
+    assertThat(activeAllocation.endDate).isEqualTo(tomorrow)
+    assertThat(endedAllocation.endDate).isEqualTo(today)
   }
 }

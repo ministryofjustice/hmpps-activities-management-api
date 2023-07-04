@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Schema(
   description =
@@ -39,6 +40,19 @@ data class AllAttendance(
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
   val issuePayment: Boolean?,
 
-  @Schema(description = "The prisoner number this attendance record is for", example = "A1234AA")
+  @Schema(description = "The prisoner number for this attendance record", example = "A1234AA")
   val prisonerNumber: String,
+
+  @Schema(description = "The id of the activity for this attendance record", example = "1")
+  val activityId: Long,
+
+  @Schema(description = "The title of the activity for this attendance record", example = "Math Level 1")
+  val activitySummary: String,
+
+  @Schema(description = "The name of the activity category for this attendance record", example = "Education")
+  val categoryName: String,
+
+  @Schema(description = "The date and time the attendance was updated", example = "2023-09-10T09:30:00")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val recordedTime: LocalDateTime?,
 )

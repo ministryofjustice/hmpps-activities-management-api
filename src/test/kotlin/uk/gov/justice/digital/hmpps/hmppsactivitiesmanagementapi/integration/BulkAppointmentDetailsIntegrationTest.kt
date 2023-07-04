@@ -84,6 +84,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
       BulkAppointmentDetails(
         6,
         "TPR",
+        if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
         category,
         appointmentDescription,
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),

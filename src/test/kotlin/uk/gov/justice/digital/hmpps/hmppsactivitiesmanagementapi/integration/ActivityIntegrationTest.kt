@@ -18,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
@@ -204,6 +205,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -255,6 +257,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -315,6 +318,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = true,
           outsideWork = true,
           payPerSession = PayPerSession.H,
@@ -713,6 +717,26 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-update-end-date.sql")
+  fun `updateActivity end date - is successful`() {
+    with(webTestClient.getActivityById(1)) {
+      assertThat(endDate).isNull()
+      assertThat(schedules).hasSize(1)
+      assertThat(schedules.first().endDate).isNull()
+      assertThat(schedules.first().allocations).hasSize(1)
+      assertThat(schedules.first().allocations.first().endDate).isNull()
+    }
+
+    val newEndDate = ActivityUpdateRequest(endDate = TimeSource.tomorrow())
+
+    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newEndDate)) {
+      assertThat(endDate).isEqualTo(TimeSource.tomorrow())
+      assertThat(schedules.first().endDate).isEqualTo(TimeSource.tomorrow())
+      assertThat(schedules.first().allocations.first().endDate).isEqualTo(TimeSource.tomorrow())
     }
   }
 }
