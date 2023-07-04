@@ -1,3 +1,7 @@
+DROP VIEW v_all_attendance_summary;
+DROP VIEW v_all_attendance;
+DROP VIEW v_activity_time_slot;
+
 CREATE OR REPLACE VIEW v_activity_time_slot
 AS
 SELECT scheduled_instance.scheduled_instance_id,
@@ -57,3 +61,17 @@ FROM scheduled_instance si
          JOIN attendance a ON si.scheduled_instance_id = a.scheduled_instance_id
          JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id
          LEFT JOIN attendance_reason ar ON a.attendance_reason_id = ar.attendance_reason_id;
+
+CREATE OR REPLACE VIEW v_all_attendance_summary
+AS SELECT min(aa.attendance_id) AS id,
+          aa.prison_code,
+          aa.activity_id,
+          aa.category_name,
+          aa.session_date,
+          aa.time_slot,
+          aa.status,
+          aa.attendance_reason_code,
+          aa.issue_payment,
+          count(aa.attendance_id) AS attendance_count
+   FROM v_all_attendance aa
+   GROUP BY aa.prison_code, aa.activity_id, aa.category_name, aa.session_date, aa.time_slot, aa.status, aa.attendance_reason_code, aa.issue_payment;
