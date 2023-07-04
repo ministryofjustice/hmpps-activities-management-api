@@ -26,7 +26,6 @@ class AttendanceTest {
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
-      recordedTime = LocalDateTime.now(),
     )
 
     attendance.uncancel()
@@ -36,7 +35,6 @@ class AttendanceTest {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
-      assertThat(recordedTime).isNull()
       assertThat(otherAbsenceReason).isNull()
     }
   }
