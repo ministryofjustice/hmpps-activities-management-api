@@ -44,6 +44,10 @@ class AppointmentOccurrenceService(
 
     val now = LocalDateTime.now()
 
+    if (appointmentOccurrence.isCancelled()) {
+      throw IllegalArgumentException("Cannot update a cancelled appointment occurrence")
+    }
+
     if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
       throw IllegalArgumentException("Cannot update a past appointment occurrence")
     }
@@ -292,7 +296,7 @@ class AppointmentOccurrenceService(
       )
       ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
       else -> listOf(appointmentOccurrence)
-    }
+    }.filter { !it.isCancelled() }
 
   private fun publishCancellation(appointmentOccurrenceAllocationId: Long) = runCatching {
     outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocationId)

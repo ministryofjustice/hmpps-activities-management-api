@@ -39,6 +39,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 
 class AppointmentOccurrenceServiceUpdateTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -109,6 +110,25 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Cannot update a past appointment occurrence")
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `update category code throws illegal argument exception when appointment occurrence is cancelled`() {
+      val request = AppointmentOccurrenceUpdateRequest()
+
+      val appointment = appointmentEntity()
+      val appointmentOccurrence = appointment.occurrences().first()
+      appointmentOccurrence.cancellationReason = AppointmentCancellationReason(1, "unavailable", false)
+
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot update a cancelled appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
       verifyNoInteractions(outboundEventsService)
