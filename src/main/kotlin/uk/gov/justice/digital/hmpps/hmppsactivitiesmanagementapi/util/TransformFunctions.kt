@@ -63,6 +63,7 @@ fun transform(activity: EntityActivity) =
     pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
+    onWing = activity.onWing,
     pieceWork = activity.pieceWork,
     outsideWork = activity.outsideWork,
     payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
@@ -112,6 +113,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     comments = it.activitySummary,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
+    onWing = it.onWing,
     outsidePrison = false, // TODO: Add the outside prison flag to the view
     date = it.sessionDate,
     startTime = it.startTime!!,
@@ -157,6 +159,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     comments = it.comment,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
+    onWing = false,
     outsidePrison = false,
     date = it.appointmentDate,
     startTime = it.startTime,
