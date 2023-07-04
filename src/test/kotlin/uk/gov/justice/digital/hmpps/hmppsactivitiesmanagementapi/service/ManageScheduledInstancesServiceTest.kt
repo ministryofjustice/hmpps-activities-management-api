@@ -17,12 +17,12 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobDefinition
@@ -227,15 +227,15 @@ class ManageScheduledInstancesServiceTest {
     val yesterday: LocalDate = LocalDate.now().minusDays(1)
 
     val moorlandBasic = listOf(
-      ActivityBasic("MDI", 1L, 1L, "A", yesterday, null),
-      ActivityBasic("MDI", 2L, 2L, "B", yesterday, null),
-      ActivityBasic("MDI", 3L, 3L, "C", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "A", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("MDI", 2L, 2L, "B", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("MDI", 3L, 3L, "C", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val leedsBasic = listOf(
-      ActivityBasic("LEI", 4L, 4L, "D", yesterday, null),
-      ActivityBasic("LEI", 5L, 5L, "E", yesterday, null),
-      ActivityBasic("LEI", 6L, 6L, "F", yesterday, null),
+      ActivityBasic("LEI", 4L, 4L, "D", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("LEI", 5L, 5L, "E", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("LEI", 6L, 6L, "F", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val moorlandActivities = listOf(
@@ -357,7 +357,7 @@ class ManageScheduledInstancesServiceTest {
     )
 
     val moorlandBasicWithExistingInstance = listOf(
-      ActivityBasic("MDI", 1L, 1L, "Existing", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "Existing", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityWithExistingInstance = listOf(
@@ -392,7 +392,7 @@ class ManageScheduledInstancesServiceTest {
     )
 
     val moorlandBasicWithSuspension = listOf(
-      ActivityBasic("MDI", 1L, 1L, "Suspension", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "Suspension", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityWithSuspension = listOf(
@@ -431,7 +431,7 @@ class ManageScheduledInstancesServiceTest {
     )
 
     val moorlandBasicNotBankHoliday = listOf(
-      ActivityBasic("MDI", 1L, 1L, "Not BH", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "Not BH", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityDoesNotRunOnABankHoliday = listOf(
@@ -464,7 +464,7 @@ class ManageScheduledInstancesServiceTest {
     )
 
     val moorlandBasicBankHoliday = listOf(
-      ActivityBasic("MDI", 1L, 1L, "BH", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "BH", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityRunsOnABankHoliday = listOf(
@@ -497,7 +497,7 @@ class ManageScheduledInstancesServiceTest {
     )
 
     val moorlandBasicWithMultipleSlots = listOf(
-      ActivityBasic("MDI", 1L, 1L, "Multiple", yesterday, null),
+      ActivityBasic("MDI", 1L, 1L, "Multiple", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityWithMultipleSlots = listOf(

@@ -5,8 +5,8 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic
 import java.time.LocalDate
 
 @Repository
@@ -34,48 +34,19 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
   fun existsActivityByPrisonCodeAndSummary(prisonCode: String, summary: String): Boolean
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
-  // Assumes a 1-to-1 between activity and activity schedule
-  @Query(
-    value =
-    """
-    SELECT 
-       new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic(
-            a.prisonCode, a.activityId, sched.activityScheduleId, a.summary, a.startDate, a.endDate
-       )
-    FROM Activity a JOIN a.schedules sched
-    WHERE a.activityId = :activityId
-    """,
-  )
-  fun getActivityBasicById(@Param("activityId") activityId: Long): ActivityBasic
+  @Query(value = "SELECT ab from ActivityBasic ab WHERE ab.activityId = :activityId")
+  fun getActivityBasicById(@Param("activityId") activityId: Long): ActivityBasic?
 
-  // Assumes a 1-to-1 between activity and activity schedule
-  @Query(
-    value =
-    """
-    SELECT 
-       new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic(
-         a.prisonCode, a.activityId, sched.activityScheduleId, a.summary, a.startDate, a.endDate
-       )
-    FROM Activity a JOIN a.schedules sched
-    WHERE a.prisonCode = :prisonCode
-    """,
-  )
+  @Query(value = "SELECT ab FROM ActivityBasic ab WHERE ab.prisonCode = :prisonCode")
   fun getActivityBasicByPrisonCode(@Param("prisonCode") prisonCode: String): List<ActivityBasic>
 
-  // Assumes a 1-to-1 between activity and activity schedule
   @Query(
     value =
     """
-    SELECT 
-       new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic(
-         a.prisonCode, a.activityId, sched.activityScheduleId, a.summary, a.startDate, a.endDate
-       )
-    FROM Activity a JOIN a.schedules sched
-    WHERE a.prisonCode = :prisonCode
-    AND a.startDate <= :toDate
-    AND (a.endDate is null or a.endDate >= :fromDate)
-    AND  sched.startDate <= :toDate
-    AND (sched.endDate is null or sched.endDate >= :fromDate)
+    SELECT ab FROM ActivityBasic ab
+    WHERE ab.prisonCode = :prisonCode
+    AND ab.startDate <= :toDate
+    AND (ab.endDate is null or ab.endDate >= :fromDate)
     """,
   )
   fun getBasicForPrisonBetweenDates(

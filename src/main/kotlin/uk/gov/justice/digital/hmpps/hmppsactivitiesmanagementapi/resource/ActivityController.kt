@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
@@ -153,8 +153,8 @@ class ActivityController(
   @GetMapping(value = ["/{activityId}/basic"])
   @ResponseBody
   @Operation(
-    summary = "Get an activity key ids",
-    description = "Returns keys ids",
+    summary = "DO NOT USE:  Get an activity key ids - testing only",
+    description = "DO NOT USEL: Returns keys ids - testing only",
   )
   @ApiResponses(
     value = [
@@ -207,8 +207,8 @@ class ActivityController(
   @GetMapping(value = ["/{prisonCode}/basic-list"])
   @ResponseBody
   @Operation(
-    summary = "Testing use only - Get a list of basic activity details by prison code",
-    description = "Testing use only - Get a list of basic activity details by prison code",
+    summary = "DO NOT USE: Testing use only - Get a list of basic activity details by prison code",
+    description = "DO NOT USE: Testing use only - Get a list of basic activity details by prison code",
     hidden = true,
   )
   @ApiResponses(

@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.projections.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -30,12 +29,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
 @Service
 @Transactional(readOnly = true)
@@ -68,12 +69,14 @@ class ActivityService(
     return transform(activity)
   }
 
-  fun getActivityBasicById(activityId: Long): ActivityBasic {
-    return activityRepository.getActivityBasicById(activityId)
+  fun getActivityBasicById(activityId: Long): ModelActivityBasic {
+    val activityBasic = activityRepository.getActivityBasicById(activityId)
+      ?: throw EntityNotFoundException("Activity $activityId not found.")
+    return transform(activityBasic)
   }
 
-  fun getActivityBasicByPrisonCode(prisonCode: String): List<ActivityBasic> {
-    return activityRepository.getActivityBasicByPrisonCode(prisonCode)
+  fun getActivityBasicByPrisonCode(prisonCode: String): List<ModelActivityBasic> {
+    return activityRepository.getActivityBasicByPrisonCode(prisonCode).toActivityBasicList()
   }
 
   fun getActivitiesByCategoryInPrison(
