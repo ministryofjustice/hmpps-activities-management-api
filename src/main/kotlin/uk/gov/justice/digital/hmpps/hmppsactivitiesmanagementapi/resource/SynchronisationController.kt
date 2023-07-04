@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -67,5 +68,6 @@ class SynchronisationController(private val synchronisationService: Synchronisat
   fun getAttendanceSync(
     @Schema(description = "Attendance id", required = true) @PathVariable attendanceId: Long,
   ) =
-    synchronisationService.getAttendanceSync(attendanceId)
+    synchronisationService.findAttendanceSync(attendanceId)
+      ?: throw EntityNotFoundException("Attendance sync not found: $attendanceId")
 }
