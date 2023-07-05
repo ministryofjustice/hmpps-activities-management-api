@@ -59,7 +59,7 @@ hmpps.sqs:
   queues:
     activities:
       queueName: activities-queue
-      subscribeFilter: "{\"eventType\":[\"prison-offender-events.prisoner.received\", \"prison-offender-events.prisoner.released\", \"prison-offender-events.prisoner.activities-changed\"]}"
+      subscribeFilter: "{\"eventType\":[\"prison-offender-events.prisoner.received\", \"prison-offender-events.prisoner.released\", \"prison-offender-events.prisoner.activities-changed\", \"prison-offender-events.prisoner.appointments-changed\"]}"
       dlqName: activities-dead-letter-queue
       subscribeTopicId: domainevents
       dlqMaxReceiveCount: 1
@@ -78,6 +78,7 @@ feature:
         released: true
         received: true
         activities-changed: true
+        appointments-changed: true
     activities:
       prisoner:
         allocation-amended: true
