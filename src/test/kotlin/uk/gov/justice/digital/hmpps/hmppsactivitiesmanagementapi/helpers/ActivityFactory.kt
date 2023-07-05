@@ -251,7 +251,10 @@ internal fun activitySchedule(
     }
   }
 
-internal fun allocation() = activitySchedule(activityEntity()).allocations().first()
+internal fun allocation(startDate: LocalDate? = null) =
+  startDate
+    ?.let { activitySchedule(activityEntity(startDate = it)).allocations().first() }
+    ?: activitySchedule(activityEntity()).allocations().first()
 
 private fun activityWaiting(
   activity: Activity,

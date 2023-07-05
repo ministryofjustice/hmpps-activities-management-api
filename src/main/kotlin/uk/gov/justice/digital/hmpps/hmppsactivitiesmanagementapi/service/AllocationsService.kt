@@ -53,9 +53,12 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
     request.startDate?.let { newStartDate ->
       val (start, end) = allocation.activitySchedule.activity.startDate to allocation.activitySchedule.activity.endDate
 
+      require(request.startDate > LocalDate.now()) { "Allocation start date must be in the future" }
+
       require(allocation.startDate > LocalDate.now()) {
         "Start date cannot be updated once allocation has started"
       }
+
       require(newStartDate.between(start, end)) {
         "Allocation start date cannot be before the activity start date or after the activity end date."
       }

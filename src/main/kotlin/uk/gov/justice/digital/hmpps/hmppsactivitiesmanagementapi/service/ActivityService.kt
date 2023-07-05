@@ -130,7 +130,7 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       onWing = request.onWing,
-      startDate = request.startDate!!,
+      startDate = request.startDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
