@@ -110,6 +110,8 @@ class ActivityService(
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
+    require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
+
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
     val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
@@ -128,7 +130,7 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       onWing = request.onWing,
-      startDate = request.startDate ?: LocalDate.now(),
+      startDate = request.startDate!!,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
@@ -172,7 +174,7 @@ class ActivityService(
         description = request.description!!,
         internalLocation = scheduleLocation,
         capacity = request.capacity!!,
-        startDate = request.startDate!!,
+        startDate = request.startDate,
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
       ).let { schedule ->

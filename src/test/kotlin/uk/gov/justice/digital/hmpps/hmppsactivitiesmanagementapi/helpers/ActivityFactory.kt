@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
@@ -13,12 +14,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -275,7 +278,15 @@ private fun activityPay(activity: Activity) =
     pieceRateItems = 50,
   )
 
-fun rolloutPrison() = RolloutPrison(1, pentonvillePrisonCode, "HMP Pentonville", true, LocalDate.of(2022, 12, 22), true, LocalDate.of(2022, 12, 23))
+fun rolloutPrison() = RolloutPrison(
+  1,
+  pentonvillePrisonCode,
+  "HMP Pentonville",
+  true,
+  LocalDate.of(2022, 12, 22),
+  true,
+  LocalDate.of(2022, 12, 23),
+)
 
 fun prisonRegime() = PrisonRegime(
   1,
@@ -317,18 +328,6 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
   ),
 )
 
-fun completedAttendance() = Attendance(
-  attendanceId = 1,
-  scheduledInstance = activityEntity().schedules().first().instances().first(),
-  prisonerNumber = "A1234AA",
-  status = AttendanceStatus.COMPLETED,
-  attendanceReason = attendanceReasons()["ATTENDED"],
-  recordedBy = "Joe Bloggs",
-  recordedTime = LocalDate.now().atStartOfDay(),
-  comment = "previous comment",
-  caseNoteId = 1,
-)
-
 internal fun attendance() = schedule().instances().first().attendances.first()
 
 internal fun attendanceSummary() = listOf(
@@ -362,3 +361,41 @@ internal fun attendanceList() = listOf(
     recordedTime = null,
   ),
 )
+
+internal fun activityCreateRequest(
+  prisonCode: String = moorlandPrisonCode,
+  educationLevel: ReferenceCode? = null,
+  studyArea: ReferenceCode? = null,
+  eligibilityRules: Set<EligibilityRule> = setOf(eligibilityRuleOver21),
+) =
+  ActivityCreateRequest(
+    prisonCode = prisonCode,
+    attendanceRequired = true,
+    inCell = false,
+    pieceWork = false,
+    outsideWork = false,
+    payPerSession = null,
+    summary = "Test activity",
+    description = "Test activity",
+    categoryId = activityCategory().activityCategoryId,
+    tierId = activityTier().activityTierId,
+    eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
+    pay = emptyList(),
+    riskLevel = "high",
+    minimumIncentiveNomisCode = "BAS",
+    minimumIncentiveLevel = "Basic",
+    startDate = TimeSource.tomorrow(),
+    endDate = null,
+    minimumEducationLevel = listOf(
+      ActivityMinimumEducationLevelCreateRequest(
+        educationLevelCode = educationLevel?.code ?: "LEVEL_CODE",
+        educationLevelDescription = educationLevel?.description ?: "LEVEL DESCRIPTION",
+        studyAreaCode = studyArea?.code ?: "STUDY_CODE",
+        studyAreaDescription = studyArea?.description ?: "STUDY DESCRIPTION",
+      ),
+    ),
+    locationId = 1,
+    capacity = 1,
+    slots = listOf(Slot(timeSlot = "AM", monday = true)),
+    onWing = false,
+  )
