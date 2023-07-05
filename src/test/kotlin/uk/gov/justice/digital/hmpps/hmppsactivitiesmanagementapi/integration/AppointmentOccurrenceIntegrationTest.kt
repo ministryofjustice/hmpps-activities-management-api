@@ -60,6 +60,64 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
+  fun `update single appointment occurrence`() {
+    val request = AppointmentOccurrenceUpdateRequest(
+      categoryCode = "AC2",
+      internalLocationId = 456,
+      startDate = LocalDate.now().plusDays(3),
+      startTime = LocalTime.of(13, 30),
+      endTime = LocalTime.of(15, 0),
+      comment = "Updated appointment occurrence level comment",
+      applyTo = ApplyTo.THIS_OCCURRENCE,
+    )
+
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
+
+    val appointment = webTestClient.updateAppointmentOccurrence(2, request)!!
+    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+
+    with(appointment) {
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(internalLocationId).isEqualTo(123)
+      assertThat(inCell).isFalse
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+      assertThat(comment).isEqualTo("Appointment level comment")
+      assertThat(appointmentDescription).isEqualTo("Appointment description")
+      assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(updatedBy).isEqualTo("test-client")
+      with(occurrences.single()) {
+        assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(request.startDate)
+        assertThat(startTime).isEqualTo(request.startTime)
+        assertThat(endTime).isEqualTo(request.endTime)
+        assertThat(comment).isEqualTo(request.comment)
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("test-client")
+        with(allocations.single()) {
+          assertThat(prisonerNumber).isEqualTo("A1234BC")
+          assertThat(bookingId).isEqualTo(456)
+        }
+      }
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
+  @Test
   fun `cancel single appointment occurrence with a reason that does NOT trigger a soft delete`() {
     val request = AppointmentOccurrenceCancelRequest(
       applyTo = ApplyTo.THIS_OCCURRENCE,
