@@ -17,6 +17,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
@@ -35,7 +36,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
 class ManageScheduledInstancesServiceTest {
@@ -55,7 +55,9 @@ class ManageScheduledInstancesServiceTest {
     safeJobRunner,
     7L,
   )
+
   private val today = LocalDate.now()
+
   private val weekFromToday = today.plusWeeks(1)
 
   @Captor
@@ -63,34 +65,26 @@ class ManageScheduledInstancesServiceTest {
 
   @Test
   fun `schedules 6 session instances over 7 days for multiple active prisons`() {
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(moorlandActivities)
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(leedsActivities)
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(moorlandBasic)
+    whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(leedsBasic)
 
-    // Activity schedules at Moorland by ID
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        moorlandActivities.first().schedules().first(),
-      ),
-    )
-    whenever(activityScheduleRepository.findById(2L)).thenReturn(Optional.of(moorlandActivities[1].schedules().first()))
-    whenever(activityScheduleRepository.findById(3L)).thenReturn(
-      Optional.of(
-        moorlandActivities.last().schedules().first(),
-      ),
-    )
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(moorlandActivities.first().schedules().first())
 
-    // Activity schedules at Leeds by ID
-    whenever(activityScheduleRepository.findById(4L)).thenReturn(
-      Optional.of(
-        leedsActivities.first().schedules().first(),
-      ),
-    )
-    whenever(activityScheduleRepository.findById(5L)).thenReturn(Optional.of(leedsActivities[1].schedules().first()))
-    whenever(activityScheduleRepository.findById(6L)).thenReturn(
-      Optional.of(
-        leedsActivities.last().schedules().first(),
-      ),
-    )
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(2L, today))
+      .thenReturn(moorlandActivities[1].schedules().first())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today))
+      .thenReturn(moorlandActivities.last().schedules().first())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(4L, today))
+      .thenReturn(leedsActivities.first().schedules().first())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(5L, today))
+      .thenReturn(leedsActivities[1].schedules().first())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(6L, today))
+      .thenReturn(leedsActivities.last().schedules().first())
 
     job.create()
 
@@ -98,32 +92,30 @@ class ManageScheduledInstancesServiceTest {
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.SCHEDULES)
 
     // Creates 6 scheduled instances for 3 activities in Moorland and 3 activities in Leeds
-    verify(activityScheduleRepository, times(6)).findById(anyLong())
+    verify(activityScheduleRepository, times(6)).getActivityScheduleByIdWithFilters(anyLong(), any())
     verify(activityScheduleRepository, times(6)).saveAndFlush(scheduleSaveCaptor.capture())
+
     scheduleSaveCaptor.savedSchedules(6).forEach { schedule ->
       assertThat(schedule.activity.prisonCode).isIn(listOf("LEI", "MDI"))
-      schedule.instances().forEach { instance ->
-        assertThat(instance.sessionDate).isBetween(today, weekFromToday)
-      }
+      schedule.instances().forEach { instance -> assertThat(instance.sessionDate).isBetween(today, weekFromToday) }
       assertThat(schedule.instancesLastUpdatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
   }
 
   @Test
   fun `can schedule multiple slots for the same day`() {
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(
-      activityWithMultipleSlots,
-    )
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        activityWithMultipleSlots.first().schedules().first(),
-      ),
-    )
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
+      .thenReturn(moorlandBasicWithMultipleSlots)
+
+    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday))
+      .thenReturn(emptyList())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(activityWithMultipleSlots.first().schedules().first())
 
     job.create()
 
-    verify(activityScheduleRepository).findById(1L)
+    verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
 
     scheduleSaveCaptor.savedSchedules(1).forEach {
@@ -139,38 +131,36 @@ class ManageScheduledInstancesServiceTest {
 
   @Test
   fun `does not schedule an activity instance today when one exists for today`() {
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(
-      activityWithExistingInstance,
-    )
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        activityWithExistingInstance.first().schedules().first(),
-      ),
-    )
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
+      .thenReturn(moorlandBasicWithExistingInstance)
+
+    whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday))
+      .thenReturn(emptyList())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(activityWithExistingInstance.first().schedules().first())
 
     job.create()
 
-    verify(activityScheduleRepository).findById(1L)
+    verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository, never()).saveAndFlush(any())
   }
 
   @Test
   fun `does schedule an instance even when it has an active suspension`() {
     // There is no UI way to configure planned suspensions so for now we will schedule whether suspended or not
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(
-      activityWithSuspension,
-    )
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        activityWithSuspension.first().schedules().first(),
-      ),
-    )
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
+      .thenReturn(moorlandBasicWithSuspension)
+
+    whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday))
+      .thenReturn(emptyList())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(activityWithSuspension.first().schedules().first())
 
     job.create()
 
-    verify(activityScheduleRepository).findById(1L)
+    verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
 
     scheduleSaveCaptor.savedSchedules(1).forEach {
@@ -181,39 +171,39 @@ class ManageScheduledInstancesServiceTest {
 
   @Test
   fun `does not schedule an instance on a bank holiday when the activity does not run on bank holidays`() {
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(
-      activityDoesNotRunOnABankHoliday,
-    )
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        activityDoesNotRunOnABankHoliday.first().schedules().first(),
-      ),
-    )
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
+      .thenReturn(moorlandBasicNotBankHoliday)
+
+    whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday))
+      .thenReturn(emptyList())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(activityDoesNotRunOnABankHoliday.first().schedules().first())
+
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
     job.create()
 
-    verify(activityScheduleRepository).findById(1L)
+    verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityRepository, never()).saveAndFlush(any())
   }
 
   @Test
   fun `schedules an instance on a bank holiday if activity runs on a bank holiday`() {
-    whenever(activityRepository.getAllForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(
-      activityRunsOnABankHoliday,
-    )
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(emptyList())
-    whenever(activityScheduleRepository.findById(1L)).thenReturn(
-      Optional.of(
-        activityRunsOnABankHoliday.first().schedules().first(),
-      ),
-    )
+    whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
+      .thenReturn(moorlandBasicBankHoliday)
+
+    whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday))
+      .thenReturn(emptyList())
+
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+      .thenReturn(activityRunsOnABankHoliday.first().schedules().first())
+
     whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
     job.create()
 
-    verify(activityScheduleRepository).findById(1L)
+    verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
     verify(activityScheduleRepository).saveAndFlush(scheduleSaveCaptor.capture())
 
     scheduleSaveCaptor.savedSchedules(1).forEach {
@@ -232,6 +222,20 @@ class ManageScheduledInstancesServiceTest {
       RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1)),
       RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1)),
       RolloutPrison(3, "XXX", "Other prison", false, null, true, LocalDate.of(2022, 11, 1)),
+    )
+
+    val yesterday: LocalDate = LocalDate.now().minusDays(1)
+
+    val moorlandBasic = listOf(
+      ActivityBasic("MDI", 1L, 1L, "A", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("MDI", 2L, 2L, "B", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("MDI", 3L, 3L, "C", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+    )
+
+    val leedsBasic = listOf(
+      ActivityBasic("LEI", 4L, 4L, "D", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("LEI", 5L, 5L, "E", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+      ActivityBasic("LEI", 6L, 6L, "F", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val moorlandActivities = listOf(
@@ -352,6 +356,10 @@ class ManageScheduledInstancesServiceTest {
       },
     )
 
+    val moorlandBasicWithExistingInstance = listOf(
+      ActivityBasic("MDI", 1L, 1L, "Existing", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+    )
+
     val activityWithExistingInstance = listOf(
       activityEntity(
         activityId = 1L,
@@ -383,12 +391,16 @@ class ManageScheduledInstancesServiceTest {
       },
     )
 
+    val moorlandBasicWithSuspension = listOf(
+      ActivityBasic("MDI", 1L, 1L, "Suspension", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+    )
+
     val activityWithSuspension = listOf(
       activityEntity(
         activityId = 1L,
         prisonCode = "MDI",
-        summary = "Existing",
-        description = "Existing instances",
+        summary = "Suspension",
+        description = "With suspension",
         startDate = LocalDate.now().minusDays(1),
         noSchedules = true,
       ).apply {
@@ -418,11 +430,15 @@ class ManageScheduledInstancesServiceTest {
       },
     )
 
+    val moorlandBasicNotBankHoliday = listOf(
+      ActivityBasic("MDI", 1L, 1L, "Not BH", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+    )
+
     val activityDoesNotRunOnABankHoliday = listOf(
       activityEntity(
         activityId = 1L,
         prisonCode = "MDI",
-        summary = "BH",
+        summary = "Not BH",
         description = "Not on bank holiday",
         startDate = LocalDate.now().minusDays(1),
         noSchedules = true,
@@ -447,12 +463,16 @@ class ManageScheduledInstancesServiceTest {
       },
     )
 
+    val moorlandBasicBankHoliday = listOf(
+      ActivityBasic("MDI", 1L, 1L, "BH", yesterday, null, 1, "SAA_EDUCATION", "Education"),
+    )
+
     val activityRunsOnABankHoliday = listOf(
       activityEntity(
         activityId = 1L,
         prisonCode = "MDI",
         summary = "BH",
-        description = "Not on bank holiday",
+        description = "Runs on a bank holiday",
         startDate = LocalDate.now().minusDays(1),
         noSchedules = true,
       ).apply {
@@ -474,6 +494,10 @@ class ManageScheduledInstancesServiceTest {
           },
         )
       },
+    )
+
+    val moorlandBasicWithMultipleSlots = listOf(
+      ActivityBasic("MDI", 1L, 1L, "Multiple", yesterday, null, 1, "SAA_EDUCATION", "Education"),
     )
 
     val activityWithMultipleSlots = listOf(

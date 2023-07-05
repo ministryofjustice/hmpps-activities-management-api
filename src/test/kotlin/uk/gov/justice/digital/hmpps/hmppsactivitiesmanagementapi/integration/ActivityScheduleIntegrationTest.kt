@@ -75,7 +75,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  fun `get all active allocations for Maths`() {
+  fun `get all allocations for Maths`() {
     webTestClient.getAllocationsBy(1, false)!!
       .also { assertThat(it).hasSize(3) }
   }
