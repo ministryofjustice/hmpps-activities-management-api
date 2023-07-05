@@ -1,0 +1,50 @@
+{
+  "offenderNo": "A1234BC",
+  "bookingId": 1200993,
+  "bookingNo": "38458A",
+  "offenderId": 1818409,
+  "rootOffenderId": 1818392,
+  "firstName": "TIM",
+  "middleName": "JETHRONE MASON",
+  "lastName": "HARRISON",
+  "dateOfBirth": "1986-06-27",
+  "age": 36,
+  "activeFlag": false,
+  "facialImageId": 1413290,
+  "agencyId": "PVI",
+  "assignedLivingUnitId": 25663,
+  "alertsCodes": [],
+  "activeAlertCount": 0,
+  "inactiveAlertCount": 0,
+  "alerts": [],
+  "assignedLivingUnit": {
+    "agencyId": "MDI",
+    "locationId": 25663,
+    "description": "2-1-007",
+    "agencyName": "Moorland (HMP & YOI)"
+  },
+  "physicalAttributes": {
+    "sexCode": "M",
+    "gender": "Male",
+    "raceCode": "W1",
+    "ethnicity": "White: Eng./Welsh/Scot./N.Irish/British"
+  },
+  "physicalCharacteristics": [],
+  "profileInformation": [
+    {
+      "type": "YOUTH",
+      "question": "Youth Offender?",
+      "resultValue": "No"
+    }
+  ],
+  "physicalMarks": [],
+  "birthPlace": "DONCASTER",
+  "birthCountryCode": "ENG",
+  "inOutStatus": "IN",
+  "status": "ACTIVE IN",
+  "statusReason": "TAP-C3",
+  "lastMovementTypeCode": "TAP",
+  "lastMovementReasonCode": "C3",
+  "receptionDate": "2020-07-20",
+  "legalStatus": "SENTENCED"
+}
