@@ -469,6 +469,55 @@ class AppointmentOccurrenceServiceUpdateTest {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
     }
+
+    @Test
+    fun `update all properties`() {
+      val request = AppointmentOccurrenceUpdateRequest(
+        categoryCode = "NEW",
+        internalLocationId = 456,
+        startDate = LocalDate.now().plusDays(3),
+        startTime = LocalTime.of(13, 30),
+        endTime = LocalTime.of(15, 0),
+        comment = "Updated appointment occurrence level comment",
+      )
+
+      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      with(response) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(internalLocationId).isEqualTo(123)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(comment).isEqualTo("Appointment level comment")
+        assertThat(appointmentDescription).isEqualTo("Appointment description")
+        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
+        with(occurrences.single()) {
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isFalse
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(comment).isEqualTo(request.comment)
+          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updatedBy).isEqualTo("TEST.USER")
+          with(allocations.single()) {
+            assertThat(prisonerNumber).isEqualTo("A1234BC")
+            assertThat(bookingId).isEqualTo(456L)
+          }
+        }
+      }
+
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
+      verifyNoMoreInteractions(outboundEventsService)
+    }
   }
 
   @Nested
@@ -1287,7 +1336,6 @@ class AppointmentOccurrenceServiceUpdateTest {
 
     @Test
     fun `update should filter out cancelled occurrences`() {
-
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
       appointment.occurrences()[1].cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
 
@@ -1301,11 +1349,11 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(inCell).isFalse
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
-        with(occurrences.subList(0,1)) {
-          assertThat(map {it.internalLocationId}.distinct().single()).isEqualTo(123)
-          assertThat(map {it.inCell}.distinct().single()).isFalse
-          assertThat(map {it.updated}.distinct().single()).isNull()
-          assertThat(map {it.updatedBy}.distinct().single()).isNull()
+        with(occurrences.subList(0, 1)) {
+          assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
+          assertThat(map { it.inCell }.distinct().single()).isFalse
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
         }
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
