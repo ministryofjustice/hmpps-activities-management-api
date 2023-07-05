@@ -71,6 +71,8 @@ data class PrisonerScheduledActivity(
 
   val inCell: Boolean,
 
+  val onWing: Boolean,
+
   val internalLocationId: Int? = null,
 
   val internalLocationCode: String? = null,

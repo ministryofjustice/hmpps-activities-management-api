@@ -54,6 +54,7 @@ internal fun activityEntity(
   noPayBands: Boolean = false,
   noMinimumEducationLevels: Boolean = false,
   inCell: Boolean = false,
+  onWing: Boolean = false,
   riskLevel: String = "high",
 ) =
   Activity(
@@ -70,6 +71,7 @@ internal fun activityEntity(
     createdTime = timestamp,
     createdBy = "test",
     inCell = inCell,
+    onWing = onWing,
   ).apply {
     this.endDate = endDate
     if (!noEligibilityRules) {

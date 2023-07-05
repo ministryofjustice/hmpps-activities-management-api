@@ -40,6 +40,8 @@ data class AttendanceSync(
   val bonusAmount: Int?,
 
   val issuePayment: Boolean?,
+
+  val allocationStartDate: LocalDate,
 ) {
   fun toModel() =
     AttendanceSyncModel(

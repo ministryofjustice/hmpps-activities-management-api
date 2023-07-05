@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand2
@@ -206,6 +205,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -257,6 +257,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           prisonCode = "PVI",
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -317,6 +318,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = true,
           outsideWork = true,
           payPerSession = PayPerSession.H,

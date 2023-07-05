@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 
 @Service
+@Transactional(readOnly = true)
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient,
@@ -58,7 +60,6 @@ class ActivityScheduleService(
     timeSlot: TimeSlot? = null,
     locationId: Long? = null,
   ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
-    // TODO consider pushing some/all of the filtering logic into a repository query (perhaps using a JPA Specification)
     val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
       .selectSchedulesAtLocation(locationId)
       .selectSchedulesWithActiveActivitiesOn(date)
@@ -84,6 +85,7 @@ class ActivityScheduleService(
 
   fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
@@ -126,6 +128,7 @@ class ActivityScheduleService(
     takeIf { it.agencyId == activity.prisonCode }
       ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
 
+  @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
     log.info("Attempting to deallocate prisoners $request")

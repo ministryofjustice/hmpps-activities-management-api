@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -16,6 +17,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
+@Transactional
 class ManageScheduledInstancesService(
   private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
@@ -57,20 +59,13 @@ class ManageScheduledInstancesService(
         rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { prison ->
           log.info("Scheduling activities for prison ${prison.description} until $endDay")
 
-          // Get the activities in this prison that are active between these dates
-          val activities = activityRepository.getAllForPrisonBetweenDates(prison.code, today, endDay)
-          val activitySchedules = activities.map {
-            it.schedules().filter { s ->
-              s.startDate.isBefore(endDay) && (s.endDate == null || s.endDate!!.isAfter(today))
-            }
-          }.flatten()
-
-          // For each active schedule add any new scheduled instances as required
-          activitySchedules.forEach { schedule ->
+          // Get the activities (basic) in this prison that are active between these dates
+          val activities = activityRepository.getBasicForPrisonBetweenDates(prison.code, today, endDay)
+          activities.forEach { basic ->
             continueToRunOnFailure(
-              block = { createInstancesForSchedule(prison, schedule.activityScheduleId, listOfDatesToSchedule) },
-              success = "Scheduling sessions of ${prison.code} ${schedule.description}",
-              failure = "Failed to schedule ${prison.code} ${schedule.description}",
+              block = { createInstancesForActivitySchedule(prison, basic.activityScheduleId, listOfDatesToSchedule) },
+              success = "Scheduling sessions of ${prison.code} ${basic.summary}",
+              failure = "Failed to schedule ${prison.code} ${basic.summary}",
             )
           }
         }
@@ -78,11 +73,14 @@ class ManageScheduledInstancesService(
     )
   }
 
-  private fun createInstancesForSchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
+  private fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
     var instancesCreated = false
-    val schedule = activityScheduleRepository.findById(scheduleId).orElseThrow {
-      EntityNotFoundException("Activity schedule ID $scheduleId not found")
-    }
+
+    // Retrieve instances which are for today, or in the future when creating sessions - avoid full-entity object maps
+    val earliestSession = LocalDate.now()
+
+    val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
+      ?: throw(EntityNotFoundException("Activity schedule ID $scheduleId not found"))
 
     days.forEach { day ->
       if (schedule.isActiveOn(day) && schedule.canBeScheduledOnDay(day) && schedule.hasNoInstancesOnDate(day)) {
@@ -105,7 +103,7 @@ class ManageScheduledInstancesService(
     }
 
     if (instancesCreated) {
-      // This will trigger the sync event
+      // This triggers the sync event, adds new instances but does not delete the earlier ones
       schedule.instancesLastUpdatedTime = LocalDateTime.now()
       activityScheduleRepository.saveAndFlush(schedule)
     }

@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic as EntityActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
@@ -63,6 +65,7 @@ fun transform(activity: EntityActivity) =
     pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
+    onWing = activity.onWing,
     pieceWork = activity.pieceWork,
     outsideWork = activity.outsideWork,
     payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
@@ -112,6 +115,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     comments = it.activitySummary,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
+    onWing = it.onWing,
     outsidePrison = false, // TODO: Add the outside prison flag to the view
     date = it.sessionDate,
     startTime = it.startTime!!,
@@ -157,6 +161,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     comments = it.comment,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
+    onWing = false,
     outsidePrison = false,
     date = it.appointmentDate,
     startTime = it.startTime,
@@ -418,5 +423,22 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
 )
 
 fun List<EventReview>.toModelEventReviewList() = map {
+  transform(it)
+}
+
+fun transform(activityBasic: EntityActivityBasic) =
+  ModelActivityBasic(
+    activityId = activityBasic.activityId,
+    prisonCode = activityBasic.prisonCode,
+    activityScheduleId = activityBasic.activityScheduleId,
+    startDate = activityBasic.startDate,
+    endDate = activityBasic.endDate,
+    summary = activityBasic.summary,
+    categoryId = activityBasic.categoryId,
+    categoryCode = activityBasic.categoryCode,
+    categoryName = activityBasic.categoryName,
+  )
+
+fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }

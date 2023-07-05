@@ -21,6 +21,7 @@ class ActivityTest : ModelTest() {
     val activity = Activity(
       id = 1,
       inCell = false,
+      onWing = false,
       minimumIncentiveLevel = "Some incentive level",
       outsideWork = true,
       pieceWork = false,

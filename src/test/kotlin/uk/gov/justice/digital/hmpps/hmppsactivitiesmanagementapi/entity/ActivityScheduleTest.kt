@@ -42,6 +42,7 @@ class ActivityScheduleTest {
         id = 1L,
         attendanceRequired = true,
         inCell = false,
+        onWing = false,
         pieceWork = false,
         outsideWork = false,
         payPerSession = PayPerSession.H,
@@ -109,6 +110,7 @@ class ActivityScheduleTest {
           id = 1L,
           attendanceRequired = true,
           inCell = false,
+          onWing = false,
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
@@ -631,6 +633,25 @@ class ActivityScheduleTest {
     with(activitySchedule.activity) {
       assertThat(id).isEqualTo(1)
       assertThat(inCell).isTrue
+      assertThat(onWing).isFalse
+    }
+  }
+
+  @Test
+  fun `on-wing activity should not contain internal location`() {
+    val activitySchedule = activitySchedule(
+      activityEntity(
+        onWing = true,
+      ),
+    ).toModelLite()
+
+    assertThat(activitySchedule.id).isEqualTo(1)
+    assertThat(activitySchedule.internalLocation).isNull()
+
+    with(activitySchedule.activity) {
+      assertThat(id).isEqualTo(1)
+      assertThat(inCell).isFalse
+      assertThat(onWing).isTrue
     }
   }
 
