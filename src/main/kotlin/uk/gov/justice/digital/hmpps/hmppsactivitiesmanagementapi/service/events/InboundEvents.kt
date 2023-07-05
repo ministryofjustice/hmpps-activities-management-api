@@ -128,7 +128,7 @@ data class AppointmentsChangedEvent(
 
   fun prisonCode() = additionalInformation.prisonId
 
-  fun cancelAppointments() = additionalInformation.cancelAppointments == "YES"
+  fun cancelAppointments() = additionalInformation.action == "YES"
 }
 
 data class ActivitiesChangedEvent(
@@ -151,7 +151,7 @@ data class Identifier(val type: String, val value: String)
 
 data class ActivitiesChangedInformation(val action: String, val prisonId: String, val user: String)
 
-data class AppointmentsChangedInformation(val prisonId: String, val cancelAppointments: String)
+data class AppointmentsChangedInformation(val action: String, val prisonId: String, val user: String)
 
 enum class Action {
   END,
