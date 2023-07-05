@@ -408,8 +408,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
       }
 
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -1067,49 +1066,6 @@ class AppointmentOccurrenceServiceUpdateTest {
     }
 
     @Test
-    fun `update prisoner list with no changes success`() {
-      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = appointmentOccurrence.prisonerNumbers(), applyTo = ApplyTo.THIS_OCCURRENCE)
-
-      var index = 0
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
-        .thenReturn(
-          Mono.just(
-            request.addPrisonerNumbers!!.map {
-              PrisonerSearchPrisonerFixture.instance(prisonerNumber = it, bookingId = 456L + index++, prisonId = appointment.prisonCode)
-            },
-          ),
-        )
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
-        assertThat(occurrences.map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
-        assertThat(occurrences.map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(456)
-        assertThat(occurrences.map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
-        assertThat(occurrences.map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
-        with(occurrences.subList(0, 2)) {
-          assertThat(map { it.updated }.distinct().single()).isNull()
-          assertThat(map { it.updatedBy }.distinct().single()).isNull()
-        }
-        with(occurrences[2]) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
-        }
-        with(occurrences[3]) {
-          assertThat(updated).isNull()
-          assertThat(updatedBy).isNull()
-        }
-      }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
-    }
-
-    @Test
     fun `update prisoner list remove one prisoner add one prisoner apply to this occurrence success`() {
       val request = AppointmentOccurrenceUpdateRequest(
         addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
@@ -1158,8 +1114,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
       }
 
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrence.allocations()[0].appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -1203,10 +1158,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
       }
 
-      appointment.occurrences().subList(2, response.occurrences.size).map { it.allocations()[0] }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -1250,10 +1202,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
       }
 
-      appointment.occurrences().subList(1, response.occurrences.size).map { it.allocations()[0] }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
