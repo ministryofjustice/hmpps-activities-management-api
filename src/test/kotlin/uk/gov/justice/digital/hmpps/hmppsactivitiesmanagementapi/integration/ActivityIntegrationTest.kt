@@ -96,7 +96,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
-    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = TimeSource.tomorrow())
+    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -589,7 +589,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     val createActivityRequest =
-      mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = TimeSource.tomorrow())
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
 
     prisonApiMockServer.stubGetLocation(
       locationId = 1,
