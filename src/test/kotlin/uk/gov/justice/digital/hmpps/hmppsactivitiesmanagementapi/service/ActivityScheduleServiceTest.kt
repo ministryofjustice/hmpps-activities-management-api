@@ -178,11 +178,11 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for start date before activity start date`() {
-    var schedule = activitySchedule(activityEntity())
+    val schedule = activitySchedule(activityEntity())
     schedule.activity.startDate = LocalDate.now().plusDays(2)
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -190,7 +190,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
         ),
         "by test",
@@ -201,11 +201,11 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for end date after activity end date`() {
-    var schedule = activitySchedule(activityEntity())
+    val schedule = activitySchedule(activityEntity())
     schedule.activity.endDate = TimeSource.tomorrow()
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -213,7 +213,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
           TimeSource.tomorrow().plusDays(1),
         ),
@@ -225,10 +225,10 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for end date before activity start date`() {
-    var schedule = activitySchedule(activityEntity())
+    val schedule = activitySchedule(activityEntity())
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -236,7 +236,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.tomorrow(),
           TimeSource.today(),
         ),
@@ -248,10 +248,10 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for start date not in future`() {
-    var schedule = activitySchedule(activityEntity())
+    val schedule = activitySchedule(activityEntity())
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123"))
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
 
     assertThatThrownBy {
@@ -259,7 +259,7 @@ class ActivityScheduleServiceTest {
         schedule.activityScheduleId,
         PrisonerAllocationRequest(
           "123456",
-          11,
+          1,
           TimeSource.today(),
         ),
         "by test",

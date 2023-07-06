@@ -39,9 +39,6 @@ class AttendancesService(
   fun findAttendancesByScheduledInstance(instanceId: Long) =
     scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, null) }
 
-  // TODO this is a very thin slice when updating.
-  // TODO some of the attributes still need populating as part of the marking journey e.g. recorded time/by, pay etc.
-  // TODO also there is no validation checking.
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {

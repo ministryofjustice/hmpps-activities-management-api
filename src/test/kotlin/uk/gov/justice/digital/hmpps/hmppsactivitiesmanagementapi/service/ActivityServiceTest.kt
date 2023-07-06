@@ -129,7 +129,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
     whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(Optional.of(eligibilityRuleOver21))
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
@@ -162,7 +162,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
-    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
     val createDuplicateActivityRequest = activityCreateRequest()
@@ -395,7 +395,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     val activityTier = activityTier()
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
@@ -430,7 +430,7 @@ class ActivityServiceTest {
 
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
@@ -459,7 +459,7 @@ class ActivityServiceTest {
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
-    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
@@ -524,7 +524,7 @@ class ActivityServiceTest {
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 10))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
     service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
@@ -589,7 +589,7 @@ class ActivityServiceTest {
 
     whenever(activityRepository.findByActivityIdAndPrisonCode(17, moorlandPrisonCode)).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh(offset = 0))
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
     service.updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 
