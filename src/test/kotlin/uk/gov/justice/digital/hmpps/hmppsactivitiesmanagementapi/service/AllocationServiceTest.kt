@@ -19,16 +19,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
 import java.util.Optional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as AllocationEntity
 
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
@@ -131,19 +130,22 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update pay band`() {
-    val updateAllocationRequest: AllocationUpdateRequest = mapper.read("allocation/allocation-update-request-3.json")
+    val allocation = allocation().also { assertThat(it.payBand).isEqualTo(lowPayBand) }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
 
-    val allocationEntity: AllocationEntity = mapper.read("allocation/allocation-entity-1.json")
+    val updateAllocationRequest = AllocationUpdateRequest(payBandId = mediumPayBand.prisonPayBandId)
 
-    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(allocationEntity)
-    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocationEntity)
-    whenever(prisonPayBandRepository.findById(12)).thenReturn(Optional.of(prisonPayBandsLowMediumHigh(moorlandPrisonCode, 10)[1]))
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+    whenever(prisonPayBandRepository.findById(mediumPayBand.prisonPayBandId)).thenReturn(Optional.of(mediumPayBand))
 
-    service.updateAllocation(1, updateAllocationRequest, moorlandPrisonCode, "user")
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    assertThat(allocationCaptor.firstValue.payBand.prisonPayBandId).isEqualTo(12)
+    assertThat(allocationCaptor.firstValue.payBand).isEqualTo(mediumPayBand)
+    assertThat(allocation.payBand).isEqualTo(mediumPayBand)
   }
 
   @Test

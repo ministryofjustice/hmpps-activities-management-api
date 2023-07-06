@@ -303,10 +303,9 @@ fun prisonRegime() = PrisonRegime(
   1,
 )
 
-// TODO remove offset, this is a hack to work with JSON file test data being used across multiple tests.
-fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset: Long = 0) = listOf(
+fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listOf(
   PrisonPayBand(
-    prisonPayBandId = 1 + offset,
+    prisonPayBandId = 1,
     prisonCode = prisonCode,
     displaySequence = 1,
     payBandAlias = "Low",
@@ -314,7 +313,7 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     nomisPayBand = 1,
   ),
   PrisonPayBand(
-    prisonPayBandId = 2 + offset,
+    prisonPayBandId = 2,
     prisonCode = prisonCode,
     displaySequence = 2,
     payBandAlias = "Medium",
@@ -322,7 +321,7 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode, offset:
     nomisPayBand = 2,
   ),
   PrisonPayBand(
-    prisonPayBandId = 3 + offset,
+    prisonPayBandId = 3,
     prisonCode = prisonCode,
     displaySequence = 3,
     payBandAlias = "High",
