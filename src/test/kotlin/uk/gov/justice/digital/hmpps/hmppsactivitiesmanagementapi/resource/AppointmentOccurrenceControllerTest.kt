@@ -64,7 +64,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
       startDate = LocalDate.now().minusDays(1),
       startTime = LocalTime.of(10, 30),
       endTime = LocalTime.of(10, 0),
-      prisonerNumbers = emptyList(),
+      addPrisonerNumbers = emptyList(),
     )
     val mockPrincipal: Principal = mock()
 
@@ -79,7 +79,6 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
             value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
             value(Matchers.containsString("Start date must not be in the past"))
             value(Matchers.containsString("End time must be after the start time"))
-            value(Matchers.containsString("Cannot remove all allocated prisoners"))
           }
         }
       }

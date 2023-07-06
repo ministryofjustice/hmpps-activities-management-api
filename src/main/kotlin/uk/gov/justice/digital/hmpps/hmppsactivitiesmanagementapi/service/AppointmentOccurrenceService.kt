@@ -44,6 +44,10 @@ class AppointmentOccurrenceService(
 
     val now = LocalDateTime.now()
 
+    if (appointmentOccurrence.isCancelled()) {
+      throw IllegalArgumentException("Cannot update a cancelled appointment occurrence")
+    }
+
     if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
       throw IllegalArgumentException("Cannot update a past appointment occurrence")
     }
@@ -211,10 +215,27 @@ class AppointmentOccurrenceService(
     updatedBy: String,
     updatedIds: MutableList<Long>,
   ) {
-    occurrencesToUpdate.forEach {
-      request.prisonerNumbers?.apply {
-        if (request.prisonerNumbers.size > 1 && appointment.appointmentType == AppointmentType.INDIVIDUAL) {
-          throw IllegalArgumentException("Cannot allocate more than one prisoner to an individual appointment occurrence")
+    occurrencesToUpdate.forEach { occurrenceToUpdate ->
+
+      request.removePrisonerNumbers?.forEach { prisonerToRemove ->
+
+        if (appointment.appointmentType == AppointmentType.INDIVIDUAL && request.removePrisonerNumbers.isNotEmpty()) {
+          throw IllegalArgumentException("Cannot remove prisoners from an individual appointment occurrence")
+        }
+        occurrenceToUpdate.allocations()
+          .filter { it.prisonerNumber == prisonerToRemove }
+          .forEach {
+            occurrenceToUpdate.removeAllocation(it)
+            // Remove id from updated list as the allocation has now been removed
+            updatedIds.remove(it.appointmentOccurrenceAllocationId)
+          }
+        occurrenceToUpdate.updated = updated
+        occurrenceToUpdate.updatedBy = updatedBy
+      }
+
+      request.addPrisonerNumbers?.apply {
+        if (appointment.appointmentType == AppointmentType.INDIVIDUAL && request.addPrisonerNumbers.isNotEmpty()) {
+          throw IllegalArgumentException("Cannot add prisoners to an individual appointment occurrence")
         }
 
         val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(this).block()!!
@@ -223,28 +244,21 @@ class AppointmentOccurrenceService(
 
         failIfMissingPrisoners(this, prisonerMap)
 
-        it.markAsUpdated(updated, updatedBy, updatedIds)
-
-        it.allocations()
-          .filter { allocation -> !prisonerMap.containsKey(allocation.prisonerNumber) }
-          .forEach { allocation ->
-            it.removeAllocation(allocation)
-            // Remove id from updated list as it has been removed
-            updatedIds.remove(allocation.appointmentOccurrenceAllocationId)
-          }
-
-        val prisonerAllocationMap = it.allocations().associateBy { allocation -> allocation.prisonerNumber }
+        val prisonerAllocationMap = occurrenceToUpdate.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
 
         newPrisoners.forEach { prisoner ->
-          it.addAllocation(
+          occurrenceToUpdate.addAllocation(
             AppointmentOccurrenceAllocation(
-              appointmentOccurrence = it,
+              appointmentOccurrence = occurrenceToUpdate,
               prisonerNumber = prisoner.prisonerNumber,
               bookingId = prisoner.bookingId!!.toLong(),
             ),
           )
         }
+
+        occurrenceToUpdate.updated = updated
+        occurrenceToUpdate.updatedBy = updatedBy
       }
     }
   }
@@ -286,7 +300,7 @@ class AppointmentOccurrenceService(
       )
       ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
       else -> listOf(appointmentOccurrence)
-    }
+    }.filter { !it.isCancelled() }
 
   private fun publishCancellation(appointmentOccurrenceAllocationId: Long) = runCatching {
     outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocationId)

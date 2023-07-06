@@ -80,10 +80,16 @@ data class AppointmentOccurrenceUpdateRequest(
   val comment: String? = null,
 
   @Schema(
+    description = "The prisoner or prisoners to deallocate from the appointment occurrence",
+    example = "[\"A1234BC\"]",
+  )
+  val removePrisonerNumbers: List<String>? = null,
+
+  @Schema(
     description = "The replacement prisoner or prisoners to allocate to the appointment occurrence",
     example = "[\"A1234BC\"]",
   )
-  val prisonerNumbers: List<String>? = null,
+  val addPrisonerNumbers: List<String>? = null,
 
   @Schema(
     description =
@@ -104,9 +110,6 @@ data class AppointmentOccurrenceUpdateRequest(
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
-
-  @AssertTrue(message = "Cannot remove all allocated prisoners")
-  private fun isPrisonerNumbers() = prisonerNumbers == null || prisonerNumbers.isNotEmpty()
 
   @AssertTrue(message = "Cannot update start date for all future occurrences")
   private fun isApplyTo() = startDate == null || applyTo != ApplyTo.ALL_FUTURE_OCCURRENCES
