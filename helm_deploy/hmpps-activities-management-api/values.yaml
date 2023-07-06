@@ -25,6 +25,9 @@ generic-service:
           return 401;
         }
 
+  # Used to access resources like SQS queues and SNS topics 
+  serviceAccountName: hmpps-activities-management-api 
+
   # Environment variables to load into the deployment
   env:
     JAVA_OPTS: "-Xmx512m"
@@ -33,6 +36,7 @@ generic-service:
     APPLICATIONINSIGHTS_CONNECTION_STRING: "InstrumentationKey=$(APPINSIGHTS_INSTRUMENTATIONKEY)"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     DB_SSL_MODE: "verify-full"
+    HMPPS_SQS_USE_WEB_TOKEN: true
     SCHEDULE_AHEAD_DAYS: 60
     SCHEDULE_AHEAD_DAYS_ONLINE: 14
     FEATURE_EVENTS_SNS_ENABLED: false
@@ -76,20 +80,12 @@ generic-service:
       DB_USER: "database_username"
       DB_PASS: "database_password"
     hmpps-domain-events-topic:
-      HMPPS_SQS_TOPICS_DOMAINEVENTS_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_TOPICS_DOMAINEVENTS_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_TOPICS_DOMAINEVENTS_ARN: "topic_arn"
     activities-domain-events-sqs-instance-output:
-      HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_QUEUES_ACTIVITIES_QUEUE_NAME: "sqs_queue_name"
     activities-domain-events-sqs-dl-instance-output:
-      HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_QUEUES_ACTIVITIES_DLQ_NAME: "sqs_queue_name"
     sqs-hmpps-audit-secret:
-      HMPPS_SQS_QUEUES_AUDIT_QUEUE_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_QUEUES_AUDIT_QUEUE_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_QUEUES_AUDIT_QUEUE_NAME: "sqs_queue_name"
     digital-prison-reporting:
       DPR_USER: "DPR_USER"
