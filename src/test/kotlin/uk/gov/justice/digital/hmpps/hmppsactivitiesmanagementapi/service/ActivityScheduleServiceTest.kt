@@ -245,4 +245,26 @@ class ActivityScheduleServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation end date cannot be before allocation start date")
   }
+
+  @Test
+  fun `allocate throws exception for start date not in future`() {
+    var schedule = activitySchedule(activityEntity())
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode("123")).thenReturn(prisonPayBandsLowMediumHigh("123", 10))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          11,
+          TimeSource.today(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date must be in the future")
+  }
 }

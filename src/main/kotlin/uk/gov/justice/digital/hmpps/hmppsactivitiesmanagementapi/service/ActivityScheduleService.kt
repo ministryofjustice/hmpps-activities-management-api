@@ -90,6 +90,8 @@ class ActivityScheduleService(
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
+    require(request.startDate!! > LocalDate.now()) { "Allocation start date must be in the future" }
+
     val schedule = repository.findOrThrowNotFound(scheduleId)
 
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
@@ -111,7 +113,7 @@ class ActivityScheduleService(
       bookingId = prisonerDetails.bookingId
         ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
       payBand = payBand,
-      startDate = request.startDate!!,
+      startDate = request.startDate,
       endDate = request.endDate,
       allocatedBy = allocatedBy,
     )

@@ -26,6 +26,7 @@ data class AppointmentOccurrenceAllocation(
   val prisonerNumber: String,
 
   val bookingId: Long,
+
 ) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentOccurrenceAllocationId,
