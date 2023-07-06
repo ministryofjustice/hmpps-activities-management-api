@@ -68,18 +68,11 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
       comment = "Updated appointment occurrence level comment",
-      prisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_OCCURRENCE,
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      request.prisonerNumbers!!,
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR"),
-      ),
-    )
 
     val appointment = webTestClient.updateAppointmentOccurrence(2, request)!!
     val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
@@ -279,14 +272,15 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
       comment = "Updated appointment occurrence level comment",
-      prisonerNumbers = listOf("B2345CD", "C3456DE"),
+      addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+      removePrisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      request.prisonerNumbers!!,
+      request.addPrisonerNumbers!!,
       listOf(
         PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", bookingId = 457, prisonId = "TPR"),
         PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 458, prisonId = "TPR"),

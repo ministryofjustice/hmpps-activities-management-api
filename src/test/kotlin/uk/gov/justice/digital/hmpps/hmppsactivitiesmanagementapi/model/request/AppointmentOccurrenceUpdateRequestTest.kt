@@ -43,12 +43,6 @@ class AppointmentOccurrenceUpdateRequestTest {
   }
 
   @Test
-  fun `cannot remove all allocated prisoners`() {
-    val request = AppointmentOccurrenceUpdateRequest(prisonerNumbers = listOf())
-    assertSingleValidationError(validator.validate(request), "prisonerNumbers", "Cannot remove all allocated prisoners")
-  }
-
-  @Test
   fun `cannot update start date for all future occurrences`() {
     val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
     assertSingleValidationError(validator.validate(request), "applyTo", "Cannot update start date for all future occurrences")
