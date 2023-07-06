@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -18,6 +17,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -32,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
-import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -48,18 +47,14 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - success`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-1.json")
+    val createActivityRequest = activityCreateRequest()
+    val createActivityResponse = activityModel(activityEntity())
 
-    val createActivityResponse: Activity = mapper.read("activity/activity-create-response-1.json")
-
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-
-    whenever(activityService.createActivity(any(), any())).thenReturn(createActivityResponse)
+    whenever(activityService.createActivity(createActivityRequest, user.name)).thenReturn(createActivityResponse)
 
     val response =
       mockMvc.post("/activities") {
-        principal = mockPrincipal
+        principal = user
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
@@ -78,11 +73,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - no request body`() {
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-
     mockMvc.post("/activities") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = null
@@ -103,11 +95,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, empty json`() {
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-
     mockMvc.post("/activities") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = "{}"
@@ -133,13 +122,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, required properties missing`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-1.json")
-
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-1.json")
 
     mockMvc.post("/activities") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -167,13 +153,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, rate 0 or negative`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-2.json")
-
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-2.json")
 
     mockMvc.post("/activities") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -199,13 +182,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `createActivity - invalid, character lengths exceeded`() {
-    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-invalid-3.json")
-
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-invalid-3.json")
 
     mockMvc.post("/activities") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -346,18 +326,17 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `updateActivity - success`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-2.json")
+    val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
     val updateActivityResponse: Activity = mapper.read("activity/activity-update-response-1.json")
 
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-
-    whenever(activityService.updateActivity(any(), any(), any(), any())).thenReturn(updateActivityResponse)
+    whenever(activityService.updateActivity(pentonvillePrisonCode, 17, updateActivityRequest, user.name)).thenReturn(
+      updateActivityResponse,
+    )
 
     val response =
       mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
-        principal = mockPrincipal
+        principal = user
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
@@ -376,11 +355,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `updateActivity - no request body`() {
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-
     mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = null
@@ -401,14 +377,14 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Test
   fun `404 response when get activity id not found`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-2.json")
+    val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-    val mockPrincipal: Principal = mock()
-    whenever(mockPrincipal.name).thenReturn("USER")
-    whenever(activityService.updateActivity(any(), any(), any(), any())).thenThrow(EntityNotFoundException("not found"))
+    whenever(activityService.updateActivity(pentonvillePrisonCode, 17, updateActivityRequest, user.name)).thenThrow(
+      EntityNotFoundException("not found"),
+    )
 
     mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
-      principal = mockPrincipal
+      principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(

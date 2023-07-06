@@ -96,7 +96,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
-    val createActivityRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-1.json")
+    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = TimeSource.tomorrow())
 
     val activity = webTestClient.createActivity(createActivityRequest)
 
@@ -132,14 +132,14 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
       assertThat(prisonCode).isEqualTo("MDI")
-      assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on 2023-03-31 at prison MDI was created")
+      assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
     }
   }
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - failed duplicate prison code - summary`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-2.json")
+    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json").copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -166,7 +166,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `createActivity - failed authorisation`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read("activity/activity-create-request-2.json")
+    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json").copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -588,9 +588,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/study-area-code-ENGLA.json",
     )
 
-    val today = LocalDate.now()
     val createActivityRequest =
-      mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = today)
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json").copy(startDate = TimeSource.tomorrow())
 
     prisonApiMockServer.stubGetLocation(
       locationId = 1,
@@ -612,7 +611,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(activity) {
       assertThat(summary).isEqualTo("IT level 1")
-      assertThat(startDate).isEqualTo(today)
+      assertThat(startDate).isEqualTo(TimeSource.tomorrow())
       assertThat(description).isEqualTo("A basic IT course")
     }
   }

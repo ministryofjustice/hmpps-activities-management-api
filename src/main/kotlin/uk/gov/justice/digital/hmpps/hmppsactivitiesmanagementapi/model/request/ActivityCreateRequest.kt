@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
@@ -91,12 +92,14 @@ data class ActivityCreateRequest(
   @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
   val minimumIncentiveLevel: String?,
 
+  @field:NotNull
+  @field:Future(message = "Activity start date must be in the future")
   @Schema(
-    description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances",
+    description = "The future date on which this activity will start. From this date, any schedules will be created as real, planned instances",
     example = "2022-12-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  val startDate: LocalDate? = null,
+  val startDate: LocalDate?,
 
   @Schema(
     description = "The date on which this activity ends. From this date, there will be no more planned instances of the activity. If null, the activity has no end date and will be scheduled indefinitely.",
