@@ -63,6 +63,10 @@ class AllocationsService(private val allocationRepository: AllocationRepository,
         "Allocation start date cannot be before the activity start date or after the activity end date."
       }
 
+      require(allocation.endDate == null || newStartDate <= allocation.endDate) {
+        "Allocation start date cannot be after allocation end date"
+      }
+
       allocation.startDate = newStartDate
     }
   }

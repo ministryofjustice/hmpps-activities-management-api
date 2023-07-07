@@ -278,4 +278,19 @@ class AllocationServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date must be in the future")
   }
+
+  @Test
+  fun `updateAllocation - fails if allocation start date after end date`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow()).apply { endDate = TimeSource.tomorrow() }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, AllocationUpdateRequest(startDate = allocation.endDate?.plusDays(1)), prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date cannot be after allocation end date")
+  }
 }
