@@ -214,6 +214,9 @@ class ActivityService(
     }
   }
 
+  /*
+   * Note: we add instances even if the activity hasn't started for unlock list purposes.
+   */
   private fun ActivitySchedule.addInstances(
     activity: Activity,
     slots: List<ActivityScheduleSlot>,
@@ -440,8 +443,20 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.runsOnBankHoliday?.apply {
-      activity.schedules().forEach { it.runsOnBankHoliday = this }
+    request.runsOnBankHoliday?.let { runsOnBankHoliday ->
+      activity.schedules().forEach { schedule ->
+        schedule.runsOnBankHoliday = runsOnBankHoliday
+
+        if (runsOnBankHoliday) {
+          schedule.addInstances(activity, schedule.slots())
+        } else {
+          val futureSessionDatesToRemove = schedule.instances()
+            .filter { it.sessionDate > LocalDate.now() && bankHolidayService.isEnglishBankHoliday(it.sessionDate) }
+            .map { it.sessionDate }
+
+          futureSessionDatesToRemove.forEach { schedule.removeInstances(it, it) }
+        }
+      }
     }
   }
 
