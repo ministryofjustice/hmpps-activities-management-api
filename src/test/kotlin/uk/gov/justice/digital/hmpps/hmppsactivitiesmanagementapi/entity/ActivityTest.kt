@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -369,6 +370,33 @@ class ActivityTest {
         activity = activity,
       ),
     )
+  }
+
+  @Test
+  fun `cannot add duplicate pay band and iep combinations to activity`() {
+    val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+    )
+
+    val exception = assertThrows<IllegalArgumentException> {
+      activity.addPay(
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 40,
+        pieceRate = 50,
+        pieceRateItems = 60,
+      )
+    }
+
+    assertThat(exception.message).isEqualTo("The pay band and incentive level combination must be unique for each pay rate")
   }
 
   @Test
