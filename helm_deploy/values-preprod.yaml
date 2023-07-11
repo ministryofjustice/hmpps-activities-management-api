@@ -12,6 +12,7 @@ generic-service:
     CASE_NOTES_API_URL: https://preprod.offender-case-notes.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SCHEDULE_AHEAD_DAYS: 14
+    SCHEDULE_AHEAD_DAYS_ONLINE: 14
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
 
