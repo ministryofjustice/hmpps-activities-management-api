@@ -32,6 +32,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -48,6 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule as EligibilityRuleEntity
@@ -107,6 +110,7 @@ class ActivityServiceTest {
     prisonApiClient,
     prisonRegimeService,
     bankHolidayService,
+    daysInAdvance = 7L,
   )
   private val location = Location(
     locationId = 1,
@@ -668,5 +672,52 @@ class ActivityServiceTest {
       service.updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity 1 not found.")
+  }
+
+  @Test
+  fun `updateActivity - now runs on bank holiday`() {
+    val bankHoliday = TimeSource.tomorrow().also { whenever(bankHolidayService.isEnglishBankHoliday(it)) doReturn true }
+    val dayAfterBankHoliday = bankHoliday.plusDays(1)
+
+    val activity = activityEntity(startDate = bankHoliday, noSchedules = true).also {
+      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(activitySchedule(activity, runsOnBankHolidays = false, noInstances = true, noSlots = true)).apply {
+      addSlot(LocalTime.NOON, LocalTime.NOON.plusHours(1), setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek))
+    }
+
+    schedule.instances() hasSize 0
+
+    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
+
+    schedule.instances() hasSize 2
+    schedule.instances()[0].sessionDate isEqualTo bankHoliday
+    schedule.instances()[1].sessionDate isEqualTo dayAfterBankHoliday
+  }
+
+  @Test
+  fun `updateActivity - no longer runs on bank holiday`() {
+    val bankHoliday = TimeSource.tomorrow().also { whenever(bankHolidayService.isEnglishBankHoliday(it)) doReturn true }
+    val dayAfterBankHoliday = bankHoliday.plusDays(1)
+
+    val activity = activityEntity(startDate = bankHoliday, noSchedules = true).also {
+      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(activitySchedule(activity, runsOnBankHolidays = false, noInstances = true, noSlots = true)).apply {
+      addSlot(LocalTime.NOON, LocalTime.NOON.plusHours(1), setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek))
+    }
+
+    schedule.instances() hasSize 0
+
+    // Set up bank holiday first so it can be removed
+    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
+    assertThat(schedule.instances()).hasSize(2)
+
+    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = false), updatedBy = "TEST")
+
+    schedule.instances() hasSize 1
+    schedule.instances().first().sessionDate isEqualTo dayAfterBankHoliday
   }
 }
