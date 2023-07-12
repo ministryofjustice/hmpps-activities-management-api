@@ -155,6 +155,7 @@ data class Attendance(
     pieces = null
     caseNoteId = null
     otherAbsenceReason = null
+    recordedTime = LocalDateTime.now()
   }
 
   /*
