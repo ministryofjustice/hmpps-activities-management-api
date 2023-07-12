@@ -160,6 +160,10 @@ data class Activity(
     pieceRate: Int?,
     pieceRateItems: Int?,
   ) {
+    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode }) {
+      "The pay band and incentive level combination must be unique for each pay rate"
+    }
+
     activityPay.add(
       ActivityPay(
         activity = this,
