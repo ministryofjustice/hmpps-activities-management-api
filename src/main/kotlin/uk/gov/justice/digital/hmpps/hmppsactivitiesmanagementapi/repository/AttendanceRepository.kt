@@ -25,9 +25,9 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         FROM Attendance a
        WHERE a.scheduledInstance.activitySchedule.activity.prisonCode = :prisonCode
          AND a.status = 'WAITING'
-         AND a.scheduledInstance.sessionDate = :sessionDate
+         AND a.scheduledInstance.sessionDate >= :sessionDate
          AND a.prisonerNumber = :prisonerNumber
     """,
   )
-  fun findWaitingAttendancesOnDateForPrisoner(prisonCode: String, sessionDate: LocalDate, prisonerNumber: String): List<Attendance>
+  fun findWaitingAttendancesOnOrAfterDateForPrisoner(prisonCode: String, sessionDate: LocalDate, prisonerNumber: String): List<Attendance>
 }

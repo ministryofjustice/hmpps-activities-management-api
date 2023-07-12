@@ -337,12 +337,12 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
-  fun `two allocations and one future attendance are suspended on receipt of activities changed event for prisoner`() {
+  fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
+    attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(it.attendanceReason).isNull()
       assertThat(it.issuePayment).isNull()
@@ -369,18 +369,19 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     // Attendance two should be suspended
-    with(attendanceRepository.findById(2L).orElseThrow()) {
-      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
-      assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
-      assertThat(issuePayment).isFalse()
-      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
-      assertThat(recordedBy).isEqualTo("Activities Management Service")
+    attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
+      assertThat(it.issuePayment).isFalse()
+      assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+      assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    // Three events should be raised two for allocation amendments and one for an attendance amendment
+    // Three events should be raised two for allocation amendments and two for an attendance amendment
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
     verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
   }
 }

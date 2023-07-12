@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -106,23 +107,39 @@ class ActivitiesChangedEventHandlerTest {
     }
 
     val historicAttendance = mock<Attendance>().also {
-      val scheduledInstance: ScheduledInstance = mock { on { startTime } doReturn LocalTime.now().minusMinutes(1) }
+      val scheduledInstance: ScheduledInstance = mock {
+        on { sessionDate } doReturn TimeSource.today()
+        on { startTime } doReturn LocalTime.now().minusMinutes(1)
+      }
       whenever(it.scheduledInstance) doReturn scheduledInstance
       whenever(it.editable()) doReturn true
     }
 
-    val futureAttendance = mock<Attendance>().also {
-      val scheduledInstance: ScheduledInstance = mock { on { startTime } doReturn LocalTime.now().plusMinutes(1) }
+    val todaysFutureAttendance = mock<Attendance>().also {
+      val scheduledInstance: ScheduledInstance = mock {
+        on { startTime } doReturn LocalTime.now().plusMinutes(1)
+        on { sessionDate } doReturn TimeSource.today()
+      }
       whenever(it.scheduledInstance) doReturn scheduledInstance
       whenever(it.editable()) doReturn true
     }
 
-    whenever(attendanceRepository.findWaitingAttendancesOnDateForPrisoner(moorlandPrisonCode, LocalDate.now(), "123456")) doReturn listOf(historicAttendance, futureAttendance)
+    val tomorrowsFutureAttendance = mock<Attendance>().also {
+      val scheduledInstance: ScheduledInstance = mock {
+        on { startTime } doReturn LocalTime.now().plusMinutes(1)
+        on { sessionDate } doReturn TimeSource.tomorrow()
+      }
+      whenever(it.scheduledInstance) doReturn scheduledInstance
+      whenever(it.editable()) doReturn true
+    }
+
+    whenever(attendanceRepository.findWaitingAttendancesOnOrAfterDateForPrisoner(moorlandPrisonCode, LocalDate.now(), "123456")) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
     handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
     verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
-    verify(futureAttendance).completeWithoutPayment(suspendedAttendanceReason)
+    verify(todaysFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
+    verify(tomorrowsFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
   }
 
   @Test

@@ -45,30 +45,35 @@ class ActivitiesChangedEventHandler(
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
     LocalDateTime.now().let { now ->
       allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-        .suspendAllocations(now, event)
-        .suspendAttendances(now, event)
+        .suspendPrisonersAllocations(now, event)
+        .suspendPrisonersFutureAttendances(now, event)
     }
 
-  private fun List<Allocation>.suspendAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
+  private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
     filter { it.status(PrisonerStatus.ACTIVE) }
       .onEach { it.autoSuspend(suspendedAt, "Temporary absence") }
       .also { log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
-  private fun List<Allocation>.suspendAttendances(
+  private fun List<Allocation>.suspendPrisonersFutureAttendances(
     dateTime: LocalDateTime,
     event: ActivitiesChangedEvent,
   ) {
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
     forEach { allocation ->
-      attendanceRepository.findWaitingAttendancesOnDateForPrisoner(
+      attendanceRepository.findWaitingAttendancesOnOrAfterDateForPrisoner(
         event.prisonCode(),
         dateTime.toLocalDate(),
         allocation.prisonerNumber,
       )
-        .filter { attendance -> attendance.editable() && attendance.scheduledInstance.startTime > dateTime.toLocalTime() }
+        .filter { attendance ->
+          attendance.editable() && (
+            (attendance.scheduledInstance.sessionDate == dateTime.toLocalDate() && attendance.scheduledInstance.startTime > dateTime.toLocalTime()) ||
+              (attendance.scheduledInstance.sessionDate > dateTime.toLocalDate())
+            )
+        }
         .onEach { attendance -> attendance.completeWithoutPayment(reason) }
-        .also { log.info("Suspended ${it.size} attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}e.") }
+        .also { log.info("Suspended ${it.size} attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }
 
