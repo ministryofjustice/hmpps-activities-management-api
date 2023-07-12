@@ -3,24 +3,31 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class ActivitiesChangedEventHandlerTest {
@@ -34,7 +41,11 @@ class ActivitiesChangedEventHandlerTest {
 
   private val allocationRepository: AllocationRepository = mock()
 
-  private val handler = ActivitiesChangedEventHandler(rolloutPrisonRepository, allocationRepository)
+  private val attendanceRepository: AttendanceRepository = mock()
+
+  private val attendanceReasonRepository: AttendanceReasonRepository = mock()
+
+  private val handler = ActivitiesChangedEventHandler(rolloutPrisonRepository, allocationRepository, attendanceRepository, attendanceReasonRepository)
 
   @Test
   fun `event is ignored for an inactive prison`() {
@@ -82,8 +93,36 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.suspendedReason).isEqualTo("Temporary absence")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
+  }
 
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
+  @Test
+  fun `only future attendances are suspended on suspend action`() {
+    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+    }
+
+    val suspendedAttendanceReason = mock<AttendanceReason>().also {
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)) doReturn it
+    }
+
+    val historicAttendance = mock<Attendance>().also {
+      val scheduledInstance: ScheduledInstance = mock { on { startTime } doReturn LocalTime.now().minusMinutes(1) }
+      whenever(it.scheduledInstance) doReturn scheduledInstance
+      whenever(it.editable()) doReturn true
+    }
+
+    val futureAttendance = mock<Attendance>().also {
+      val scheduledInstance: ScheduledInstance = mock { on { startTime } doReturn LocalTime.now().plusMinutes(1) }
+      whenever(it.scheduledInstance) doReturn scheduledInstance
+      whenever(it.editable()) doReturn true
+    }
+
+    whenever(attendanceRepository.findWaitingAttendancesOnDateForPrisoner(moorlandPrisonCode, LocalDate.now(), "123456")) doReturn listOf(historicAttendance, futureAttendance)
+
+    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+
+    verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
+    verify(futureAttendance).completeWithoutPayment(suspendedAttendanceReason)
   }
 
   @Test
@@ -132,7 +171,5 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
   }
 }

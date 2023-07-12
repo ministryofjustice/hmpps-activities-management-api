@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDate
@@ -243,5 +245,44 @@ class AttendanceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record for prisoner 'A1234AA' can no longer be modified")
+  }
+
+  @Test
+  fun `complete attendance without payment`() {
+    val attendance = with(Attendance(scheduledInstance = instance, prisonerNumber = "123456")) {
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(issuePayment).isNull()
+      assertThat(recordedTime).isNull()
+      assertThat(recordedBy).isNull()
+      assertThat(attendanceReason).isNull()
+      assertThat(history()).isEmpty()
+      this
+    }
+
+    val reason = mock<AttendanceReason>()
+
+    with(attendance.completeWithoutPayment(reason)) {
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(issuePayment).isFalse()
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(attendanceReason).isEqualTo(reason)
+      assertThat(history()).hasSize(1)
+    }
+  }
+
+  @Test
+  fun `cannot complete attendance without payment when no longer editable`() {
+    val attendance = Attendance(
+      scheduledInstance = instance.copy(sessionDate = LocalDate.now().minusWeeks(3)),
+      prisonerNumber = "123456",
+      status = AttendanceStatus.COMPLETED,
+    ).also { assertThat(it.editable()).isFalse() }
+
+    assertThatThrownBy {
+      attendance.completeWithoutPayment(mock())
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance record for prisoner '123456' can no longer be modified")
   }
 }

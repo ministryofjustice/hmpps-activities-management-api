@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -10,20 +12,27 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 /**
  * This integration test is bypassing the step whereby this would be instigated by incoming prisoner events.
@@ -34,7 +43,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
-  private lateinit var repository: AllocationRepository
+  private lateinit var allocationRepository: AllocationRepository
+
+  @Autowired
+  private lateinit var attendanceRepository: AttendanceRepository
 
   @Autowired
   private lateinit var eventReviewRepository: EventReviewRepository
@@ -59,7 +71,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(eventReviewRepository.count()).isEqualTo(0)
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
@@ -74,7 +86,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
@@ -92,13 +104,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-from-remand",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
@@ -117,13 +129,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-from-custodial-sentence",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
@@ -142,13 +154,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-on-death-in-prison",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.ENDED))
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
     }
@@ -168,7 +180,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
@@ -225,7 +237,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
@@ -282,7 +294,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "",
     )
 
-    repository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
@@ -321,5 +333,54 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentOccurrenceRepository.existsById(212)).isTrue()
 
     verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-changed-event.sql")
+  fun `two allocations and one future attendance are suspended on receipt of activities changed event for prisoner`() {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isNull()
+      assertThat(it.recordedBy).isNull()
+    }
+
+    service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.SUSPEND))
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED))
+      assertThat(it.suspendedReason).isEqualTo("Temporary absence")
+      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
+    }
+
+    // Attendance one should be untouched
+    with(attendanceRepository.findById(1L).orElseThrow()) {
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(attendanceReason).isNull()
+      assertThat(issuePayment).isNull()
+      assertThat(recordedTime).isNull()
+      assertThat(recordedBy).isNull()
+    }
+
+    // Attendance two should be suspended
+    with(attendanceRepository.findById(2L).orElseThrow()) {
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
+      assertThat(issuePayment).isFalse()
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+    }
+
+    // Three events should be raised two for allocation amendments and one for an attendance amendment
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
   }
 }
