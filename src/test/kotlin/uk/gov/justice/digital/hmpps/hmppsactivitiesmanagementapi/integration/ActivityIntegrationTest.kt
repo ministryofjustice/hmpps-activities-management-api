@@ -445,6 +445,20 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-2.sql",
   )
   @Test
+  fun `attempting to a get an activity from a different prison returns a 404`() {
+    webTestClient.get()
+      .uri("/activities/2")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf()))
+      .header("Caseload-Id", "MDI")
+      .exchange()
+      .expectStatus().isNotFound
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-2.sql",
+  )
+  @Test
   fun `get scheduled english activities for morning and afternoon`() {
     val englishLevelTwoActivity = with(webTestClient.getActivityById(2)) {
       assertThat(attendanceRequired).isTrue
@@ -531,7 +545,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities/$id")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
-      .header("Caseload-Id",caseLoadId)
+      .header("Caseload-Id", caseLoadId)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

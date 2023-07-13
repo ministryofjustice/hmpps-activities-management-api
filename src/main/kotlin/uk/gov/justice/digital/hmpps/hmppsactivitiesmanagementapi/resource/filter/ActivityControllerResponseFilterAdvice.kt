@@ -14,29 +14,26 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 @ControllerAdvice
 class ActivityControllerResponseFilterAdvice : ResponseBodyAdvice<Activity> {
 
-    companion object {
-        val log = LoggerFactory.getLogger(this::class.java)
+  companion object {
+    val log = LoggerFactory.getLogger(this::class.java)
+  }
+
+  override fun beforeBodyWrite(
+    activity: Activity?,
+    returnType: MethodParameter,
+    selectedContentType: MediaType,
+    selectedConverterType: Class<out HttpMessageConverter<*>>,
+    request: ServerHttpRequest,
+    response: ServerHttpResponse,
+  ): Activity? {
+    if (activity?.prisonCode != request.headers.getFirst("Caseload-Id")) {
+      throw EntityNotFoundException()
+    } else {
+      return activity
     }
-    override fun beforeBodyWrite(
-        activity: Activity?,
-        returnType: MethodParameter,
-        selectedContentType: MediaType,
-        selectedConverterType: Class<out HttpMessageConverter<*>>,
-        request: ServerHttpRequest,
-        response: ServerHttpResponse
-    ): Activity? {
+  }
 
-        if (activity?.prisonCode != request.headers.getFirst("Caseload-Id")) {
-
-            throw EntityNotFoundException()
-        }
-        else {
-            return activity
-        }
-    }
-
-    override fun supports(returnType: MethodParameter, converterType: Class<out HttpMessageConverter<*>>): Boolean {
-
-        return returnType.parameterType.equals(Activity::class.java)
-    }
+  override fun supports(returnType: MethodParameter, converterType: Class<out HttpMessageConverter<*>>): Boolean {
+    return returnType.parameterType.equals(Activity::class.java) && returnType.method.name.startsWith("get")
+  }
 }
