@@ -98,7 +98,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     post()
       .uri("/migrate-appointment")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf("NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
