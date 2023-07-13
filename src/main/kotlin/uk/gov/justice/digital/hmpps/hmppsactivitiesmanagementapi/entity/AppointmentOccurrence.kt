@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -32,7 +33,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Where(clause = "deleted = false")
 data class AppointmentOccurrence(
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "appointment_occurrence_seq")
+  @SequenceGenerator(name = "appointment_occurrence_seq", sequenceName = "appointment_occurrence_appointment_occurrence_id_seq", allocationSize = 1)
   val appointmentOccurrenceId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)

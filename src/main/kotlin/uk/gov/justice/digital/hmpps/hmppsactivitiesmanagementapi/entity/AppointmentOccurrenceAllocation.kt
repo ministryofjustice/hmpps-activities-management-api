@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -15,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @EntityListeners(AppointmentOccurrenceAllocationEntityListener::class)
 data class AppointmentOccurrenceAllocation(
   @Id
-  // @GeneratedValue(generator = "appointment_occurrence_alloca_appointment_occurrence_alloca_seq")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "appointment_occurrence_allocation_seq")
   @SequenceGenerator(name = "appointment_occurrence_allocation_seq", sequenceName = "appointment_occurrence_alloca_appointment_occurrence_alloca_seq", allocationSize = 1)
   val appointmentOccurrenceAllocationId: Long = 0,
 

@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.OrderBy
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -33,7 +34,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Table(name = "appointment")
 data class Appointment(
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "appointment_seq")
+  @SequenceGenerator(name = "appointment_seq", sequenceName = "appointment_appointment_id_seq", allocationSize = 1)
   val appointmentId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)

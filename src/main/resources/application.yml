@@ -48,8 +48,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-      jdbc:
-        batch_size: 100
+        jdbc:
+          batch_size: 10
     show-sql: false
     generate-ddl: false
     hibernate:
