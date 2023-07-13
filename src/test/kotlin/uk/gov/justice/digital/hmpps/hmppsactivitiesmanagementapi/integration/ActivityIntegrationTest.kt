@@ -526,11 +526,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ActivityScheduleLite::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.getActivityById(id: Long) =
+  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") =
     get()
       .uri("/activities/$id")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
+      .header("Caseload-Id",caseLoadId)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
