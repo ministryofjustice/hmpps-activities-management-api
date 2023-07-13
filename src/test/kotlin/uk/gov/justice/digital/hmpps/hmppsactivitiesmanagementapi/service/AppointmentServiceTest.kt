@@ -549,7 +549,7 @@ class AppointmentServiceTest {
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
       assertThat(comment).isEqualTo(request.comment)
-      assertThat(appointmentDescription).isEqualTo(request.comment)
+      assertThat(appointmentDescription).isNull()
       assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updated).isNull()
