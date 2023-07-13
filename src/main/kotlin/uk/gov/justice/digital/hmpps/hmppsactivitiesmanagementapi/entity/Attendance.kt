@@ -147,7 +147,7 @@ data class Attendance(
     )
   }
 
-  private fun resetAttendance() {
+  fun resetAttendance() {
     if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) attendanceReason = null
     comment = null
     issuePayment = null
