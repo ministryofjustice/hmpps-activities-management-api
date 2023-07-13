@@ -26,7 +26,13 @@ class ActivityControllerResponseFilterAdvice : ResponseBodyAdvice<Activity> {
     request: ServerHttpRequest,
     response: ServerHttpResponse,
   ): Activity? {
-    if (activity?.prisonCode != request.headers.getFirst("Caseload-Id")) {
+    val userCaseLoadId = request.headers.getFirst("Caseload-Id")
+    var activityPrisonCode = activity?.prisonCode
+    if (activityPrisonCode != userCaseLoadId) {
+      log.error(
+        "Cannot return Activity [${activity?.id}] from method [${returnType.method.name}] because the Activity " +
+          "is for prison [$activityPrisonCode] and the user's case load is for prison [$userCaseLoadId].",
+      )
       throw EntityNotFoundException()
     } else {
       return activity
