@@ -16,6 +16,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -110,7 +111,7 @@ data class Attendance(
     newCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
-    if (!editable()) throw IllegalArgumentException("Attendance record for prisoner '$prisonerNumber' can no longer be modified")
+    require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
 
     if (status != AttendanceStatus.WAITING || history().isNotEmpty()) addAttendanceToHistory()
 
@@ -180,6 +181,18 @@ data class Attendance(
         this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
       )
   }
+
+  fun completeWithoutPayment(reason: AttendanceReason) =
+    apply {
+      require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
+
+      attendanceReason = reason
+      issuePayment = false
+      status = AttendanceStatus.COMPLETED
+      recordedTime = LocalDateTime.now()
+      recordedBy = ServiceName.SERVICE_NAME.value
+      addAttendanceToHistory()
+    }
 }
 
 enum class AttendanceStatus {
