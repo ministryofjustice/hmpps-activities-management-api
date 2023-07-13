@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -377,11 +379,49 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    // Three events should be raised two for allocation amendments and two for an attendance amendment
+    // Four events should be raised two for allocation amendments and two for an attendance amendment
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
     verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-changed-event.sql")
+  fun `two allocations and two future attendance are unsuspended on receipt of offender received event for prisoner`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE))
+    }
+
+    service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.SUSPEND))
+    service.process(offenderReceivedFromTemporaryAbsence(prisonCode = pentonvillePrisonCode, prisonerNumber = "A11111A"))
+
+    // Eight events should be raised four for allocation amendments and four for an attendance amendment
+    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
+
+    // This attendance record is never modified
+    attendanceRepository.findById(1L).orElseThrow().also {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isNull()
+      assertThat(it.recordedBy).isNull()
+    }
+
+    // These attendance records are modified and now WAITING
+    attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+    }
   }
 }

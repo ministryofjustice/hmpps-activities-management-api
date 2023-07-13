@@ -148,6 +148,8 @@ data class Attendance(
   }
 
   fun resetAttendance() {
+    require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
+
     if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) attendanceReason = null
     comment = null
     issuePayment = null
@@ -191,6 +193,23 @@ data class Attendance(
       status = AttendanceStatus.COMPLETED
       recordedTime = LocalDateTime.now()
       recordedBy = ServiceName.SERVICE_NAME.value
+      addAttendanceToHistory()
+    }
+
+  fun resetSuspended() =
+    apply {
+      require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
+
+      require(attendanceReason?.code == AttendanceReasonEnum.SUSPENDED) {
+        "Attendance must be suspended to reset it"
+      }
+
+      attendanceReason = null
+      issuePayment = null
+      status = AttendanceStatus.WAITING
+      recordedTime = LocalDateTime.now()
+      recordedBy = ServiceName.SERVICE_NAME.value
+
       addAttendanceToHistory()
     }
 }

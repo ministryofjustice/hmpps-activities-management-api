@@ -120,22 +120,6 @@ internal fun activityCategory2(code: String = "category code 2") =
     description = "category description 2",
   )
 
-internal fun attendanceReason(code: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) =
-  AttendanceReason(
-    attendanceReasonId = 1,
-    code = code,
-    description = "reason description",
-    attended = false,
-    capturePay = true,
-    captureMoreDetail = true,
-    captureCaseNote = false,
-    captureIncentiveLevelWarning = false,
-    captureOtherText = false,
-    displayInAbsence = true,
-    displaySequence = 1,
-    notes = "reason notes",
-  )
-
 internal fun schedule() = activityEntity().schedules().first()
 
 internal fun attendanceReasons() = mapOf(
@@ -149,6 +133,8 @@ internal fun attendanceReasons() = mapOf(
   "CANCELLED" to AttendanceReason(8, AttendanceReasonEnum.CANCELLED, "Cancelled", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
   "ATTENDED" to AttendanceReason(9, AttendanceReasonEnum.ATTENDED, "Attended", true, false, false, false, false, false, false, null, "Maps to ATT in NOMIS"),
 )
+
+internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!
 
 internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
 
