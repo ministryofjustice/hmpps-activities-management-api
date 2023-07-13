@@ -144,6 +144,7 @@ class ActivityTest {
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     )
 
     assertThat(activity.schedules()).containsExactly(
@@ -156,6 +157,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       ),
     )
   }
@@ -178,6 +180,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate.minusDays(1),
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.startDate.minusDays(1)}' cannot be before the activity start date ${activity.startDate}")
@@ -202,6 +205,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.endDate!!,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.endDate}' must be before the activity end date ${activity.endDate}")
@@ -227,6 +231,7 @@ class ActivityTest {
         startDate = activity.startDate,
         endDate = activity.endDate!!.plusDays(1),
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule end date '${activity.endDate!!.plusDays(1)}' cannot be after the activity end date ${activity.endDate}")
@@ -250,6 +255,7 @@ class ActivityTest {
         capacity = 0,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -272,6 +278,7 @@ class ActivityTest {
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     )
 
     assertThatThrownBy {
@@ -287,6 +294,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }
   }
@@ -479,6 +487,7 @@ class ActivityTest {
       capacity = 1,
       startDate = activity.startDate.plusDays(1),
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = LocalTime.NOON,

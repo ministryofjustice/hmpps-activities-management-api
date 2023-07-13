@@ -240,6 +240,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon"),
@@ -253,6 +254,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
       ),
       ActivityScheduleLite(
         id = 2,
@@ -291,6 +293,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 2L,
+            weekNumber = 1,
             startTime = LocalTime.of(14, 0),
             endTime = LocalTime.of(15, 0),
             daysOfWeek = listOf("Mon"),
@@ -304,6 +307,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
       ),
     )
   }
@@ -344,6 +348,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon", "Wed"),
@@ -357,6 +362,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 2L,
+            weekNumber = 1,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
             daysOfWeek = listOf("Mon", "Thu"),
@@ -370,6 +376,104 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
+      ),
+    )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-multi-week-schedule-1.sql",
+  )
+  @Test
+  fun `gets activity schedules for activity with multi-week schedule`() {
+    val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+    assertThat(schedules).containsExactly(
+      ActivityScheduleLite(
+        id = 1,
+        description = "Maths AM",
+        internalLocation = InternalLocation(1, "L1", "Location 1"),
+        capacity = 10,
+        activity = ActivityLite(
+          id = 1L,
+          attendanceRequired = true,
+          inCell = false,
+          onWing = false,
+          pieceWork = true,
+          outsideWork = true,
+          payPerSession = PayPerSession.H,
+          prisonCode = "PVI",
+          summary = "Maths",
+          description = "Maths Level 1",
+          riskLevel = "high",
+          minimumIncentiveNomisCode = "BAS",
+          minimumIncentiveLevel = "Basic",
+          category = educationCategory,
+          capacity = 10,
+          allocated = 2,
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            weekNumber = 1,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Mon", "Wed"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = true,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 2L,
+            weekNumber = 1,
+            startTime = LocalTime.of(13, 0),
+            endTime = LocalTime.of(14, 0),
+            daysOfWeek = listOf("Mon", "Thu"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = true,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 3L,
+            weekNumber = 2,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Tue", "Fri"),
+            mondayFlag = false,
+            tuesdayFlag = true,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = true,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 4L,
+            weekNumber = 2,
+            startTime = LocalTime.of(13, 0),
+            endTime = LocalTime.of(14, 0),
+            daysOfWeek = listOf("Mon", "Thu"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = true,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+        ),
+        startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 2,
       ),
     )
   }

@@ -72,9 +72,11 @@ class ActivityScheduleTest {
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),
+      scheduleWeeks = 1,
       slots = listOf(
         ActivityScheduleSlot(
           id = 1L,
+          weekNumber = 1,
           startTime = LocalTime.of(10, 20),
           endTime = LocalTime.of(11, 20),
           daysOfWeek = listOf("Mon"),
@@ -140,9 +142,11 @@ class ActivityScheduleTest {
           createdTime = LocalDate.now().atStartOfDay(),
           activityState = ActivityState.LIVE,
         ),
+        scheduleWeeks = 1,
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(11, 20),
             daysOfWeek = listOf("Mon"),
@@ -337,6 +341,7 @@ class ActivityScheduleTest {
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
+        weekNumber = 1,
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
@@ -353,6 +358,7 @@ class ActivityScheduleTest {
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
+        weekNumber = 1,
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
@@ -370,6 +376,7 @@ class ActivityScheduleTest {
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
+        weekNumber = 1,
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
@@ -391,6 +398,7 @@ class ActivityScheduleTest {
 
     val expected = EntityActivityScheduleSlot(
       activitySchedule = schedule,
+      weekNumber = 1,
       startTime = LocalTime.MIDNIGHT,
       endTime = LocalTime.MIDNIGHT.plusHours(1),
       mondayFlag = true,
@@ -453,6 +461,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = LocalDate.now(),
+      scheduleWeeks = 1,
     )
 
     assertThatThrownBy {
@@ -461,6 +470,7 @@ class ActivityScheduleTest {
         description = "description",
         capacity = 0,
         startDate = LocalDate.now(),
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -473,6 +483,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = today,
+      scheduleWeeks = 1,
     )
 
     with(scheduleWithNoEndDate) {
@@ -490,6 +501,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = today,
+      scheduleWeeks = 1,
     ).apply {
       endDate = tomorrow
     }
@@ -509,6 +521,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = today,
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
@@ -531,6 +544,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = today,
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
@@ -559,6 +573,7 @@ class ActivityScheduleTest {
       description = "description",
       capacity = 1,
       startDate = today,
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),
@@ -588,6 +603,7 @@ class ActivityScheduleTest {
       internalLocationId = 1,
       internalLocationCode = "Loc Code",
       internalLocationDescription = "Loc Code Desc",
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = today.atStartOfDay().toLocalTime(),

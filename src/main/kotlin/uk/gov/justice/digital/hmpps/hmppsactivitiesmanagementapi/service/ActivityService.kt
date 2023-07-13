@@ -177,6 +177,8 @@ class ActivityService(
         startDate = request.startDate,
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
+        // TODO - Add support for multi-week schedules
+        scheduleWeeks = 1,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
         schedule.addInstances(activity, schedule.slots(), null, null)
