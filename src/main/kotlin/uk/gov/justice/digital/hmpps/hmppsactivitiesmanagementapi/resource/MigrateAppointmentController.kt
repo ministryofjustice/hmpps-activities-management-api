@@ -70,7 +70,7 @@ class MigrateAppointmentController(
       ),
     ],
   )
-  @PreAuthorize("hasAuthority('NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('NOMIS_APPOINTMENTS')")
   fun migrateAppointment(
     principal: Principal,
     @Valid

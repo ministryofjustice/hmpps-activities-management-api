@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
@@ -43,11 +45,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -65,6 +69,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @MockBean
+  private lateinit var bankHolidayService: BankHolidayService
 
   @MockBean
   private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
@@ -233,6 +240,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon"),
@@ -246,6 +254,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
       ),
       ActivityScheduleLite(
         id = 2,
@@ -284,6 +293,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 2L,
+            weekNumber = 1,
             startTime = LocalTime.of(14, 0),
             endTime = LocalTime.of(15, 0),
             daysOfWeek = listOf("Mon"),
@@ -297,6 +307,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
       ),
     )
   }
@@ -337,6 +348,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
             daysOfWeek = listOf("Mon", "Wed"),
@@ -350,6 +362,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 2L,
+            weekNumber = 1,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
             daysOfWeek = listOf("Mon", "Thu"),
@@ -363,6 +376,104 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 1,
+      ),
+    )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-multi-week-schedule-1.sql",
+  )
+  @Test
+  fun `gets activity schedules for activity with multi-week schedule`() {
+    val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+    assertThat(schedules).containsExactly(
+      ActivityScheduleLite(
+        id = 1,
+        description = "Maths AM",
+        internalLocation = InternalLocation(1, "L1", "Location 1"),
+        capacity = 10,
+        activity = ActivityLite(
+          id = 1L,
+          attendanceRequired = true,
+          inCell = false,
+          onWing = false,
+          pieceWork = true,
+          outsideWork = true,
+          payPerSession = PayPerSession.H,
+          prisonCode = "PVI",
+          summary = "Maths",
+          description = "Maths Level 1",
+          riskLevel = "high",
+          minimumIncentiveNomisCode = "BAS",
+          minimumIncentiveLevel = "Basic",
+          category = educationCategory,
+          capacity = 10,
+          allocated = 2,
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
+        ),
+        slots = listOf(
+          ActivityScheduleSlot(
+            id = 1L,
+            weekNumber = 1,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Mon", "Wed"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = true,
+            thursdayFlag = false,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 2L,
+            weekNumber = 1,
+            startTime = LocalTime.of(13, 0),
+            endTime = LocalTime.of(14, 0),
+            daysOfWeek = listOf("Mon", "Thu"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = true,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 3L,
+            weekNumber = 2,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            daysOfWeek = listOf("Tue", "Fri"),
+            mondayFlag = false,
+            tuesdayFlag = true,
+            wednesdayFlag = false,
+            thursdayFlag = false,
+            fridayFlag = true,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+          ActivityScheduleSlot(
+            id = 4L,
+            weekNumber = 2,
+            startTime = LocalTime.of(13, 0),
+            endTime = LocalTime.of(14, 0),
+            daysOfWeek = listOf("Mon", "Thu"),
+            mondayFlag = true,
+            tuesdayFlag = false,
+            wednesdayFlag = false,
+            thursdayFlag = true,
+            fridayFlag = false,
+            saturdayFlag = false,
+            sundayFlag = false,
+          ),
+        ),
+        startDate = LocalDate.of(2022, 10, 10),
+        scheduleWeeks = 2,
       ),
     )
   }
@@ -752,5 +863,107 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(schedules.first().endDate).isEqualTo(TimeSource.tomorrow())
       assertThat(schedules.first().allocations.first().endDate).isEqualTo(TimeSource.tomorrow())
     }
+  }
+
+  @Test
+  fun `updateActivity - runs on bank holidays updated to not run on bankholidays`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val startDate = TimeSource.tomorrow()
+
+    whenever(bankHolidayService.isEnglishBankHoliday(startDate)) doReturn true
+
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json")
+        .copy(
+          startDate = startDate,
+          slots = listOf(
+            Slot(
+              timeSlot = "AM",
+              monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
+              tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
+              wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
+              thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
+              friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
+              saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
+              sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+            ),
+          ),
+          runsOnBankHoliday = true,
+        )
+
+    val activity = webTestClient.createActivity(createActivityRequest)!!
+
+    activity.schedules.flatMap { it.instances } hasSize 2
+
+    val updatedActivity = webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = false))
+
+    updatedActivity.schedules.flatMap { it.instances } hasSize 1
+  }
+
+  @Test
+  fun `updateActivity - does not run on bank holidays changed to does run on bank holidays`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val startDate = TimeSource.tomorrow()
+
+    whenever(bankHolidayService.isEnglishBankHoliday(startDate)) doReturn true
+
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json")
+        .copy(
+          startDate = startDate,
+          slots = listOf(
+            Slot(
+              timeSlot = "AM",
+              monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
+              tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
+              wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
+              thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
+              friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
+              saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
+              sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+            ),
+          ),
+          runsOnBankHoliday = false,
+        )
+
+    val activity = webTestClient.createActivity(createActivityRequest)!!
+
+    activity.schedules.flatMap { it.instances } hasSize 1
+
+    val updatedActivity = webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = true))
+
+    updatedActivity.schedules.flatMap { it.instances } hasSize 2
   }
 }

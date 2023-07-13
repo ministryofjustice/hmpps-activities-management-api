@@ -160,6 +160,10 @@ data class Activity(
     pieceRate: Int?,
     pieceRateItems: Int?,
   ) {
+    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode }) {
+      "The pay band and incentive level combination must be unique for each pay rate"
+    }
+
     activityPay.add(
       ActivityPay(
         activity = this,
@@ -205,6 +209,7 @@ data class Activity(
     startDate: LocalDate,
     endDate: LocalDate? = null,
     runsOnBankHoliday: Boolean,
+    scheduleWeeks: Int,
   ) =
     addSchedule(
       ActivitySchedule.valueOf(
@@ -217,6 +222,7 @@ data class Activity(
         startDate = startDate,
         endDate = endDate,
         runsOnBankHoliday = runsOnBankHoliday,
+        scheduleWeeks = scheduleWeeks,
       ),
     )
 

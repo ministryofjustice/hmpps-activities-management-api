@@ -24,6 +24,8 @@ data class ActivityScheduleSlot(
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
+  val weekNumber: Int,
+
   val startTime: LocalTime,
 
   val endTime: LocalTime,
@@ -63,11 +65,13 @@ data class ActivityScheduleSlot(
   companion object {
     fun valueOf(
       activitySchedule: ActivitySchedule,
+      weekNumber: Int,
       startTime: LocalTime,
       endTime: LocalTime,
       daysOfWeek: Set<DayOfWeek>,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
+      weekNumber = weekNumber,
       startTime = startTime,
       endTime = endTime,
       mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
@@ -96,6 +100,7 @@ data class ActivityScheduleSlot(
 
   fun toModel() = ModelActivityScheduleSlot(
     id = this.activityScheduleSlotId,
+    weekNumber = this.weekNumber,
     startTime = this.startTime,
     endTime = this.endTime,
     daysOfWeek = this.getDaysOfWeek()

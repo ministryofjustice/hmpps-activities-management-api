@@ -59,6 +59,7 @@ object ScheduledInstanceFixture {
       internalLocationDescription = "LOCATION_DESCRIPTION $locationId",
       capacity = 10,
       startDate = date,
+      scheduleWeeks = 1,
     ),
     sessionDate = date,
     startTime = startTime,
