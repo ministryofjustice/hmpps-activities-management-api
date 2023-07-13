@@ -76,6 +76,7 @@ data class ActivitySchedule(
 
   init {
     require(capacity > 0) { "The schedule capacity must be greater than zero." }
+    require(scheduleWeeks > 0) { "Schedule weeks must be greater than zero." }
   }
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)

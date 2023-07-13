@@ -477,6 +477,31 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `fails to initialise if schedule weeks not greater than zero`() {
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.now(),
+        scheduleWeeks = 0,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Schedule weeks must be greater than zero.")
+
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.now(),
+        scheduleWeeks = -1,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Schedule weeks must be greater than zero.")
+  }
+
+  @Test
   fun `check activity active status that starts today with open end date`() {
     val scheduleWithNoEndDate = ActivitySchedule(
       activity = activityEntity(),
