@@ -561,6 +561,7 @@ class ActivityServiceTest {
       startDate = beforeActivityEntity.startDate,
       endDate = beforeActivityEntity.endDate,
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     )
 
     beforeActivityEntity.schedules().first().allocatePrisoner(

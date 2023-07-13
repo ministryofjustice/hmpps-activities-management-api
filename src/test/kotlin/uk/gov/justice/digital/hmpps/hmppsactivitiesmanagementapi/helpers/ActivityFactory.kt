@@ -181,6 +181,7 @@ internal fun activitySchedule(
     internalLocationDescription = "Education - R1",
     startDate = startDate ?: activity.startDate,
     runsOnBankHoliday = runsOnBankHolidays,
+    scheduleWeeks = 1,
   ).apply {
     this.endDate = endDate ?: activity.endDate
     if (!noAllocations) {
@@ -196,6 +197,7 @@ internal fun activitySchedule(
       this.addSlot(
         ActivityScheduleSlot(
           activityScheduleSlotId = 1,
+          weekNumber = 1,
           activitySchedule = this,
           startTime = timestamp.toLocalTime(),
           endTime = timestamp.toLocalTime().plusHours(1),

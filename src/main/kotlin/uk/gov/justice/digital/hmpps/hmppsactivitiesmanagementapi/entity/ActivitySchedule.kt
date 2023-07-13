@@ -70,6 +70,8 @@ data class ActivitySchedule(
   var updatedBy: String? = null,
 
   var instancesLastUpdatedTime: LocalDateTime? = null,
+
+  var scheduleWeeks: Int,
 ) {
 
   init {
@@ -126,6 +128,7 @@ data class ActivitySchedule(
       startDate: LocalDate,
       endDate: LocalDate?,
       runsOnBankHoliday: Boolean,
+      scheduleWeeks: Int,
     ) = ActivitySchedule(
       activity = activity,
       description = description,
@@ -135,6 +138,7 @@ data class ActivitySchedule(
       capacity = capacity,
       startDate = startDate,
       runsOnBankHoliday = runsOnBankHoliday,
+      scheduleWeeks = scheduleWeeks,
     ).apply {
       this.endDate = endDate
     }
@@ -191,8 +195,9 @@ data class ActivitySchedule(
     }
   }
 
+  // TODO - Add support for adding slots of multi-week schedules
   fun addSlot(startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>) =
-    addSlot(ActivityScheduleSlot.valueOf(this, startTime, endTime, daysOfWeek))
+    addSlot(ActivityScheduleSlot.valueOf(this, 1, startTime, endTime, daysOfWeek))
 
   fun addSlot(slot: ActivityScheduleSlot): ActivityScheduleSlot {
     if (slot.activitySchedule.activityScheduleId != activityScheduleId) throw IllegalArgumentException("Can only add slots that belong to this schedule.")
@@ -267,6 +272,7 @@ data class ActivitySchedule(
     description = this.description,
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
+    scheduleWeeks = this.scheduleWeeks,
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,
     endDate = this.endDate,

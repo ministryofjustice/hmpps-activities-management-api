@@ -209,6 +209,7 @@ data class Activity(
     startDate: LocalDate,
     endDate: LocalDate? = null,
     runsOnBankHoliday: Boolean,
+    scheduleWeeks: Int,
   ) =
     addSchedule(
       ActivitySchedule.valueOf(
@@ -221,6 +222,7 @@ data class Activity(
         startDate = startDate,
         endDate = endDate,
         runsOnBankHoliday = runsOnBankHoliday,
+        scheduleWeeks = scheduleWeeks,
       ),
     )
 

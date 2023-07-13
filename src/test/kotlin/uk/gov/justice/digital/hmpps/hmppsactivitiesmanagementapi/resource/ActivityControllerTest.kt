@@ -282,6 +282,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            weekNumber = 1,
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(10, 20),
             daysOfWeek = listOf("Mon"),
@@ -295,6 +296,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           ),
         ),
         startDate = LocalDate.now(),
+        scheduleWeeks = 1,
       ),
     )
 
