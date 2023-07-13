@@ -526,6 +526,7 @@ class ManageScheduledInstancesServiceTest {
             this.addSlot(
               ActivityScheduleSlot(
                 activityScheduleSlotId = 1,
+                weekNumber = 1,
                 activitySchedule = this,
                 startTime = LocalTime.of(9, 30),
                 endTime = LocalTime.of(11, 30),
@@ -541,6 +542,7 @@ class ManageScheduledInstancesServiceTest {
             this.addSlot(
               ActivityScheduleSlot(
                 activityScheduleSlotId = 2,
+                weekNumber = 1,
                 activitySchedule = this,
                 startTime = LocalTime.of(13, 30),
                 endTime = LocalTime.of(15, 30),

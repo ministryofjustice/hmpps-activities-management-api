@@ -157,6 +157,7 @@ class TransformFunctionsTest {
           slots = listOf(
             ActivityScheduleSlot(
               id = 1L,
+              weekNumber = 1,
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),
               daysOfWeek = listOf("Mon"),
@@ -173,6 +174,7 @@ class TransformFunctionsTest {
           runsOnBankHoliday = false,
           updatedTime = null,
           updatedBy = null,
+          scheduleWeeks = 1,
         ),
       )
       assertThat(waitingList).containsExactly(

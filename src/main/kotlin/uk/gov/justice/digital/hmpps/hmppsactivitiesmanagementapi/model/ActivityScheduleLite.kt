@@ -31,6 +31,9 @@ data class ActivityScheduleLite(
   @Schema(description = "The activity")
   val activity: ActivityLite,
 
+  @Schema(description = "The number of weeks in the schedule", example = "1")
+  val scheduleWeeks: Int,
+
   @Schema(description = "The slots associated with this activity schedule")
   val slots: List<ActivityScheduleSlot> = emptyList(),
 
