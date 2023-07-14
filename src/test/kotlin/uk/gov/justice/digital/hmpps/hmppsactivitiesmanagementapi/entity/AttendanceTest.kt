@@ -285,4 +285,29 @@ class AttendanceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record for prisoner '123456' can no longer be modified")
   }
+
+  @Test
+  fun `resetting attendance record`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReasons()["ATTENDED"]!!,
+      status = AttendanceStatus.WAITING,
+      comment = "Some Comment",
+      recordedTime = LocalDateTime.now().minusDays(1),
+    )
+
+    attendance.resetAttendance()
+
+    with(attendance) {
+      assertThat(attendanceReason).isNull()
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(comment).isNull()
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(recordedTime).isCloseTo(
+        LocalDateTime.now(),
+        Assertions.within(1, ChronoUnit.SECONDS),
+      )
+    }
+  }
 }
