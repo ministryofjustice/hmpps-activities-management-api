@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -143,6 +144,7 @@ class ActivityTest {
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     )
 
     assertThat(activity.schedules()).containsExactly(
@@ -155,6 +157,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       ),
     )
   }
@@ -177,6 +180,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate.minusDays(1),
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.startDate.minusDays(1)}' cannot be before the activity start date ${activity.startDate}")
@@ -201,6 +205,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.endDate!!,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule start date '${activity.endDate}' must be before the activity end date ${activity.endDate}")
@@ -226,6 +231,7 @@ class ActivityTest {
         startDate = activity.startDate,
         endDate = activity.endDate!!.plusDays(1),
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule end date '${activity.endDate!!.plusDays(1)}' cannot be after the activity end date ${activity.endDate}")
@@ -249,6 +255,7 @@ class ActivityTest {
         capacity = 0,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule capacity must be greater than zero.")
@@ -271,6 +278,7 @@ class ActivityTest {
       capacity = 10,
       startDate = activity.startDate,
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     )
 
     assertThatThrownBy {
@@ -286,6 +294,7 @@ class ActivityTest {
         capacity = 10,
         startDate = activity.startDate,
         runsOnBankHoliday = true,
+        scheduleWeeks = 1,
       )
     }
   }
@@ -372,6 +381,33 @@ class ActivityTest {
   }
 
   @Test
+  fun `cannot add duplicate pay band and iep combinations to activity`() {
+    val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+    )
+
+    val exception = assertThrows<IllegalArgumentException> {
+      activity.addPay(
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 40,
+        pieceRate = 50,
+        pieceRateItems = 60,
+      )
+    }
+
+    assertThat(exception.message).isEqualTo("The pay band and incentive level combination must be unique for each pay rate")
+  }
+
+  @Test
   fun `get schedules on date when schedule has no suspensions`() {
     val activity = activityEntity()
     val schedule = activity.schedules().first()
@@ -451,6 +487,7 @@ class ActivityTest {
       capacity = 1,
       startDate = activity.startDate.plusDays(1),
       runsOnBankHoliday = true,
+      scheduleWeeks = 1,
     ).apply {
       addSlot(
         startTime = LocalTime.NOON,

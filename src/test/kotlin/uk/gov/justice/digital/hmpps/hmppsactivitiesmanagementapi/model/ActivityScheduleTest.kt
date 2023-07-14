@@ -45,6 +45,7 @@ class ActivityScheduleTest : ModelTest() {
       runsOnBankHoliday = true,
       updatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter),
       updatedBy = "TestUser",
+      scheduleWeeks = 1,
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)

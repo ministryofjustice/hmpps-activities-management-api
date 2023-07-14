@@ -17,6 +17,9 @@ data class ActivityScheduleSlot(
   @Schema(description = "The internally-generated ID for this activity schedule slot", example = "123456")
   val id: Long,
 
+  @Schema(description = "The week of the schedule this slot relates to", example = "1")
+  val weekNumber: Int,
+
   @Schema(description = "The time that any instances of this schedule slot will start", example = "9:00")
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,

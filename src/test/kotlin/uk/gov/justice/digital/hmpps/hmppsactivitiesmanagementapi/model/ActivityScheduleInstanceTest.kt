@@ -60,6 +60,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
         capacity = 10,
         startDate = LocalDate.now(),
         endDate = LocalDate.now(),
+        scheduleWeeks = 1,
       ),
     )
 
