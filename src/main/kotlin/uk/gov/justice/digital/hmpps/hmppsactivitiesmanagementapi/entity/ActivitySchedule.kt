@@ -152,6 +152,22 @@ data class ActivitySchedule(
 
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
 
+  fun getWeekNumber(date: LocalDate): Int {
+    require(!date.isBefore(startDate) && (endDate == null || !date.isAfter(endDate))) {
+      "Date must be within activity schedule range."
+    }
+    // To calculate the week number for a given date:
+    // - Calculate first Monday of schedule
+    // - Calculate the total number of days into the schedule from the first Monday
+    // - Calculate the number of days into the schedule period for the given date
+    // - Finally, calculate the week number from the number of days into this schedule period
+    val daysInWeek = 7
+    val scheduleFirstMonday = startDate.minusDays(startDate.dayOfWeek.value - 1L)
+    val daysIntoSchedule = ChronoUnit.DAYS.between(scheduleFirstMonday, date)
+    val daysIntoThisSchedulePeriod = daysIntoSchedule % (daysInWeek * scheduleWeeks)
+    return (daysIntoThisSchedulePeriod / daysInWeek).toInt() + 1
+  }
+
   fun hasNoInstancesOnDate(day: LocalDate) =
     instances.none { instance -> instance.sessionDate == day }
 
