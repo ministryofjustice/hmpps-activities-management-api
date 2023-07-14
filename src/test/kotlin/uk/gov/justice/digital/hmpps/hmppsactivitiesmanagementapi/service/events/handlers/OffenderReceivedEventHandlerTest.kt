@@ -140,6 +140,7 @@ class OffenderReceivedEventHandlerTest {
       },
     )
 
+    // Technically we do not create attendances beyond today. This is included to future-proof should that rule change.
     val tomorrowsFutureAttendance = Attendance(
       scheduledInstance = mock {
         on { startTime } doReturn LocalTime.now().plusMinutes(1)

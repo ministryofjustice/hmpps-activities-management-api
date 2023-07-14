@@ -4,7 +4,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
@@ -255,18 +254,6 @@ private fun activityWaiting(
     priority = 1,
     createdTime = timestamp,
     createdBy = "test",
-  )
-
-private fun activityPay(activity: Activity) =
-  ActivityPay(
-    activityPayId = 1,
-    activity = activity,
-    incentiveNomisCode = "BAS",
-    incentiveLevel = "Basic",
-    payBand = lowPayBand,
-    rate = 30,
-    pieceRate = 40,
-    pieceRateItems = 50,
   )
 
 fun rolloutPrison() = RolloutPrison(

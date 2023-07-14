@@ -39,7 +39,7 @@ class OffenderReceivedEventHandler(
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber()).let { allocations ->
             if (allocations.isNotEmpty()) {
               allocations
-                .resetSuspended(event)
+                .resetSuspendedAllocations(event)
                 .resetFutureSuspendedAttendances(event)
             } else {
               log.info("No allocations for prisoner ${event.prisonerNumber()} in prison ${event.prisonCode()}")
@@ -61,7 +61,7 @@ class OffenderReceivedEventHandler(
   private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
     this.findByCode(prisonCode)?.isActivitiesRolledOut() == true
 
-  private fun List<Allocation>.resetSuspended(event: OffenderReceivedEvent) =
+  private fun List<Allocation>.resetSuspendedAllocations(event: OffenderReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
       .onEach { it.reactivateAutoSuspensions() }
       .also {
@@ -83,7 +83,7 @@ class OffenderReceivedEventHandler(
           (attendance.scheduledInstance.sessionDate == now.toLocalDate() && attendance.scheduledInstance.startTime > now.toLocalTime()) ||
             (attendance.scheduledInstance.sessionDate > now.toLocalDate())
         }
-        .onEach(Attendance::resetSuspended)
+        .onEach(Attendance::unsuspend)
         .also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }

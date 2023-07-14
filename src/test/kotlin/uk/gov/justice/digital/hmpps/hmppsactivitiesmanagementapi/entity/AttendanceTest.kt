@@ -294,32 +294,45 @@ class AttendanceTest {
       scheduledInstance = instance,
       prisonerNumber = "P000111",
       attendanceReason = attendanceReasons()["ATTENDED"]!!,
-      status = AttendanceStatus.WAITING,
+      status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedTime = LocalDateTime.now().minusDays(1),
     )
 
-    attendance.resetAttendance()
+    attendance.resetAttendance("reset by test")
 
     with(attendance) {
       assertThat(attendanceReason).isNull()
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(otherAbsenceReason).isNull()
-      assertThat(recordedTime).isCloseTo(
-        LocalDateTime.now(),
-        Assertions.within(1, ChronoUnit.SECONDS),
-      )
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+      assertThat(recordedBy).isEqualTo("reset by test")
     }
   }
 
   @Test
-  fun `reset suspended attendance to waiting and history records created`() {
+  fun `attempting to reset a waiting attendance record fails`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      status = AttendanceStatus.WAITING,
+    )
+
+    assertThatThrownBy {
+      attendance.resetAttendance("reset by test")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot reset an attendance that is already WAITING")
+  }
+
+  @Test
+  fun `unsuspend attendance to waiting and history records created`() {
     Attendance(scheduledInstance = instance, prisonerNumber = "123456")
       .also { assertThat(it.history()).isEmpty() }
       .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED))
       .also { assertThat(it.history()).hasSize(1) }
-      .resetSuspended()
+      .unsuspend()
       .also {
         assertThat(it.history()).hasSize(2)
         assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -337,9 +350,9 @@ class AttendanceTest {
     }
 
     assertThatThrownBy {
-      attendance.resetSuspended()
+      attendance.unsuspend()
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Attendance must be suspended to reset it")
+      .hasMessage("Attendance must be suspended to unsuspend it")
   }
 }

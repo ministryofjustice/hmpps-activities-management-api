@@ -396,7 +396,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
+    // Suspending first so can unspend afterwards.
     service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.SUSPEND))
+
     service.process(offenderReceivedFromTemporaryAbsence(prisonCode = pentonvillePrisonCode, prisonerNumber = "A11111A"))
 
     // Eight events should be raised four for allocation amendments and four for an attendance amendment
