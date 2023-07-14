@@ -90,6 +90,8 @@ data class Activity(
 
   @Schema(description = "The list of minimum education levels that can apply to this activity")
   val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList(),
-)
+) : CaseLoadRestricted {
+  override fun getCaseLoadId() = this.prisonCode
+}
 
 enum class PayPerSession { H, F }

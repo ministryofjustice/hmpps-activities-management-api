@@ -10,32 +10,33 @@ import org.springframework.http.server.ServerHttpResponse
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.CaseLoadRestricted
 
 @ControllerAdvice
-class ActivityControllerResponseFilterAdvice : ResponseBodyAdvice<Activity> {
+class ActivityControllerResponseFilterAdvice : ResponseBodyAdvice<CaseLoadRestricted> {
 
   companion object {
     val log = LoggerFactory.getLogger(this::class.java)
   }
 
   override fun beforeBodyWrite(
-    activity: Activity?,
+    restrictedEntity: CaseLoadRestricted?,
     returnType: MethodParameter,
     selectedContentType: MediaType,
     selectedConverterType: Class<out HttpMessageConverter<*>>,
     request: ServerHttpRequest,
     response: ServerHttpResponse,
-  ): Activity? {
+  ): CaseLoadRestricted? {
     val userCaseLoadId = request.headers.getFirst("Caseload-Id")
-    var activityPrisonCode = activity?.prisonCode
+    var activityPrisonCode = restrictedEntity?.getCaseLoadId()
     if (activityPrisonCode != userCaseLoadId) {
       log.error(
-        "Cannot return Activity [${activity?.id}] from method [${returnType.method.name}] because the Activity " +
+        "Cannot return Entity [${restrictedEntity?.javaClass?.simpleName}] from method [${returnType.method.name}] because the Entity " +
           "is for prison [$activityPrisonCode] and the user's case load is for prison [$userCaseLoadId].",
       )
       throw EntityNotFoundException()
     } else {
-      return activity
+      return restrictedEntity
     }
   }
 
