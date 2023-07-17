@@ -48,6 +48,7 @@ data class ActivityScheduleSlot(
   init {
     failIfNoDaysSelectedForSlot()
     failIfDatesAreInvalidForSlot()
+    failIfWeekNumberInvalid()
   }
 
   private fun failIfNoDaysSelectedForSlot() {
@@ -59,6 +60,12 @@ data class ActivityScheduleSlot(
   private fun failIfDatesAreInvalidForSlot() {
     if (!endTime.isAfter(startTime)) {
       throw IllegalArgumentException("Start time '$startTime' must be before end time '$endTime'.")
+    }
+  }
+
+  private fun failIfWeekNumberInvalid() {
+    if (weekNumber <= 0) {
+      throw IllegalArgumentException("Week number must be greater than zero.")
     }
   }
 

@@ -248,4 +248,33 @@ class ActivityScheduleSlotTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("A slot must run on at least one day.")
   }
+
+  @Test
+  fun `fails to initialise if week number is not greater than zero`() {
+    assertThatThrownBy {
+      ActivityScheduleSlot(
+        activityScheduleSlotId = 1,
+        weekNumber = 0,
+        activitySchedule = mock(),
+        startTime = LocalTime.now(),
+        endTime = LocalTime.now(),
+        mondayFlag = true,
+        sundayFlag = true,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Week number must be greater than zero.")
+
+    assertThatThrownBy {
+      ActivityScheduleSlot(
+        activityScheduleSlotId = 1,
+        weekNumber = -1,
+        activitySchedule = mock(),
+        startTime = LocalTime.now(),
+        endTime = LocalTime.now(),
+        mondayFlag = true,
+        sundayFlag = true,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Week number must be greater than zero.")
+  }
 }
