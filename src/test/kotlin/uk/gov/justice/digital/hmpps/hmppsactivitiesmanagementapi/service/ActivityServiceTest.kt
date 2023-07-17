@@ -48,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseLoadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalTime
@@ -237,7 +238,14 @@ class ActivityServiceTest {
   fun `getActivityById returns an activity for known activity ID`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThat(service.getActivityById(1)).isInstanceOf(ModelActivity::class.java)
+    assertThat(service.getActivityById(1, "123")).isInstanceOf(ModelActivity::class.java)
+  }
+
+  @Test
+  fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+
+    assertThatThrownBy { service.getActivityById(1, "456") }.isInstanceOf(CaseLoadAccessException::class.java)
   }
 
   @Test

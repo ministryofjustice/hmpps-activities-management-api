@@ -14,12 +14,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformFilteredInstances
@@ -78,12 +80,20 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true) =
-    repository.findOrThrowNotFound(scheduleId).allocations()
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, caseLoadId: String? = null): List<Allocation> {
+    val schedule = repository.findOrThrowNotFound(scheduleId)
+    checkCaseLoadAccess(schedule.activity.prisonCode, caseLoadId)
+
+    return schedule.allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
+  }
 
-  fun getScheduleById(scheduleId: Long) = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
+  fun getScheduleById(scheduleId: Long, caseLoadId: String? = null): ModelActivitySchedule {
+    val schedule = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
+    checkCaseLoadAccess(schedule.activity.prisonCode, caseLoadId)
+    return schedule
+  }
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")

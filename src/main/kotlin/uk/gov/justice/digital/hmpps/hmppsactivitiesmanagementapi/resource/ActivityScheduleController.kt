@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
@@ -105,7 +106,8 @@ class ActivityScheduleController(
     )
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
-  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
+    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
+  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, caseLoadId)
 
   @GetMapping(value = ["/{scheduleId}"])
   @ResponseBody
@@ -157,8 +159,8 @@ class ActivityScheduleController(
       ),
     ],
   )
-  fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
-    scheduleService.getScheduleById(scheduleId)
+  fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long, @RequestHeader(CASELOAD_ID) caseLoadId: String?) =
+    scheduleService.getScheduleById(scheduleId, caseLoadId)
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
@@ -295,6 +297,7 @@ class ActivityScheduleController(
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
+    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
   ): Page<ActivityCandidate> {
     val candidates = candidatesService.getActivityCandidates(
       scheduleId,
@@ -302,6 +305,7 @@ class ActivityScheduleController(
       suitableRiskLevel,
       suitableForEmployed,
       search,
+      caseLoadId,
     )
 
     val start = pageable.offset.toInt()

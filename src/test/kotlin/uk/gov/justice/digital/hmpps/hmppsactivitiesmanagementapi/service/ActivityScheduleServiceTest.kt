@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -57,7 +58,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(1)
+    val allocations = service.getAllocationsBy(scheduleId = 1, caseLoadId = "123")
 
     assertThat(allocations).hasSize(1)
     assertThat(allocations).containsExactlyInAnyOrder(*schedule.allocations().toModelAllocations().toTypedArray())
@@ -71,11 +72,12 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    assertThat(service.getAllocationsBy(1)).isEmpty()
+    assertThat(service.getAllocationsBy(scheduleId = 1, caseLoadId = "123")).isEmpty()
   }
 
   @Test
   fun `all current, future and ended allocations for a given schedule are returned`() {
+    val prisonCode = "123"
     val active = activeAllocation.copy(allocationId = 1)
     val suspended = activeAllocation.copy(allocationId = 1).apply { prisonerStatus = PrisonerStatus.SUSPENDED }
     val ended =
@@ -83,11 +85,14 @@ class ActivityScheduleServiceTest {
         .apply { endDate = LocalDate.now().minusDays(1) }
     val future = active.copy(allocationId = 3, startDate = active.startDate.plusDays(1))
     val schedule = mock<ActivitySchedule>()
+    val activity = mock<Activity>()
 
+    whenever(schedule.activity).thenReturn(activity)
+    whenever(activity.prisonCode).thenReturn(prisonCode)
     whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(1, false)
+    val allocations = service.getAllocationsBy(1, false, "123")
     assertThat(allocations).hasSize(4)
     assertThat(allocations).containsExactlyInAnyOrder(
       *listOf(active, suspended, ended, future).toModelAllocations().toTypedArray(),
