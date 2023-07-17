@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -91,7 +92,8 @@ class AttendanceTest {
     val attendanceReason = attendanceReasons()["CANCELLED"]!!
     val canceledInstance =
       instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
-    val attendanceWithCanceledInstance = attendance.copy(attendanceReason = attendanceReasons()["SUSPENDED"], scheduledInstance = canceledInstance)
+    val attendanceWithCanceledInstance =
+      attendance.copy(attendanceReason = attendanceReasons()["SUSPENDED"], scheduledInstance = canceledInstance)
 
     attendanceWithCanceledInstance.cancel(attendanceReason)
     assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
@@ -284,5 +286,73 @@ class AttendanceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record for prisoner '123456' can no longer be modified")
+  }
+
+  @Test
+  fun `resetting attendance record`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReasons()["ATTENDED"]!!,
+      status = AttendanceStatus.COMPLETED,
+      comment = "Some Comment",
+      recordedTime = LocalDateTime.now().minusDays(1),
+    )
+
+    attendance.resetAttendance("reset by test")
+
+    with(attendance) {
+      assertThat(attendanceReason).isNull()
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(comment).isNull()
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+      assertThat(recordedBy).isEqualTo("reset by test")
+    }
+  }
+
+  @Test
+  fun `attempting to reset a waiting attendance record fails`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      status = AttendanceStatus.WAITING,
+    )
+
+    assertThatThrownBy {
+      attendance.resetAttendance("reset by test")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot reset an attendance that is already WAITING")
+  }
+
+  @Test
+  fun `unsuspend attendance to waiting and history records created`() {
+    Attendance(scheduledInstance = instance, prisonerNumber = "123456")
+      .also { assertThat(it.history()).isEmpty() }
+      .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED))
+      .also { assertThat(it.history()).hasSize(1) }
+      .unsuspend()
+      .also {
+        assertThat(it.history()).hasSize(2)
+        assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+        assertThat(it.attendanceReason).isNull()
+        assertThat(it.issuePayment).isNull()
+        assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+        assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+      }
+  }
+
+  @Test
+  fun `reset waiting attendance fails if as attendance is not suspended`() {
+    val attendance = Attendance(scheduledInstance = instance, prisonerNumber = "123456").also {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+    }
+
+    assertThatThrownBy {
+      attendance.unsuspend()
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance must be suspended to unsuspend it")
   }
 }

@@ -10,7 +10,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceReasonService
 
 @WebMvcTest(controllers = [AttendanceReasonController::class])
@@ -24,22 +23,7 @@ class AttendanceReasonControllerTest : ControllerTestBase<AttendanceReasonContro
 
   @Test
   fun `200 response when get attendance reasons`() {
-    val expectedModel = listOf(
-      AttendanceReason(
-        id = 1,
-        code = "ATTENDED",
-        description = "reason description",
-        attended = false,
-        capturePay = true,
-        captureMoreDetail = true,
-        captureCaseNote = false,
-        captureIncentiveLevelWarning = false,
-        captureOtherText = false,
-        displayInAbsence = true,
-        displaySequence = 1,
-        notes = "reason notes",
-      ),
-    )
+    val expectedModel = listOf(attendanceReason().toModel())
 
     whenever(attendanceReasonService.getAll()).thenReturn(listOf(attendanceReason().toModel()))
 

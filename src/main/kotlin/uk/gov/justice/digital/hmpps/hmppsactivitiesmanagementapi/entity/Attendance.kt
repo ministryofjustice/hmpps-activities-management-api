@@ -101,6 +101,35 @@ data class Attendance(
     newOtherAbsenceReason = null,
   )
 
+  fun completeWithoutPayment(reason: AttendanceReason) =
+    mark(
+      principalName = ServiceName.SERVICE_NAME.value,
+      reason = reason,
+      newStatus = AttendanceStatus.COMPLETED,
+      newIssuePayment = false,
+      newCaseNoteId = null,
+      newComment = null,
+      newIncentiveLevelWarningIssued = null,
+      newOtherAbsenceReason = null,
+    ).also { addAttendanceToHistory() }
+
+  fun unsuspend() =
+    apply {
+      require(attendanceReason?.code == AttendanceReasonEnum.SUSPENDED) {
+        "Attendance must be suspended to unsuspend it"
+      }
+      mark(
+        principalName = ServiceName.SERVICE_NAME.value,
+        reason = null,
+        newStatus = AttendanceStatus.WAITING,
+        newIssuePayment = null,
+        newCaseNoteId = null,
+        newComment = null,
+        newIncentiveLevelWarningIssued = null,
+        newOtherAbsenceReason = null,
+      )
+    }
+
   fun mark(
     principalName: String?,
     reason: AttendanceReason?,
@@ -116,16 +145,17 @@ data class Attendance(
     if (status != AttendanceStatus.WAITING || history().isNotEmpty()) addAttendanceToHistory()
 
     if (newStatus == AttendanceStatus.WAITING) {
-      resetAttendance()
-    } else {
-      attendanceReason = reason
-      comment = newComment
-      issuePayment = newIssuePayment
-      incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
-      caseNoteId = newCaseNoteId?.toLong()
-      otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
-      recordedTime = LocalDateTime.now()
+      resetAttendance(principalName)
+      return this
     }
+
+    attendanceReason = reason
+    comment = newComment
+    issuePayment = newIssuePayment
+    incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
+    caseNoteId = newCaseNoteId?.toLong()
+    otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
+    recordedTime = LocalDateTime.now()
     status = newStatus
     recordedBy = principalName
     return this
@@ -147,8 +177,11 @@ data class Attendance(
     )
   }
 
-  private fun resetAttendance() {
-    if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) attendanceReason = null
+  fun resetAttendance(resetBy: String? = null) {
+    require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
+    require(status != AttendanceStatus.WAITING) { "Cannot reset an attendance that is already WAITING" }
+
+    attendanceReason = null
     comment = null
     issuePayment = null
     incentiveLevelWarningIssued = null
@@ -156,6 +189,9 @@ data class Attendance(
     pieces = null
     caseNoteId = null
     otherAbsenceReason = null
+    status = AttendanceStatus.WAITING
+    recordedTime = LocalDateTime.now()
+    recordedBy = resetBy
   }
 
   /*
@@ -180,18 +216,6 @@ data class Attendance(
         this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
       )
   }
-
-  fun completeWithoutPayment(reason: AttendanceReason) =
-    apply {
-      require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
-
-      attendanceReason = reason
-      issuePayment = false
-      status = AttendanceStatus.COMPLETED
-      recordedTime = LocalDateTime.now()
-      recordedBy = ServiceName.SERVICE_NAME.value
-      addAttendanceToHistory()
-    }
 }
 
 enum class AttendanceStatus {

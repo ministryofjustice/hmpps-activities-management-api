@@ -100,7 +100,6 @@ class AppointmentService(
         prisonerNumbers = listOf(request.prisonerNumber),
         prisonerBookings = prisonerBookings,
         categoryCode = request.categoryCode,
-        appointmentDescription = request.comment?.takeIf { it.length <= 40 },
         internalLocationId = request.internalLocationId,
         inCell = false,
         startDate = request.startDate,
