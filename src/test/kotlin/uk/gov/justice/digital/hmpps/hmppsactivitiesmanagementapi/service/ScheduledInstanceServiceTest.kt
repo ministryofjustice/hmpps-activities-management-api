@@ -106,7 +106,10 @@ class ScheduledInstanceServiceTest {
     @Test
     fun `un-cancels a scheduled instance - success`() {
       val instance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
-      instance.cancelled = true
+      instance.apply {
+        cancelled = true
+        attendances.first().cancel(mock())
+      }
 
       whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
       whenever(repository.saveAndFlush(instance)).thenReturn(instance)

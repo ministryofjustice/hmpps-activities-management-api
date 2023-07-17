@@ -13,6 +13,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -133,7 +134,7 @@ class ActivitiesChangedEventHandlerTest {
       whenever(it.editable()) doReturn true
     }
 
-    whenever(attendanceRepository.findWaitingAttendancesOnOrAfterDateForPrisoner(moorlandPrisonCode, LocalDate.now(), "123456")) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+    whenever(attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(moorlandPrisonCode, LocalDate.now(), AttendanceStatus.WAITING, "123456")) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
     handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
