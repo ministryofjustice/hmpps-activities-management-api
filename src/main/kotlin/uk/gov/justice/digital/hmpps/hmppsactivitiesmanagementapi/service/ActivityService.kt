@@ -413,10 +413,10 @@ class ActivityService(
       "removeEndDate flag cannot be true when an endDate is also supplied."
     }
 
-    if (request.removeEndDate == true) {
+    if (request.removeEndDate) {
       activity.endDate = null
       activity.schedules().forEach {
-        // end date has been removed so add new instances from the day after the original end date up to the new end date
+        // end date has been removed so add new instances from the day after the original end date
         it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1))
         it.endDate = null
       }
