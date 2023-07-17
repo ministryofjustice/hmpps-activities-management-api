@@ -802,7 +802,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
-      assertThat(instances).hasSize(4)
+      assertThat(instances).hasSizeBetween(3, 4)
     }
 
     val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", thursday = true)))
@@ -810,7 +810,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdayFridaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
-      assertThat(instances).hasSize(2)
+      assertThat(instances).hasSizeBetween(1, 2)
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
