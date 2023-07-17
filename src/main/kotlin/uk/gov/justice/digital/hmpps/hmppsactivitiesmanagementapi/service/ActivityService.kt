@@ -409,6 +409,19 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
+    require(request.endDate == null || request.removeEndDate == false) {
+      "removeEndDate flag cannot be true when an endDate is also supplied."
+    }
+
+    if (request.removeEndDate == true) {
+      activity.endDate = null
+      activity.schedules().forEach {
+        // end date has been removed so add new instances from the day after the original end date up to the new end date
+        it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1))
+        it.endDate = null
+      }
+    }
+
     request.endDate?.let { newEndDate ->
       activity.endDate = newEndDate
       activity.schedules().forEach {

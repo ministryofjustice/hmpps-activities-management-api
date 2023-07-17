@@ -659,6 +659,33 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update end date fails if removeEndDate is also true`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    assertThatThrownBy {
+      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = activity.endDate?.plusDays(1), removeEndDate = true), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("removeEndDate flag cannot be true when an endDate is also supplied.")
+  }
+
+  @Test
+  fun `updateActivity - renoval of the end date is successful`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      assertThat(endDate).isNull()
+      schedules().forEach { s -> assertThat(s.endDate).isNull() }
+    }
+  }
+
+  @Test
   fun `updateActivity - fails if activity has already ended (archived)`() {
     val activity = activityEntity(startDate = TimeSource.yesterday().minusDays(1), endDate = TimeSource.yesterday())
 

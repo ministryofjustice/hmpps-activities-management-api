@@ -89,4 +89,7 @@ data class ActivityUpdateRequest(
 
   @Schema(description = "The days and times an activity schedule can take place")
   val slots: List<Slot>? = null,
+
+  @Schema(description = "A flag to indicate that the end date is to be removed", example = "true")
+  val removeEndDate: Boolean? = null,
 )
