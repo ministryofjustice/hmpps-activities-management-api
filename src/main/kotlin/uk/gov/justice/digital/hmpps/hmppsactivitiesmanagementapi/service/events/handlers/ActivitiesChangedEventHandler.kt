@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -61,9 +62,10 @@ class ActivitiesChangedEventHandler(
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
     forEach { allocation ->
-      attendanceRepository.findWaitingAttendancesOnOrAfterDateForPrisoner(
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         event.prisonCode(),
         dateTime.toLocalDate(),
+        AttendanceStatus.WAITING,
         allocation.prisonerNumber,
       )
         .filter { attendance ->
