@@ -671,7 +671,7 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `updateActivity - renoval of the end date is successful`() {
+  fun `updateActivity - removal of the end date is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
