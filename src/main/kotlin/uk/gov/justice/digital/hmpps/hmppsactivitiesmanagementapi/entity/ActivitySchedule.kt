@@ -311,13 +311,12 @@ data class ActivitySchedule(
     updateMatchingSlots(updates)
     addNewSlots(updates)
 
-    val instancesToKeep = instances
-      .filter {
-        it.sessionDate >= LocalDate.now() &&
-          (it.attendances.isNotEmpty() || updates[it.startTime to it.endTime]?.contains(it.dayOfWeek()) == true)
-      }
+    // Remove any instances that are in the future (not included today) and are no longer required
+    val instancesToRemove = instances
+      .filter { it.sessionDate > LocalDate.now() }
+      .filter { updates[it.startTime to it.endTime]?.contains(it.dayOfWeek()) == false }
 
-    instances.removeIf { instancesToKeep.contains(it).not() }
+    instances.removeIf { instancesToRemove.contains(it) }
   }
 
   private fun removeRedundantSlots(updates: Map<Pair<LocalTime, LocalTime>, Set<DayOfWeek>>) {

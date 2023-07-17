@@ -940,16 +940,16 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `slot update does not remove instance with attendance`() {
+  fun `slot update removes redundant instances in the future`() {
     val schedule =
       activitySchedule(activity = activityEntity(startDate = yesterday), noSlots = true, noInstances = true)
 
     assertThat(schedule.slots()).isEmpty()
 
-    val slotOne = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(today.dayOfWeek))
+    val slotOne = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(yesterday.dayOfWeek))
     val slotTwo = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(tomorrow.dayOfWeek))
 
-    val instanceOne = schedule.addInstance(today, slotOne).apply {
+    val instanceOne = schedule.addInstance(yesterday, slotOne).apply {
       attendances.add(
         attendance(),
       )
@@ -958,11 +958,11 @@ class ActivityScheduleTest {
 
     assertThat(schedule.instances()).containsOnly(instanceOne, instanceTwo)
 
-    val updates = mapOf(Pair(LocalTime.MIDNIGHT, LocalTime.NOON) to setOf(instanceTwo.dayOfWeek()))
+    val updates = mapOf(Pair(LocalTime.MIDNIGHT, LocalTime.NOON) to setOf(today.dayOfWeek))
 
     schedule.updateSlotsAndRemoveRedundantInstances(updates)
 
-    assertThat(schedule.instances()).containsOnly(instanceOne, instanceTwo)
+    assertThat(schedule.instances()).containsOnly(instanceOne)
   }
 
   @Test
