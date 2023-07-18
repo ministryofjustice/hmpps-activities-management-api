@@ -10,6 +10,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -28,9 +29,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils.extractJwtFromHeader
 import java.security.Principal
 import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ClientDetailsExtractor
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -39,6 +43,7 @@ import java.time.LocalDate
 @RequestMapping("/activities", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ActivityController(
   private val activityService: ActivityService,
+  private val clientDetailsExtractor: ClientDetailsExtractor,
 ) {
 
   @GetMapping(value = ["/{activityId}"])
@@ -91,8 +96,14 @@ class ActivityController(
       ),
     ],
   )
-  fun getActivityById(@PathVariable("activityId") activityId: Long, @RequestHeader(CASELOAD_ID) caseLoadId: String?): Activity =
-    activityService.getActivityById(activityId, caseLoadId)
+  fun getActivityById(
+    @PathVariable("activityId") activityId: Long,
+    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
+    @RequestHeader(AUTHORIZATION) authToken: String,
+  ): Activity {
+    val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
+    return activityService.getActivityById(activityId, client)
+  }
 
   @GetMapping(value = ["/{activityId}/filtered"])
   @ResponseBody

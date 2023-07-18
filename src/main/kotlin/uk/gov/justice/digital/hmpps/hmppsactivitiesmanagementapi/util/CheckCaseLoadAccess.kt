@@ -1,7 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
-fun checkCaseLoadAccess(prisonCode: String, caseLoadId: String?) {
-  if (prisonCode != caseLoadId) throw CaseLoadAccessException()
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
+
+fun checkCaseLoadAccess(prisonCode: String, client: ClientDetails) {
+  if (!client.isClientToken &&
+    !client.hasAdminRole &&
+    (prisonCode != client.caseLoadId)
+  ) {
+    throw CaseLoadAccessException()
+  }
 }
 
 class CaseLoadAccessException : RuntimeException()

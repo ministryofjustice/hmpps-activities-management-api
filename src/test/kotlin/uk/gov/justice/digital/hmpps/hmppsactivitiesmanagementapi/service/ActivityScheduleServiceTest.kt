@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -52,13 +53,14 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
+    val prisonCode = "123"
     val schedule = schedule().apply {
       allocations().first().startDate = LocalDate.now()
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(scheduleId = 1, caseLoadId = "123")
+    val allocations = service.getAllocationsBy(scheduleId = 1, client = ClientDetails(caseLoadId = prisonCode))
 
     assertThat(allocations).hasSize(1)
     assertThat(allocations).containsExactlyInAnyOrder(*schedule.allocations().toModelAllocations().toTypedArray())
@@ -66,13 +68,14 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `ended allocations for a given schedule are not returned`() {
+    val prisonCode = "123"
     val schedule = schedule().apply {
       allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    assertThat(service.getAllocationsBy(scheduleId = 1, caseLoadId = "123")).isEmpty()
+    assertThat(service.getAllocationsBy(scheduleId = 1, client = ClientDetails(caseLoadId = prisonCode))).isEmpty()
   }
 
   @Test
@@ -92,7 +95,7 @@ class ActivityScheduleServiceTest {
     whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(1, false, "123")
+    val allocations = service.getAllocationsBy(1, false, client = ClientDetails(caseLoadId = prisonCode))
     assertThat(allocations).hasSize(4)
     assertThat(allocations).containsExactlyInAnyOrder(
       *listOf(active, suspended, ended, future).toModelAllocations().toTypedArray(),
@@ -101,7 +104,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `throws entity not found exception for unknown activity schedule`() {
-    assertThatThrownBy { service.getAllocationsBy(-99) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getAllocationsBy(-99, client = ClientDetails()) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule -99 not found")
   }
 

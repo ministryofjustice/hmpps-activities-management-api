@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -30,11 +31,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import org.mockito.kotlin.eq
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ClientDetailsExtractor
 
 @WebMvcTest(controllers = [ActivityController::class])
 @ContextConfiguration(classes = [ActivityController::class])
@@ -43,7 +47,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   @MockBean
   private lateinit var activityService: ActivityService
 
-  override fun controller() = ActivityController(activityService)
+  @MockBean
+  private lateinit var clientDetailsExtractor: ClientDetailsExtractor
+
+  override fun controller() = ActivityController(activityService, clientDetailsExtractor)
 
   @Test
   fun `createActivity - success`() {
@@ -220,7 +227,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   fun `200 response when get activity by ID found`() {
     val activity = activityModel(activityEntity())
 
-    whenever(activityService.getActivityById(1)).thenReturn(activity)
+    whenever(clientDetailsExtractor.extract(any(), any())).thenReturn(ClientDetails(caseLoadId = "123"))
+    whenever(activityService.getActivityById(eq(1), any())).thenReturn(activity)
 
     val response = mockMvc.getActivityById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -229,12 +237,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(activity))
 
-    verify(activityService).getActivityById(1)
+    verify(activityService).getActivityById(1, any())
   }
 
   @Test
   fun `404 response when get activity by ID not found`() {
-    whenever(activityService.getActivityById(2)).thenThrow(EntityNotFoundException("not found"))
+    whenever(activityService.getActivityById(2, ClientDetails())).thenThrow(EntityNotFoundException("not found"))
 
     val response = mockMvc.getActivityById(2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -243,7 +251,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(activityService).getActivityById(2)
+    verify(activityService).getActivityById(2, ClientDetails())
   }
 
   @Test

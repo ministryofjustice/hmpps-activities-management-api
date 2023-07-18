@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -64,10 +65,10 @@ class ActivityService(
     return transform(activity)
   }
 
-  fun getActivityById(activityId: Long, caseLoadId: String? = null): ModelActivity {
+  fun getActivityById(activityId: Long, client: ClientDetails): ModelActivity {
     val activity = activityRepository.findById(activityId)
       .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-    checkCaseLoadAccess(activity.prisonCode, caseLoadId)
+    checkCaseLoadAccess(activity.prisonCode, client)
     return transform(activity)
   }
 

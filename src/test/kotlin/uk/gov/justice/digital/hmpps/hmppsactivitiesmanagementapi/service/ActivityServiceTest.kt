@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -236,21 +237,22 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
+    val prisonCode = "123"
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThat(service.getActivityById(1, "123")).isInstanceOf(ModelActivity::class.java)
+    assertThat(service.getActivityById(1, ClientDetails(caseLoadId = prisonCode))).isInstanceOf(ModelActivity::class.java)
   }
 
   @Test
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThatThrownBy { service.getActivityById(1, "456") }.isInstanceOf(CaseLoadAccessException::class.java)
+    assertThatThrownBy { service.getActivityById(1, ClientDetails()) }.isInstanceOf(CaseLoadAccessException::class.java)
   }
 
   @Test
   fun `getActivityById throws entity not found exception for unknown activity ID`() {
-    assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getActivityById(-1, ClientDetails()) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity -1 not found")
   }
 

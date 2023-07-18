@@ -88,10 +88,10 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
   fun handleCaseLoadAccessException(e: CaseLoadAccessException): ResponseEntity<ErrorResponse> {
     log.info("Case load access exception: {}", e.message)
     return ResponseEntity
-      .status(NOT_FOUND)
+      .status(FORBIDDEN)
       .body(
         ErrorResponse(
-          status = NOT_FOUND.value(),
+          status = FORBIDDEN.value(),
           userMessage = "Not found: ${e.message}",
           developerMessage = e.message,
         ),
