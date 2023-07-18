@@ -6,15 +6,16 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class ScheduledInstanceTest {
 
   private val instance = activityEntity().schedules().first().instances().first()
-  val today: LocalDateTime = LocalDateTime.now()
+  private val today: LocalDate = TimeSource.today()
 
   @Test
   fun `instance is not cancelled`() {
@@ -96,13 +97,13 @@ class ScheduledInstanceTest {
   @Test
   fun `can cancel scheduled instance`() {
     val cancelableInstance = instance.copy()
-    cancelableInstance.cancelSession(
+    cancelableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
       by = "USER1",
       cancelComment = "Resume tomorrow",
-    ) {
-      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
-    }
+      cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+    )
+
     with(cancelableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")
       assertThat(cancelled).isTrue
@@ -110,22 +111,42 @@ class ScheduledInstanceTest {
       assertThat(cancelledTime).isNotNull
       assertThat(comment).isEqualTo("Resume tomorrow")
 
-      with(attendances.first()) {
-        assertThat(attendanceReason).isEqualTo(attendanceReason)
-      }
+      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED) }
+    }
+  }
+
+  @Test
+  fun `cancelling scheduled instance does not cancel suspended attendances`() {
+    val cancelableInstance = instance.copy()
+      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
+
+    cancelableInstance.cancelSessionAndAttendances(
+      reason = "Staff unavailable",
+      by = "USER1",
+      cancelComment = "Resume tomorrow",
+      cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+    )
+
+    with(cancelableInstance) {
+      assertThat(cancelledReason).isEqualTo("Staff unavailable")
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledTime).isNotNull
+      assertThat(comment).isEqualTo("Resume tomorrow")
+
+      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED) }
     }
   }
 
   @Test
   fun `cannot cancel scheduled instance that's already cancelled`() {
     assertThatThrownBy {
-      instance.copy(cancelled = true).cancelSession(
+      instance.copy(cancelled = true).cancelSessionAndAttendances(
         reason = "Staff unavailable",
         by = "USER1",
         cancelComment = "Resume tomorrow",
-      ) {
-        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!) }
-      }
+        cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule instance has already been cancelled")
   }
@@ -133,13 +154,12 @@ class ScheduledInstanceTest {
   @Test
   fun `cannot cancel a past scheduled instance`() {
     assertThatThrownBy {
-      instance.copy(sessionDate = today.minusDays(7).toLocalDate()).cancelSession(
+      instance.copy(sessionDate = today.minusWeeks(1)).cancelSessionAndAttendances(
         reason = "Staff unavailable",
         by = "USER1",
         cancelComment = "Resume tomorrow",
-      ) {
-        it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANC"]!!) }
-      }
+        cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule instance has ended")
   }
