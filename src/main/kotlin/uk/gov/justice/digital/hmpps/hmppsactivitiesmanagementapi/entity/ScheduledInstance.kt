@@ -96,18 +96,30 @@ data class ScheduledInstance(
 
   fun attendanceRequired() = activitySchedule.activity.attendanceRequired
 
-  fun cancelSession(reason: String, by: String, cancelComment: String?, f: (List<Attendance>) -> Unit) {
-    if (cancelled) throw IllegalArgumentException("The schedule instance has already been cancelled")
+  /**
+   * This will not cancel suspended attendances. If you wish to cancel a suspended attendance then you must cancel the
+   * attendance directly.
+   */
+  fun cancelSessionAndAttendances(
+    reason: String,
+    by: String,
+    cancelComment: String?,
+    cancellationReason: AttendanceReason,
+  ) {
+    require(!cancelled) { "The schedule instance has already been cancelled" }
 
     val today = LocalDateTime.now().withNano(0)
-    if (sessionDate < today.toLocalDate()) throw IllegalArgumentException("The schedule instance has ended")
+
+    require(sessionDate >= today.toLocalDate()) { "The schedule instance has ended" }
 
     cancelled = true
     cancelledReason = reason
     cancelledTime = today
     cancelledBy = by
     comment = cancelComment
-    if (attendances.isNotEmpty()) f(attendances)
+    attendances
+      .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
+      .forEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
   }
 }
 

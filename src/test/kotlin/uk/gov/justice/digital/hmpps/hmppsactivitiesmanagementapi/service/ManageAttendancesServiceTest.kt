@@ -192,9 +192,7 @@ class ManageAttendancesServiceTest {
   @Test
   fun `attendance record is created, paid and marked as not required when scheduled instance is cancelled`() {
     instance.activitySchedule.activity.attendanceRequired = true
-    instance.cancelSession("Cancel test", "user", "comment") {
-      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
-    }
+    instance.cancelSessionAndAttendances("Cancel test", "user", "comment", attendanceReason(AttendanceReasonEnum.CANCELLED))
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
@@ -226,9 +224,7 @@ class ManageAttendancesServiceTest {
   fun `attendance record is created and marked as not attended when scheduled instance is cancelled but allocation suspended`() {
     instance.activitySchedule.activity.attendanceRequired = true
     allocation.userSuspend(today.atStartOfDay(), "reason", "user")
-    instance.cancelSession("Cancel test", "user", "comment") {
-      it.forEach { attendance -> attendance.cancel(attendanceReasons()["CANCELLED"]!!) }
-    }
+    instance.cancelSessionAndAttendances("Cancel test", "user", "comment", attendanceReason(AttendanceReasonEnum.CANCELLED))
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
