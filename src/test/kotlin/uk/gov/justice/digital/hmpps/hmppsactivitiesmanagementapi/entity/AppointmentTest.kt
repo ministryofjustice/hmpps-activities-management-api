@@ -99,9 +99,12 @@ class AppointmentTest {
   }
 
   @Test
-  fun `usernames includes created by, updated by and occurrence updated by`() {
-    val entity = appointmentEntity(createdBy = "CREATE.USER", updatedBy = "UPDATE.USER").apply { occurrences().first().updatedBy = "OCCURRENCE.UPDATE.USER" }
-    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "OCCURRENCE.UPDATE.USER")
+  fun `usernames includes created by, updated by and occurrence updated by and cancelled by`() {
+    val entity = appointmentEntity(createdBy = "CREATE.USER", updatedBy = "UPDATE.USER").apply {
+      occurrences().first().updatedBy = "OCCURRENCE.UPDATE.USER"
+      occurrences().first().cancelledBy = "OCCURRENCE.CANCEL.USER"
+    }
+    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "OCCURRENCE.UPDATE.USER", "OCCURRENCE.CANCEL.USER")
   }
 
   @Test
