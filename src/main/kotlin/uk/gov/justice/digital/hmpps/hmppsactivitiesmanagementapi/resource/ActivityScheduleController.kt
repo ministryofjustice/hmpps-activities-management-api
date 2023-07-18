@@ -112,7 +112,7 @@ class ActivityScheduleController(
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
     @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @RequestHeader(AUTHORIZATION) authToken: String,
+    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
   ): List<Allocation> {
     val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
     return scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, client)
@@ -171,7 +171,7 @@ class ActivityScheduleController(
   fun getScheduleId(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @RequestHeader(AUTHORIZATION) authToken: String,
+    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
   ): ActivitySchedule {
     val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
     return scheduleService.getScheduleById(scheduleId, client)
@@ -313,7 +313,7 @@ class ActivityScheduleController(
     @ParameterObject @PageableDefault
     pageable: Pageable,
     @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @RequestHeader(AUTHORIZATION) authToken: String,
+    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
   ): Page<ActivityCandidate> {
     val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
     val candidates = candidatesService.getActivityCandidates(

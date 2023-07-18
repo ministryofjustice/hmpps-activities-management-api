@@ -99,7 +99,7 @@ class ActivityController(
   fun getActivityById(
     @PathVariable("activityId") activityId: Long,
     @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @RequestHeader(AUTHORIZATION) authToken: String,
+    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
   ): Activity {
     val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
     return activityService.getActivityById(activityId, client)
