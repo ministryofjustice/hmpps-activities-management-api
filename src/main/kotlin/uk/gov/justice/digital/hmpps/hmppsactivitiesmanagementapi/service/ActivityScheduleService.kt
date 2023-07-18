@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -81,18 +80,18 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, client: ClientDetails): List<Allocation> {
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> {
     val schedule = repository.findOrThrowNotFound(scheduleId)
-    checkCaseLoadAccess(schedule.activity.prisonCode, client)
+    checkCaseLoadAccess(schedule.activity.prisonCode)
 
     return schedule.allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
   }
 
-  fun getScheduleById(scheduleId: Long, client: ClientDetails): ModelActivitySchedule {
+  fun getScheduleById(scheduleId: Long): ModelActivitySchedule {
     val schedule = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
-    checkCaseLoadAccess(schedule.activity.prisonCode, client)
+    checkCaseLoadAccess(schedule.activity.prisonCode)
     return schedule
   }
 

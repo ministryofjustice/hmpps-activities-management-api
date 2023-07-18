@@ -11,7 +11,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
-import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -20,7 +19,6 @@ import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -28,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Candida
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ClientDetailsExtractor
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
@@ -40,10 +37,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @MockBean
   private lateinit var candidatesService: CandidatesService
 
-  @MockBean
-  private lateinit var clientDetailsExtractor: ClientDetailsExtractor
-
-  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, clientDetailsExtractor)
+  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService)
 
   private fun MockMvc.getActivityScheduleCapacity(activityScheduleId: Long) =
     get("/schedules/{activityScheduleId}/capacity", activityScheduleId)
@@ -52,7 +46,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   fun `200 response when get allocations by schedule identifier`() {
     val expectedAllocations = activityEntity().schedules().first().allocations().toModelAllocations()
 
-    whenever(activityScheduleService.getAllocationsBy(1, true, ClientDetails())).thenReturn(expectedAllocations)
+    whenever(activityScheduleService.getAllocationsBy(1, true)).thenReturn(expectedAllocations)
 
     val response = mockMvc.getAllocationsByScheduleId(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -61,12 +55,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedAllocations))
 
-    verify(activityScheduleService).getAllocationsBy(1, true, ClientDetails())
+    verify(activityScheduleService).getAllocationsBy(1, true)
   }
 
   @Test
   fun `404 response when get allocations by schedule identifier not found`() {
-    whenever(activityScheduleService.getAllocationsBy(-99, true, ClientDetails())).thenThrow(EntityNotFoundException("Not found"))
+    whenever(activityScheduleService.getAllocationsBy(-99, true)).thenThrow(EntityNotFoundException("Not found"))
 
     val response = mockMvc.getAllocationsByScheduleId(-99)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -83,7 +77,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   fun `200 response when get schedule lite by schedule identifier`() {
     val expected = activityEntity().schedules().first().toModelSchedule()
 
-    whenever(activityScheduleService.getScheduleById(1, ClientDetails())).thenReturn(expected)
+    whenever(activityScheduleService.getScheduleById(1)).thenReturn(expected)
 
     val response = mockMvc.getScheduleById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -91,12 +85,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expected))
-    verify(activityScheduleService).getScheduleById(1, ClientDetails())
+    verify(activityScheduleService).getScheduleById(1)
   }
 
   @Test
   fun `404 response when get schedule by id not found`() {
-    whenever(activityScheduleService.getScheduleById(-99, ClientDetails())).thenThrow(EntityNotFoundException("not found"))
+    whenever(activityScheduleService.getScheduleById(-99)).thenThrow(EntityNotFoundException("not found"))
 
     val response = mockMvc.getScheduleById(-99)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -105,7 +99,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
     assertThat(response.contentAsString).contains("not found")
 
-    verify(activityScheduleService).getScheduleById(-99, ClientDetails())
+    verify(activityScheduleService).getScheduleById(-99)
   }
 
   private fun MockMvc.getScheduleById(scheduleId: Long) =

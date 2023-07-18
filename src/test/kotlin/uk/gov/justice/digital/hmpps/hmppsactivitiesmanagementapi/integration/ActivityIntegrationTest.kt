@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -554,16 +553,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  // @Disabled
   @Sql(
     "classpath:test_data/seed-activity-id-2.sql",
   )
   @Test
-  @Disabled
   fun `attempting to get an activity from a different caseload returns a 403`() {
     webTestClient.get()
       .uri("/activities/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(isClientToken = false))
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden

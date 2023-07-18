@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -86,12 +85,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  @Disabled
   fun `403 when fetching allocations for the wrong case load`() {
     webTestClient.get()
       .uri("/schedules/1/allocations")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(isClientToken = false))
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden
@@ -307,12 +305,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
-  @Disabled
   fun `403 when fetching candidates for the wrong case load`() {
     webTestClient.get()
       .uri("/schedules/1/candidates")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(isClientToken = false))
       .header(CASELOAD_ID, "MDI")
       .exchange()
       .expectStatus().isForbidden

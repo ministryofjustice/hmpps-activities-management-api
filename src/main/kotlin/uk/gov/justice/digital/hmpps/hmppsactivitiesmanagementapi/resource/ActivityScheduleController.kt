@@ -17,13 +17,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
@@ -32,16 +30,13 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import java.security.Principal
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ClientDetailsExtractor
 
 // TODO add pre-auth annotations to enforce roles when we have them
 
@@ -50,7 +45,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ClientDeta
 class ActivityScheduleController(
   private val scheduleService: ActivityScheduleService,
   private val candidatesService: CandidatesService,
-  private val clientDetailsExtractor: ClientDetailsExtractor
 ) {
 
   @GetMapping(value = ["/{scheduleId}/allocations"])
@@ -111,12 +105,8 @@ class ActivityScheduleController(
     )
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
-    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
-  ): List<Allocation> {
-    val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
-    return scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, client)
-  }
+  ): List<Allocation> =
+    scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
 
   @GetMapping(value = ["/{scheduleId}"])
   @ResponseBody
@@ -170,12 +160,7 @@ class ActivityScheduleController(
   )
   fun getScheduleId(
     @PathVariable("scheduleId") scheduleId: Long,
-    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
-  ): ActivitySchedule {
-    val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
-    return scheduleService.getScheduleById(scheduleId, client)
-  }
+  ): ActivitySchedule = scheduleService.getScheduleById(scheduleId)
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
@@ -312,17 +297,13 @@ class ActivityScheduleController(
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
-    @RequestHeader(CASELOAD_ID) caseLoadId: String?,
-    @Parameter(hidden = true) @RequestHeader(AUTHORIZATION) authToken: String,
   ): Page<ActivityCandidate> {
-    val client = clientDetailsExtractor.extract(caseLoadId = caseLoadId, bearerToken = authToken)
     val candidates = candidatesService.getActivityCandidates(
       scheduleId,
       suitableIncentiveLevel,
       suitableRiskLevel,
       suitableForEmployed,
       search,
-      client,
     )
 
     val start = pageable.offset.toInt()

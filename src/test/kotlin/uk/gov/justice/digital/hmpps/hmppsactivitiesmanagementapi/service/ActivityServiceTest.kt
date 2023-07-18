@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
@@ -42,7 +43,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -50,6 +50,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseLoadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseLoadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalTime
@@ -126,6 +128,11 @@ class ActivityServiceTest {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
     whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("MDI")).thenReturn(transform(prisonRegime()))
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseLoadIdFromRequestHeader()
   }
 
   @Test
@@ -237,22 +244,22 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
-    val prisonCode = "123"
+    addCaseLoadIdToRequestHeader("123")
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThat(service.getActivityById(1, ClientDetails(caseLoadId = prisonCode))).isInstanceOf(ModelActivity::class.java)
+    assertThat(service.getActivityById(1)).isInstanceOf(ModelActivity::class.java)
   }
 
   @Test
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThatThrownBy { service.getActivityById(1, ClientDetails()) }.isInstanceOf(CaseLoadAccessException::class.java)
+    assertThatThrownBy { service.getActivityById(1) }.isInstanceOf(CaseLoadAccessException::class.java)
   }
 
   @Test
   fun `getActivityById throws entity not found exception for unknown activity ID`() {
-    assertThatThrownBy { service.getActivityById(-1, ClientDetails()) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity -1 not found")
   }
 

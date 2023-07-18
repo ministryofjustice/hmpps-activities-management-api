@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -21,11 +22,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ClientDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseLoadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import java.time.LocalDate
 import java.util.Optional
@@ -51,16 +53,21 @@ class ActivityScheduleServiceTest {
     bookingId = 1,
   )
 
+  @AfterEach
+  fun tearDown() {
+    clearCaseLoadIdFromRequestHeader()
+  }
+
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
-    val prisonCode = "123"
+    addCaseLoadIdToRequestHeader("123")
     val schedule = schedule().apply {
       allocations().first().startDate = LocalDate.now()
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(scheduleId = 1, client = ClientDetails(caseLoadId = prisonCode))
+    val allocations = service.getAllocationsBy(scheduleId = 1)
 
     assertThat(allocations).hasSize(1)
     assertThat(allocations).containsExactlyInAnyOrder(*schedule.allocations().toModelAllocations().toTypedArray())
@@ -68,14 +75,14 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `ended allocations for a given schedule are not returned`() {
-    val prisonCode = "123"
+    addCaseLoadIdToRequestHeader("123")
     val schedule = schedule().apply {
       allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
     }
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    assertThat(service.getAllocationsBy(scheduleId = 1, client = ClientDetails(caseLoadId = prisonCode))).isEmpty()
+    assertThat(service.getAllocationsBy(scheduleId = 1)).isEmpty()
   }
 
   @Test
@@ -90,12 +97,13 @@ class ActivityScheduleServiceTest {
     val schedule = mock<ActivitySchedule>()
     val activity = mock<Activity>()
 
+    addCaseLoadIdToRequestHeader(prisonCode)
     whenever(schedule.activity).thenReturn(activity)
     whenever(activity.prisonCode).thenReturn(prisonCode)
     whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(1, false, client = ClientDetails(caseLoadId = prisonCode))
+    val allocations = service.getAllocationsBy(1, false)
     assertThat(allocations).hasSize(4)
     assertThat(allocations).containsExactlyInAnyOrder(
       *listOf(active, suspended, ended, future).toModelAllocations().toTypedArray(),
@@ -104,7 +112,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `throws entity not found exception for unknown activity schedule`() {
-    assertThatThrownBy { service.getAllocationsBy(-99, client = ClientDetails()) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.getAllocationsBy(-99) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule -99 not found")
   }
 
