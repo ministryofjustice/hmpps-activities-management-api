@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -221,7 +220,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   fun `200 response when get activity by ID found`() {
     val activity = activityModel(activityEntity())
 
-    whenever(activityService.getActivityById(eq(1))).thenReturn(activity)
+    whenever(activityService.getActivityById(1)).thenReturn(activity)
 
     val response = mockMvc.getActivityById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }

@@ -46,7 +46,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   fun `200 response when get allocations by schedule identifier`() {
     val expectedAllocations = activityEntity().schedules().first().allocations().toModelAllocations()
 
-    whenever(activityScheduleService.getAllocationsBy(1, true)).thenReturn(expectedAllocations)
+    whenever(activityScheduleService.getAllocationsBy(1)).thenReturn(expectedAllocations)
 
     val response = mockMvc.getAllocationsByScheduleId(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -55,12 +55,12 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedAllocations))
 
-    verify(activityScheduleService).getAllocationsBy(1, true)
+    verify(activityScheduleService).getAllocationsBy(1)
   }
 
   @Test
   fun `404 response when get allocations by schedule identifier not found`() {
-    whenever(activityScheduleService.getAllocationsBy(-99, true)).thenThrow(EntityNotFoundException("Not found"))
+    whenever(activityScheduleService.getAllocationsBy(-99)).thenThrow(EntityNotFoundException("Not found"))
 
     val response = mockMvc.getAllocationsByScheduleId(-99)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }

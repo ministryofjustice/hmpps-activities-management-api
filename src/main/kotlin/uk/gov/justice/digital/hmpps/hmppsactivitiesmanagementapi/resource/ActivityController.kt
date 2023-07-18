@@ -90,11 +90,8 @@ class ActivityController(
       ),
     ],
   )
-  fun getActivityById(
-    @PathVariable("activityId") activityId: Long,
-  ): Activity {
-    return activityService.getActivityById(activityId)
-  }
+  fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
+    activityService.getActivityById(activityId)
 
   @GetMapping(value = ["/{activityId}/filtered"])
   @ResponseBody

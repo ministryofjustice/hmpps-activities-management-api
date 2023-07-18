@@ -67,7 +67,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    val allocations = service.getAllocationsBy(scheduleId = 1)
+    val allocations = service.getAllocationsBy(1)
 
     assertThat(allocations).hasSize(1)
     assertThat(allocations).containsExactlyInAnyOrder(*schedule.allocations().toModelAllocations().toTypedArray())
@@ -82,7 +82,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 
-    assertThat(service.getAllocationsBy(scheduleId = 1)).isEmpty()
+    assertThat(service.getAllocationsBy(1)).isEmpty()
   }
 
   @Test

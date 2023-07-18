@@ -105,8 +105,7 @@ class ActivityScheduleController(
     )
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
-  ): List<Allocation> =
-    scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
+  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
 
   @GetMapping(value = ["/{scheduleId}"])
   @ResponseBody
@@ -158,9 +157,8 @@ class ActivityScheduleController(
       ),
     ],
   )
-  fun getScheduleId(
-    @PathVariable("scheduleId") scheduleId: Long,
-  ): ActivitySchedule = scheduleService.getScheduleById(scheduleId)
+  fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
+    scheduleService.getScheduleById(scheduleId)
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
