@@ -183,7 +183,7 @@ class ActivityService(
         scheduleWeeks = 1,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(activity, schedule.slots(), null, null)
+        schedule.addInstances(schedule.slots(), null, null)
 
         return transform(activityRepository.saveAndFlush(activity))
       }
@@ -222,43 +222,42 @@ class ActivityService(
    * Note: we add instances even if the activity hasn't started for unlock list purposes.
    */
   private fun ActivitySchedule.addInstances(
-    activity: Activity,
     slots: List<ActivityScheduleSlot>,
     fromDate: LocalDate? = null,
     toDate: LocalDate? = null,
   ) {
-    val today = LocalDate.now()
-    val endDay = today.plusDays(daysInAdvance)
-    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+    val tomorrow = LocalDate.now().plusDays(1)
+    val endDay = LocalDate.now().plusDays(daysInAdvance)
+    val listOfDatesToSchedule = tomorrow.datesUntil(endDay).toList()
 
-    listOfDatesToSchedule.forEach { day ->
-      slots.forEach { slot ->
-        val daysOfWeek = getDaysOfWeek(
-          Slot(
-            timeSlot = "",
-            monday = slot.mondayFlag,
-            tuesday = slot.tuesdayFlag,
-            wednesday = slot.wednesdayFlag,
-            thursday = slot.thursdayFlag,
-            friday = slot.fridayFlag,
-            saturday = slot.saturdayFlag,
-            sunday = slot.sundayFlag,
-          ),
-        )
+    listOfDatesToSchedule.filter { this.isActiveOn(it) }
+      .filter { fromDate == null || it >= fromDate }
+      .filter { toDate == null || it <= toDate }
+      .forEach { day ->
+        val weekNumber = this.getWeekNumber(day)
 
-        if (activity.isActive(day) && day.dayOfWeek in daysOfWeek &&
-          (
-            runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
-            ) &&
-          (fromDate == null || day >= fromDate) &&
-          (toDate == null || day <= toDate)
-        ) {
-          if (this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime)) {
+        slots.filter { it.weekNumber == weekNumber }.forEach { slot ->
+          val daysOfWeek = getDaysOfWeek(
+            Slot(
+              timeSlot = "",
+              monday = slot.mondayFlag,
+              tuesday = slot.tuesdayFlag,
+              wednesday = slot.wednesdayFlag,
+              thursday = slot.thursdayFlag,
+              friday = slot.fridayFlag,
+              saturday = slot.saturdayFlag,
+              sunday = slot.sundayFlag,
+            ),
+          )
+
+          if (day.dayOfWeek in daysOfWeek &&
+            this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime) &&
+            (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day))
+          ) {
             this.addInstance(sessionDate = day, slot = slot)
           }
         }
       }
-    }
   }
 
   private fun getLocationForSchedule(activity: Activity, locationId: Long?) =
@@ -394,14 +393,16 @@ class ActivityService(
 
       activity.startDate = newStartDate
       activity.schedules().forEach {
-        if (it.startDate < newStartDate) {
-          // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          it.removeInstances(it.startDate, newStartDate.minusDays(1))
-        } else if (newStartDate < it.startDate) {
-          // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addInstances(activity, it.slots(), newStartDate, it.startDate.minusDays(1))
-        }
+        val currentScheduleStartDate = it.startDate
         it.startDate = newStartDate
+
+        if (currentScheduleStartDate < newStartDate) {
+          // start date has been moved later so remove all instances between the original start date and the day before the new start date
+          it.removeInstances(currentScheduleStartDate, newStartDate.minusDays(1))
+        } else if (newStartDate < currentScheduleStartDate) {
+          // start date has been moved earlier so create new instances between the new start date and the day before the original start date
+          it.addInstances(it.slots(), newStartDate, currentScheduleStartDate.minusDays(1))
+        }
       }
     }
   }
@@ -418,7 +419,7 @@ class ActivityService(
           (it.endDate)?.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
         } else if (it.endDate !== null && it.endDate!! < newEndDate) {
           // end date has been moved later so add new instances from the day after the original end date up to the new end date
-          it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1), newEndDate)
+          it.addInstances(it.slots(), it.endDate!!.plusDays(1), newEndDate)
         }
         it.endDate = newEndDate
       }
@@ -452,7 +453,7 @@ class ActivityService(
         schedule.runsOnBankHoliday = runsOnBankHoliday
 
         if (runsOnBankHoliday) {
-          schedule.addInstances(activity, schedule.slots())
+          schedule.addInstances(schedule.slots())
         } else {
           val futureSessionDatesToRemove = schedule.instances()
             .filter { it.sessionDate > LocalDate.now() && bankHolidayService.isEnglishBankHoliday(it.sessionDate) }
@@ -585,7 +586,7 @@ class ActivityService(
 
     activity.schedules().forEach {
       it.updateSlotsAndRemoveRedundantInstances(slots.toMap(timeSlots))
-      it.addInstances(activity, it.slots())
+      it.addInstances(it.slots())
     }
   }
 

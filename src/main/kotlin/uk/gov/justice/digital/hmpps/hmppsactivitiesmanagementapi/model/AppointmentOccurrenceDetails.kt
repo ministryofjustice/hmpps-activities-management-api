@@ -210,4 +210,21 @@ data class AppointmentOccurrenceDetails(
     """,
   )
   val updatedBy: UserSummary?,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment occurrence was cancelled
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val cancelled: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The summary of the user who cancelled this appointment occurrence
+    """,
+  )
+  val cancelledBy: UserSummary?,
 )

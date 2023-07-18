@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
@@ -53,6 +54,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseLoadAc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseLoadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
@@ -104,7 +106,9 @@ class ActivityServiceTest {
 
   private val activityCaptor = argumentCaptor<ActivityEntity>()
 
-  private val service = ActivityService(
+  private fun service(
+    daysInAdvance: Long = 7L,
+  ) = ActivityService(
     activityRepository,
     activityCategoryRepository,
     activityTierRepository,
@@ -114,8 +118,9 @@ class ActivityServiceTest {
     prisonApiClient,
     prisonRegimeService,
     bankHolidayService,
-    daysInAdvance = 7L,
+    daysInAdvance = daysInAdvance,
   )
+
   private val location = Location(
     locationId = 1,
     locationType = "type",
@@ -147,7 +152,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
 
-    service.createActivity(createActivityRequest, "SCH_ACTIVITY")
+    service().createActivity(createActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     verify(activityCategoryRepository).findById(1)
@@ -165,7 +170,7 @@ class ActivityServiceTest {
 
   @Test
   fun `createActivity - start date must be in the future`() {
-    assertThatThrownBy { service.createActivity(activityCreateRequest().copy(startDate = TimeSource.today()), "SCH_ACTIVITY") }
+    assertThatThrownBy { service().createActivity(activityCreateRequest().copy(startDate = TimeSource.today()), "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date must be in the future")
   }
@@ -180,7 +185,7 @@ class ActivityServiceTest {
 
     val createDuplicateActivityRequest = activityCreateRequest()
 
-    assertThatThrownBy { service.createActivity(createDuplicateActivityRequest, "SCH_ACTIVITY") }
+    assertThatThrownBy { service().createActivity(createDuplicateActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Duplicate activity name detected for this prison (MDI): '${createDuplicateActivityRequest.summary}'")
 
@@ -193,7 +198,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(activityCreateRequest.categoryId!!)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.createActivity(activityCreateRequest, "SCH_ACTIVITY") }
+    assertThatThrownBy { service().createActivity(activityCreateRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category ${activityCreateRequest.categoryId} not found")
   }
@@ -205,7 +210,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(activityCreateRequest.tierId!!)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.createActivity(activityCreateRequest(), "SCH_ACTIVITY") }
+    assertThatThrownBy { service().createActivity(activityCreateRequest(), "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Tier ${activityCreateRequest.tierId} not found")
   }
@@ -219,7 +224,7 @@ class ActivityServiceTest {
     whenever(eligibilityRuleRepository.findById(activityCreateRequest.eligibilityRuleIds.first())).thenReturn(Optional.empty())
 
     assertThatThrownBy {
-      service.createActivity(activityCreateRequest, "SCH_ACTIVITY")
+      service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Eligibility Rule ${activityCreateRequest.eligibilityRuleIds.first()} not found")
@@ -237,7 +242,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getStudyArea(any())).thenReturn(Mono.just(studyArea))
     whenever(prisonApiClient.getLocation(createActivityRequest.locationId!!)).thenReturn(Mono.just(location))
 
-    assertThatThrownBy { service.createActivity(createActivityRequest, "SCH_ACTIVITY") }
+    assertThatThrownBy { service().createActivity(createActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The activities prison 'DOES_NOT_MATCH' does not match that of the locations '${location.agencyId}'")
   }
@@ -247,7 +252,7 @@ class ActivityServiceTest {
     addCaseLoadIdToRequestHeader("123")
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThat(service.getActivityById(1)).isInstanceOf(ModelActivity::class.java)
+    assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
   }
 
   @Test
@@ -259,7 +264,7 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivityById throws entity not found exception for unknown activity ID`() {
-    assertThatThrownBy { service.getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service().getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity -1 not found")
   }
 
@@ -272,7 +277,7 @@ class ActivityServiceTest {
       .thenReturn(listOf(activityEntity()))
 
     assertThat(
-      service.getActivitiesByCategoryInPrison(
+      service().getActivitiesByCategoryInPrison(
         "MDI",
         1,
       ),
@@ -285,7 +290,7 @@ class ActivityServiceTest {
   fun `getActivitiesByCategoryInPrison throws entity not found exception for unknown category ID`() {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.getActivitiesByCategoryInPrison("MDI", 1) }
+    assertThatThrownBy { service().getActivitiesByCategoryInPrison("MDI", 1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Category 1 not found")
   }
@@ -296,7 +301,7 @@ class ActivityServiceTest {
       .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
 
     assertThat(
-      service.getActivitiesInPrison(
+      service().getActivitiesInPrison(
         "MDI",
         true,
       ),
@@ -311,7 +316,7 @@ class ActivityServiceTest {
       .thenReturn(listOf(activityEntity(), activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2))))
 
     assertThat(
-      service.getActivitiesInPrison(
+      service().getActivitiesInPrison(
         "MDI",
         false,
       ),
@@ -328,7 +333,7 @@ class ActivityServiceTest {
     whenever(activityScheduleRepository.getAllByActivity(activity))
       .thenReturn(listOf(activitySchedule(activityEntity())))
 
-    assertThat(service.getSchedulesForActivity(1)).isEqualTo(listOf(activitySchedule(activityEntity())).toModelLite())
+    assertThat(service().getSchedulesForActivity(1)).isEqualTo(listOf(activitySchedule(activityEntity())).toModelLite())
 
     verify(activityScheduleRepository, times(1)).getAllByActivity(activity)
   }
@@ -337,7 +342,7 @@ class ActivityServiceTest {
   fun `getSchedulesForActivity throws entity not found exception for unknown activity ID`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.getSchedulesForActivity(1) }
+    assertThatThrownBy { service().getSchedulesForActivity(1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity 1 not found")
   }
@@ -351,7 +356,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel.copy(description = "Reading Measure 1.0")))
 
     assertThatThrownBy {
-      service.createActivity(activityCreateRequest(educationLevel = educationLevel.copy(description = "Reading Measure 2.0")), "SCH_ACTIVITY")
+      service().createActivity(activityCreateRequest(educationLevel = educationLevel.copy(description = "Reading Measure 2.0")), "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The education level description 'Reading Measure 2.0' does not match the NOMIS education level 'Reading Measure 1.0'")
@@ -366,7 +371,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getEducationLevel(inactiveEducationLevel.code)).thenReturn(Mono.just(inactiveEducationLevel))
 
     assertThatThrownBy {
-      service.createActivity(activityCreateRequest(educationLevel = inactiveEducationLevel), "SCH_ACTIVITY")
+      service().createActivity(activityCreateRequest(educationLevel = inactiveEducationLevel), "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The education level code '1' is not active in NOMIS")
@@ -382,7 +387,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getStudyArea(studyArea.code)).thenReturn(Mono.just(studyArea.copy(description = "DOES NOT MATCH")))
 
     assertThatThrownBy {
-      service.createActivity(activityCreateRequest(educationLevel = educationLevel, studyArea = studyArea), "SCH_ACTIVITY")
+      service().createActivity(activityCreateRequest(educationLevel = educationLevel, studyArea = studyArea), "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The study area description 'English Language' does not match the NOMIS study area 'DOES NOT MATCH'")
@@ -398,7 +403,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getStudyArea(studyArea.code)).thenReturn(Mono.just(studyArea.copy(activeFlag = "N")))
 
     assertThatThrownBy {
-      service.createActivity(activityCreateRequest(educationLevel = educationLevel, studyArea = studyArea), "SCH_ACTIVITY")
+      service().createActivity(activityCreateRequest(educationLevel = educationLevel, studyArea = studyArea), "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The study area code 'ENGLA' is not active in NOMIS")
@@ -425,7 +430,7 @@ class ActivityServiceTest {
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
 
-    service.createActivity(createInCellActivityRequest, createdBy)
+    service().createActivity(createInCellActivityRequest, createdBy)
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -455,7 +460,7 @@ class ActivityServiceTest {
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
-    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(1)
     verify(activityTierRepository).findById(1)
@@ -488,7 +493,7 @@ class ActivityServiceTest {
       on { summary } doReturn ("IT level 1")
     }
 
-    assertThatThrownBy { service.updateActivity(moorlandPrisonCode, 1, updateDuplicateActivityRequest, "SCH_ACTIVITY") }
+    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateDuplicateActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
 
@@ -505,7 +510,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category 1 not found")
   }
@@ -522,7 +527,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Tier 1 not found")
   }
@@ -548,7 +553,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
-    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(2)
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
@@ -593,7 +598,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(beforeActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
 
-    service.updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -613,7 +618,7 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    service.updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -629,7 +634,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
-      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date must be in the future.")
   }
@@ -641,7 +646,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
-      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)), "TEST")
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date cannot be after the end date.")
   }
@@ -653,7 +658,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
-      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -665,7 +670,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
-      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -677,7 +682,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
 
     assertThatThrownBy {
-      service.updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity cannot be updated because it is now archived.")
   }
@@ -687,7 +692,7 @@ class ActivityServiceTest {
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
 
     assertThatThrownBy {
-      service.updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity 1 not found.")
   }
@@ -707,7 +712,7 @@ class ActivityServiceTest {
 
     schedule.instances() hasSize 0
 
-    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
+    service().updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
 
     schedule.instances() hasSize 2
     schedule.instances()[0].sessionDate isEqualTo bankHoliday
@@ -730,12 +735,77 @@ class ActivityServiceTest {
     schedule.instances() hasSize 0
 
     // Set up bank holiday first so it can be removed
-    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
+    service().updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = true), updatedBy = "TEST")
     assertThat(schedule.instances()).hasSize(2)
 
-    service.updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = false), updatedBy = "TEST")
+    service().updateActivity(activity.prisonCode, activity.activityId, ActivityUpdateRequest(runsOnBankHoliday = false), updatedBy = "TEST")
 
     schedule.instances() hasSize 1
     schedule.instances().first().sessionDate isEqualTo dayAfterBankHoliday
+  }
+
+  @Test
+  fun `updateActivity - update start date of multi-week schedule`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow.plusDays(14),
+      noSchedules = true,
+    ).also {
+      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(
+      activitySchedule(activity, scheduleWeeks = 2, noSlots = true, noInstances = true, noAllocations = true),
+    ).apply {
+      addSlot(
+        ActivityScheduleSlot.valueOf(
+          this,
+          1,
+          LocalTime.NOON,
+          LocalTime.NOON.plusHours(1),
+          setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+        ),
+      )
+      addSlot(
+        ActivityScheduleSlot.valueOf(
+          this,
+          2,
+          LocalTime.NOON,
+          LocalTime.NOON.plusHours(1),
+          setOf(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY),
+        ),
+      )
+    }
+
+    schedule.instances() hasSize 0
+
+    val daysToSchedule = 14L
+
+    service(daysInAdvance = daysToSchedule).updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(startDate = tomorrow),
+      updatedBy = "TEST",
+    )
+
+    // After updating there should be at least one instance for both week 1 and 2 scheduled on the correct day
+    with(schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 1 }) {
+      assertThat(this.size).isGreaterThanOrEqualTo(1)
+
+      assertThat(
+        this.filter { listOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY).contains(it.dayOfWeek()) }.size,
+      ).isGreaterThanOrEqualTo(1)
+      this.filter { listOf(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY).contains(it.dayOfWeek()) } hasSize 0
+    }
+
+    with(schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 2 }) {
+      assertThat(this.size).isGreaterThanOrEqualTo(1)
+
+      assertThat(
+        this.filter { listOf(DayOfWeek.TUESDAY, DayOfWeek.TUESDAY).contains(it.dayOfWeek()) }.size,
+      ).isGreaterThanOrEqualTo(1)
+      this.filter { listOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY).contains(it.dayOfWeek()) } hasSize 0
+    }
   }
 }

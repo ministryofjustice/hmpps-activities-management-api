@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -18,14 +17,13 @@ class AttendanceTest {
   private val activitySchedule = activity.schedules().first()
   private val instance = activitySchedule.instances().first()
   private val attendance = instance.attendances.first()
-  private val today = LocalDateTime.now()
 
   @Test
   fun `uncancel method sets the state correctly`() {
     val attendance = Attendance(
       scheduledInstance = instance,
       prisonerNumber = "P000111",
-      attendanceReason = attendanceReasons()["ATTENDED"]!!,
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
@@ -49,7 +47,7 @@ class AttendanceTest {
     val attendance = Attendance(
       scheduledInstance = instance,
       prisonerNumber = "P000111",
-      attendanceReason = attendanceReasons()["SUSPENDED"]!!,
+      attendanceReason = attendanceReason(AttendanceReasonEnum.SUSPENDED),
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = recordedBy,
@@ -69,47 +67,41 @@ class AttendanceTest {
   }
 
   @Test
-  fun `can cancel attendance`() {
-    val attendanceReason = attendanceReasons()["CANCELLED"]!!
-    val canceledInstance =
-      instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
-    val attendanceWithCanceledInstance = attendance.copy(scheduledInstance = canceledInstance)
+  fun `can cancel attendance independently of its instance`() {
+    attendance.cancel(reason = attendanceReason(AttendanceReasonEnum.CANCELLED), cancelledReason = "By test reason", cancelledBy = "By test user")
 
-    attendanceWithCanceledInstance.cancel(attendanceReason)
-    assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(true)
-    assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReason)
-    assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
-    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
-      LocalDateTime.now(),
-      Assertions.within(1, ChronoUnit.SECONDS),
-    )
-    assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
+    with(attendance) {
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(issuePayment).isEqualTo(true)
+      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      assertThat(comment).isEqualTo("By test reason")
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+      assertThat(recordedBy).isEqualTo("By test user")
+    }
   }
 
   @Test
-  fun `cancel does not alter the attendance reason of a suspended prisoner`() {
-    val attendanceReason = attendanceReasons()["CANCELLED"]!!
-    val canceledInstance =
-      instance.copy(cancelledBy = "USER1", cancelledTime = today, cancelledReason = "Staff unavailable")
-    val attendanceWithCanceledInstance =
-      attendance.copy(attendanceReason = attendanceReasons()["SUSPENDED"], scheduledInstance = canceledInstance)
+  fun `confirm cancel attendance defaults on cancel`() {
+    with(attendance.cancel(reason = attendanceReason(AttendanceReasonEnum.CANCELLED))) {
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(comment).isNull()
+    }
+  }
 
-    attendanceWithCanceledInstance.cancel(attendanceReason)
-    assertThat(attendanceWithCanceledInstance.status()).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendanceWithCanceledInstance.issuePayment).isEqualTo(false)
-    assertThat(attendanceWithCanceledInstance.attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
-    assertThat(attendanceWithCanceledInstance.comment).isEqualTo("Staff unavailable")
-    assertThat(attendanceWithCanceledInstance.recordedTime).isCloseTo(
-      LocalDateTime.now(),
-      Assertions.within(1, ChronoUnit.SECONDS),
-    )
-    assertThat(attendanceWithCanceledInstance.recordedBy).isEqualTo("USER1")
+  @Test
+  fun `cancel attendance fails when if already cancelled`() {
+    val attendance = Attendance(scheduledInstance = instance, prisonerNumber = "123456", attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED))
+
+    assertThatThrownBy {
+      attendance.cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance already cancelled")
   }
 
   @Test
   fun `marking attendance records history`() {
-    val attendanceReason = attendanceReasons()["OTHER"]!!
+    val attendanceReason = attendanceReason(AttendanceReasonEnum.OTHER)
     val otherAttendance = attendance.copy(
       status = AttendanceStatus.COMPLETED,
       attendanceReason = attendanceReason,
@@ -237,7 +229,7 @@ class AttendanceTest {
     assertThatThrownBy {
       attendance.mark(
         principalName = "New user",
-        reason = attendanceReasons()["ATTENDED"]!!,
+        reason = attendanceReason(AttendanceReasonEnum.ATTENDED),
         newStatus = AttendanceStatus.COMPLETED,
         newComment = null,
         newIssuePayment = null,
@@ -293,7 +285,7 @@ class AttendanceTest {
     val attendance = Attendance(
       scheduledInstance = instance,
       prisonerNumber = "P000111",
-      attendanceReason = attendanceReasons()["ATTENDED"]!!,
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedTime = LocalDateTime.now().minusDays(1),

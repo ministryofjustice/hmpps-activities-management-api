@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
@@ -169,8 +169,7 @@ class ScheduledInstanceServiceTest {
 
       whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
       whenever(repository.saveAndFlush(instance)).thenReturn(instance)
-      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED))
-        .thenReturn(attendanceReasons()["CANCELLED"])
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReason(AttendanceReasonEnum.CANCELLED))
 
       service.cancelScheduledInstance(
         instance.scheduledInstanceId,
@@ -202,6 +201,7 @@ class ScheduledInstanceServiceTest {
       instance.cancelled = true
 
       whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReason(AttendanceReasonEnum.CANCELLED))
 
       assertThrows<IllegalArgumentException> {
         service.cancelScheduledInstance(

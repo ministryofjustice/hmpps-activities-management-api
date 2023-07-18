@@ -477,6 +477,110 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `fails to initialise if schedule weeks not greater than zero`() {
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.now(),
+        scheduleWeeks = 0,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Schedule weeks must be greater than zero.")
+
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.now(),
+        scheduleWeeks = -1,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Schedule weeks must be greater than zero.")
+  }
+
+  @Test
+  fun `gets schedule week number for given date (1 week schedule)`() {
+    val activitySchedule = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = LocalDate.parse("2023-07-14"),
+      scheduleWeeks = 1,
+    )
+
+    listOf(
+      Pair(LocalDate.parse("2023-07-14"), 1),
+      Pair(LocalDate.parse("2023-07-21"), 1),
+      Pair(LocalDate.parse("2023-08-01"), 1),
+      Pair(LocalDate.parse("2023-12-15"), 1),
+      Pair(LocalDate.parse("2024-01-01"), 1),
+      Pair(LocalDate.parse("2024-01-15"), 1),
+      Pair(LocalDate.parse("2028-08-15"), 1),
+    ).forEach {
+      assertThat(activitySchedule.getWeekNumber(it.first)).isEqualTo(it.second)
+    }
+  }
+
+  @Test
+  fun `gets schedule week number for given date (2 week schedule)`() {
+    val activitySchedule = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = LocalDate.parse("2023-07-14"),
+      scheduleWeeks = 2,
+    )
+
+    listOf(
+      Pair(LocalDate.parse("2023-07-14"), 1),
+      Pair(LocalDate.parse("2023-07-21"), 2),
+      Pair(LocalDate.parse("2023-08-01"), 2),
+      Pair(LocalDate.parse("2023-12-15"), 1),
+      Pair(LocalDate.parse("2024-01-01"), 2),
+      Pair(LocalDate.parse("2024-01-15"), 2),
+      Pair(LocalDate.parse("2028-08-15"), 1),
+    ).forEach {
+      assertThat(activitySchedule.getWeekNumber(it.first)).isEqualTo(it.second)
+    }
+  }
+
+  @Test
+  fun `getWeekNumber() throws error when date comes before activity start date`() {
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.parse("2023-07-13"),
+        scheduleWeeks = 1,
+      ).getWeekNumber(LocalDate.parse("2023-07-12"))
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Date must be within activity schedule range.")
+  }
+
+  @Test
+  fun `getWeekNumber() throws error when date comes after activity end date`() {
+    assertThatThrownBy {
+      ActivitySchedule(
+        activity = activityEntity(
+          startDate = LocalDate.parse("2023-07-13"),
+          endDate = LocalDate.parse("2023-08-13"),
+        ),
+        description = "description",
+        capacity = 1,
+        startDate = LocalDate.parse("2023-07-13"),
+        scheduleWeeks = 1,
+      ).apply {
+        endDate = LocalDate.parse("2023-08-13")
+      }.getWeekNumber(LocalDate.parse("2023-08-14"))
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Date must be within activity schedule range.")
+  }
+
+  @Test
   fun `check activity active status that starts today with open end date`() {
     val scheduleWithNoEndDate = ActivitySchedule(
       activity = activityEntity(),
@@ -915,16 +1019,16 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `slot update does not remove instance with attendance`() {
+  fun `slot update removes redundant instances in the future`() {
     val schedule =
       activitySchedule(activity = activityEntity(startDate = yesterday), noSlots = true, noInstances = true)
 
     assertThat(schedule.slots()).isEmpty()
 
-    val slotOne = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(today.dayOfWeek))
+    val slotOne = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(yesterday.dayOfWeek))
     val slotTwo = schedule.addSlot(LocalTime.MIDNIGHT, LocalTime.NOON, setOf(tomorrow.dayOfWeek))
 
-    val instanceOne = schedule.addInstance(today, slotOne).apply {
+    val instanceOne = schedule.addInstance(yesterday, slotOne).apply {
       attendances.add(
         attendance(),
       )
@@ -933,11 +1037,11 @@ class ActivityScheduleTest {
 
     assertThat(schedule.instances()).containsOnly(instanceOne, instanceTwo)
 
-    val updates = mapOf(Pair(LocalTime.MIDNIGHT, LocalTime.NOON) to setOf(instanceTwo.dayOfWeek()))
+    val updates = mapOf(Pair(LocalTime.MIDNIGHT, LocalTime.NOON) to setOf(today.dayOfWeek))
 
     schedule.updateSlotsAndRemoveRedundantInstances(updates)
 
-    assertThat(schedule.instances()).containsOnly(instanceOne, instanceTwo)
+    assertThat(schedule.instances()).containsOnly(instanceOne)
   }
 
   @Test
