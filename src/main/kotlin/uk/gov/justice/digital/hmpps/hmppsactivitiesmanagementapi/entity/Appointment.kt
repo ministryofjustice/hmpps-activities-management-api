@@ -110,7 +110,7 @@ data class Appointment(
   }
 
   fun usernames() =
-    listOf(createdBy, updatedBy).union(occurrences().map { occurrence -> occurrence.updatedBy }).filterNotNull()
+    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> listOf(occurrence.updatedBy, occurrence.cancelledBy) }).filterNotNull()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,

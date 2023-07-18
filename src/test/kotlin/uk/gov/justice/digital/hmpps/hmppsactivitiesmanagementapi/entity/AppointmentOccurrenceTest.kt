@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod as AppointmentRepeatPeriodEnity
 
@@ -352,6 +353,7 @@ class AppointmentOccurrenceTest {
   fun `entity to details mapping users not found`() {
     val appointment = appointmentEntity()
     val entity = appointment.occurrences().first()
+    entity.cancelledBy = "CANCEL.USER"
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = emptyMap<String, UserDetail>()
@@ -375,6 +377,11 @@ class AppointmentOccurrenceTest {
       assertThat(updatedBy!!.username).isEqualTo("UPDATE.USER")
       assertThat(updatedBy!!.firstName).isEqualTo("UNKNOWN")
       assertThat(updatedBy!!.lastName).isEqualTo("UNKNOWN")
+      assertThat(cancelledBy).isNotNull
+      assertThat(cancelledBy!!.id).isEqualTo(-1)
+      assertThat(cancelledBy!!.username).isEqualTo("CANCEL.USER")
+      assertThat(cancelledBy!!.firstName).isEqualTo("UNKNOWN")
+      assertThat(cancelledBy!!.lastName).isEqualTo("UNKNOWN")
     }
   }
 
@@ -429,6 +436,70 @@ class AppointmentOccurrenceTest {
     with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
+    }
+  }
+
+  @Test
+  fun `entity to details mapping cancelled by`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    entity.cancelled = LocalDateTime.now()
+    entity.cancellationReason = AppointmentCancellationReason(2, "Cancelled", false)
+    entity.cancelledBy = "CANCEL.USER"
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+      entity.cancelledBy!! to userDetail(3, "CANCEL.USER", "CANCEL", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(isCancelled).isTrue
+      assertThat(cancelled).isEqualTo(entity.cancelled)
+      assertThat(cancelledBy).isNotNull
+      assertThat(cancelledBy!!.id).isEqualTo(3)
+      assertThat(cancelledBy!!.username).isEqualTo("CANCEL.USER")
+      assertThat(cancelledBy!!.firstName).isEqualTo("CANCEL")
+      assertThat(cancelledBy!!.lastName).isEqualTo("USER")
+    }
+  }
+
+  @Test
+  fun `entity to details mapping cancelled by null`() {
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    entity.cancelled = null
+    entity.cancellationReason = null
+    entity.cancelledBy = null
+    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+    )
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      assertThat(isCancelled).isFalse
+      assertThat(cancelled).isNull()
+      assertThat(cancelledBy).isNull()
     }
   }
 

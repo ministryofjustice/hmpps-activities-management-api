@@ -176,6 +176,12 @@ data class AppointmentOccurrence(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
+      cancelled,
+      if (cancelledBy == null) {
+        null
+      } else {
+        userMap[cancelledBy].toSummary(cancelledBy!!)
+      },
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {

@@ -272,6 +272,8 @@ fun appointmentOccurrenceDetails(
   createdBy,
   updated,
   updatedBy,
+  null,
+  null,
 )
 
 fun appointmentOccurrenceSearchResultModel() = AppointmentOccurrenceSearchResult(
