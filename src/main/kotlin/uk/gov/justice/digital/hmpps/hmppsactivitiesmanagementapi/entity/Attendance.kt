@@ -79,19 +79,21 @@ data class Attendance(
     return this::class.simpleName + "(attendanceId = $attendanceId )"
   }
 
-  fun cancel(reason: AttendanceReason) = apply {
-    require(attendanceReason?.code != AttendanceReasonEnum.CANCELLED) { "Attendance already cancelled" }
-    mark(
-      principalName = scheduledInstance.cancelledBy,
-      reason = if (attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) reason else attendanceReason,
-      newStatus = AttendanceStatus.COMPLETED,
-      newComment = scheduledInstance.cancelledReason,
-      newIssuePayment = this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED,
-      newIncentiveLevelWarningIssued = null,
-      newCaseNoteId = null,
-      newOtherAbsenceReason = null,
-    )
-  }
+  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) =
+    apply {
+      require(attendanceReason?.code != AttendanceReasonEnum.CANCELLED) { "Attendance already cancelled" }
+
+      mark(
+        principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
+        reason = reason,
+        newStatus = AttendanceStatus.COMPLETED,
+        newComment = cancelledReason,
+        newIssuePayment = true,
+        newIncentiveLevelWarningIssued = null,
+        newCaseNoteId = null,
+        newOtherAbsenceReason = null,
+      )
+    }
 
   fun uncancel() = mark(
     principalName = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.recordedBy,

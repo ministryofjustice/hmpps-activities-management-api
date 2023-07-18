@@ -71,16 +71,12 @@ class ScheduledInstanceService(
     val scheduledInstance = repository.findById(instanceId)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
-    scheduledInstance.cancelSession(
+    scheduledInstance.cancelSessionAndAttendances(
       reason = scheduleInstanceCancelRequest.reason,
       by = scheduleInstanceCancelRequest.username,
       cancelComment = scheduleInstanceCancelRequest.comment,
-    ) { attendanceList ->
-      val attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
-      attendanceList.forEach {
-        it.cancel(attendanceReason)
-      }
-    }
+      cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+    )
 
     val cancelledInstance = repository.saveAndFlush(scheduledInstance)
 
