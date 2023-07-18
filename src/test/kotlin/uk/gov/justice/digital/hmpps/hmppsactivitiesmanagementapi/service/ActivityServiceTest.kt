@@ -676,6 +676,110 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update end date fails if removeEndDate is also true`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    assertThatThrownBy {
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = activity.endDate?.plusDays(1), removeEndDate = true), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("removeEndDate flag cannot be true when an endDate is also supplied.")
+  }
+
+  @Test
+  fun `updateActivity - removal of the end date is successful`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      assertThat(endDate).isNull()
+      schedules().forEach { s ->
+        // assert end date set to null and instances are scheduled into the future
+        assertThat(s.endDate).isNull()
+        assertThat(s.instances().find { i -> i.sessionDate > TimeSource.tomorrow().plusDays(1) }).isNotNull
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - setting of the end date is successful`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow())
+    activity.schedules().forEach {
+      it.addInstance(TimeSource.tomorrow().plusDays(1), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(2), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(3), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(4), it.slots().first())
+    }
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      // assert end date set and future instances ahead of the new end date are removed
+      assertThat(endDate).isEqualTo(TimeSource.tomorrow())
+      schedules().forEach { s ->
+        assertThat(s.endDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(s.instances().find { i -> i.sessionDate > TimeSource.tomorrow() }).isNull()
+        assertThat(s.instances().find { i -> i.sessionDate == TimeSource.tomorrow() }).isNotNull
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - prolonging the end date into the future is successful`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow().plusDays(5)), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      assertThat(endDate).isEqualTo(TimeSource.tomorrow().plusDays(5))
+      schedules().forEach { s ->
+        // assert end date set and future instances ahead of the new end date are created
+        assertThat(s.endDate).isEqualTo(TimeSource.tomorrow().plusDays(5))
+        assertThat(s.instances().find { i -> i.sessionDate == TimeSource.tomorrow().plusDays(5) }).isNotNull
+        assertThat(s.instances().find { i -> i.sessionDate > TimeSource.tomorrow().plusDays(5) }).isNull()
+      }
+    }
+  }
+
+  @Test
+  fun `updateActivity - bringing the end date closer is successful`() {
+    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(5))
+    activity.schedules().forEach {
+      it.addInstance(TimeSource.tomorrow().plusDays(1), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(2), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(3), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(4), it.slots().first())
+      it.addInstance(TimeSource.tomorrow().plusDays(5), it.slots().first())
+    }
+
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow().plusDays(1)), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    with(activityCaptor.firstValue) {
+      // assert end date set and future instances ahead of the new end date are removed
+      assertThat(endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+      schedules().forEach { s ->
+        assertThat(s.endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+        assertThat(s.instances().find { i -> i.sessionDate == TimeSource.tomorrow().plusDays(1) }).isNotNull
+        assertThat(s.instances().find { i -> i.sessionDate > TimeSource.tomorrow().plusDays(1) }).isNull()
+      }
+    }
+  }
+
+  @Test
   fun `updateActivity - fails if activity has already ended (archived)`() {
     val activity = activityEntity(startDate = TimeSource.yesterday().minusDays(1), endDate = TimeSource.yesterday())
 

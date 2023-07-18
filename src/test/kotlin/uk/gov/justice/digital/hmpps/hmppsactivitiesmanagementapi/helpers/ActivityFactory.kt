@@ -199,7 +199,7 @@ internal fun activitySchedule(
     }
     if (!noInstances && !noSlots) {
       this.addInstance(
-        sessionDate = timestamp.toLocalDate(),
+        sessionDate = this.startDate,
         slot = this.slots().first(),
       ).apply {
         this.attendances.add(
