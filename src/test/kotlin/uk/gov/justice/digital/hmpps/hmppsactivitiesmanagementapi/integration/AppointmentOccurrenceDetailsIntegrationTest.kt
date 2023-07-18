@@ -100,6 +100,8 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
         null,
+        null,
+        null,
       ),
     )
 
@@ -147,6 +149,8 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         false,
         appointmentOccurrenceDetails.created,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        null,
+        null,
         null,
         null,
       ),
