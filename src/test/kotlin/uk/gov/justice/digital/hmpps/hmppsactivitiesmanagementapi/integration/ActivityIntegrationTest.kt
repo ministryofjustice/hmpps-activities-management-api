@@ -553,7 +553,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  // @Disabled
   @Sql(
     "classpath:test_data/seed-activity-id-2.sql",
   )
