@@ -224,9 +224,9 @@ class ActivityService(
     fromDate: LocalDate? = null,
     toDate: LocalDate? = null,
   ) {
-    val today = LocalDate.now()
-    val endDay = today.plusDays(daysInAdvance)
-    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+    val tomorrow = LocalDate.now().plusDays(1)
+    val endDay = LocalDate.now().plusDays(daysInAdvance)
+    val listOfDatesToSchedule = tomorrow.datesUntil(endDay).toList()
 
     listOfDatesToSchedule.filter { this.isActiveOn(it) }
       .filter { fromDate == null || it >= fromDate }
