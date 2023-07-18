@@ -142,6 +142,7 @@ internal fun activitySchedule(
   activityScheduleId: Long = 1,
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   description: String = "schedule description",
+  scheduleWeeks: Int = 1,
   monday: Boolean = true,
   tuesday: Boolean = false,
   wednesday: Boolean = false,
@@ -166,7 +167,7 @@ internal fun activitySchedule(
     internalLocationDescription = "Education - R1",
     startDate = startDate ?: activity.startDate,
     runsOnBankHoliday = runsOnBankHolidays,
-    scheduleWeeks = 1,
+    scheduleWeeks = scheduleWeeks,
   ).apply {
     this.endDate = endDate ?: activity.endDate
     if (!noAllocations) {
