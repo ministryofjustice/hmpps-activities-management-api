@@ -332,6 +332,7 @@ internal fun attendanceList() = listOf(
     attendanceReasonCode = null,
     issuePayment = null,
     prisonerNumber = "A11111A",
+    scheduledInstanceId = 1,
     activityId = 1,
     summary = "Maths Level 1",
     categoryName = "Education",

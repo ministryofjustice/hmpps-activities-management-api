@@ -29,6 +29,8 @@ data class `AllAttendance`(
 
   val prisonerNumber: String,
 
+  val scheduledInstanceId: Long,
+
   val activityId: Long,
 
   val summary: String,
@@ -47,6 +49,7 @@ data class `AllAttendance`(
       attendanceReasonCode = attendanceReasonCode,
       issuePayment = issuePayment,
       prisonerNumber = prisonerNumber,
+      scheduledInstanceId = scheduledInstanceId,
       activityId = activityId,
       activitySummary = summary,
       categoryName = categoryName,
