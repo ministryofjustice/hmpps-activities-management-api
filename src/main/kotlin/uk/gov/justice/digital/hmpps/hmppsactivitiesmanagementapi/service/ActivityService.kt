@@ -181,7 +181,7 @@ class ActivityService(
         scheduleWeeks = 1,
       ).let { schedule ->
         schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addInstances(schedule.slots(), null, null)
+        schedule.addFutureInstances(schedule.slots(), null, null)
 
         return transform(activityRepository.saveAndFlush(activity))
       }
@@ -219,7 +219,7 @@ class ActivityService(
   /*
    * Note: we add instances even if the activity hasn't started for unlock list purposes.
    */
-  private fun ActivitySchedule.addInstances(
+  private fun ActivitySchedule.addFutureInstances(
     slots: List<ActivityScheduleSlot>,
     fromDate: LocalDate? = null,
     toDate: LocalDate? = null,
@@ -399,7 +399,7 @@ class ActivityService(
           it.removeInstances(currentScheduleStartDate, newStartDate.minusDays(1))
         } else if (newStartDate < currentScheduleStartDate) {
           // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addInstances(it.slots(), newStartDate, currentScheduleStartDate.minusDays(1))
+          it.addFutureInstances(it.slots(), newStartDate, currentScheduleStartDate.minusDays(1))
         }
       }
     }
@@ -409,30 +409,36 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    require(request.endDate == null || request.removeEndDate == false) {
+    require(request.endDate == null || !request.removeEndDate) {
       "removeEndDate flag cannot be true when an endDate is also supplied."
     }
 
     if (request.removeEndDate) {
       activity.endDate = null
       activity.schedules().forEach {
-        // end date has been removed so add new instances from the day after the original end date
-        it.addInstances(activity, it.slots(), it.endDate!!.plusDays(1))
+        val originalEndDate = it.endDate
         it.endDate = null
+
+        if (originalEndDate != null) {
+          // end date has been removed so add new instances from the day after the original end date
+          it.addFutureInstances(it.slots(), originalEndDate.plusDays(1))
+        }
       }
     }
 
     request.endDate?.let { newEndDate ->
       activity.endDate = newEndDate
       activity.schedules().forEach {
-        if (it.endDate == null || it.endDate!! > newEndDate) {
-          // end date has been set or moved earlier so remove all instances from the day after the new end date
-          (it.endDate)?.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
-        } else if (it.endDate !== null && it.endDate!! < newEndDate) {
-          // end date has been moved later so add new instances from the day after the original end date up to the new end date
-          it.addInstances(it.slots(), it.endDate!!.plusDays(1), newEndDate)
-        }
+        val originalEndDate = it.endDate
         it.endDate = newEndDate
+
+        if (originalEndDate == null || originalEndDate > newEndDate) {
+          // end date has been set or moved earlier so remove all instances from the day after the new end date
+          originalEndDate.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
+        } else if (originalEndDate < newEndDate) {
+          // end date has been moved later so add new instances from the day after the original end date up to the new end date
+          it.addFutureInstances(it.slots(), originalEndDate.plusDays(1), newEndDate)
+        }
       }
     }
   }
@@ -464,7 +470,7 @@ class ActivityService(
         schedule.runsOnBankHoliday = runsOnBankHoliday
 
         if (runsOnBankHoliday) {
-          schedule.addInstances(schedule.slots())
+          schedule.addFutureInstances(schedule.slots())
         } else {
           val futureSessionDatesToRemove = schedule.instances()
             .filter { it.sessionDate > LocalDate.now() && bankHolidayService.isEnglishBankHoliday(it.sessionDate) }
@@ -597,7 +603,7 @@ class ActivityService(
 
     activity.schedules().forEach {
       it.updateSlotsAndRemoveRedundantInstances(slots.toMap(timeSlots))
-      it.addInstances(it.slots())
+      it.addFutureInstances(it.slots())
     }
   }
 
