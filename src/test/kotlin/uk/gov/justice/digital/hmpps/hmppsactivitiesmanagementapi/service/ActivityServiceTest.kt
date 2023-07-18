@@ -684,7 +684,7 @@ class ActivityServiceTest {
       schedules().forEach { s ->
         // assert end date set to null and instances are scheduled into the future
         assertThat(s.endDate).isNull()
-        assertThat(s.instances().find { i -> i.sessionDate >  TimeSource.tomorrow().plusDays(1) }).isNotNull
+        assertThat(s.instances().find { i -> i.sessionDate > TimeSource.tomorrow().plusDays(1) }).isNotNull
       }
     }
   }
