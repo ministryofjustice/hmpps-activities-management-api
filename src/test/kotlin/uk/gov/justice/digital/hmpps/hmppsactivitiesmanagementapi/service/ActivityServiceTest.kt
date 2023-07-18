@@ -259,7 +259,7 @@ class ActivityServiceTest {
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThatThrownBy { service.getActivityById(1) }.isInstanceOf(CaseLoadAccessException::class.java)
+    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseLoadAccessException::class.java)
   }
 
   @Test
