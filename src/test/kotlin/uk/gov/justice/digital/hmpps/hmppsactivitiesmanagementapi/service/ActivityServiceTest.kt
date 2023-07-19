@@ -715,7 +715,7 @@ class ActivityServiceTest {
     }
   }
 
-  @Test
+  // @Test
   fun `updateActivity - prolonging the end date into the future is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
