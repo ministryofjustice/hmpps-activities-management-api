@@ -1,26 +1,29 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwareAuthenticationToken
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 
 fun checkCaseLoadAccess(prisonCode: String) {
   val httpRequest = if (RequestContextHolder.getRequestAttributes() != null) (RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request else null
-  val jwt = if (SecurityContextHolder.getContext()?.authentication?.credentials != null) SecurityContextHolder.getContext().authentication.credentials as Jwt else null
+  val auth = if (SecurityContextHolder.getContext()?.authentication != null) SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken else null
   val caseLoadId = httpRequest?.getHeader(CASELOAD_ID)
 
-  if (!isClientToken(jwt) &&
-    !hasAdminRole(jwt) &&
-    (prisonCode != caseLoadId)
+  if (tokenIsNotAClientToken(auth) &&
+    tokenDoesNotHaveTheActivityAdminRole(auth) &&
+    caseLoadIdRequestHeaderDoesNotMatchPrisonCode(caseLoadId, prisonCode)
   ) {
     throw CaseLoadAccessException()
   }
 }
 
-fun isClientToken(jwt: Jwt?) = jwt?.claims?.containsKey("client_id") == true
+private fun tokenIsNotAClientToken(auth: AuthAwareAuthenticationToken?) = auth == null || !auth.isClientToken
 
-fun hasAdminRole(jwt: Jwt?) = jwt?.claims?.containsKey("roles") == true && (jwt.claims?.get("roles") as List<*>).contains("ACTIVITY_ADMIN")
+private fun tokenDoesNotHaveTheActivityAdminRole(auth: AuthAwareAuthenticationToken?) = auth == null || !auth.roles.contains(ACTIVITY_ADMIN)
+
+private fun caseLoadIdRequestHeaderDoesNotMatchPrisonCode(caseLoadIdRequestHeader: String?, prisonCode: String) = caseLoadIdRequestHeader != prisonCode
 
 class CaseLoadAccessException : RuntimeException()
