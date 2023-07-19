@@ -81,7 +81,8 @@ data class Attendance(
 
   fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) =
     apply {
-      require(attendanceReason?.code != AttendanceReasonEnum.CANCELLED) { "Attendance already cancelled" }
+      require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
+      require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
 
       mark(
         principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
@@ -96,9 +97,9 @@ data class Attendance(
     }
 
   fun uncancel() = mark(
-    principalName = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.recordedBy,
-    reason = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) null else this.attendanceReason,
-    newStatus = if (this.attendanceReason?.code != AttendanceReasonEnum.SUSPENDED) AttendanceStatus.WAITING else this.status,
+    principalName = null,
+    reason = null,
+    newStatus = AttendanceStatus.WAITING,
     newComment = null,
     newIssuePayment = null,
     newIncentiveLevelWarningIssued = null,
@@ -120,9 +121,7 @@ data class Attendance(
 
   fun unsuspend() =
     apply {
-      require(attendanceReason?.code == AttendanceReasonEnum.SUSPENDED) {
-        "Attendance must be suspended to unsuspend it"
-      }
+      require(hasReason(AttendanceReasonEnum.SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
       mark(
         principalName = ServiceName.SERVICE_NAME.value,
         reason = null,
@@ -222,6 +221,8 @@ data class Attendance(
         this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
       )
   }
+
+  fun hasReason(reason: AttendanceReasonEnum) = attendanceReason?.code == reason
 }
 
 enum class AttendanceStatus {
