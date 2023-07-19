@@ -202,6 +202,7 @@ class ActivityController(
       ),
     ],
   )
+  @Parameter(name = "Caseload-ID", `in` = ParameterIn.HEADER)
   fun getActivityKeyIds(
     @PathVariable("activityId") activityId: Long,
   ) = activityService.getActivityBasicById(activityId)
