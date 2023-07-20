@@ -30,6 +30,7 @@ data class ScheduledInstance(
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
+  // TODO ideally should be private
   @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   val attendances: MutableList<Attendance> = mutableListOf(),
@@ -125,6 +126,12 @@ data class ScheduledInstance(
     attendances
       .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
       .forEach(Attendance::uncancel)
+  }
+
+  fun remove(attendance: Attendance) {
+    require(attendances.contains(attendance)) { "Attendance record with ${attendance.attendanceId} does not exist on the scheduled instance" }
+
+    attendances.remove(attendance)
   }
 }
 
