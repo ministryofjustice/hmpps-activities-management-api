@@ -34,14 +34,6 @@ class AuthAwareTokenConverter : Converter<Jwt, AbstractAuthenticationToken> {
       addAll(jwtGrantedAuthoritiesConverter.convert(jwt)!!)
       jwt.getClaimAsStringList("authorities")?.map(::SimpleGrantedAuthority)?.let(::addAll)
     }.toSet()
-
-  private fun extractRoles(jwt: Jwt): Set<String> {
-    return if (jwt.claims?.containsKey("roles") == true) {
-      jwt.claims?.get("roles") as Set<String>
-    } else {
-      emptySet()
-    }
-  }
 }
 
 class AuthAwareAuthenticationToken(

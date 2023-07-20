@@ -69,7 +69,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `attempting to fetch a schedule by its id without specifying a caseload succeeds if token is a client token`() {
       webTestClient.get()
-        .uri("/schedules/1/allocations")
+        .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(isClientToken = true))
         .exchange()
@@ -80,7 +80,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `attempting to fetch a schedule by its id without specifying a caseload succeeds if admin role present`() {
       webTestClient.get()
-        .uri("/schedules/1/allocations")
+        .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
         .exchange()
