@@ -19,6 +19,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
@@ -49,6 +51,40 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       assertThat(scheduledInstance.id).isEqualTo(1L)
       assertThat(scheduledInstance.startTime.toString()).isEqualTo("10:00")
       assertThat(scheduledInstance.endTime.toString()).isEqualTo("11:00")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `403 when fetching a schedule by its id for the wrong caseload`() {
+      webTestClient.get()
+        .uri("/scheduled-instances/1")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false))
+        .header(CASELOAD_ID, "MDI")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `attempting to fetch a schedule by its id without specifying a caseload succeeds if token is a client token`() {
+      webTestClient.get()
+        .uri("/schedules/1/allocations")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = true))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `attempting to fetch a schedule by its id without specifying a caseload succeeds if admin role present`() {
+      webTestClient.get()
+        .uri("/schedules/1/allocations")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+        .exchange()
+        .expectStatus().isOk
     }
   }
 
@@ -261,6 +297,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .uri("/scheduled-instances/$id")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf()))
+    .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

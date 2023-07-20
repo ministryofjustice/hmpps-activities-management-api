@@ -18,8 +18,7 @@ class AuthAwareTokenConverter : Converter<Jwt, AbstractAuthenticationToken> {
     val isClientToken = jwt?.claims?.containsKey("client_id") == true
     val principal = findPrincipal(claims)
     val authorities = extractAuthorities(jwt)
-    val roles = extractRoles(jwt)
-    return AuthAwareAuthenticationToken(jwt, principal, authorities, isClientToken, roles)
+    return AuthAwareAuthenticationToken(jwt, principal, authorities, isClientToken)
   }
 
   private fun findPrincipal(claims: Map<String, Any?>): String {
@@ -50,7 +49,6 @@ class AuthAwareAuthenticationToken(
   private val aPrincipal: String,
   authorities: Collection<GrantedAuthority>,
   val isClientToken: Boolean,
-  val roles: Set<String>,
 ) : JwtAuthenticationToken(jwt, authorities) {
   override fun getPrincipal(): Any {
     return aPrincipal
