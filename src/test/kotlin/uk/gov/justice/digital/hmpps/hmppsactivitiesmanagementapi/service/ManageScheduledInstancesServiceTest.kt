@@ -19,7 +19,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -251,7 +250,6 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = true,
             noAllocations = true,
             noInstances = true,
           ),
@@ -269,8 +267,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 2,
-            monday = false,
-            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
             noAllocations = true,
             noInstances = true,
           ),
@@ -288,8 +285,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 3,
-            monday = false,
-            wednesday = true,
+            daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
             noAllocations = true,
             noInstances = true,
           ),
@@ -310,7 +306,6 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 4,
-            monday = true,
             noAllocations = true,
             noInstances = true,
           ),
@@ -328,8 +323,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 5,
-            monday = false,
-            tuesday = true,
+            daysOfWeek = setOf(DayOfWeek.TUESDAY),
             noAllocations = true,
             noInstances = true,
           ),
@@ -347,8 +341,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 6,
-            monday = false,
-            wednesday = true,
+            daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
             noAllocations = true,
             noInstances = true,
           ),
@@ -373,13 +366,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-            tuesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-            wednesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-            thursday = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-            friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-            saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-            sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             noInstances = true,
           ).apply {
             this.addInstance(
@@ -408,13 +395,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-            tuesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-            wednesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-            thursday = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-            friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-            saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-            sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             noInstances = true,
           ).apply {
             this.suspensions.clear()
@@ -447,13 +428,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-            tuesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-            wednesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-            thursday = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-            friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-            saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-            sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             runsOnBankHolidays = false,
             noInstances = true,
           ).apply {
@@ -480,13 +455,7 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-            tuesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-            wednesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-            thursday = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-            friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-            saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-            sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             runsOnBankHolidays = true,
             noInstances = true,
           ).apply {
@@ -513,47 +482,21 @@ class ManageScheduledInstancesServiceTest {
           activitySchedule(
             activity = this,
             activityScheduleId = 1,
-            monday = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-            tuesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-            wednesday = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-            thursday = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-            friday = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-            saturday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-            sunday = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
+            daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             noSlots = true,
           ).apply {
             this.suspensions.clear()
             this.addSlot(
-              ActivityScheduleSlot(
-                activityScheduleSlotId = 1,
-                weekNumber = 1,
-                activitySchedule = this,
-                startTime = LocalTime.of(9, 30),
-                endTime = LocalTime.of(11, 30),
-                mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-                tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-                wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-                thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-                fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-                saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-                sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-              ),
+              weekNumber = 1,
+              startTime = LocalTime.of(9, 30),
+              endTime = LocalTime.of(11, 30),
+              daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             )
             this.addSlot(
-              ActivityScheduleSlot(
-                activityScheduleSlotId = 2,
-                weekNumber = 1,
-                activitySchedule = this,
-                startTime = LocalTime.of(13, 30),
-                endTime = LocalTime.of(15, 30),
-                mondayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.MONDAY),
-                tuesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.TUESDAY),
-                wednesdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.WEDNESDAY),
-                thursdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.THURSDAY),
-                fridayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.FRIDAY),
-                saturdayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SATURDAY),
-                sundayFlag = LocalDate.now().dayOfWeek.equals(DayOfWeek.SUNDAY),
-              ),
+              weekNumber = 1,
+              startTime = LocalTime.of(13, 30),
+              endTime = LocalTime.of(15, 30),
+              daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             )
           },
         )

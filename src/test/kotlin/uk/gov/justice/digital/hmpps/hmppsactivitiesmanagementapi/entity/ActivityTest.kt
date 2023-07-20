@@ -413,6 +413,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -429,6 +430,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -453,6 +455,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -490,6 +493,7 @@ class ActivityTest {
       scheduleWeeks = 1,
     ).apply {
       addSlot(
+        weekNumber = 1,
         startTime = LocalTime.NOON,
         endTime = LocalTime.NOON.plusHours(1),
         setOf(*DayOfWeek.values()),

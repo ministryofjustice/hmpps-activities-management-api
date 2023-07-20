@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -162,13 +161,6 @@ class ActivityService(
 
     activity.let {
       val scheduleLocation = if (request.inCell || request.onWing) null else getLocationForSchedule(it, request.locationId!!)
-      val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
-      val timeSlots =
-        mapOf(
-          TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
-          TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-          TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
-        )
 
       activity.addSchedule(
         description = request.description!!,
@@ -180,8 +172,10 @@ class ActivityService(
         // TODO - Add support for multi-week schedules
         scheduleWeeks = 1,
       ).let { schedule ->
-        schedule.addSlots(request.slots!!, timeSlots)
-        schedule.addFutureInstances(schedule.slots(), null, null)
+        // TODO - Add support for multi-week schedules
+        val weekNumber = 1
+        schedule.addSlots(weekNumber, request.slots!!)
+        schedule.addInstances()
 
         return transform(activityRepository.saveAndFlush(activity))
       }
@@ -206,47 +200,32 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addSlots(slots: List<Slot>, timeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) {
+  private fun ActivitySchedule.addSlots(weekNumber: Int, slots: List<Slot>) {
     slots.forEach { slot ->
+      val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
       val daysOfWeek = getDaysOfWeek(slot)
-
-      this.addSlot(start, end, daysOfWeek)
+      this.addSlot(weekNumber, start, end, daysOfWeek)
     }
   }
 
   /*
    * Note: we add instances even if the activity hasn't started for unlock list purposes.
    */
-  private fun ActivitySchedule.addFutureInstances(
-    slots: List<ActivityScheduleSlot>,
-    fromDate: LocalDate? = null,
-    toDate: LocalDate? = null,
-  ) {
+  private fun ActivitySchedule.addInstances() {
     val tomorrow = LocalDate.now().plusDays(1)
     val endDay = LocalDate.now().plusDays(daysInAdvance)
     val listOfDatesToSchedule = tomorrow.datesUntil(endDay).toList()
 
     listOfDatesToSchedule.filter { this.isActiveOn(it) }
-      .filter { fromDate == null || it >= fromDate }
-      .filter { toDate == null || it <= toDate }
+      .filter { it >= this.startDate }
+      .filter { this.endDate == null || it <= this.endDate }
       .forEach { day ->
         val weekNumber = this.getWeekNumber(day)
 
-        slots.filter { it.weekNumber == weekNumber }.forEach { slot ->
-          val daysOfWeek = getDaysOfWeek(
-            Slot(
-              timeSlot = "",
-              monday = slot.mondayFlag,
-              tuesday = slot.tuesdayFlag,
-              wednesday = slot.wednesdayFlag,
-              thursday = slot.thursdayFlag,
-              friday = slot.fridayFlag,
-              saturday = slot.saturdayFlag,
-              sunday = slot.sundayFlag,
-            ),
-          )
+        this.slots().filter { it.weekNumber == weekNumber }.forEach { slot ->
+          val daysOfWeek = slot.getDaysOfWeek()
 
           if (day.dayOfWeek in daysOfWeek &&
             this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime) &&
@@ -323,7 +302,10 @@ class ActivityService(
     activity.updatedTime = now
     activity.updatedBy = updatedBy
 
-    activity.schedules().forEach { it.markAsUpdated(now, updatedBy) }
+    activity.schedules().forEach {
+      it.updateInstances()
+      it.markAsUpdated(now, updatedBy)
+    }
 
     activityRepository.saveAndFlush(activity)
 
@@ -390,18 +372,8 @@ class ActivityService(
       }
 
       activity.startDate = newStartDate
-      activity.schedules().forEach {
-        val currentScheduleStartDate = it.startDate
-        it.startDate = newStartDate
 
-        if (currentScheduleStartDate < newStartDate) {
-          // start date has been moved later so remove all instances between the original start date and the day before the new start date
-          it.removeInstances(currentScheduleStartDate, newStartDate.minusDays(1))
-        } else if (newStartDate < currentScheduleStartDate) {
-          // start date has been moved earlier so create new instances between the new start date and the day before the original start date
-          it.addFutureInstances(it.slots(), newStartDate, currentScheduleStartDate.minusDays(1))
-        }
-      }
+      activity.schedules().forEach { it.startDate = newStartDate }
     }
   }
 
@@ -415,30 +387,11 @@ class ActivityService(
 
     if (request.removeEndDate) {
       activity.endDate = null
-      activity.schedules().forEach {
-        val originalEndDate = it.endDate
-        it.endDate = null
-
-        if (originalEndDate != null) {
-          // end date has been removed so add new instances from the day after the original end date
-          it.addFutureInstances(it.slots(), originalEndDate.plusDays(1))
-        }
-      }
-    }
-
-    request.endDate?.let { newEndDate ->
-      activity.endDate = newEndDate
-      activity.schedules().forEach {
-        val originalEndDate = it.endDate
-        it.endDate = newEndDate
-
-        if (originalEndDate == null || originalEndDate > newEndDate) {
-          // end date has been set or moved earlier so remove all instances from the day after the new end date
-          originalEndDate.let { it1 -> it.removeInstances(newEndDate.plusDays(1), it1) }
-        } else if (originalEndDate < newEndDate) {
-          // end date has been moved later so add new instances from the day after the original end date up to the new end date
-          it.addFutureInstances(it.slots(), originalEndDate.plusDays(1), newEndDate)
-        }
+      activity.schedules().forEach { it.endDate = null }
+    } else {
+      request.endDate?.let { newEndDate ->
+        activity.endDate = newEndDate
+        activity.schedules().forEach { it.endDate = newEndDate }
       }
     }
   }
@@ -466,20 +419,32 @@ class ActivityService(
     activity: Activity,
   ) {
     request.runsOnBankHoliday?.let { runsOnBankHoliday ->
-      activity.schedules().forEach { schedule ->
-        schedule.runsOnBankHoliday = runsOnBankHoliday
-
-        if (runsOnBankHoliday) {
-          schedule.addFutureInstances(schedule.slots())
-        } else {
-          val futureSessionDatesToRemove = schedule.instances()
-            .filter { it.sessionDate > LocalDate.now() && bankHolidayService.isEnglishBankHoliday(it.sessionDate) }
-            .map { it.sessionDate }
-
-          futureSessionDatesToRemove.forEach { schedule.removeInstances(it, it) }
-        }
-      }
+      activity.schedules().forEach { it.runsOnBankHoliday = runsOnBankHoliday }
     }
+  }
+
+  private fun ActivitySchedule.updateInstances() {
+    this.removeRedundantInstances()
+    this.addInstances()
+  }
+
+  private fun ActivitySchedule.removeRedundantInstances() {
+    // Remove any instances that are in the future (not included today) and are no longer required
+    // Considers start date, end date, slots and bank holidays
+    val instancesToRemove = this.instances().filter {
+      it.sessionDate > LocalDate.now()
+    }.filter {
+      it.sessionDate < this.startDate ||
+        (this.endDate != null && it.sessionDate > this.endDate) ||
+        this.slots().none { slot ->
+          slot.weekNumber == this.getWeekNumber(it.sessionDate) &&
+            slot.getDaysOfWeek().contains(it.dayOfWeek()) &&
+            it.startTime to it.endTime == slot.startTime to slot.endTime
+        } ||
+        !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
+    }
+
+    this.removeInstances(instancesToRemove)
   }
 
   private fun applyCapacityUpdate(
@@ -593,20 +558,14 @@ class ActivityService(
     slots: List<Slot>,
     activity: Activity,
   ) {
-    val prisonRegime = prisonRegimeService.getPrisonRegimeByPrisonCode(activity.prisonCode)
-    val timeSlots =
-      mapOf(
-        TimeSlot.AM to Pair(prisonRegime.amStart, prisonRegime.amFinish),
-        TimeSlot.PM to Pair(prisonRegime.pmStart, prisonRegime.pmFinish),
-        TimeSlot.ED to Pair(prisonRegime.edStart, prisonRegime.edFinish),
-      )
-
-    activity.schedules().forEach {
-      it.updateSlotsAndRemoveRedundantInstances(slots.toMap(timeSlots))
-      it.addFutureInstances(it.slots())
-    }
+    val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
+    activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>) =
-    associate { regimeTimeSlots[it.timeSlot()]!! to it.getDaysOfWeek() }
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):
+    Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>> {
+    // TODO: Add support for multi-week schedules
+    val weekNumber = 1
+    return this.associate { Pair(weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
+  }
 }
