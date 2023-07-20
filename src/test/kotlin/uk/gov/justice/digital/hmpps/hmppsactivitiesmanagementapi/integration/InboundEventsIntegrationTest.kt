@@ -392,8 +392,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `two allocations and two future attendance are unsuspended on receipt of offender received event for prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").forEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     // Suspending first so can unspend afterwards.
@@ -425,5 +425,55 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-received-event-cancel-suspensions.sql")
+  fun `two suspended allocations are unsuspended and two future attendance are cancelled on receipt of offender received event for prisoner`() {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
+    }
+
+    attendanceRepository.findById(1L).orElseThrow().also {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isNull()
+      assertThat(it.recordedBy).isNull()
+    }
+
+    attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
+      assertThat(it.issuePayment).isFalse()
+      assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+    }
+
+    service.process(offenderReceivedFromTemporaryAbsence(prisonCode = pentonvillePrisonCode, prisonerNumber = "A11111A"))
+
+    attendanceRepository.findById(1L).orElseThrow().also {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isNull()
+      assertThat(it.recordedBy).isNull()
+    }
+
+    attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+      assertThat(it.issuePayment).isTrue()
+      assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
   }
 }

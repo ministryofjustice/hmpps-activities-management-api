@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -36,32 +35,6 @@ class AttendanceTest {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(comment).isNull()
       assertThat(recordedBy).isNull()
-      assertThat(otherAbsenceReason).isNull()
-    }
-  }
-
-  @Test
-  fun `uncancel does not alter the attendance reason of a suspended prisoner`() {
-    val recordedTime = LocalDateTime.now()
-    val recordedBy = "Old User"
-    val attendance = Attendance(
-      scheduledInstance = instance,
-      prisonerNumber = "P000111",
-      attendanceReason = attendanceReason(AttendanceReasonEnum.SUSPENDED),
-      status = AttendanceStatus.COMPLETED,
-      comment = "Some Comment",
-      recordedBy = recordedBy,
-      recordedTime = recordedTime,
-    )
-
-    attendance.uncancel()
-
-    with(attendance) {
-      assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
-      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
-      assertThat(comment).isNull()
-      assertThat(recordedBy).isEqualTo(recordedBy)
-      assertThat(recordedTime).isEqualTo(recordedTime)
       assertThat(otherAbsenceReason).isNull()
     }
   }
@@ -97,6 +70,15 @@ class AttendanceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance already cancelled")
+  }
+
+  @Test
+  fun `cancel attendance fails if if wrong reason code`() {
+    assertThatThrownBy {
+      Attendance(scheduledInstance = instance, prisonerNumber = "123456").cancel(attendanceReason(AttendanceReasonEnum.ATTENDED))
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Supplied reason code is not cancelled")
   }
 
   @Test
@@ -242,7 +224,7 @@ class AttendanceTest {
   }
 
   @Test
-  fun `complete attendance without payment`() {
+  fun `can complete attendance without payment`() {
     val attendance = with(Attendance(scheduledInstance = instance, prisonerNumber = "123456")) {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(issuePayment).isNull()
@@ -319,7 +301,7 @@ class AttendanceTest {
   }
 
   @Test
-  fun `unsuspend attendance to waiting and history records created`() {
+  fun `can unsuspend attendance to waiting and history records are created`() {
     Attendance(scheduledInstance = instance, prisonerNumber = "123456")
       .also { assertThat(it.history()).isEmpty() }
       .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED))
@@ -336,7 +318,7 @@ class AttendanceTest {
   }
 
   @Test
-  fun `reset waiting attendance fails if as attendance is not suspended`() {
+  fun `reset waiting attendance fails if the attendance is not suspended`() {
     val attendance = Attendance(scheduledInstance = instance, prisonerNumber = "123456").also {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
     }
