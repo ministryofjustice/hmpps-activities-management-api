@@ -110,7 +110,7 @@ class ScheduledInstanceServiceTest {
       val instance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
       instance.apply {
         cancelled = true
-        attendances.first().cancel(mock())
+        attendances.first().cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
       }
 
       whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))

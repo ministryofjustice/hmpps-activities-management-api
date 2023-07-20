@@ -378,3 +378,13 @@ internal fun activityCreateRequest(
     slots = listOf(Slot(timeSlot = "AM", monday = true)),
     onWing = false,
   )
+
+internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
+  mondayFlag = true
+  tuesdayFlag = true
+  wednesdayFlag = true
+  thursdayFlag = true
+  fridayFlag = true
+  saturdayFlag = true
+  sundayFlag = true
+}

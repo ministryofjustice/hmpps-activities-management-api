@@ -58,7 +58,7 @@ class ScheduledInstanceService(
     val scheduledInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
-    scheduledInstance.uncancel()
+    scheduledInstance.uncancelSessionAndAttendances()
 
     val uncancelledInstance = repository.saveAndFlush(scheduledInstance)
 
