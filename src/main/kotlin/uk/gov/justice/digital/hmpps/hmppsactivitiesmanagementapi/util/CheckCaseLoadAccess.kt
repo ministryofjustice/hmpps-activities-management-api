@@ -20,9 +20,10 @@ fun checkCaseLoadAccess(prisonCode: String) {
   }
 }
 
-private fun tokenIsNotAClientToken(auth: AuthAwareAuthenticationToken?) = auth == null || !auth.isClientToken
+private fun tokenIsNotAClientToken(auth: AuthAwareAuthenticationToken?) = (auth == null) || auth.isUserToken
 
-private fun tokenDoesNotHaveTheActivityAdminRole(auth: AuthAwareAuthenticationToken?) = auth == null || !auth.roles.contains(ACTIVITY_ADMIN)
+private fun tokenDoesNotHaveTheActivityAdminRole(auth: AuthAwareAuthenticationToken?) =
+  (auth == null) || !auth.roles.contains(ACTIVITY_ADMIN)
 
 private fun caseLoadIdRequestHeaderDoesNotMatchPrisonCode(caseLoadIdRequestHeader: String?, prisonCode: String) = caseLoadIdRequestHeader != prisonCode
 
