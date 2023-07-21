@@ -74,7 +74,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     // This event falls back to being processed as an interesting event due to the unknown reason for release
@@ -89,7 +89,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     assertThat(eventReviewRepository.count()).isEqualTo(1L)
@@ -107,13 +107,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
@@ -132,13 +132,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
@@ -157,18 +157,47 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-released-event-deletes-attendances.sql")
+  fun `permanent release of prisoner removes any future attendances at time of event being raised`() {
+    prisonApiMockServer.stubGetPrisonerDetails(
+      prisonerNumber = "A11111A",
+      fullInfo = true,
+      extraInfo = true,
+      jsonFileSuffix = "-released-from-remand",
+    )
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
+    }
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
   }
 
   @Test
@@ -183,7 +212,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
@@ -240,7 +269,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
@@ -341,7 +370,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {

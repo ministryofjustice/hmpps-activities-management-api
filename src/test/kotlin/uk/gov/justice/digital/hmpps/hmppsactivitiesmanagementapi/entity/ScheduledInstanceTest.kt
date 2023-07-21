@@ -181,4 +181,26 @@ class ScheduledInstanceTest {
       attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED) }
     }
   }
+
+  @Test
+  fun `can remove attendance`() {
+    val attendance = instance.attendances.first()
+
+    assertThat(instance.attendances).contains(attendance)
+
+    instance.remove(attendance)
+
+    assertThat(instance.attendances).doesNotContain(attendance)
+  }
+
+  @Test
+  fun `fails to remove attendance if attendance not present`() {
+    val attendance = instance.attendances.first()
+
+    instance.remove(attendance)
+
+    assertThatThrownBy { instance.remove(attendance) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance record with ${attendance.attendanceId} does not exist on the scheduled instance")
+  }
 }
