@@ -1,3 +1,3 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
-const val ACTIVITY_ADMIN = "ACTIVITY_ADMIN"
+const val ACTIVITY_ADMIN = "ROLE_ACTIVITY_ADMIN"

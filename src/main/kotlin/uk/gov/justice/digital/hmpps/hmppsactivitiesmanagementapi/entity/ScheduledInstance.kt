@@ -51,21 +51,6 @@ data class ScheduledInstance(
   var comment: String? = null,
 ) {
 
-  fun uncancel() {
-    if (sessionDate.isBefore(LocalDate.now())) {
-      throw IllegalArgumentException("Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past")
-    }
-
-    if (!cancelled) {
-      throw IllegalArgumentException("Cannot uncancel scheduled instance [$scheduledInstanceId] because it is not cancelled")
-    }
-
-    cancelled = false
-    cancelledBy = null
-    cancelledReason = null
-    attendances.forEach(Attendance::uncancel)
-  }
-
   fun dayOfWeek() = sessionDate.dayOfWeek
 
   fun toModel() = ModelScheduledInstance(
@@ -120,6 +105,26 @@ data class ScheduledInstance(
     attendances
       .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
       .forEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
+  }
+
+  /**
+   * This will not uncancel suspended attendances. If you wish to uncancel a suspended attendance then you must uncancel the
+   * attendance directly.
+   */
+  fun uncancelSessionAndAttendances() {
+    require(sessionDate >= LocalDate.now()) {
+      "Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past"
+    }
+
+    require(cancelled) { "Cannot uncancel scheduled instance [$scheduledInstanceId] because it is not cancelled" }
+
+    cancelled = false
+    cancelledBy = null
+    cancelledReason = null
+    cancelledTime = null
+    attendances
+      .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
+      .forEach(Attendance::uncancel)
   }
 }
 

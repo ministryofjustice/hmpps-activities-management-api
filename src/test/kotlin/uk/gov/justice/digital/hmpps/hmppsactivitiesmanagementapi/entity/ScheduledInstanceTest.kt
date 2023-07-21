@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ScheduledInstanceTest {
 
@@ -57,7 +58,7 @@ class ScheduledInstanceTest {
       attendances = mutableListOf(mock()),
     )
 
-    cancelledInstance.uncancel()
+    cancelledInstance.uncancelSessionAndAttendances()
 
     with(cancelledInstance) {
       assertThat(cancelled).isFalse
@@ -77,7 +78,7 @@ class ScheduledInstanceTest {
         cancelledBy = "DEF981",
         cancelledReason = "Meeting Cancelled",
         sessionDate = LocalDate.of(2022, 1, 1),
-      ).uncancel()
+      ).uncancelSessionAndAttendances()
     }
 
     assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is in the past")
@@ -88,7 +89,7 @@ class ScheduledInstanceTest {
     val exception = assertThrows<IllegalArgumentException> {
       instance.copy(
         scheduledInstanceId = 1,
-      ).uncancel()
+      ).uncancelSessionAndAttendances()
     }
 
     assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is not cancelled")
@@ -116,7 +117,7 @@ class ScheduledInstanceTest {
   }
 
   @Test
-  fun `cancelling scheduled instance does not cancel suspended attendances`() {
+  fun `cancelling scheduled instance ignores suspended attendances`() {
     val cancelableInstance = instance.copy()
       .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
 
@@ -162,5 +163,22 @@ class ScheduledInstanceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("The schedule instance has ended")
+  }
+
+  @Test
+  fun `uncancelling scheduled instance ignores suspended attendances`() {
+    val cancelledInstance = instance.copy(cancelled = true, cancelledReason = "cancelled reason", cancelledBy = "cancelled by", cancelledTime = LocalDateTime.now())
+      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
+
+    cancelledInstance.uncancelSessionAndAttendances()
+
+    with(cancelledInstance) {
+      assertThat(cancelledReason).isNull()
+      assertThat(cancelled).isFalse
+      assertThat(cancelledBy).isNull()
+      assertThat(cancelledTime).isNull()
+
+      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED) }
+    }
   }
 }

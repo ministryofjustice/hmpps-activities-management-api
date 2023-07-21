@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -45,6 +46,7 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `scheduled instance found - success`() {
+      addCaseLoadIdToRequestHeader("MDI")
       whenever(repository.findById(1))
         .thenReturn(Optional.of(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
@@ -108,7 +110,7 @@ class ScheduledInstanceServiceTest {
       val instance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
       instance.apply {
         cancelled = true
-        attendances.first().cancel(mock())
+        attendances.first().cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
       }
 
       whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))

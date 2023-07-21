@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwar
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 
-fun checkCaseLoadAccess(prisonCode: String) {
+fun checkCaseLoadAccess(prisonCode: String?) {
   val httpRequest = if (RequestContextHolder.getRequestAttributes() != null) (RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request else null
   val auth = if (SecurityContextHolder.getContext()?.authentication != null) SecurityContextHolder.getContext().authentication as AuthAwareAuthenticationToken else null
   val caseLoadId = httpRequest?.getHeader(CASELOAD_ID)
@@ -22,9 +22,8 @@ fun checkCaseLoadAccess(prisonCode: String) {
 
 private fun tokenIsNotAClientToken(auth: AuthAwareAuthenticationToken?) = (auth == null) || auth.isUserToken
 
-private fun tokenDoesNotHaveTheActivityAdminRole(auth: AuthAwareAuthenticationToken?) =
-  (auth == null) || !auth.roles.contains(ACTIVITY_ADMIN)
+private fun tokenDoesNotHaveTheActivityAdminRole(auth: AuthAwareAuthenticationToken?) = auth == null || !auth.authorities.map { it.authority }.contains(ACTIVITY_ADMIN)
 
-private fun caseLoadIdRequestHeaderDoesNotMatchPrisonCode(caseLoadIdRequestHeader: String?, prisonCode: String) = caseLoadIdRequestHeader != prisonCode
+private fun caseLoadIdRequestHeaderDoesNotMatchPrisonCode(caseLoadIdRequestHeader: String?, prisonCode: String?) = caseLoadIdRequestHeader != prisonCode
 
 class CaseLoadAccessException : RuntimeException()

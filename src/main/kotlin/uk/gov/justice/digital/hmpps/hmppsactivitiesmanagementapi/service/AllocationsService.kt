@@ -9,24 +9,36 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
 @Transactional(readOnly = true)
-class AllocationsService(private val allocationRepository: AllocationRepository, private val prisonPayBandRepository: PrisonPayBandRepository) {
+class AllocationsService(
+  private val allocationRepository: AllocationRepository,
+  private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val scheduleRepository: ActivityScheduleRepository,
+) {
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
     allocationRepository
       .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelPrisonerAllocations()
 
-  fun getAllocationById(id: Long) = allocationRepository.findOrThrowNotFound(id).toModel()
+  fun getAllocationById(id: Long): ModelAllocation {
+    val allocation = allocationRepository.findOrThrowNotFound(id).toModel()
+    val schedule = scheduleRepository.findOrThrowNotFound(allocation.scheduleId)
+    checkCaseLoadAccess(schedule.activity.prisonCode)
+
+    return allocation
+  }
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
