@@ -34,7 +34,7 @@ class CheckCaseLoadAccessTest {
 
   @Test
   fun `should not throw exception if client token present`() {
-    setTokenExpectations(isClientToken = true)
+    setTokenExpectations(isUserToken = false)
     assertDoesNotThrow { checkCaseLoadAccess(prisonCode) }
   }
 
@@ -50,13 +50,13 @@ class CheckCaseLoadAccessTest {
     assertDoesNotThrow { checkCaseLoadAccess(prisonCode) }
   }
 
-  private fun setTokenExpectations(isClientToken: Boolean = false, hasAdminRole: Boolean = false) {
+  private fun setTokenExpectations(isUserToken: Boolean = true, hasAdminRole: Boolean = false) {
     val token = mock<AuthAwareAuthenticationToken>()
     val securityContext = mock<SecurityContext>()
     SecurityContextHolder.setContext(securityContext)
 
     whenever(securityContext.authentication).thenReturn(token)
-    whenever(token.isClientToken).thenReturn(isClientToken)
+    whenever(token.isUserToken).thenReturn(isUserToken)
 
     if (hasAdminRole) {
       val roles = setOf(SimpleGrantedAuthority(ACTIVITY_ADMIN))
