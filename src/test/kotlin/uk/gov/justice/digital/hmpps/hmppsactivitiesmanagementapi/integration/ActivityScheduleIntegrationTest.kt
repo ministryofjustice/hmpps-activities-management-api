@@ -434,7 +434,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .uri("/schedules/$scheduleId/allocations")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
 
   private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) =

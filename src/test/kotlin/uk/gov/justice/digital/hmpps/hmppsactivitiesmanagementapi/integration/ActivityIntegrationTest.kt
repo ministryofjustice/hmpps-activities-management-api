@@ -698,7 +698,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -714,7 +714,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities/$prisonCode/activityId/$id")
       .bodyValue(activityUpdateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

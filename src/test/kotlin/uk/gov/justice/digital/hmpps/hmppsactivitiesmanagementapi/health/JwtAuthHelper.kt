@@ -26,8 +26,8 @@ class JwtAuthHelper(private val keyPair: KeyPair) {
     jwtId: String = UUID.randomUUID().toString(),
   ): String =
     mutableMapOf<String, Any>()
-      .also { subject?.let { subject -> it["user_name"] = subject } }
-      .also { if (isClientToken) it["client_id"] = "activities-management-admin-1" }
+      .also { if (!isClientToken) subject?.let { subject -> it["user_name"] = subject } }
+      .also { it["client_id"] = "activities-management-admin-1" }
       .also { roles?.let { roles -> it["authorities"] = roles } }
       .also { scope?.let { scope -> it["scope"] = scope } }
       .let {
