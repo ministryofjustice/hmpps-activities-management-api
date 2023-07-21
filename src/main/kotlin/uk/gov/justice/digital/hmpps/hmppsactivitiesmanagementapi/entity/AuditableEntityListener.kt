@@ -10,11 +10,13 @@ import org.springframework.stereotype.Component
 import toActivityCreatedEvent
 import toActivityUpdatedEvent
 import toPrisonerAllocatedEvent
+import toPrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import java.time.LocalDate
 
 @Component
-class AuditableListener {
+class AuditableEntityListener {
 
   @Autowired
   private lateinit var auditing: AuditUtil
@@ -35,17 +37,29 @@ class AuditableListener {
   fun onUpdate(entity: Any) {
     when (entity) {
       is Activity -> audit(entity.toActivityUpdatedEvent(), "Failed to audit activity update event for activity id ${entity.activityId}")
+      is Allocation -> audit(entity)
     }
   }
+
+  private fun audit(allocation: Allocation) {
+    when {
+      allocation.isDeallocatedToday() -> audit(allocation.toPrisonerDeallocatedEvent(), "Failed to audit prisoner deallocation event for allocation id ${allocation.allocationId}")
+      else -> log.warn("Ignoring audit of allocation id ${allocation.allocationId}")
+    }
+  }
+
+  private fun Allocation.isDeallocatedToday() =
+    isEnded() &&
+      endDate == LocalDate.now() &&
+      deallocatedBy != null &&
+      deallocatedTime != null &&
+      deallocatedReason != null
 
   private fun audit(auditableEvent: AuditableEvent, failureMessage: String) {
     runCatching {
       auditing.logEvent(auditableEvent)
     }.onFailure {
-      log.error(
-        failureMessage,
-        it,
-      )
+      log.error(failureMessage, it)
     }
   }
 }

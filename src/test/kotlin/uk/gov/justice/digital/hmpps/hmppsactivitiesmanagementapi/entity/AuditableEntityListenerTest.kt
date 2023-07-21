@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.argumentCaptor
@@ -10,17 +11,21 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
 @ExtendWith(FakeSecurityContext::class)
-class AuditableEntityListenerTest(@Autowired private val listener: AuditableListener) {
+class AuditableEntityListenerTest(@Autowired private val listener: AuditableEntityListener) {
 
   @MockBean
   private lateinit var auditService: AuditService
@@ -29,6 +34,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableList
 
   private val activityCreatedCaptor = argumentCaptor<ActivityCreatedEvent>()
   private val prisonerAllocatedCaptor = argumentCaptor<PrisonerAllocatedEvent>()
+  private val prisonerDeallocatedCaptor = argumentCaptor<PrisonerDeallocatedEvent>()
 
   @Test
   fun `activity created event raised on creation`() {
@@ -62,6 +68,26 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableList
       assertThat(scheduleId).isEqualTo(1)
       assertThat(scheduleDescription).isNotNull
       assertThat(createdAt).isNotNull
+    }
+  }
+
+  @Test
+  fun `prisoner deallocation audit event raised on update`() {
+    listener.onUpdate(allocation.deallocateNow())
+
+    verify(auditService).logEvent(prisonerDeallocatedCaptor.capture())
+    verifyNoMoreInteractions(auditService)
+
+    with(prisonerDeallocatedCaptor.firstValue) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(activityName).isEqualTo("Maths")
+      assertThat(prisonCode).isEqualTo("123")
+      assertThat(prisonerNumber).isEqualTo("A1234AA")
+      assertThat(scheduleId).isEqualTo(1)
+      assertThat(deallocatedBy).isEqualTo(ServiceName.SERVICE_NAME.value)
+      assertThat(deallocationTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(reason).isEqualTo("Allocation end date reached")
+      assertThat(createdAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
   }
 }

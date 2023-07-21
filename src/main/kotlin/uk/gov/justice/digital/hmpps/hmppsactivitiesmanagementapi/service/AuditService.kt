@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Hmp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.LocalAuditable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AuditRecordSearchFilters
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import java.time.ZoneId
@@ -79,6 +78,7 @@ class AuditService(
           HmppsAuditEvent(
             what = event.auditEventType.name,
             details = event.toJson(),
+            who = event.createdBy,
           ),
         )
       } else {
@@ -127,8 +127,8 @@ class HmppsAuditApiClient(
 data class HmppsAuditEvent(
   val what: String,
   val details: String,
+  val who: String,
 ) {
-  val who = SecurityUtils.getUserNameForLoggedInUser()
   val `when`: String = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault()).format(ZonedDateTime.now())
   val service = "hmpps-activities-management-api"
 }
