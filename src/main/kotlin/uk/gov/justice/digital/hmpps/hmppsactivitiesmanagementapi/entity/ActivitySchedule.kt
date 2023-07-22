@@ -193,6 +193,7 @@ data class ActivitySchedule(
         endTime = slot.endTime,
       ),
     )
+    instancesLastUpdatedTime = LocalDateTime.now()
 
     return instances.last()
   }
@@ -311,16 +312,20 @@ data class ActivitySchedule(
       .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
       .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
 
-  fun removeInstances(instancesToRemove: List<ScheduledInstance>) = instances.removeAll(instancesToRemove)
+  fun removeInstances(instancesToRemove: List<ScheduledInstance>) {
+    instances.removeAll(instancesToRemove)
+    this.instancesLastUpdatedTime = LocalDateTime.now()
+  }
 
   fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    removeRedundantSlots(updates)
     updateMatchingSlots(updates)
     addNewSlots(updates)
+    removeRedundantSlots(updates)
   }
 
   private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
     slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) })
+    require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
   }
 
   private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {

@@ -339,7 +339,8 @@ internal fun activityCreateRequest(
     ),
     locationId = 1,
     capacity = 1,
-    slots = listOf(Slot(timeSlot = "AM", monday = true)),
+    scheduleWeeks = 1,
+    slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
     onWing = false,
   )
 

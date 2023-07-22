@@ -1,9 +1,10 @@
 {
-  "prisonCode": "PVI",
+  "prisonCode": "MDI",
   "attendanceRequired": false,
-  "summary": "Maths",
+  "summary": "IT level 1",
+  "description": "A basic IT course",
   "categoryId": 1,
-  "payPerSession": "H",
+  "tierId": 1,
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",
   "riskLevel": "high",
@@ -11,7 +12,7 @@
     {
       "incentiveNomisCode": "BAS",
       "incentiveLevel": "Basic",
-      "payBandId": 1,
+      "payBandId": 11,
       "rate": 125,
       "pieceRate": 150,
       "pieceRateItems": 10
@@ -19,7 +20,7 @@
     {
       "incentiveNomisCode": "STD",
       "incentiveLevel": "Standard",
-      "payBandId": 2,
+      "payBandId": 12,
       "rate": 160,
       "pieceRate": 180,
       "pieceRateItems": 15
@@ -34,14 +35,19 @@
     }
   ],
   "startDate": "2023-03-31",
-  "locationId": 26962,
+  "locationId": 1,
   "capacity": 20,
-  "scheduleWeeks": 1,
+  "scheduleWeeks": 2,
   "slots": [
     {
       "weekNumber": 1,
       "timeSlot": "AM",
       "monday": true
+    },
+    {
+      "weekNumber": 2,
+      "timeSlot": "PM",
+      "tuesday": true
     }
   ],
   "runsOnBankHoliday": false

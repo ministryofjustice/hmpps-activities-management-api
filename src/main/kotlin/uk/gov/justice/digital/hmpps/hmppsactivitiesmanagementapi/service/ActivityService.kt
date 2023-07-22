@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
@@ -171,12 +170,9 @@ class ActivityService(
         startDate = request.startDate,
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
-        // TODO - Add support for multi-week schedules
-        scheduleWeeks = 1,
+        scheduleWeeks = request.scheduleWeeks,
       ).let { schedule ->
-        // TODO - Add support for multi-week schedules
-        val weekNumber = 1
-        schedule.addSlots(weekNumber, request.slots!!)
+        schedule.addSlots(request.slots!!)
         schedule.addInstances()
 
         return transform(activityRepository.saveAndFlush(activity))
@@ -202,41 +198,41 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addSlots(weekNumber: Int, slots: List<Slot>) {
+  private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
       val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
       val daysOfWeek = getDaysOfWeek(slot)
-      this.addSlot(weekNumber, start, end, daysOfWeek)
+      this.addSlot(slot.weekNumber, start, end, daysOfWeek)
     }
   }
+
+  fun addScheduleInstances(
+    schedule: ActivitySchedule,
+    daysToSchedule: List<LocalDate>? = null,
+  ) = schedule.addInstances(daysToSchedule)
 
   /*
    * Note: we add instances even if the activity hasn't started for unlock list purposes.
    */
-  private fun ActivitySchedule.addInstances() {
-    val tomorrow = LocalDate.now().plusDays(1)
-    val endDay = LocalDate.now().plusDays(daysInAdvance)
-    val listOfDatesToSchedule = tomorrow.datesUntil(endDay).toList()
+  private fun ActivitySchedule.addInstances(daysToSchedule: List<LocalDate>? = null) {
+    val possibleDaysToSchedule = daysToSchedule ?: LocalDate.now().plusDays(1).let { tomorrow ->
+      tomorrow.datesUntil(tomorrow.plusDays(daysInAdvance)).toList()
+    }
 
-    listOfDatesToSchedule.filter { this.isActiveOn(it) }
-      .filter { it >= this.startDate }
-      .filter { this.endDate == null || it <= this.endDate }
-      .forEach { day ->
-        val weekNumber = this.getWeekNumber(day)
+    possibleDaysToSchedule.filter(::isActiveOn).forEach { activeDay ->
+      val scheduleWeekNumber = this.getWeekNumber(activeDay)
 
-        this.slots().filter { it.weekNumber == weekNumber }.forEach { slot ->
-          val daysOfWeek = slot.getDaysOfWeek()
-
-          if (day.dayOfWeek in daysOfWeek &&
-            this.hasNoInstancesOnDate(day, slot.startTime to slot.endTime) &&
-            (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day))
-          ) {
-            this.addInstance(sessionDate = day, slot = slot)
-          }
+      this.slots().filter { slot -> slot.weekNumber == scheduleWeekNumber }.forEach { slot ->
+        if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
+          this.hasNoInstancesOnDate(activeDay, slot.startTime to slot.endTime) &&
+          (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
+        ) {
+          this.addInstance(sessionDate = activeDay, slot = slot)
         }
       }
+    }
   }
 
   private fun getLocationForSchedule(activity: Activity, locationId: Long?) =
@@ -268,14 +264,12 @@ class ActivityService(
     request: ActivityUpdateRequest,
     updatedBy: String,
   ): ModelActivity {
-    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+    val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
       ?: throw EntityNotFoundException("Activity $activityId not found.")
 
     require(activity.state(ActivityState.ARCHIVED).not()) {
       "Activity cannot be updated because it is now archived."
     }
-
-    val now = LocalDateTime.now()
 
     applyCategoryUpdate(request, activity)
     applyTierUpdate(request, activity)
@@ -291,15 +285,12 @@ class ActivityService(
     applyInCellUpdate(request, activity)
     applyOnWingUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
-    if (request.minimumEducationLevel != null) {
-      applyMinimumEducationLevelUpdate(request.minimumEducationLevel, activity)
-    }
-    if (request.pay != null) {
-      applyPayUpdate(prisonCode, request.pay, activity)
-    }
-    if (request.slots != null) {
-      applySlotsUpdate(request.slots, activity)
-    }
+    applyMinimumEducationLevelUpdate(request, activity)
+    applyPayUpdate(prisonCode, request, activity)
+    applyScheduleWeeksUpdate(request, activity)
+    applySlotsUpdate(request, activity)
+
+    val now = LocalDateTime.now()
 
     activity.updatedTime = now
     activity.updatedBy = updatedBy
@@ -374,7 +365,6 @@ class ActivityService(
       }
 
       activity.startDate = newStartDate
-
       activity.schedules().forEach { it.startDate = newStartDate }
     }
   }
@@ -436,8 +426,7 @@ class ActivityService(
     val instancesToRemove = this.instances().filter {
       it.sessionDate > LocalDate.now()
     }.filter {
-      it.sessionDate < this.startDate ||
-        (this.endDate != null && it.sessionDate > this.endDate) ||
+      !this.isActiveOn(it.sessionDate) ||
         this.slots().none { slot ->
           slot.weekNumber == this.getWeekNumber(it.sessionDate) &&
             slot.getDaysOfWeek().contains(it.dayOfWeek()) &&
@@ -446,7 +435,7 @@ class ActivityService(
         !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
     }
 
-    this.removeInstances(instancesToRemove)
+    if (instancesToRemove.isNotEmpty()) this.removeInstances(instancesToRemove)
   }
 
   private fun applyCapacityUpdate(
@@ -509,65 +498,78 @@ class ActivityService(
   }
 
   private fun applyMinimumEducationLevelUpdate(
-    minimumEducationLevel: List<ActivityMinimumEducationLevelCreateRequest>,
+    request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    checkEducationLevels(minimumEducationLevel)
+    request.minimumEducationLevel?.let { minimumEducationLevel ->
+      checkEducationLevels(minimumEducationLevel)
 
-    activity.activityMinimumEducationLevel().filter {
-      minimumEducationLevel.none { newEducation ->
-        it.studyAreaCode == newEducation.studyAreaCode && it.educationLevelCode == newEducation.educationLevelCode
-      }
-    }.forEach { activity.removeMinimumEducationLevel(it) }
+      activity.activityMinimumEducationLevel().filter {
+        minimumEducationLevel.none { newEducation ->
+          it.studyAreaCode == newEducation.studyAreaCode && it.educationLevelCode == newEducation.educationLevelCode
+        }
+      }.forEach { activity.removeMinimumEducationLevel(it) }
 
-    minimumEducationLevel.filter {
-      activity.activityMinimumEducationLevel().none { activityEducation ->
-        it.studyAreaCode == activityEducation.studyAreaCode && it.educationLevelCode == activityEducation.educationLevelCode
+      minimumEducationLevel.filter {
+        activity.activityMinimumEducationLevel().none { activityEducation ->
+          it.studyAreaCode == activityEducation.studyAreaCode && it.educationLevelCode == activityEducation.educationLevelCode
+        }
+      }.forEach {
+        activity.addMinimumEducationLevel(
+          educationLevelCode = it.educationLevelCode!!,
+          educationLevelDescription = it.educationLevelDescription!!,
+          studyAreaCode = it.studyAreaCode!!,
+          studyAreaDescription = it.studyAreaDescription!!,
+        )
       }
-    }.forEach {
-      activity.addMinimumEducationLevel(
-        educationLevelCode = it.educationLevelCode!!,
-        educationLevelDescription = it.educationLevelDescription!!,
-        studyAreaCode = it.studyAreaCode!!,
-        studyAreaDescription = it.studyAreaDescription!!,
-      )
     }
   }
 
   private fun applyPayUpdate(
     prisonCode: String,
-    pay: List<ActivityPayCreateRequest>,
+    request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    activity.removePay()
-    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
-      .associateBy { it.prisonPayBandId }
-      .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
-    pay.forEach {
-      activity.addPay(
-        incentiveNomisCode = it.incentiveNomisCode!!,
-        incentiveLevel = it.incentiveLevel!!,
-        payBand = prisonPayBands[it.payBandId]
-          ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
-        rate = it.rate,
-        pieceRate = it.pieceRate,
-        pieceRateItems = it.pieceRateItems,
-      )
+    request.pay?.let { pay ->
+      activity.removePay()
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
+      pay.forEach {
+        activity.addPay(
+          incentiveNomisCode = it.incentiveNomisCode!!,
+          incentiveLevel = it.incentiveLevel!!,
+          payBand = prisonPayBands[it.payBandId]
+            ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
+          rate = it.rate,
+          pieceRate = it.pieceRate,
+          pieceRateItems = it.pieceRateItems,
+        )
+      }
+    }
+  }
+
+  private fun applyScheduleWeeksUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.scheduleWeeks?.let { scheduleWeeks ->
+      activity.schedules().forEach { it.scheduleWeeks = scheduleWeeks }
     }
   }
 
   private fun applySlotsUpdate(
-    slots: List<Slot>,
+    request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-    activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+    request.slots?.let { slots ->
+      val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
+      activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+    }
   }
 
   private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):
     Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>> {
-    // TODO: Add support for multi-week schedules
-    val weekNumber = 1
-    return this.associate { Pair(weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
+    return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
   }
 }

@@ -11,6 +11,12 @@ import java.time.LocalDate
 
 interface ActivityRepositoryCustom {
   fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Activity?
+
+  fun findByActivityIdAndPrisonCodeWithFilters(
+    activityId: Long,
+    prisonCode: String,
+    earliestSessionDate: LocalDate,
+  ): Activity?
 }
 
 class ActivityRepositoryImpl : ActivityRepositoryCustom {
@@ -36,6 +42,29 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
     return runCatching {
       query.singleResult
     }.onFailure { log.error("Activity by ID with filters ${it.message}") }
+      .getOrNull()
+  }
+
+  @Override
+  override fun findByActivityIdAndPrisonCodeWithFilters(
+    activityId: Long,
+    prisonCode: String,
+    earliestSessionDate: LocalDate,
+  ): Activity? {
+    val session = entityManager.unwrap(Session::class.java)
+
+    log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
+    val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
+    sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
+
+    val hql = "select a from Activity a where a.activityId = :activityId and a.prisonCode = :prisonCode"
+    val query: TypedQuery<Activity> = entityManager.createQuery(hql, Activity::class.java)
+    query.setParameter("activityId", activityId)
+    query.setParameter("prisonCode", prisonCode)
+
+    return runCatching {
+      query.singleResult
+    }.onFailure { log.error("Activity by ID and prison code with filters ${it.message}") }
       .getOrNull()
   }
 }

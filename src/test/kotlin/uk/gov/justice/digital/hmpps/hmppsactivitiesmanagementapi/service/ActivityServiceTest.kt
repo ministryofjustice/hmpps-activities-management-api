@@ -185,6 +185,59 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `createActivity - success - creates activity with multi-week schedule`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-9.json")
+      .copy(startDate = TimeSource.tomorrow())
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+
+    service(daysInAdvance = 14).createActivity(createActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verify(activityCategoryRepository).findById(1)
+    verify(activityTierRepository).findById(1)
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
+      assertThat(activityCategory).isEqualTo(activityCategory())
+      assertThat(activityTier).isEqualTo(activityTier())
+      with(schedules().first()) {
+        assertThat(slots()).hasSize(2)
+
+        // Week one only has AM slots
+        assertThat(
+          instances().filter {
+            getWeekNumber(it.sessionDate) == 1 && it.startTime == LocalTime.of(9, 0)
+          },
+        ).isNotEmpty
+        assertThat(
+          instances().filter {
+            getWeekNumber(it.sessionDate) == 1 && it.startTime == LocalTime.of(13, 0)
+          },
+        ).isEmpty()
+
+        // Week two only has PM slots
+        assertThat(
+          instances().filter {
+            getWeekNumber(it.sessionDate) == 2 && it.startTime == LocalTime.of(13, 0)
+          },
+        ).isNotEmpty
+        assertThat(
+          instances().filter {
+            getWeekNumber(it.sessionDate) == 2 && it.startTime == LocalTime.of(9, 0)
+          },
+        ).isEmpty()
+      }
+    }
+  }
+
+  @Test
   fun `createActivity - start date must be in the future`() {
     assertThatThrownBy {
       service().createActivity(
@@ -502,7 +555,13 @@ class ActivityServiceTest {
 
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
@@ -534,7 +593,13 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(savedActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
@@ -559,7 +624,13 @@ class ActivityServiceTest {
   fun `updateActivity - category id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, pentonvillePrisonCode)).thenReturn(savedActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        pentonvillePrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -574,7 +645,13 @@ class ActivityServiceTest {
   fun `updateActivity - tier id not found`() {
     val updatedBy = "SCH_ACTIVITY"
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, pentonvillePrisonCode)).thenReturn(savedActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        pentonvillePrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -600,7 +677,13 @@ class ActivityServiceTest {
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(beforeActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(beforeActivityEntity)
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -661,7 +744,13 @@ class ActivityServiceTest {
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(beforeActivityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(beforeActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
 
     service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
@@ -681,7 +770,13 @@ class ActivityServiceTest {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-3.json")
     val activityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(17, moorlandPrisonCode)).thenReturn(activityEntity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
@@ -698,7 +793,13 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if new date not in future`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
@@ -710,7 +811,13 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if new date after end date`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
@@ -727,7 +834,13 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if activity has already started`() {
     val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
@@ -739,7 +852,13 @@ class ActivityServiceTest {
   fun `updateActivity - update start date fails if activity has allocations already started`() {
     val activity = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.tomorrow().plusWeeks(1))
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
@@ -751,7 +870,13 @@ class ActivityServiceTest {
   fun `updateActivity - update end date fails if removeEndDate is also true`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
@@ -780,7 +905,13 @@ class ActivityServiceTest {
       )
     }
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThat(activity.endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
     activity.schedules().forEach { activitySchedule ->
@@ -813,7 +944,13 @@ class ActivityServiceTest {
       it.addInstance(TimeSource.tomorrow().plusDays(4), everydaySlot)
     }
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
 
@@ -836,7 +973,13 @@ class ActivityServiceTest {
         activity.schedules().forEach { schedule -> schedule.slots().onEach { slot -> slot.runEveryDayOfWeek() } }
       }
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     val newEndDate = activity.endDate!!.plusDays(4)
 
@@ -866,7 +1009,13 @@ class ActivityServiceTest {
       it.addInstance(TimeSource.tomorrow().plusDays(5), everydaySlot)
     }
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     service().updateActivity(
       moorlandPrisonCode,
@@ -889,9 +1038,18 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - fails if activity has already ended (archived)`() {
-    val activity = activityEntity(startDate = TimeSource.yesterday().minusDays(1), endDate = TimeSource.yesterday())
+    val activity = activityEntity(
+      startDate = TimeSource.yesterday().minusDays(1),
+      endDate = TimeSource.yesterday(),
+    )
 
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
@@ -912,7 +1070,13 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - add new slot (adds new instances)`() {
     val activity = activityEntity(noSchedules = true).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
@@ -928,6 +1092,7 @@ class ActivityServiceTest {
       ActivityUpdateRequest(
         slots = listOf(
           Slot(
+            weekNumber = 1,
             timeSlot = "AM",
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
@@ -949,7 +1114,13 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - remove slots (removes instances)`() {
     val activity = activityEntity(noSchedules = true).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val tomorrow = LocalDate.now().plusDays(1)
@@ -983,6 +1154,7 @@ class ActivityServiceTest {
       ActivityUpdateRequest(
         slots = listOf(
           Slot(
+            weekNumber = 1,
             timeSlot = "AM",
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
@@ -1006,7 +1178,13 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - update existing slot (adds & removes instances)`() {
     val activity = activityEntity(noSchedules = true).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val tomorrow = LocalDate.now().plusDays(1)
@@ -1037,6 +1215,7 @@ class ActivityServiceTest {
       ActivityUpdateRequest(
         slots = listOf(
           Slot(
+            weekNumber = 1,
             timeSlot = "ED",
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
@@ -1047,6 +1226,7 @@ class ActivityServiceTest {
             sunday = tomorrow.dayOfWeek == DayOfWeek.SUNDAY,
           ),
           Slot(
+            weekNumber = 1,
             timeSlot = "PM",
             monday = tomorrow.plusDays(1).dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.plusDays(1).dayOfWeek == DayOfWeek.TUESDAY,
@@ -1076,7 +1256,13 @@ class ActivityServiceTest {
     val dayAfterBankHoliday = bankHoliday.plusDays(1)
 
     val activity = activityEntity(startDate = bankHoliday, noSchedules = true).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val schedule =
@@ -1110,7 +1296,13 @@ class ActivityServiceTest {
     val dayAfterBankHoliday = bankHoliday.plusDays(1)
 
     val activity = activityEntity(startDate = bankHoliday, noSchedules = true).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val schedule =
@@ -1154,7 +1346,13 @@ class ActivityServiceTest {
       startDate = tomorrow.plusDays(14),
       noSchedules = true,
     ).also {
-      whenever(activityRepository.findByActivityIdAndPrisonCode(it.activityId, it.prisonCode)) doReturn (it)
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
     }
 
     val schedule = activity.addSchedule(
@@ -1185,22 +1383,137 @@ class ActivityServiceTest {
       updatedBy = "TEST",
     )
 
-    val week1Schedules = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 1 }
-    assertThat(week1Schedules.size).isEqualTo(2)
-    week1Schedules.all {
+    val week1Instances = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 1 }
+    assertThat(week1Instances.size).isEqualTo(2)
+    week1Instances.all {
       listOf(
         tomorrow.dayOfWeek,
         tomorrow.plusDays(2).dayOfWeek,
       ).contains(it.dayOfWeek())
     }
 
-    val week2Schedules = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 2 }
-    assertThat(week2Schedules.size).isEqualTo(2)
-    week2Schedules.all {
+    val week2Instances = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 2 }
+    assertThat(week2Instances.size).isEqualTo(2)
+    week2Instances.all {
       listOf(
         tomorrow.plusDays(1).dayOfWeek,
         tomorrow.plusDays(3).dayOfWeek,
       ).contains(it.dayOfWeek())
     }
+  }
+
+  @Test
+  fun `updateActivity - update slots of multi-week schedule`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    ).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(
+      activitySchedule(activity, scheduleWeeks = 2, noSlots = true, noInstances = true, noAllocations = true),
+    ).apply {
+      addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+    }
+
+    schedule.instances() hasSize 0
+
+    val week2SlotDay = tomorrow.plusDays(1).dayOfWeek
+
+    val daysToSchedule = 14L
+    service(daysInAdvance = daysToSchedule).updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
+            tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
+            wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
+            thursday = tomorrow.dayOfWeek == DayOfWeek.THURSDAY,
+            friday = tomorrow.dayOfWeek == DayOfWeek.FRIDAY,
+            saturday = tomorrow.dayOfWeek == DayOfWeek.SATURDAY,
+            sunday = tomorrow.dayOfWeek == DayOfWeek.SUNDAY,
+          ),
+          Slot(
+            weekNumber = 2,
+            timeSlot = "AM",
+            monday = week2SlotDay == DayOfWeek.MONDAY,
+            tuesday = week2SlotDay == DayOfWeek.TUESDAY,
+            wednesday = week2SlotDay == DayOfWeek.WEDNESDAY,
+            thursday = week2SlotDay == DayOfWeek.THURSDAY,
+            friday = week2SlotDay == DayOfWeek.FRIDAY,
+            saturday = week2SlotDay == DayOfWeek.SATURDAY,
+            sunday = week2SlotDay == DayOfWeek.SUNDAY,
+          ),
+        ),
+      ),
+      updatedBy = "TEST",
+    )
+
+    val week1Instances = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 1 }
+    assertThat(week1Instances.size).isEqualTo(1)
+    week1Instances.all {
+      listOf(tomorrow.dayOfWeek).contains(it.dayOfWeek())
+    }
+
+    val week2Schedules = schedule.instances().filter { schedule.getWeekNumber(it.sessionDate) == 2 }
+    assertThat(week2Schedules.size).isEqualTo(1)
+    week2Schedules.all {
+      listOf(tomorrow.plusDays(1).dayOfWeek).contains(it.dayOfWeek())
+    }
+  }
+
+  @Test
+  fun `addScheduleInstances - should add new schedule instances where required`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    )
+
+    val schedule = activity.addSchedule(
+      activitySchedule(activity, scheduleWeeks = 2, noSlots = true, noInstances = true, noAllocations = true),
+    ).apply {
+      addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+      addSlot(
+        weekNumber = 2,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.plusDays(1).dayOfWeek),
+      )
+    }
+
+    assertThat(schedule.instances()).isEmpty()
+
+    service(7).addScheduleInstances(schedule)
+
+    schedule.instances() hasSize 1
+
+    service(14).addScheduleInstances(schedule)
+
+    schedule.instances() hasSize 2
   }
 }
