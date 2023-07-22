@@ -736,9 +736,28 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - removal of the end date is successful`() {
-    val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
+    val activity = activityEntity(
+      startDate = TimeSource.tomorrow(),
+      endDate = TimeSource.tomorrow().plusDays(1),
+      noSchedules = true,
+    ).apply {
+      this.addSchedule(
+        activitySchedule(
+          this,
+          activityScheduleId = 1,
+          daysOfWeek = DayOfWeek.values().toSet(),
+        ),
+      )
+    }
 
     whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(activity)
+
+    assertThat(activity.endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+    activity.schedules().forEach { activitySchedule ->
+      assertThat(
+        activitySchedule.instances().find { i -> i.sessionDate > TimeSource.tomorrow().plusDays(1) },
+      ).isNull()
+    }
 
     service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
 
