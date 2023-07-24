@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonReg
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
@@ -277,5 +278,18 @@ class PrisonRegimeServiceTest {
 
     assertThat(result.start).isEqualTo("18:00")
     assertThat(result.end).isEqualTo("23:59")
+  }
+
+  @Test
+  fun `returns prison time slot map`() {
+    val prisonCode = "PBI"
+    whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
+      .thenReturn(prisonRegime())
+    val prisonTimeSlots = service.getPrisonTimeSlots(prisonCode)
+
+    assertThat(prisonTimeSlots.values).hasSize(3)
+    assertThat(prisonTimeSlots[TimeSlot.AM]).isEqualTo(LocalTime.of(9, 0) to LocalTime.of(12, 0))
+    assertThat(prisonTimeSlots[TimeSlot.PM]).isEqualTo(LocalTime.of(13, 0) to LocalTime.of(16, 30))
+    assertThat(prisonTimeSlots[TimeSlot.ED]).isEqualTo(LocalTime.of(18, 0) to LocalTime.of(20, 0))
   }
 }

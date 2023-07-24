@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -143,13 +144,7 @@ internal fun activitySchedule(
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   description: String = "schedule description",
   scheduleWeeks: Int = 1,
-  monday: Boolean = true,
-  tuesday: Boolean = false,
-  wednesday: Boolean = false,
-  thursday: Boolean = false,
-  friday: Boolean = false,
-  saturday: Boolean = false,
-  sunday: Boolean = false,
+  daysOfWeek: Set<DayOfWeek> = setOf(DayOfWeek.MONDAY),
   runsOnBankHolidays: Boolean = false,
   startDate: LocalDate? = null,
   endDate: LocalDate? = null,
@@ -180,22 +175,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      this.addSlot(
-        ActivityScheduleSlot(
-          activityScheduleSlotId = 1,
-          weekNumber = 1,
-          activitySchedule = this,
-          startTime = timestamp.toLocalTime(),
-          endTime = timestamp.toLocalTime().plusHours(1),
-          mondayFlag = monday,
-          tuesdayFlag = tuesday,
-          wednesdayFlag = wednesday,
-          thursdayFlag = thursday,
-          fridayFlag = friday,
-          saturdayFlag = saturday,
-          sundayFlag = sunday,
-        ),
-      )
+      this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
     }
     if (!noInstances && !noSlots) {
       this.addInstance(
