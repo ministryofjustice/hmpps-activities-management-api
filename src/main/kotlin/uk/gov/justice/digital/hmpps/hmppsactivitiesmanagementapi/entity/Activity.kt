@@ -241,10 +241,6 @@ data class Activity(
       throw IllegalArgumentException("The schedule start date '$startDate' cannot be before the activity start date ${this.startDate}")
     }
 
-    if (this.endDate != null && startDate.isBefore(this.endDate).not()) {
-      throw IllegalArgumentException("The schedule start date '$startDate' must be before the activity end date ${this.endDate}")
-    }
-
     if (endDate != null && this.endDate != null && endDate.isAfter(this.endDate)) {
       throw IllegalArgumentException("The schedule end date '$endDate' cannot be after the activity end date ${this.endDate}")
     }
