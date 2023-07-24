@@ -33,13 +33,20 @@ fun EntityAllocation.toPrisonerAllocatedEvent() = PrisonerAllocatedEvent(
   createdAt = allocatedTime,
 )
 
-fun EntityAllocation.toPrisonerDeallocatedEvent() = PrisonerDeallocatedEvent(
-  activityId = activitySchedule.activity.activityId,
-  activityName = activitySchedule.activity.summary,
-  prisonCode = activitySchedule.activity.prisonCode,
-  prisonerNumber = prisonerNumber,
-  scheduleId = activitySchedule.activityScheduleId,
-  deallocationTime = deallocatedTime ?: throw IllegalStateException("Missing expected deallocation time"),
-  reason = deallocatedReason?.description ?: throw IllegalStateException("Missing expected deallocation description"),
-  deallocatedBy = deallocatedBy ?: throw IllegalStateException("Missing expected deallocated By"),
-)
+fun EntityAllocation.toPrisonerDeallocatedEvent() =
+  let {
+    if (isEnded().not() || deallocatedTime == null || deallocatedReason == null || deallocatedBy == null) {
+      throw IllegalStateException("Prisoner $prisonerNumber is missing expected deallocation details for allocation id 123456")
+    }
+
+    PrisonerDeallocatedEvent(
+      activityId = activitySchedule.activity.activityId,
+      activityName = activitySchedule.activity.summary,
+      prisonCode = activitySchedule.activity.prisonCode,
+      prisonerNumber = prisonerNumber,
+      scheduleId = activitySchedule.activityScheduleId,
+      deallocationTime = deallocatedTime!!,
+      reason = deallocatedReason!!.description,
+      deallocatedBy = deallocatedBy!!,
+    )
+  }
