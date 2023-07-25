@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AuditRecordSearchFilters
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.LocalAuditSearchResults
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import java.time.LocalDateTime
 
 class AuditIntegrationTest : IntegrationTestBase() {
@@ -174,7 +175,7 @@ class AuditIntegrationTest : IntegrationTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

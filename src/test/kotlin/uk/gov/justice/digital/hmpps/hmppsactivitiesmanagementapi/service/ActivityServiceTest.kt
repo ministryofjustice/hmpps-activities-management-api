@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
@@ -51,6 +52,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -140,6 +144,11 @@ class ActivityServiceTest {
         )
       },
     )
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
   }
 
   @Test
@@ -262,9 +271,18 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+    val prisonCode = "123"
+    addCaseloadIdToRequestHeader(prisonCode)
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = prisonCode)))
 
     assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
+  }
+
+  @Test
+  fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+
+    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test

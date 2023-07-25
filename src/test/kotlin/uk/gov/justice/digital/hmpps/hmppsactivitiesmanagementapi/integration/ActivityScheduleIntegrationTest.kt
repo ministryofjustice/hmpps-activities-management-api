@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -80,7 +82,34 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .also { assertThat(it).hasSize(3) }
   }
 
-  private fun WebTestClient.getAllocationsBy(scheduleId: Long, activeOnly: Boolean? = null) =
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `403 when fetching allocations for the wrong case load`() {
+    webTestClient.get()
+      .uri("/schedules/1/allocations")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `attempting to fetch allocations without specifying a caseload succeeds if admin role present`() {
+    webTestClient.get()
+      .uri("/schedules/1/allocations")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+  }
+
+  private fun WebTestClient.getAllocationsBy(scheduleId: Long, activeOnly: Boolean? = null, caseLoadId: String = "PVI") =
     get()
       .uri { builder ->
         builder
@@ -90,6 +119,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       }
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
+      .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -110,7 +140,35 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.getScheduleBy(scheduleId: Long) =
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `403 when fetching schedule for the wrong case load`() {
+    webTestClient.get()
+      .uri("/schedules/1")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `attempting to get a schedule without specifying a caseload succeeds if admin role present`() {
+    webTestClient.get()
+      .uri("/schedules/1")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI") =
     get()
       .uri { builder ->
         builder
@@ -119,6 +177,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       }
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
+      .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -284,6 +343,33 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     assertThat(response["totalElements"]).isEqualTo(16)
   }
 
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `403 when fetching candidates for the wrong case load`() {
+    webTestClient.get()
+      .uri("/schedules/1/candidates")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `attempting to fetch candidates without specifying a caseload succeeds if admin role present`() {
+    webTestClient.get()
+      .uri("/schedules/1/candidates")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+  }
+
   @Test
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
@@ -348,7 +434,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .uri("/schedules/$scheduleId/allocations")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
 
   private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) =
@@ -356,14 +442,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .uri("/schedules/$scheduleId/deallocate")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
 
-  private fun WebTestClient.getCandidates(scheduleId: Long, pageNum: Long = 0, pageSize: Long = 10) =
+  private fun WebTestClient.getCandidates(scheduleId: Long, pageNum: Long = 0, pageSize: Long = 10, caseLoadId: String = "PVI") =
     get()
       .uri("/schedules/$scheduleId/candidates?size=$pageSize&page=$pageNum")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
 }

@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
@@ -76,6 +77,8 @@ class CandidatesService(
     searchString: String?,
   ): List<ActivityCandidate> {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
+    checkCaseloadAccess(schedule.activity.prisonCode)
+
     val prisonCode = schedule.activity.prisonCode
 
     var prisoners =

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -97,6 +98,7 @@ class ActivityScheduleController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun getAllocationsBy(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
@@ -157,6 +159,7 @@ class ActivityScheduleController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
     scheduleService.getScheduleById(scheduleId)
 
@@ -283,6 +286,7 @@ class ActivityScheduleController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun candidates(
     @PathVariable("scheduleId") scheduleId: Long,

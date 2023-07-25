@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
@@ -78,7 +79,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isNoContent
 
@@ -154,7 +155,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isNoContent
 

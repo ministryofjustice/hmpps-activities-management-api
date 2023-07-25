@@ -3,9 +3,9 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.2.2"
-  kotlin("plugin.spring") version "1.8.22"
-  kotlin("plugin.jpa") version "1.8.22"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.3.0-beta"
+  kotlin("plugin.spring") version "1.9.0"
+  kotlin("plugin.jpa") version "1.9.0"
   jacoco
   id("org.openapi.generator") version "6.6.0"
 }
@@ -29,8 +29,8 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
 
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.25.0")
 
@@ -50,9 +50,9 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:2.38.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.38.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:2.38.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:3.0.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.0.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.0.0")
 }
 
 java {
