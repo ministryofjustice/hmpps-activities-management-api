@@ -156,7 +156,7 @@ class TransformFunctionsTest {
           activity = activity.toModelLite(),
           slots = listOf(
             ActivityScheduleSlot(
-              id = 1L,
+              id = 0,
               weekNumber = 1,
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),

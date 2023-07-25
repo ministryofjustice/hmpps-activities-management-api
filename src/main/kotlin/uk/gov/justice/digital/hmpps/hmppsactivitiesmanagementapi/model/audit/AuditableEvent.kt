@@ -10,10 +10,8 @@ open class AuditableEvent(
   val auditEventType: AuditEventType,
   val createdAt: LocalDateTime,
   private val details: String,
+  val createdBy: String = SecurityUtils.getUserNameForLoggedInUser(),
 ) {
-
-  val createdBy = SecurityUtils.getUserNameForLoggedInUser()
-
   override fun toString() = "$details. Event created on ${createdAt.toLocalDate()} " +
     "at ${createdAt.format(DateTimeFormatter.ofPattern("HH:mm:ss"))} by $createdBy."
 }

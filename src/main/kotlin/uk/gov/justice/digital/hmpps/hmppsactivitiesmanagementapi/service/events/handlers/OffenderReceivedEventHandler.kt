@@ -86,7 +86,6 @@ class OffenderReceivedEventHandler(
             (attendance.scheduledInstance.sessionDate > now.toLocalDate())
         }
         .onEach { attendance ->
-          log.info("attendance ${attendance.attendanceId}")
           if (attendance.scheduledInstance.cancelled) {
             // If the schedule instance was cancelled (and still is) after the initial suspension then we need to cancel instead of unsuspend
             attendance.cancel(cancelledReason).also { log.info("Cancelled attendance ${attendance.attendanceId}") }

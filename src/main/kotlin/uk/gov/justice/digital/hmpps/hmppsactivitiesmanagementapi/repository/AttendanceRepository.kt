@@ -25,10 +25,10 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       SELECT a
         FROM Attendance a
        WHERE a.scheduledInstance.activitySchedule.activity.prisonCode = :prisonCode
-         AND a.status = :attendanceStatus
+         AND (:attendanceStatus is null or a.status = :attendanceStatus)
          AND a.scheduledInstance.sessionDate >= :sessionDate
          AND a.prisonerNumber = :prisonerNumber
     """,
   )
-  fun findAttendancesOnOrAfterDateForPrisoner(prisonCode: String, sessionDate: LocalDate, attendanceStatus: AttendanceStatus, prisonerNumber: String): List<Attendance>
+  fun findAttendancesOnOrAfterDateForPrisoner(prisonCode: String, sessionDate: LocalDate, attendanceStatus: AttendanceStatus? = null, prisonerNumber: String): List<Attendance>
 }

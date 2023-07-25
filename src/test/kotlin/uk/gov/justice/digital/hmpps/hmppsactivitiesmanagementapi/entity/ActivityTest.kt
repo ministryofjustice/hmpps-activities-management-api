@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -163,6 +164,41 @@ class ActivityTest {
   }
 
   @Test
+  fun `can add schedule to activity that starts and ends on same day`() {
+    val activity = activityEntity(noSchedules = true, startDate = LocalDate.now(), endDate = LocalDate.now())
+    assertThat(activity.schedules()).isEmpty()
+
+    activity.addSchedule(
+      description = "Woodwork",
+      internalLocation = Location(
+        locationId = 1,
+        internalLocationCode = "WW",
+        description = "The wood work room description",
+        locationType = "APP",
+        agencyId = "MDI",
+      ),
+      capacity = 10,
+      startDate = activity.startDate,
+      endDate = activity.endDate,
+      runsOnBankHoliday = true,
+      scheduleWeeks = 1,
+    )
+
+    with(activity.schedules().first()) {
+      assertThat(this.activity).isEqualTo(activity)
+      assertThat(description).isEqualTo("Woodwork")
+      assertThat(internalLocationId).isEqualTo(1)
+      assertThat(internalLocationCode).isEqualTo("WW")
+      assertThat(internalLocationDescription).isEqualTo("The wood work room description")
+      assertThat(capacity).isEqualTo(10)
+      assertThat(startDate).isEqualTo(TimeSource.today())
+      assertThat(endDate).isEqualTo(TimeSource.today())
+      assertThat(runsOnBankHoliday).isTrue
+      assertThat(scheduleWeeks).isEqualTo(1)
+    }
+  }
+
+  @Test
   fun `cannot add schedule when start date is before that of the activity`() {
     val activity = activityEntity(noSchedules = true)
     assertThat(activity.schedules()).isEmpty()
@@ -187,34 +223,10 @@ class ActivityTest {
   }
 
   @Test
-  fun `cannot add schedule when start date is not before end date of the activity`() {
-    val activity =
-      activityEntity(noSchedules = true).copy(startDate = LocalDate.now()).apply { endDate = LocalDate.now().plusDays(1) }
-    assertThat(activity.schedules()).isEmpty()
-
-    assertThatThrownBy {
-      activity.addSchedule(
-        description = "Woodwork",
-        internalLocation = Location(
-          locationId = 1,
-          internalLocationCode = "WW",
-          description = "The wood work room description",
-          locationType = "APP",
-          agencyId = "MDI",
-        ),
-        capacity = 10,
-        startDate = activity.endDate!!,
-        runsOnBankHoliday = true,
-        scheduleWeeks = 1,
-      )
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The schedule start date '${activity.endDate}' must be before the activity end date ${activity.endDate}")
-  }
-
-  @Test
   fun `cannot add schedule when end date is after the end date of the activity`() {
     val activity =
-      activityEntity(noSchedules = true).copy(startDate = LocalDate.now()).apply { endDate = LocalDate.now().plusDays(1) }
+      activityEntity(noSchedules = true).copy(startDate = LocalDate.now())
+        .apply { endDate = LocalDate.now().plusDays(1) }
     assertThat(activity.schedules()).isEmpty()
 
     assertThatThrownBy {
@@ -413,6 +425,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -429,6 +442,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -453,6 +467,7 @@ class ActivityTest {
     val schedule = activity.schedules().first()
 
     schedule.addSlot(
+      weekNumber = 1,
       startTime = LocalTime.NOON,
       endTime = LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
@@ -490,6 +505,7 @@ class ActivityTest {
       scheduleWeeks = 1,
     ).apply {
       addSlot(
+        weekNumber = 1,
         startTime = LocalTime.NOON,
         endTime = LocalTime.NOON.plusHours(1),
         setOf(*DayOfWeek.values()),
@@ -520,7 +536,8 @@ class ActivityTest {
 
   @Test
   fun `can add minimum education levels to activity`() {
-    val activity = activityEntity(noMinimumEducationLevels = true).also { assertThat(it.activityMinimumEducationLevel()).isEmpty() }
+    val activity =
+      activityEntity(noMinimumEducationLevels = true).also { assertThat(it.activityMinimumEducationLevel()).isEmpty() }
 
     activity.addMinimumEducationLevel(
       educationLevelCode = "1",

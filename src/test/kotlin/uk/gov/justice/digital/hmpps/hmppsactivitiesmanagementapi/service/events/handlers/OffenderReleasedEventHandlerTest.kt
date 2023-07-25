@@ -18,13 +18,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.SentenceCalcDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -33,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderTemporaryReleasedEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class OffenderReleasedEventHandlerTest {
@@ -40,8 +44,15 @@ class OffenderReleasedEventHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
+  private val attendanceRepository: AttendanceRepository = mock()
 
-  private val handler = OffenderReleasedEventHandler(rolloutPrisonRepository, allocationRepository, appointmentOccurrenceAllocationService, prisonApiClient)
+  private val handler = OffenderReleasedEventHandler(
+    rolloutPrisonRepository,
+    allocationRepository,
+    appointmentOccurrenceAllocationService,
+    prisonApiClient,
+    attendanceRepository,
+  )
 
   private val prisoner: InmateDetail = mock {
     on { status } doReturn "INACTIVE OUT"
@@ -152,8 +163,6 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
-
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
   }
 
   @Test
@@ -193,8 +202,6 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
-
-    verify(allocationRepository).saveAllAndFlush(any<List<Allocation>>())
   }
 
   @Test
@@ -270,5 +277,63 @@ class OffenderReleasedEventHandlerTest {
 
     assertThat(outcome.isSuccess()).isTrue()
     verify(appointmentOccurrenceAllocationService).cancelFutureOffenderAppointments(moorlandPrisonCode, "12345")
+  }
+
+  @Test
+  fun `only future attendances are removed on release`() {
+    prisonApiClient.stub {
+      on {
+        prisonApiClient.getPrisonerDetails(
+          "123456",
+          fullInfo = true,
+          extraInfo = true,
+        )
+      } doReturn Mono.just(prisoner)
+    }
+
+    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+    }
+
+    val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
+    val todaysHistoricAttendance = attendanceFor(todaysHistoricScheduledInstance)
+
+    val todaysFuturescheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().plusMinutes(1))
+    val todaysFutureAttendance = attendanceFor(todaysFuturescheduledInstance)
+
+    val tomorrowsScheduledInstance = scheduledInstanceOn(TimeSource.tomorrow(), LocalTime.now().plusMinutes(1))
+    val tomorrowsFutureAttendance = attendanceFor(tomorrowsScheduledInstance)
+
+    whenever(
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
+        prisonCode = moorlandPrisonCode,
+        sessionDate = LocalDate.now(),
+        prisonerNumber = "123456",
+      ),
+    ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+
+    handler.handle(
+      OffenderReleasedEvent(
+        ReleaseInformation(
+          nomsNumber = "123456",
+          reason = "RELEASED",
+          prisonId = moorlandPrisonCode,
+        ),
+      ),
+    )
+
+    verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
+    verify(todaysFuturescheduledInstance).remove(todaysFutureAttendance)
+    verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
+  }
+
+  private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {
+    on { sessionDate } doReturn date
+    on { startTime } doReturn time
+  }
+
+  private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {
+    on { scheduledInstance } doReturn instance
+    on { editable() } doReturn true
   }
 }

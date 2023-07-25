@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
@@ -12,22 +14,29 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
@@ -39,7 +48,16 @@ import java.time.temporal.ChronoUnit
 /**
  * This integration test is bypassing the step whereby this would be instigated by incoming prisoner events.
  */
+@TestPropertySource(
+  properties = [
+    "feature.audit.service.hmpps.enabled=true",
+    "feature.audit.service.local.enabled=true",
+  ],
+)
 class InboundEventsIntegrationTest : IntegrationTestBase() {
+
+  @Autowired
+  private lateinit var auditRepository: AuditRepository
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -59,6 +77,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentOccurrenceAllocationSearchRepository: AppointmentOccurrenceAllocationSearchRepository
 
+  @MockBean
+  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
+
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
+
   @Autowired
   private lateinit var service: InboundEventsService
 
@@ -74,7 +99,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     // This event falls back to being processed as an interesting event due to the unknown reason for release
@@ -89,7 +114,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     assertThat(eventReviewRepository.count()).isEqualTo(1L)
@@ -107,18 +132,34 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+
+    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
+
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
+      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
+    }
+
+    with(hmppsAuditEventCaptor.secondValue) {
+      assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
+      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":2,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
+    }
+
+    // TODO check rows created as expected in the local audit table.
   }
 
   @Test
@@ -132,13 +173,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
     }
 
@@ -157,18 +198,47 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED))
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-released-event-deletes-attendances.sql")
+  fun `permanent release of prisoner removes any future attendances at time of event being raised`() {
+    prisonApiMockServer.stubGetPrisonerDetails(
+      prisonerNumber = "A11111A",
+      fullInfo = true,
+      extraInfo = true,
+      jsonFileSuffix = "-released-from-remand",
+    )
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
+    }
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
   }
 
   @Test
@@ -183,7 +253,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
@@ -240,7 +310,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A1234BC").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
@@ -341,7 +411,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE))
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
     attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {

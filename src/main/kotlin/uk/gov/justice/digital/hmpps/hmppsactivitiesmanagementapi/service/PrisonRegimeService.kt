@@ -75,6 +75,15 @@ class PrisonRegimeService(
 
         LocalTimeRange(start, end)
       }
+
+  fun getPrisonTimeSlots(prisonCode: String): Map<TimeSlot, Pair<LocalTime, LocalTime>> =
+    getPrisonRegimeByPrisonCode(prisonCode).let { pr ->
+      mapOf(
+        TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
+        TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
+        TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
+      )
+    }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)

@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 
 @Entity
 @Table(name = "activity")
-@EntityListeners(AuditableListener::class)
+@EntityListeners(AuditableEntityListener::class)
 data class Activity(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -239,10 +239,6 @@ data class Activity(
   private fun failIfScheduleDatesClashWithActivityDates(startDate: LocalDate, endDate: LocalDate?) {
     if (startDate.isBefore(this.startDate)) {
       throw IllegalArgumentException("The schedule start date '$startDate' cannot be before the activity start date ${this.startDate}")
-    }
-
-    if (this.endDate != null && startDate.isBefore(this.endDate).not()) {
-      throw IllegalArgumentException("The schedule start date '$startDate' must be before the activity end date ${this.endDate}")
     }
 
     if (endDate != null && this.endDate != null && endDate.isAfter(this.endDate)) {

@@ -35,7 +35,7 @@ class ActivitiesChangedEventHandler(
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {
         Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event).let { Outcome.success() }
-        Action.END -> deallocatePrisonerAllocations(event).let { Outcome.success() }
+        Action.END -> deallocatePrisonerAndRemoveFutureAttendances(event).let { Outcome.success() }
         else -> log.warn("Unable to process $event, unknown action").let { Outcome.failed() }
       }
     }
@@ -79,7 +79,7 @@ class ActivitiesChangedEventHandler(
     }
   }
 
-  private fun deallocatePrisonerAllocations(event: ActivitiesChangedEvent) =
+  private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) =
     allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
       .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE)
       .also { log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.") }
