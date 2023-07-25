@@ -52,9 +52,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseLoadAccessException
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseLoadIdFromRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -148,7 +148,7 @@ class ActivityServiceTest {
 
   @AfterEach
   fun tearDown() {
-    clearCaseLoadIdFromRequestHeader()
+    clearCaseloadIdFromRequestHeader()
   }
 
   @Test
@@ -271,8 +271,9 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
-    addCaseLoadIdToRequestHeader("123")
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+    val prisonCode = "123"
+    addCaseloadIdToRequestHeader(prisonCode)
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = prisonCode)))
 
     assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
   }
@@ -281,7 +282,7 @@ class ActivityServiceTest {
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
 
-    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseLoadAccessException::class.java)
+    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test

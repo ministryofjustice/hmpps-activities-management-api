@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
@@ -35,7 +35,7 @@ class AllocationsService(
   fun getAllocationById(id: Long): ModelAllocation {
     val allocation = allocationRepository.findOrThrowNotFound(id).toModel()
     val schedule = scheduleRepository.findOrThrowNotFound(allocation.scheduleId)
-    checkCaseLoadAccess(schedule.activity.prisonCode)
+    checkCaseloadAccess(schedule.activity.prisonCode)
 
     return allocation
   }

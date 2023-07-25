@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformFilteredInstances
@@ -82,7 +82,7 @@ class ActivityScheduleService(
 
   fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> {
     val schedule = repository.findOrThrowNotFound(scheduleId)
-    checkCaseLoadAccess(schedule.activity.prisonCode)
+    checkCaseloadAccess(schedule.activity.prisonCode)
 
     return schedule.allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
@@ -91,7 +91,7 @@ class ActivityScheduleService(
 
   fun getScheduleById(scheduleId: Long): ModelActivitySchedule {
     val schedule = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
-    checkCaseLoadAccess(schedule.activity.prisonCode)
+    checkCaseloadAccess(schedule.activity.prisonCode)
     return schedule
   }
 

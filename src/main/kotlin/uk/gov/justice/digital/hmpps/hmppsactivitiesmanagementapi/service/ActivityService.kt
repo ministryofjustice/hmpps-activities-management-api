@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
@@ -66,7 +66,7 @@ class ActivityService(
   fun getActivityById(activityId: Long): ModelActivity {
     val activity = activityRepository.findById(activityId)
       .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-    checkCaseLoadAccess(activity.prisonCode)
+    checkCaseloadAccess(activity.prisonCode)
     return transform(activity)
   }
 

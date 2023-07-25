@@ -23,31 +23,31 @@ class CheckCaseLoadAccessTest {
 
   @Test
   fun `should throw exception if no client token and not admin user and wrong caseload id `() {
-    addCaseLoadIdToRequestHeader("PVI")
-    assertThrows<CaseLoadAccessException> { checkCaseLoadAccess(prisonCode) }
+    addCaseloadIdToRequestHeader("PVI")
+    assertThrows<CaseloadAccessException> { checkCaseloadAccess(prisonCode) }
   }
 
   @Test
   fun `should throw exception if no client token and not admin user and null caseload id `() {
-    assertThrows<CaseLoadAccessException> { checkCaseLoadAccess(prisonCode) }
+    assertThrows<CaseloadAccessException> { checkCaseloadAccess(prisonCode) }
   }
 
   @Test
   fun `should not throw exception if client token present`() {
     setTokenExpectations(isUserToken = false)
-    assertDoesNotThrow { checkCaseLoadAccess(prisonCode) }
+    assertDoesNotThrow { checkCaseloadAccess(prisonCode) }
   }
 
   @Test
   fun `should not throw exception if admin user`() {
     setTokenExpectations(hasAdminRole = true)
-    assertDoesNotThrow { checkCaseLoadAccess(prisonCode) }
+    assertDoesNotThrow { checkCaseloadAccess(prisonCode) }
   }
 
   @Test
   fun `should not throw exception if case load id matches prison code`() {
-    addCaseLoadIdToRequestHeader(prisonCode)
-    assertDoesNotThrow { checkCaseLoadAccess(prisonCode) }
+    addCaseloadIdToRequestHeader(prisonCode)
+    assertDoesNotThrow { checkCaseloadAccess(prisonCode) }
   }
 
   private fun setTokenExpectations(isUserToken: Boolean = true, hasAdminRole: Boolean = false) {

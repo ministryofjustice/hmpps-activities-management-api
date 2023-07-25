@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseLoadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 
 @Service
 @Transactional(readOnly = true)
@@ -31,7 +31,7 @@ class ScheduledInstanceService(
   fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance {
     val activityScheduleInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
-    checkCaseLoadAccess(activityScheduleInstance?.activitySchedule?.activity?.prisonCode)
+    checkCaseloadAccess(activityScheduleInstance?.activitySchedule?.activity?.prisonCode)
     return activityScheduleInstance.toModel()
   }
 

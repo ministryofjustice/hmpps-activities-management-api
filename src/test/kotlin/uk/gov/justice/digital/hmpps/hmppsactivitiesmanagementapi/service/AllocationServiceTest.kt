@@ -23,10 +23,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseLoadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
-import java.util.*
+import java.util.Optional
 
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
@@ -73,7 +73,7 @@ class AllocationServiceTest {
   fun `transformed allocation returned when find by id`() {
     val expected = allocation()
 
-    addCaseLoadIdToRequestHeader("123")
+    addCaseloadIdToRequestHeader("123")
     whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
 
