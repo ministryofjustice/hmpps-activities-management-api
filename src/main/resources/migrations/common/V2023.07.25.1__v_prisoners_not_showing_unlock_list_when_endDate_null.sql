@@ -16,7 +16,7 @@ AS SELECT si.scheduled_instance_id,
           act.summary AS activity_summary,
           si.cancelled,
           CASE
-              WHEN alloc.prisoner_status::text = 'SUSPENDED'::text OR alloc.prisoner_status::text = 'AUTO_SUSPENDED'::text THEN true
+              WHEN alloc.prisoner_status = 'SUSPENDED' OR alloc.prisoner_status = 'AUTO_SUSPENDED' THEN true
             ELSE false
 END AS suspended,
     act.in_cell,
