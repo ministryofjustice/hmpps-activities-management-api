@@ -1,8 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -23,8 +20,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
 import java.util.Optional
@@ -32,8 +31,8 @@ import java.util.Optional
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository)
-  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+  private val scheduleRepository: ActivityScheduleRepository = mock()
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -74,6 +73,8 @@ class AllocationServiceTest {
   fun `transformed allocation returned when find by id`() {
     val expected = allocation()
 
+    addCaseloadIdToRequestHeader("123")
+    whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
 
     assertThat(service.getAllocationById(expected.allocationId)).isEqualTo(expected.toModel())

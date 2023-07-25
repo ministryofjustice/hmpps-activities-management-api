@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -45,6 +46,7 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `scheduled instance found - success`() {
+      addCaseloadIdToRequestHeader("MDI")
       whenever(repository.findById(1))
         .thenReturn(Optional.of(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 

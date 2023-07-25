@@ -12,8 +12,8 @@ import java.util.UUID
 @Component
 class JwtAuthHelper(private val keyPair: KeyPair) {
 
-  fun setAuthorisation(user: String = "activities-management-admin-1", roles: List<String> = listOf()): (HttpHeaders) -> Unit {
-    val token = createJwt(subject = user, scope = listOf("read"), expiryTime = Duration.ofHours(1L), roles = roles)
+  fun setAuthorisation(user: String = "activities-management-admin-1", roles: List<String> = listOf(), isClientToken: Boolean = true): (HttpHeaders) -> Unit {
+    val token = createJwt(subject = user, scope = listOf("read"), expiryTime = Duration.ofHours(1L), roles = roles, isClientToken = isClientToken)
     return { it.set(HttpHeaders.AUTHORIZATION, "Bearer $token") }
   }
 
@@ -21,11 +21,12 @@ class JwtAuthHelper(private val keyPair: KeyPair) {
     subject: String?,
     scope: List<String>? = listOf(),
     roles: List<String>? = listOf(),
+    isClientToken: Boolean,
     expiryTime: Duration = Duration.ofHours(1),
     jwtId: String = UUID.randomUUID().toString(),
   ): String =
     mutableMapOf<String, Any>()
-      .also { subject?.let { subject -> it["user_name"] = subject } }
+      .also { if (!isClientToken) subject?.let { subject -> it["user_name"] = subject } }
       .also { it["client_id"] = "activities-management-admin-1" }
       .also { roles?.let { roles -> it["authorities"] = roles } }
       .also { scope?.let { scope -> it["scope"] = scope } }

@@ -23,6 +23,7 @@ import org.springframework.web.context.request.WebRequest
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 
 @RestControllerAdvice
 class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
@@ -77,6 +78,20 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = NOT_FOUND.value(),
+          userMessage = "Not found: ${e.message}",
+          developerMessage = e.message,
+        ),
+      )
+  }
+
+  @ExceptionHandler(CaseloadAccessException::class)
+  fun handleCaseLoadAccessException(e: CaseloadAccessException): ResponseEntity<ErrorResponse> {
+    log.info("Case load access exception: {}", e.message)
+    return ResponseEntity
+      .status(FORBIDDEN)
+      .body(
+        ErrorResponse(
+          status = FORBIDDEN.value(),
           userMessage = "Not found: ${e.message}",
           developerMessage = e.message,
         ),

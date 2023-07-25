@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -11,6 +12,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -24,6 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import java.time.LocalDate
 import java.util.Optional
@@ -49,8 +53,14 @@ class ActivityScheduleServiceTest {
     bookingId = 1,
   )
 
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
+
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
+    addCaseloadIdToRequestHeader("123")
     val schedule = schedule().apply {
       allocations().first().startDate = LocalDate.now()
     }
@@ -65,6 +75,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `ended allocations for a given schedule are not returned`() {
+    addCaseloadIdToRequestHeader("123")
     val schedule = schedule().apply {
       allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
     }
@@ -76,6 +87,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `all current, future and ended allocations for a given schedule are returned`() {
+    val prisonCode = "123"
     val active = activeAllocation.copy(allocationId = 1)
     val suspended = activeAllocation.copy(allocationId = 1).apply { prisonerStatus = PrisonerStatus.SUSPENDED }
     val ended =
@@ -83,7 +95,11 @@ class ActivityScheduleServiceTest {
         .apply { endDate = LocalDate.now().minusDays(1) }
     val future = active.copy(allocationId = 3, startDate = active.startDate.plusDays(1))
     val schedule = mock<ActivitySchedule>()
+    val activity = mock<Activity>()
 
+    addCaseloadIdToRequestHeader(prisonCode)
+    whenever(schedule.activity).thenReturn(activity)
+    whenever(activity.prisonCode).thenReturn(prisonCode)
     whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
     whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
 

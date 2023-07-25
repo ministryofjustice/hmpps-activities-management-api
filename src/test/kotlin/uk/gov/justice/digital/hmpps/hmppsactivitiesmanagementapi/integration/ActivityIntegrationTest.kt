@@ -45,6 +45,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
@@ -152,7 +154,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().is4xxClientError
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -556,6 +558,46 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-2.sql",
   )
   @Test
+  fun `attempting to get an activity from a different caseload returns a 403`() {
+    webTestClient.get()
+      .uri("/activities/2")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = emptyList()))
+      .header(CASELOAD_ID, "MDI")
+      .exchange()
+      .expectStatus().isForbidden
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-2.sql",
+  )
+  @Test
+  fun `attempting to get an activity without specifying a caseload succeeds if using a client token`() {
+    webTestClient.get()
+      .uri("/activities/2")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = true, roles = emptyList()))
+      .exchange()
+      .expectStatus().isOk
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-2.sql",
+  )
+  @Test
+  fun `attempting to get an activity without specifying a caseload succeeds if admin role present`() {
+    webTestClient.get()
+      .uri("/activities/2")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-2.sql",
+  )
+  @Test
   fun `get scheduled english activities for morning and afternoon`() {
     val englishLevelTwoActivity = with(webTestClient.getActivityById(2)) {
       assertThat(attendanceRequired).isTrue
@@ -637,11 +679,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ActivityScheduleLite::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.getActivityById(id: Long) =
+  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") =
     get()
       .uri("/activities/$id")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf()))
+      .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -655,7 +698,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -671,7 +714,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities/$prisonCode/activityId/$id")
       .bodyValue(activityUpdateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_ACTIVITY_ADMIN")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

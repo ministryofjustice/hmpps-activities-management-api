@@ -75,7 +75,8 @@ abstract class IntegrationTestBase {
   internal fun setAuthorisation(
     user: String = "test-client",
     roles: List<String> = listOf(),
-  ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles)
+    isClientToken: Boolean = true,
+  ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles, isClientToken)
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
