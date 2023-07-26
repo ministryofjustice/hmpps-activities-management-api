@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -82,51 +81,6 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   fun getAttendanceById(
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
-
-  @GetMapping(value = ["/summary/{prisonCode}/{sessionDate}"])
-  @ResponseBody
-  @Operation(
-    summary = "Get a daily summary of attendances",
-    description = "Returns an attendance summary.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Attendance Summary found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = AllAttendanceSummary::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getAttendanceSummaryByDate(
-    @PathVariable("prisonCode") prisonCode: String,
-    @PathVariable("sessionDate") sessionDate: LocalDate,
-  ): List<AllAttendanceSummary> = attendancesService.getAttendanceSummaryByDate(prisonCode, sessionDate)
 
   @GetMapping(value = ["/{prisonCode}/{sessionDate}"])
   @ResponseBody
