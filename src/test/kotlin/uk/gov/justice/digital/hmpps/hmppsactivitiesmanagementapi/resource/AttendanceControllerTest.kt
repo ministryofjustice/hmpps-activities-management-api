@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -92,22 +91,6 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     assertThat(response.contentAsString).contains("Not found")
 
     verify(attendancesService).getAttendanceById(2)
-  }
-
-  @Test
-  fun `200 response when get attendance summary by date found`() {
-    val attendanceSummary = attendanceSummary().toModel()
-
-    whenever(attendancesService.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(attendanceSummary)
-
-    val response = mockMvc.getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendanceSummary))
-
-    verify(attendancesService).getAttendanceSummaryByDate(pentonvillePrisonCode, LocalDate.now())
   }
 
   @Test

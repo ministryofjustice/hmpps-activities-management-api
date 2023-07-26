@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -287,21 +286,6 @@ fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listO
 )
 
 internal fun attendance() = schedule().instances().first().attendances.first()
-
-internal fun attendanceSummary() = listOf(
-  AllAttendanceSummary(
-    id = 1,
-    prisonCode = pentonvillePrisonCode,
-    activityId = 1,
-    categoryName = "Education",
-    sessionDate = LocalDate.now(),
-    timeSlot = "AM",
-    status = "WAITING",
-    attendanceReasonCode = null,
-    issuePayment = null,
-    attendanceCount = 2,
-  ),
-)
 
 internal fun attendanceList() = listOf(
   AllAttendance(
