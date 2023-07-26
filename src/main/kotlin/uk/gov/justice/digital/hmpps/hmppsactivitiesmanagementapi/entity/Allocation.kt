@@ -47,6 +47,7 @@ data class Allocation(
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
+
 ) {
 
   var endDate: LocalDate? = null
@@ -193,6 +194,7 @@ data class Allocation(
       suspendedReason = suspendedReason,
       suspendedTime = suspendedTime,
       status = prisonerStatus,
+      plannedDeallocation = plannedDeallocation?.toModel(),
     )
 
   fun activate() =
