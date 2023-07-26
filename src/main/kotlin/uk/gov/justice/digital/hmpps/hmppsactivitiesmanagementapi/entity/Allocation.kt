@@ -230,7 +230,6 @@ data class Allocation(
         "You can only reactivate auto-suspended allocations",
         PrisonerStatus.AUTO_SUSPENDED,
       )
-
       prisonerStatus = PrisonerStatus.ACTIVE
       suspendedTime = null
       suspendedReason = null
