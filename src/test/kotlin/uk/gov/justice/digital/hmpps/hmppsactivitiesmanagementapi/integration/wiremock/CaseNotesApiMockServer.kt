@@ -21,7 +21,7 @@ class CaseNotesApiMockServer : WireMockServer(8444) {
     )
   }
 
-  fun stubPostCaseNote(caseNoteId: Long, prisonCode: String, prisonerNumber: String, caseNote: String, type: String, subType: String) {
+  fun stubPostCaseNote(caseNoteId: Long, prisonCode: String, prisonerNumber: String, caseNote: String, subType: String) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/case-notes/$prisonerNumber"))
         .withRequestBody(
