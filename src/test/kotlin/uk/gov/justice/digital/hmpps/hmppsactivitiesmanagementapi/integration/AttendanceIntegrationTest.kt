@@ -175,7 +175,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-attendance-summary.sql",
+    "classpath:test_data/seed-attendances.sql",
   )
   @Test
   fun `get attendance list for specified date`() {
