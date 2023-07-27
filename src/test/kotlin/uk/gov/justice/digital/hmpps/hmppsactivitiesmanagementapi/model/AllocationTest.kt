@@ -46,6 +46,13 @@ class AllocationTest : ModelTest() {
       scheduleDescription = "Blah blah",
       scheduleId = 123,
       status = PrisonerStatus.ACTIVE,
+      plannedDeallocation = PlannedDeallocation(
+        id = 1,
+        plannedDate = LocalDate.of(2022, 10, 11),
+        plannedBy = "MR BLOGSS",
+        plannedReason = DeallocationReason.PLANNED.toModel(),
+        plannedAt = LocalDateTime.now(),
+      ),
     )
 
     val json = objectMapper.writeValueAsString(allocation)

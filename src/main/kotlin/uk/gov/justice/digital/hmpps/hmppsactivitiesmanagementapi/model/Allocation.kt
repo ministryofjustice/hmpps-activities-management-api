@@ -72,6 +72,9 @@ data class Allocation(
 
   @Schema(description = "The status of the allocation", example = "ACTIVE")
   val status: PrisonerStatus,
+
+  @Schema(description = "Where an allocation end date has been set, this includes the details of the planned de-allocation")
+  val plannedDeallocation: PlannedDeallocation?,
 )
 
 @Schema(

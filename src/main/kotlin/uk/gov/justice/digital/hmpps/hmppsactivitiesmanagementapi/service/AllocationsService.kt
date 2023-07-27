@@ -25,6 +25,7 @@ class AllocationsService(
   private val allocationRepository: AllocationRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val scheduleRepository: ActivityScheduleRepository,
+
 ) {
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
     allocationRepository
@@ -52,10 +53,21 @@ class AllocationsService(
     applyEndDateUpdate(request, allocation, updatedBy)
     applyRemoveEndDateUpdate(request, allocation)
     applyPayBandUpdate(request, allocation)
+    applyReasonCode(request, allocation, updatedBy)
 
     allocationRepository.saveAndFlush(allocation)
 
     return allocation.toModel()
+  }
+
+  private fun applyReasonCode(
+    request: AllocationUpdateRequest,
+    allocation: Allocation,
+    updatedBy: String,
+  ) {
+    request.reasonCode?.apply {
+      allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, allocation.endDate!!, this.toDeallocationReason(), updatedBy)
+    }
   }
 
   private fun applyStartDateUpdate(

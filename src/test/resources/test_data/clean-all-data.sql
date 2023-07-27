@@ -10,6 +10,7 @@ truncate table attendance_reason restart identity;
 truncate table scheduled_instance restart identity;
 truncate table activity_schedule_suspension restart identity;
 truncate table allocation restart identity;
+truncate table planned_deallocation restart identity;
 truncate table activity_pay restart identity;
 truncate table activity_minimum_education_level restart identity;
 truncate table prisoner_waiting restart identity;
