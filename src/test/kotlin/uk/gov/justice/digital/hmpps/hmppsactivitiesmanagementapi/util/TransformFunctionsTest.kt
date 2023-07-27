@@ -161,6 +161,7 @@ class TransformFunctionsTest {
               scheduleId = 1,
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
+              plannedDeallocation = null,
             ),
           ),
           description = "schedule description",

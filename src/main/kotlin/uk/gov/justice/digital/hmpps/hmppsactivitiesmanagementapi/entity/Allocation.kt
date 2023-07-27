@@ -47,6 +47,7 @@ data class Allocation(
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
+
 ) {
 
   var endDate: LocalDate? = null
@@ -193,6 +194,7 @@ data class Allocation(
       suspendedReason = suspendedReason,
       suspendedTime = suspendedTime,
       status = prisonerStatus,
+      plannedDeallocation = plannedDeallocation?.toModel(),
     )
 
   fun activate() =
@@ -228,7 +230,6 @@ data class Allocation(
         "You can only reactivate auto-suspended allocations",
         PrisonerStatus.AUTO_SUSPENDED,
       )
-
       prisonerStatus = PrisonerStatus.ACTIVE
       suspendedTime = null
       suspendedReason = null
@@ -257,7 +258,7 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   // System reasons
   DIED("Deceased"),
   ENDED("Allocation end date reached"),
-  PLANNED("Allocation end date entered on initial allocation"),
+  PLANNED("Duration set by staff"),
   EXPIRED("Expired"),
   RELEASED("Released from prison"),
   TEMPORARY_ABSENCE("Temporary absence"),

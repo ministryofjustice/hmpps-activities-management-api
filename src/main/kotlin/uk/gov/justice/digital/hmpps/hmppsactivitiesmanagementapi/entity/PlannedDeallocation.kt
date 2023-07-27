@@ -11,6 +11,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedDeallocation as ModelPlannedDeallocation
 
 @Entity
 @Table(name = "planned_deallocation")
@@ -31,4 +32,13 @@ data class PlannedDeallocation(
   var plannedReason: DeallocationReason,
 
   var plannedAt: LocalDateTime = LocalDateTime.now(),
-)
+) {
+  fun toModel() = ModelPlannedDeallocation(
+
+    id = plannedDeallocationId,
+    plannedDate = plannedDate,
+    plannedBy = plannedBy,
+    plannedReason = plannedReason.toModel(),
+    plannedAt = plannedAt,
+  )
+}

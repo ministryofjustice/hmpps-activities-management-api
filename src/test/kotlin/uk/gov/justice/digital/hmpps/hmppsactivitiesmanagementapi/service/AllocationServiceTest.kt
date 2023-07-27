@@ -294,4 +294,40 @@ class AllocationServiceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date cannot be after allocation end date")
   }
+
+  @Test
+  fun `updateAllocation - update reasonCode`() {
+    val allocation = allocation().apply {}
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "HEALTH")
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.plannedDeallocation?.plannedReason?.name).isEqualTo("HEALTH")
+  }
+
+  @Test
+  fun `updateAllocation - invalid reasonCode`() {
+    val allocation = allocation().apply {}
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "ALPHA")
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Invalid deallocation reason specified 'ALPHA'")
+  }
 }
