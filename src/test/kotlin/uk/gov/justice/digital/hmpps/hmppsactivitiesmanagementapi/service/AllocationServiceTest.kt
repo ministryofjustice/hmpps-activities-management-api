@@ -297,7 +297,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update reasonCode`() {
-    val allocation = allocation().apply {}
+    val allocation = allocation()
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -315,7 +315,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - invalid reasonCode`() {
-    val allocation = allocation().apply {}
+    val allocation = allocation()
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
