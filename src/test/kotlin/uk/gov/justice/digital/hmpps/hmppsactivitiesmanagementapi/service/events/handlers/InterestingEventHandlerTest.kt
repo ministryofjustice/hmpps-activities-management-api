@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -60,9 +61,24 @@ class InterestingEventHandlerTest {
   }
 
   @Test
-  fun `stores an interesting event when allocations exist`() {
+  fun `stores an interesting event when active allocations exist`() {
     val inboundEvent = cellMoveEvent("123456")
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
+      .doReturn(activeAllocations)
+
+    val outcome = handler.handle(inboundEvent)
+
+    assertThat(outcome.isSuccess()).isTrue
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
+  }
+
+  @Test
+  fun `stores an interesting event when pending allocations exist`() {
+    val inboundEvent = cellMoveEvent("123456")
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.PENDING))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
 
