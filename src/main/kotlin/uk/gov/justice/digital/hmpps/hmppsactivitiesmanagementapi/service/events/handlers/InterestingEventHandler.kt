@@ -37,7 +37,7 @@ class InterestingEventHandler(
     prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()
       ?.let { prisoner ->
         if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)
-            ?.isActivitiesRolledOut() == true
+          ?.isActivitiesRolledOut() == true
         ) {
           if (allocationRepository.findByPrisonCodeAndPrisonerNumber(
               prisoner.agencyId,
