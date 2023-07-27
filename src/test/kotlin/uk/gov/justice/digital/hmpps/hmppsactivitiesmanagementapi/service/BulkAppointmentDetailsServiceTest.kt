@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -14,6 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkApp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.util.Optional
 
 class BulkAppointmentDetailsServiceTest {
@@ -30,6 +35,16 @@ class BulkAppointmentDetailsServiceTest {
     prisonerSearchApiClient,
     prisonApiClient,
   )
+
+  @BeforeEach
+  fun setUp() {
+    addCaseloadIdToRequestHeader("TPR")
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
 
   @Test
   fun `getBulkAppointmentDetailsById returns mapped appointment details for known bulk appointment id`() {
@@ -84,5 +99,13 @@ class BulkAppointmentDetailsServiceTest {
   fun `getBulkAppointmentDetailsById throws entity not found exception for unknown bulk appointment id`() {
     assertThatThrownBy { service.getBulkAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Bulk Appointment -1 not found")
+  }
+
+  @Test
+  fun `getBulkAppointmentDetailsById throws caseload access exception when caseload id header is different`() {
+    addCaseloadIdToRequestHeader("WRONG")
+    val entity = bulkAppointmentEntity()
+    whenever(bulkAppointmentRepository.findById(entity.bulkAppointmentId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getBulkAppointmentDetailsById(entity.bulkAppointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }

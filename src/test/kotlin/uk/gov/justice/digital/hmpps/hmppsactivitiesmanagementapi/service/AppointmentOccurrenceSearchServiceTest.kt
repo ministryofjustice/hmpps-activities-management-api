@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -16,9 +19,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.*
 
 class AppointmentOccurrenceSearchServiceTest {
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository = mock()
@@ -38,6 +45,16 @@ class AppointmentOccurrenceSearchServiceTest {
     referenceCodeService,
     locationService,
   )
+
+  @BeforeEach
+  fun setup() {
+    addCaseloadIdToRequestHeader("TPR")
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
 
   @Test
   fun `search by start date`() {
@@ -197,5 +214,22 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
     verify(appointmentOccurrenceSearchSpecification).createdByEquals(request.createdBy!!)
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+  }
+
+  @Test
+  fun `search throws caseload access exception if caseload id header does not match`() {
+    addCaseloadIdToRequestHeader("WRONG")
+    val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
+    val result = appointmentOccurrenceSearchEntity()
+
+    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+
+    Assertions.assertThatThrownBy { service.searchAppointmentOccurrences("TPR", request, principal) }
+      .isInstanceOf(CaseloadAccessException::class.java)
   }
 }

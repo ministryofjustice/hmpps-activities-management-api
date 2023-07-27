@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 
 @Service
@@ -70,6 +71,7 @@ class AppointmentOccurrenceSearchService(
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
+    checkCaseloadAccess(results.firstOrNull()?.prisonCode)
 
     val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentOccurrenceId })
       .groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
