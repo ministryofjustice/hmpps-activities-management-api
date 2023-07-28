@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.*
 
 class AppointmentOccurrenceSearchServiceTest {
   private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository = mock()
@@ -229,7 +228,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    Assertions.assertThatThrownBy { service.searchAppointmentOccurrences("TPR", request, principal) }
+    assertThatThrownBy { service.searchAppointmentOccurrences("TPR", request, principal) }
       .isInstanceOf(CaseloadAccessException::class.java)
   }
 }
