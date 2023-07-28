@@ -34,28 +34,35 @@ class InterestingEventHandler(
   override fun handle(event: InboundEvent): Outcome {
     log.info("Checking for interesting event: $event")
 
-    prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()?.let { prisoner ->
-      if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
-        if (allocationRepository.findByPrisonCodeAndPrisonerNumber(prisoner.agencyId, prisoner.offenderNo!!).hasActiveAllocations()) {
-          val saved = eventReviewRepository.saveAndFlush(
-            EventReview(
-              eventTime = LocalDateTime.now(),
-              eventType = event.eventType(),
-              eventData = this.getEventMessage(event, prisoner),
-              prisonCode = prisoner.agencyId,
-              prisonerNumber = prisoner.offenderNo,
-              bookingId = prisoner.bookingId?.toInt(),
-            ),
-          )
-          log.info("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
-          return Outcome.success()
+    prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()
+      ?.let { prisoner ->
+        if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)
+          ?.isActivitiesRolledOut() == true
+        ) {
+          if (allocationRepository.findByPrisonCodeAndPrisonerNumber(
+              prisoner.agencyId,
+              prisoner.offenderNo!!,
+            ).hasActiveOrPendingAllocations()
+          ) {
+            val saved = eventReviewRepository.saveAndFlush(
+              EventReview(
+                eventTime = LocalDateTime.now(),
+                eventType = event.eventType(),
+                eventData = this.getEventMessage(event, prisoner),
+                prisonCode = prisoner.agencyId,
+                prisonerNumber = prisoner.offenderNo,
+                bookingId = prisoner.bookingId?.toInt(),
+              ),
+            )
+            log.info("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
+            return Outcome.success()
+          } else {
+            log.info("${prisoner.offenderNo} has no active or pending allocations at ${prisoner.agencyId}")
+          }
         } else {
-          log.info("${prisoner.offenderNo} has no active allocations at ${prisoner.agencyId}")
+          log.info("${prisoner.agencyId} is not a rolled out prison")
         }
-      } else {
-        log.info("${prisoner.agencyId} is not a rolled out prison")
       }
-    }
     return Outcome.failed()
   }
 
@@ -71,5 +78,6 @@ class InterestingEventHandler(
       else -> "Unknown event for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
     }
 
-  private fun List<Allocation>.hasActiveAllocations() = this.any { it.status(PrisonerStatus.ACTIVE) }
+  private fun List<Allocation>.hasActiveOrPendingAllocations() =
+    this.any { it.status(PrisonerStatus.ACTIVE, PrisonerStatus.PENDING) }
 }
