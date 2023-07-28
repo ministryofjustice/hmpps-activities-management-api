@@ -26,6 +26,8 @@ class AppointmentOccurrenceSearchService(
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> {
+    checkCaseloadAccess(prisonCode)
+
     var spec = appointmentOccurrenceSearchSpecification.prisonCodeEquals(prisonCode)
 
     with(request) {
@@ -71,7 +73,6 @@ class AppointmentOccurrenceSearchService(
     }
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
-    checkCaseloadAccess(results.firstOrNull()?.prisonCode)
 
     val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentOccurrenceId })
       .groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
