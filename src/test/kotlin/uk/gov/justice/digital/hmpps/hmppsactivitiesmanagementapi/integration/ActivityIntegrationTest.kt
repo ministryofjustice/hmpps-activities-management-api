@@ -881,7 +881,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(schedules).hasSize(1)
       assertThat(schedules.first().endDate).isNull()
       assertThat(schedules.first().allocations).hasSize(1)
-      assertThat(schedules.first().allocations.first().endDate).isNull()
+      assertThat(schedules.first().allocations.first().endDate).isNotNull()
     }
 
     val newEndDate = ActivityUpdateRequest(endDate = TimeSource.tomorrow())
