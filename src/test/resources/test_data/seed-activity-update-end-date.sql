@@ -14,4 +14,4 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, current_date, null, true);
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (1, 1, 'A11111A', 10001, 1, current_date, null, current_timestamp, 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (1, 1, 'A11111A', 10001, 1, current_date, current_date + 60, current_timestamp, 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');

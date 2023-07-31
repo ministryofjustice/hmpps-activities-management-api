@@ -104,7 +104,7 @@ data class ActivitySchedule(
     newEndDate?.let {
       allocations
         .filterNot { allocation -> allocation.status(PrisonerStatus.ENDED) }
-        .filter { allocation -> allocation.endDate == null || allocation.endDate?.isAfter(newEndDate) == true }
+        .filter { allocation -> allocation.endDate != null && allocation.endDate?.isAfter(newEndDate) == true }
         .forEach { allocation ->
           allocation.endDate = newEndDate
         }
