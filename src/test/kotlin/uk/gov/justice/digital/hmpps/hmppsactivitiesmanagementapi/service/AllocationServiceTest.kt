@@ -73,7 +73,7 @@ class AllocationServiceTest {
   fun `transformed allocation returned when find by id`() {
     val expected = allocation()
 
-    addCaseloadIdToRequestHeader("123")
+    addCaseloadIdToRequestHeader("MDI")
     whenever(scheduleRepository.findById(expected.activitySchedule.activityScheduleId)).thenReturn(Optional.of(expected.activitySchedule))
     whenever(allocationRepository.findById(expected.allocationId)).thenReturn(Optional.of(expected))
 

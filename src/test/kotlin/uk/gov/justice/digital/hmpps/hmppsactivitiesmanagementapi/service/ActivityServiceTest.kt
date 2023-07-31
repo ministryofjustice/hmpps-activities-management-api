@@ -130,6 +130,8 @@ class ActivityServiceTest {
     agencyId = "MDI",
   )
 
+  private val caseLoad = "MDI"
+
   @BeforeEach
   fun setUp() {
     openMocks(this)
@@ -144,6 +146,7 @@ class ActivityServiceTest {
         )
       },
     )
+    addCaseloadIdToRequestHeader(caseLoad)
   }
 
   @AfterEach
@@ -309,31 +312,20 @@ class ActivityServiceTest {
     val createActivityRequest =
       activityCreateRequest(prisonCode = "DOES_NOT_MATCH", educationLevel = educationLevel, studyArea = studyArea)
 
-    whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
-    whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
-    whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
-    whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
-    whenever(prisonApiClient.getEducationLevel(any())).thenReturn(Mono.just(educationLevel))
-    whenever(prisonApiClient.getStudyArea(any())).thenReturn(Mono.just(studyArea))
-    whenever(prisonApiClient.getLocation(createActivityRequest.locationId!!)).thenReturn(Mono.just(location))
-
     assertThatThrownBy { service().createActivity(createActivityRequest, "SCH_ACTIVITY") }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The activities prison 'DOES_NOT_MATCH' does not match that of the locations '${location.agencyId}'")
+      .isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test
   fun `getActivityById returns an activity for known activity ID`() {
-    val prisonCode = "123"
-    addCaseloadIdToRequestHeader(prisonCode)
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = prisonCode)))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = caseLoad)))
 
     assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
   }
 
   @Test
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity()))
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = "DIFFERENT_PRISON_CODE")))
 
     assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseloadAccessException::class.java)
   }
@@ -627,7 +619,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        pentonvillePrisonCode,
+        moorlandPrisonCode,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -636,7 +628,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service().updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category 1 not found")
   }
@@ -648,7 +640,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        pentonvillePrisonCode,
+        moorlandPrisonCode,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -659,7 +651,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service().updateActivity(pentonvillePrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Tier 1 not found")
   }
@@ -1063,8 +1055,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy {
       service().updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
-    }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Activity 1 not found.")
+    }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test

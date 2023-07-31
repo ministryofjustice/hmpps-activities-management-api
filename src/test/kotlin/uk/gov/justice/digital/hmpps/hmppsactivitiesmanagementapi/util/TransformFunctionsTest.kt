@@ -79,7 +79,7 @@ class TransformFunctionsTest {
 
     with(transform(activity)) {
       assertThat(id).isEqualTo(1)
-      assertThat(prisonCode).isEqualTo("123")
+      assertThat(prisonCode).isEqualTo("MDI")
       assertThat(attendanceRequired).isFalse
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths basic")

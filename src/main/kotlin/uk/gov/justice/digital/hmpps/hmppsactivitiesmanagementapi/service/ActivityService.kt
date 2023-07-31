@@ -110,12 +110,14 @@ class ActivityService(
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
+    checkCaseloadAccess(request.prisonCode!!)
+
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
     val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
-    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode!!)
+    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
@@ -264,6 +266,8 @@ class ActivityService(
     request: ActivityUpdateRequest,
     updatedBy: String,
   ): ModelActivity {
+    checkCaseloadAccess(prisonCode)
+
     val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
       ?: throw EntityNotFoundException("Activity $activityId not found.")
 

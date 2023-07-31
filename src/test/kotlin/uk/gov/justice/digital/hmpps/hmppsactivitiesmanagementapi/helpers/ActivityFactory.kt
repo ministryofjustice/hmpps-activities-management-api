@@ -46,7 +46,7 @@ internal fun activityEntity(
   tier: ActivityTier = activityTier(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   activityId: Long = 1L,
-  prisonCode: String = "123",
+  prisonCode: String = "MDI",
   summary: String = "Maths",
   description: String = "Maths basic",
   startDate: LocalDate = timestamp.toLocalDate(),
