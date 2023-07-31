@@ -14,7 +14,7 @@ CREATE TABLE waiting_list (
   declined_reason      varchar(100),
   updated_time         timestamp,
   updated_by           varchar(100),
-  allocation_id        bigint REFERENCES allocation (allocation_id)
+  allocation_id        bigint
 );
 
 CREATE INDEX idx_waiting_list_allocation_id ON waiting_list (allocation_id);
