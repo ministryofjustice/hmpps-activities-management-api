@@ -84,7 +84,7 @@ class CandidatesService(
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
-        .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD }
+        .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
@@ -134,7 +134,7 @@ class CandidatesService(
     suitableIncentiveLevels: List<String>?,
   ): Boolean {
     return suitableIncentiveLevels == null ||
-      suitableIncentiveLevels.contains(prisoner.currentIncentive?.level?.description)
+      suitableIncentiveLevels.contains(prisoner.currentIncentive!!.level.description)
   }
 
   private fun filterByEmployment(
