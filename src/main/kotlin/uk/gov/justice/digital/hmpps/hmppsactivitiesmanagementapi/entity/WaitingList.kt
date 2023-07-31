@@ -55,5 +55,6 @@ enum class WaitingListStatus {
   PENDING,
   APPROVED,
   DECLINED,
-  // TODO add more statuses
+  ALLOCATED,
+  REMOVED,
 }
