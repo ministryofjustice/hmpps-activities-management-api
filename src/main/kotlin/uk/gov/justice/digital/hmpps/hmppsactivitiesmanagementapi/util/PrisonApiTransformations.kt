@@ -267,7 +267,7 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
 
 fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) =
   if (this == null) {
-    ModelAppointmentCategorySummary(code, "UNKNOWN")
+    ModelAppointmentCategorySummary(code, code)
   } else {
     ModelAppointmentCategorySummary(this.code, this.description)
   }
@@ -281,7 +281,7 @@ fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toApp
 
 fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
   if (this == null) {
-    ModelAppointmentLocationSummary(locationId, prisonCode, "UNKNOWN")
+    ModelAppointmentLocationSummary(locationId, prisonCode, "No information available")
   } else {
     ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
   }
