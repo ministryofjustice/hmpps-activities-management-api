@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -59,6 +61,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 class TransformFunctionsTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
+
+  @BeforeEach
+  fun setUp() {
+    addCaseloadIdToRequestHeader("TPR")
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
 
   @Test
   fun `transformation of activity entity to the activity models`() {

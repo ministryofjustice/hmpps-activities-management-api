@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -38,8 +39,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_USERNAME
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -79,6 +83,12 @@ class AppointmentServiceTest {
   fun setUp() {
     MockitoAnnotations.openMocks(this)
     principal = SecurityContextHolder.getContext().authentication
+    addCaseloadIdToRequestHeader("TPR")
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
   }
 
   @Test
@@ -95,10 +105,10 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `buildValidAppointmentEntity throws illegal argument exception when requested prison code is not in user's case load`() {
+  fun `buildValidAppointmentEntity throws caseload access exception when requested prison code is not in user's case load`() {
+    addCaseloadIdToRequestHeader("DIFFERENT")
     val request = appointmentCreateRequest()
 
-    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(emptyList()))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
 
     assertThatThrownBy {
@@ -118,8 +128,7 @@ class AppointmentServiceTest {
         comment = request.comment,
         createdBy = principal.name,
       )
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prison code '${request.prisonCode}' not found in user's case load")
+    }.isInstanceOf(CaseloadAccessException::class.java)
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }

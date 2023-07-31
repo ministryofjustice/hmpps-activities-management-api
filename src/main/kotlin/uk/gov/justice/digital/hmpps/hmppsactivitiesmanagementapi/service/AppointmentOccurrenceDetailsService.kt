@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 
 @Service
 @Transactional(readOnly = true)
@@ -19,6 +20,8 @@ class AppointmentOccurrenceDetailsService(
 ) {
   fun getAppointmentOccurrenceDetailsById(appointmentOccurrenceId: Long): AppointmentOccurrenceDetails {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
+    checkCaseloadAccess(appointmentOccurrence.appointment.prisonCode)
+
     val appointment = appointmentOccurrence.appointment
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentOccurrence.prisonerNumbers())
