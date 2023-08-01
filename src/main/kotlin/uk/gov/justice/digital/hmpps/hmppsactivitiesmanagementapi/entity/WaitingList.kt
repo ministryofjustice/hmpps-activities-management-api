@@ -47,7 +47,7 @@ class WaitingList(
   var updatedBy: String? = null
 
   @OneToOne
-  @JoinColumn(name = "allocation_id", nullable = false)
+  @JoinColumn(name = "allocation_id", nullable = true)
   var allocation: Allocation? = null
 }
 
