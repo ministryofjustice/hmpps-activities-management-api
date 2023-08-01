@@ -33,6 +33,8 @@ class WaitingList(
 
   val requestedBy: String,
 
+  var comments: String? = null,
+
   @Enumerated(EnumType.STRING)
   var status: WaitingListStatus,
 
