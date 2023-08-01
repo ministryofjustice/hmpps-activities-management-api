@@ -10,7 +10,7 @@ CREATE TABLE waiting_list (
   status               varchar(20)  NOT NULL,
   creation_time        timestamp    NOT NULL,
   created_by           varchar(20)  NOT NULL,
-  comments             varchar(300),
+  comments             varchar(500),
   declined_reason      varchar(100),
   updated_time         timestamp,
   updated_by           varchar(100),
