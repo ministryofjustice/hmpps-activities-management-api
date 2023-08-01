@@ -17,4 +17,8 @@ CREATE TABLE waiting_list (
   allocation_id        bigint
 );
 
+CREATE INDEX idx_waiting_list_prison_code ON waiting_list (prison_code);
+CREATE INDEX idx_waiting_list_prisoner_number ON waiting_list (prisoner_number);
+CREATE INDEX idx_waiting_list_application_date ON waiting_list (application_date);
+CREATE INDEX idx_waiting_list_status ON waiting_list (status);
 CREATE INDEX idx_waiting_list_allocation_id ON waiting_list (allocation_id);
