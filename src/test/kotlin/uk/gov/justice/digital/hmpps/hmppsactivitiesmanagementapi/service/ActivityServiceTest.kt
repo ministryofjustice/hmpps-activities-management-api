@@ -641,12 +641,23 @@ class ActivityServiceTest {
       scheduleWeeks = 1,
     )
 
-    beforeActivityEntity.schedules().first().allocatePrisoner(
-      prisonerNumber = "123456".toPrisonerNumber(),
-      payBand = lowPayBand,
-      bookingId = 10001,
-      allocatedBy = "FRED",
-    )
+    with(beforeActivityEntity.schedules().first()) {
+      allocatePrisoner(
+        prisonerNumber = "123456".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 10001,
+        allocatedBy = "FRED",
+        endDate = updateActivityRequest.endDate?.plusYears(1),
+      )
+
+      allocatePrisoner(
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 20002,
+        allocatedBy = "BOB",
+        endDate = null,
+      )
+    }
 
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
@@ -660,7 +671,8 @@ class ActivityServiceTest {
     with(activityCaptor.firstValue) {
       assertThat(endDate).isEqualTo("2023-12-31")
       assertThat(schedules().first().endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().allocations().first().endDate).isEqualTo("2023-12-31")
+      assertThat(schedules().first().allocations().find { it.prisonerNumber == "123456" }?.endDate).isEqualTo("2023-12-31")
+      assertThat(schedules().first().allocations().find { it.prisonerNumber == "654321" }?.endDate).isNull()
     }
   }
 
