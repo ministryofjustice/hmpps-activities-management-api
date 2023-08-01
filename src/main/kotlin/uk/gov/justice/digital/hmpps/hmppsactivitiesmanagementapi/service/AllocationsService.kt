@@ -109,6 +109,8 @@ class AllocationsService(
       }
       if (allocation.endDate == null) {
         allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, this, request.reasonCode.toDeallocationReason(), updatedBy)
+      } else {
+        allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, this, allocation.plannedDeallocation!!.plannedReason, updatedBy)
       }
       allocation.endDate = this
     }
