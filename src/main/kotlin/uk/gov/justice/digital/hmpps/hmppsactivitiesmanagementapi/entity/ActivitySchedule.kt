@@ -91,6 +91,10 @@ data class ActivitySchedule(
   @Fetch(FetchMode.SUBSELECT)
   private val slots: MutableList<ActivityScheduleSlot> = mutableListOf()
 
+  @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val waiting: MutableList<WaitingList> = mutableListOf()
+
   var endDate: LocalDate? = null
     set(value) {
       require(value == null || value >= startDate) {
@@ -213,7 +217,12 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(weekNumber: Int, startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
+  fun addSlot(
+    weekNumber: Int,
+    startTime: LocalTime,
+    endTime: LocalTime,
+    daysOfWeek: Set<DayOfWeek>,
+  ): ActivityScheduleSlot {
     slots.add(ActivityScheduleSlot.valueOf(this, weekNumber, startTime, endTime, daysOfWeek))
     return slots.last()
   }
@@ -339,6 +348,70 @@ data class ActivitySchedule(
       slots.map { Pair(it.weekNumber, it.startTime to it.endTime) }.contains(key)
     }.forEach {
       addSlot(it.first, it.second.first, it.second.second, updates[it]!!)
+    }
+  }
+
+  fun addToWaitingList(
+    prisonerNumber: String,
+    bookingId: Long,
+    applicationDate: LocalDate,
+    requestedBy: String,
+    createdBy: String,
+    status: WaitingListStatus,
+    comments: String? = null,
+  ) {
+    failIfIsNotInWorkCategory()
+    failIfActivelyAllocated(prisonerNumber)
+    failIfApplicationDateInFuture(applicationDate)
+    failIfNotFutureSchedule()
+    failIfAlreadyPendingOrApproved(prisonerNumber)
+
+    waiting.add(
+      WaitingList(
+        prisonCode = activity.prisonCode,
+        prisonerNumber = prisonerNumber,
+        bookingId = bookingId,
+        activitySchedule = this,
+        applicationDate = applicationDate,
+        requestedBy = requestedBy,
+        comments = comments,
+        createdBy = createdBy,
+        status = status,
+      ),
+    )
+  }
+
+  private fun failIfIsNotInWorkCategory() {
+    require(!activity.activityCategory.isNotInWork()) {
+      "Cannot add prisoner to the waiting list because the activity category is 'not in work'"
+    }
+  }
+
+  private fun failIfActivelyAllocated(prisonerNumber: String) {
+    require(allocations().none { it.prisonerNumber == prisonerNumber && (it.endDate == null || it.endDate!! > LocalDate.now()) }) {
+      "Cannot add prisoner to the waiting list because they are already allocated"
+    }
+  }
+
+  private fun failIfApplicationDateInFuture(applicationDate: LocalDate) {
+    require(applicationDate <= LocalDate.now()) {
+      "Cannot add prisoner to the waiting list because the application date cannot be not be in the future"
+    }
+  }
+
+  private fun failIfNotFutureSchedule() {
+    require(activity.endDate == null || activity.endDate?.isAfter(LocalDate.now()) == true) {
+      "Cannot add prisoner to the waiting list to activity ending on or before today"
+    }
+  }
+
+  private fun failIfAlreadyPendingOrApproved(prisonerNumber: String) {
+    require(waiting.none { it.status == WaitingListStatus.PENDING && it.prisonerNumber == prisonerNumber }) {
+      "Cannot add prisoner to the waiting list because a pending application already exists"
+    }
+
+    require(waiting.none { it.status == WaitingListStatus.APPROVED && it.prisonerNumber == prisonerNumber }) {
+      "Cannot add prisoner to the waiting list because an approved application already exists"
     }
   }
 }

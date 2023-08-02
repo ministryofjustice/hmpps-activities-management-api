@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import java.time.LocalDate
 
-class WaitingListCreateRequestTest : ValidatorBase<WaitingListCreateRequest>() {
+class WaitingListApplicationRequestTest : ValidatorBase<WaitingListApplicationRequest>() {
 
-  private val request = WaitingListCreateRequest(
+  private val request = WaitingListApplicationRequest(
     prisonerNumber = "123456",
     activityScheduleId = 1L,
     applicationDate = LocalDate.now(),

@@ -5,8 +5,10 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -352,7 +354,12 @@ class ActivityScheduleTest {
   fun `can add two day slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+    schedule.addSlot(
+      1,
+      LocalTime.MIDNIGHT,
+      LocalTime.MIDNIGHT.plusHours(1),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+    )
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -370,7 +377,7 @@ class ActivityScheduleTest {
   fun `can add entire week slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
+    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.entries.toSet())
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -970,7 +977,8 @@ class ActivityScheduleTest {
 
   @Test
   fun `slot removed on update`() {
-    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
 
     assertThat(schedule.slots()).isEmpty()
 
@@ -1108,12 +1116,190 @@ class ActivityScheduleTest {
       activity = activityEntity(),
       noSlots = true,
     ).apply {
-      this.addSlot(1, LocalTime.of(8, 0), LocalTime.of(12, 0), DayOfWeek.values().toSet())
+      this.addSlot(1, LocalTime.of(8, 0), LocalTime.of(12, 0), DayOfWeek.entries.toSet())
     }
 
     assertThatThrownBy {
       schedule.updateSlots(emptyMap())
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Must have at least 1 active slot across the schedule")
+  }
+
+  @Test
+  fun `add to waiting list fails if activity category is 'not in work'`() {
+    val activity = activityEntity().apply { activityCategory = activityCategory(code = "SAA_NOT_IN_WORK") }
+    val schedule = activity.schedules().first()
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list because the activity category is 'not in work'")
+  }
+
+  @Test
+  fun `add to waiting list fails if activity has ended or ends today`() {
+    val schedule = activityEntity(startDate = TimeSource.today(), endDate = TimeSource.today()).schedules().first()
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list to activity ending on or before today")
+  }
+
+  @Test
+  fun `add to waiting list fails if application date is in the future`() {
+    val schedule = activityEntity().schedules().first()
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.tomorrow(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list because the application date cannot be not be in the future")
+  }
+
+  @Test
+  fun `add to waiting list fails if pending application already exists for prisoner`() {
+    val schedule = activityEntity().schedules().first()
+
+    schedule.addToWaitingList(
+      prisonerNumber = "123456",
+      bookingId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Test",
+      createdBy = "Test",
+      status = WaitingListStatus.PENDING,
+    )
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list because a pending application already exists")
+  }
+
+  @Test
+  fun `add to waiting list fails if approved application already exists for prisoner`() {
+    val schedule = activityEntity().schedules().first()
+
+    schedule.addToWaitingList(
+      prisonerNumber = "123456",
+      bookingId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Test",
+      createdBy = "Test",
+      status = WaitingListStatus.APPROVED,
+    )
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.APPROVED,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list because an approved application already exists")
+  }
+
+  @Test
+  fun `add to waiting list fails if prisoner already allocated (in future)`() {
+    val schedule = activityEntity().schedules().first()
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = mock(),
+      bookingId = 1L,
+      startDate = TimeSource.tomorrow(),
+      allocatedBy = "Test",
+    )
+
+    assertThatThrownBy {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoner to the waiting list because they are already allocated")
+  }
+
+  @Test
+  fun `add pending application to waiting list for prisoner`() {
+    val schedule = activityEntity().schedules().first()
+
+    assertDoesNotThrow {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.PENDING,
+      )
+    }
+  }
+
+  @Test
+  fun `add approved application to waiting list for prisoner`() {
+    val schedule = activityEntity().schedules().first()
+
+    assertDoesNotThrow {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.APPROVED,
+      )
+    }
+  }
+
+  @Test
+  fun `add declined application to waiting list for prisoner`() {
+    val schedule = activityEntity().schedules().first()
+
+    assertDoesNotThrow {
+      schedule.addToWaitingList(
+        prisonerNumber = "123456",
+        bookingId = 1L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Test",
+        createdBy = "Test",
+        status = WaitingListStatus.DECLINED,
+      )
+    }
   }
 }

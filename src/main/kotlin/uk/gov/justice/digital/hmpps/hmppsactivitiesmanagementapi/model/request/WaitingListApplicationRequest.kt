@@ -9,7 +9,13 @@ import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import java.time.LocalDate
 
-data class WaitingListCreateRequest(
+@Schema(
+  description =
+  """
+  Describes a single waiting list application for a prisoner to an activity.
+  """,
+)
+data class WaitingListApplicationRequest(
 
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   @field:NotBlank(message = "Prisoner number must be supplied")
