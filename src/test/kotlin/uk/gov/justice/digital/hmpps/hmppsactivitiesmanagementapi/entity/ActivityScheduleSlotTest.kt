@@ -3,18 +3,20 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import java.time.DayOfWeek
 import java.time.LocalTime
 
 class ActivityScheduleSlotTest {
+  private val activity = activityEntity()
+  private val activitySchedule = activity.schedules().first()
 
   @Test
   fun `conversion to model sets day flags and days-of-week list correctly`() {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       mondayFlag = true,
@@ -40,7 +42,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       mondayFlag = true,
@@ -63,7 +65,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       tuesdayFlag = true,
@@ -86,7 +88,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       wednesdayFlag = true,
@@ -109,7 +111,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       thursdayFlag = true,
@@ -132,7 +134,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       fridayFlag = true,
@@ -155,7 +157,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       saturdayFlag = true,
@@ -178,7 +180,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       sundayFlag = true,
@@ -201,7 +203,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       mondayFlag = true,
@@ -236,7 +238,7 @@ class ActivityScheduleSlotTest {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
       weekNumber = 1,
-      activitySchedule = mock(),
+      activitySchedule = activitySchedule,
       startTime = LocalTime.now(),
       endTime = LocalTime.now(),
       mondayFlag = true,
@@ -255,7 +257,7 @@ class ActivityScheduleSlotTest {
       ActivityScheduleSlot(
         activityScheduleSlotId = 1,
         weekNumber = 0,
-        activitySchedule = mock(),
+        activitySchedule = activitySchedule,
         startTime = LocalTime.now(),
         endTime = LocalTime.now(),
         mondayFlag = true,
@@ -268,7 +270,7 @@ class ActivityScheduleSlotTest {
       ActivityScheduleSlot(
         activityScheduleSlotId = 1,
         weekNumber = -1,
-        activitySchedule = mock(),
+        activitySchedule = activitySchedule,
         startTime = LocalTime.now(),
         endTime = LocalTime.now(),
         mondayFlag = true,
@@ -276,5 +278,24 @@ class ActivityScheduleSlotTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Week number must be greater than zero.")
+  }
+
+  @Test
+  fun `fails to initialise if week number is not in range`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first().apply { scheduleWeeks = 2 }
+
+    assertThatThrownBy {
+      ActivityScheduleSlot(
+        activityScheduleSlotId = 1,
+        weekNumber = 3,
+        activitySchedule = schedule,
+        startTime = LocalTime.now(),
+        endTime = LocalTime.now(),
+        mondayFlag = true,
+        sundayFlag = true,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Week number must less than or equal to the number of schedule weeks.")
   }
 }

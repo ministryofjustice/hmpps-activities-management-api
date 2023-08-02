@@ -45,7 +45,7 @@ class ActivityScheduleTest {
         pieceWork = false,
         outsideWork = false,
         payPerSession = PayPerSession.H,
-        prisonCode = "123",
+        prisonCode = "MDI",
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "high",
@@ -115,7 +115,7 @@ class ActivityScheduleTest {
           pieceWork = false,
           outsideWork = false,
           payPerSession = PayPerSession.H,
-          prisonCode = "123",
+          prisonCode = "MDI",
           summary = "Maths",
           description = "Maths basic",
           riskLevel = "high",
@@ -400,7 +400,8 @@ class ActivityScheduleTest {
 
   @Test
   fun `can add slots for multi-week schedule`() {
-    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
 
     schedule.addSlot(
       weekNumber = 1,
@@ -642,10 +643,36 @@ class ActivityScheduleTest {
     }
 
     assertThat(scheduleWithSlot.instances()).isEmpty()
-
     scheduleWithSlot.addInstance(today, scheduleWithSlot.slots().first())
-
     assertThat(scheduleWithSlot.instances()).hasSize(1)
+  }
+
+  @Test
+  fun `adding instance to schedule updates instancesLastUpdatedTime`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first().apply {
+      instancesLastUpdatedTime = null
+    }
+
+    assertThat(schedule.instancesLastUpdatedTime).isNull()
+
+    schedule.addInstance(LocalDate.now().plusDays(1), schedule.slots().first())
+
+    assertThat(schedule.instancesLastUpdatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+  }
+
+  @Test
+  fun `remove instance from schedule updates instancesLastUpdatedTime`() {
+    val activity = activityEntity()
+    val schedule = activity.schedules().first().apply {
+      instancesLastUpdatedTime = null
+    }
+
+    assertThat(schedule.instancesLastUpdatedTime).isNull()
+
+    schedule.removeInstances(listOf(schedule.instances().first()))
+
+    assertThat(schedule.instancesLastUpdatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
   }
 
   @Test
@@ -943,23 +970,31 @@ class ActivityScheduleTest {
 
   @Test
   fun `slot removed on update`() {
-    val schedule =
-      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
 
     assertThat(schedule.slots()).isEmpty()
 
-    val slot = schedule.addSlot(
+    val slot1 = schedule.addSlot(
       1,
       LocalTime.MIDNIGHT,
       LocalTime.NOON,
       setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
     )
 
-    assertThat(schedule.slots()).contains(slot)
+    val slot2 = schedule.addSlot(
+      1,
+      LocalTime.of(8, 0),
+      LocalTime.of(10, 0),
+      setOf(DayOfWeek.MONDAY),
+    )
 
-    schedule.updateSlots(emptyMap())
+    assertThat(schedule.slots()).containsAll(setOf(slot1, slot2))
 
-    assertThat(schedule.slots()).doesNotContain(slot)
+    val updates = mapOf(Pair(slot2.weekNumber, slot2.startTime to slot2.endTime) to slot2.getDaysOfWeek().toSet())
+    schedule.updateSlots(updates)
+
+    assertThat(schedule.slots()).doesNotContain(slot1)
+    assertThat(schedule.slots()).contains(slot2)
   }
 
   @Test
@@ -1065,5 +1100,20 @@ class ActivityScheduleTest {
 
     assertThat(activeAllocation.endDate).isEqualTo(tomorrow)
     assertThat(endedAllocation.endDate).isEqualTo(today)
+  }
+
+  @Test
+  fun `Removing last slot from schedule throws exception`() {
+    val schedule = activitySchedule(
+      activity = activityEntity(),
+      noSlots = true,
+    ).apply {
+      this.addSlot(1, LocalTime.of(8, 0), LocalTime.of(12, 0), DayOfWeek.values().toSet())
+    }
+
+    assertThatThrownBy {
+      schedule.updateSlots(emptyMap())
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Must have at least 1 active slot across the schedule")
   }
 }

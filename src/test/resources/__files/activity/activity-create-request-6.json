@@ -39,8 +39,10 @@
   "inCell": true,
   "locationId": 1,
   "capacity": 20,
+  "scheduleWeeks": 1,
   "slots": [
     {
+      "weekNumber": 1,
       "timeSlot": "AM",
       "monday": true
     }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Future
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
@@ -122,6 +124,11 @@ data class ActivityCreateRequest(
   )
   val capacity: Int?,
 
+  @field:Min(value = 1, message = "Schedule weeks must be either 1 or 2")
+  @field:Max(value = 2, message = "Schedule weeks must be either 1 or 2")
+  @Schema(description = "The number of weeks in the schedule", example = "1")
+  val scheduleWeeks: Int,
+
   @field:NotEmpty(message = "The activity schedule must have one or more unique slots")
   @Schema(description = "The days and times an activity schedule can take place")
   val slots: List<Slot>?,
@@ -139,6 +146,9 @@ data class ActivityCreateRequest(
 )
 
 data class Slot(
+  @field:Positive(message = "The week number must be a positive integer")
+  @Schema(description = "The week of the schedule this slot relates to", example = "1")
+  val weekNumber: Int,
 
   @field:NotEmpty(message = "The time slot must supplied")
   @Schema(
