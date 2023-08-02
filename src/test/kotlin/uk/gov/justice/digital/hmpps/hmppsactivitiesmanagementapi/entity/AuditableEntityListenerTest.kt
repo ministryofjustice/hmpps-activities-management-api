@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.argumentCaptor
@@ -19,6 +21,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Pri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -36,6 +40,18 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
   private val prisonerAllocatedCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val prisonerDeallocatedCaptor = argumentCaptor<PrisonerDeallocatedEvent>()
 
+  private val caseLoad = "MDI"
+
+  @BeforeEach
+  fun setUp() {
+    addCaseloadIdToRequestHeader(caseLoad)
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
+
   @Test
   fun `activity created event raised on creation`() {
     listener.onCreate(activity)
@@ -46,7 +62,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
     with(activityCreatedCaptor.firstValue) {
       assertThat(activityId).isEqualTo(1)
       assertThat(activityName).isEqualTo("Maths")
-      assertThat(prisonCode).isEqualTo("123")
+      assertThat(prisonCode).isEqualTo(caseLoad)
       assertThat(categoryCode).isEqualTo("category name")
       assertThat(startDate).isNotNull
       assertThat(createdAt).isNotNull
@@ -63,7 +79,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
     with(prisonerAllocatedCaptor.firstValue) {
       assertThat(activityId).isEqualTo(1)
       assertThat(activityName).isEqualTo("Maths")
-      assertThat(prisonCode).isEqualTo("123")
+      assertThat(prisonCode).isEqualTo(caseLoad)
       assertThat(prisonerNumber).isEqualTo("A1234AA")
       assertThat(scheduleId).isEqualTo(1)
       assertThat(scheduleDescription).isNotNull
@@ -81,7 +97,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
     with(prisonerDeallocatedCaptor.firstValue) {
       assertThat(activityId).isEqualTo(1)
       assertThat(activityName).isEqualTo("Maths")
-      assertThat(prisonCode).isEqualTo("123")
+      assertThat(prisonCode).isEqualTo(caseLoad)
       assertThat(prisonerNumber).isEqualTo("A1234AA")
       assertThat(scheduleId).isEqualTo(1)
       assertThat(deallocatedBy).isEqualTo(ServiceName.SERVICE_NAME.value)

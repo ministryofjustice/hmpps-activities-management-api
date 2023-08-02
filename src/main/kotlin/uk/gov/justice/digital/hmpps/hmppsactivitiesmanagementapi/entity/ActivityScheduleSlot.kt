@@ -67,6 +67,9 @@ data class ActivityScheduleSlot(
     if (weekNumber <= 0) {
       throw IllegalArgumentException("Week number must be greater than zero.")
     }
+    if (weekNumber > activitySchedule.scheduleWeeks) {
+      throw IllegalArgumentException("Week number must less than or equal to the number of schedule weeks.")
+    }
   }
 
   companion object {

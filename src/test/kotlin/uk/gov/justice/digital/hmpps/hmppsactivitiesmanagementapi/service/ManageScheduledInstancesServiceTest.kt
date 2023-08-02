@@ -41,7 +41,18 @@ class ManageScheduledInstancesServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
-  private val bankHolidayService: BankHolidayService = mock { on { isEnglishBankHoliday(any()) } doReturn (false) }
+  private val activityServiceTest: ActivityService = ActivityService(
+    activityRepository = activityRepository,
+    activityCategoryRepository = mock(),
+    activityTierRepository = mock(),
+    eligibilityRuleRepository = mock(),
+    activityScheduleRepository = activityScheduleRepository,
+    prisonPayBandRepository = mock(),
+    prisonApiClient = mock(),
+    prisonRegimeService = mock(),
+    bankHolidayService = mock(),
+    daysInAdvance = 7L,
+  )
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
@@ -50,7 +61,7 @@ class ManageScheduledInstancesServiceTest {
     activityRepository,
     activityScheduleRepository,
     rolloutPrisonRepository,
-    bankHolidayService,
+    activityServiceTest,
     safeJobRunner,
     7L,
   )
@@ -179,8 +190,6 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityDoesNotRunOnABankHoliday.first().schedules().first())
 
-    whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
-
     job.create()
 
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -197,8 +206,6 @@ class ManageScheduledInstancesServiceTest {
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityRunsOnABankHoliday.first().schedules().first())
-
-    whenever(bankHolidayService.isEnglishBankHoliday(today)).thenReturn(true)
 
     job.create()
 

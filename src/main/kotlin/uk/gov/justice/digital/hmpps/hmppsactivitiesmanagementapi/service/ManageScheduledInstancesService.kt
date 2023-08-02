@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobDefinition
@@ -14,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -22,7 +20,7 @@ class ManageScheduledInstancesService(
   private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val bankHolidayService: BankHolidayService,
+  private val activityService: ActivityService,
   private val jobRunner: SafeJobRunner,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
 ) {
@@ -74,8 +72,6 @@ class ManageScheduledInstancesService(
   }
 
   private fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
-    var instancesCreated = false
-
     // Retrieve instances which are for today, or in the future when creating sessions - avoid full-entity object maps
     val earliestSession = LocalDate.now()
 
@@ -83,29 +79,23 @@ class ManageScheduledInstancesService(
       ?: throw(EntityNotFoundException("Activity schedule ID $scheduleId not found"))
 
     days.forEach { day ->
-      if (schedule.isActiveOn(day) && schedule.canBeScheduledOnDay(day) && schedule.hasNoInstancesOnDate(day)) {
-        val filteredSlots = schedule.slots().filter { slot -> day.dayOfWeek in slot.getDaysOfWeek() }
-        filteredSlots.forEach { slot ->
-          continueToRunOnFailure(
-            block = { schedule.addInstance(sessionDate = day, slot = slot) },
-            success = "Scheduling session at ${prison.code} ${schedule.description} on $day at ${slot.startTime}",
-            failure = "Failed to schedule ${prison.code} ${schedule.description} on $day at ${slot.startTime}",
-          )
-
-          // Ignoring planned suspensions for now - logged for interest (no UI way to set these yet)
+      continueToRunOnFailure(
+        block = {
           if (schedule.isSuspendedOn(day)) {
-            log.info("This instance was suspended ${schedule.description} on $day at ${slot.startTime}")
+            log.info("This instance was suspended ${schedule.description} on $day")
           }
 
-          instancesCreated = true
-        }
-      }
-    }
+          val lastUpdate = schedule.instancesLastUpdatedTime
+          activityService.addScheduleInstances(schedule, days)
 
-    if (instancesCreated) {
-      // This triggers the sync event, adds new instances but does not delete the earlier ones
-      schedule.instancesLastUpdatedTime = LocalDateTime.now()
-      activityScheduleRepository.saveAndFlush(schedule)
+          // If there are been updates, save
+          if (schedule.instancesLastUpdatedTime != lastUpdate) {
+            activityScheduleRepository.saveAndFlush(schedule)
+          }
+        },
+        success = "Scheduling session at ${prison.code} ${schedule.description} on $day",
+        failure = "Failed to schedule ${prison.code} ${schedule.description} on $day",
+      )
     }
   }
 
@@ -116,7 +106,4 @@ class ManageScheduledInstancesService(
       .onSuccess { log.info(success) }
       .onFailure { log.error(failure, it) }
   }
-
-  private fun ActivitySchedule.canBeScheduledOnDay(day: LocalDate) =
-    this.runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(day)
 }

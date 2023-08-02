@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Future
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
@@ -86,6 +88,11 @@ data class ActivityUpdateRequest(
   @field:Valid
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest>? = null,
+
+  @field:Min(value = 1, message = "Schedule weeks must be either 1 or 2")
+  @field:Max(value = 2, message = "Schedule weeks must be either 1 or 2")
+  @Schema(description = "The number of weeks in the schedule", example = "1")
+  val scheduleWeeks: Int? = null,
 
   @Schema(description = "The days and times an activity schedule can take place")
   val slots: List<Slot>? = null,

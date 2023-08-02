@@ -146,9 +146,77 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/clear-local-audit.sql")
+  fun `createActivity - create multi-week schedule activity`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-8.json").copy(startDate = TimeSource.tomorrow())
+
+    val activity = webTestClient.createActivity(createActivityRequest)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(1)
+      assertThat(pay.size).isEqualTo(2)
+      assertThat(createdBy).isEqualTo("test-client")
+      with(schedules.first()) {
+        assertThat(scheduleWeeks).isEqualTo(2)
+        assertThat(slots.size).isEqualTo(2)
+        assertThat(slots.find { it.weekNumber == 1 && it.mondayFlag }).isNotNull
+        assertThat(slots.find { it.weekNumber == 1 && it.tuesdayFlag }).isNull()
+        assertThat(slots.find { it.weekNumber == 2 && it.tuesdayFlag }).isNotNull
+        assertThat(slots.find { it.weekNumber == 2 && it.mondayFlag }).isNull()
+      }
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_CREATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `createActivity - failed duplicate prison code - summary`() {
-    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json").copy(startDate = TimeSource.tomorrow())
+    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json")
+      .copy(startDate = TimeSource.tomorrow())
 
     val error = webTestClient.post()
       .uri("/activities")
@@ -840,7 +908,16 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(instances).isEmpty()
     }
 
-    val mondayTuesdaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", monday = true, tuesday = true)))
+    val mondayTuesdaySlot = ActivityUpdateRequest(
+      slots = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "AM",
+          monday = true,
+          tuesday = true,
+        ),
+      ),
+    )
 
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
@@ -848,9 +925,17 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(instances).hasSizeBetween(3, 4)
     }
 
-    val thursdayFridaySlot = ActivityUpdateRequest(slots = listOf(Slot("AM", thursday = true)))
+    val thursdaySlot = ActivityUpdateRequest(
+      slots = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "AM",
+          thursday = true,
+        ),
+      ),
+    )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdayFridaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)
@@ -922,6 +1007,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           startDate = startDate,
           slots = listOf(
             Slot(
+              weekNumber = 1,
               timeSlot = "AM",
               monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
               tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
@@ -973,6 +1059,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           startDate = startDate,
           slots = listOf(
             Slot(
+              weekNumber = 1,
               timeSlot = "AM",
               monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
               tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
@@ -991,6 +1078,73 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     activity.schedules.flatMap { it.instances } hasSize 1
 
     val updatedActivity = webTestClient.updateActivity(activity.prisonCode, activity.id, ActivityUpdateRequest(runsOnBankHoliday = true))
+
+    updatedActivity.schedules.flatMap { it.instances } hasSize 2
+  }
+
+  @Test
+  fun `updateActivity - adds second week slots to activity with multi-week schedule`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val startDate = TimeSource.tomorrow()
+
+    val weekOneSlot = Slot(
+      weekNumber = 1,
+      timeSlot = "AM",
+      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
+      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
+      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
+      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
+      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
+      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
+      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+    )
+
+    val weekTwoSlot = Slot(
+      weekNumber = 2,
+      timeSlot = "AM",
+      monday = startDate.plusDays(1).dayOfWeek == DayOfWeek.MONDAY,
+      tuesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.TUESDAY,
+      wednesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.WEDNESDAY,
+      thursday = startDate.plusDays(1).dayOfWeek == DayOfWeek.THURSDAY,
+      friday = startDate.plusDays(1).dayOfWeek == DayOfWeek.FRIDAY,
+      saturday = startDate.plusDays(1).dayOfWeek == DayOfWeek.SATURDAY,
+      sunday = startDate.plusDays(1).dayOfWeek == DayOfWeek.SUNDAY,
+    )
+
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(
+        startDate = startDate,
+        scheduleWeeks = 2,
+        slots = listOf(weekOneSlot),
+      )
+
+    val activity = webTestClient.createActivity(createActivityRequest)!!
+
+    activity.schedules.flatMap { it.instances } hasSize 1
+
+    val updatedActivity = webTestClient.updateActivity(
+      activity.prisonCode,
+      activity.id,
+      ActivityUpdateRequest(
+        slots = listOf(weekOneSlot, weekTwoSlot),
+      ),
+    )
 
     updatedActivity.schedules.flatMap { it.instances } hasSize 2
   }
