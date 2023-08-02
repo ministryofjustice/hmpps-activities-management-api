@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -27,6 +28,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,6 +56,16 @@ class AppointmentOccurrenceServiceCancelTest {
     prisonerSearchApiClient,
     outboundEventsService,
   )
+
+  @BeforeEach
+  fun setup() {
+    addCaseloadIdToRequestHeader("TPR")
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
 
   @Nested
   @DisplayName("cancel individual appointment validation")
@@ -426,6 +440,14 @@ class AppointmentOccurrenceServiceCancelTest {
         )
       }
       verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `cancel appointment throws caseload access exception if caseload id header does not match`() {
+      addCaseloadIdToRequestHeader("WRONG")
+      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.ALL_FUTURE_OCCURRENCES)
+      assertThatThrownBy { service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal) }
+        .isInstanceOf(CaseloadAccessException::class.java)
     }
   }
 }

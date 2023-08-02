@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -366,6 +367,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       .uri("/appointment-occurrences/$prisonCode/search")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf()))
+      .header(CASELOAD_ID, prisonCode)
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

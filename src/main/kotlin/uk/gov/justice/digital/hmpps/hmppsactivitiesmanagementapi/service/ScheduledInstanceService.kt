@@ -31,7 +31,7 @@ class ScheduledInstanceService(
   fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance {
     val activityScheduleInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
-    checkCaseloadAccess(activityScheduleInstance?.activitySchedule?.activity?.prisonCode)
+    checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
     return activityScheduleInstance.toModel()
   }
 

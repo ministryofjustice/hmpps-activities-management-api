@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -36,8 +38,12 @@ class AppointmentService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
   @Transactional(readOnly = true)
-  fun getAppointmentById(appointmentId: Long) =
-    appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+  fun getAppointmentById(appointmentId: Long): Appointment {
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    checkCaseloadAccess(appointment.prisonCode)
+
+    return appointment
+  }
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
     require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
@@ -115,12 +121,6 @@ class AppointmentService(
       ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
     }
 
-  private fun failIfPrisonCodeNotInUserCaseLoad(prisonCode: String) {
-    prisonApiUserClient.getUserCaseLoads().block()
-      ?.firstOrNull { caseLoad -> caseLoad.caseLoadId == prisonCode }
-      ?: throw IllegalArgumentException("Prison code '$prisonCode' not found in user's case load")
-  }
-
   private fun failIfCategoryNotFound(categoryCode: String) {
     referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
       ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
@@ -163,7 +163,7 @@ class AppointmentService(
     isMigrated: Boolean = false,
   ): AppointmentEntity {
     if (!isMigrated) {
-      failIfPrisonCodeNotInUserCaseLoad(prisonCode)
+      checkCaseloadAccess(prisonCode)
       failIfCategoryNotFound(categoryCode!!)
       failIfLocationNotFound(inCell, prisonCode, internalLocationId)
       failIfMissingPrisoners(prisonerNumbers, prisonerBookings)

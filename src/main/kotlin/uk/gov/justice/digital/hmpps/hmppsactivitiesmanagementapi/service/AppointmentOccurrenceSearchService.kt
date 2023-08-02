@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 
 @Service
@@ -25,6 +26,8 @@ class AppointmentOccurrenceSearchService(
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> {
+    checkCaseloadAccess(prisonCode)
+
     var spec = appointmentOccurrenceSearchSpecification.prisonCodeEquals(prisonCode)
 
     with(request) {

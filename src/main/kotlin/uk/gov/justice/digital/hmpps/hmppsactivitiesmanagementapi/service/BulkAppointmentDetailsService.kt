@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 
 @Service
 @Transactional(readOnly = true)
@@ -19,6 +20,7 @@ class BulkAppointmentDetailsService(
 ) {
   fun getBulkAppointmentDetailsById(appointmentId: Long): BulkAppointmentDetails {
     val bulkAppointment = bulkAppointmentRepository.findOrThrowNotFound(appointmentId)
+    checkCaseloadAccess(bulkAppointment.prisonCode)
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(bulkAppointment.prisonerNumbers())
 

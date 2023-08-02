@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -88,6 +89,7 @@ class AppointmentOccurrenceController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun updateAppointmentOccurrence(
     @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
     @Valid
@@ -154,6 +156,7 @@ class AppointmentOccurrenceController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun cancelAppointmentOccurrence(
     @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
     @Valid
@@ -210,6 +213,7 @@ class AppointmentOccurrenceController(
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun searchAppointmentOccurrences(
     @PathVariable("prisonCode") prisonCode: String,
     @Valid

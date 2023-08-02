@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -14,6 +15,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.util.Optional
 
 class AppointmentOccurrenceDetailsServiceTest {
@@ -31,8 +35,14 @@ class AppointmentOccurrenceDetailsServiceTest {
     prisonApiClient,
   )
 
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
+
   @Test
   fun `getAppointmentOccurrenceDetailsById returns mapped appointment details for known appointment id`() {
+    addCaseloadIdToRequestHeader("TPR")
     val appointment = appointmentEntity()
     val entity = appointment.occurrences().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
@@ -74,5 +84,14 @@ class AppointmentOccurrenceDetailsServiceTest {
   fun `getAppointmentOccurrenceDetailsById throws entity not found exception for unknown appointment id`() {
     assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment Occurrence -1 not found")
+  }
+
+  @Test
+  fun `getAppointmentOccurrenceDetailsById throws caseload access exception if caseload id header does not match`() {
+    addCaseloadIdToRequestHeader("WRONG")
+    val appointment = appointmentEntity()
+    val entity = appointment.occurrences().first()
+    whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(entity.appointmentOccurrenceId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }
