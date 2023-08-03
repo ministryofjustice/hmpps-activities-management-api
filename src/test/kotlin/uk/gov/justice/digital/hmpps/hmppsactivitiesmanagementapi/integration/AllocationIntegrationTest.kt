@@ -9,10 +9,10 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Status
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
@@ -102,12 +102,12 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       applicationDate = TimeSource.today(),
       requestedBy = "Bob",
       comments = "Some comments from Bob",
-      status = Status.PENDING,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThat(waitingListRepository.findAll()).isEmpty()
 
-    webTestClient.waitingListApplication(moorlandPrisonCode, request)
+    webTestClient.waitingListApplication(moorlandPrisonCode, request, moorlandPrisonCode).expectStatus().isNoContent
 
     val persisted = waitingListRepository.findAll()
     assertThat(persisted).hasSize(1)
@@ -122,15 +122,35 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.waitingListApplication(prisonCode: String, application: WaitingListApplicationRequest) =
+  @Sql(
+    "classpath:test_data/seed-activity-id-20.sql",
+  )
+  @Test
+  fun `attempting to add waiting list to activity from a different caseload returns a 403`() {
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "G4793VF",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Some comments from Bob",
+      status = WaitingListStatus.PENDING,
+    )
+
+    webTestClient.waitingListApplication(moorlandPrisonCode, request, pentonvillePrisonCode).expectStatus().isForbidden
+  }
+
+  private fun WebTestClient.waitingListApplication(
+    prisonCode: String,
+    application: WaitingListApplicationRequest,
+    caseloadId: String? = CASELOAD_ID,
+  ) =
     post()
       .uri("/allocations/$prisonCode/waiting-list-application")
       .bodyValue(application)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
-      .header(CASELOAD_ID, prisonCode)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .header(CASELOAD_ID, caseloadId)
       .exchange()
-      .expectStatus().isNoContent
 
   private fun WebTestClient.getAllocationBy(allocationId: Long) =
     get()

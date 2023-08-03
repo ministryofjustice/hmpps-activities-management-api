@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import java.time.LocalDate
 
@@ -12,7 +13,7 @@ class WaitingListApplicationRequestTest : ValidatorBase<WaitingListApplicationRe
     applicationDate = LocalDate.now(),
     requestedBy = "a".repeat(100),
     comments = "a".repeat(500),
-    status = Status.PENDING,
+    status = WaitingListStatus.PENDING,
   )
 
   @Test

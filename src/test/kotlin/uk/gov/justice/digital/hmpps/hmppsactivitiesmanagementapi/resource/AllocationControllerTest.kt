@@ -14,9 +14,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Status
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -93,7 +93,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       applicationDate = LocalDate.now(),
       requestedBy = "a".repeat(100),
       comments = "a".repeat(500),
-      status = Status.PENDING,
+      status = WaitingListStatus.PENDING,
     )
 
     mockMvc.waitingListApplication(pentonvillePrisonCode, request).andExpect { status { isNoContent() } }

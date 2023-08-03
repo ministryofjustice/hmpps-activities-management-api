@@ -58,11 +58,5 @@ data class WaitingListApplicationRequest(
     example = "PENDING",
   )
   @field:NotNull(message = "Status must be supplied")
-  val status: Status?,
+  val status: WaitingListStatus?,
 )
-
-enum class Status(val waitingListStatus: WaitingListStatus) {
-  APPROVED(WaitingListStatus.APPROVED),
-  DECLINED(WaitingListStatus.DECLINED),
-  PENDING(WaitingListStatus.PENDING),
-}
