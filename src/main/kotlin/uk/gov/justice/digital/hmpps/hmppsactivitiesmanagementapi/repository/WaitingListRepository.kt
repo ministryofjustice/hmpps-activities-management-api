@@ -12,4 +12,6 @@ interface WaitingListRepository : JpaRepository<WaitingList, Long> {
     prisonerNumber: String,
     activitySchedule: ActivitySchedule,
   ): List<WaitingList>
+
+  fun findByActivitySchedule(activitySchedule: ActivitySchedule): List<WaitingList>
 }

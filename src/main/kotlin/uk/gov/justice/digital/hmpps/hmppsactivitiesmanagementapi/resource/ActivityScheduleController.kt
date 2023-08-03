@@ -31,21 +31,22 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import java.security.Principal
-
-// TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
 @RequestMapping("/schedules", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ActivityScheduleController(
   private val scheduleService: ActivityScheduleService,
   private val candidatesService: CandidatesService,
+  private val waitingListService: WaitingListService,
 ) {
 
   @GetMapping(value = ["/{scheduleId}/allocations"])
@@ -455,4 +456,58 @@ class ActivityScheduleController(
   ) {
     scheduleService.deallocatePrisoners(scheduleId, deallocationRequest, principal.name)
   }
+
+  @GetMapping(value = ["/{scheduleId}/waiting-lists"])
+  @ResponseBody
+  @Operation(
+    summary = "Get schedules waiting list applications",
+    description = "Returns zero or more activity schedule waiting list applications.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The waiting list applications for an activity schedule",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = WaitingListApplication::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Schedule ID not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  fun getWaitingListsBy(@PathVariable("scheduleId") scheduleId: Long) =
+    waitingListService.getWaitingListsBySchedule(scheduleId)
 }

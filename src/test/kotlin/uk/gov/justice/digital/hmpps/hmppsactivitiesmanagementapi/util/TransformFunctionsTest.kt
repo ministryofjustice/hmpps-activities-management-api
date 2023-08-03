@@ -15,12 +15,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
@@ -423,14 +429,26 @@ class TransformFunctionsTest {
 
   @Test
   fun `reference code to appointment category summary mapping`() {
-    assertThat(appointmentCategoryReferenceCode("MEDO", "Medical - Doctor").toAppointmentCategorySummary("MEDO")).isEqualTo(
+    assertThat(
+      appointmentCategoryReferenceCode(
+        "MEDO",
+        "Medical - Doctor",
+      ).toAppointmentCategorySummary("MEDO"),
+    ).isEqualTo(
       AppointmentCategorySummary("MEDO", "Medical - Doctor"),
     )
   }
 
   @Test
   fun `reference code list to appointment category summary list mapping`() {
-    assertThat(listOf(appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")).toAppointmentCategorySummary()).isEqualTo(
+    assertThat(
+      listOf(
+        appointmentCategoryReferenceCode(
+          "MEDO",
+          "Medical - Doctor",
+        ),
+      ).toAppointmentCategorySummary(),
+    ).isEqualTo(
       listOf(AppointmentCategorySummary("MEDO", "Medical - Doctor")),
     )
   }
@@ -561,5 +579,47 @@ class TransformFunctionsTest {
         ),
       ),
     )
+  }
+
+  @Test
+  fun `waiting list entity to waiting list model`() {
+    val schedule = activityEntity(prisonCode = pentonvillePrisonCode).schedules().first()
+    val allocation = schedule.allocations().first()
+
+    with(
+      WaitingList(
+        waitingListId = 99,
+        prisonCode = pentonvillePrisonCode,
+        activitySchedule = schedule,
+        prisonerNumber = "123456",
+        bookingId = 100L,
+        applicationDate = TimeSource.today(),
+        requestedBy = "Fred",
+        comments = "Some random test comments",
+        status = WaitingListStatus.DECLINED,
+        createdBy = "Bob",
+      ).apply {
+        this.allocation = allocation
+        this.updatedBy = "Test"
+        this.updatedTime = TimeSource.now()
+        this.declinedReason = "Needs to attend level one activity first"
+      }.toModel(),
+    ) {
+      id isEqualTo 99
+      scheduleId isEqualTo schedule.activityScheduleId
+      allocationId isEqualTo schedule.allocations().first().allocationId
+      prisonCode isEqualTo DEFAULT_CASELOAD_PENTONVILLE
+      prisonerNumber isEqualTo "123456"
+      bookingId isEqualTo 100L
+      status isEqualTo WaitingListStatus.DECLINED
+      requestedDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Fred"
+      comments isEqualTo "Some random test comments"
+      createdBy isEqualTo "Bob"
+      creationTime isCloseTo TimeSource.now()
+      updatedBy isEqualTo "Test"
+      updatedTime!! isCloseTo TimeSource.now()
+      declinedReason isEqualTo "Needs to attend level one activity first"
+    }
   }
 }
