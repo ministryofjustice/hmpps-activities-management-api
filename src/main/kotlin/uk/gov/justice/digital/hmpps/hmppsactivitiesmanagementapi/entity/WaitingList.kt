@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
@@ -14,7 +15,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "waiting_list")
-class WaitingList(
+data class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val waitingListId: Long = 0,
@@ -27,7 +28,7 @@ class WaitingList(
 
   val applicationDate: LocalDate,
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
@@ -40,6 +41,11 @@ class WaitingList(
 
   val createdBy: String,
 ) {
+
+  @ManyToOne
+  @JoinColumn(name = "activity_id", nullable = false)
+  val activity: Activity = activitySchedule.activity
+
   val creationTime: LocalDateTime = LocalDateTime.now()
 
   var declinedReason: String? = null

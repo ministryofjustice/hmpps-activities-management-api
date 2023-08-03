@@ -1,0 +1,2 @@
+ALTER TABLE waiting_list ADD FOREIGN KEY(activity_id) REFERENCES activity(activity_id);
+ALTER TABLE waiting_list ADD FOREIGN KEY(activity_schedule_id) REFERENCES activity_schedule(activity_schedule_id);

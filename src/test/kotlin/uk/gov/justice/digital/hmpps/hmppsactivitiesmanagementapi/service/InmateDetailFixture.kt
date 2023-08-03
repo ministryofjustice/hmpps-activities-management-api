@@ -14,7 +14,7 @@ object InmateDetailFixture {
     activeFlag: Boolean = true,
     inOutStatus: String = "IN",
     status: String = "IN",
-    bookingId: Long = 900001,
+    bookingId: Long? = 900001,
     bookingNo: String = "BK01",
     middleName: String = "James",
     agencyId: String = "MDI",
