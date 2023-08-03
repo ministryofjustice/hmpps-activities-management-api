@@ -14,3 +14,5 @@ fun InmateDetail.isReleasedFromCustodialSentence(): Boolean =
 fun InmateDetail.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 
 fun InmateDetail.isActiveInPrison(prisonCode: String): Boolean = status == "ACTIVE IN" && agencyId == prisonCode
+
+fun InmateDetail.isActiveOutPrison(prisonCode: String): Boolean = status == "ACTIVE OUT" && agencyId == prisonCode
