@@ -317,7 +317,7 @@ class AppointmentOccurrenceTest {
     )
     with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(category.code).isEqualTo(appointment.categoryCode)
-      assertThat(category.description).isEqualTo("UNKNOWN")
+      assertThat(category.description).isEqualTo(appointment.categoryCode)
     }
   }
 
@@ -345,7 +345,7 @@ class AppointmentOccurrenceTest {
       assertThat(internalLocation).isNotNull
       assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
       assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
-      assertThat(internalLocation!!.description).isEqualTo("UNKNOWN")
+      assertThat(internalLocation!!.description).isEqualTo("No information available")
     }
   }
 
