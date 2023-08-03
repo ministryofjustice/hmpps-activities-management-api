@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -460,18 +460,18 @@ class ActivityScheduleController(
   @GetMapping(value = ["/{scheduleId}/waiting-lists"])
   @ResponseBody
   @Operation(
-    summary = "Get schedule waiting lists",
-    description = "Returns zero or more activity schedule waiting lists.",
+    summary = "Get schedules waiting list applications",
+    description = "Returns zero or more activity schedule waiting list applications.",
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "The waiting lists for an activity schedule",
+        description = "The waiting list applications for an activity schedule",
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = WaitingList::class)),
+            array = ArraySchema(schema = Schema(implementation = WaitingListApplication::class)),
           ),
         ],
       ),

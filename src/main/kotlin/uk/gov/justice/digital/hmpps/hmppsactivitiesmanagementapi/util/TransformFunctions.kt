@@ -52,7 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerW
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingList as ModelWaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication as ModelWaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 fun transform(activity: EntityActivity) =
@@ -467,7 +467,7 @@ fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }
 
-fun EntityWaitingList.toModel() = ModelWaitingList(
+fun EntityWaitingList.toModel() = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
   scheduleId = activitySchedule.activityScheduleId,

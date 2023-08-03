@@ -6,8 +6,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Schema(description = "Describes a single waiting list for a prisoner who is waiting to be allocated to an activity.")
-data class WaitingList(
+@Schema(description = "Describes a single waiting list application for a prisoner who is waiting to be allocated to an activity.")
+data class WaitingListApplication(
 
   @Schema(
     description = "The internally-generated ID for this waiting list",
