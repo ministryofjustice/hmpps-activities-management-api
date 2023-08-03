@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
@@ -34,7 +33,6 @@ class AppointmentService(
   private val bulkAppointmentRepository: BulkAppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
-  private val prisonApiUserClient: PrisonApiUserClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
 ) {
   @Transactional(readOnly = true)
@@ -141,6 +139,14 @@ class AppointmentService(
     }
   }
 
+  private fun failIfMaximumOccurrencesExceeded(prisonerNumbers: List<String>, repeat: AppointmentRepeat?) {
+    val maxOccurrenceAllocations = 20000
+    val repeatCount = repeat?.count ?: 1
+    require(prisonerNumbers.size * repeatCount <= maxOccurrenceAllocations) {
+      "You cannot schedule more than ${maxOccurrenceAllocations / prisonerNumbers.size} appointments for this number of attendees."
+    }
+  }
+
   fun buildValidAppointmentEntity(
     appointmentType: AppointmentType? = null,
     prisonCode: String,
@@ -162,6 +168,8 @@ class AppointmentService(
     isCancelled: Boolean = false,
     isMigrated: Boolean = false,
   ): AppointmentEntity {
+    failIfMaximumOccurrencesExceeded(prisonerNumbers, repeat)
+
     if (!isMigrated) {
       checkCaseloadAccess(prisonCode)
       failIfCategoryNotFound(categoryCode!!)
