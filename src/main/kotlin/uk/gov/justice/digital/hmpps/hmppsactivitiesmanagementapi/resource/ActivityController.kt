@@ -32,8 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import java.security.Principal
 import java.time.LocalDate
 
-// TODO add pre-auth annotations to enforce roles when we have them
-
 @RestController
 @Validated
 @RequestMapping("/activities", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -155,8 +153,8 @@ class ActivityController(
   @GetMapping(value = ["/{activityId}/basic"])
   @ResponseBody
   @Operation(
-    summary = "DO NOT USE:  Get an activity key ids - testing only",
-    description = "DO NOT USEL: Returns keys ids - testing only",
+    summary = "Returns the basic activity ids and descriptions without its child collections",
+    description = "Returns basics activity IDs and attributes without its child collections.",
   )
   @ApiResponses(
     value = [
@@ -310,10 +308,7 @@ class ActivityController(
     principal: Principal,
     @Valid
     @RequestBody
-    @Parameter(
-      description = "The create request with the new activity details",
-      required = true,
-    )
+    @Parameter(description = "The create request with the new activity details", required = true)
     activity: ActivityCreateRequest,
   ): Activity = activityService.createActivity(activity, principal.name)
 
