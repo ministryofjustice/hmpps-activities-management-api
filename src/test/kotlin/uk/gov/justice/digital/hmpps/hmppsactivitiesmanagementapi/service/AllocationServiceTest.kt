@@ -12,10 +12,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.deallocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -119,6 +121,26 @@ class AllocationServiceTest {
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
     whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "OTHER")
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.endDate).isEqualTo(TimeSource.tomorrow())
+  }
+
+  @Test
+  fun `updateAllocation - update end date when it had been set before`() {
+    var allocation = deallocation(endDate = TimeSource.tomorrow().plusDays(2))
+    allocation.deallocateOn(TimeSource.tomorrow().plusDays(2), DeallocationReason.HEALTH, "Test User")
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
 
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "OTHER")
 
