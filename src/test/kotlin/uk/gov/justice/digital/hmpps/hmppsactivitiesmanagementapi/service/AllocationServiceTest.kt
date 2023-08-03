@@ -141,7 +141,6 @@ class AllocationServiceTest {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
     whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
 
-
     val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow(), reasonCode = "OTHER")
 
     service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
