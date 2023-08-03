@@ -415,9 +415,9 @@ class TransformFunctionsTest {
   }
 
   @Test
-  fun `reference code to appointment category summary returns unknown for null reference codes`() {
+  fun `reference code to appointment category summary returns category code for null reference codes`() {
     assertThat((null as ReferenceCode?).toAppointmentCategorySummary("MEDO")).isEqualTo(
-      AppointmentCategorySummary("MEDO", "UNKNOWN"),
+      AppointmentCategorySummary("MEDO", "MEDO"),
     )
   }
 
@@ -446,7 +446,7 @@ class TransformFunctionsTest {
   @Test
   fun `reference code to appointment name mapping for null reference code`() {
     assertThat(null.toAppointmentName("MEDO", "John's doctor appointment"))
-      .isEqualTo("John's doctor appointment (UNKNOWN)")
+      .isEqualTo("John's doctor appointment (MEDO)")
   }
 
   @Test
@@ -459,13 +459,13 @@ class TransformFunctionsTest {
 
   @Test
   fun `reference code to appointment name mapping for null reference code and no description`() {
-    assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("UNKNOWN")
+    assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("MEDO")
   }
 
   @Test
-  fun `location to appointment location summary returns unknown for null locations`() {
+  fun `location to appointment location summary returns a default description for null locations`() {
     assertThat((null as Location?).toAppointmentLocationSummary(1, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, "TPR", "UNKNOWN"),
+      AppointmentLocationSummary(1, "TPR", "No information available"),
     )
   }
 
