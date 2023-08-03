@@ -304,6 +304,7 @@ class ActivityController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun create(
     principal: Principal,
     @Valid
@@ -425,6 +426,7 @@ class ActivityController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun update(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("activityId") activityId: Long,
