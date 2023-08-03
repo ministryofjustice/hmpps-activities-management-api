@@ -75,7 +75,6 @@ class AppointmentServiceTest {
     bulkAppointmentRepository,
     referenceCodeService,
     locationService,
-    prisonApiUserClient,
     prisonerSearchApiClient,
   )
 
@@ -296,6 +295,40 @@ class AppointmentServiceTest {
       service.createAppointment(request, principal)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
+
+    verify(appointmentRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `createAppointment group repeat appointment throws error if occurrence allocations exceeds 20,000`() {
+    val prisonerList = MutableList(60) { prisoner -> "A11${prisoner}BC" }
+    val request = appointmentCreateRequest(
+      prisonerNumbers = prisonerList,
+      repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 350),
+    )
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          request.prisonerNumbers.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it,
+              bookingId = 1,
+              prisonId = request.prisonCode!!,
+            )
+          },
+        ),
+      )
+
+    assertThatThrownBy {
+      service.createAppointment(request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("You cannot schedule more than 333 appointments for this number of attendees.")
 
     verify(appointmentRepository, never()).saveAndFlush(any())
   }
