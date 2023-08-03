@@ -19,8 +19,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
@@ -109,7 +111,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
   }
 
-  private fun WebTestClient.getAllocationsBy(scheduleId: Long, activeOnly: Boolean? = null, caseLoadId: String = "PVI") =
+  private fun WebTestClient.getAllocationsBy(
+    scheduleId: Long,
+    activeOnly: Boolean? = null,
+    caseLoadId: String = "PVI",
+  ) =
     get()
       .uri { builder ->
         builder
@@ -445,7 +451,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
 
-  private fun WebTestClient.getCandidates(scheduleId: Long, pageNum: Long = 0, pageSize: Long = 10, caseLoadId: String = "PVI") =
+  private fun WebTestClient.getCandidates(
+    scheduleId: Long,
+    pageNum: Long = 0,
+    pageSize: Long = 10,
+    caseLoadId: String = "PVI",
+  ) =
     get()
       .uri("/schedules/$scheduleId/candidates?size=$pageSize&page=$pageNum")
       .accept(MediaType.APPLICATION_JSON)
@@ -453,4 +464,28 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
+  fun `get all waiting lists for Maths`() {
+    webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+  }
+
+  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = moorlandPrisonCode) =
+    get()
+      .uri { builder ->
+        builder
+          .path("/schedules/$scheduleId/waiting-lists")
+          .build(scheduleId)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(WaitingList::class.java)
+      .returnResult().responseBody
 }

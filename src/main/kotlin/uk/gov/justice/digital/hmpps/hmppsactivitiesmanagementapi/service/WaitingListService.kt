@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 
 @Service
@@ -23,6 +24,13 @@ class WaitingListService(
   private val waitingListRepository: WaitingListRepository,
   private val prisonApiClient: PrisonApiClient,
 ) {
+
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun getWaitingListsBySchedule(id: Long) =
+    scheduleRepository.findById(id)
+      .orElseThrow { EntityNotFoundException("Activity schedule $id not found") }
+      .also { checkCaseloadAccess(it.activity.prisonCode) }
+      .let { schedule -> waitingListRepository.findByActivitySchedule(schedule).map { it.toModel() } }
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")

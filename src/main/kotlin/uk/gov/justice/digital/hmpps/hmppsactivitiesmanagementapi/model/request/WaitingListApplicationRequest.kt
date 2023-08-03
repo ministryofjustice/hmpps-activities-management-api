@@ -17,7 +17,7 @@ import java.time.LocalDate
 )
 data class WaitingListApplicationRequest(
 
-  @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
+  @Schema(description = "The prisoner number (NOMIS ID)", example = "A1234AA")
   @field:NotBlank(message = "Prisoner number must be supplied")
   @field:Size(max = 7, message = "Prisoner number must not exceed {max} characters")
   val prisonerNumber: String?,
@@ -30,7 +30,7 @@ data class WaitingListApplicationRequest(
   val activityScheduleId: Long?,
 
   @Schema(
-    description = "The past or present date on which the waitlist application was requested",
+    description = "The past or present date on which the waiting list application was requested",
     example = "2023-06-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

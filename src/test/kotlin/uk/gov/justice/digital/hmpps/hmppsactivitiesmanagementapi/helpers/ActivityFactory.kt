@@ -17,6 +17,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
@@ -31,10 +33,8 @@ internal fun activityModel(activity: Activity) = transform(activity)
 const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"
 
-val eligibilityRuleOver21 =
-  EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
-val eligibilityRuleFemale =
-  EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
+val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
+val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
 
 val lowPayBand = prisonPayBandsLowMediumHigh()[0]
 val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
@@ -357,4 +357,27 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   fridayFlag = true
   saturdayFlag = true
   sundayFlag = true
+}
+
+fun waitingList(prisonCode: String = pentonvillePrisonCode): WaitingList {
+  val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
+  val allocation = schedule.allocations().first()
+
+  return WaitingList(
+    waitingListId = 99,
+    prisonCode = pentonvillePrisonCode,
+    activitySchedule = schedule,
+    prisonerNumber = "123456",
+    bookingId = 100L,
+    applicationDate = TimeSource.today(),
+    requestedBy = "Fred",
+    comments = "Some random test comments",
+    status = WaitingListStatus.DECLINED,
+    createdBy = "Bob",
+  ).apply {
+    this.allocation = allocation
+    this.updatedBy = "Test"
+    this.updatedTime = TimeSource.now()
+    this.declinedReason = "Needs to attend level one activity first"
+  }
 }
