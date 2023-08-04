@@ -24,6 +24,7 @@ truncate table prison_regime restart identity;
 truncate table event_review restart identity;
 truncate table attendance_history restart identity;
 truncate table waiting_list restart identity;
+truncate table local_audit restart identity;
 
 --Appointments
 truncate table appointment_cancellation_reason;

@@ -4,8 +4,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import toPrisonerAddedToWaitingListEvent
 import toPrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -35,5 +39,20 @@ class AuditTransformationsTest {
     }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Prisoner ABCDEF is missing expected deallocation details for allocation id 123456")
+  }
+
+  @Test
+  fun `transform to prisoner added to waiting list event`() {
+    val waitingList = waitingList(moorlandPrisonCode)
+
+    with(waitingList.toPrisonerAddedToWaitingListEvent()) {
+      activityId isEqualTo waitingList.activity.activityId
+      activityName isEqualTo waitingList.activity.summary
+      scheduleId isEqualTo waitingList.activitySchedule.activityScheduleId
+      prisonCode isEqualTo waitingList.activity.prisonCode
+      prisonerNumber isEqualTo waitingList.prisonerNumber
+      status isEqualTo waitingList.status
+      createdAt isEqualTo waitingList.creationTime
+    }
   }
 }

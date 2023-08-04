@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import java.time.LocalDateTime
 
 class PrisonerAddedToWaitingListEvent(
@@ -8,14 +9,17 @@ class PrisonerAddedToWaitingListEvent(
   val activityName: String,
   val prisonCode: String,
   val prisonerNumber: String,
+  val scheduleId: Long,
+  val status: WaitingListStatus,
+  createdBy: String,
   createdAt: LocalDateTime,
-
 ) : AuditableEvent(
   auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_ADDED_TO_WAITING_LIST,
   details = "Prisoner $prisonerNumber was added to the waiting list for " +
-    "activity '$activityName'($activityId)",
+    "activity '$activityName'($activityId) with a status of $status",
   createdAt = createdAt,
+  createdBy = createdBy,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -28,11 +32,13 @@ class PrisonerAddedToWaitingListEvent(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
+    activityScheduleId = scheduleId,
     message = toString(),
   )
 
   override fun toJson(): String = generateHmppsAuditJson(
     activityId = activityId,
+    scheduleId = scheduleId,
     activityName = activityName,
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import toActivityCreatedEvent
 import toActivityUpdatedEvent
+import toPrisonerAddedToWaitingListEvent
 import toPrisonerAllocatedEvent
 import toPrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditableEvent
@@ -30,6 +31,7 @@ class AuditableEntityListener {
     when (entity) {
       is Activity -> audit(entity.toActivityCreatedEvent(), "Failed to audit activity creation event for activity id ${entity.activityId}")
       is Allocation -> audit(entity.toPrisonerAllocatedEvent(), "Failed to audit prisoner allocation event for allocation id ${entity.allocationId}")
+      is WaitingList -> audit(entity.toPrisonerAddedToWaitingListEvent(), "Failed to audit prisoner added to waiting list id ${entity.waitingListId}")
     }
   }
 
