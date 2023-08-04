@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRe
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting as EntityPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList as EntityWaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -51,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerW
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication as ModelWaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 fun transform(activity: EntityActivity) =
@@ -331,14 +333,29 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
-    caseNoteText = attendance.caseNoteId?.let { caseNotesApiClient?.getCaseNote(attendance.prisonerNumber, attendance.caseNoteId)?.text },
+    caseNoteText = attendance.caseNoteId?.let {
+      caseNotesApiClient?.getCaseNote(
+        attendance.prisonerNumber,
+        attendance.caseNoteId,
+      )?.text
+    },
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory -> transform(attendanceHistory, attendance.prisonerNumber, caseNotesApiClient) },
+      .map { attendanceHistory: EntityAttendanceHistory ->
+        transform(
+          attendanceHistory,
+          attendance.prisonerNumber,
+          caseNotesApiClient,
+        )
+      },
   )
 
-fun transform(attendanceHistory: EntityAttendanceHistory, prisonerNumber: String, caseNotesApiClient: CaseNotesApiClient?): ModelAttendanceHistory =
+fun transform(
+  attendanceHistory: EntityAttendanceHistory,
+  prisonerNumber: String,
+  caseNotesApiClient: CaseNotesApiClient?,
+): ModelAttendanceHistory =
   ModelAttendanceHistory(
     id = attendanceHistory.attendanceHistoryId,
     attendanceReason = attendanceHistory.attendanceReason?.let {
@@ -363,7 +380,12 @@ fun transform(attendanceHistory: EntityAttendanceHistory, prisonerNumber: String
     issuePayment = attendanceHistory.issuePayment,
     incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
     otherAbsenceReason = attendanceHistory.otherAbsenceReason,
-    caseNoteText = attendanceHistory.caseNoteId?.let { caseNotesApiClient?.getCaseNote(prisonerNumber, attendanceHistory.caseNoteId)?.text },
+    caseNoteText = attendanceHistory.caseNoteId?.let {
+      caseNotesApiClient?.getCaseNote(
+        prisonerNumber,
+        attendanceHistory.caseNoteId,
+      )?.text
+    },
   )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() =
@@ -444,3 +466,21 @@ fun transform(activityBasic: EntityActivityBasic) =
 fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }
+
+fun EntityWaitingList.toModel() = ModelWaitingListApplication(
+  id = waitingListId,
+  prisonCode = prisonCode,
+  scheduleId = activitySchedule.activityScheduleId,
+  allocationId = allocation?.allocationId,
+  prisonerNumber = prisonerNumber,
+  bookingId = bookingId,
+  status = status,
+  declinedReason = declinedReason,
+  requestedDate = applicationDate,
+  requestedBy = requestedBy,
+  comments = comments,
+  createdBy = createdBy,
+  creationTime = creationTime,
+  updatedTime = updatedTime,
+  updatedBy = updatedBy,
+)

@@ -19,10 +19,13 @@ import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
@@ -37,7 +40,10 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @MockBean
   private lateinit var candidatesService: CandidatesService
 
-  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService)
+  @MockBean
+  private lateinit var waitingListService: WaitingListService
+
+  override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, waitingListService)
 
   private fun MockMvc.getActivityScheduleCapacity(activityScheduleId: Long) =
     get("/schedules/{activityScheduleId}/capacity", activityScheduleId)
@@ -174,4 +180,21 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       content = mapper.writeValueAsString(request)
       contentType = MediaType.APPLICATION_JSON
     }
+
+  @Test
+  fun `200 response when get waiting lists by schedule identifier`() {
+    val waitingList = waitingList().toModel()
+
+    whenever(waitingListService.getWaitingListsBySchedule(1)).thenReturn(listOf(waitingList))
+
+    val response = mockMvc.getWaitingListsScheduleById(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(waitingList)))
+  }
+
+  private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) =
+    get("/schedules/$scheduleId/waiting-list-applications")
 }
