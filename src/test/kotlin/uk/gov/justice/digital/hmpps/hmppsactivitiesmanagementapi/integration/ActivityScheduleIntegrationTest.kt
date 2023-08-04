@@ -477,7 +477,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     get()
       .uri { builder ->
         builder
-          .path("/schedules/$scheduleId/waiting-lists")
+          .path("/schedules/$scheduleId/waiting-list-applications")
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)

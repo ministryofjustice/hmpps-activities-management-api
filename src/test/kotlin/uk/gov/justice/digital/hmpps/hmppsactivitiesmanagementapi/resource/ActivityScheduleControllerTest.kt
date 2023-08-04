@@ -196,5 +196,5 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   }
 
   private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) =
-    get("/schedules/$scheduleId/waiting-lists")
+    get("/schedules/$scheduleId/waiting-list-applications")
 }
