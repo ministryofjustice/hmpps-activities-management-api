@@ -86,7 +86,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private lateinit var auditRepository: AuditRepository
 
   @Test
-  @Sql("classpath:test_data/clear-local-audit.sql")
   fun `createActivity - is successful`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
@@ -146,7 +145,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/clear-local-audit.sql")
   fun `createActivity - create multi-week schedule activity`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
@@ -796,7 +794,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Test
-  @Sql("classpath:test_data/clear-local-audit.sql")
   fun `the activity should be persisted even if the subsequent event notification fails`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",

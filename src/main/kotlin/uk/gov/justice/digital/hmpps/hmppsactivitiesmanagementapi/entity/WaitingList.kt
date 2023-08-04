@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
@@ -15,6 +16,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "waiting_list")
+@EntityListeners(AuditableEntityListener::class)
 data class WaitingList(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
