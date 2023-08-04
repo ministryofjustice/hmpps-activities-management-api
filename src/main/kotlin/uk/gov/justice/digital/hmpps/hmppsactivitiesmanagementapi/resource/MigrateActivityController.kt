@@ -16,17 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
 
 @RestController
 @Validated
 @RequestMapping("/migrate", produces = [MediaType.APPLICATION_JSON_VALUE])
-class MigrateActivityController(private val activityService: ActivityService) {
+class MigrateActivityController(
+  private val migrateActivityService: MigrateActivityService,
+) {
 
   @PostMapping(value = ["/activity"])
   @Operation(
     summary = "Migrate an activity",
-    description = "Migrate an activity. Requires the role 'ACTIVITY_ADMIN'",
+    description = "Migrate an activity. Requires the role 'ROLE_NOMIS_ACTIVITIES'",
   )
   @ApiResponses(
     value = [
@@ -66,11 +69,62 @@ class MigrateActivityController(private val activityService: ActivityService) {
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
-  fun migrate(
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
+  fun migrateActivity(
     @Valid
     @RequestBody
     @Parameter(description = "Activity migration request", required = true)
     activityMigrateRequest: ActivityMigrateRequest,
-  ) = activityService.migrateActivity(activityMigrateRequest)
+  ) = migrateActivityService.migrateActivity(activityMigrateRequest)
+
+  @PostMapping(value = ["/allocation"])
+  @Operation(
+    summary = "Migrate an allocation",
+    description = "Migrate an allocation from NOMIS. Requires the role 'ROLE_NOMIS_ACTIVITIES'",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The allocation was migrated.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
+  fun migrateAllocation(
+    @Valid
+    @RequestBody
+    @Parameter(description = "Allocation migration request", required = true)
+    allocationMigrateRequest: AllocationMigrateRequest,
+  ) = migrateActivityService.migrateAllocation(allocationMigrateRequest)
 }

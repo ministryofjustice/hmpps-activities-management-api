@@ -16,11 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -311,15 +309,6 @@ class ActivityService(
     activityRepository.saveAndFlush(activity)
 
     return transform(activity)
-  }
-
-  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
-  fun migrateActivity(activityMigrateRequest: ActivityMigrateRequest): ActivityMigrateResponse {
-    log.info("Request to migrate NOMIS activity ${activityMigrateRequest.description}")
-
-    // TODO: Logic for mapping and creating a local activity here.
-
-    return ActivityMigrateResponse("RSI", 1L, 2L)
   }
 
   private fun ActivitySchedule.markAsUpdated(

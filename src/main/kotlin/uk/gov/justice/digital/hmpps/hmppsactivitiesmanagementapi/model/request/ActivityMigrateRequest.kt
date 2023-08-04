@@ -49,88 +49,70 @@ data class ActivityMigrateRequest(
   @Schema(description = "A summary description for the activity.", example = "Maths level 1")
   val description: String,
 
-  @Schema(description = "Indicates (F)ull or (H)alf day (for payment purposes). Not nullable.", example = "H")
-  var payPerSession: String,
+  @Schema(description = "Indicates (F)ull or (H)alf day (for payment purposes). Not nullable.", example = "H", allowableValues = ["H", "F"])
+  val payPerSession: String,
 
+  @field:NotEmpty(message = "Minimum incentive level is required.")
   @Schema(description = "The NOMIS code for the minimum incentive level for this activity", example = "BAS")
-  val minimumIncentiveLevel: String?,
+  val minimumIncentiveLevel: String,
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean = false,
 
+  @field:NotEmpty(message = "Activity schedules must have at least one time when they run.")
   @Schema(description = "Details of when this activity runs during the week")
-  val scheduleRules: List<NomisScheduleRule> = emptyList(),
+  val scheduleRules: List<NomisScheduleRule>,
 
+  @field:NotEmpty(message = "An activity must have at least one pay rate.")
   @Schema(description = "The pay rates which apply to this activity")
-  val payRates: List<NomisPayRate> = emptyList(),
-
-  @Schema(description = "The people currently allocated to this activity")
-  val allocations: List<NomisAllocation> = emptyList(),
+  val payRates: List<NomisPayRate>,
 )
 
-@Schema(description = "The scheduling rules in Nomis")
+@Schema(description = "The scheduling rules in Nomis. At least one day and time must be specified.")
 data class NomisScheduleRule(
+  @Schema(description = "Start time on the day", example = "10:45")
+  @field:NotNull
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
+  @Schema(description = "End time on the day", example = "11:45")
+  @field:NotNull
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
+  @Schema(description = "Runs on a Monday", example = "true")
   val monday: Boolean = false,
 
+  @Schema(description = "Runs on a Tuesday", example = "true")
   val tuesday: Boolean = false,
 
+  @Schema(description = "Runs on a Wednesday", example = "true")
   val wednesday: Boolean = false,
 
+  @Schema(description = "Runs on a Thursday", example = "true")
   val thursday: Boolean = false,
 
+  @Schema(description = "Runs on a Friday", example = "true")
   val friday: Boolean = false,
 
+  @Schema(description = "Runs on a Saturday", example = "true")
   val saturday: Boolean = false,
 
+  @Schema(description = "Runs on a Sunday", example = "true")
   val sunday: Boolean = false,
 )
 
-@Schema(description = "Describes the pay rates defined for this activity")
+@Schema(description = "Describes a pay rate for an activity. At least one pay rate must be specified.")
 data class NomisPayRate(
-  @Schema(description = "The incentive level code from NOMIS")
+  @Schema(description = "The incentive level code from NOMIS", example = "BAS")
+  @field:NotEmpty(message = "An incentive level must be specified")
   val incentiveLevel: String,
 
-  @Schema(description = "The pay band code from NOMIS")
-  val nomisPayBand: String,
+  @Schema(description = "The pay band code from NOMIS. If null, will be defaulted to 1", example = "2")
+  val nomisPayBand: String?,
 
-  @Schema(description = "The pay rate for one half day session (in pence)")
+  @Schema(description = "The pay rate for one half day session in pence", example = "120")
+  @field:NotNull
   @field:PositiveOrZero(message = "Pay rates must be zero or above, cannot be negative.")
   val rate: Int,
-)
-
-@Schema(description = "Describes the allocations to this activity")
-data class NomisAllocation(
-  @field:NotNull
-  @Schema(description = "The prisoner display number from NOMIS.")
-  val prisonerNumber: String,
-
-  @field:NotNull
-  @Schema(description = "The prisoner booking id from NOMIS.")
-  val bookingId: Long,
-
-  @field:NotNull
-  @Schema(description = "The pay band code from NOMIS")
-  val nomisPayBand: String,
-
-  @field:NotNull
-  @Schema(description = "Date on which this allocation starts or started. Can not be null.", example = "2022-12-23")
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  val startDate: LocalDate,
-
-  @Schema(description = "Date on which this allocation starts or started. Nullable.", example = "2022-12-23")
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  val endDate: LocalDate? = null,
-
-  @Schema(description = "If an end date is set there may be a comment. Nullable.", example = "Due to end in January.")
-  val endComment: String? = null,
-
-  @Schema(description = "True id this prisoner is suspended.", example = "true")
-  val suspendedFlag: Boolean = false,
-
-  @Schema(description = "There may be a comment to explain the suspension.", example = "Suspended for poor attendance.")
-  val suspendedComment: String? = null,
 )

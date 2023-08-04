@@ -1,7 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -11,11 +15,12 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -24,20 +29,25 @@ import java.time.LocalTime
 class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityController>() {
 
   @MockBean
-  private lateinit var activityService: ActivityService
+  private lateinit var migrateActivityService: MigrateActivityService
 
-  override fun controller() = MigrateActivityController(activityService)
+  override fun controller() = MigrateActivityController(migrateActivityService)
+
+  @BeforeEach
+  fun resetMocks() {
+    reset(migrateActivityService)
+  }
 
   @Test
   fun `200 response when migrating an activity`() {
     val expectedResponse = ActivityMigrateResponse(moorlandPrisonCode, 1L, 2L)
-    whenever(activityService.migrateActivity(request)).thenReturn(expectedResponse)
+    whenever(migrateActivityService.migrateActivity(activityRequest)).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/activity") {
       principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(request)
+      content = mapper.writeValueAsBytes(activityRequest)
     }
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -46,22 +56,81 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
 
-    verify(activityService).migrateActivity(request)
+    verify(migrateActivityService).migrateActivity(activityRequest)
   }
 
-  // TODO: No suitable role forbidden/access denied
+  @Test
+  fun `Simulate 400 response for activity migration - could be for a variety of reasons`() {
+    whenever(migrateActivityService.migrateActivity(activityRequest))
+      .thenThrow(ValidationException("Generic validation exception"))
 
-  // TODO: Prison is not rolled out for activities - do not allow migration of an activity
+    mockMvc.post("/migrate/activity") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(activityRequest)
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isBadRequest() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(Matchers.containsString("Generic validation exception"))
+          }
+        }
+      }
 
-  // TODO: Invalid request - no pay rates
+    verify(migrateActivityService).migrateActivity(activityRequest)
+  }
 
-  // TODO: Invalid request - no startDate
+  @Test
+  fun `200 response when migrating an allocation`() {
+    val expectedResponse = AllocationMigrateResponse(1L, 2L)
+    whenever(migrateActivityService.migrateAllocation(allocationRequest)).thenReturn(expectedResponse)
 
-  // TODO: Invalid request - invalid category
+    val response = mockMvc.post("/migrate/allocation") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(allocationRequest)
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
 
-  // TODO: Invalid request - no schedules
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
 
-  // TODO: Invalid request - no allocations
+    verify(migrateActivityService).migrateAllocation(allocationRequest)
+  }
+
+  @Test
+  fun `Simulate 400 response for allocation migration - could be for a variety of reasons`() {
+    whenever(migrateActivityService.migrateAllocation(allocationRequest))
+      .thenThrow(ValidationException("Generic validation exception"))
+
+    mockMvc.post("/migrate/allocation") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(allocationRequest)
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isBadRequest() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(Matchers.containsString("Generic validation exception"))
+          }
+        }
+      }
+
+    verify(migrateActivityService).migrateAllocation(allocationRequest)
+  }
 
   companion object {
     private val startTimeAm = LocalTime.of(9, 23)
@@ -71,7 +140,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     private val startDate = LocalDate.of(2023, 10, 1)
     private val endDate = LocalDate.of(2024, 10, 1)
 
-    val request = ActivityMigrateRequest(
+    val activityRequest = ActivityMigrateRequest(
       programServiceCode = "TEST",
       prisonCode = moorlandPrisonCode,
       startDate,
@@ -92,9 +161,18 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
         NomisScheduleRule(startTime = startTimeAm, endTime = endTimeAm, monday = true),
         NomisScheduleRule(startTime = startTimePm, endTime = endTimePm, monday = true),
       ),
-      allocations = listOf(
-        NomisAllocation(prisonerNumber = "G4765GG", bookingId = 1, nomisPayBand = "1", startDate, endDate),
-      ),
+    )
+
+    val allocationRequest = AllocationMigrateRequest(
+      prisonCode = moorlandPrisonCode,
+      activityId = 1L,
+      splitRegimeActivityId = 2L,
+      prisonerNumber = "A1234AA",
+      bookingId = 12L,
+      cellLocation = "RSI-A-1-2-011",
+      nomisPayBand = "1",
+      startDate,
+      suspendedFlag = false,
     )
   }
 }
