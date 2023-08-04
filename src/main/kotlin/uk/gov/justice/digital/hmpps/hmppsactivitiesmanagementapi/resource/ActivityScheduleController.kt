@@ -457,10 +457,10 @@ class ActivityScheduleController(
     scheduleService.deallocatePrisoners(scheduleId, deallocationRequest, principal.name)
   }
 
-  @GetMapping(value = ["/{scheduleId}/waiting-lists"])
+  @GetMapping(value = ["/{scheduleId}/waiting-list-applications"])
   @ResponseBody
   @Operation(
-    summary = "Get schedules waiting list applications",
+    summary = "Get a schedules waiting list applications",
     description = "Returns zero or more activity schedule waiting list applications.",
   )
   @ApiResponses(
@@ -508,6 +508,6 @@ class ActivityScheduleController(
     ],
   )
   @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
-  fun getWaitingListsBy(@PathVariable("scheduleId") scheduleId: Long) =
+  fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) =
     waitingListService.getWaitingListsBySchedule(scheduleId)
 }
