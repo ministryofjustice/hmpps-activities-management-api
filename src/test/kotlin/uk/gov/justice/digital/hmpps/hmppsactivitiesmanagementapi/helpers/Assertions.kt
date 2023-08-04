@@ -5,6 +5,9 @@ import org.assertj.core.api.Assertions.within
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+/**
+ * Simple helper functions for commonly used assertions
+ */
 internal infix fun LocalDateTime.isCloseTo(dateTime: LocalDateTime) {
   assertThat(this).isCloseTo(dateTime, within(2, ChronoUnit.SECONDS))
 }
@@ -15,4 +18,8 @@ internal infix fun <T> T.isEqualTo(value: T) {
 
 internal infix fun <T> Collection<T>.hasSize(size: Int) {
   assertThat(this).hasSize(size)
+}
+
+internal infix fun String.startsWith(prefix: String) {
+  assertThat(this).startsWith(prefix)
 }

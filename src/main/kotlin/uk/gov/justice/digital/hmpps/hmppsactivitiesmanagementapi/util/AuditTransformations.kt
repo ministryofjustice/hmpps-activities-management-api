@@ -1,9 +1,11 @@
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAddedToWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList as EntityWaitingList
 
 fun EntityActivity.toActivityCreatedEvent() = ActivityCreatedEvent(
   activityId = activityId,
@@ -50,3 +52,15 @@ fun EntityAllocation.toPrisonerDeallocatedEvent() =
       deallocatedBy = deallocatedBy!!,
     )
   }
+
+fun EntityWaitingList.toPrisonerAddedToWaitingListEvent() =
+  PrisonerAddedToWaitingListEvent(
+    activityId = activity.activityId,
+    scheduleId = activitySchedule.activityScheduleId,
+    activityName = activity.summary,
+    prisonCode = activity.prisonCode,
+    prisonerNumber = prisonerNumber,
+    status = status,
+    createdBy = createdBy,
+    createdAt = creationTime,
+  )

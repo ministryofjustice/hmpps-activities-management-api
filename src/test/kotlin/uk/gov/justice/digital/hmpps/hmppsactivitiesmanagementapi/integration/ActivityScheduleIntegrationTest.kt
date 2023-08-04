@@ -191,10 +191,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
   @Test
-  @Sql(
-    "classpath:test_data/seed-activity-id-7.sql",
-    "classpath:test_data/clear-local-audit.sql",
-  )
+  @Sql("classpath:test_data/seed-activity-id-7.sql")
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
 
