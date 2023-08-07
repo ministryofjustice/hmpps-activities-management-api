@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,27 +15,32 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 
 @Service
 @Transactional(readOnly = true)
+@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
   private val prisonApiClient: PrisonApiClient,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun getWaitingListBy(id: Long) =
+    waitingListRepository.findOrThrowNotFound(id).also { checkCaseloadAccess(it.prisonCode) }.toModel()
+
   fun getWaitingListsBySchedule(id: Long) =
-    scheduleRepository.findById(id)
-      .orElseThrow { EntityNotFoundException("Activity schedule $id not found") }
+    scheduleRepository.findOrThrowNotFound(id)
       .also { checkCaseloadAccess(it.activity.prisonCode) }
       .let { schedule -> waitingListRepository.findByActivitySchedule(schedule).map { it.toModel() } }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
     checkCaseloadAccess(prisonCode)
 
@@ -59,6 +66,7 @@ class WaitingListService(
         status = request.status!!,
       ),
     )
+      .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
   }
 
   private fun WaitingListApplicationRequest.failIfApplicationDateInFuture() {
