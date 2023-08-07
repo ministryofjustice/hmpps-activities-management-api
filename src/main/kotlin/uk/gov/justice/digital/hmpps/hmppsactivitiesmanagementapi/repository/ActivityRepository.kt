@@ -32,6 +32,14 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
   fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
   fun getAllByPrisonCode(prisonCode: String): List<Activity>
   fun existsActivityByPrisonCodeAndSummary(prisonCode: String, summary: String): Boolean
+
+  @Query(value = "SELECT a FROM Activity a WHERE a.prisonCode = :prisonCode AND a.summary = :summary AND a.activityId  <> :activityId")
+  fun getActivityByPrisonCodeAndSummaryAndActivityId(
+    @Param("prisonCode") prisonCode: String,
+    @Param("summary") summary: String,
+    @Param("activityId") activityId: Long,
+  ): List<Activity>
+
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
   @Query(value = "SELECT ab from ActivityBasic ab WHERE ab.activityId = :activityId")

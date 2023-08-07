@@ -592,7 +592,7 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
-    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
+    whenever(activityRepository.getActivityByPrisonCodeAndSummaryAndActivityId(any(), any(), any())).thenReturn(mapper.read("activity/activity-entity-4.json"))
 
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
       on { summary } doReturn ("IT level 1")
