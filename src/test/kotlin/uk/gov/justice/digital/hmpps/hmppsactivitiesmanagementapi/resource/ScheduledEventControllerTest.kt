@@ -59,6 +59,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
+        false,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
         locationService.getLocationsForAppointmentsMap("MDI"),
       ),
@@ -70,6 +71,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM.name,
+        false,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
@@ -82,6 +84,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
+      false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap("MDI"),
     )
@@ -98,6 +101,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
+        false,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
         locationService.getLocationsForAppointmentsMap("MDI"),
       ),
@@ -108,6 +112,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM.name,
+      false,
     )
       .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
       .andExpect { status { is5xxServerError() } }
@@ -120,6 +125,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
+      false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap("MDI"),
     )
@@ -230,6 +236,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "G1234GG",
         LocalDateRange(startDate, endDate),
         null,
+        false,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
         locationService.getLocationsForAppointmentsMap("MDI"),
       ),
@@ -240,6 +247,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "G1234GG",
       startDate,
       endDate,
+      false,
     )
       .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
       .andExpect { status { isOk() } }
@@ -252,6 +260,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "G1234GG",
       LocalDateRange(startDate, endDate),
       null,
+      false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap("MDI"),
     )
@@ -269,6 +278,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "G1234GG",
         LocalDateRange(startDate, endDate),
         null,
+        false,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
         locationService.getLocationsForAppointmentsMap("MDI"),
       ),
@@ -279,6 +289,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "G1234GG",
       startDate,
       endDate,
+      false,
     )
       .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
       .andExpect { status { is5xxServerError() } }
@@ -291,6 +302,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       "G1234GG",
       LocalDateRange(startDate, endDate),
       null,
+      false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap("MDI"),
     )
@@ -308,6 +320,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         "G1234GG",
         LocalDateRange(startDate, endDate),
         null,
+        false,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
         locationService.getLocationsForAppointmentsMap("MDI"),
       ),
@@ -317,6 +330,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       param("prisonerNumber", "G1234GG")
       param("startDate", "2022-11-01")
       param("endDate", "2023-02-01")
+      param("includeSensitiveEvents", "false")
     }
       .andDo { print() }
       .andExpect {
@@ -436,14 +450,16 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
-  ) = get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+    includeSensitiveEvents: Boolean,
+  ) = get("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate&includeSensitiveEvents=$includeSensitiveEvents")
 
   private fun MockMvc.getScheduledEventsForMultiplePrisoners(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: String,
-  ) = post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
+    includeSensitiveEvents: Boolean,
+  ) = post("/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot&includeSensitiveEvents=$includeSensitiveEvents") {
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(

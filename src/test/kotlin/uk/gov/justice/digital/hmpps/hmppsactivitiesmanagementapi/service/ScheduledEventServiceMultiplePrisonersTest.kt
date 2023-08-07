@@ -147,13 +147,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
       on {
         runBlocking {
-          getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
-        }
-      } doReturn transferEvents
-
-      on {
-        runBlocking {
-          prisonApiClient.getOffenderAdjudications(
+          getOffenderAdjudications(
             prisonCode,
             date.rangeTo(date.plusDays(1)),
             prisonerNumbers,
@@ -161,6 +155,16 @@ class ScheduledEventServiceMultiplePrisonersTest {
           )
         }
       } doReturn adjudications
+
+      on {
+        runBlocking {
+          getExternalTransfersOnDateAsync(
+            prisonCode,
+            prisonerNumbers,
+            date,
+          )
+        }
+      } doReturn transferEvents
     }
   }
 
@@ -286,12 +290,27 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
+        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
 
-      verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
-      verifyBlocking(prisonApiClient) { getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
+      verifyBlocking(prisonApiClient, never()) {
+        getScheduledActivitiesForPrisonerNumbersAsync(
+          any(),
+          any(),
+          any(),
+          anyOrNull(),
+        )
+      }
+      verifyBlocking(prisonApiClient) {
+        getScheduledAppointmentsForPrisonerNumbersAsync(
+          any(),
+          any(),
+          any(),
+          anyOrNull(),
+        )
+      }
 
       with(scheduledEvents!!) {
         assertThat(this.prisonerNumbers).contains("G4793VF")
@@ -400,13 +419,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.date).isEqualTo(LocalDate.now())
           assertThat(it.priority).isEqualTo(EventType.ADJUDICATION_HEARING.defaultPriority)
           assertThat(it.startTime).isEqualTo(LocalDate.now().atStartOfDay().toLocalTime())
-          assertThat(it.endTime).isEqualTo(LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS))
+          assertThat(it.endTime).isEqualTo(
+            LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+          )
         }
       }
     }
 
     @Test
-    fun `Events for tomorrow - excludes external transfers - success`() {
+    fun `Events for tomorrow - excludes external transfers and court events - success`() {
       val prisonCode = "MDI"
       val prisonerNumbers = setOf("G4793VF", "G1234GK")
       val tomorrow = LocalDate.now().plusDays(1)
@@ -433,12 +454,27 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         tomorrow,
         timeSlot,
+        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
 
-      verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
-      verifyBlocking(prisonApiClient) { getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
+      verifyBlocking(prisonApiClient, never()) {
+        getScheduledActivitiesForPrisonerNumbersAsync(
+          any(),
+          any(),
+          any(),
+          anyOrNull(),
+        )
+      }
+      verifyBlocking(prisonApiClient) {
+        getScheduledAppointmentsForPrisonerNumbersAsync(
+          any(),
+          any(),
+          any(),
+          anyOrNull(),
+        )
+      }
 
       with(scheduledEvents!!) {
         assertThat(this.prisonerNumbers).contains("G4793VF")
@@ -465,7 +501,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         }
 
         assertThat(courtHearings).isNotNull
-        assertThat(courtHearings).hasSize(1)
+        assertThat(courtHearings).hasSize(0)
 
         courtHearings!!.map {
           assertThat(it.eventSource).isEqualTo("NOMIS")
@@ -496,45 +532,13 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventType).isEqualTo(EventType.ADJUDICATION_HEARING.name)
           assertThat(it.date).isEqualTo(LocalDate.now())
           assertThat(it.startTime).isEqualTo(LocalDate.now().atStartOfDay().toLocalTime())
-          assertThat(it.endTime).isEqualTo(LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS))
+          assertThat(it.endTime).isEqualTo(
+            LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
+          )
           assertThat(it.priority).isEqualTo(EventType.ADJUDICATION_HEARING.defaultPriority)
         }
 
         assertThat(externalTransfers).isEmpty()
-      }
-    }
-
-    @Test
-    fun `Events - empty prisoner number list`() {
-      val prisonCode = "MDI"
-      val prisonerNumbers = emptySet<String>()
-      val today = LocalDate.now()
-      val timeSlot: TimeSlot = TimeSlot.AM
-
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
-
-      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
-
-      val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
-        prisonCode,
-        prisonerNumbers,
-        today,
-        timeSlot,
-        appointmentCategoryMap(),
-        appointmentLocationMap(),
-      )
-
-      verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
-      verifyBlocking(prisonApiClient, never()) { getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
-
-      with(scheduledEvents!!) {
-        assertThat(appointments).isEmpty()
-        assertThat(visits).isEmpty()
-        assertThat(courtHearings).isEmpty()
-        assertThat(activities).isEmpty()
-        assertThat(externalTransfers).isEmpty()
-        assertThat(adjudications).isEmpty()
       }
     }
   }
@@ -575,6 +579,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
+        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -661,6 +666,84 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventType).isEqualTo(EventType.ADJUDICATION_HEARING.name)
           assertThat(it.priority).isEqualTo(EventType.ADJUDICATION_HEARING.defaultPriority)
         }
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("Scheduled events - show / hide sensitive events")
+  inner class ShowHideSensitiveEvents {
+    val prisonCode = "MDI"
+    val bookingId = 900001L
+    val prisonerNumbers = setOf("G4793VF", "G1234GK")
+    val tomorrow: LocalDate = LocalDate.now().plusDays(1)
+    val timeSlot: TimeSlot = TimeSlot.AM
+
+    @BeforeEach
+    fun beforeEach() {
+      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2022, 12, 22))
+
+      val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+          prisonCode,
+          prisonerNumbers,
+          tomorrow,
+        ),
+      )
+        .thenReturn(listOf(activityEntity))
+
+      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumbers.first(), bookingId = bookingId)
+      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(any(), any(), any(), any(), any()))
+        .thenReturn(listOf(appointmentEntity))
+
+      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+    }
+
+    @Test
+    fun `Should fetch sensitive future events`() {
+      setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
+
+      service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        tomorrow,
+        timeSlot,
+        true,
+        appointmentCategoryMap(),
+        appointmentLocationMap(),
+      )
+
+      // Should retrieve sensitive events with future date ranges
+      verifyBlocking(prisonApiClient) {
+        getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, tomorrow, timeSlot)
+      }
+      verifyBlocking(prisonApiClient) {
+        getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, tomorrow)
+      }
+    }
+
+    @Test
+    fun `Should not fetch sensitive future events`() {
+      setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
+
+      service.getScheduledEventsForMultiplePrisoners(
+        prisonCode,
+        prisonerNumbers,
+        tomorrow,
+        timeSlot,
+        false,
+        appointmentCategoryMap(),
+        appointmentLocationMap(),
+      )
+
+      // Should not retrieve sensitive events with future date ranges
+      verifyBlocking(prisonApiClient, never()) {
+        getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, tomorrow, timeSlot)
+      }
+      verifyBlocking(prisonApiClient, never()) {
+        getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, tomorrow)
       }
     }
   }

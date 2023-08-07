@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -111,6 +113,23 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledAppointmentsForPrisonerNumbersAsync - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val date = LocalDate.of(2022, 12, 14)
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/appointments?date=$date")))
+
+    prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
+
+    val scheduledAppointments =
+      prisonApiClient.getScheduledAppointmentsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
+    assertThat(scheduledAppointments).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
+  }
+
+  @Test
   fun `getScheduledActivitiesAsync - success`(): Unit = runBlocking {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
@@ -149,6 +168,23 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledActivitiesForPrisonerNumbersAsync - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val date = LocalDate.of(2022, 12, 14)
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/activities?date=$date")))
+
+    prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
+
+    val activities =
+      prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
+    assertThat(activities).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
+  }
+
+  @Test
   fun `getCourtHearingsAsync by booking id - success`(): Unit = runBlocking {
     val bookingId = 10001L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
@@ -156,8 +192,8 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetCourtHearings(bookingId, dateRange.start, dateRange.endInclusive)
 
     val courtHearings = prisonApiClient.getScheduledCourtHearingsAsync(bookingId, dateRange)
-    assertThat(courtHearings.hearings).hasSize(4)
-    assertThat(courtHearings.hearings?.first()?.id).isEqualTo(1L)
+    assertThat(courtHearings?.hearings).hasSize(4)
+    assertThat(courtHearings?.hearings?.first()?.id).isEqualTo(1L)
   }
 
   @Test
@@ -184,6 +220,23 @@ class PrisonApiClientTest {
       prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(courtEvents).hasSize(2)
     assertThat(courtEvents.first().offenderNo).isEqualTo("G4793VF")
+  }
+
+  @Test
+  fun `getCourtEventsForPrisonerNumbersAsync - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val date = LocalDate.of(2022, 12, 14)
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/courtEvents?date=$date")))
+
+    prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+
+    val courtEvents =
+      prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
+    assertThat(courtEvents).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
   }
 
   @Test
@@ -221,6 +274,22 @@ class PrisonApiClientTest {
     val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(visits).hasSize(2)
     assertThat(visits.first().offenderNo).isEqualTo("A5193DY")
+  }
+
+  @Test
+  fun `getScheduledVisitsForPrisonerNumbersAsync - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val date = LocalDate.of(2022, 12, 14)
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/visits?date=$date")))
+
+    prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+
+    val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
+    assertThat(visits).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
   }
 
   @Test
@@ -358,6 +427,22 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getExternalTransfersOnDateAsync - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val date = LocalDate.now()
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date")))
+
+    prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
+
+    val externalTransfers = prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
+    assertThat(externalTransfers).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
+  }
+
+  @Test
   fun `getReferenceCodes - success`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
 
@@ -406,6 +491,37 @@ class PrisonApiClientTest {
       assertThat(offenderNo).isEqualTo("B4793VX")
       assertThat(hearingId).isEqualTo(1)
     }
+  }
+
+  @Test
+  fun `getOffenderAdjudications - empty prisoner list shouldn't call API`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val prisonerNumbers = emptySet<String>()
+    val fromDate = LocalDate.now()
+    val toDate = fromDate.plusDays(1)
+    val timeslot = TimeSlot.AM
+
+    fun PrisonApiMockServer.verifyNoClientRequests() =
+      verify(
+        0,
+        postRequestedFor(
+          urlEqualTo(
+            "/api/offenders/adjudication-hearings?agencyId=$prisonCode&fromDate=$fromDate&toDate=$toDate&timeSlot=$timeslot",
+          ),
+        ),
+      )
+
+    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate.rangeTo(toDate), prisonerNumbers.toList(), timeslot)
+
+    val adjudications = prisonApiClient.getOffenderAdjudications(
+      prisonCode,
+      fromDate.rangeTo(toDate),
+      prisonerNumbers.toSet(),
+      TimeSlot.AM,
+    )
+
+    assertThat(adjudications).hasSize(0)
+    prisonApiMockServer.verifyNoClientRequests()
   }
 
   @Test

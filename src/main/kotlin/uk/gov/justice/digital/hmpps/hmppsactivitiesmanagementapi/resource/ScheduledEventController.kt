@@ -106,6 +106,10 @@ class ScheduledEventController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
+
+    @RequestParam(value = "includeSensitiveEvents", required = false)
+    @Parameter(description = "If true will return security sensitive future events.")
+    includeSensitiveEvents: Boolean?,
   ): PrisonerScheduledEvents? {
     val dateRange = LocalDateRange(startDate, endDate)
     if (endDate.isAfter(startDate.plusMonths(3))) {
@@ -116,6 +120,7 @@ class ScheduledEventController(
       prisonerNumber,
       dateRange,
       timeSlot,
+      includeSensitiveEvents ?: false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap(prisonCode),
     )
@@ -185,6 +190,10 @@ class ScheduledEventController(
     @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
 
+    @RequestParam(value = "includeSensitiveEvents", required = false)
+    @Parameter(description = "If true will return security sensitive future events.")
+    includeSensitiveEvents: Boolean?,
+
     @RequestBody(required = true)
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>,
@@ -194,6 +203,7 @@ class ScheduledEventController(
       prisonerNumbers,
       date,
       timeSlot,
+      includeSensitiveEvents ?: false,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap(prisonCode),
     )
