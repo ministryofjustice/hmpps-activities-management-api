@@ -107,13 +107,6 @@ class ActivityService(
     }
   }
 
-  private fun failDuplicateActivityOnEdit(prisonCode: String, summary: String, activityId: Long) {
-    val duplicateActivity = activityRepository.getActivityByPrisonCodeAndSummaryAndActivityId(prisonCode, summary, activityId)
-    if (!duplicateActivity.isEmpty()) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
-    }
-  }
-
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
@@ -347,11 +340,13 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.summary?.apply {
-      failDuplicateActivityOnEdit(prisonCode, this, activityId = activity.activityId)
-      activity.summary = this
-      activity.description = this
-      activity.schedules().forEach { it.description = this }
+    if (activity.summary != request.summary) {
+      request.summary?.apply {
+        failDuplicateActivity(prisonCode, this)
+        activity.summary = this
+        activity.description = this
+        activity.schedules().forEach { it.description = this }
+      }
     }
   }
 

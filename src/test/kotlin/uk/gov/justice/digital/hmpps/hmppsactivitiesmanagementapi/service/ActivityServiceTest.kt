@@ -592,11 +592,9 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
-    whenever(activityRepository.getActivityByPrisonCodeAndSummaryAndActivityId(any(), any(), any())).thenReturn(mapper.read("activity/activity-entity-4.json"))
+    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
 
-    val updateDuplicateActivityRequest: ActivityUpdateRequest = mock {
-      on { summary } doReturn ("IT level 1")
-    }
+    val updateDuplicateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-5.json")
 
     assertThatThrownBy {
       service().updateActivity(
@@ -607,7 +605,7 @@ class ActivityServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 1'")
+      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 2'")
 
     verify(activityRepository, never()).saveAndFlush(any())
   }
