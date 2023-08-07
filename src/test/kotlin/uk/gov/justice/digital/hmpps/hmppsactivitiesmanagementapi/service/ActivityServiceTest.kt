@@ -1491,7 +1491,7 @@ class ActivityServiceTest {
         weekNumber = 2,
         startTime = LocalTime.of(9, 0),
         endTime = LocalTime.of(12, 0),
-        daysOfWeek = setOf(tomorrow.plusDays(1).dayOfWeek),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
     }
 
