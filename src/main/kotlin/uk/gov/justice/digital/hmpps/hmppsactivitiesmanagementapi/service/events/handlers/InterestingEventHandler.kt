@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.CellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesDeletedEvent
@@ -68,6 +69,7 @@ class InterestingEventHandler(
 
   private fun getEventMessage(event: InboundEvent, prisoner: InmateDetail) =
     when (event) {
+      is AlertsUpdatedEvent -> "Alerts updated for  ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is CellMoveEvent -> "Cell move for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is NonAssociationsChangedEvent -> "Non-associations for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
       is IncentivesInsertedEvent -> "Incentive review created for ${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
