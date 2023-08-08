@@ -121,18 +121,19 @@ class CandidatesService(
   }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
+    val riskAssessmentCodes = listOf("RLO", "RME", "RHI")
+
     return suitableRiskLevels == null ||
 
-      (
-        suitableRiskLevels.contains("NONE") &&
-          (prisoner.alerts ?: emptyList()).none { it.alertType == "R" }
-        ) ||
+      suitableRiskLevels.contains("NONE") &&
+        (prisoner.alerts ?: emptyList())
+          .none { it.alertType == "R" && riskAssessmentCodes.contains(it.alertCode) } ||
 
       suitableRiskLevels.contains(
         (prisoner.alerts ?: emptyList())
           .filter { it.alertType == "R" }
           .map { it.alertCode }
-          .firstOrNull(),
+          .firstOrNull { riskAssessmentCodes.contains(it) },
       )
   }
 
