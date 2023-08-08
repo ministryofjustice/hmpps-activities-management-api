@@ -344,7 +344,11 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   sundayFlag = true
 }
 
-fun waitingList(prisonCode: String = pentonvillePrisonCode): WaitingList {
+fun waitingList(
+  prisonCode: String = pentonvillePrisonCode,
+  prisonerNumber: String = "123456",
+  status: WaitingListStatus = WaitingListStatus.DECLINED,
+): WaitingList {
   val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
   val allocation = schedule.allocations().first()
 
@@ -352,12 +356,12 @@ fun waitingList(prisonCode: String = pentonvillePrisonCode): WaitingList {
     waitingListId = 99,
     prisonCode = prisonCode,
     activitySchedule = schedule,
-    prisonerNumber = "123456",
+    prisonerNumber = prisonerNumber,
     bookingId = 100L,
     applicationDate = TimeSource.today(),
     requestedBy = "Fred",
     comments = "Some random test comments",
-    status = WaitingListStatus.DECLINED,
+    status = status,
     createdBy = "Bob",
   ).apply {
     this.allocation = allocation
