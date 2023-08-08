@@ -126,8 +126,8 @@ class CandidatesService(
     return suitableRiskLevels == null ||
 
       suitableRiskLevels.contains("NONE") &&
-        (prisoner.alerts ?: emptyList())
-          .none { it.alertType == "R" && riskAssessmentCodes.contains(it.alertCode) } ||
+      (prisoner.alerts ?: emptyList())
+        .none { it.alertType == "R" && riskAssessmentCodes.contains(it.alertCode) } ||
 
       suitableRiskLevels.contains(
         (prisoner.alerts ?: emptyList())
