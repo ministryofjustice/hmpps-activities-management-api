@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
@@ -11,39 +9,29 @@ import java.time.LocalDate
 @Schema(
   description =
   """
-  Describes a single waiting list application for a prisoner to an activity.
+  Describes a single waiting list application to be updated.
   """,
 )
-data class WaitingListApplicationRequest(
-
-  @Schema(description = "The prisoner number (NOMIS ID)", example = "A1234AA")
-  @field:NotBlank(message = "Prisoner number must be supplied")
-  @field:Size(max = 7, message = "Prisoner number must not exceed {max} characters")
-  val prisonerNumber: String?,
+data class WaitingListApplicationUpdateRequest(
 
   @Schema(
-    description = "The internally-generated ID for this activity schedule (assumes 1-2-1 with activity)",
-    example = "7654321",
-  )
-  @field:NotNull(message = "Activity schedule identifier must be supplied")
-  val activityScheduleId: Long?,
-
-  @Schema(
-    description = "The past or present date on which the waiting list application was requested",
+    description = """
+      The past or present date on which the waiting list application was requested.
+      
+      Note this cannot be after the date the waiting list application was first made.
+    """,
     example = "2023-06-23",
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  @field:NotNull(message = "Application date must be supplied")
   @field:PastOrPresent(message = "Application date cannot be in the future")
-  val applicationDate: LocalDate?,
+  val applicationDate: LocalDate? = null,
 
   @Schema(
     description = "The person who made the request",
     example = "Fred Bloggs",
   )
-  @field:NotBlank(message = "Requested by must be supplied")
   @field:Size(max = 100, message = "Requested by must not exceed {max} characters")
-  val requestedBy: String?,
+  val requestedBy: String? = null,
 
   @Schema(
     description = "Any particular comments related to the waiting list request",
@@ -57,6 +45,5 @@ data class WaitingListApplicationRequest(
     example = "PENDING",
     allowableValues = ["PENDING", "APPROVED", "DECLINED"],
   )
-  @field:NotNull(message = "Status must be supplied")
-  val status: String?,
+  val status: String? = null,
 )

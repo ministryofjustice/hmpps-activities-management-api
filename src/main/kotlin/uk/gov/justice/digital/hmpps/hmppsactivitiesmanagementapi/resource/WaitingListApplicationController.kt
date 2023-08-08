@@ -75,4 +75,6 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
   )
   @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun getWaitingListById(@PathVariable("waitingListId") id: Long) = waitingListService.getWaitingListBy(id)
+
+  // TODO add patch endpoint here for updating a waiting list application
 }

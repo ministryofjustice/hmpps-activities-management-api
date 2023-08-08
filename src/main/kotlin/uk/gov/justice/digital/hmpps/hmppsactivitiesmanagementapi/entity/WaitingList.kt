@@ -28,13 +28,13 @@ data class WaitingList(
 
   val bookingId: Long,
 
-  val applicationDate: LocalDate,
+  var applicationDate: LocalDate,
 
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
-  val requestedBy: String,
+  var requestedBy: String,
 
   var comments: String? = null,
 

@@ -93,7 +93,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       applicationDate = LocalDate.now(),
       requestedBy = "a".repeat(100),
       comments = "a".repeat(500),
-      status = WaitingListStatus.PENDING,
+      status = WaitingListStatus.PENDING.name,
     )
 
     mockMvc.waitingListApplication(pentonvillePrisonCode, request).andExpect { status { isNoContent() } }
