@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import java.time.LocalDate
@@ -20,7 +21,7 @@ object PrisonerSearchPrisonerFixture {
     religion: String = "Test Religion",
     nationality: String = "Test Nationality",
     inOutStatus: Prisoner.InOutStatus = Prisoner.InOutStatus.IN,
-    status: String = "IN",
+    status: String = "ACTIVE IN",
     mostSeriousOffence: String = "Test Offence",
     restrictedPatient: Boolean = false,
     bookingId: Long? = 900001,
@@ -62,4 +63,6 @@ object PrisonerSearchPrisonerFixture {
       releaseDate = releaseDate,
       alerts = alerts,
     )
+
+  fun pagedResult(prisonerNumber: String = "G4793VF") = PagedPrisoner(content = listOf(instance(prisonerNumber)))
 }

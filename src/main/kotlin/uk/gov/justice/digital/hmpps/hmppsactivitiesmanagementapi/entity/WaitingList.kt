@@ -59,6 +59,8 @@ data class WaitingList(
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
   var allocation: Allocation? = null
+
+  fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }
 }
 
 enum class WaitingListStatus {
