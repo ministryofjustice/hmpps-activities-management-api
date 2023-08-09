@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rollout
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
@@ -123,6 +124,21 @@ class InterestingEventHandlerTest {
   @Test
   fun `stores a released event when allocations exist`() {
     val inboundEvent = offenderReleasedEvent(pentonvillePrisonCode, "123456")
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
+      .doReturn(activeAllocations)
+
+    val outcome = handler.handle(inboundEvent)
+
+    assertThat(outcome.isSuccess()).isTrue
+    verify(rolloutPrisonRepository).findByCode(pentonvillePrisonCode)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456")
+    verify(eventReviewRepository).saveAndFlush(any<EventReview>())
+  }
+
+  @Test
+  fun `stores an alerts updated event`() {
+    val inboundEvent = alertsUpdatedEvent(prisonerNumber = "123456")
     val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
     whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "123456"))
       .doReturn(activeAllocations)
