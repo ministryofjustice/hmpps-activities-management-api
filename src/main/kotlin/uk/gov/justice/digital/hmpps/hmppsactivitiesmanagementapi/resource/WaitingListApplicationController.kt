@@ -11,6 +11,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Waiting
 import java.security.Principal
 
 @RestController
+@Validated
 @RequestMapping("/waiting-list-applications", produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
 class WaitingListApplicationController(private val waitingListService: WaitingListService) {
@@ -127,6 +129,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
       ),
     ],
   )
+  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
   fun updateWaitingList(
     @PathVariable("waitingListId") waitingListId: Long,
     principal: Principal,
