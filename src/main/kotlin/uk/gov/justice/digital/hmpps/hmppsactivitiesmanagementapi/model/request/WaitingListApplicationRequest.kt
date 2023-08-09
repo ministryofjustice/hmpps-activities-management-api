@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import java.time.LocalDate
 
 @Schema(
@@ -55,8 +56,7 @@ data class WaitingListApplicationRequest(
   @Schema(
     description = "The status of the application",
     example = "PENDING",
-    allowableValues = ["PENDING", "APPROVED", "DECLINED"],
   )
   @field:NotNull(message = "Status must be supplied")
-  val status: String?,
+  val status: WaitingListStatus?,
 )

@@ -67,7 +67,7 @@ class WaitingListService(
         requestedBy = request.requestedBy!!,
         comments = request.comments,
         createdBy = createdBy,
-        status = WaitingListStatus.valueOf(request.status!!),
+        status = request.status!!,
       ),
     )
       .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
@@ -76,7 +76,7 @@ class WaitingListService(
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
       status != null &&
-        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == WaitingListStatus.valueOf(status) },
+        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == status },
     ) {
       "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
     }
@@ -140,7 +140,7 @@ class WaitingListService(
   }
 
   @Transactional
-  fun updateWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, updatedBy: String) {
+  fun updateWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, updatedBy: String) =
     waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
@@ -150,8 +150,7 @@ class WaitingListService(
         updateRequestedBy(request, updatedBy)
         updateComments(request, updatedBy)
         updateStatus(request, updatedBy)
-      }
-  }
+      }.toModel()
 
   private fun WaitingList.failIfNotUpdatable() = also {
     require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
@@ -192,18 +191,18 @@ class WaitingListService(
   }
 
   private fun WaitingList.updateStatus(request: WaitingListApplicationUpdateRequest, changedBy: String) {
-    request.status?.takeUnless { it == status.name }?.let { updatedStatus ->
+    request.status?.takeUnless { it == status }?.let { updatedStatus ->
       require(
         listOf(
           WaitingListStatus.APPROVED,
           WaitingListStatus.PENDING,
           WaitingListStatus.DECLINED,
-        ).contains(WaitingListStatus.valueOf(updatedStatus)),
+        ).contains(updatedStatus),
       ) {
         "Only PENDING, APPROVED or DECLINED are allowed for the status change"
       }
 
-      status = WaitingListStatus.valueOf(updatedStatus)
+      status = updatedStatus
       updatedTime = LocalDateTime.now()
       updatedBy = changedBy
     }

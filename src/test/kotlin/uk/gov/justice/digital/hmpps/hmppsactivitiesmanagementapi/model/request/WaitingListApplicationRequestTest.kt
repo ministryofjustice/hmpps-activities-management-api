@@ -13,7 +13,7 @@ class WaitingListApplicationRequestTest : ValidatorBase<WaitingListApplicationRe
     applicationDate = LocalDate.now(),
     requestedBy = "a".repeat(100),
     comments = "a".repeat(500),
-    status = WaitingListStatus.PENDING.name,
+    status = WaitingListStatus.PENDING,
   )
 
   @Test

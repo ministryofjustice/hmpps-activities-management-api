@@ -119,7 +119,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       applicationDate = TimeSource.today(),
       requestedBy = "Bob",
       comments = "Some comments from Bob",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThat(waitingListRepository.findAll()).isEmpty()
@@ -169,7 +169,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       applicationDate = TimeSource.today(),
       requestedBy = "Bob",
       comments = "Some comments from Bob",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     webTestClient.waitingListApplication(moorlandPrisonCode, request, pentonvillePrisonCode).expectStatus().isForbidden

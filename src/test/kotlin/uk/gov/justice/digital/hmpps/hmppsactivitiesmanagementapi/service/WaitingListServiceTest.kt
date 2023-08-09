@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
@@ -72,7 +73,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
@@ -99,14 +100,14 @@ class WaitingListServiceTest {
       applicationDate = TimeSource.today(),
       requestedBy = "Bob",
       comments = "Bob's comments",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
-    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = "ALLOCATED"), "test") }
+    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.ALLOCATED), "test") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
 
-    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = "REMOVED"), "test") }
+    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.REMOVED), "test") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
   }
@@ -129,7 +130,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
@@ -144,7 +145,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     activity.activityCategory = activityCategory(code = "SAA_NOT_IN_WORK")
@@ -165,7 +166,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
@@ -180,7 +181,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.tomorrow(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
@@ -195,7 +196,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     mock<WaitingList> { on { status } doReturn WaitingListStatus.PENDING }.also { pending ->
@@ -222,7 +223,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     mock<WaitingList> { on { status } doReturn WaitingListStatus.APPROVED }.also { approved ->
@@ -249,7 +250,7 @@ class WaitingListServiceTest {
       activityScheduleId = schedule.activityScheduleId,
       applicationDate = TimeSource.today(),
       requestedBy = "Test",
-      status = WaitingListStatus.PENDING.name,
+      status = WaitingListStatus.PENDING,
     )
 
     schedule.allocatePrisoner(
@@ -293,7 +294,7 @@ class WaitingListServiceTest {
         applicationDate = TimeSource.today(),
         requestedBy = "Bob",
         comments = "Bob's comments",
-        status = WaitingListStatus.PENDING.name,
+        status = WaitingListStatus.PENDING,
       )
 
       service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
@@ -329,7 +330,7 @@ class WaitingListServiceTest {
         applicationDate = TimeSource.today(),
         requestedBy = "Bob",
         comments = "Bob's comments",
-        status = WaitingListStatus.DECLINED.name,
+        status = WaitingListStatus.DECLINED,
       )
 
       service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
@@ -339,7 +340,7 @@ class WaitingListServiceTest {
           applicationDate = TimeSource.yesterday(),
           requestedBy = "Fred",
           comments = "Fred's comments",
-          status = WaitingListStatus.PENDING.name,
+          status = WaitingListStatus.PENDING,
         ),
         "Test user",
       )
@@ -640,7 +641,7 @@ class WaitingListServiceTest {
 
     service.updateWaitingList(
       waitingList.waitingListId,
-      WaitingListApplicationUpdateRequest(status = "APPROVED"),
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
       "Frank",
     )
 
@@ -661,7 +662,7 @@ class WaitingListServiceTest {
 
     service.updateWaitingList(
       waitingList.waitingListId,
-      WaitingListApplicationUpdateRequest(status = "PENDING"),
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.PENDING),
       "Frank",
     )
 
@@ -679,7 +680,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.updateWaitingList(
         waitingList.waitingListId,
-        WaitingListApplicationUpdateRequest(status = "DECLINED"),
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.DECLINED),
         "Frank",
       )
     }
@@ -700,7 +701,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.updateWaitingList(
         waitingList.waitingListId,
-        WaitingListApplicationUpdateRequest(status = "APPROVED"),
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
         "Frank",
       )
     }
@@ -721,7 +722,7 @@ class WaitingListServiceTest {
     assertThatThrownBy {
       service.updateWaitingList(
         waitingList.waitingListId,
-        WaitingListApplicationUpdateRequest(status = "ALLOCATED"),
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED),
         "Frank",
       )
     }
@@ -731,5 +732,28 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update fails if waiting list not found`() {
+    whenever(waitingListRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy {
+      service.updateWaitingList(99, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+    }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Waiting List 99 not found")
+  }
+
+  @Test
+  fun `update fails if incorrect caseload`() {
+    val waitingList = waitingList(moorlandPrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    assertThatThrownBy {
+      service.updateWaitingList(waitingList.waitingListId, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+    }
+      .isInstanceOf(CaseloadAccessException::class.java)
   }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import java.time.LocalDate
 
 @Schema(
@@ -43,7 +44,6 @@ data class WaitingListApplicationUpdateRequest(
   @Schema(
     description = "The status of the application",
     example = "PENDING",
-    allowableValues = ["PENDING", "APPROVED", "DECLINED"],
   )
-  val status: String? = null,
+  val status: WaitingListStatus? = null,
 )
