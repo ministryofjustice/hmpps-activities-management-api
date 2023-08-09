@@ -343,7 +343,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     assertThat(response["content"] as List<ActivityCandidate>).hasSize(5)
     assertThat(response["totalPages"]).isEqualTo(4)
-    assertThat(response["totalElements"]).isEqualTo(16)
+    assertThat(response["totalElements"]).isEqualTo(20)
   }
 
   @Sql(
@@ -388,7 +388,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     assertThat(response["content"] as List<ActivityCandidate>).isEmpty()
     assertThat(response["totalPages"]).isEqualTo(4)
-    assertThat(response["totalElements"]).isEqualTo(16)
+    assertThat(response["totalElements"]).isEqualTo(20)
   }
 
   @Test
