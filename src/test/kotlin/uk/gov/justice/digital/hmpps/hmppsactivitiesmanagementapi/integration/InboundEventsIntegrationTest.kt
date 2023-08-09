@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
@@ -160,6 +161,25 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     // TODO check rows created as expected in the local audit table.
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner alerts updated`() {
+    prisonApiMockServer.stubGetPrisonerDetails(
+      prisonerNumber = "A11111A",
+      fullInfo = false,
+      extraInfo = null,
+      jsonFileSuffix = "",
+    )
+
+    service.process(alertsUpdatedEvent(prisonerNumber = "A11111A"))
+
+    val interestingEvent = eventReviewRepository.findAll().last()
+
+    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-search.prisoner.alerts-updated")
+    assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+    assertThat(interestingEvent.eventData).isEqualTo("Alerts updated for  HARRISON, TIM (A11111A)")
   }
 
   @Test
