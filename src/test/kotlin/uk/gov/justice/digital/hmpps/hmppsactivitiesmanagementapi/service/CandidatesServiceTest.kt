@@ -15,12 +15,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
@@ -29,6 +34,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,12 +46,14 @@ class CandidatesServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
+  private val waitingListRepository: WaitingListRepository = mock()
 
   private val service = CandidatesService(
     prisonApiClient,
     prisonerSearchApiClient,
     activityScheduleRepository,
     allocationRepository,
+    waitingListRepository,
   )
 
   @Nested
@@ -484,6 +493,99 @@ class CandidatesServiceTest {
           payRate = candidateAllocation.allocationPay("BAS")?.toModelLite(),
         ),
       )
+    }
+  }
+
+  @Nested
+  inner class GetActivityCandidates {
+    fun candidatesSetup(activity: Activity, candidates: PagedPrisoner, waitingList: List<WaitingList>) {
+      addCaseloadIdToRequestHeader("MDI")
+
+      val schedule = activity.schedules().first()
+
+      whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
+      whenever(waitingListRepository.findByActivitySchedule(schedule)).thenReturn(waitingList)
+      whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode)).thenReturn(Mono.just(candidates))
+
+      whenever(
+        allocationRepository.findByPrisonCodeAndPrisonerNumbers(
+          schedule.activity.prisonCode,
+          candidates.content.map { it.prisonerNumber },
+        ),
+      ).thenReturn(emptyList())
+    }
+
+    @Test
+    fun `fetch list of suitable candidates`() {
+      val activity = activityEntity()
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumber = "A1234BC",
+      )
+      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.REMOVED))
+
+      candidatesSetup(activity, allPrisoners, waitingList)
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      assertThat(candidates).isEqualTo(
+        listOf(
+          ActivityCandidate(
+            name = "Tim Harrison",
+            prisonerNumber = "A1234BC",
+            cellLocation = "1-2-3",
+            otherAllocations = emptyList(),
+            releaseDate = null,
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `Candidates with PENDING waiting list are filtered out`() {
+      val activity = activityEntity()
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumber = "A1234BC",
+      )
+      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.PENDING))
+
+      candidatesSetup(activity, allPrisoners, waitingList)
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      assertThat(candidates).isEqualTo(emptyList<ActivityCandidate>())
+    }
+
+    @Test
+    fun `Candidates with APPROVED waiting list are filtered out`() {
+      val activity = activityEntity()
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumber = "A1234BC",
+      )
+      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.APPROVED))
+
+      candidatesSetup(activity, allPrisoners, waitingList)
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      assertThat(candidates).isEqualTo(emptyList<ActivityCandidate>())
     }
   }
 }
