@@ -51,9 +51,6 @@ data class Activity(
   @Schema(description = "A list of schedules for this activity. These contain the time slots / recurrence settings for instances of this activity.")
   val schedules: List<ActivitySchedule> = emptyList(),
 
-  @Schema(description = "A list of prisoners who are waiting for allocation to this activity. This list is held against the activity, though allocation is against particular schedules of the activity")
-  val waitingList: List<PrisonerWaiting> = emptyList(),
-
   @Schema(description = "The list of pay rates by incentive level and pay band that can apply to this activity")
   val pay: List<ActivityPay> = emptyList(),
 

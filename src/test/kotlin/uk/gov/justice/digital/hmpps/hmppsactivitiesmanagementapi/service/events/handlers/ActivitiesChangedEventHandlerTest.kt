@@ -47,7 +47,12 @@ class ActivitiesChangedEventHandlerTest {
 
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
 
-  private val handler = ActivitiesChangedEventHandler(rolloutPrisonRepository, allocationRepository, attendanceRepository, attendanceReasonRepository)
+  private val handler = ActivitiesChangedEventHandler(
+    rolloutPrisonRepository,
+    allocationRepository,
+    attendanceRepository,
+    attendanceReasonRepository,
+  )
 
   @Test
   fun `event is ignored for an inactive prison`() {
@@ -134,7 +139,14 @@ class ActivitiesChangedEventHandlerTest {
       whenever(it.editable()) doReturn true
     }
 
-    whenever(attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(moorlandPrisonCode, LocalDate.now(), AttendanceStatus.WAITING, "123456")) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+    whenever(
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
+        moorlandPrisonCode,
+        LocalDate.now(),
+        AttendanceStatus.WAITING,
+        "123456",
+      ),
+    ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
     handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
@@ -189,5 +201,75 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
+  }
+
+  @Test
+  fun `future attendances are not removed on suspend`() {
+    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+    }
+
+    val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
+    val todaysHistoricAttendance = attendanceFor(todaysHistoricScheduledInstance)
+
+    val todaysFuturescheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().plusMinutes(1))
+    val todaysFutureAttendance = attendanceFor(todaysFuturescheduledInstance)
+
+    val tomorrowsScheduledInstance = scheduledInstanceOn(TimeSource.tomorrow(), LocalTime.now().plusMinutes(1))
+    val tomorrowsFutureAttendance = attendanceFor(tomorrowsScheduledInstance)
+
+    whenever(
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
+        prisonCode = moorlandPrisonCode,
+        sessionDate = LocalDate.now(),
+        prisonerNumber = "123456",
+      ),
+    ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+
+    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+
+    verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
+    verify(todaysFuturescheduledInstance, never()).remove(todaysFutureAttendance)
+    verify(tomorrowsScheduledInstance, never()).remove(tomorrowsFutureAttendance)
+  }
+
+  @Test
+  fun `only future attendances are removed on end`() {
+    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+    }
+
+    val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
+    val todaysHistoricAttendance = attendanceFor(todaysHistoricScheduledInstance)
+
+    val todaysFutureScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().plusMinutes(1))
+    val todaysFutureAttendance = attendanceFor(todaysFutureScheduledInstance)
+
+    val tomorrowsScheduledInstance = scheduledInstanceOn(TimeSource.tomorrow(), LocalTime.now().plusMinutes(1))
+    val tomorrowsFutureAttendance = attendanceFor(tomorrowsScheduledInstance)
+
+    whenever(
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
+        prisonCode = moorlandPrisonCode,
+        sessionDate = LocalDate.now(),
+        prisonerNumber = "123456",
+      ),
+    ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
+    verify(todaysFutureScheduledInstance).remove(todaysFutureAttendance)
+    verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
+  }
+
+  private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {
+    on { sessionDate } doReturn date
+    on { startTime } doReturn time
+  }
+
+  private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {
+    on { scheduledInstance } doReturn instance
+    on { editable() } doReturn true
   }
 }

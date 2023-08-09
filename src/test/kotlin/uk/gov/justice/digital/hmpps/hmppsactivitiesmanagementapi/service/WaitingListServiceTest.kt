@@ -1,15 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -21,12 +24,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.util.Optional
 
@@ -43,9 +48,9 @@ class WaitingListServiceTest {
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
   @Test
-  fun `fails if does not have case load access`() {
+  fun `add prisoner fails if does not have case load access`() {
     assertThatThrownBy {
-      service.addPrisoner("XYZ", mock(), "test")
+      service.addPrisoner("WRONG_CASELOAD", mock(), "test")
     }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
@@ -381,5 +386,39 @@ class WaitingListServiceTest {
         declinedReason isEqualTo "Needs to attend level one activity first"
       }
     }
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier fails when not found`() {
+    whenever(scheduleRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy { service.getWaitingListsBySchedule(99) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity Schedule 99 not found")
+  }
+
+  @Test
+  fun `get waiting list by id`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(waitingListId = 99)
+
+    whenever(waitingListRepository.findById(waitingList.waitingListId)) doReturn Optional.of(waitingList)
+
+    service.getWaitingListBy(99) isEqualTo waitingList.toModel()
+  }
+
+  @Test
+  fun `get waiting list by id fails if does not have case load access`() {
+    whenever(waitingListRepository.findById(99)) doReturn Optional.of(waitingList("WRONG_CASELOAD").copy(waitingListId = 99))
+
+    assertThatThrownBy { service.getWaitingListBy(99) }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `get waiting list by id fails if not found`() {
+    whenever(waitingListRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy { service.getWaitingListBy(99) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Waiting List 99 not found")
   }
 }
