@@ -95,7 +95,7 @@ class CandidatesService(
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
-        .filter { waitingList.none { w -> w.prisonerNumber === it.prisonerNumber } }
+        .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
 
     val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
       prisonCode,
