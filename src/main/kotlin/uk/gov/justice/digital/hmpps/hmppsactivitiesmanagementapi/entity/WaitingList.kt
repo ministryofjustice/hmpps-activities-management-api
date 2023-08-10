@@ -61,6 +61,11 @@ data class WaitingList(
   var allocation: Allocation? = null
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }
+
+  fun allocated(allocation: Allocation) {
+    this.status = WaitingListStatus.ALLOCATED
+    this.allocation = allocation
+  }
 }
 
 enum class WaitingListStatus {
