@@ -127,7 +127,6 @@ data class Allocation(
 
   private fun maybeEndDate() =
     when {
-      endDate != null -> endDate
       activitySchedule.endDate != null -> activitySchedule.endDate
       activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
       else -> null
