@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -62,7 +60,7 @@ class BulkAppointmentDetailsController(
       ),
     ],
   )
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   fun getBulkAppointmentDetailsById(@PathVariable("bulkAppointmentId") bulkAppointmentId: Long): BulkAppointmentDetails =
     bulkAppointmentDetailsService.getBulkAppointmentDetailsById(bulkAppointmentId)
 }
