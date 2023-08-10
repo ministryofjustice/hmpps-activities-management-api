@@ -129,22 +129,14 @@ class ActivityScheduleService(
       startDate = request.startDate,
       endDate = request.endDate,
       allocatedBy = allocatedBy,
-    )
-
-    val allocation = repository.saveAndFlush(schedule).allocations().last()
-
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
-      schedule.activity.prisonCode,
-      request.prisonerNumber,
-      schedule,
-    ).let { entries ->
-      entries.forEach {
-        if (it.status === WaitingListStatus.APPROVED) {
-          it.status = WaitingListStatus.ALLOCATED
-          it.allocation = allocation
-          waitingListRepository.saveAndFlush(it)
-        }
-      }
+    ).let { allocation ->
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        schedule.activity.prisonCode,
+        request.prisonerNumber,
+        schedule,
+      )
+        .filter { it.status == WaitingListStatus.APPROVED }
+        .forEach { it.allocated(allocation) }
     }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")

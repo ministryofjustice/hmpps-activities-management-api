@@ -46,7 +46,6 @@ class ActivityScheduleServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
   private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository)
-  private val waitlistCaptor = argumentCaptor<WaitingList>()
 
   private val caseLoad = "MDI"
 
@@ -321,8 +320,7 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
-    verify(waitingListRepository).saveAndFlush(waitlistCaptor.capture())
-    with(waitlistCaptor.firstValue) {
+    with(waitingListEntity) {
       assertThat(status).isEqualTo(WaitingListStatus.ALLOCATED)
       assertThat(allocation?.allocatedBy).isEqualTo("by test")
       assertThat(allocation?.prisonerNumber).isEqualTo("123456")

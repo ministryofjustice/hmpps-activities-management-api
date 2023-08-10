@@ -18,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
@@ -65,6 +67,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: ActivityScheduleRepository
+
+  @Autowired
+  private lateinit var waitlistRepository: WaitingListRepository
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
@@ -325,6 +330,32 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     with(repository.findById(1).orElseThrow().allocations().first()) {
       assertThat(prisonerNumber).isEqualTo("G4793VF")
       assertThat(allocatedBy).isEqualTo("test-client")
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql",
+  )
+  fun `allocation should set any APPROVED waitlist applications to ALLOCATED status`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.tomorrow(),
+      ),
+    ).expectStatus().isNoContent
+
+    with(repository.findById(1).orElseThrow()) {
+      val allocation = allocations().first()
+
+      with(waitlistRepository.findByActivitySchedule(this).first()) {
+        assertThat(status).isEqualTo(WaitingListStatus.ALLOCATED)
+        assertThat(allocation).isEqualTo(allocation)
+      }
     }
   }
 
