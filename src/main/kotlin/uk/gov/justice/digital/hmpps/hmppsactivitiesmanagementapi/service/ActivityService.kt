@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -37,6 +38,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
+
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
@@ -49,6 +51,7 @@ class ActivityService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
+  private val telemetryClient: TelemetryClient,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -123,6 +126,15 @@ class ActivityService(
     failDuplicateActivity(request.prisonCode, request.summary!!)
     checkEducationLevels(request.minimumEducationLevel)
 
+    val propertiesMap = mapOf(
+      "prisonName" to request.prisonCode,
+      "activityName" to request.summary,
+    )
+    val metricsMap = mapOf(
+      "numberOfResults" to 1.0,
+    )
+    telemetryClient.trackEvent("SAA-CreateActivity", propertiesMap, metricsMap)
+
     val activity = Activity(
       prisonCode = request.prisonCode,
       activityCategory = category,
@@ -180,7 +192,10 @@ class ActivityService(
         return transform(activityRepository.saveAndFlush(activity))
       }
     }
+
   }
+
+
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
@@ -275,6 +290,7 @@ class ActivityService(
       "Activity cannot be updated because it is now archived."
     }
 
+
     applyCategoryUpdate(request, activity)
     applyTierUpdate(request, activity)
     applySummaryUpdate(prisonCode, request, activity)
@@ -305,6 +321,15 @@ class ActivityService(
     }
 
     activityRepository.saveAndFlush(activity)
+
+    val propertiesMap = mapOf(
+      "prisonName" to prisonCode,
+      "activityName" to request.summary,
+    )
+    val metricsMap = mapOf(
+      "numberOfResults" to 1.0,
+    )
+    telemetryClient.trackEvent("SAA-EditActivity", propertiesMap, metricsMap)
 
     return transform(activity)
   }
