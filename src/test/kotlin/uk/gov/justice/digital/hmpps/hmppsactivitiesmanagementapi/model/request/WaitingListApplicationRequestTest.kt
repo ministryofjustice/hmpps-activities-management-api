@@ -135,8 +135,8 @@ class WaitingListApplicationRequestTest : ValidatorBase<WaitingListApplicationRe
       "Only PENDING, APPROVED or DECLINED are allowed for status",
     )
 
-    assertNoErrors(request.copy(status = WaitingListStatus.PENDING), "status")
-    assertNoErrors(request.copy(status = WaitingListStatus.APPROVED), "status")
-    assertNoErrors(request.copy(status = WaitingListStatus.DECLINED), "status")
+    assertNoErrors(request.copy(status = WaitingListStatus.PENDING))
+    assertNoErrors(request.copy(status = WaitingListStatus.APPROVED))
+    assertNoErrors(request.copy(status = WaitingListStatus.DECLINED))
   }
 }

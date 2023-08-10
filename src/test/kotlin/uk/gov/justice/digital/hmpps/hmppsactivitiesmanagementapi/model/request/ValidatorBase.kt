@@ -16,7 +16,7 @@ abstract class ValidatorBase<MODEL> {
     }
   }
 
-  internal fun assertNoErrors(model: MODEL, propertyName: String) {
+  internal fun assertNoErrors(model: MODEL) {
     assertThat(validator.validate(model)).isEmpty()
   }
 }
