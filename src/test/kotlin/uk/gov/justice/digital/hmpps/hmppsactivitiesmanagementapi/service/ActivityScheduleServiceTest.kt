@@ -48,7 +48,6 @@ class ActivityScheduleServiceTest {
   private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository)
   private val waitlistCaptor = argumentCaptor<WaitingList>()
 
-
   private val caseLoad = "MDI"
 
   private val prisoner = InmateDetail(
