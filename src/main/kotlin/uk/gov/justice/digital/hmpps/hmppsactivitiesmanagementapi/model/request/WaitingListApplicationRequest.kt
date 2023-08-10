@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
@@ -54,9 +55,13 @@ data class WaitingListApplicationRequest(
   val comments: String? = null,
 
   @Schema(
-    description = "The status of the application",
+    description = "The status of the application. Only PENDING, APPROVED or DECLINED are allowed when creating.",
     example = "PENDING",
   )
   @field:NotNull(message = "Status must be supplied")
   val status: WaitingListStatus?,
-)
+) {
+  @AssertTrue(message = "Only PENDING, APPROVED or DECLINED are allowed for status")
+  private fun isStatus() =
+    status == null || listOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED).contains(status)
+}
