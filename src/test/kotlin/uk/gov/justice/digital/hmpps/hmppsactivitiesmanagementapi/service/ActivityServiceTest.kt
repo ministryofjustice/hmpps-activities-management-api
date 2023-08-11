@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -74,6 +75,7 @@ class ActivityServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val bankHolidayService: BankHolidayService = mock()
+  private val telemetryClient: TelemetryClient = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -121,6 +123,7 @@ class ActivityServiceTest {
     prisonRegimeService,
     bankHolidayService,
     daysInAdvance = daysInAdvance,
+    telemetryClient = telemetryClient,
   )
 
   private val location = Location(
