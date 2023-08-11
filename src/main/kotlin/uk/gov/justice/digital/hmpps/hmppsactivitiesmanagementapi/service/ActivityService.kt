@@ -38,7 +38,6 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
-
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
@@ -192,10 +191,7 @@ class ActivityService(
         return transform(activityRepository.saveAndFlush(activity))
       }
     }
-
   }
-
-
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
@@ -289,7 +285,6 @@ class ActivityService(
     require(activity.state(ActivityState.ARCHIVED).not()) {
       "Activity cannot be updated because it is now archived."
     }
-
 
     applyCategoryUpdate(request, activity)
     applyTierUpdate(request, activity)
