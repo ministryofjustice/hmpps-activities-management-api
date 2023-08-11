@@ -24,4 +24,11 @@ class WaitingListTest {
       assertThat(this.allocation).isEqualTo(allocation)
     }
   }
+
+  @Test
+  fun `removed sets the status of a waiting list application to REMOVED`() {
+    with(waitingList().apply { removed() }) {
+      assertThat(this.status).isEqualTo(WaitingListStatus.REMOVED)
+    }
+  }
 }

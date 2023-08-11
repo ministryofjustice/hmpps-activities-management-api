@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -65,6 +66,14 @@ data class WaitingList(
   fun allocated(allocation: Allocation) {
     this.status = WaitingListStatus.ALLOCATED
     this.allocation = allocation
+    this.updatedTime = LocalDateTime.now()
+    this.updatedBy = ServiceName.SERVICE_NAME.value
+  }
+
+  fun removed() {
+    this.status = WaitingListStatus.REMOVED
+    this.updatedTime = LocalDateTime.now()
+    this.updatedBy = ServiceName.SERVICE_NAME.value
   }
 }
 

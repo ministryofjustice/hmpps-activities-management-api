@@ -135,8 +135,10 @@ class ActivityScheduleService(
         request.prisonerNumber,
         schedule,
       )
-        .filter { it.status == WaitingListStatus.APPROVED }
-        .forEach { it.allocated(allocation) }
+        .forEach {
+          if (it.status == WaitingListStatus.APPROVED) it.allocated(allocation)
+          if (it.status == WaitingListStatus.DECLINED) it.removed()
+        }
     }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")

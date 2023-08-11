@@ -324,4 +324,31 @@ class ActivityScheduleServiceTest {
       assertThat(allocation?.prisonerNumber).isEqualTo("123456")
     }
   }
+
+  @Test
+  fun `allocate updates any DECLINED waitlist applications to REMOVED status`() {
+    val schedule = activitySchedule(activityEntity())
+    val waitingListEntity = waitingList(status = WaitingListStatus.DECLINED)
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(repository.saveAndFlush(any())).doReturn(schedule)
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(caseLoad, "123456", schedule)).thenReturn(listOf(waitingListEntity))
+
+    service.allocatePrisoner(
+      schedule.activityScheduleId,
+      PrisonerAllocationRequest(
+        "123456",
+        1,
+        TimeSource.tomorrow(),
+      ),
+      "by test",
+    )
+
+    with(waitingListEntity) {
+      assertThat(status).isEqualTo(WaitingListStatus.REMOVED)
+    }
+  }
 }

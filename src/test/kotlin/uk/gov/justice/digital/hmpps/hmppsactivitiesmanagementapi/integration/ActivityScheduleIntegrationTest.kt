@@ -361,6 +361,29 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
+    "classpath:test_data/seed-activity-id-20.sql",
+  )
+  fun `allocation should set any DECLINED waitlist applications to REMOVED status`() {
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.tomorrow(),
+      ),
+    ).expectStatus().isNoContent
+
+    with(repository.findById(1).orElseThrow()) {
+      with(waitlistRepository.findByActivitySchedule(this).first()) {
+        assertThat(status).isEqualTo(WaitingListStatus.REMOVED)
+      }
+    }
+  }
+
+  @Test
+  @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
   fun `should be able to fetch a paged list of candidates for an activity`() {
