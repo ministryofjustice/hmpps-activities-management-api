@@ -361,7 +361,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-20.sql",
+    "classpath:test_data/seed-activity-id-23.sql",
   )
   fun `allocation should set any DECLINED waitlist applications to REMOVED status`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
