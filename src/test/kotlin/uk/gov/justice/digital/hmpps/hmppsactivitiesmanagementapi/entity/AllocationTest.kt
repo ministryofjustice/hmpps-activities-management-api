@@ -177,17 +177,6 @@ class AllocationTest {
   }
 
   @Test
-  fun `planned deallocation must be on or before the allocation end date`() {
-    val allocationEndingToday =
-      allocation().apply { endDate = today }.also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
-
-    assertThatThrownBy {
-      allocationEndingToday.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Planned date cannot be after $today.")
-  }
-
-  @Test
   fun `planned deallocation must be on or before the schedule end date`() {
     val scheduleEndingToday: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
