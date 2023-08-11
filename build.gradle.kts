@@ -32,10 +32,6 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
 
-  implementation("io.opentelemetry:opentelemetry-api:1.26.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.4.13")
-  agentDeps("com.microsoft.azure:applicationinsights-agent:3.4.13")
-
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.25.0")
 
   // OpenAPI
@@ -43,7 +39,6 @@ dependencies {
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.10.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.4.9")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -136,9 +131,6 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     xml.required.set(true)
     html.required.set(true)
   }
-}
-repositories {
-  mavenCentral()
 }
 
 configure<KtlintExtension> {
