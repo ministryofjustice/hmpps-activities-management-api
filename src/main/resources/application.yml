@@ -112,3 +112,6 @@ online:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE}
 
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
