@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -11,29 +13,37 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
+@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
   private val prisonApiClient: PrisonApiClient,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  fun getWaitingListBy(id: Long) =
+    waitingListRepository.findOrThrowNotFound(id).checkCaseloadAccess().toModel()
+
   fun getWaitingListsBySchedule(id: Long) =
-    scheduleRepository.findById(id)
-      .orElseThrow { EntityNotFoundException("Activity schedule $id not found") }
-      .also { checkCaseloadAccess(it.activity.prisonCode) }
+    scheduleRepository
+      .findOrThrowNotFound(id)
+      .checkCaseloadAccess()
       .let { schedule -> waitingListRepository.findByActivitySchedule(schedule).map { it.toModel() } }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
     checkCaseloadAccess(prisonCode)
 
@@ -44,6 +54,7 @@ class WaitingListService(
     schedule.failIfNotFutureSchedule()
     schedule.failIfActivelyAllocated(request.prisonerNumber!!)
     request.failIfApplicationDateInFuture()
+    request.failIfNotAllowableStatus()
     failIfAlreadyPendingOrApproved(prisonCode, request.prisonerNumber, schedule)
 
     waitingListRepository.saveAndFlush(
@@ -59,6 +70,16 @@ class WaitingListService(
         status = request.status!!,
       ),
     )
+      .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
+  }
+
+  private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
+    require(
+      status != null &&
+        listOf(WaitingListStatus.ALLOCATED, WaitingListStatus.REMOVED).none { it == status },
+    ) {
+      "Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list"
+    }
   }
 
   private fun WaitingListApplicationRequest.failIfApplicationDateInFuture() {
@@ -117,4 +138,77 @@ class WaitingListService(
       "Cannot add prisoner to the waiting list because they are already allocated"
     }
   }
+
+  @Transactional
+  fun updateWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, updatedBy: String) =
+    waitingListRepository
+      .findOrThrowNotFound(id)
+      .checkCaseloadAccess()
+      .failIfNotUpdatable()
+      .apply {
+        updateApplicationDate(request, updatedBy)
+        updateRequestedBy(request, updatedBy)
+        updateComments(request, updatedBy)
+        updateStatus(request, updatedBy)
+      }.toModel()
+
+  private fun WaitingList.failIfNotUpdatable() = also {
+    require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
+      "The waiting list $waitingListId can no longer be updated"
+    }
+  }
+
+  private fun WaitingList.updateApplicationDate(request: WaitingListApplicationUpdateRequest, changedBy: String) {
+    request.applicationDate?.takeUnless { it == applicationDate }?.let { updatedApplicationDate ->
+      require(updatedApplicationDate <= creationTime.toLocalDate()) {
+        "The application date cannot be after the date the application was initially created ${creationTime.toLocalDate()}"
+      }
+
+      applicationDate = updatedApplicationDate
+      updatedTime = LocalDateTime.now()
+      updatedBy = changedBy
+    }
+  }
+
+  private fun WaitingList.updateRequestedBy(request: WaitingListApplicationUpdateRequest, changedBy: String) {
+    request.requestedBy?.takeUnless { it == requestedBy }?.let { updatedRequestedBy ->
+      require(updatedRequestedBy.isNotBlank()) {
+        "Requested by cannot be blank or empty"
+      }
+
+      requestedBy = updatedRequestedBy
+      updatedTime = LocalDateTime.now()
+      updatedBy = changedBy
+    }
+  }
+
+  private fun WaitingList.updateComments(request: WaitingListApplicationUpdateRequest, changedBy: String) {
+    request.comments?.takeUnless { it == comments }?.let { updatedComments ->
+      comments = updatedComments
+      updatedTime = LocalDateTime.now()
+      updatedBy = changedBy
+    }
+  }
+
+  private fun WaitingList.updateStatus(request: WaitingListApplicationUpdateRequest, changedBy: String) {
+    request.status?.takeUnless { it == status }?.let { updatedStatus ->
+      require(
+        listOf(
+          WaitingListStatus.APPROVED,
+          WaitingListStatus.PENDING,
+          WaitingListStatus.DECLINED,
+        ).contains(updatedStatus),
+      ) {
+        "Only PENDING, APPROVED or DECLINED are allowed for the status change"
+      }
+
+      status = updatedStatus
+      updatedTime = LocalDateTime.now()
+      updatedBy = changedBy
+    }
+  }
+
+  private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
+
+  private fun WaitingList.checkCaseloadAccess() = also { checkCaseloadAccess(prisonCode) }
 }

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
@@ -36,6 +38,7 @@ class CandidatesService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationRepository: AllocationRepository,
+  private val waitingListRepository: WaitingListRepository,
 ) {
   fun candidateSuitability(scheduleId: Long, prisonerNumber: String): AllocationSuitability {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
@@ -81,14 +84,18 @@ class CandidatesService(
 
     val prisonCode = schedule.activity.prisonCode
 
+    val waitingList = waitingListRepository.findByActivitySchedule(schedule)
+      .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
+
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
-        .filter { it.status == "ACTIVE IN" && it.legalStatus !== Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
+        .filter { (it.status == "ACTIVE IN" || it.status == "ACTIVE OUT") && it.legalStatus !== Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
+        .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
 
     val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
       prisonCode,
@@ -114,18 +121,19 @@ class CandidatesService(
   }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
+    val riskAssessmentCodes = listOf("RLO", "RME", "RHI")
+
     return suitableRiskLevels == null ||
 
-      (
-        suitableRiskLevels.contains("NONE") &&
-          (prisoner.alerts ?: emptyList()).none { it.alertType == "R" }
-        ) ||
+      suitableRiskLevels.contains("NONE") &&
+      (prisoner.alerts ?: emptyList())
+        .none { it.alertType == "R" && riskAssessmentCodes.contains(it.alertCode) } ||
 
       suitableRiskLevels.contains(
         (prisoner.alerts ?: emptyList())
           .filter { it.alertType == "R" }
           .map { it.alertCode }
-          .firstOrNull(),
+          .firstOrNull { riskAssessmentCodes.contains(it) },
       )
   }
 

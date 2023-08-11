@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -89,7 +88,7 @@ class AllocationController(
       ),
     ],
   )
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)
 
@@ -236,7 +235,7 @@ class AllocationController(
       ),
     ],
   )
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun addToWaitingList(
     @PathVariable("prisonCode") prisonCode: String,

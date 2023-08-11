@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -89,7 +88,7 @@ class ActivityController(
       ),
     ],
   )
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
 
@@ -304,7 +303,7 @@ class ActivityController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   fun create(
     principal: Principal,
     @Valid
@@ -426,7 +425,7 @@ class ActivityController(
     ],
   )
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
-  @Parameter(name = CASELOAD_ID, `in` = ParameterIn.HEADER)
+  @CaseloadHeader
   fun update(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("activityId") activityId: Long,

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
@@ -81,9 +82,30 @@ class ActivitiesChangedEventHandler(
 
   private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) =
     allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE)
+      .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE, event)
+      .removeFutureAttendances(event)
+
+  private fun List<Allocation>.deallocateAffectedAllocations(
+    reason: DeallocationReason,
+    event: ActivitiesChangedEvent,
+  ) =
+    this.filterNot { it.status(PrisonerStatus.ENDED) }.onEach { it.deallocateNowWithReason(reason) }
       .also { log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.") }
 
-  private fun List<Allocation>.deallocateAffectedAllocations(reason: DeallocationReason) =
-    this.filterNot { it.status(PrisonerStatus.ENDED) }.onEach { it.deallocateNowWithReason(reason) }
+  private fun List<Allocation>.removeFutureAttendances(event: ActivitiesChangedEvent) {
+    val now = LocalDateTime.now()
+
+    forEach { allocation ->
+      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
+        prisonCode = event.prisonCode(),
+        sessionDate = LocalDate.now(),
+        prisonerNumber = allocation.prisonerNumber,
+      ).filter { attendance ->
+        (attendance.scheduledInstance.sessionDate == now.toLocalDate() && attendance.scheduledInstance.startTime > now.toLocalTime()) ||
+          (attendance.scheduledInstance.sessionDate > now.toLocalDate())
+      }.onEach { futureAttendance ->
+        futureAttendance.scheduledInstance.remove(futureAttendance)
+      }
+    }
+  }
 }

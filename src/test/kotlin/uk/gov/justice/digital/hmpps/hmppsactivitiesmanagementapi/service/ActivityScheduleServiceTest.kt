@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -17,16 +18,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -38,7 +42,8 @@ class ActivityScheduleServiceTest {
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository)
+  private val waitingListRepository: WaitingListRepository = mock()
+  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository)
 
   private val caseLoad = "MDI"
 
@@ -289,5 +294,34 @@ class ActivityScheduleServiceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date must be in the future")
+  }
+
+  @Test
+  fun `allocate updates any APPROVED waitlist applications to ALLOCATED status`() {
+    val schedule = activitySchedule(activityEntity())
+    val waitingListEntity = waitingList(status = WaitingListStatus.APPROVED)
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(repository.saveAndFlush(any())).doReturn(schedule)
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(caseLoad, "123456", schedule)).thenReturn(listOf(waitingListEntity))
+
+    service.allocatePrisoner(
+      schedule.activityScheduleId,
+      PrisonerAllocationRequest(
+        "123456",
+        1,
+        TimeSource.tomorrow(),
+      ),
+      "by test",
+    )
+
+    with(waitingListEntity) {
+      assertThat(status).isEqualTo(WaitingListStatus.ALLOCATED)
+      assertThat(allocation?.allocatedBy).isEqualTo("by test")
+      assertThat(allocation?.prisonerNumber).isEqualTo("123456")
+    }
   }
 }

@@ -1,13 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -41,11 +37,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSumma
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -59,24 +52,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelActivityWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
-  private val referenceCodeService: ReferenceCodeService = mock()
-  private val locationService: LocationService = mock()
-
-  @BeforeEach
-  fun setUp() {
-    addCaseloadIdToRequestHeader("TPR")
-  }
-
-  @AfterEach
-  fun tearDown() {
-    clearCaseloadIdFromRequestHeader()
-  }
 
   @Test
   fun `transformation of activity entity to the activity models`() {
@@ -129,17 +109,17 @@ class TransformFunctionsTest {
                       id = 1,
                       attendanceReason = ModelAttendanceReason(
                         9,
-                        "ATTENDED",
-                        "Previous Desc",
-                        false,
-                        true,
-                        true,
-                        false,
-                        false,
-                        false,
-                        true,
-                        1,
-                        "some note",
+                        code = "ATTENDED",
+                        description = "Previous Desc",
+                        attended = false,
+                        capturePay = true,
+                        captureMoreDetail = true,
+                        captureCaseNote = false,
+                        captureIncentiveLevelWarning = false,
+                        captureOtherText = false,
+                        displayInAbsence = true,
+                        displaySequence = 1,
+                        notes = "some note",
                       ),
                       issuePayment = null,
                       incentiveLevelWarningIssued = null,
@@ -196,15 +176,6 @@ class TransformFunctionsTest {
           scheduleWeeks = 1,
         ),
       )
-      assertThat(waitingList).containsExactly(
-        ModelActivityWaiting(
-          id = 1,
-          prisonerNumber = "A1234AA",
-          priority = 1,
-          createdTime = timestamp,
-          createdBy = "test",
-        ),
-      )
       assertThat(pay).containsExactly(
         ModelActivityPay(
           id = 0,
@@ -234,7 +205,7 @@ class TransformFunctionsTest {
 
   @Nested
   @DisplayName("appointmentInstanceToScheduledEvents")
-  inner class appointmentInstanceToScheduledEvents {
+  inner class AppointmentInstanceToScheduledEvents {
     @Test
     fun `appointment instance to scheduled event`() {
       val entity = appointmentInstanceEntity()
@@ -327,34 +298,23 @@ class TransformFunctionsTest {
     }
 
     private fun transform(appointmentInstance: AppointmentInstance): List<ScheduledEvent> {
-      val eventPriorities = EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) })
+      val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
       val result = appointmentOccurrenceSearchEntity()
-
-      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-        .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-      whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-        .thenReturn(
-          mapOf(
-            result.internalLocationId!! to Location(
-              locationId = 1,
-              internalLocationCode = "LOC123",
-              description = "An appointment location",
-              userDescription = "User location desc",
-              locationType = "APP",
-              agencyId = "TPR",
-            ),
-          ),
-        )
-
-      val referenceCodesForAppointmentsMap =
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
-      val locationsForAppointmentsMap = locationService.getLocationsForAppointmentsMap(result.prisonCode)
 
       return transformAppointmentInstanceToScheduledEvents(
         "TPR",
         eventPriorities,
-        referenceCodesForAppointmentsMap,
-        locationsForAppointmentsMap,
+        mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)),
+        mapOf(
+          result.internalLocationId!! to Location(
+            locationId = 1,
+            internalLocationCode = "LOC123",
+            description = "An appointment location",
+            userDescription = "User location desc",
+            locationType = "APP",
+            agencyId = "TPR",
+          ),
+        ),
         listOf(appointmentInstance),
       )
     }

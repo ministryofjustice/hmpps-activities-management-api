@@ -120,4 +120,23 @@ class WaitingListApplicationRequestTest : ValidatorBase<WaitingListApplicationRe
       "Status must be supplied",
     )
   }
+
+  @Test
+  fun `status can only be pending, approved or declined`() {
+    assertSingleValidationError(
+      request.copy(status = WaitingListStatus.ALLOCATED),
+      "status",
+      "Only PENDING, APPROVED or DECLINED are allowed for status",
+    )
+
+    assertSingleValidationError(
+      request.copy(status = WaitingListStatus.REMOVED),
+      "status",
+      "Only PENDING, APPROVED or DECLINED are allowed for status",
+    )
+
+    assertNoErrors(request.copy(status = WaitingListStatus.PENDING))
+    assertNoErrors(request.copy(status = WaitingListStatus.APPROVED))
+    assertNoErrors(request.copy(status = WaitingListStatus.DECLINED))
+  }
 }

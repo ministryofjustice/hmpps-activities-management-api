@@ -342,11 +342,13 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.summary?.apply {
-      failDuplicateActivity(prisonCode, this)
-      activity.summary = this
-      activity.description = this
-      activity.schedules().forEach { it.description = this }
+    if (activity.summary != request.summary) {
+      request.summary?.apply {
+        failDuplicateActivity(prisonCode, this)
+        activity.summary = this
+        activity.description = this
+        activity.schedules().forEach { it.description = this }
+      }
     }
   }
 

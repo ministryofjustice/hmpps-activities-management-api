@@ -1,15 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -20,13 +23,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.util.Optional
 
@@ -43,9 +50,9 @@ class WaitingListServiceTest {
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
   @Test
-  fun `fails if does not have case load access`() {
+  fun `add prisoner fails if does not have case load access`() {
     assertThatThrownBy {
-      service.addPrisoner("XYZ", mock(), "test")
+      service.addPrisoner("WRONG_CASELOAD", mock(), "test")
     }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
@@ -72,6 +79,37 @@ class WaitingListServiceTest {
     assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test") }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Tim Harrison is not resident at this prison")
+  }
+
+  @Test
+  fun `fails if status not PENDING, APPROVED or DECLINED`() {
+    prisonApiClient.stub {
+      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
+        InmateDetailFixture.instance(
+          offenderNo = "123456",
+          status = "ACTIVE IN",
+          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
+          bookingId = 1L,
+        ),
+      )
+    }
+
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
+
+    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.ALLOCATED), "test") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
+
+    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.REMOVED), "test") }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
   }
 
   @Test
@@ -381,5 +419,341 @@ class WaitingListServiceTest {
         declinedReason isEqualTo "Needs to attend level one activity first"
       }
     }
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier fails when not found`() {
+    whenever(scheduleRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy { service.getWaitingListsBySchedule(99) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity Schedule 99 not found")
+  }
+
+  @Test
+  fun `get waiting list by id`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(waitingListId = 99)
+
+    whenever(waitingListRepository.findById(waitingList.waitingListId)) doReturn Optional.of(waitingList)
+
+    service.getWaitingListBy(99) isEqualTo waitingList.toModel()
+  }
+
+  @Test
+  fun `get waiting list by id fails if does not have case load access`() {
+    whenever(waitingListRepository.findById(99)) doReturn Optional.of(waitingList("WRONG_CASELOAD").copy(waitingListId = 99))
+
+    assertThatThrownBy { service.getWaitingListBy(99) }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `get waiting list by id fails if not found`() {
+    whenever(waitingListRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy { service.getWaitingListBy(99) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Waiting List 99 not found")
+  }
+
+  @Test
+  fun `update the application date`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(applicationDate = TimeSource.today()).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.applicationDate isEqualTo TimeSource.today()
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(applicationDate = TimeSource.yesterday()),
+      "Jon",
+    )
+
+    waitingList.applicationDate isEqualTo TimeSource.yesterday()
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy!! isEqualTo "Jon"
+  }
+
+  @Test
+  fun `update the application date no-op if the same`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(applicationDate = TimeSource.today()).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.applicationDate isEqualTo TimeSource.today()
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(applicationDate = TimeSource.today()),
+      "Jon",
+    )
+
+    waitingList.applicationDate isEqualTo TimeSource.today()
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update the application date fails if after creation date`() {
+    val waitingList = waitingList(pentonvillePrisonCode).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.applicationDate isEqualTo TimeSource.today()
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(applicationDate = TimeSource.tomorrow()),
+        "Fred",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The application date cannot be after the date the application was initially created ${TimeSource.today()}")
+  }
+
+  @Test
+  fun `update requested by`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.requestedBy isEqualTo "Fred"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(requestedBy = "Bob"),
+      "Fred",
+    )
+
+    waitingList.requestedBy isEqualTo "Bob"
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Fred"
+  }
+
+  @Test
+  fun `update requested by no-op if the same`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.requestedBy isEqualTo "Fred"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(requestedBy = "Fred"),
+      "Fred",
+    )
+
+    waitingList.requestedBy isEqualTo "Fred"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update requested fails if blank or empty`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.requestedBy isEqualTo "Fred"
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(requestedBy = " "),
+        "Fred",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Requested by cannot be blank or empty")
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(requestedBy = ""),
+        "Fred",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Requested by cannot be blank or empty")
+  }
+
+  @Test
+  fun `update comments`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(comments = "Initial comments").also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.comments isEqualTo "Initial comments"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(comments = "Updated comments"),
+      "Lucy",
+    )
+
+    waitingList.comments isEqualTo "Updated comments"
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Lucy"
+  }
+
+  @Test
+  fun `update comments no-op if the same`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(comments = "Initial comments").also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.comments isEqualTo "Initial comments"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(comments = "Initial comments"),
+      "Lucy",
+    )
+
+    waitingList.comments isEqualTo "Initial comments"
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update status`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+      "Frank",
+    )
+
+    waitingList.status isEqualTo WaitingListStatus.APPROVED
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Frank"
+  }
+
+  @Test
+  fun `update status no-op if the same`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.PENDING),
+      "Frank",
+    )
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update status fails if already allocated`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.ALLOCATED).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.DECLINED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
+
+    waitingList.status isEqualTo WaitingListStatus.ALLOCATED
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update status fails if already removed`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.REMOVED).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
+
+    waitingList.status isEqualTo WaitingListStatus.REMOVED
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update status fails if not PENDING, APPROVED or DECLINED`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Only PENDING, APPROVED or DECLINED are allowed for the status change")
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update fails if waiting list not found`() {
+    whenever(waitingListRepository.findById(any())) doReturn Optional.empty()
+
+    assertThatThrownBy {
+      service.updateWaitingList(99, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+    }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Waiting List 99 not found")
+  }
+
+  @Test
+  fun `update fails if incorrect caseload`() {
+    val waitingList = waitingList(moorlandPrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    assertThatThrownBy {
+      service.updateWaitingList(waitingList.waitingListId, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+    }
+      .isInstanceOf(CaseloadAccessException::class.java)
   }
 }

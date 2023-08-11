@@ -30,7 +30,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory as EntityAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime as EntityPrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting as EntityPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance as EntityScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList as EntityWaitingList
@@ -48,7 +47,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventRevi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime as ModelPrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerWaiting as ModelPrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
@@ -63,7 +61,6 @@ fun transform(activity: EntityActivity) =
     tier = activity.activityTier?.toModelActivityTier(),
     eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
     schedules = activity.schedules().toModelSchedules(),
-    waitingList = activity.waitingList.toModelWaitingList(),
     pay = activity.activityPay().toModelActivityPayList(),
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
@@ -237,16 +234,6 @@ fun EntityActivitySchedule.toModelSchedule() =
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
   )
-
-private fun List<EntityPrisonerWaiting>.toModelWaitingList() = map {
-  ModelPrisonerWaiting(
-    id = it.prisonerWaitingId,
-    prisonerNumber = it.prisonerNumber,
-    priority = it.priority,
-    createdTime = it.createdTime,
-    createdBy = it.createdBy,
-  )
-}
 
 private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map { it.toModel() }
 

@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerWaiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -82,7 +81,6 @@ internal fun activityEntity(
     if (!noSchedules) {
       this.addSchedule(activitySchedule(this, activityScheduleId = 1, timestamp))
     }
-    waitingList.add(activityWaiting(this, timestamp))
     if (!noPayBands) {
       this.addPay(
         incentiveNomisCode = "BAS",
@@ -228,19 +226,6 @@ internal fun deallocation(endDate: LocalDate? = null) =
     ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
     ?: activitySchedule(activityEntity()).allocations().first()
 
-private fun activityWaiting(
-  activity: Activity,
-  timestamp: LocalDateTime,
-) =
-  PrisonerWaiting(
-    prisonerWaitingId = 1,
-    activity = activity,
-    prisonerNumber = "A1234AA",
-    priority = 1,
-    createdTime = timestamp,
-    createdBy = "test",
-  )
-
 fun rolloutPrison() = RolloutPrison(
   1,
   pentonvillePrisonCode,
@@ -359,20 +344,24 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   sundayFlag = true
 }
 
-fun waitingList(prisonCode: String = pentonvillePrisonCode): WaitingList {
+fun waitingList(
+  prisonCode: String = pentonvillePrisonCode,
+  prisonerNumber: String = "123456",
+  status: WaitingListStatus = WaitingListStatus.DECLINED,
+): WaitingList {
   val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
   val allocation = schedule.allocations().first()
 
   return WaitingList(
     waitingListId = 99,
-    prisonCode = pentonvillePrisonCode,
+    prisonCode = prisonCode,
     activitySchedule = schedule,
-    prisonerNumber = "123456",
+    prisonerNumber = prisonerNumber,
     bookingId = 100L,
     applicationDate = TimeSource.today(),
     requestedBy = "Fred",
     comments = "Some random test comments",
-    status = WaitingListStatus.DECLINED,
+    status = status,
     createdBy = "Bob",
   ).apply {
     this.allocation = allocation
