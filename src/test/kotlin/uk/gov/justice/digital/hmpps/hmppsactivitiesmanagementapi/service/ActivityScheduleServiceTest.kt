@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -43,7 +44,8 @@ class ActivityScheduleServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
-  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository)
+  private val telemetryClient: TelemetryClient = mock()
+  private val service = ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, telemetryClient)
 
   private val caseLoad = "MDI"
 

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
@@ -38,6 +39,7 @@ class ActivityScheduleService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   companion object {
@@ -138,6 +140,14 @@ class ActivityScheduleService(
         .filter { it.status == WaitingListStatus.APPROVED }
         .forEach { it.allocated(allocation) }
     }
+    val propertiesMap = mapOf(
+      "prisonNumber" to prisonerNumber.toString(),
+      "allocatedBy" to allocatedBy,
+    )
+    val metricsMap = mapOf(
+      "numberOfResults" to 1.0,
+    )
+    telemetryClient.trackEvent("SAA-AllocatePrisoner", propertiesMap, metricsMap)
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
   }
@@ -161,6 +171,15 @@ class ActivityScheduleService(
       }
       repository.saveAndFlush(this)
     }
+
+    val propertiesMap = mapOf(
+      "reasonCode" to request.reasonCode.toDeallocationReason().toString(),
+      "deallocatedBy" to deallocatedBy,
+    )
+    val metricsMap = mapOf(
+      "numberOfResults" to 1.0,
+    )
+    telemetryClient.trackEvent("SAA-DeallocatePrisoner", propertiesMap, metricsMap)
   }
 
   private fun String?.toDeallocationReason() =

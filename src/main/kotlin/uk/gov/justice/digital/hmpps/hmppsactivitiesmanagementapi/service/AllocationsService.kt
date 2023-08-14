@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
@@ -25,6 +26,7 @@ class AllocationsService(
   private val allocationRepository: AllocationRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val scheduleRepository: ActivityScheduleRepository,
+  private val telemetryClient: TelemetryClient,
 
 ) {
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =

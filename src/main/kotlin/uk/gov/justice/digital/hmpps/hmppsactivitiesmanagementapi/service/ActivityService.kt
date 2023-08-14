@@ -125,15 +125,6 @@ class ActivityService(
     failDuplicateActivity(request.prisonCode, request.summary!!)
     checkEducationLevels(request.minimumEducationLevel)
 
-    val propertiesMap = mapOf(
-      "prisonName" to request.prisonCode,
-      "activityName" to request.summary,
-    )
-    val metricsMap = mapOf(
-      "numberOfResults" to 1.0,
-    )
-    telemetryClient.trackEvent("SAA-CreateActivity", propertiesMap, metricsMap)
-
     val activity = Activity(
       prisonCode = request.prisonCode,
       activityCategory = category,
@@ -171,6 +162,16 @@ class ActivityService(
           studyAreaDescription = it.studyAreaDescription!!,
         )
       }
+      val propertiesMap = mapOf(
+        "prisonName" to request.prisonCode,
+        "activityName" to request.summary,
+        "createdTime" to createdTime.toString(),
+        "createdBy" to createdBy,
+      )
+      val metricsMap = mapOf(
+        "numberOfResults" to 1.0,
+      )
+      telemetryClient.trackEvent("SAA-CreateActivity", propertiesMap, metricsMap)
     }
 
     activity.let {
@@ -319,7 +320,8 @@ class ActivityService(
 
     val propertiesMap = mapOf(
       "prisonName" to prisonCode,
-      "activityName" to request.summary,
+      "updatedTime" to now.toString(),
+      "updatedBy" to updatedBy,
     )
     val metricsMap = mapOf(
       "numberOfResults" to 1.0,
