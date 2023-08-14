@@ -15,4 +15,8 @@ abstract class ValidatorBase<MODEL> {
       assertThat(first().message).isEqualTo(message)
     }
   }
+
+  internal fun assertNoErrors(model: MODEL) {
+    assertThat(validator.validate(model)).isEmpty()
+  }
 }

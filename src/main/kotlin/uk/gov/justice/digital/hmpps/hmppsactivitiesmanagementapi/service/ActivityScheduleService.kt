@@ -14,12 +14,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -35,6 +37,7 @@ class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val waitingListRepository: WaitingListRepository,
 ) {
 
   companion object {
@@ -126,9 +129,15 @@ class ActivityScheduleService(
       startDate = request.startDate,
       endDate = request.endDate,
       allocatedBy = allocatedBy,
-    )
-
-    repository.saveAndFlush(schedule)
+    ).let { allocation ->
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        schedule.activity.prisonCode,
+        request.prisonerNumber,
+        schedule,
+      )
+        .filter { it.status == WaitingListStatus.APPROVED }
+        .forEach { it.allocated(allocation) }
+    }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
   }
