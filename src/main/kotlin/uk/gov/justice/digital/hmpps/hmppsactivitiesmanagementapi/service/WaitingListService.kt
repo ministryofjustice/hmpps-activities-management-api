@@ -229,7 +229,7 @@ class WaitingListService(
     }
 
     if (status == WaitingListStatus.DECLINED) {
-      logMetric(TelemetryEvent.PRISONER_REJECTED_FROM_WAITLIST, prisonerNumber)
+      logMetric(TelemetryEvent.PRISONER_DECLINED_FROM_WAITLIST, prisonerNumber)
     }
   }
 
