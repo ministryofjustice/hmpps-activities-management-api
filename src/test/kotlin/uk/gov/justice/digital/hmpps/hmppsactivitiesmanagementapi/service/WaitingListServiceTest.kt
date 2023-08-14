@@ -683,7 +683,7 @@ class WaitingListServiceTest {
     )
 
     verify(telemetryClient).trackEvent(
-      TelemetryEvent.PRISONER_REJECTED_FROM_WAITLIST.value,
+      TelemetryEvent.PRISONER_DECLINED_FROM_WAITLIST.value,
       mapOf(PRISONER_NUMBER_KEY to "123456"),
       mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
     )
