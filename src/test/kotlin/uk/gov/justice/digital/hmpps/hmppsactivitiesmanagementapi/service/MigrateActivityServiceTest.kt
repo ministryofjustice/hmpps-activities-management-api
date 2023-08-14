@@ -125,10 +125,10 @@ class MigrateActivityServiceTest {
       // Check the content of the saved Activity entity
       with(activityCaptor.firstValue) {
         assertThat(summary).isEqualTo("An activity")
-        assertThat(description).isEqualTo("An activity")
+        assertThat(description).contains("Migrated from NOMIS")
         assertThat(inCell).isFalse
         assertThat(onWing).isFalse
-        assertThat(startDate).isEqualTo(LocalDate.now().minusDays(1))
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(endDate).isNull()
         assertThat(eligibilityRules()).hasSize(0)
         assertThat(activityMinimumEducationLevel()).hasSize(0)
@@ -150,7 +150,7 @@ class MigrateActivityServiceTest {
         assertThat(schedules()).hasSize(1)
         with(schedules().first()) {
           assertThat(description).isEqualTo("An activity")
-          assertThat(startDate).isEqualTo(LocalDate.now().minusDays(1))
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
           assertThat(endDate).isNull()
           assertThat(capacity).isEqualTo(10)
           assertThat(runsOnBankHoliday).isFalse

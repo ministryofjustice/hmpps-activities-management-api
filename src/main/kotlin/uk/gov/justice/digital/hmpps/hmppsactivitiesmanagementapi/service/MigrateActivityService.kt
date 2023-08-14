@@ -24,7 +24,10 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+// Useful constants
 const val MIGRATION_USER = "MIGRATION"
+const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
+const val ON_WING_LOCATION = "WOW"
 
 @Service
 @Transactional(readOnly = true)
@@ -37,7 +40,7 @@ class MigrateActivityService(
   private val prisonPayBandRepository: PrisonPayBandRepository,
 ) {
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
@@ -66,7 +69,7 @@ class MigrateActivityService(
       if (payBand != null) {
         activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
       } else {
-        val errMsg = "No matching pay band found for ${request.description} ${it.nomisPayBand}"
+        val errMsg = "Failed to migrate activity ${request.description}. No matching prison pay band found for Nomis pay band ${it.nomisPayBand}"
         log.error(errMsg)
         throw ValidationException(errMsg)
       }
@@ -85,10 +88,10 @@ class MigrateActivityService(
       activityTier = mapProgramToTier(request.programServiceCode),
       attendanceRequired = true, // Default
       summary = request.description,
-      description = request.description,
-      inCell = request.internalLocationId == null || request.programServiceCode == "T2ICA",
-      onWing = request.internalLocationCode?.contains("WOW") ?: false,
-      startDate = request.startDate ?: LocalDate.now(),
+      description = "Migrated from NOMIS ${request.description} program service ${request.programServiceCode}",
+      inCell = request.internalLocationId == null || request.programServiceCode == TIER2_IN_CELL_ACTIVITY,
+      onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
+      startDate = LocalDate.now().plusDays(1), // Start date of tomorrow
       riskLevel = "Low", // Default
       minimumIncentiveNomisCode = request.minimumIncentiveLevel,
       minimumIncentiveLevel = mapIncentiveLevel(request.minimumIncentiveLevel),
@@ -110,7 +113,7 @@ class MigrateActivityService(
           )
         },
         capacity = request.capacity,
-        startDate = request.startDate ?: LocalDate.now(),
+        startDate = this.startDate,
         endDate = request.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
         scheduleWeeks = 1, // Defaults to 1
@@ -148,55 +151,66 @@ class MigrateActivityService(
     val activityCategories = activityCategoryRepository.findAll()
     val category = when {
       // Prison industries
-      programServiceCode.startsWith("IND_") -> activityCategories.find { it.code == "SAA_INDUSTRIES" }
+      programServiceCode.startsWith("IND_") -> activityCategories.isIndustries()
 
       // Prison jobs
-      programServiceCode.startsWith("SER_") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("KITCHEN") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("CLNR") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("FG") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("LIBRARY") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("WORKS") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
-      programServiceCode.startsWith("RECYCLE") -> activityCategories.find { it.code == "SAA_PRISON_JOBS" }
+      programServiceCode.startsWith("SER_") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("KITCHEN") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("CLNR") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("FG") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("LIBRARY") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("WORKS") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("RECYCLE") -> activityCategories.isPrisonJobs()
 
       // Education
-      programServiceCode.startsWith("EDU") -> activityCategories.find { it.code == "SAA_EDUCATION" }
-      programServiceCode.startsWith("CORECLASS") -> activityCategories.find { it.code == "SAA_EDUCATION" }
-      programServiceCode.startsWith("SKILLS") -> activityCategories.find { it.code == "SAA_EDUCATION" }
-      programServiceCode.startsWith("KEY_SKILLS") -> activityCategories.find { it.code == "SAA_EDUCATION" }
+      programServiceCode.startsWith("EDU") -> activityCategories.isEducation()
+      programServiceCode.startsWith("CORECLASS") -> activityCategories.isEducation()
+      programServiceCode.startsWith("SKILLS") -> activityCategories.isEducation()
+      programServiceCode.startsWith("KEY_SKILLS") -> activityCategories.isEducation()
 
       // Not in work
-      programServiceCode.startsWith("UNEMP") -> activityCategories.find { it.code == "SAA_NOT_IN_WORK" }
-      programServiceCode.startsWith("OTH_UNE") -> activityCategories.find { it.code == "SAA_NOT_IN_WORK" }
+      programServiceCode.startsWith("UNEMP") -> activityCategories.isNotInWork()
+      programServiceCode.startsWith("OTH_UNE") -> activityCategories.isNotInWork()
 
       // Interventions/courses
-      programServiceCode.startsWith("INT_") -> activityCategories.find { it.code == "SAA_INTERVENTIONS" }
-      programServiceCode.startsWith("GROUP") -> activityCategories.find { it.code == "SAA_INTERVENTIONS" }
-      programServiceCode.startsWith("ABUSE") -> activityCategories.find { it.code == "SAA_INTERVENTIONS" }
+      programServiceCode.startsWith("INT_") -> activityCategories.isInterventions()
+      programServiceCode.startsWith("GROUP") -> activityCategories.isInterventions()
+      programServiceCode.startsWith("ABUSE") -> activityCategories.isInterventions()
 
       // Sports and fitness
-      programServiceCode.startsWith("PE") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
-      programServiceCode.startsWith("SPORT") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
-      programServiceCode.startsWith("HEALTH") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
-      programServiceCode.startsWith("T2PER") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
-      programServiceCode.startsWith("T2HCW") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
-      programServiceCode.startsWith("OTH_PER") -> activityCategories.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
+      programServiceCode.startsWith("PE") -> activityCategories.isGymSportsFitness()
+      programServiceCode.startsWith("SPORT") -> activityCategories.isGymSportsFitness()
+      programServiceCode.startsWith("HEALTH") -> activityCategories.isGymSportsFitness()
+      programServiceCode.startsWith("T2PER") -> activityCategories.isGymSportsFitness()
+      programServiceCode.startsWith("T2HCW") -> activityCategories.isGymSportsFitness()
+      programServiceCode.startsWith("OTH_PER") -> activityCategories.isGymSportsFitness()
 
       // Faith and spirituality
-      programServiceCode.startsWith("CHAP") -> activityCategories.find { it.code == "SAA_FAITH_SPIRITUALITY" }
-      programServiceCode.startsWith("T2CFA") -> activityCategories.find { it.code == "SAA_FAITH_SPIRITUALITY" }
-      programServiceCode.startsWith("OTH_CFR") -> activityCategories.find { it.code == "SAA_FAITH_SPIRITUALITY" }
+      programServiceCode.startsWith("CHAP") -> activityCategories.isFaithSpirituality()
+      programServiceCode.startsWith("T2CFA") -> activityCategories.isFaithSpirituality()
+      programServiceCode.startsWith("OTH_CFR") -> activityCategories.isFaithSpirituality()
 
       // Induction/guidance
-      programServiceCode.startsWith("INDUCTION") -> activityCategories.find { it.code == "SAA_INDUCTION" }
-      programServiceCode.startsWith("IAG") -> activityCategories.find { it.code == "SAA_INDUCTION" }
-      programServiceCode.startsWith("SAFE") -> activityCategories.find { it.code == "SAA_INDUCTION" }
+      programServiceCode.startsWith("INDUCTION") -> activityCategories.isInduction()
+      programServiceCode.startsWith("IAG") -> activityCategories.isInduction()
+      programServiceCode.startsWith("SAFE") -> activityCategories.isInduction()
 
       // Everything else is Other
-      else -> activityCategories.find { it.code == "SAA_OTHER" }
+      else -> activityCategories.isOther()
     }
-    return category!!
+
+    return category ?: throw ValidationException("Could not map $programServiceCode to a category")
   }
+
+  fun List<ActivityCategory>.isIndustries() = this.find { it.code == "SAA_INDUSTRIES" }
+  fun List<ActivityCategory>.isPrisonJobs() = this.find { it.code == "SAA_PRISON_JOBS" }
+  fun List<ActivityCategory>.isEducation() = this.find { it.code == "SAA_EDUCATION" }
+  fun List<ActivityCategory>.isNotInWork() = this.find { it.code == "SAA_NOT_IN_WORK" }
+  fun List<ActivityCategory>.isInterventions() = this.find { it.code == "SAA_INTERVENTIONS" }
+  fun List<ActivityCategory>.isInduction() = this.find { it.code == "SAA_INDUCTION" }
+  fun List<ActivityCategory>.isGymSportsFitness() = this.find { it.code == "SAA_GYM_SPORTS_FITNESS" }
+  fun List<ActivityCategory>.isFaithSpirituality() = this.find { it.code == "SAA_FAITH_SPIRITUALITY" }
+  fun List<ActivityCategory>.isOther() = this.find { it.code == "SAA_OTHER" }
 
   fun mapProgramToTier(programServiceCode: String): ActivityTier? {
     // We only have one Tier for now - use Tier 1 for all

@@ -153,7 +153,7 @@ class ActivityController(
   @ResponseBody
   @Operation(
     summary = "Returns the basic activity ids and descriptions without its child collections",
-    description = "Returns basics activity IDs and attributes without its child collections.",
+    description = "Returns basic activity IDs and attributes without its child collections.",
   )
   @ApiResponses(
     value = [

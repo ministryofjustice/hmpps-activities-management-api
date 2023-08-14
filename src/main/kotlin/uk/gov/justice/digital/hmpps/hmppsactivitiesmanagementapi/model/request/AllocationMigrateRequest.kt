@@ -46,13 +46,13 @@ data class AllocationMigrateRequest(
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
-  @Schema(description = "Date on which this allocation starts or started. Nullable.", example = "2022-12-23")
+  @Schema(description = "Date on which this allocation ended or will end. Nullable.", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
   @Schema(description = "If an end date is set there may be a comment. Nullable.", example = "Due to end in January.")
   val endComment: String? = null,
 
-  @Schema(description = "True id this prisoner is suspended.", example = "true")
+  @Schema(description = "True if this prisoner allocation is suspended.", example = "true")
   val suspendedFlag: Boolean = false,
 )
