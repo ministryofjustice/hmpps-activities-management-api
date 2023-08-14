@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -40,6 +41,7 @@ import java.time.temporal.ChronoUnit
 class ManageScheduledInstancesServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
+  private val telemetryClient: TelemetryClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -52,6 +54,7 @@ class ManageScheduledInstancesServiceTest {
     prisonRegimeService = mock(),
     bankHolidayService = mock(),
     daysInAdvance = 7L,
+    telemetryClient = telemetryClient,
   )
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
