@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,6 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
@@ -29,6 +33,7 @@ class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val telemetryClient: TelemetryClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -71,6 +76,7 @@ class WaitingListService(
       ),
     )
       .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
+      .also { logPrisonerAddedMetric(request.prisonerNumber) }
   }
 
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
@@ -205,10 +211,36 @@ class WaitingListService(
       status = updatedStatus
       updatedTime = LocalDateTime.now()
       updatedBy = changedBy
+      logStatusChangeMetric(this.prisonerNumber, status)
     }
   }
 
   private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
 
   private fun WaitingList.checkCaseloadAccess() = also { checkCaseloadAccess(prisonCode) }
+
+  private fun logPrisonerAddedMetric(prisonerNumber: String) {
+    logMetric(TelemetryEvent.PRISONER_ADDED_TO_WAITLIST, prisonerNumber)
+  }
+
+  private fun logStatusChangeMetric(prisonerNumber: String, status: WaitingListStatus) {
+    if (status == WaitingListStatus.APPROVED) {
+      logMetric(TelemetryEvent.PRISONER_APPROVED_ON_WAITLIST, prisonerNumber)
+    }
+
+    if (status == WaitingListStatus.DECLINED) {
+      logMetric(TelemetryEvent.PRISONER_REJECTED_FROM_WAITLIST, prisonerNumber)
+    }
+  }
+
+  private fun logMetric(event: TelemetryEvent, prisonerNumber: String) {
+    val propertiesMap = mapOf(
+      PRISONER_NUMBER_KEY to prisonerNumber,
+    )
+    val metricsMap = mapOf(
+      NUMBER_OF_RESULTS_KEY to 1.0,
+    )
+
+    telemetryClient.trackEvent(event.value, propertiesMap, metricsMap)
+  }
 }
