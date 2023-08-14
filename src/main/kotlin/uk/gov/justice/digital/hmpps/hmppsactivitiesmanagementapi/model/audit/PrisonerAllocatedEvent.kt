@@ -10,13 +10,14 @@ class PrisonerAllocatedEvent(
   val prisonerNumber: String,
   val scheduleId: Long,
   val scheduleDescription: String,
+  val waitingListId: Long? = null,
   createdAt: LocalDateTime,
-
 ) : AuditableEvent(
   auditType = AuditType.PRISONER,
   auditEventType = AuditEventType.PRISONER_ALLOCATED,
   details = "Prisoner $prisonerNumber was allocated to " +
-    "activity '$activityName'($activityId) and schedule $scheduleDescription($scheduleId)",
+    "activity '$activityName'($activityId) and schedule $scheduleDescription($scheduleId)" +
+    (waitingListId?.let { " for waiting list '$it'" } ?: ""),
   createdAt = createdAt,
 ),
   HmppsAuditable,
