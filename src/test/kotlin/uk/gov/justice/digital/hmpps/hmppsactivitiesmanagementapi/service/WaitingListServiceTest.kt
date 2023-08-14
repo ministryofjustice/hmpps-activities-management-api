@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -30,6 +31,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
@@ -46,7 +50,8 @@ class WaitingListServiceTest {
     mock { on { findBy(schedule.activityScheduleId, DEFAULT_CASELOAD_PENTONVILLE) } doReturn schedule }
   private val waitingListRepository: WaitingListRepository = mock {}
   private val prisonApiClient: PrisonApiClient = mock()
-  private val service = WaitingListService(scheduleRepository, waitingListRepository, prisonApiClient)
+  private val telemetryClient: TelemetryClient = mock()
+  private val service = WaitingListService(scheduleRepository, waitingListRepository, prisonApiClient, telemetryClient)
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
   @Test
@@ -300,6 +305,11 @@ class WaitingListServiceTest {
       service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
 
       verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+      verify(telemetryClient).trackEvent(
+        TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+        mapOf(PRISONER_NUMBER_KEY to "123456"),
+        mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+      )
 
       with(waitingListCaptor.firstValue) {
         prisonerNumber isEqualTo "123456"
@@ -630,7 +640,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `update status`() {
+  fun `update status to APPROVED`() {
     val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
@@ -645,7 +655,40 @@ class WaitingListServiceTest {
       "Frank",
     )
 
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_APPROVED_ON_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
+
     waitingList.status isEqualTo WaitingListStatus.APPROVED
+    waitingList.updatedTime!! isCloseTo TimeSource.now()
+    waitingList.updatedBy isEqualTo "Frank"
+  }
+
+  @Test
+  fun `update status to DECLINED`() {
+    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.DECLINED),
+      "Frank",
+    )
+
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_REJECTED_FROM_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
+
+    waitingList.status isEqualTo WaitingListStatus.DECLINED
     waitingList.updatedTime!! isCloseTo TimeSource.now()
     waitingList.updatedBy isEqualTo "Frank"
   }
