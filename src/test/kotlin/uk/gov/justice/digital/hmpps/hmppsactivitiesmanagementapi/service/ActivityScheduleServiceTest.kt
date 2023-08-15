@@ -306,7 +306,11 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `successful allocation is audited`() {
-    val schedule = activitySchedule(activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode), activityScheduleId = 200, noAllocations = true)
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
     schedule.allocations() hasSize 0
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
@@ -358,13 +362,18 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocation updates APPROVED waiting list application to ALLOCATED status when present and is audited`() {
-    val schedule = activitySchedule(activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode), activityScheduleId = 200, noAllocations = true)
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
     schedule.allocations() hasSize 0
 
     val waitingListEntity = waitingList(
       prisonCode = schedule.activity.prisonCode,
-      status = WaitingListStatus.APPROVED,
-    ).copy(waitingListId = 300)
+      initialStatus = WaitingListStatus.APPROVED,
+      waitingListId = 300,
+    )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
@@ -417,8 +426,16 @@ class ActivityScheduleServiceTest {
   fun `allocation fails if more than one approved waiting list`() {
     val schedule = activitySchedule(activity = activityEntity(prisonCode = pentonvillePrisonCode))
     val waitingLists = listOf(
-      waitingList(prisonCode = schedule.activity.prisonCode, status = WaitingListStatus.APPROVED).copy(waitingListId = 1),
-      waitingList(prisonCode = schedule.activity.prisonCode, status = WaitingListStatus.APPROVED).copy(waitingListId = 2),
+      waitingList(
+        prisonCode = schedule.activity.prisonCode,
+        initialStatus = WaitingListStatus.APPROVED,
+        waitingListId = 1,
+      ),
+      waitingList(
+        prisonCode = schedule.activity.prisonCode,
+        initialStatus = WaitingListStatus.APPROVED,
+        waitingListId = 2,
+      ),
     )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))

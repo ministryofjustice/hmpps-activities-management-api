@@ -521,7 +521,7 @@ class CandidatesServiceTest {
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
         prisonerNumber = "A1234BC",
       )
-      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.REMOVED))
+      val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
 
@@ -552,7 +552,7 @@ class CandidatesServiceTest {
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
         prisonerNumber = "A1234BC",
       )
-      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.PENDING))
+      val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.PENDING))
 
       candidatesSetup(activity, allPrisoners, waitingList)
 
@@ -573,7 +573,7 @@ class CandidatesServiceTest {
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
         prisonerNumber = "A1234BC",
       )
-      val waitingList = listOf(waitingList(activity.prisonCode, "A1234BC", WaitingListStatus.APPROVED))
+      val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.APPROVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
 

@@ -556,8 +556,8 @@ class TransformFunctionsTest {
         applicationDate = TimeSource.today(),
         requestedBy = "Fred",
         comments = "Some random test comments",
-        status = WaitingListStatus.DECLINED,
         createdBy = "Bob",
+        initialStatus = WaitingListStatus.DECLINED,
       ).apply {
         this.allocation = allocation
         this.updatedBy = "Test"

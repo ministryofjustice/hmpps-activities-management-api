@@ -345,28 +345,29 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
 }
 
 fun waitingList(
+  waitingListId: Long = 1,
   prisonCode: String = pentonvillePrisonCode,
   prisonerNumber: String = "123456",
-  status: WaitingListStatus = WaitingListStatus.DECLINED,
+  initialStatus: WaitingListStatus = WaitingListStatus.DECLINED,
+  applicationDate: LocalDate = TimeSource.today(),
+  requestedBy: String = "Fred",
+  comments: String? = null,
 ): WaitingList {
   val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
   val allocation = schedule.allocations().first()
 
   return WaitingList(
-    waitingListId = 99,
+    waitingListId = waitingListId,
     prisonCode = prisonCode,
     activitySchedule = schedule,
     prisonerNumber = prisonerNumber,
     bookingId = 100L,
-    applicationDate = TimeSource.today(),
-    requestedBy = "Fred",
-    comments = "Some random test comments",
-    status = status,
+    applicationDate = applicationDate,
+    requestedBy = requestedBy,
+    comments = comments,
     createdBy = "Bob",
+    initialStatus = initialStatus,
   ).apply {
     this.allocation = allocation
-    this.updatedBy = "Test"
-    this.updatedTime = TimeSource.now()
-    this.declinedReason = "Needs to attend level one activity first"
   }
 }
