@@ -32,7 +32,7 @@ abstract class AuditableEvent(
     endTime: LocalTime? = null,
     createdAt: LocalDateTime? = null,
     createdBy: String? = null,
-  ) = JSONObject.toJSONString(
+  ): String = JSONObject.toJSONString(
     buildMap<String, Any> {
       activityId?.let { put("activityId", it) }
       activityName?.let { put("activityName", it) }

@@ -117,7 +117,7 @@ internal fun activityCategory2(code: String = "category code 2") =
     description = "category description 2",
   )
 
-internal fun schedule() = activityEntity().schedules().first()
+internal fun schedule(prisonCode: String = moorlandPrisonCode) = activityEntity(prisonCode = prisonCode).schedules().first()
 
 internal fun attendanceReasons() = mapOf(
   "SICK" to AttendanceReason(1, AttendanceReasonEnum.SICK, "Sick", false, true, true, false, false, false, true, 1, "Maps to ACCAB in NOMIS"),

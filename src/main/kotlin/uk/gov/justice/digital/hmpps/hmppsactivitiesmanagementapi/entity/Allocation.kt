@@ -95,6 +95,8 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
+  fun prisonCode() = activitySchedule.activity.prisonCode
+
   private fun activitySummary() = activitySchedule.activity.summary
 
   /**
@@ -127,7 +129,6 @@ data class Allocation(
 
   private fun maybeEndDate() =
     when {
-      endDate != null -> endDate
       activitySchedule.endDate != null -> activitySchedule.endDate
       activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
       else -> null

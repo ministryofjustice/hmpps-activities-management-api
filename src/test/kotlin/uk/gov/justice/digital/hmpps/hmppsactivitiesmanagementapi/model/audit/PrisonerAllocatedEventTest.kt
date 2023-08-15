@@ -9,29 +9,32 @@ class PrisonerAllocatedEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
-    val event = createEvent()
-    assertThat(event.auditEventType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+    assertThat(createEvent().auditEventType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
   }
 
   @Test
   fun `returns correct string representation`() {
-    val event = createEvent()
     val expectedToString = "Prisoner AA12346 was allocated to activity 'Some Activity'(1) and schedule " +
       "Some schedule(42). Event created on 2023-03-22 at 09:00:03 by Bob."
-    assertThat(event.toString()).isEqualTo(expectedToString)
+    assertThat(createEvent().toString()).isEqualTo(expectedToString)
+  }
+
+  @Test
+  fun `returns correct string representation when on waiting list`() {
+    val expectedToString = "Prisoner AA12346 was allocated to activity 'Some Activity'(1) and schedule " +
+      "Some schedule(42) for waiting list '100'. Event created on 2023-03-22 at 09:00:03 by Bob."
+    assertThat(createEvent(withWaitingListId = 100).toString()).isEqualTo(expectedToString)
   }
 
   @Test
   fun `returns the correct json representation`() {
-    val event = createEvent()
     val expectedJson =
       """{"activityId":1,"activityName":"Some Activity","prisonCode":"PBI","prisonerNumber":"AA12346","scheduleId":42,"createdAt":"2023-03-22T09:00:03","createdBy":"Bob"}"""
-    assertThat(event.toJson()).isEqualTo(expectedJson)
+    assertThat(createEvent().toJson()).isEqualTo(expectedJson)
   }
 
   @Test
   fun `returns the correct LocalAuditRecord representation`() {
-    val event = createEvent()
     val expectedLocalAuditRecord = LocalAuditRecord(
       username = "Bob",
       auditType = AuditType.PRISONER,
@@ -45,20 +48,20 @@ class PrisonerAllocatedEventTest : AuditableEventTestBase() {
         "Event created on 2023-03-22 at 09:00:03 by Bob.",
     )
 
-    assertThat(event.toLocalAuditRecord()).isEqualTo(expectedLocalAuditRecord)
+    assertThat(createEvent().toLocalAuditRecord()).isEqualTo(expectedLocalAuditRecord)
   }
 
-  private fun createEvent(): PrisonerAllocatedEvent {
+  private fun createEvent(withWaitingListId: Long? = null): PrisonerAllocatedEvent {
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
     return PrisonerAllocatedEvent(
-      1,
-      "Some Activity",
-      "PBI",
-      "AA12346",
-      42,
-      "Some schedule",
-      createdAt,
-
+      activityId = 1,
+      activityName = "Some Activity",
+      prisonCode = "PBI",
+      prisonerNumber = "AA12346",
+      scheduleId = 42,
+      scheduleDescription = "Some schedule",
+      waitingListId = withWaitingListId,
+      createdAt = createdAt,
     )
   }
 }
