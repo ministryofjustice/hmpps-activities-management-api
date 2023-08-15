@@ -85,7 +85,7 @@ class EventReviewService(
     val metricsMap = mapOf(
       NUMBER_OF_RESULTS_KEY to 1.0,
     )
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.COC.value, propertiesMap, metricsMap)
   }
 
   private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {

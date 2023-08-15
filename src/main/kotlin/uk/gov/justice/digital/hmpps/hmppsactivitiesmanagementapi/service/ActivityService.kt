@@ -138,7 +138,7 @@ class ActivityService(
     val metricsMap = mapOf(
       NUMBER_OF_RESULTS_KEY to 1.0,
     )
-    telemetryClient.trackEvent(TelemetryEvent.COC.value, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, metricsMap)
 
     val activity = Activity(
       prisonCode = request.prisonCode,
