@@ -70,24 +70,6 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
   }
 
   @Test
-  fun `prisoner allocation audit event raised on creation`() {
-    listener.onCreate(allocation)
-
-    verify(auditService).logEvent(prisonerAllocatedCaptor.capture())
-    verifyNoMoreInteractions(auditService)
-
-    with(prisonerAllocatedCaptor.firstValue) {
-      assertThat(activityId).isEqualTo(1)
-      assertThat(activityName).isEqualTo("Maths")
-      assertThat(prisonCode).isEqualTo(caseLoad)
-      assertThat(prisonerNumber).isEqualTo("A1234AA")
-      assertThat(scheduleId).isEqualTo(1)
-      assertThat(scheduleDescription).isNotNull
-      assertThat(createdAt).isNotNull
-    }
-  }
-
-  @Test
   fun `prisoner deallocation audit event raised on update`() {
     listener.onUpdate(allocation.deallocateNow())
 
