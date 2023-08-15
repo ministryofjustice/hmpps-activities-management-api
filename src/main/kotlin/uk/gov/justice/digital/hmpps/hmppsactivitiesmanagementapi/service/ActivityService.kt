@@ -28,6 +28,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -124,6 +128,15 @@ class ActivityService(
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
     checkEducationLevels(request.minimumEducationLevel)
+
+    val propertiesMap = mapOf(
+      PRISON_NAME_KEY to request.prisonCode,
+      ACTIVITY_NAME_KEY to request.summary,
+    )
+    val metricsMap = mapOf(
+      NUMBER_OF_RESULTS_KEY to 1.0,
+    )
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, metricsMap)
 
     val activity = Activity(
       prisonCode = request.prisonCode,
