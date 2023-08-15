@@ -457,10 +457,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val date = LocalDate.of(2022, 10, 1)
 
       prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
-      prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
-      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
-      prisonApiMockServer.stubGetExternalTransfersForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)

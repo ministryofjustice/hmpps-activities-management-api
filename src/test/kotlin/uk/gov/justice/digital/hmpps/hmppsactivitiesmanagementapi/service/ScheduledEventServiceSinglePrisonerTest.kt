@@ -100,7 +100,6 @@ class ScheduledEventServiceSinglePrisonerTest {
     withAppointmentSubType: String? = null,
     withPrisonerDetailsException: Boolean = false,
     prisonOverride: String = prisonCode,
-    sensitiveEvents: Boolean = false,
   ) {
     val appointments = if (!withAppointmentSubType.isNullOrEmpty()) {
       listOf(PrisonApiScheduledEventFixture.appointmentInstance(eventSubType = withAppointmentSubType))
@@ -113,11 +112,10 @@ class ScheduledEventServiceSinglePrisonerTest {
     val adjudications = listOf(adjudicationHearing(prisonCode, prisonerNumber))
     val transferEventsToday = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = LocalDate.now()))
 
-    val sensitiveEventDateRange = if (sensitiveEvents || !dateRange.endInclusive.isAfter(LocalDate.now())) {
-      dateRange
-    } else {
-      LocalDateRange(dateRange.start, LocalDate.now())
-    }
+    val sensitiveEventDateRange = LocalDateRange(
+      dateRange.start,
+      if (LocalDate.now() < dateRange.endInclusive) LocalDate.now() else dateRange.endInclusive,
+    )
 
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
@@ -306,7 +304,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -484,7 +481,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -567,7 +563,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -636,7 +631,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -707,7 +701,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -761,7 +754,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -872,7 +864,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -996,7 +987,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -1037,7 +1027,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1068,7 +1057,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1107,7 +1095,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1149,7 +1136,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1191,7 +1177,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1229,7 +1214,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           dateRange,
           null,
-          false,
           appointmentCategoryMap(),
           appointmentLocationMap(),
         )
@@ -1240,7 +1224,7 @@ class ScheduledEventServiceSinglePrisonerTest {
   }
 
   @Nested
-  @DisplayName("Scheduled events - show / hide sensitive events")
+  @DisplayName("Scheduled events - hide sensitive future events")
   inner class ShowHideSensitiveEvents {
     val prisonCode = "MDI"
     val prisonerNumber = "G4793VF"
@@ -1270,38 +1254,14 @@ class ScheduledEventServiceSinglePrisonerTest {
     }
 
     @Test
-    fun `Should fetch sensitive future events`() {
-      setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate, sensitiveEvents = true)
-
-      service.getScheduledEventsForSinglePrisoner(
-        prisonCode,
-        prisonerNumber,
-        LocalDateRange(startDate, endDate),
-        timeSlot,
-        true,
-        appointmentCategoryMap(),
-        appointmentLocationMap(),
-      )
-
-      // Should retrieve sensitive events with future date ranges
-      verifyBlocking(prisonApiClient) {
-        getScheduledCourtHearingsAsync(any(), eq(LocalDateRange(startDate, endDate)))
-      }
-      verifyBlocking(prisonApiClient) {
-        getExternalTransfersOnDateAsync(any(), any(), eq(LocalDate.now()))
-      }
-    }
-
-    @Test
     fun `Should not fetch sensitive future events`() {
-      setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate, sensitiveEvents = false)
+      setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate)
 
       service.getScheduledEventsForSinglePrisoner(
         prisonCode,
         prisonerNumber,
         LocalDateRange(startDate, endDate),
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )

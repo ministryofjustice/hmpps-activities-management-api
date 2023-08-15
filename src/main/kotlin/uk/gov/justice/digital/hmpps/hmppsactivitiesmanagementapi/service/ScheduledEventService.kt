@@ -63,7 +63,6 @@ class ScheduledEventService(
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
-    includeSensitiveEvents: Boolean = false,
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode> = emptyMap(),
     locationsForAppointmentsMap: Map<Long, Location> = emptyMap(),
   ) = runBlocking {
@@ -82,7 +81,7 @@ class ScheduledEventService(
           ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
         val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
-        getSinglePrisonerEventCalls(BookingIdPrisonerNo(bookingId, prisonerNumber), prisonRolledOut, dateRange, includeSensitiveEvents)
+        getSinglePrisonerEventCalls(BookingIdPrisonerNo(bookingId, prisonerNumber), prisonRolledOut, dateRange)
           .let { schedules ->
             PrisonerScheduledEvents(
               prisonCode,
@@ -154,16 +153,12 @@ class ScheduledEventService(
     prisoner: BookingIdPrisonerNo,
     prisonRolledOut: RolloutPrison,
     dateRange: LocalDateRange,
-    includeSensitiveEvents: Boolean = false,
   ): SinglePrisonerSchedules = coroutineScope {
-    val sensitiveEventDateRange =
-      if (includeSensitiveEvents || !dateRange.endInclusive.isAfter(LocalDate.now())) {
-        dateRange
-      } else if (dateRange.start.isAfter(LocalDate.now())) {
-        LocalDateRange.EMPTY
-      } else {
-        LocalDateRange(dateRange.start, LocalDate.now())
-      }
+    val sensitiveEventDateRange = when {
+      dateRange.start.isAfter(LocalDate.now()) -> LocalDateRange.EMPTY
+      dateRange.endInclusive.isAfter(LocalDate.now()) -> LocalDateRange(dateRange.start, LocalDate.now())
+      else -> dateRange
+    }
 
     val appointments = async {
       if (prisonRolledOut.isAppointmentsRolledOut()) {
@@ -190,7 +185,7 @@ class ScheduledEventService(
     }
 
     val transfers = async {
-      fetchExternalTransfersIfRangeIncludesToday(prisonRolledOut, prisoner.second, sensitiveEventDateRange)
+      fetchExternalTransfersIfRangeIncludesToday(prisonRolledOut, prisoner.second, dateRange)
     }
 
     val adjudications = async {
@@ -246,7 +241,6 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-    includeSensitiveEvents: Boolean = false,
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
     locationsForAppointmentsMap: Map<Long, Location>,
   ): PrisonerScheduledEvents? = runBlocking {
@@ -258,7 +252,7 @@ class ScheduledEventService(
       rolloutPrisonRepository.findByCode(prisonCode)
     } ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
 
-    getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot, includeSensitiveEvents)
+    getMultiplePrisonerEventCalls(prisonRolledOut, prisonerNumbers, date, timeSlot)
       .let { schedules ->
         PrisonerScheduledEvents(
           prisonCode,
@@ -328,7 +322,6 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot?,
-    includeSensitiveEvents: Boolean = false,
   ): MultiPrisonerSchedules = coroutineScope {
     val appointments = async {
       if (rolloutPrison.isAppointmentsRolledOut()) {
@@ -357,7 +350,7 @@ class ScheduledEventService(
     }
 
     val courtEvents = async {
-      if (includeSensitiveEvents || !date.isAfter(LocalDate.now())) {
+      if (!date.isAfter(LocalDate.now())) {
         prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(
           rolloutPrison.code,
           prisonerNumbers,
@@ -379,12 +372,7 @@ class ScheduledEventService(
     }
 
     val transfers = async {
-      if (includeSensitiveEvents || !date.isAfter(LocalDate.now())) {
-        prisonApiClient.getExternalTransfersOnDateAsync(rolloutPrison.code, prisonerNumbers, date)
-          .map { transfers -> transfers.redacted() }
-      } else {
-        emptyList()
-      }
+      fetchExternalTransfersIfDateIsToday(date, rolloutPrison.code, prisonerNumbers)
     }
 
     val adjudications = async {

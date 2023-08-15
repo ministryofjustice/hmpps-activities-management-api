@@ -147,17 +147,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
       on {
         runBlocking {
-          getOffenderAdjudications(
-            prisonCode,
-            date.rangeTo(date.plusDays(1)),
-            prisonerNumbers,
-            timeSlot,
-          )
-        }
-      } doReturn adjudications
-
-      on {
-        runBlocking {
           getExternalTransfersOnDateAsync(
             prisonCode,
             prisonerNumbers,
@@ -165,6 +154,17 @@ class ScheduledEventServiceMultiplePrisonersTest {
           )
         }
       } doReturn transferEvents
+
+      on {
+        runBlocking {
+          prisonApiClient.getOffenderAdjudications(
+            prisonCode,
+            date.rangeTo(date.plusDays(1)),
+            prisonerNumbers,
+            timeSlot,
+          )
+        }
+      } doReturn adjudications
     }
   }
 
@@ -290,26 +290,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
-        getScheduledActivitiesForPrisonerNumbersAsync(
-          any(),
-          any(),
-          any(),
-          anyOrNull(),
-        )
+        getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull())
       }
       verifyBlocking(prisonApiClient) {
-        getScheduledAppointmentsForPrisonerNumbersAsync(
-          any(),
-          any(),
-          any(),
-          anyOrNull(),
-        )
+        getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull())
       }
 
       with(scheduledEvents!!) {
@@ -454,26 +443,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         tomorrow,
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
-        getScheduledActivitiesForPrisonerNumbersAsync(
-          any(),
-          any(),
-          any(),
-          anyOrNull(),
-        )
+        getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull())
       }
       verifyBlocking(prisonApiClient) {
-        getScheduledAppointmentsForPrisonerNumbersAsync(
-          any(),
-          any(),
-          any(),
-          anyOrNull(),
-        )
+        getScheduledAppointmentsForPrisonerNumbersAsync(any(), any(), any(), anyOrNull())
       }
 
       with(scheduledEvents!!) {
@@ -579,7 +557,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )
@@ -671,7 +648,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
   }
 
   @Nested
-  @DisplayName("Scheduled events - show / hide sensitive events")
+  @DisplayName("Scheduled events - hide sensitive future events")
   inner class ShowHideSensitiveEvents {
     val prisonCode = "MDI"
     val bookingId = 900001L
@@ -702,29 +679,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
 
     @Test
-    fun `Should fetch sensitive future events`() {
-      setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
-
-      service.getScheduledEventsForMultiplePrisoners(
-        prisonCode,
-        prisonerNumbers,
-        tomorrow,
-        timeSlot,
-        true,
-        appointmentCategoryMap(),
-        appointmentLocationMap(),
-      )
-
-      // Should retrieve sensitive events with future date ranges
-      verifyBlocking(prisonApiClient) {
-        getScheduledCourtEventsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, tomorrow, timeSlot)
-      }
-      verifyBlocking(prisonApiClient) {
-        getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, tomorrow)
-      }
-    }
-
-    @Test
     fun `Should not fetch sensitive future events`() {
       setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
 
@@ -733,7 +687,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         tomorrow,
         timeSlot,
-        false,
         appointmentCategoryMap(),
         appointmentLocationMap(),
       )

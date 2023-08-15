@@ -165,18 +165,6 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetExternalTransfersForPrisonerNumbers(prisonCode: String, date: LocalDate) {
-    stubFor(
-      WireMock.post(WireMock.urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBodyFile("prisonapi/schedules/external-transfers-1.json")
-            .withStatus(200),
-        ),
-    )
-  }
-
   fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null, jsonFileSuffix: String = "") {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
