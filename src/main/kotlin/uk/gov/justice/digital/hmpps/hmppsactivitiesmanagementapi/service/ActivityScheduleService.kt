@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import toPrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -38,10 +39,11 @@ class ActivityScheduleService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val auditService: AuditService,
 ) {
 
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   fun getScheduledInternalLocations(
@@ -83,20 +85,16 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> {
-    val schedule = repository.findOrThrowNotFound(scheduleId)
-    checkCaseloadAccess(schedule.activity.prisonCode)
-
-    return schedule.allocations()
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> =
+    repository
+      .findOrThrowNotFound(scheduleId)
+      .checkCaseloadAccess()
+      .allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
-  }
 
-  fun getScheduleById(scheduleId: Long): ModelActivitySchedule {
-    val schedule = repository.findOrThrowNotFound(scheduleId).toModelSchedule()
-    checkCaseloadAccess(schedule.activity.prisonCode)
-    return schedule
-  }
+  fun getScheduleById(scheduleId: Long) =
+    repository.findOrThrowNotFound(scheduleId).checkCaseloadAccess().toModelSchedule()
 
   @Transactional
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
@@ -130,13 +128,22 @@ class ActivityScheduleService(
       endDate = request.endDate,
       allocatedBy = allocatedBy,
     ).let { allocation ->
-      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+      val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
         schedule.activity.prisonCode,
         request.prisonerNumber,
         schedule,
       )
         .filter { it.status == WaitingListStatus.APPROVED }
-        .forEach { it.allocated(allocation) }
+        .also {
+          require(it.size <= 1) {
+            "" +
+              "Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list"
+          }
+        }
+        .singleOrNull()?.allocated(allocation)
+
+      repository.saveAndFlush(schedule)
+      auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
     }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
@@ -164,7 +171,10 @@ class ActivityScheduleService(
   }
 
   private fun String?.toDeallocationReason() =
-    DeallocationReason.values()
+    DeallocationReason.entries
       .filter(DeallocationReason::displayed)
-      .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
+      .firstOrNull { it.name == this }
+      ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
+
+  private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
 }

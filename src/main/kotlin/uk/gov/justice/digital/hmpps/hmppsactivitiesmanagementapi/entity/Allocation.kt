@@ -95,6 +95,8 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
+  fun prisonCode() = activitySchedule.activity.prisonCode
+
   private fun activitySummary() = activitySchedule.activity.summary
 
   /**
