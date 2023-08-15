@@ -322,11 +322,11 @@ class ActivityService(
     activityRepository.saveAndFlush(activity)
 
     val propertiesMap = mapOf(
-      "prisonName" to prisonCode,
-      "activityName" to request.summary,
+      PRISON_NAME_KEY to prisonCode,
+      ACTIVITY_NAME_KEY to request.summary,
     )
 
-    telemetryClient.trackEvent("SAA-EditActivity", propertiesMap, metricsMap())
+    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, metricsMap())
 
     return transform(activity)
   }

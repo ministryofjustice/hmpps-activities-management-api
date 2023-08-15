@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -11,6 +12,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.E
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_BY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_TIME_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_REVIEW_IDS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
@@ -20,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventRevi
 class EventReviewService(
   private val eventReviewRepository: EventReviewRepository,
   private val eventReviewSearchSpecification: EventReviewSearchSpecification,
+  private val telemetryClient: TelemetryClient,
 ) {
   fun getFilteredEvents(
     page: Int,
@@ -69,6 +76,16 @@ class EventReviewService(
       it.acknowledgedTime = LocalDateTime.now()
     }
     eventReviewRepository.saveAllAndFlush(updatedEvents)
+
+    val propertiesMap = mapOf(
+      ACKNOWLEDGED_BY_KEY to name,
+      ACKNOWLEDGED_TIME_KEY to LocalDateTime.now().toString(),
+      EVENT_REVIEW_IDS_KEY to req.eventReviewIds.joinToString { "," },
+    )
+    val metricsMap = mapOf(
+      NUMBER_OF_RESULTS_KEY to 1.0,
+    )
+    telemetryClient.trackEvent(TelemetryEvent.COC.value, propertiesMap, metricsMap)
   }
 
   private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {
