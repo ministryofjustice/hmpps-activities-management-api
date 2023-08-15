@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -24,7 +25,8 @@ import java.time.LocalDateTime
 class EventReviewServiceTest {
   private val eventReviewRepository = mock<EventReviewRepository>()
   private val eventReviewSearchSpecification: EventReviewSearchSpecification = spy()
-  private val eventReviewService = EventReviewService(eventReviewRepository, eventReviewSearchSpecification)
+  private val telemetryClient: TelemetryClient = mock()
+  private val eventReviewService = EventReviewService(eventReviewRepository, eventReviewSearchSpecification, telemetryClient)
 
   @Test
   fun `returns rows based on a search specification`() {
