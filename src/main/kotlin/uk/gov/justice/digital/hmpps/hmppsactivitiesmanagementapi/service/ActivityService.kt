@@ -62,6 +62,7 @@ class ActivityService(
   }
 
   fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
+    // TODO: Caseload check
     val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
       ?: throw (EntityNotFoundException("Activity $activityId not found"))
@@ -76,6 +77,7 @@ class ActivityService(
   }
 
   fun getActivityBasicById(activityId: Long): ModelActivityBasic {
+    // TODO: Caseload check
     val activityBasic = activityRepository.getActivityBasicById(activityId)
       ?: throw EntityNotFoundException("Activity $activityId not found.")
     return transform(activityBasic)
