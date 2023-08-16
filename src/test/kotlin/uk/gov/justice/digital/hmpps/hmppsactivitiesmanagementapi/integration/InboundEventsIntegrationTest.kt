@@ -20,14 +20,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
@@ -35,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
@@ -56,9 +56,6 @@ import java.time.temporal.ChronoUnit
 )
 class InboundEventsIntegrationTest : IntegrationTestBase() {
 
-  @Autowired
-  private lateinit var auditRepository: AuditRepository
-
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
 
@@ -72,6 +69,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   private lateinit var eventReviewRepository: EventReviewRepository
 
   @Autowired
+  private lateinit var waitingListRepository: WaitingListRepository
+
+  @Autowired
   private lateinit var appointmentOccurrenceRepository: AppointmentOccurrenceRepository
 
   @Autowired
@@ -79,8 +79,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
-
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -98,9 +96,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(eventReviewRepository.count()).isEqualTo(0)
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     // This event falls back to being processed as an interesting event due to the unknown reason for release
     service.process(
@@ -113,17 +109,15 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     assertThat(eventReviewRepository.count()).isEqualTo(1L)
     verifyNoInteractions(outboundEventsService)
   }
 
   @Test
-  @Sql("classpath:test_data/seed-activity-id-1.sql")
-  fun `permanent release of prisoner from remand`() {
+  @Sql("classpath:test_data/seed-offender-for-release.sql")
+  fun `permanent release of prisoner from remand ends allocations and declines waiting list for offender`() {
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A11111A",
       fullInfo = true,
@@ -131,16 +125,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-from-remand",
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
-    }
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
@@ -158,8 +149,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
       assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":2,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
     }
-
-    // TODO check rows created as expected in the local audit table.
   }
 
   @Test
@@ -182,8 +171,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/seed-activity-id-1.sql", "classpath:test_data/seed-appointment-search.sql")
-  fun `permanent release of prisoner from custodial sentence`() {
+  @Sql("classpath:test_data/seed-offender-for-release.sql", "classpath:test_data/seed-appointment-search.sql")
+  fun `permanent release of prisoner from custodial sentence ends allocations and declines waiting list for offender`() {
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A11111A",
       fullInfo = true,
@@ -191,24 +180,21 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-from-custodial-sentence",
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
-    }
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
   }
 
   @Test
-  @Sql("classpath:test_data/seed-activity-id-1.sql")
-  fun `permanent release of prisoner due to death in prison`() {
+  @Sql("classpath:test_data/seed-offender-for-release.sql")
+  fun `permanent release of prisoner due to death in prison ends allocations and declines waiting list for offender`() {
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A11111A",
       fullInfo = true,
@@ -216,16 +202,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-on-death-in-prison",
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.DIED)
-    }
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.DIED)
+    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
@@ -241,18 +224,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       jsonFileSuffix = "-released-from-remand",
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
-    }
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
@@ -429,9 +407,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -481,9 +457,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `two allocations and two future attendance are unsuspended on receipt of offender received event for prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").forEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     // Suspending first so can unspend afterwards.
     service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.SUSPEND))
@@ -569,22 +543,36 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
   fun `allocations are ended and future attendances are removed on receipt of activities changed event for prisoner`() {
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-    }
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
 
     service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.END))
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
-      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.TEMPORARY_ABSENCE)
-    }
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.TEMPORARY_ABSENCE)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
+  }
+
+  private fun assertThatAllocationsAreActiveFor(prisonCode: String, prisonerNumber: String) {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, prisonerNumber).onEach {
+      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
+    }
+  }
+
+  private fun assertThatAllocationsAreEndedFor(prisonCode: String, prisonerNumber: String, reasonOverride: DeallocationReason = DeallocationReason.RELEASED) {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, prisonerNumber).onEach {
+      assertThat(it.status(PrisonerStatus.ENDED)).isTrue
+      assertThat(it.deallocatedReason).isEqualTo(reasonOverride)
+    }
+  }
+
+  private fun assertThatWaitingListStatusIs(status: WaitingListStatus, prisonCode: String, vararg prisonerNumbers: String) {
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers.asList().toSet()).onEach {
+      assertThat(it.status).isEqualTo(status)
+    }
   }
 }

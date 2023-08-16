@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -28,7 +27,6 @@ import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
-@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -242,7 +240,12 @@ class WaitingListService(
   }
 
   @Transactional
-  fun declinePendingOrApprovedApplicationsFor(prisonCode: String, prisonerNumbers: Set<String>, reason: String, declinedBy: String) {
+  fun declinePendingOrApprovedApplicationsFor(
+    prisonCode: String,
+    prisonerNumbers: Set<String>,
+    reason: String,
+    declinedBy: String,
+  ) {
     waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers)
       .filter { it.isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED) }
       .forEach { application ->
