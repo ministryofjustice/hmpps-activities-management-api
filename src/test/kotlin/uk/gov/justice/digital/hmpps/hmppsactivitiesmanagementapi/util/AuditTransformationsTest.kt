@@ -43,7 +43,7 @@ class AuditTransformationsTest {
 
   @Test
   fun `transform to prisoner added to waiting list event`() {
-    val waitingList = waitingList(moorlandPrisonCode)
+    val waitingList = waitingList(prisonCode = moorlandPrisonCode)
 
     with(waitingList.toPrisonerAddedToWaitingListEvent()) {
       activityId isEqualTo waitingList.activity.activityId

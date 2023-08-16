@@ -72,7 +72,7 @@ class WaitingListService(
         requestedBy = request.requestedBy!!,
         comments = request.comments,
         createdBy = createdBy,
-        status = request.status!!,
+        initialStatus = request.status!!,
       ),
     )
       .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
@@ -239,5 +239,25 @@ class WaitingListService(
     )
 
     telemetryClient.trackEvent(event.value, propertiesMap, metricsMap())
+  }
+
+  @Transactional
+  fun declinePendingOrApprovedApplicationsFor(prisonCode: String, prisonerNumbers: Set<String>, reason: String, declinedBy: String) {
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers)
+      .filter { it.isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED) }
+      .forEach { application ->
+        val statusBefore = application.status
+
+        application.apply {
+          status = WaitingListStatus.DECLINED
+          declinedReason = reason
+          updatedTime = LocalDateTime.now()
+          updatedBy = declinedBy
+        }
+
+        // TODO needs to be audited???
+
+        log.info("Declined $statusBefore waiting list application ${application.waitingListId} for prisoner number ${application.prisonerNumber}")
+      }
   }
 }

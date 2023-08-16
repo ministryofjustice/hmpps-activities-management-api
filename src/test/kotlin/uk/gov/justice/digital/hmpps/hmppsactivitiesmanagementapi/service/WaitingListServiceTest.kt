@@ -108,11 +108,23 @@ class WaitingListServiceTest {
       status = WaitingListStatus.PENDING,
     )
 
-    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.ALLOCATED), "test") }
+    assertThatThrownBy {
+      service.addPrisoner(
+        DEFAULT_CASELOAD_PENTONVILLE,
+        request.copy(status = WaitingListStatus.ALLOCATED),
+        "test",
+      )
+    }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
 
-    assertThatThrownBy { service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request.copy(status = WaitingListStatus.REMOVED), "test") }
+    assertThatThrownBy {
+      service.addPrisoner(
+        DEFAULT_CASELOAD_PENTONVILLE,
+        request.copy(status = WaitingListStatus.REMOVED),
+        "test",
+      )
+    }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Only statuses of PENDING, APPROVED and DECLINED are allowed when adding a prisoner to a waiting list")
   }
@@ -391,8 +403,8 @@ class WaitingListServiceTest {
       applicationDate = TimeSource.today(),
       requestedBy = "Fred",
       comments = "Some random test comments",
-      status = WaitingListStatus.DECLINED,
       createdBy = "Bob",
+      initialStatus = WaitingListStatus.DECLINED,
     ).apply {
       this.allocation = allocation
       this.updatedBy = "Test"
@@ -442,7 +454,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `get waiting list by id`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(waitingListId = 99)
+    val waitingList = waitingList(waitingListId = 99, prisonCode = pentonvillePrisonCode)
 
     whenever(waitingListRepository.findById(waitingList.waitingListId)) doReturn Optional.of(waitingList)
 
@@ -451,7 +463,12 @@ class WaitingListServiceTest {
 
   @Test
   fun `get waiting list by id fails if does not have case load access`() {
-    whenever(waitingListRepository.findById(99)) doReturn Optional.of(waitingList("WRONG_CASELOAD").copy(waitingListId = 99))
+    whenever(waitingListRepository.findById(99)) doReturn Optional.of(
+      waitingList(
+        waitingListId = 99,
+        prisonCode = "WRONG_CASELOAD",
+      ),
+    )
 
     assertThatThrownBy { service.getWaitingListBy(99) }.isInstanceOf(CaseloadAccessException::class.java)
   }
@@ -467,7 +484,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(applicationDate = TimeSource.today()).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, applicationDate = TimeSource.today()).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -488,7 +505,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date no-op if the same`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(applicationDate = TimeSource.today()).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, applicationDate = TimeSource.today()).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -509,7 +526,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date fails if after creation date`() {
-    val waitingList = waitingList(pentonvillePrisonCode).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -528,7 +545,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested by`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -549,7 +566,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested by no-op if the same`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -570,7 +587,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested fails if blank or empty`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -599,7 +616,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update comments`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(comments = "Initial comments").also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, comments = "Initial comments").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -620,7 +637,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update comments no-op if the same`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(comments = "Initial comments").also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, comments = "Initial comments").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -641,7 +658,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status to APPROVED`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -668,7 +685,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status to DECLINED`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -695,7 +712,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status no-op if the same`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -716,9 +733,10 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if already allocated`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.ALLOCATED).also {
-      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
-    }
+    val waitingList =
+      waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.ALLOCATED).also {
+        whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+      }
 
     assertThatThrownBy {
       service.updateWaitingList(
@@ -737,7 +755,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if already removed`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.REMOVED).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.REMOVED).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -758,7 +776,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if not PENDING, APPROVED or DECLINED`() {
-    val waitingList = waitingList(pentonvillePrisonCode).copy(status = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -790,13 +808,61 @@ class WaitingListServiceTest {
 
   @Test
   fun `update fails if incorrect caseload`() {
-    val waitingList = waitingList(moorlandPrisonCode).copy(status = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = moorlandPrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
     assertThatThrownBy {
-      service.updateWaitingList(waitingList.waitingListId, WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED), "Frank")
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.ALLOCATED),
+        "Frank",
+      )
     }
       .isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `declines pending and approved applications only`() {
+    val pending = waitingList(waitingListId = 1, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.PENDING)
+    val approved = waitingList(waitingListId = 2, prisonCode = moorlandPrisonCode, prisonerNumber = "B", initialStatus = WaitingListStatus.APPROVED)
+    val allocated = waitingList(waitingListId = 3, prisonCode = moorlandPrisonCode, prisonerNumber = "C", initialStatus = WaitingListStatus.ALLOCATED)
+    val removed = waitingList(waitingListId = 4, prisonCode = moorlandPrisonCode, prisonerNumber = "D", initialStatus = WaitingListStatus.REMOVED)
+
+    whenever(
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(
+        prisonCode = moorlandPrisonCode,
+        setOf("A", "B", "C", "D"),
+      ),
+    ) doReturn listOf(pending, approved, allocated, removed)
+
+    service.declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("A", "B", "C", "D"), "reason", "Fred")
+
+    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberIn(moorlandPrisonCode, setOf("A", "B", "C", "D"))
+
+    with(pending) {
+      status isEqualTo WaitingListStatus.DECLINED
+      declinedReason isEqualTo "reason"
+      updatedTime!! isCloseTo TimeSource.now()
+      updatedBy isEqualTo "Fred"
+    }
+    with(approved) {
+      status isEqualTo WaitingListStatus.DECLINED
+      declinedReason isEqualTo "reason"
+      updatedTime!! isCloseTo TimeSource.now()
+      updatedBy isEqualTo "Fred"
+    }
+    with(allocated) {
+      status isEqualTo WaitingListStatus.ALLOCATED
+      declinedReason isEqualTo null
+      updatedTime isEqualTo null
+      updatedBy isEqualTo null
+    }
+    with(removed) {
+      status isEqualTo WaitingListStatus.REMOVED
+      declinedReason isEqualTo null
+      updatedTime isEqualTo null
+      updatedBy isEqualTo null
+    }
   }
 }
