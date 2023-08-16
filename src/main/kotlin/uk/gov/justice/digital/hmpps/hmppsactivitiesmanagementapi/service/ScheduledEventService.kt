@@ -142,7 +142,7 @@ class ScheduledEventService(
 
   private data class SinglePrisonerSchedules(
     val appointments: List<PrisonApiScheduledEvent>,
-    val courtHearings: CourtHearings,
+    val courtHearings: CourtHearings?,
     val visits: List<PrisonApiScheduledEvent>,
     val activities: List<PrisonApiScheduledEvent>,
     val transfers: List<PrisonerSchedule>,
@@ -154,6 +154,12 @@ class ScheduledEventService(
     prisonRolledOut: RolloutPrison,
     dateRange: LocalDateRange,
   ): SinglePrisonerSchedules = coroutineScope {
+    val sensitiveEventDateRange = when {
+      dateRange.start.isAfter(LocalDate.now()) -> LocalDateRange.EMPTY
+      dateRange.endInclusive.isAfter(LocalDate.now()) -> LocalDateRange(dateRange.start, LocalDate.now())
+      else -> dateRange
+    }
+
     val appointments = async {
       if (prisonRolledOut.isAppointmentsRolledOut()) {
         emptyList()
@@ -171,7 +177,7 @@ class ScheduledEventService(
     }
 
     val courtHearings = async {
-      prisonApiClient.getScheduledCourtHearingsAsync(prisoner.first, dateRange)
+      prisonApiClient.getScheduledCourtHearingsAsync(prisoner.first, sensitiveEventDateRange)
     }
 
     val visits = async {
@@ -318,7 +324,7 @@ class ScheduledEventService(
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
     val appointments = async {
-      if (rolloutPrison.isAppointmentsRolledOut() || prisonerNumbers.isEmpty()) {
+      if (rolloutPrison.isAppointmentsRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -331,7 +337,7 @@ class ScheduledEventService(
     }
 
     val activities = async {
-      if (rolloutPrison.isActivitiesRolledOut() || prisonerNumbers.isEmpty()) {
+      if (rolloutPrison.isActivitiesRolledOut()) {
         emptyList()
       } else {
         prisonApiClient.getScheduledActivitiesForPrisonerNumbersAsync(
@@ -344,29 +350,25 @@ class ScheduledEventService(
     }
 
     val courtEvents = async {
-      if (prisonerNumbers.isEmpty()) {
-        emptyList()
-      } else {
+      if (!date.isAfter(LocalDate.now())) {
         prisonApiClient.getScheduledCourtEventsForPrisonerNumbersAsync(
           rolloutPrison.code,
           prisonerNumbers,
           date,
           timeSlot,
         )
+      } else {
+        emptyList()
       }
     }
 
     val visits = async {
-      if (prisonerNumbers.isEmpty()) {
-        emptyList()
-      } else {
-        prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(
-          rolloutPrison.code,
-          prisonerNumbers,
-          date,
-          timeSlot,
-        )
-      }
+      prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(
+        rolloutPrison.code,
+        prisonerNumbers,
+        date,
+        timeSlot,
+      )
     }
 
     val transfers = async {
@@ -374,16 +376,12 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      if (prisonerNumbers.isEmpty()) {
-        emptyList()
-      } else {
-        prisonApiClient.getOffenderAdjudications(
-          rolloutPrison.code,
-          date.rangeTo(date.plusDays(1)),
-          prisonerNumbers,
-          timeSlot,
-        )
-      }
+      prisonApiClient.getOffenderAdjudications(
+        rolloutPrison.code,
+        date.rangeTo(date.plusDays(1)),
+        prisonerNumbers,
+        timeSlot,
+      )
     }
 
     MultiPrisonerSchedules(

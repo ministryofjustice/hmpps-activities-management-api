@@ -80,12 +80,12 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
 Takes a list of Prison API CourtHearings for a single person from NOMIS.
 Produces a list of SAA ScheduledEvents for court hearings.
 */
-fun PrisonApiCourtHearings.nomisCourtHearingsToScheduledEvents(
+fun PrisonApiCourtHearings?.nomisCourtHearingsToScheduledEvents(
   bookingId: Long,
   prisonCode: String?,
   prisonerNumber: String?,
   priority: Int,
-) = this.hearings?.map {
+) = this?.hearings?.map {
   ModelScheduleEvent(
     prisonCode = prisonCode,
     eventSource = "NOMIS",
@@ -113,7 +113,7 @@ fun PrisonApiCourtHearings.nomisCourtHearingsToScheduledEvents(
     endTime = null,
     priority = priority,
   )
-}
+} ?: emptyList()
 
 /*
  Takes a list of NOMIS OffenderAdjudicationHearing events (single or multiple people).
