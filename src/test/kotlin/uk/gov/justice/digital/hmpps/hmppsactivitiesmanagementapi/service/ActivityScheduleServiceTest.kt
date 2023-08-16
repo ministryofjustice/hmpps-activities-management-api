@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -36,6 +37,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -53,8 +57,9 @@ class ActivityScheduleServiceTest {
   private val waitingListRepository: WaitingListRepository = mock()
   private val auditService: AuditService = mock()
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
+  private val telemetryClient: TelemetryClient = mock()
   private val service =
-    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService)
+    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService, telemetryClient)
 
   private val caseLoad = pentonvillePrisonCode
 
@@ -140,6 +145,11 @@ class ActivityScheduleServiceTest {
 
     verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
     verify(repository).saveAndFlush(schedule)
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_DEALLOCATED.value,
+      mapOf(PRISONER_NUMBER_KEY to "1"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
   }
 
   @Test
@@ -338,6 +348,12 @@ class ActivityScheduleServiceTest {
       waitingListId isEqualTo null
       createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
+
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ALLOCATED.value,
+      mapOf(PRISONER_NUMBER_KEY to "654321"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
   }
 
   @Test

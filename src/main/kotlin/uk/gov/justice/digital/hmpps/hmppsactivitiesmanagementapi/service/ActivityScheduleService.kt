@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,6 +25,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.metricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -40,6 +44,7 @@ class ActivityScheduleService(
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   companion object {
@@ -144,6 +149,7 @@ class ActivityScheduleService(
 
       repository.saveAndFlush(schedule)
       auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
+      logAllocationEvent(request.prisonerNumber)
     }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
@@ -165,6 +171,7 @@ class ActivityScheduleService(
       request.prisonerNumbers!!.distinct().forEach {
         deallocatePrisonerOn(it, request.endDate!!, request.reasonCode.toDeallocationReason(), deallocatedBy)
         log.info("Planned deallocation of prisoner $it from activity schedule id ${this.activityScheduleId}")
+        logDeallocationEvent(it)
       }
       repository.saveAndFlush(this)
     }
@@ -177,4 +184,20 @@ class ActivityScheduleService(
       ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 
   private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
+
+  private fun logAllocationEvent(prisonerNumber: String) {
+    logMetric(TelemetryEvent.PRISONER_ALLOCATED, prisonerNumber)
+  }
+
+  private fun logDeallocationEvent(prisonerNumber: String) {
+    logMetric(TelemetryEvent.PRISONER_DEALLOCATED, prisonerNumber)
+  }
+
+  private fun logMetric(event: TelemetryEvent, prisonerNumber: String) {
+    val propertiesMap = mapOf(
+      PRISONER_NUMBER_KEY to prisonerNumber,
+    )
+
+    telemetryClient.trackEvent(event.value, propertiesMap, metricsMap())
+  }
 }
