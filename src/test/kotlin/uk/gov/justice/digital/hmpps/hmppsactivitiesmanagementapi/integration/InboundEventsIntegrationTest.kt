@@ -543,13 +543,15 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
   fun `allocations are ended and future attendances are removed on receipt of activities changed event for prisoner`() {
-    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A11111A")
+    assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A22222A")
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A22222A")
 
-    service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A11111A", action = Action.END))
+    service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A22222A", action = Action.END))
 
-    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.TEMPORARY_ABSENCE)
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARY_ABSENCE)
+    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
