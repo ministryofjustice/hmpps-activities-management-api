@@ -581,7 +581,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.internalLocationId).isEqualTo(101L)
-          assertThat(it.internalLocationCode).isEqualTo("Unknown")
+          assertThat(it.internalLocationCode).isEqualTo("No information available")
           assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
           assertThat(it.cancelled).isFalse
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
