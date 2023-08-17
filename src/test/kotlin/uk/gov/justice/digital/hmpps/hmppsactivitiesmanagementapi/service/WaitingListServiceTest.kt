@@ -39,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 
 @ExtendWith(FakeCaseLoad::class)
@@ -804,11 +803,13 @@ class WaitingListServiceTest {
         whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
 
         val moreRecentApplication = waitingList(waitingListId = 2, prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
-        whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
-          it.prisonCode,
-          it.prisonerNumber,
-          it.activitySchedule,
-        )) doReturn listOf(it, moreRecentApplication)
+        whenever(
+          waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+            it.prisonCode,
+            it.prisonerNumber,
+            it.activitySchedule,
+          ),
+        ) doReturn listOf(it, moreRecentApplication)
       }
 
     assertThatThrownBy {

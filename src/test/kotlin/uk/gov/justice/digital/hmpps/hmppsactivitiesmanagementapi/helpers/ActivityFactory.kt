@@ -356,14 +356,14 @@ fun waitingList(
 ): WaitingList {
   val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
     .apply {
-       if (allocated) {
-         allocatePrisoner(
-           prisonerNumber = prisonerNumber.toPrisonerNumber(),
-           bookingId = 10001,
-           payBand = lowPayBand,
-           allocatedBy = "Mr Blogs"
-         )
-       }
+      if (allocated) {
+        allocatePrisoner(
+          prisonerNumber = prisonerNumber.toPrisonerNumber(),
+          bookingId = 10001,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+        )
+      }
     }
 
   val allocation = schedule.allocations().first()
