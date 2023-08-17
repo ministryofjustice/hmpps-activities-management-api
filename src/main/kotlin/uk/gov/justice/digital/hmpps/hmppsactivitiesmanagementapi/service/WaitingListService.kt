@@ -161,7 +161,7 @@ class WaitingListService(
       "The waiting list $waitingListId can no longer be updated"
     }
 
-    require(activitySchedule.allocations(true).find { it.prisonerNumber == prisonerNumber } === null) {
+    require(activitySchedule.allocations(true).none { it.prisonerNumber == prisonerNumber }) {
       "The waiting list $waitingListId can no longer be updated because the prisoner has already been allocated to the activity"
     }
 
@@ -170,9 +170,9 @@ class WaitingListService(
         prisonCode,
         prisonerNumber,
         activitySchedule,
-      ).filter { it !== this }
+      ).filter { it != this }
 
-    require(otherApplications.find { (it.updatedTime ?: it.creationTime) > (updatedTime ?: creationTime) } === null) {
+    require(otherApplications.none { (it.updatedTime ?: it.creationTime) > (updatedTime ?: creationTime) }) {
       "The waiting list $waitingListId can no longer be updated because there is a more recent application for this prisoner"
     }
   }

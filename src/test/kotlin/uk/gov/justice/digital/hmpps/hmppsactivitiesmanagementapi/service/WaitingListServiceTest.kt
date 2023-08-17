@@ -809,7 +809,7 @@ class WaitingListServiceTest {
             it.prisonerNumber,
             it.activitySchedule,
           ),
-        ) doReturn listOf(it, moreRecentApplication)
+        ) doReturn listOf(it.copy(), moreRecentApplication)
       }
 
     assertThatThrownBy {
