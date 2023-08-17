@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
@@ -26,6 +27,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment as BulkAppointmentEntity
 
+const val MAX_SYNC_CREATE_APPOINTMENT_INSTANCES = 1000
+const val MAX_APPOINTMENT_INSTANCES = 20000
+
 @Service
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
@@ -34,6 +38,7 @@ class AppointmentService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long): Appointment {
@@ -76,8 +81,11 @@ class AppointmentService(
       }
     }
 
-  fun createAppointment(request: AppointmentCreateRequest, principal: Principal) =
-    createPrisonerMap(request.prisonerNumbers, request.prisonCode).let { prisonerBookings ->
+  fun createAppointment(request: AppointmentCreateRequest, principal: Principal): Appointment {
+    val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
+    val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > MAX_SYNC_CREATE_APPOINTMENT_INSTANCES } ?: false
+
+    val appointment = appointmentRepository.saveAndFlush(
       buildValidAppointmentEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
@@ -93,8 +101,16 @@ class AppointmentService(
         repeat = request.repeat,
         comment = request.comment,
         createdBy = principal.name,
-      ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
+        createFirstOccurrenceOnly = createFirstOccurrenceOnly,
+      ),
+    )
+
+    if (createFirstOccurrenceOnly) {
+      createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
     }
+
+    return appointment.toModel()
+  }
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
     mapOf(request.prisonerNumber!! to request.bookingId.toString()).let { prisonerBookings ->
@@ -140,10 +156,9 @@ class AppointmentService(
   }
 
   private fun failIfMaximumOccurrencesExceeded(prisonerNumbers: List<String>, repeat: AppointmentRepeat?) {
-    val maxOccurrenceAllocations = 20000
     val repeatCount = repeat?.count ?: 1
-    require(prisonerNumbers.size * repeatCount <= maxOccurrenceAllocations) {
-      "You cannot schedule more than ${maxOccurrenceAllocations / prisonerNumbers.size} appointments for this number of attendees."
+    require(prisonerNumbers.size * repeatCount <= MAX_APPOINTMENT_INSTANCES) {
+      "You cannot schedule more than ${MAX_APPOINTMENT_INSTANCES / prisonerNumbers.size} appointments for this number of attendees."
     }
   }
 
@@ -167,6 +182,7 @@ class AppointmentService(
     updatedBy: String? = null,
     isCancelled: Boolean = false,
     isMigrated: Boolean = false,
+    createFirstOccurrenceOnly: Boolean = false,
   ): AppointmentEntity {
     failIfMaximumOccurrencesExceeded(prisonerNumbers, repeat)
 
@@ -203,6 +219,8 @@ class AppointmentService(
       }
 
       this.scheduleIterator().withIndex().forEach {
+        if (createFirstOccurrenceOnly && it.index > 0) return@forEach
+
         this.addOccurrence(
           AppointmentOccurrenceEntity(
             appointment = this,
