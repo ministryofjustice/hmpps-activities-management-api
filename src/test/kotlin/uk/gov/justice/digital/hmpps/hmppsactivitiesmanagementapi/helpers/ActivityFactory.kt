@@ -352,8 +352,20 @@ fun waitingList(
   applicationDate: LocalDate = TimeSource.today(),
   requestedBy: String = "Fred",
   comments: String? = null,
+  allocated: Boolean = false,
 ): WaitingList {
   val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
+    .apply {
+       if (allocated) {
+         allocatePrisoner(
+           prisonerNumber = prisonerNumber.toPrisonerNumber(),
+           bookingId = 10001,
+           payBand = lowPayBand,
+           allocatedBy = "Mr Blogs"
+         )
+       }
+    }
+
   val allocation = schedule.allocations().first()
 
   return WaitingList(

@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Optional
 
 @ExtendWith(FakeCaseLoad::class)
@@ -770,6 +771,57 @@ class WaitingListServiceTest {
       .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated")
 
     waitingList.status isEqualTo WaitingListStatus.REMOVED
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update application fails if person is already allocated to the activity`() {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING, allocated = true)
+      .also {
+        whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+      }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated because the prisoner has already been allocated to the activity")
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update application fails if person has a more recent application for the same activity`() {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+      .also {
+        whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+
+        val moreRecentApplication = waitingList(waitingListId = 2, prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+        whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+          it.prisonCode,
+          it.prisonerNumber,
+          it.activitySchedule,
+        )) doReturn listOf(it, moreRecentApplication)
+      }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated because there is a more recent application for this prisoner")
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
   }

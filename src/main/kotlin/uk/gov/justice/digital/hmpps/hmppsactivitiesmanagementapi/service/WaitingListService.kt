@@ -160,6 +160,21 @@ class WaitingListService(
     require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
       "The waiting list $waitingListId can no longer be updated"
     }
+
+    require(activitySchedule.allocations(true).find { it.prisonerNumber == prisonerNumber } === null) {
+      "The waiting list $waitingListId can no longer be updated because the prisoner has already been allocated to the activity"
+    }
+
+    val otherApplications =
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        prisonCode,
+        prisonerNumber,
+        activitySchedule,
+      ).filter { it !== this }
+
+    require(otherApplications.find { (it.updatedTime ?: it.creationTime) > (updatedTime ?: creationTime) } === null) {
+      "The waiting list $waitingListId can no longer be updated because there is a more recent application for this prisoner"
+    }
   }
 
   private fun WaitingList.updateApplicationDate(request: WaitingListApplicationUpdateRequest, changedBy: String) {
