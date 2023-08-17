@@ -8,6 +8,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -40,6 +41,7 @@ class ManageAllocationsServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonRegimeRepository: PrisonRegimeRepository = mock()
   private val searchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val waitingListService: WaitingListService = mock()
 
   private val service =
     ManageAllocationsService(
@@ -49,6 +51,7 @@ class ManageAllocationsServiceTest {
       allocationRepository,
       prisonRegimeRepository,
       searchApiClient,
+      waitingListService,
     )
   private val yesterday = LocalDate.now().minusDays(1)
   private val today = yesterday.plusDays(1)
@@ -68,6 +71,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsEnded()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verify(waitingListService).declinePendingOrApprovedApplications(activity.activityId, "Activity ended", "Activities Management Service")
   }
 
   @Test
@@ -86,6 +90,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsEnded(DeallocationReason.OTHER)
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verify(waitingListService).declinePendingOrApprovedApplications(activity.activityId, "Activity ended", "Activities Management Service")
   }
 
   @Test
@@ -103,6 +108,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsEnded()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -120,6 +126,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsActive()
 
     verify(activityScheduleRepo, never()).saveAndFlush(any())
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -141,6 +148,8 @@ class ManageAllocationsServiceTest {
         verify(activityScheduleRepo).saveAndFlush(this.schedules().first())
       }
     }
+    verify(waitingListService).declinePendingOrApprovedApplications(pentonvilleActivity.activityId, "Activity ended", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandActivity.activityId, "Activity ended", "Activities Management Service")
   }
 
   @Test
@@ -167,12 +176,13 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
   }
 
   @Test
   fun `transferred offenders are deallocated from allocations due to expire`() {
     val prison = rolloutPrison()
-    val activity = activityEntity(startDate = yesterday, endDate = today)
+    val activity = activityEntity(prisonCode = prison.code, startDate = yesterday, endDate = today)
     val schedule = activity.schedules().first()
     val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
     val prisoner: Prisoner = mock {
@@ -193,6 +203,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
   }
 
   @Test
@@ -220,6 +231,7 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
   }
 
   @Test

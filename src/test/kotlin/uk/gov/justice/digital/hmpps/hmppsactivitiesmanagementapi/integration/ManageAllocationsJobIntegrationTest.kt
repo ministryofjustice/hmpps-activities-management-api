@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,6 +24,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
 
+  @Autowired
+  private lateinit var waitingListRepository: WaitingListRepository
+
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending today`() {
@@ -30,6 +34,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     assertThat(activeAllocations).hasSize(3)
     activeAllocations.forEach { it.assertIs(PrisonerStatus.ACTIVE) }
+
+    waitingListRepository.findAll().also { assertThat(it).hasSize(2) }
 
     webTestClient.manageAllocations(withDeallocate = true)
 

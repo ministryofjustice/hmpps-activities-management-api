@@ -85,9 +85,9 @@ class OffenderReleasedEventHandler(
           .let { null }
       }
     }?.let { reason ->
-      waitingListService.declinePendingOrApprovedApplicationsFor(
+      waitingListService.declinePendingOrApprovedApplications(
         event.prisonCode(),
-        setOf(event.prisonerNumber()),
+        event.prisonerNumber(),
         "Released",
         ServiceName.SERVICE_NAME.value,
       )

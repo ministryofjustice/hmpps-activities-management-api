@@ -572,8 +572,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun assertThatWaitingListStatusIs(status: WaitingListStatus, prisonCode: String, vararg prisonerNumbers: String) {
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers.asList().toSet()).onEach {
+  private fun assertThatWaitingListStatusIs(status: WaitingListStatus, prisonCode: String, prisonerNumber: String) {
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(prisonCode, prisonerNumber, setOf(status)).onEach {
       assertThat(it.status).isEqualTo(status)
     }
   }
