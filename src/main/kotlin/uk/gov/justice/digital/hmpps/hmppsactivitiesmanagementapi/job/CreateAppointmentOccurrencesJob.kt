@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import kotlin.system.measureTimeMillis
 
 @Component
 class CreateAppointmentOccurrencesJob(
@@ -31,43 +32,47 @@ class CreateAppointmentOccurrencesJob(
   }
 
   private fun createAppointmentOccurrences(appointmentId: Long, prisonerBookings: Map<String, String?>) {
-    log.info("Creating occurrences for appointment with id $appointmentId")
+    log.info("Creating remaining occurrences for appointment with id $appointmentId")
 
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val elapsed = measureTimeMillis {
+      val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
 
-    appointment.scheduleIterator().withIndex().forEach {
-      val sequenceNumber = it.index + 1
-      val occurrence = appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(appointment, sequenceNumber)
-      if (occurrence == null) {
-        log.info("Creating occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
-        runCatching {
-          appointmentOccurrenceRepository.saveAndFlush(
-            AppointmentOccurrence(
-              appointment = appointment,
-              sequenceNumber = sequenceNumber,
-              internalLocationId = appointment.internalLocationId,
-              inCell = appointment.inCell,
-              startDate = it.value,
-              startTime = appointment.startTime,
-              endTime = appointment.endTime,
-            ).apply {
-              prisonerBookings.forEach { prisonerBooking ->
-                this.addAllocation(
-                  AppointmentOccurrenceAllocation(
-                    appointmentOccurrence = this,
-                    prisonerNumber = prisonerBooking.key,
-                    bookingId = prisonerBooking.value!!.toLong(),
-                  ),
-                )
-              }
-            },
-          )
-        }.onSuccess {
-          log.info("Successfully created occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
-        }.onFailure {
-          log.error("Failed to create occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
+      appointment.scheduleIterator().withIndex().forEach {
+        val sequenceNumber = it.index + 1
+        val occurrence = appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(appointment, sequenceNumber)
+        if (occurrence == null) {
+          log.info("Creating occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
+          runCatching {
+            appointmentOccurrenceRepository.saveAndFlush(
+              AppointmentOccurrence(
+                appointment = appointment,
+                sequenceNumber = sequenceNumber,
+                internalLocationId = appointment.internalLocationId,
+                inCell = appointment.inCell,
+                startDate = it.value,
+                startTime = appointment.startTime,
+                endTime = appointment.endTime,
+              ).apply {
+                prisonerBookings.forEach { prisonerBooking ->
+                  this.addAllocation(
+                    AppointmentOccurrenceAllocation(
+                      appointmentOccurrence = this,
+                      prisonerNumber = prisonerBooking.key,
+                      bookingId = prisonerBooking.value!!.toLong(),
+                    ),
+                  )
+                }
+              },
+            )
+          }.onSuccess {
+            log.info("Successfully created occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
+          }.onFailure {
+            log.error("Failed to create occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
+          }
         }
       }
     }
+
+    log.info("Creating remaining occurrences for appointment with id $appointmentId took ${elapsed}ms")
   }
 }
