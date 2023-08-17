@@ -59,12 +59,6 @@ data class ActivityLite(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "The capacity of the activity")
-  val capacity: Int,
-
-  @Schema(description = "The number of prisoners currently allocated to the activity")
-  val allocated: Int,
-
   @Schema(description = "The date and time when this activity was created", example = "2022-09-01T09:01:02")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,

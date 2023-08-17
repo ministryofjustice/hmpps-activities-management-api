@@ -273,10 +273,6 @@ data class Activity(
     minimumIncentiveNomisCode = minimumIncentiveNomisCode,
     minimumIncentiveLevel = minimumIncentiveLevel,
     minimumEducationLevel = activityMinimumEducationLevel().toModel(),
-    capacity = schedules().sumOf { schedule -> schedule.capacity },
-    allocated = schedules().sumOf { schedule ->
-      schedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.size
-    },
     endDate = endDate,
     createdTime = createdTime,
     activityState = getActivityState(),
