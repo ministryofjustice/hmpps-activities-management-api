@@ -13,7 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
@@ -237,11 +237,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `create appointment synchronously success`() {
     // 5 prisoners with 2 occurrences results in 10 appointment instances. Lower than the configured max-sync-appointment-instance-actions value
     // The resulting create appointment request will be synchronous, creating all occurrences and allocations
-    val prisonerNumberToBookingIdMap = (1L..5L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val prisonerNumberToBookingIdMap = (1L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
-      prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first },
+      prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
       repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 2),
     )
 
@@ -252,8 +252,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       request.prisonerNumbers,
       prisonerNumberToBookingIdMap.map {
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = it.first,
-          bookingId = it.second,
+          prisonerNumber = it.key,
+          bookingId = it.value,
           prisonId = request.prisonCode!!,
         )
       },
@@ -262,8 +262,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointment = webTestClient.createAppointment(request)!!
     val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
 
-    appointment.occurrences.size isEqualTo 2
-    allocationIds.size isEqualTo 10
+    appointment.occurrences hasSize 2
+    allocationIds hasSize 10
 
     verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
 
@@ -280,12 +280,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // 3 prisoners with 4 occurrences results in 12 appointment instances. Higher than the configured max-sync-appointment-instance-actions value
     // The resulting create appointment request will only create the first occurrence and its allocations synchronously. The remaining
     // occurrences and allocations will be created as an asynchronous job
-    val prisonerNumberToBookingIdMap = (1L..3L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
 
     val request = appointmentCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
-      prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first },
+      prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
       repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 4),
     )
 
@@ -296,8 +296,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       request.prisonerNumbers,
       prisonerNumberToBookingIdMap.map {
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = it.first,
-          bookingId = it.second,
+          prisonerNumber = it.key,
+          bookingId = it.value,
           prisonId = request.prisonCode!!,
         )
       },
@@ -306,15 +306,15 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // Synchronous creation. First occurrence and allocations only
     val appointment = webTestClient.createAppointment(request)!!
     var allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
-    appointment.occurrences.size isEqualTo 1
-    allocationIds.size isEqualTo 3
+    appointment.occurrences hasSize 1
+    allocationIds hasSize 3
 
     // Wait for remaining occurrences to be created
     Thread.sleep(1000)
     val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
     allocationIds = appointmentDetails.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
-    appointmentDetails.occurrences.size isEqualTo 4
-    allocationIds.size isEqualTo 12
+    appointmentDetails.occurrences hasSize 4
+    allocationIds hasSize 12
 
     verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
 
