@@ -6,6 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import toPrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveOutPrison
@@ -34,6 +35,7 @@ class WaitingListService(
   private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -267,7 +269,10 @@ class WaitingListService(
       prisonCode,
       prisonerNumber,
       setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
-    ).forEach { application -> application.decline(reason, declinedBy) }
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
   }
 
   @Transactional
@@ -279,10 +284,13 @@ class WaitingListService(
     waitingListRepository.findByActivityAndStatusIn(
       activityRepository.findOrThrowNotFound(activityId),
       setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
-    ).forEach { application -> application.decline(reason, declinedBy) }
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
   }
 
-  private fun WaitingList.decline(reason: String, declinedBy: String) {
+  private fun WaitingList.decline(reason: String, declinedBy: String): WaitingList {
     val statusBefore = this.status
 
     apply {
@@ -293,5 +301,7 @@ class WaitingListService(
     }
 
     log.info("Declined $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
+
+    return this
   }
 }
