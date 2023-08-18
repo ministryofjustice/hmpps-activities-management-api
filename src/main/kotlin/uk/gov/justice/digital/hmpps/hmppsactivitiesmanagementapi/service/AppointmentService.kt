@@ -83,6 +83,7 @@ class AppointmentService(
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): Appointment {
     val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
+    // Determine if this is a create request for a very large appointment. If it is, this function will only create the first occurrence
     val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointment = appointmentRepository.saveAndFlush(
@@ -106,6 +107,7 @@ class AppointmentService(
     )
 
     if (createFirstOccurrenceOnly) {
+      // The remaining occurrences will be created asynchronously by this job
       createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
     }
 

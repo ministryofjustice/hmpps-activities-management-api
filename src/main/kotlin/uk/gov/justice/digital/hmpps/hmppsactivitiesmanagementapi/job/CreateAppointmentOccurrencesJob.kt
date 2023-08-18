@@ -12,6 +12,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import kotlin.system.measureTimeMillis
 
+/**
+ * This job is used to asynchronously create the remaining occurrences and the allocations to those occurrences for an appointment.
+ * It is used only when creating very large group appointments. Those are defined as any appointment that will be represented by
+ * more than 500 appointment instances, the number of attendees multiplied by the repeat count. This appointment instance count is
+ * configurable via applications.max-sync-appointment-instance-actions.
+ *
+ * If an appointment is identified as very large (see createFirstOccurrenceOnly logic in AppointmentService.createAppointment) then
+ * only the first occurrence is created synchronously. This job is then executed asynchronously to create the remaining occurrences.
+ *
+ * This means that a usable appointment with its first occurrence is returned as quickly as possible, preventing the user having to
+ * wait an extended period of time for feedback. This was needed as the creation of a 360 attendee repeating weekly appointment, the
+ * largest seen in production, would take a minute and cause timeouts on the frontend.
+ *
+ * The side effect of this approach is that the user will not see all the appointments within a series until this job has completed.
+ * This is only for a short time window (minutes) and only affects the 1% of very large appointments created in the service.
+ */
 @Component
 class CreateAppointmentOccurrencesJob(
   private val jobRunner: SafeJobRunner,
