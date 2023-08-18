@@ -55,3 +55,7 @@ jobs:
 online:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE:14}
+
+applications:
+  max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES:20000}
+  max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS:500}

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -27,9 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment as BulkAppointmentEntity
 
-const val MAX_SYNC_CREATE_APPOINTMENT_INSTANCES = 1000
-const val MAX_APPOINTMENT_INSTANCES = 20000
-
 @Service
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
@@ -39,6 +37,8 @@ class AppointmentService(
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
+  @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
+  @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long): Appointment {
@@ -83,7 +83,7 @@ class AppointmentService(
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): Appointment {
     val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
-    val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > MAX_SYNC_CREATE_APPOINTMENT_INSTANCES } ?: false
+    val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointment = appointmentRepository.saveAndFlush(
       buildValidAppointmentEntity(
@@ -157,8 +157,8 @@ class AppointmentService(
 
   private fun failIfMaximumOccurrencesExceeded(prisonerNumbers: List<String>, repeat: AppointmentRepeat?) {
     val repeatCount = repeat?.count ?: 1
-    require(prisonerNumbers.size * repeatCount <= MAX_APPOINTMENT_INSTANCES) {
-      "You cannot schedule more than ${MAX_APPOINTMENT_INSTANCES / prisonerNumbers.size} appointments for this number of attendees."
+    require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
+      "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
     }
   }
 
