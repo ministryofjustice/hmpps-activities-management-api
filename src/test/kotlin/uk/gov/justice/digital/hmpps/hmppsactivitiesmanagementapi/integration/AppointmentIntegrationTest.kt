@@ -237,11 +237,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `create appointment synchronously success`() {
     // 5 prisoners with 2 occurrences results in 10 appointment instances. Lower than the configured max-sync-appointment-instance-actions value
     // The resulting create appointment request will be synchronous, creating all occurrences and allocations
-    val prisonNumbersMap = (1L..5L).map { it to "A12${it.toString().padStart(3, '0')}BC" }
+    val prisonerNumberToBookingIdMap = (1L..5L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
     val request = appointmentCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
-      prisonerNumbers = prisonNumbersMap.map { it.second },
+      prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first },
       repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 2),
     )
 
@@ -250,10 +250,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
-      prisonNumbersMap.map {
+      prisonerNumberToBookingIdMap.map {
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = it.second,
-          bookingId = it.first,
+          prisonerNumber = it.first,
+          bookingId = it.second,
           prisonId = request.prisonCode!!,
         )
       },
@@ -280,12 +280,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // 3 prisoners with 4 occurrences results in 12 appointment instances. Higher than the configured max-sync-appointment-instance-actions value
     // The resulting create appointment request will only create the first occurrence and its allocations synchronously. The remaining
     // occurrences and allocations will be created as an asynchronous job
-    val prisonNumbersMap = (1L..3L).map { it to "A12${it.toString().padStart(3, '0')}BC" }
+    val prisonerNumberToBookingIdMap = (1L..3L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
 
     val request = appointmentCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
-      prisonerNumbers = prisonNumbersMap.map { it.second },
+      prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first },
       repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 4),
     )
 
@@ -294,10 +294,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
-      prisonNumbersMap.map {
+      prisonerNumberToBookingIdMap.map {
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = it.second,
-          bookingId = it.first,
+          prisonerNumber = it.first,
+          bookingId = it.second,
           prisonId = request.prisonCode!!,
         )
       },

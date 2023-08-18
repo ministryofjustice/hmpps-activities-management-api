@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
@@ -79,6 +80,7 @@ class AppointmentServiceTest {
     locationService,
     prisonerSearchApiClient,
     createAppointmentOccurrencesJob,
+    maxSyncAppointmentInstanceActions = 14,
   )
 
   @BeforeEach
@@ -461,6 +463,143 @@ class AppointmentServiceTest {
       assertThat(size).isEqualTo(3)
       assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
     }
+  }
+
+  @Test
+  fun `createAppointment for fifteen prisoners synchronously when it does not repeat creating fifteen appointment instances`() {
+    val prisonerNumberToBookingIdMap = (1L..15L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first }, repeat = null)
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          prisonerNumberToBookingIdMap.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it.first,
+              bookingId = it.second,
+              prisonId = request.prisonCode!!,
+            )
+          },
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap.toMap()))
+
+    service.createAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      occurrences().size isEqualTo 1
+      occurrences().flatMap { it.allocations() }.size isEqualTo 15
+    }
+
+    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+  }
+
+  @Test
+  fun `createAppointment for fifteen prisoners synchronously when it repeats once creating fifteen appointment instances`() {
+    val prisonerNumberToBookingIdMap = (1L..15L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first }, repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 1))
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          prisonerNumberToBookingIdMap.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it.first,
+              bookingId = it.second,
+              prisonId = request.prisonCode!!,
+            )
+          },
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap.toMap()))
+
+    service.createAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      occurrences().size isEqualTo 1
+      occurrences().flatMap { it.allocations() }.size isEqualTo 15
+    }
+
+    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+  }
+
+  @Test
+  fun `createAppointment for seven prisoners synchronously when it repeats twice creating fourteen appointment instances`() {
+    val prisonerNumberToBookingIdMap = (1L..7L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first }, repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 2))
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          prisonerNumberToBookingIdMap.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it.first,
+              bookingId = it.second,
+              prisonId = request.prisonCode!!,
+            )
+          },
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap.toMap()))
+
+    service.createAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      occurrences().size isEqualTo 2
+      occurrences().flatMap { it.allocations() }.size isEqualTo 14
+    }
+
+    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+  }
+
+  @Test
+  fun `createAppointment for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
+    val prisonerNumberToBookingIdMap = (1L..3L).map { "A12${it.toString().padStart(3, '0')}BC" to it }
+    val prisonerNumbers = prisonerNumberToBookingIdMap.map { it.first }
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumbers, repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 5))
+
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        Mono.just(
+          prisonerNumberToBookingIdMap.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it.first,
+              bookingId = it.second,
+              prisonId = request.prisonCode!!,
+            )
+          },
+        ),
+      )
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap.toMap()))
+
+    service.createAppointment(request, principal)
+
+    with(appointmentEntityCaptor.value) {
+      occurrences().size isEqualTo 1
+      occurrences().flatMap { it.allocations() }.size isEqualTo 3
+    }
+
+    verify(createAppointmentOccurrencesJob).execute(1, prisonerNumberToBookingIdMap.associate { it.first to it.second.toString() })
   }
 
   @Test
