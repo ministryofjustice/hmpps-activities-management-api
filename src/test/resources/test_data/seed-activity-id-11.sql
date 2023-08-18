@@ -30,3 +30,6 @@ values (1, 'PVI', 'A11111A', 111111, '2023-06-23', 1, 1, 'Fred Bloggs', 'PENDING
 
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (2, 'PVI', 'A22222A', 222222, '2023-06-23', 1, 1, 'Fred Bloggs', 'APPROVED', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);
+
+insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
+values (3, 'PVI', 'A33333A', 333333, '2023-06-23', 1, 1, 'Fred Bloggs', 'PENDING', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);

@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -20,7 +19,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -31,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 class ManageAllocationsServiceTest {
 
@@ -71,7 +72,23 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsEnded()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
-    verify(waitingListService).declinePendingOrApprovedApplications(activity.activityId, "Activity ended", "Activities Management Service")
+  }
+
+  @Test
+  fun `deallocate offenders from activity ending today declines pending or approved waiting lists`() {
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = yesterday, endDate = today)
+
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(prison))
+    whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).thenReturn(listOf(activity))
+
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
+
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      activity.activityId,
+      "Activity ended",
+      "Activities Management Service",
+    )
   }
 
   @Test
@@ -87,10 +104,9 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.DEALLOCATE_ENDING)
 
-    allocation.verifyIsEnded(DeallocationReason.OTHER)
+    allocation.verifyIsEnded(DeallocationReason.OTHER, "by test")
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
-    verify(waitingListService).declinePendingOrApprovedApplications(activity.activityId, "Activity ended", "Activities Management Service")
   }
 
   @Test
@@ -148,8 +164,31 @@ class ManageAllocationsServiceTest {
         verify(activityScheduleRepo).saveAndFlush(this.schedules().first())
       }
     }
-    verify(waitingListService).declinePendingOrApprovedApplications(pentonvilleActivity.activityId, "Activity ended", "Activities Management Service")
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandActivity.activityId, "Activity ended", "Activities Management Service")
+  }
+
+  @Test
+  fun `deallocate offenders from activities ending today declines pending or approved waiting lists`() {
+    val moorland = rolloutPrison().copy(code = moorlandPrisonCode)
+    val pentonville = rolloutPrison()
+    whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(pentonville, moorland))
+
+    val pentonvilleActivity = activityEntity(activityId = 1, startDate = yesterday, endDate = today)
+    val moorlandActivity = activityEntity(activityId = 2, startDate = yesterday, endDate = today)
+    whenever(activityRepo.getAllForPrisonAndDate(pentonville.code, today)).thenReturn(listOf(pentonvilleActivity))
+    whenever(activityRepo.getAllForPrisonAndDate(moorland.code, today)).thenReturn(listOf(moorlandActivity))
+
+    service.allocations(AllocationOperation.DEALLOCATE_ENDING)
+
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      pentonvilleActivity.activityId,
+      "Activity ended",
+      "Activities Management Service",
+    )
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      moorlandActivity.activityId,
+      "Activity ended",
+      "Activities Management Service",
+    )
   }
 
   @Test
@@ -176,7 +215,6 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
-    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
   }
 
   @Test
@@ -203,7 +241,6 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
-    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
   }
 
   @Test
@@ -231,7 +268,36 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
-    verify(waitingListService).declinePendingOrApprovedApplications(prison.code, allocation.prisonerNumber, "Released", "Activities Management Service")
+  }
+
+  @Test
+  fun `released offenders due to expire waiting lists are declined`() {
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = yesterday, endDate = today)
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
+    val prisoner: Prisoner = mock {
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
+      on { prisonerNumber } doReturn allocation.prisonerNumber
+      on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
+      on { releaseDate } doReturn LocalDate.now().minusDays(5)
+    }
+
+    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
+    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)).doReturn(prisonRegime())
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
+      listOf(allocation),
+    )
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
+
+    service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      prison.code,
+      allocation.prisonerNumber,
+      "Released",
+      "Activities Management Service",
+    )
   }
 
   @Test
@@ -298,20 +364,23 @@ class ManageAllocationsServiceTest {
   }
 
   private fun Allocation.verifyIsActive() {
-    assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+    prisonerStatus isEqualTo PrisonerStatus.ACTIVE
   }
 
-  private fun Allocation.verifyIsEnded(reason: DeallocationReason = DeallocationReason.ENDED) {
-    assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
-    assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo(reason)
-    assertThat(deallocatedBy).isNotNull
+  private fun Allocation.verifyIsEnded(
+    reason: DeallocationReason = DeallocationReason.ENDED,
+    endedBy: String? = "Activities Management Service",
+  ) {
+    prisonerStatus isEqualTo PrisonerStatus.ENDED
+    deallocatedTime!! isCloseTo TimeSource.now()
+    deallocatedReason isEqualTo reason
+    deallocatedBy isEqualTo endedBy
   }
 
   private fun Allocation.verifyIsExpired() {
-    assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
-    assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(deallocatedReason).isEqualTo(DeallocationReason.EXPIRED)
-    assertThat(deallocatedBy).isNotNull
+    prisonerStatus isEqualTo PrisonerStatus.ENDED
+    deallocatedTime!! isCloseTo TimeSource.now()
+    deallocatedReason isEqualTo DeallocationReason.EXPIRED
+    deallocatedBy isEqualTo "Activities Management Service"
   }
 }

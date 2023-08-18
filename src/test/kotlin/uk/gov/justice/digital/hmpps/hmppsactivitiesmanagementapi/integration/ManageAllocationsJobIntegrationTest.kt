@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,13 +10,26 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.EXPIRED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.PENDING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
@@ -30,45 +42,50 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending today`() {
-    val activeAllocations = allocationRepository.findAll().filterNot(Allocation::isEnded)
+    val activeAllocations = with(allocationRepository.findAll().filterNot(Allocation::isEnded)) {
+      size isEqualTo 3
+      onEach { it isStatus ACTIVE }
+    }
 
-    assertThat(activeAllocations).hasSize(3)
-    activeAllocations.forEach { it.assertIs(PrisonerStatus.ACTIVE) }
-
-    waitingListRepository.findAll().also { assertThat(it).hasSize(2) }
+    with(waitingListRepository.findAll()) {
+      size isEqualTo 3
+      none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
+    }
 
     webTestClient.manageAllocations(withDeallocate = true)
 
-    val deallocatedAllocations = allocationRepository.findAllById(activeAllocations.map { it.allocationId })
+    with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
+      size isEqualTo 3
+      onEach { it isDeallocatedWithReason ENDED }
+    }
 
-    assertThat(deallocatedAllocations).hasSize(3)
-    deallocatedAllocations.forEach { it.assertIsDeallocated(DeallocationReason.ENDED) }
+    with(waitingListRepository.findAll()) {
+      onEach { it isStatus DECLINED }
+      onEach { it.declinedReason isEqualTo "Activity ended" }
+    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
   @Test
   fun `deallocate offenders for activity with no end date`() {
-    val allocations = allocationRepository.findAll().also {
-      it.prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
-      it.prisoner("A22222A").assertIs(PrisonerStatus.ACTIVE)
-      it.prisoner("A33333A").assertIs(PrisonerStatus.ACTIVE)
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      onEach { it isStatus ACTIVE }
     }
-
-    assertThat(allocations).hasSize(3)
 
     webTestClient.manageAllocations(withDeallocate = true)
 
-    allocationRepository.findAll().let {
-      assertThat(it).hasSize(3)
-      it.prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
-      it.prisoner("A22222A").assertIsDeallocated(DeallocationReason.ENDED)
-      it.prisoner("A33333A").assertIs(PrisonerStatus.ACTIVE)
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("A11111A") isStatus ACTIVE
+      prisoner("A22222A") isDeallocatedWithReason ENDED
+      prisoner("A33333A") isStatus ACTIVE
     }
   }
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")
   @Test
-  fun `deallocate offenders allocations due to expire`() {
+  fun `deallocate offenders allocations due to expire and waiting lists declined`() {
     val prisoner = PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
@@ -76,49 +93,68 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       releaseDate = LocalDate.now().minusDays(5),
     )
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
-
-    val allocations = allocationRepository.findAll().also {
-      it.prisoner("A11111A").assertIsAutoSuspended()
+    with(waitingListRepository.findAll().prisoner("A11111A")) {
+      status isStatus WaitingListStatus.PENDING
+      declinedReason isEqualTo null
+      updatedBy isEqualTo null
+      updatedTime isEqualTo null
     }
 
-    assertThat(allocations).hasSize(1)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 1
+      prisoner("A11111A") isStatus AUTO_SUSPENDED
+    }
 
     webTestClient.manageAllocations(withDeallocate = true)
 
-    allocationRepository.findAll().prisoner("A11111A").assertIsDeallocated(DeallocationReason.EXPIRED)
+    allocationRepository.findAll().prisoner("A11111A") isDeallocatedWithReason EXPIRED
+    waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
   fun `pending allocation is activated`() {
-    val allocations = allocationRepository.findAll().also {
-      it.prisoner("A11111A").assertIs(PrisonerStatus.PENDING)
+    with(allocationRepository.findAll()) {
+      size isEqualTo 1
+      prisoner("A11111A") isStatus PENDING
     }
-
-    assertThat(allocations).hasSize(1)
 
     webTestClient.manageAllocations(withActivate = true)
 
-    allocationRepository.findAll().prisoner("A11111A").assertIs(PrisonerStatus.ACTIVE)
+    allocationRepository.findAll().prisoner("A11111A") isStatus ACTIVE
   }
 
-  private fun Allocation.assertIs(status: PrisonerStatus) {
+  private infix fun WaitingList.isStatus(status: WaitingListStatus) {
+    this.status isEqualTo status
+  }
+
+  private infix fun WaitingListStatus.isStatus(status: WaitingListStatus) {
+    this isEqualTo status
+  }
+
+  private infix fun WaitingList.isDeclinedWithReason(reason: String) {
+    status isEqualTo DECLINED
+    declinedReason isEqualTo reason
+    updatedTime isCloseTo LocalDateTime.now()
+    updatedBy isEqualTo "Activities Management Service"
+  }
+
+  private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
+
+  private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
+
+  private infix fun Allocation.isStatus(status: PrisonerStatus) {
     assertThat(this.prisonerStatus).isEqualTo(status)
   }
 
-  private fun Allocation.assertIsAutoSuspended() {
-    assertThat(this.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
+  private infix fun Allocation.isDeallocatedWithReason(reason: DeallocationReason) {
+    prisonerStatus isEqualTo PrisonerStatus.ENDED
+    deallocatedBy isEqualTo "Activities Management Service"
+    deallocatedReason isEqualTo reason
+    deallocatedTime isCloseTo TimeSource.now()
   }
-
-  private fun Allocation.assertIsDeallocated(reason: DeallocationReason) {
-    assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
-    assertThat(deallocatedBy).isEqualTo("Activities Management Service")
-    assertThat(deallocatedReason).isEqualTo(reason)
-    assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-  }
-
-  private fun List<Allocation>.prisoner(number: String) = first { it.prisonerNumber == number }
 
   private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocate: Boolean = false) {
     post()

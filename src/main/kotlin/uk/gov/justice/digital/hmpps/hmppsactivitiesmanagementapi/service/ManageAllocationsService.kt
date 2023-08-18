@@ -111,8 +111,9 @@ class ManageAllocationsService(
               .block()
               ?.filter { it.hasExpired(regime) }
               ?.map { it.prisonerNumber }
+              ?.toSet()
               ?.onEach { waitingListService.declinePendingOrApprovedApplications(prison.code, it, "Released", ServiceName.SERVICE_NAME.value) }
-              ?.toSet() ?: emptySet()
+              ?: emptySet()
           }
 
           candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
