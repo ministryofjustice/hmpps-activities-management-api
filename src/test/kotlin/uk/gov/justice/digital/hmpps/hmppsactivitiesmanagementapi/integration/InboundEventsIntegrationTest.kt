@@ -136,15 +136,21 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
 
-    verify(hmppsAuditApiClient, times(2)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient, times(3)).createEvent(hmppsAuditEventCaptor.capture())
 
     with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("PRISONER_DECLINED_FROM_WAITING_LIST")
+      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
+      assertThatJson(details).isEqualTo("{\"activityId\":2,\"activityName\":\"English\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":3,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
+    }
+
+    with(hmppsAuditEventCaptor.secondValue) {
       assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
       assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
       assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
     }
 
-    with(hmppsAuditEventCaptor.secondValue) {
+    with(hmppsAuditEventCaptor.thirdValue) {
       assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
       assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
       assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":2,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
