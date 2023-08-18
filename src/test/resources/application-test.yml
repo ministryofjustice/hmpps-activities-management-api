@@ -38,7 +38,7 @@ online:
 
 applications:
   max-appointment-instances: 20000
-  max-sync-appointment-instance-actions: 50
+  max-sync-appointment-instance-actions: 10
 
 hmpps:
   auth:
