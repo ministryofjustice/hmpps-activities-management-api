@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -30,6 +31,7 @@ import java.time.LocalDateTime
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val telemetryClient: TelemetryClient,
 ) {
@@ -255,27 +257,41 @@ class WaitingListService(
   }
 
   @Transactional
-  fun declinePendingOrApprovedApplicationsFor(
+  fun declinePendingOrApprovedApplications(
     prisonCode: String,
-    prisonerNumbers: Set<String>,
+    prisonerNumber: String,
     reason: String,
     declinedBy: String,
   ) {
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers)
-      .filter { it.isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED) }
-      .forEach { application ->
-        val statusBefore = application.status
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
+      prisonCode,
+      prisonerNumber,
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application -> application.decline(reason, declinedBy) }
+  }
 
-        application.apply {
-          status = WaitingListStatus.DECLINED
-          declinedReason = reason
-          updatedTime = LocalDateTime.now()
-          updatedBy = declinedBy
-        }
+  @Transactional
+  fun declinePendingOrApprovedApplications(
+    activityId: Long,
+    reason: String,
+    declinedBy: String,
+  ) {
+    waitingListRepository.findByActivityAndStatusIn(
+      activityRepository.findOrThrowNotFound(activityId),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application -> application.decline(reason, declinedBy) }
+  }
 
-        // TODO needs to be audited???
+  private fun WaitingList.decline(reason: String, declinedBy: String) {
+    val statusBefore = this.status
 
-        log.info("Declined $statusBefore waiting list application ${application.waitingListId} for prisoner number ${application.prisonerNumber}")
-      }
+    apply {
+      status = WaitingListStatus.DECLINED
+      declinedReason = reason
+      updatedTime = LocalDateTime.now()
+      updatedBy = declinedBy
+    }
+
+    log.info("Declined $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
   }
 }

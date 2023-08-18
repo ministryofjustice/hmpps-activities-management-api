@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonv
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
@@ -49,9 +50,10 @@ class WaitingListServiceTest {
   private val scheduleRepository: ActivityScheduleRepository =
     mock { on { findBy(schedule.activityScheduleId, DEFAULT_CASELOAD_PENTONVILLE) } doReturn schedule }
   private val waitingListRepository: WaitingListRepository = mock {}
+  private val activityRepository: ActivityRepository = mock {}
   private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val service = WaitingListService(scheduleRepository, waitingListRepository, prisonApiClient, telemetryClient)
+  private val service = WaitingListService(scheduleRepository, waitingListRepository, activityRepository, prisonApiClient, telemetryClient)
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
   @Test
@@ -876,22 +878,21 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `declines pending and approved applications only`() {
+  fun `declines pending and approved applications for prisoner`() {
     val pending = waitingList(waitingListId = 1, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.PENDING)
-    val approved = waitingList(waitingListId = 2, prisonCode = moorlandPrisonCode, prisonerNumber = "B", initialStatus = WaitingListStatus.APPROVED)
-    val allocated = waitingList(waitingListId = 3, prisonCode = moorlandPrisonCode, prisonerNumber = "C", initialStatus = WaitingListStatus.ALLOCATED)
-    val removed = waitingList(waitingListId = 4, prisonCode = moorlandPrisonCode, prisonerNumber = "D", initialStatus = WaitingListStatus.REMOVED)
+    val approved = waitingList(waitingListId = 2, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.APPROVED)
 
     whenever(
-      waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
         prisonCode = moorlandPrisonCode,
-        setOf("A", "B", "C", "D"),
+        prisonerNumber = "A",
+        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
       ),
-    ) doReturn listOf(pending, approved, allocated, removed)
+    ) doReturn listOf(pending, approved)
 
-    service.declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("A", "B", "C", "D"), "reason", "Fred")
+    service.declinePendingOrApprovedApplications(moorlandPrisonCode, "A", "reason", "Fred")
 
-    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberIn(moorlandPrisonCode, setOf("A", "B", "C", "D"))
+    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberAndStatusIn(moorlandPrisonCode, "A", setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED))
 
     with(pending) {
       status isEqualTo WaitingListStatus.DECLINED
@@ -899,23 +900,43 @@ class WaitingListServiceTest {
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
+
     with(approved) {
       status isEqualTo WaitingListStatus.DECLINED
       declinedReason isEqualTo "reason"
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
-    with(allocated) {
-      status isEqualTo WaitingListStatus.ALLOCATED
-      declinedReason isEqualTo null
-      updatedTime isEqualTo null
-      updatedBy isEqualTo null
-    }
-    with(removed) {
-      status isEqualTo WaitingListStatus.REMOVED
-      declinedReason isEqualTo null
-      updatedTime isEqualTo null
-      updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `declines pending and approved applications for activity`() {
+    val activity = activityEntity()
+    val pendingA = waitingList(waitingListId = 1, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.PENDING)
+    val approvedA = waitingList(waitingListId = 2, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.APPROVED)
+    val pendingB = waitingList(waitingListId = 3, prisonCode = moorlandPrisonCode, prisonerNumber = "B", initialStatus = WaitingListStatus.PENDING)
+    val approvedB = waitingList(waitingListId = 4, prisonCode = moorlandPrisonCode, prisonerNumber = "B", initialStatus = WaitingListStatus.APPROVED)
+
+    whenever(activityRepository.findById(activity.activityId)) doReturn Optional.of(activity)
+
+    whenever(
+      waitingListRepository.findByActivityAndStatusIn(
+        activity,
+        setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      ),
+    ) doReturn listOf(pendingA, approvedA, pendingB, approvedB)
+
+    service.declinePendingOrApprovedApplications(activity.activityId, "reason", "Bob")
+
+    verify(waitingListRepository).findByActivityAndStatusIn(activity, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED))
+
+    listOf(pendingA, approvedA, pendingB, approvedB).forEach {
+      with(it) {
+        status isEqualTo WaitingListStatus.DECLINED
+        declinedReason isEqualTo "reason"
+        updatedTime!! isCloseTo TimeSource.now()
+        updatedBy isEqualTo "Bob"
+      }
     }
   }
 }
