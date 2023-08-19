@@ -89,6 +89,7 @@ class AllocationController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)
 
@@ -121,6 +122,7 @@ class AllocationController(
   )
   @GetMapping(value = ["/deallocation-reasons"])
   @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
 
   @ResponseStatus(HttpStatus.ACCEPTED)
@@ -168,7 +170,7 @@ class AllocationController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun update(
     @PathVariable("allocationId") allocationId: Long,
     @PathVariable("prisonCode") prisonCode: String,
@@ -236,7 +238,7 @@ class AllocationController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun addToWaitingList(
     @PathVariable("prisonCode") prisonCode: String,
     principal: Principal,

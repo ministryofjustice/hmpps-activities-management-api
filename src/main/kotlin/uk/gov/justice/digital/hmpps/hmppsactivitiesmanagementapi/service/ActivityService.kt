@@ -277,7 +277,6 @@ class ActivityService(
   }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(
     prisonCode: String,
     activityId: Long,

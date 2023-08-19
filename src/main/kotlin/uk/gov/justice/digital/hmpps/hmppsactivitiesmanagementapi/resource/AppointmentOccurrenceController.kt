@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -89,6 +90,7 @@ class AppointmentOccurrenceController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun updateAppointmentOccurrence(
     @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
     @Valid
@@ -156,6 +158,7 @@ class AppointmentOccurrenceController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun cancelAppointmentOccurrence(
     @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
     @Valid
@@ -213,6 +216,7 @@ class AppointmentOccurrenceController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun searchAppointmentOccurrences(
     @PathVariable("prisonCode") prisonCode: String,
     @Valid
