@@ -19,10 +19,12 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction
 import org.springframework.web.context.annotation.RequestScope
 import org.springframework.web.reactive.function.client.ClientRequest
+import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 
 @Configuration
 class WebClientConfiguration(
@@ -164,7 +166,40 @@ class WebClientConfiguration(
   fun caseNotesApiWebClient(): WebClient {
     return webClientBuilder.baseUrl(caseNotesApiUrl)
       .filter(addAuthHeaderFilterFunction())
+      //.filter(logRequestResponse())
       .build()
+  }
+
+  @Bean
+  fun caseNotesApiAppWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+  ): WebClient {
+    return getCaseNotesAPIOAuthWebClient(authorizedClientManager, builder, caseNotesApiUrl)
+  }
+
+  private fun getCaseNotesAPIOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+    rootUri: String,
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId("case-notes-api")
+    return builder.baseUrl(rootUri)
+      .apply(oauth2Client.oauth2Configuration())
+      .filter(logRequestResponse())
+      .build()
+  }
+
+  private fun logRequestResponse(): ExchangeFilterFunction {
+    return ExchangeFilterFunction.ofRequestProcessor { clientRequest: ClientRequest ->
+      println("Request: ${clientRequest.method()} ${clientRequest.url()}")
+      clientRequest.headers().forEach { name, values -> values.forEach { println("$name: $it") } }
+      Mono.just(clientRequest)
+    }.andThen(ExchangeFilterFunction.ofResponseProcessor { clientResponse: ClientResponse ->
+      clientResponse.headers().asHttpHeaders().forEach { name, values -> values.forEach { println("$name: $it") } }
+      Mono.just(clientResponse)
+    })
   }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context

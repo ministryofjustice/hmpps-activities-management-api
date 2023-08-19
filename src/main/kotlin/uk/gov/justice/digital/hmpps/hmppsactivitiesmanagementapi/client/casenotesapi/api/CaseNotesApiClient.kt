@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 @Service
-class CaseNotesApiClient(@Qualifier("caseNotesApiAppWebClient") private val webClient: WebClient) {
+class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
 
   fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, incentiveLevelWarningIssued: Boolean? = false): CaseNote? {
     val subType = if (incentiveLevelWarningIssued == true) { "IEP_WARN" } else { "NEG_GEN" }

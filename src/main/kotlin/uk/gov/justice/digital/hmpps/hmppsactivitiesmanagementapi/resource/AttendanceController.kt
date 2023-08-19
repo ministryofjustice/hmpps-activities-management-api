@@ -153,7 +153,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun markAttendances(
     principal: Principal,
     @RequestBody attendances: List<AttendanceUpdateRequest>,
