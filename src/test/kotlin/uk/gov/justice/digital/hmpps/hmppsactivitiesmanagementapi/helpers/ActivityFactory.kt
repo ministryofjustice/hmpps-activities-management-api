@@ -79,7 +79,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = 1, timestamp))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp))
     }
     if (!noPayBands) {
       this.addPay(
@@ -345,28 +345,41 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
 }
 
 fun waitingList(
+  waitingListId: Long = 1,
   prisonCode: String = pentonvillePrisonCode,
   prisonerNumber: String = "123456",
-  status: WaitingListStatus = WaitingListStatus.DECLINED,
+  initialStatus: WaitingListStatus = WaitingListStatus.DECLINED,
+  applicationDate: LocalDate = TimeSource.today(),
+  requestedBy: String = "Fred",
+  comments: String? = null,
+  allocated: Boolean = false,
 ): WaitingList {
-  val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
+  val schedule = activityEntity(activityId = waitingListId, prisonCode = prisonCode).schedules().first()
+    .apply {
+      if (allocated) {
+        allocatePrisoner(
+          prisonerNumber = prisonerNumber.toPrisonerNumber(),
+          bookingId = 10001,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+        )
+      }
+    }
+
   val allocation = schedule.allocations().first()
 
   return WaitingList(
-    waitingListId = 99,
+    waitingListId = waitingListId,
     prisonCode = prisonCode,
     activitySchedule = schedule,
     prisonerNumber = prisonerNumber,
     bookingId = 100L,
-    applicationDate = TimeSource.today(),
-    requestedBy = "Fred",
-    comments = "Some random test comments",
-    status = status,
+    applicationDate = applicationDate,
+    requestedBy = requestedBy,
+    comments = comments,
     createdBy = "Bob",
+    initialStatus = initialStatus,
   ).apply {
     this.allocation = allocation
-    this.updatedBy = "Test"
-    this.updatedTime = TimeSource.now()
-    this.declinedReason = "Needs to attend level one activity first"
   }
 }

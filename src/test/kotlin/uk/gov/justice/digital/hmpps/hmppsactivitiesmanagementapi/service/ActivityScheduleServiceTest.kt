@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -36,6 +37,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -53,8 +57,9 @@ class ActivityScheduleServiceTest {
   private val waitingListRepository: WaitingListRepository = mock()
   private val auditService: AuditService = mock()
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
+  private val telemetryClient: TelemetryClient = mock()
   private val service =
-    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService)
+    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService, telemetryClient)
 
   private val caseLoad = pentonvillePrisonCode
 
@@ -140,6 +145,11 @@ class ActivityScheduleServiceTest {
 
     verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
     verify(repository).saveAndFlush(schedule)
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_DEALLOCATED.value,
+      mapOf(PRISONER_NUMBER_KEY to "1"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
   }
 
   @Test
@@ -296,7 +306,11 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `successful allocation is audited`() {
-    val schedule = activitySchedule(activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode), activityScheduleId = 200, noAllocations = true)
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
     schedule.allocations() hasSize 0
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
@@ -338,17 +352,28 @@ class ActivityScheduleServiceTest {
       waitingListId isEqualTo null
       createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
+
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ALLOCATED.value,
+      mapOf(PRISONER_NUMBER_KEY to "654321"),
+      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+    )
   }
 
   @Test
   fun `allocation updates APPROVED waiting list application to ALLOCATED status when present and is audited`() {
-    val schedule = activitySchedule(activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode), activityScheduleId = 200, noAllocations = true)
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
     schedule.allocations() hasSize 0
 
     val waitingListEntity = waitingList(
       prisonCode = schedule.activity.prisonCode,
-      status = WaitingListStatus.APPROVED,
-    ).copy(waitingListId = 300)
+      initialStatus = WaitingListStatus.APPROVED,
+      waitingListId = 300,
+    )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
@@ -401,8 +426,16 @@ class ActivityScheduleServiceTest {
   fun `allocation fails if more than one approved waiting list`() {
     val schedule = activitySchedule(activity = activityEntity(prisonCode = pentonvillePrisonCode))
     val waitingLists = listOf(
-      waitingList(prisonCode = schedule.activity.prisonCode, status = WaitingListStatus.APPROVED).copy(waitingListId = 1),
-      waitingList(prisonCode = schedule.activity.prisonCode, status = WaitingListStatus.APPROVED).copy(waitingListId = 2),
+      waitingList(
+        prisonCode = schedule.activity.prisonCode,
+        initialStatus = WaitingListStatus.APPROVED,
+        waitingListId = 1,
+      ),
+      waitingList(
+        prisonCode = schedule.activity.prisonCode,
+        initialStatus = WaitingListStatus.APPROVED,
+        waitingListId = 2,
+      ),
     )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))

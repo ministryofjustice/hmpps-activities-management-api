@@ -79,6 +79,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     date: LocalDate?,
     timeSlot: TimeSlot?,
   ): List<PrisonerSchedule> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -95,8 +96,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   suspend fun getScheduledCourtHearingsAsync(
     bookingId: Long,
     dateRange: LocalDateRange,
-  ): CourtHearings =
-    prisonApiWebClient.get()
+  ): CourtHearings? {
+    if (dateRange.isEmpty()) return null
+    return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/{bookingId}/court-hearings")
@@ -106,14 +108,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .awaitBody()
+  }
 
   suspend fun getScheduledCourtEventsForPrisonerNumbersAsync(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
     timeSlot: TimeSlot?,
-  ): List<PrisonerSchedule> =
-    prisonApiWebClient.post()
+  ): List<PrisonerSchedule> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/schedules/{prisonCode}/courtEvents")
@@ -124,6 +128,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
+  }
 
   suspend fun getScheduledVisitsAsync(
     bookingId: Long,
@@ -145,8 +150,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonerNumbers: Set<String>,
     date: LocalDate?,
     timeSlot: TimeSlot?,
-  ): List<PrisonerSchedule> =
-    prisonApiWebClient.post()
+  ): List<PrisonerSchedule> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/schedules/{prisonCode}/visits")
@@ -157,14 +163,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
+  }
 
   suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate?,
     timeSlot: TimeSlot?,
-  ): List<PrisonerSchedule> =
-    prisonApiWebClient.post()
+  ): List<PrisonerSchedule> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/schedules/{prisonCode}/activities")
@@ -175,13 +183,15 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
+  }
 
   suspend fun getExternalTransfersOnDateAsync(
     agencyId: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
-  ): List<PrisonerSchedule> =
-    prisonApiWebClient.post()
+  ): List<PrisonerSchedule> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/schedules/{agencyId}/externalTransfers")
@@ -191,14 +201,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
+  }
 
   suspend fun getOffenderAdjudications(
     agencyId: String,
     dateRange: LocalDateRange,
     prisonerNumbers: Set<String>,
     timeSlot: TimeSlot? = null,
-  ): List<OffenderAdjudicationHearing> =
-    prisonApiWebClient.post()
+  ): List<OffenderAdjudicationHearing> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/offenders/adjudication-hearings")
@@ -211,6 +223,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .awaitBody()
+  }
 
   fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
     return prisonApiWebClient.get()

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
@@ -111,6 +112,11 @@ class ScheduledEventServiceSinglePrisonerTest {
     val adjudications = listOf(adjudicationHearing(prisonCode, prisonerNumber))
     val transferEventsToday = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = LocalDate.now()))
 
+    val sensitiveEventDateRange = LocalDateRange(
+      dateRange.start,
+      if (LocalDate.now() < dateRange.endInclusive) LocalDate.now() else dateRange.endInclusive,
+    )
+
     if (withPrisonerDetailsException) {
       prisonerSearchApiClient.stub {
         on {
@@ -151,7 +157,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
       on {
         runBlocking {
-          prisonApiClient.getScheduledCourtHearingsAsync(900001, dateRange)
+          prisonApiClient.getScheduledCourtHearingsAsync(900001, sensitiveEventDateRange)
         }
       } doReturn courtHearings
 
@@ -887,7 +893,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
-          assertThat(it.internalLocationCode).isEqualTo("Unknown")
+          assertThat(it.internalLocationCode).isEqualTo("No information available")
           assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }
@@ -1214,6 +1220,59 @@ class ScheduledEventServiceSinglePrisonerTest {
       }
         .isInstanceOf(Exception::class.java)
         .hasMessage("Error")
+    }
+  }
+
+  @Nested
+  @DisplayName("Scheduled events - hide sensitive future events")
+  inner class ShowHideSensitiveEvents {
+    val prisonCode = "MDI"
+    val prisonerNumber = "G4793VF"
+    val startDate: LocalDate = LocalDate.now().minusDays(1)
+    val endDate: LocalDate = LocalDate.now().plusDays(10)
+    private val dateRangeOverlappingTodaysDate = LocalDateRange(startDate, endDate)
+    val timeSlot: TimeSlot = TimeSlot.AM
+
+    @BeforeEach
+    fun beforeEach() {
+      setupRolledOutPrisonMock(
+        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
+        appointmentsRolloutDate = LocalDate.of(2600, 12, 22),
+      )
+
+      whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
+        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
+          prisonCode,
+          prisonerNumber,
+          startDate,
+          endDate,
+        ),
+      ).thenReturn(listOf(activityFromDbInstance()))
+    }
+
+    @Test
+    fun `Should not fetch sensitive future events`() {
+      setupSinglePrisonerApiMocks(prisonCode, prisonerNumber, dateRangeOverlappingTodaysDate)
+
+      service.getScheduledEventsForSinglePrisoner(
+        prisonCode,
+        prisonerNumber,
+        LocalDateRange(startDate, endDate),
+        timeSlot,
+        appointmentCategoryMap(),
+        appointmentLocationMap(),
+      )
+
+      // Should not retrieve sensitive events with future date ranges
+      verifyBlocking(prisonApiClient) {
+        getScheduledCourtHearingsAsync(any(), eq(LocalDateRange(startDate, LocalDate.now())))
+      }
+      verifyBlocking(prisonApiClient) {
+        getExternalTransfersOnDateAsync(any(), any(), eq(LocalDate.now()))
+      }
     }
   }
 }

@@ -3,19 +3,22 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import java.time.LocalDateTime
 
-class PrisonerRejectedFromWaitingListEvent(
+class PrisonerDeclinedFromWaitingListEvent(
+  val waitingListId: Long,
   val activityId: Long,
+  val scheduleId: Long,
   val activityName: String,
   val prisonCode: String,
   val prisonerNumber: String,
-  createdAt: LocalDateTime,
-
+  declinedAt: LocalDateTime,
+  declinedBy: String,
 ) : AuditableEvent(
   auditType = AuditType.PRISONER,
-  auditEventType = AuditEventType.PRISONER_REJECTED_FROM_WAITING_LIST,
-  details = "Prisoner $prisonerNumber was rejected from the waiting list for " +
+  auditEventType = AuditEventType.PRISONER_DECLINED_FROM_WAITING_LIST,
+  details = "Prisoner $prisonerNumber was declined from the waiting list ($waitingListId) for " +
     "activity '$activityName'($activityId)",
-  createdAt = createdAt,
+  createdAt = declinedAt,
+  createdBy = declinedBy,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -28,11 +31,13 @@ class PrisonerRejectedFromWaitingListEvent(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
+    activityScheduleId = scheduleId,
     message = toString(),
   )
 
   override fun toJson(): String = generateHmppsAuditJson(
     activityId = activityId,
+    scheduleId = scheduleId,
     activityName = activityName,
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,

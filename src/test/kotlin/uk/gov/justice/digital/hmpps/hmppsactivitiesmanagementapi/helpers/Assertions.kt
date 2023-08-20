@@ -8,7 +8,12 @@ import java.time.temporal.ChronoUnit
 /**
  * Simple helper functions for commonly used assertions
  */
-internal infix fun LocalDateTime.isCloseTo(dateTime: LocalDateTime) {
+
+internal infix fun Boolean.isBool(value: Boolean) {
+  assertThat(this).isEqualTo(value)
+}
+
+internal infix fun LocalDateTime?.isCloseTo(dateTime: LocalDateTime) {
   assertThat(this).isCloseTo(dateTime, within(2, ChronoUnit.SECONDS))
 }
 

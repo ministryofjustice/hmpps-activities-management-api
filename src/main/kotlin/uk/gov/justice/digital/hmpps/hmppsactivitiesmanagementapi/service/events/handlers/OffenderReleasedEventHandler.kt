@@ -10,10 +10,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,6 +28,7 @@ class OffenderReleasedEventHandler(
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService,
   private val prisonApiClient: PrisonApiApplicationClient,
   private val attendanceRepository: AttendanceRepository,
+  private val waitingListService: WaitingListService,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
@@ -82,6 +85,13 @@ class OffenderReleasedEventHandler(
           .let { null }
       }
     }?.let { reason ->
+      waitingListService.declinePendingOrApprovedApplications(
+        event.prisonCode(),
+        event.prisonerNumber(),
+        "Released",
+        ServiceName.SERVICE_NAME.value,
+      )
+
       allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
         .deallocateAffectedAllocations(reason, event)
         .removeFutureAttendances(event)

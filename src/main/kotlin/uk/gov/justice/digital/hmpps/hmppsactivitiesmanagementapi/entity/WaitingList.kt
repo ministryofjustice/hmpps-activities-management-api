@@ -38,11 +38,26 @@ data class WaitingList(
 
   var comments: String? = null,
 
-  @Enumerated(EnumType.STRING)
-  var status: WaitingListStatus,
-
   val createdBy: String,
+
+  @Transient
+  private val initialStatus: WaitingListStatus,
 ) {
+  @Enumerated(EnumType.STRING)
+  var status: WaitingListStatus = initialStatus
+    set(value) {
+      if (value == WaitingListStatus.DECLINED) {
+        require(isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED)) {
+          "Only pending and approved waiting lists can be declined"
+        }
+      }
+
+      if (status == WaitingListStatus.DECLINED && value != WaitingListStatus.DECLINED) {
+        declinedReason = null
+      }
+
+      field = value
+    }
 
   @ManyToOne
   @JoinColumn(name = "activity_id", nullable = false)
@@ -51,6 +66,11 @@ data class WaitingList(
   val creationTime: LocalDateTime = LocalDateTime.now()
 
   var declinedReason: String? = null
+    set(value) {
+      require(status == WaitingListStatus.DECLINED) { "Cannot set the declined reason when status is not declined" }
+
+      field = value
+    }
 
   var updatedTime: LocalDateTime? = null
 

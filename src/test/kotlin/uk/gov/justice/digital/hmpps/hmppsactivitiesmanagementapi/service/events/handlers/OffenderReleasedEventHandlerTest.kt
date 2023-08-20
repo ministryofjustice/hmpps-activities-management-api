@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
@@ -45,6 +46,7 @@ class OffenderReleasedEventHandlerTest {
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
   private val attendanceRepository: AttendanceRepository = mock()
+  private val waitingListService: WaitingListService = mock()
 
   private val handler = OffenderReleasedEventHandler(
     rolloutPrisonRepository,
@@ -52,6 +54,7 @@ class OffenderReleasedEventHandlerTest {
     appointmentOccurrenceAllocationService,
     prisonApiClient,
     attendanceRepository,
+    waitingListService,
   )
 
   private val prisoner: InmateDetail = mock {
@@ -87,6 +90,7 @@ class OffenderReleasedEventHandlerTest {
     assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -100,6 +104,7 @@ class OffenderReleasedEventHandlerTest {
     assertThat(outcome.isSuccess()).isTrue
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -125,6 +130,7 @@ class OffenderReleasedEventHandlerTest {
     previouslyActiveAllocations.forEach { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue }
 
     verify(allocationRepository, never()).saveAllAndFlush(any<List<Allocation>>())
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -163,6 +169,8 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
+
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -202,6 +210,8 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
+
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -231,6 +241,8 @@ class OffenderReleasedEventHandlerTest {
 
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
+
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -257,6 +269,7 @@ class OffenderReleasedEventHandlerTest {
     assertThat(outcome.isSuccess()).isFalse
     assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
     verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test

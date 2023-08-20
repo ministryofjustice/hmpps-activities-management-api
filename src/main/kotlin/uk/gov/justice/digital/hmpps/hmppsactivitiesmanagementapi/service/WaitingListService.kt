@@ -4,9 +4,9 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import toPrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveOutPrison
@@ -15,12 +15,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.metricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
@@ -28,12 +29,13 @@ import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
-@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -72,7 +74,7 @@ class WaitingListService(
         requestedBy = request.requestedBy!!,
         comments = request.comments,
         createdBy = createdBy,
-        status = request.status!!,
+        initialStatus = request.status!!,
       ),
     )
       .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
@@ -162,6 +164,21 @@ class WaitingListService(
     require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
       "The waiting list $waitingListId can no longer be updated"
     }
+
+    require(activitySchedule.allocations(true).none { it.prisonerNumber == prisonerNumber }) {
+      "The waiting list $waitingListId can no longer be updated because the prisoner has already been allocated to the activity"
+    }
+
+    val otherApplications =
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        prisonCode,
+        prisonerNumber,
+        activitySchedule,
+      ).filter { it != this }
+
+    require(otherApplications.none { (it.updatedTime ?: it.creationTime) > (updatedTime ?: creationTime) }) {
+      "The waiting list $waitingListId can no longer be updated because there is a more recent application for this prisoner"
+    }
   }
 
   private fun WaitingList.updateApplicationDate(request: WaitingListApplicationUpdateRequest, changedBy: String) {
@@ -237,10 +254,54 @@ class WaitingListService(
     val propertiesMap = mapOf(
       PRISONER_NUMBER_KEY to prisonerNumber,
     )
-    val metricsMap = mapOf(
-      NUMBER_OF_RESULTS_KEY to 1.0,
-    )
 
-    telemetryClient.trackEvent(event.value, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(event.value, propertiesMap, metricsMap())
+  }
+
+  @Transactional
+  fun declinePendingOrApprovedApplications(
+    prisonCode: String,
+    prisonerNumber: String,
+    reason: String,
+    declinedBy: String,
+  ) {
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
+      prisonCode,
+      prisonerNumber,
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
+  }
+
+  @Transactional
+  fun declinePendingOrApprovedApplications(
+    activityId: Long,
+    reason: String,
+    declinedBy: String,
+  ) {
+    waitingListRepository.findByActivityAndStatusIn(
+      activityRepository.findOrThrowNotFound(activityId),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
+  }
+
+  private fun WaitingList.decline(reason: String, declinedBy: String): WaitingList {
+    val statusBefore = this.status
+
+    apply {
+      status = WaitingListStatus.DECLINED
+      declinedReason = reason
+      updatedTime = LocalDateTime.now()
+      updatedBy = declinedBy
+    }
+
+    log.info("Declined $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
+
+    return this
   }
 }

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -30,6 +31,7 @@ class ManageAllocationsService(
   private val allocationRepository: AllocationRepository,
   private val prisonRegimeRepository: PrisonRegimeRepository,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
+  private val waitingListService: WaitingListService,
 ) {
 
   companion object {
@@ -71,6 +73,7 @@ class ManageAllocationsService(
         .flatMap { prison ->
           activityRepository.getAllForPrisonAndDate(prison.code, today).flatMap { activity ->
             if (activity.ends(today)) {
+              waitingListService.declinePendingOrApprovedApplications(activity.activityId, "Activity ended", ServiceName.SERVICE_NAME.value)
               activity.schedules().flatMap { it.allocations().filterNot(Allocation::isEnded) }
             } else {
               activity.schedules().flatMap { it.allocations().ending(today) }
@@ -108,7 +111,9 @@ class ManageAllocationsService(
               .block()
               ?.filter { it.hasExpired(regime) }
               ?.map { it.prisonerNumber }
-              ?.toSet() ?: emptySet()
+              ?.toSet()
+              ?.onEach { waitingListService.declinePendingOrApprovedApplications(prison.code, it, "Released", ServiceName.SERVICE_NAME.value) }
+              ?: emptySet()
           }
 
           candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
