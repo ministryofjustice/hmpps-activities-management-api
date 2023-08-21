@@ -10,6 +10,8 @@ import jakarta.validation.Valid
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -127,4 +129,62 @@ class MigrateActivityController(
     @Parameter(description = "Allocation migration request", required = true)
     allocationMigrateRequest: AllocationMigrateRequest,
   ) = migrateActivityService.migrateAllocation(allocationMigrateRequest)
+
+  @DeleteMapping(value = ["/delete-activity/prison/{prisonCode}/id/{activityId}"])
+  @Operation(
+    summary = "Delete an activity with cascade.",
+    description = """
+      Deletes an activity and all its child entities including schedule, slots, pay, instances, attendances and allocations.
+      Only for use via by migration services to undo a failed migration.
+      Requires the role 'ROLE_NOMIS_ACTIVITIES'.
+      """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The activity was deleted.",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
+  fun deleteActivity(
+    @Parameter(description = "The prison code where this activity exists", required = true)
+    @PathVariable("prisonCode")
+    prisonCode: String,
+
+    @Parameter(description = "The activity ID to remove", required = true)
+    @PathVariable("activityId")
+    activityId: Long,
+  ) = migrateActivityService.deleteActivityCascade(prisonCode, activityId)
 }

@@ -313,4 +313,13 @@ class MigrateActivityService(
     log.error(msg)
     throw ValidationException(msg)
   }
+
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
+  @Transactional
+  fun deleteActivityCascade(prisonCode: String, activityId: Long) {
+    log.info("Delete cascade activity ID $activityId")
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+      ?: logAndThrowValidationException("Failed to delete. Activity $activityId was not found at prison $prisonCode")
+    activityRepository.delete(activity)
+  }
 }
