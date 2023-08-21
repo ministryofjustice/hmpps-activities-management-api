@@ -8,10 +8,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import java.time.LocalDate
@@ -24,6 +26,7 @@ class ActivitiesChangedEventHandler(
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val waitingListService: WaitingListService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -80,10 +83,18 @@ class ActivitiesChangedEventHandler(
     }
   }
 
-  private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) =
+  private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) {
+    waitingListService.declinePendingOrApprovedApplications(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      "Released",
+      ServiceName.SERVICE_NAME.value,
+    )
+
     allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
       .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE, event)
       .removeFutureAttendances(event)
+  }
 
   private fun List<Allocation>.deallocateAffectedAllocations(
     reason: DeallocationReason,

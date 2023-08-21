@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import java.time.LocalDate
@@ -42,16 +43,16 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   private val allocationRepository: AllocationRepository = mock()
-
   private val attendanceRepository: AttendanceRepository = mock()
-
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
+  private val waitingListService: WaitingListService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
     rolloutPrisonRepository,
     allocationRepository,
     attendanceRepository,
     attendanceReasonRepository,
+    waitingListService,
   )
 
   @Test
@@ -62,6 +63,7 @@ class ActivitiesChangedEventHandlerTest {
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -72,6 +74,7 @@ class ActivitiesChangedEventHandlerTest {
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -100,6 +103,7 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.suspendedReason).isEqualTo("Temporary absence")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -153,6 +157,7 @@ class ActivitiesChangedEventHandlerTest {
     verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
     verify(todaysFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
     verify(tomorrowsFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -172,10 +177,11 @@ class ActivitiesChangedEventHandlerTest {
     assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
     assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
+    verifyNoInteractions(waitingListService)
   }
 
   @Test
-  fun `allocations are ended on end action`() {
+  fun `allocations are ended on end action and waiting lists are declined`() {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456"),
@@ -201,6 +207,8 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
+
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -234,7 +242,7 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `only future attendances are removed on end`() {
+  fun `only future attendances are removed on end and waiting lists are declined`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
       whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
     }
@@ -261,6 +269,7 @@ class ActivitiesChangedEventHandlerTest {
     verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
     verify(todaysFutureScheduledInstance).remove(todaysFutureAttendance)
     verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {

@@ -6,6 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import toPrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveOutPrison
@@ -14,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -30,8 +32,10 @@ import java.time.LocalDateTime
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -160,6 +164,21 @@ class WaitingListService(
     require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {
       "The waiting list $waitingListId can no longer be updated"
     }
+
+    require(activitySchedule.allocations(true).none { it.prisonerNumber == prisonerNumber }) {
+      "The waiting list $waitingListId can no longer be updated because the prisoner has already been allocated to the activity"
+    }
+
+    val otherApplications =
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        prisonCode,
+        prisonerNumber,
+        activitySchedule,
+      ).filter { it != this }
+
+    require(otherApplications.none { (it.updatedTime ?: it.creationTime) > (updatedTime ?: creationTime) }) {
+      "The waiting list $waitingListId can no longer be updated because there is a more recent application for this prisoner"
+    }
   }
 
   private fun WaitingList.updateApplicationDate(request: WaitingListApplicationUpdateRequest, changedBy: String) {
@@ -240,27 +259,49 @@ class WaitingListService(
   }
 
   @Transactional
-  fun declinePendingOrApprovedApplicationsFor(
+  fun declinePendingOrApprovedApplications(
     prisonCode: String,
-    prisonerNumbers: Set<String>,
+    prisonerNumber: String,
     reason: String,
     declinedBy: String,
   ) {
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(prisonCode, prisonerNumbers)
-      .filter { it.isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED) }
-      .forEach { application ->
-        val statusBefore = application.status
+    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
+      prisonCode,
+      prisonerNumber,
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
+  }
 
-        application.apply {
-          status = WaitingListStatus.DECLINED
-          declinedReason = reason
-          updatedTime = LocalDateTime.now()
-          updatedBy = declinedBy
-        }
+  @Transactional
+  fun declinePendingOrApprovedApplications(
+    activityId: Long,
+    reason: String,
+    declinedBy: String,
+  ) {
+    waitingListRepository.findByActivityAndStatusIn(
+      activityRepository.findOrThrowNotFound(activityId),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    ).forEach { application ->
+      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
+      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+    }
+  }
 
-        // TODO needs to be audited???
+  private fun WaitingList.decline(reason: String, declinedBy: String): WaitingList {
+    val statusBefore = this.status
 
-        log.info("Declined $statusBefore waiting list application ${application.waitingListId} for prisoner number ${application.prisonerNumber}")
-      }
+    apply {
+      status = WaitingListStatus.DECLINED
+      declinedReason = reason
+      updatedTime = LocalDateTime.now()
+      updatedBy = declinedBy
+    }
+
+    log.info("Declined $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
+
+    return this
   }
 }

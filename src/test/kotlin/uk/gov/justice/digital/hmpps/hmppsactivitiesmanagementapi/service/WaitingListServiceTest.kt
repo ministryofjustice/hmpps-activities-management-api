@@ -27,8 +27,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
@@ -49,9 +51,19 @@ class WaitingListServiceTest {
   private val scheduleRepository: ActivityScheduleRepository =
     mock { on { findBy(schedule.activityScheduleId, DEFAULT_CASELOAD_PENTONVILLE) } doReturn schedule }
   private val waitingListRepository: WaitingListRepository = mock {}
+  private val activityRepository: ActivityRepository = mock {}
   private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val service = WaitingListService(scheduleRepository, waitingListRepository, prisonApiClient, telemetryClient)
+  private val auditService: AuditService = mock()
+  private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
+  private val service = WaitingListService(
+    scheduleRepository,
+    waitingListRepository,
+    activityRepository,
+    prisonApiClient,
+    telemetryClient,
+    auditService,
+  )
   private val waitingListCaptor = argumentCaptor<WaitingList>()
 
   @Test
@@ -775,6 +787,61 @@ class WaitingListServiceTest {
   }
 
   @Test
+  fun `update application fails if person is already allocated to the activity`() {
+    val waitingList =
+      waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING, allocated = true)
+        .also {
+          whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+        }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated because the prisoner has already been allocated to the activity")
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
+  fun `update application fails if person has a more recent application for the same activity`() {
+    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+      .also {
+        whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+
+        val moreRecentApplication =
+          waitingList(waitingListId = 2, prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+        whenever(
+          waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+            it.prisonCode,
+            it.prisonerNumber,
+            it.activitySchedule,
+          ),
+        ) doReturn listOf(it.copy(), moreRecentApplication)
+      }
+
+    assertThatThrownBy {
+      service.updateWaitingList(
+        waitingList.waitingListId,
+        WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+        "Frank",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The waiting list ${waitingList.waitingListId} can no longer be updated because there is a more recent application for this prisoner")
+
+    waitingList.status isEqualTo WaitingListStatus.PENDING
+    waitingList.updatedTime isEqualTo null
+    waitingList.updatedBy isEqualTo null
+  }
+
+  @Test
   fun `update status fails if not PENDING, APPROVED or DECLINED`() {
     val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
@@ -823,22 +890,35 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `declines pending and approved applications only`() {
-    val pending = waitingList(waitingListId = 1, prisonCode = moorlandPrisonCode, prisonerNumber = "A", initialStatus = WaitingListStatus.PENDING)
-    val approved = waitingList(waitingListId = 2, prisonCode = moorlandPrisonCode, prisonerNumber = "B", initialStatus = WaitingListStatus.APPROVED)
-    val allocated = waitingList(waitingListId = 3, prisonCode = moorlandPrisonCode, prisonerNumber = "C", initialStatus = WaitingListStatus.ALLOCATED)
-    val removed = waitingList(waitingListId = 4, prisonCode = moorlandPrisonCode, prisonerNumber = "D", initialStatus = WaitingListStatus.REMOVED)
+  fun `declines pending and approved applications for prisoner and is audited`() {
+    val pending = waitingList(
+      waitingListId = 1,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.PENDING,
+    )
+    val approved = waitingList(
+      waitingListId = 2,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.APPROVED,
+    )
 
     whenever(
-      waitingListRepository.findByPrisonCodeAndPrisonerNumberIn(
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
         prisonCode = moorlandPrisonCode,
-        setOf("A", "B", "C", "D"),
+        prisonerNumber = "A",
+        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
       ),
-    ) doReturn listOf(pending, approved, allocated, removed)
+    ) doReturn listOf(pending, approved)
 
-    service.declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("A", "B", "C", "D"), "reason", "Fred")
+    service.declinePendingOrApprovedApplications(moorlandPrisonCode, "A", "reason", "Fred")
 
-    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberIn(moorlandPrisonCode, setOf("A", "B", "C", "D"))
+    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberAndStatusIn(
+      moorlandPrisonCode,
+      "A",
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    )
 
     with(pending) {
       status isEqualTo WaitingListStatus.DECLINED
@@ -846,23 +926,130 @@ class WaitingListServiceTest {
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
+
     with(approved) {
       status isEqualTo WaitingListStatus.DECLINED
       declinedReason isEqualTo "reason"
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
-    with(allocated) {
-      status isEqualTo WaitingListStatus.ALLOCATED
-      declinedReason isEqualTo null
-      updatedTime isEqualTo null
-      updatedBy isEqualTo null
+
+    verify(auditService, times(2)).logEvent(declinedEventCaptor.capture())
+
+    with(declinedEventCaptor.firstValue) {
+      waitingListId isEqualTo 1
+      activityId isEqualTo 1
+      scheduleId isEqualTo 1
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
     }
-    with(removed) {
-      status isEqualTo WaitingListStatus.REMOVED
-      declinedReason isEqualTo null
-      updatedTime isEqualTo null
-      updatedBy isEqualTo null
+
+    with(declinedEventCaptor.secondValue) {
+      waitingListId isEqualTo 2
+      activityId isEqualTo 2
+      scheduleId isEqualTo 2
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
+    }
+  }
+
+  @Test
+  fun `declines pending and approved applications for activity and is audited`() {
+    val activity = activityEntity()
+    val pendingA = waitingList(
+      waitingListId = 1,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.PENDING,
+    )
+    val approvedA = waitingList(
+      waitingListId = 2,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.APPROVED,
+    )
+    val pendingB = waitingList(
+      waitingListId = 3,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "B",
+      initialStatus = WaitingListStatus.PENDING,
+    )
+    val approvedB = waitingList(
+      waitingListId = 4,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "B",
+      initialStatus = WaitingListStatus.APPROVED,
+    )
+
+    whenever(activityRepository.findById(activity.activityId)) doReturn Optional.of(activity)
+
+    whenever(
+      waitingListRepository.findByActivityAndStatusIn(
+        activity,
+        setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      ),
+    ) doReturn listOf(pendingA, approvedA, pendingB, approvedB)
+
+    service.declinePendingOrApprovedApplications(activity.activityId, "reason", "Bob")
+
+    verify(waitingListRepository).findByActivityAndStatusIn(
+      activity,
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+    )
+
+    listOf(pendingA, approvedA, pendingB, approvedB).forEach {
+      with(it) {
+        status isEqualTo WaitingListStatus.DECLINED
+        declinedReason isEqualTo "reason"
+        updatedTime!! isCloseTo TimeSource.now()
+        updatedBy isEqualTo "Bob"
+      }
+    }
+
+    verify(auditService, times(4)).logEvent(declinedEventCaptor.capture())
+
+    with(declinedEventCaptor.firstValue) {
+      waitingListId isEqualTo 1
+      activityId isEqualTo 1
+      scheduleId isEqualTo 1
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
+    }
+
+    with(declinedEventCaptor.secondValue) {
+      waitingListId isEqualTo 2
+      activityId isEqualTo 2
+      scheduleId isEqualTo 2
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
+    }
+
+    with(declinedEventCaptor.thirdValue) {
+      waitingListId isEqualTo 3
+      activityId isEqualTo 3
+      scheduleId isEqualTo 3
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "B"
+      createdAt isCloseTo TimeSource.now()
+    }
+
+    with(declinedEventCaptor.lastValue) {
+      waitingListId isEqualTo 4
+      activityId isEqualTo 4
+      scheduleId isEqualTo 4
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "B"
+      createdAt isCloseTo TimeSource.now()
     }
   }
 }
