@@ -53,7 +53,7 @@ class MigrateActivityService(
   @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
-      throw ValidationException("The requested prison is not rolled-out for activities")
+      throw ValidationException("The requested prison ${request.prisonCode} is not rolled-out for activities")
     }
 
     log.info("Migrating activity ${request.description}")
