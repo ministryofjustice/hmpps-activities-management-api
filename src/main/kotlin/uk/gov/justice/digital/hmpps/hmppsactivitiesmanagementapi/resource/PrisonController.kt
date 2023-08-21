@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -27,8 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
 import java.time.LocalDate
-
-// TODO add pre-auth annotations to enforce roles when we have them
 
 @RestController
 @RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -78,6 +77,7 @@ class PrisonController(
   )
   @GetMapping(value = ["/{prisonCode}/activities"])
   @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
@@ -132,6 +132,7 @@ class PrisonController(
   )
   @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/activities"])
   @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivitiesInCategory(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("categoryId") categoryId: Long,
@@ -177,6 +178,7 @@ class PrisonController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getScheduledPrisonLocations(
     @PathVariable("prisonCode")
     prisonCode: String,
@@ -230,6 +232,7 @@ class PrisonController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getSchedulesByPrisonCode(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(
@@ -299,6 +302,7 @@ class PrisonController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getPrisonPayBands(
     @PathVariable("prisonCode")
     prisonCode: String,
@@ -354,6 +358,7 @@ class PrisonController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): PrisonRegime =
     prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 }

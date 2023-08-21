@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -49,7 +48,6 @@ class MigrateActivityService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
@@ -234,7 +232,6 @@ class MigrateActivityService(
     return if (tiers.size > 0) tiers.first() else null
   }
 
-  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateAllocation(request: AllocationMigrateRequest): AllocationMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {

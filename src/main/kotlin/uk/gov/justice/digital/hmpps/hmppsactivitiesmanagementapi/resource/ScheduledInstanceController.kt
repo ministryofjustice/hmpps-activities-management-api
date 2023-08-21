@@ -11,6 +11,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -26,9 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
-
-// TODO add pre-auth annotations to enforce roles when we have them
-// TODO - Combine this with ActivityScheduleInstanceController - all /scheduled-instances endpoints.
 
 @RestController
 @RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -88,6 +86,7 @@ class ScheduledInstanceController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getScheduledInstanceById(
     @PathVariable("instanceId") instanceId: Long,
   ): ActivityScheduleInstance = scheduledInstanceService.getActivityScheduleInstanceById(instanceId)
@@ -142,6 +141,7 @@ class ScheduledInstanceController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAttendancesByScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
   ): List<Attendance> = attendancesService.findAttendancesByScheduledInstance(instanceId)
@@ -201,6 +201,7 @@ class ScheduledInstanceController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun uncancelScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
     @Valid
@@ -248,6 +249,7 @@ class ScheduledInstanceController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun cancelScheduledInstance(
     @PathVariable("instanceId")
     instanceId: Long,

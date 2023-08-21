@@ -28,7 +28,7 @@ import java.security.Principal
 @RestController
 @Validated
 @RequestMapping("/waiting-list-applications", produces = [MediaType.APPLICATION_JSON_VALUE])
-@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+@PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
 class WaitingListApplicationController(private val waitingListService: WaitingListService) {
 
   @GetMapping(value = ["/{waitingListId}"])
@@ -82,6 +82,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getWaitingListById(@PathVariable("waitingListId") id: Long) = waitingListService.getWaitingListBy(id)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
@@ -129,6 +130,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun updateWaitingList(
     @PathVariable("waitingListId") waitingListId: Long,
     principal: Principal,
