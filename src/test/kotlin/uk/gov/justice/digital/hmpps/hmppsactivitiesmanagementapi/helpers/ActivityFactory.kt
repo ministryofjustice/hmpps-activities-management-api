@@ -79,7 +79,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = 1, timestamp))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp))
     }
     if (!noPayBands) {
       this.addPay(
@@ -354,7 +354,7 @@ fun waitingList(
   comments: String? = null,
   allocated: Boolean = false,
 ): WaitingList {
-  val schedule = activityEntity(prisonCode = prisonCode).schedules().first()
+  val schedule = activityEntity(activityId = waitingListId, prisonCode = prisonCode).schedules().first()
     .apply {
       if (allocated) {
         allocatePrisoner(
@@ -365,7 +365,6 @@ fun waitingList(
         )
       }
     }
-
   val allocation = schedule.allocations().first()
 
   return WaitingList(

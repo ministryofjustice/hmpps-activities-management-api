@@ -170,7 +170,7 @@ class OffenderReleasedEventHandlerTest {
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("123456"), "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -211,7 +211,7 @@ class OffenderReleasedEventHandlerTest {
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("123456"), "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -242,7 +242,7 @@ class OffenderReleasedEventHandlerTest {
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
 
-    verify(waitingListService).declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("123456"), "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test

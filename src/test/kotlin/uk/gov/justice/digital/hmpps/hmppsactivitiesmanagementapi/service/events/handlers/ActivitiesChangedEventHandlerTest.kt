@@ -208,7 +208,7 @@ class ActivitiesChangedEventHandlerTest {
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("123456"), "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   @Test
@@ -269,7 +269,7 @@ class ActivitiesChangedEventHandlerTest {
     verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
     verify(todaysFutureScheduledInstance).remove(todaysFutureAttendance)
     verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
-    verify(waitingListService).declinePendingOrApprovedApplicationsFor(moorlandPrisonCode, setOf("123456"), "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
   private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {
