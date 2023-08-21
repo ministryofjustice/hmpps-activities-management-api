@@ -112,6 +112,10 @@ online:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS_ONLINE}
 
+applications:
+  max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES}
+  max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS}
+
 springdoc:
   swagger-ui:
     tags-sorter: alpha
