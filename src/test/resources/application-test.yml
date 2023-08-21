@@ -36,6 +36,10 @@ online:
   create-scheduled-instances:
     days-in-advance: 14
 
+applications:
+  max-appointment-instances: 20000
+  max-sync-appointment-instance-actions: 10
+
 hmpps:
   auth:
     url: http://localhost:8090/auth
