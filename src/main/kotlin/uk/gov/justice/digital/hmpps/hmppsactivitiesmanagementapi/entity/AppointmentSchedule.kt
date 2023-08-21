@@ -52,6 +52,10 @@ data class AppointmentSchedule(
     result = 31 * result + repeatCount
     return result
   }
+
+  override fun toString(): String {
+    return "AppointmentSchedule(appointmentScheduleId=$appointmentScheduleId, repeatPeriod=$repeatPeriod, repeatCount=$repeatCount)"
+  }
 }
 
 class AppointmentScheduleIterator(

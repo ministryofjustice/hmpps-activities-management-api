@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -23,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
@@ -46,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityB
 @Transactional(readOnly = true)
 class ActivityService(
   private val activityRepository: ActivityRepository,
+  private val activitySummaryRepository: ActivitySummaryRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val activityTierRepository: ActivityTierRepository,
   private val eligibilityRuleRepository: EligibilityRuleRepository,
@@ -98,9 +101,9 @@ class ActivityService(
   fun getActivitiesInPrison(
     prisonCode: String,
     excludeArchived: Boolean,
-  ) = activityRepository.getAllByPrisonCode(prisonCode)
-    .filter { !excludeArchived || !it.state(ActivityState.ARCHIVED) }
-    .toModelLite()
+  ) = activitySummaryRepository.findAllByPrisonCode(prisonCode)
+    .filter { !excludeArchived || it.activityState != ActivityState.ARCHIVED }
+    .toModel()
 
   fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
     val activity = activityRepository.findById(activityId)
