@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
@@ -80,7 +81,7 @@ class PrisonController(
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
-  ): List<ActivityLite> = activityService.getActivitiesInPrison(prisonCode, excludeArchived)
+  ): List<ActivitySummary> = activityService.getActivitiesInPrison(prisonCode, excludeArchived)
 
   @Operation(
     summary = "Get list of activities within a category at a specified prison",

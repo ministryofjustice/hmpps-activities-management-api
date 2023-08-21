@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonRegimeService
@@ -113,20 +114,9 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   @Test
   fun `200 response when get activities`() {
     val expectedModel = listOf(
-      ActivityLite(
+      ActivitySummary(
         id = 1,
-        prisonCode = moorlandPrisonCode,
-        attendanceRequired = true,
-        inCell = false,
-        onWing = false,
-        pieceWork = false,
-        outsideWork = false,
-        payPerSession = PayPerSession.H,
-        summary = "activity summary",
-        description = "activity description",
-        riskLevel = "High",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
+        activityName = "Book club",
         category = ActivityCategory(
           id = 1L,
           code = "LEISURE_SOCIAL",
@@ -135,6 +125,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         ),
         capacity = 20,
         allocated = 10,
+        waitlisted = 3,
         createdTime = LocalDateTime.now(),
         activityState = ActivityState.LIVE,
       ),
