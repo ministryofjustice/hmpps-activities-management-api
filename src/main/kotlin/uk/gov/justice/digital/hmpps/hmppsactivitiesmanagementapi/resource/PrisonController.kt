@@ -50,7 +50,7 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityLite::class)),
+            array = ArraySchema(schema = Schema(implementation = ActivitySummary::class)),
           ),
         ],
       ),
