@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
 
 @Repository
 interface ActivitySummaryRepository : ReadOnlyRepository<ActivitySummary, Long> {
