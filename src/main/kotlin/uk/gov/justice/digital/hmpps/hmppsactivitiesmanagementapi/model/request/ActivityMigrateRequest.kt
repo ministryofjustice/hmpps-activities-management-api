@@ -59,12 +59,14 @@ data class ActivityMigrateRequest(
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean = false,
 
+  @Schema(description = "Whether the activity takes place outside of the prison", example = "true")
+  val outsideWork: Boolean = false,
+
   @field:NotEmpty(message = "Activity schedules must have at least one time when they run.")
   @Schema(description = "Details of when this activity runs during the week")
   val scheduleRules: List<NomisScheduleRule>,
 
-  @field:NotEmpty(message = "An activity must have at least one pay rate.")
-  @Schema(description = "The pay rates which apply to this activity")
+  @Schema(description = "The pay rates which apply to this activity. Where none are specified we will assume an unpaid activity.")
   val payRates: List<NomisPayRate>,
 )
 
@@ -102,7 +104,7 @@ data class NomisScheduleRule(
   val sunday: Boolean = false,
 )
 
-@Schema(description = "Describes a pay rate for an activity. At least one pay rate must be specified.")
+@Schema(description = "Describes a pay rate for an activity.")
 data class NomisPayRate(
   @Schema(description = "The incentive level code from NOMIS", example = "BAS")
   @field:NotEmpty(message = "An incentive level must be specified")

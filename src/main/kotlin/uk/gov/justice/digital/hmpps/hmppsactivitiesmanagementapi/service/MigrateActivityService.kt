@@ -7,6 +7,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
@@ -24,10 +26,13 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-// Useful constants
 const val MIGRATION_USER = "MIGRATION"
 const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
 const val ON_WING_LOCATION = "WOW"
+const val DEFAULT_NOMIS_PAY_BAND = "1"
+const val DEFAULT_RISK_LEVEL = "low"
+
+val commonIncentiveLevels = listOf("BAS", "STD", "ENH")
 
 @Service
 @Transactional(readOnly = true)
@@ -35,6 +40,7 @@ class MigrateActivityService(
   private val rolloutPrisonService: RolloutPrisonService,
   private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val activityTierRepository: ActivityTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -46,53 +52,63 @@ class MigrateActivityService(
   @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
-    log.info("Request to migrate NOMIS activity ${request.description}")
-
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
-      throw ValidationException("The requested prison is not rolled-out for activities")
+      throw ValidationException("The requested prison ${request.prisonCode} is not rolled-out for activities")
     }
 
-    // TODO: Is this a split regime activity? Different path for this ....
+    log.info("Migrating activity ${request.description}")
 
-    // Create the activity with its schedule from the request
     val activity = buildActivityEntity(request)
 
-    // Add the time slots into the schedule
+    // Add the day/time slots
     request.scheduleRules.forEach {
       activity.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
     }
 
-    // Add the pay rates
+    // Get pay bands defined for this prison
     val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+
+    // Add the pay rates to the activity
     request.payRates.forEach {
       val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
       if (payBand != null) {
         activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
       } else {
-        val errMsg = "Failed to migrate activity ${request.description}. No matching prison pay band found for Nomis pay band ${it.nomisPayBand}"
-        log.error(errMsg)
-        throw ValidationException(errMsg)
+        logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
       }
     }
 
-    // Saving the activity will also save the schedule, and this will trigger the sync event to NOMIS.
+    // If no pay rates are provided create flat rate of 0.00 for all pay bands and incentive levels
+    if (request.payRates.isEmpty()) {
+      payBands.forEach { pb ->
+        commonIncentiveLevels.forEach { incentive ->
+          activity.addPay(incentive, mapIncentiveLevel(incentive), pb, 0, null, null)
+        }
+      }
+    }
+
     val savedActivity = activityRepository.saveAndFlush(activity)
+
+    log.info("Migrated activity ${request.description}")
 
     return ActivityMigrateResponse(request.prisonCode, savedActivity.activityId, null)
   }
 
   private fun buildActivityEntity(request: ActivityMigrateRequest): Activity {
+    val tomorrow = LocalDate.now().plusDays(1)
+
     return Activity(
       prisonCode = request.prisonCode,
       activityCategory = mapProgramToCategory(request.programServiceCode),
       activityTier = mapProgramToTier(request.programServiceCode),
-      attendanceRequired = true, // Default
+      attendanceRequired = true,
       summary = request.description,
-      description = "Migrated from NOMIS ${request.description} program service ${request.programServiceCode}",
-      inCell = request.internalLocationId == null || request.programServiceCode == TIER2_IN_CELL_ACTIVITY,
+      description = "Migrated from NOMIS with program service code ${request.programServiceCode}",
+      inCell = (request.internalLocationId == null && !request.outsideWork) || request.programServiceCode == TIER2_IN_CELL_ACTIVITY,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
-      startDate = LocalDate.now().plusDays(1), // Start date of tomorrow
-      riskLevel = "Low", // Default
+      outsideWork = request.outsideWork,
+      startDate = tomorrow,
+      riskLevel = DEFAULT_RISK_LEVEL,
       minimumIncentiveNomisCode = request.minimumIncentiveLevel,
       minimumIncentiveLevel = mapIncentiveLevel(request.minimumIncentiveLevel),
       createdTime = LocalDateTime.now(),
@@ -100,10 +116,11 @@ class MigrateActivityService(
       updatedTime = LocalDateTime.now(),
       updatedBy = MIGRATION_USER,
     ).apply {
+      endDate = request.endDate
+    }.apply {
       addSchedule(
         description = request.description,
         internalLocation = request.internalLocationId?.let {
-          // TODO: Why is this using a prison API type for Location?
           Location(
             locationId = it,
             internalLocationCode = request.internalLocationCode,
@@ -114,9 +131,9 @@ class MigrateActivityService(
         },
         capacity = request.capacity,
         startDate = this.startDate,
-        endDate = request.endDate,
+        endDate = this.endDate,
         runsOnBankHoliday = request.runsOnBankHoliday,
-        scheduleWeeks = 1, // Defaults to 1
+        scheduleWeeks = 1,
       )
     }
   }
@@ -133,9 +150,7 @@ class MigrateActivityService(
     )
   }
 
-  // TODO: Not happy with this - should we get from the incentives API for this prison?
-  // Or in the request from the migration service?
-  // It will work for Risley, and most other prisons, except where they have defined their own set.
+  // TODO: Temporary - will work for Risley but we should look these up from incentives API for other prisons
   fun mapIncentiveLevel(code: String): String {
     val incentiveLevel = when (code) {
       "BAS" -> "Basic"
@@ -202,6 +217,7 @@ class MigrateActivityService(
     return category ?: throw ValidationException("Could not map $programServiceCode to a category")
   }
 
+  // Helper functions
   fun List<ActivityCategory>.isIndustries() = this.find { it.code == "SAA_INDUSTRIES" }
   fun List<ActivityCategory>.isPrisonJobs() = this.find { it.code == "SAA_PRISON_JOBS" }
   fun List<ActivityCategory>.isEducation() = this.find { it.code == "SAA_EDUCATION" }
@@ -213,8 +229,7 @@ class MigrateActivityService(
   fun List<ActivityCategory>.isOther() = this.find { it.code == "SAA_OTHER" }
 
   fun mapProgramToTier(programServiceCode: String): ActivityTier? {
-    // We only have one Tier for now - use Tier 1 for all
-    // TODO - some of these program code show Tier 2 activities - we could define a Tier 2?
+    // We only have one tier
     val tiers = activityTierRepository.findAll()
     return if (tiers.size > 0) tiers.first() else null
   }
@@ -222,15 +237,80 @@ class MigrateActivityService(
   @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateAllocation(request: AllocationMigrateRequest): AllocationMigrateResponse {
-    log.info("Request to migrate an allocation")
-
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
-      throw ValidationException("The requested prison is not rolled-out for activities")
+      logAndThrowValidationException("Prison ${request.prisonCode} is not rolled out for activities")
     }
 
-    // Is there a split regime ID provided? If yes, need to use rules to make the choice of activity
-    // If no choice, allocate to the activity ID provided.
+    val activity = activityRepository.findByActivityIdAndPrisonCode(request.activityId, request.prisonCode)
+      ?: logAndThrowValidationException("Activity ${request.activityId} was not found at prison ${request.prisonCode}")
 
-    return AllocationMigrateResponse(1L, 1L)
+    log.info("Migrating allocation ${request.prisonerNumber} to activity ${request.activityId} ${activity.summary}")
+
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+
+    if (!activity.isActive(tomorrow)) {
+      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} activity is not active tomorrow")
+    }
+
+    val activityScheduleId = activity.schedules().first().activityScheduleId
+    val schedule = activityScheduleRepository.findBy(activityScheduleId, activity.prisonCode)
+      ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber} to ${request.activityId} ${activity.summary}. Activity schedule ID $activityScheduleId not found.")
+
+    if (!schedule.isActiveOn(tomorrow)) {
+      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} - schedule is not active tomorrow")
+    }
+
+    if (schedule.allocations(excludeEnded = true).any { allocation -> allocation.prisonerNumber == request.prisonerNumber }) {
+      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Already allocated to ${request.activityId} ${activity.summary}")
+    }
+
+    val prisonerResults = prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)).block()
+    if (prisonerResults.isNullOrEmpty()) {
+      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not found in prisoner search.")
+    }
+
+    val prisoner = prisonerResults.first()
+    if (prisoner.prisonId != request.prisonCode || prisoner.status.contains("INACTIVE")) {
+      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not in ${request.prisonCode} or INACTIVE")
+    }
+
+    val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+
+    val prisonPayBand = if (request.nomisPayBand.isNullOrEmpty()) {
+      payBands.find { "${it.nomisPayBand}".trim() == DEFAULT_NOMIS_PAY_BAND }
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Pay band default $DEFAULT_NOMIS_PAY_BAND is not valid for ${request.prisonCode}")
+    } else {
+      payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
+    }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = request.prisonerNumber.toPrisonerNumber(),
+      payBand = prisonPayBand,
+      bookingId = prisoner.bookingId?.let { prisoner.bookingId.toLong() } ?: 0L,
+      startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
+      endDate = request.endDate,
+      allocatedBy = MIGRATION_USER,
+    )
+
+    if (request.suspendedFlag) {
+      log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+    }
+
+    val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)
+
+    val allocation = savedSchedule.allocations(excludeEnded = true)
+      .find { it.prisonerNumber == request.prisonerNumber }
+      ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Could not re-read the saved allocation")
+
+    log.info("Allocated ${request.prisonerNumber} to ${activity.activityId} ${activity.summary} with allocation ID ${allocation.allocationId}")
+
+    return AllocationMigrateResponse(request.activityId, allocation.allocationId)
+  }
+
+  private fun logAndThrowValidationException(msg: String): Nothing {
+    log.error(msg)
+    throw ValidationException(msg)
   }
 }
