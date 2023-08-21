@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.Ser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -37,7 +36,6 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
   private val allocation = allocation()
 
   private val activityCreatedCaptor = argumentCaptor<ActivityCreatedEvent>()
-  private val prisonerAllocatedCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val prisonerDeallocatedCaptor = argumentCaptor<PrisonerDeallocatedEvent>()
 
   private val caseLoad = "MDI"

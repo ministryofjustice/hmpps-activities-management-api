@@ -6,6 +6,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -100,6 +102,29 @@ internal fun activityEntity(
       )
     }
   }
+
+internal fun activitySummary(
+  category: ActivityCategory = activityCategory(),
+  timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  activityId: Long = 1L,
+  prisonCode: String = "MDI",
+  activityName: String = "Maths",
+  capacity: Int = 20,
+  allocated: Int = 10,
+  waitlisted: Int = 2,
+  activityState: ActivityState = ActivityState.LIVE,
+) =
+  ActivitySummary(
+    id = activityId,
+    prisonCode = prisonCode,
+    activityName = activityName,
+    capacity = capacity,
+    allocated = allocated,
+    waitlisted = waitlisted,
+    createdTime = timestamp,
+    activityState = activityState,
+    activityCategory = category,
+  )
 
 internal fun activityCategory(code: String = "category code") =
   ActivityCategory(

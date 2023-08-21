@@ -45,6 +45,7 @@ class ManageScheduledInstancesServiceTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
+    activitySummaryRepository = mock(),
     activityCategoryRepository = mock(),
     activityTierRepository = mock(),
     eligibilityRuleRepository = mock(),

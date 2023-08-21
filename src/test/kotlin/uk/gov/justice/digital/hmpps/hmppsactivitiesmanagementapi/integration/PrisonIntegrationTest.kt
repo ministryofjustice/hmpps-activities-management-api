@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityM
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -67,32 +68,13 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     val activities = webTestClient.getActivities("PVI")
 
     assertThat(activities).containsExactlyInAnyOrder(
-      ActivityLite(
+      ActivitySummary(
         id = 1,
-        prisonCode = "PVI",
-        attendanceRequired = true,
-        inCell = false,
-        onWing = false,
-        pieceWork = false,
-        outsideWork = false,
-        payPerSession = PayPerSession.H,
-        summary = "Maths",
-        description = "Maths Level 1",
-        riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
-        minimumEducationLevel = listOf(
-          ActivityMinimumEducationLevel(
-            id = 1,
-            educationLevelCode = "1",
-            educationLevelDescription = "Reading Measure 1.0",
-            studyAreaCode = "ENGLA",
-            studyAreaDescription = "English Language",
-          ),
-        ),
+        activityName = "Maths Level 1",
         category = educationCategory,
-        capacity = 20,
-        allocated = 4,
+        capacity = 10,
+        allocated = 2,
+        waitlisted = 1,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
       ),
@@ -153,7 +135,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ActivityLite::class.java)
+      .expectBodyList(ActivitySummary::class.java)
       .returnResult().responseBody
 
   private fun WebTestClient.getLocationsPrisonByCode(

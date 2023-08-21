@@ -25,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
@@ -32,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
@@ -50,6 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
@@ -67,6 +71,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity 
 
 class ActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
+  private val activitySummaryRepository: ActivitySummaryRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val activityTierRepository: ActivityTierRepository = mock()
   private val eligibilityRuleRepository: EligibilityRuleRepository = mock()
@@ -114,6 +119,7 @@ class ActivityServiceTest {
     daysInAdvance: Long = 7L,
   ) = ActivityService(
     activityRepository,
+    activitySummaryRepository,
     activityCategoryRepository,
     activityTierRepository,
     eligibilityRuleRepository,
@@ -368,11 +374,11 @@ class ActivityServiceTest {
 
   @Test
   fun `getActivitiesInPrison only returns list of live activities`() {
-    whenever(activityRepository.getAllByPrisonCode("MDI"))
+    whenever(activitySummaryRepository.findAllByPrisonCode("MDI"))
       .thenReturn(
         listOf(
-          activityEntity(),
-          activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2)),
+          activitySummary(),
+          activitySummary(activityName = "English", activityState = ActivityState.ARCHIVED),
         ),
       )
 
@@ -381,18 +387,18 @@ class ActivityServiceTest {
         "MDI",
         true,
       ),
-    ).isEqualTo(listOf(activityEntity()).toModelLite())
+    ).isEqualTo(listOf(activitySummary()).toModel())
 
-    verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
+    verify(activitySummaryRepository, times(1)).findAllByPrisonCode("MDI")
   }
 
   @Test
   fun `getActivitiesInPrison returns all activities including archived activities`() {
-    whenever(activityRepository.getAllByPrisonCode("MDI"))
+    whenever(activitySummaryRepository.findAllByPrisonCode("MDI"))
       .thenReturn(
         listOf(
-          activityEntity(),
-          activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2)),
+          activitySummary(),
+          activitySummary(activityName = "English", activityState = ActivityState.ARCHIVED),
         ),
       )
 
@@ -403,12 +409,12 @@ class ActivityServiceTest {
       ),
     ).isEqualTo(
       listOf(
-        activityEntity(),
-        activityEntity(startDate = LocalDate.of(2023, 1, 1), endDate = LocalDate.of(2023, 1, 2)),
-      ).toModelLite(),
+        activitySummary(),
+        activitySummary(activityName = "English", activityState = ActivityState.ARCHIVED),
+      ).toModel(),
     )
 
-    verify(activityRepository, times(1)).getAllByPrisonCode("MDI")
+    verify(activitySummaryRepository, times(1)).findAllByPrisonCode("MDI")
   }
 
   @Test
