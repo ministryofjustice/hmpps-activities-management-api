@@ -71,6 +71,10 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
+    eventCaptor.allValues.forEach { event ->
+      log.info("Event captured on successful activity migration: ${event.eventType}")
+    }
+
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
     }

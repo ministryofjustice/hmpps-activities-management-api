@@ -82,7 +82,7 @@ class AuditService(
           ),
         )
       } else {
-        log.info("Not sending event of type ${event.javaClass.simpleName} to HMPPS as the feature is disabled")
+        log.info("Not sending audit event of type ${event.javaClass.simpleName} to HMPPS as the feature is disabled")
       }
     }
 
