@@ -7,6 +7,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
@@ -36,6 +38,9 @@ import java.time.LocalTime
 class MigrateActivityIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @Autowired
+  private lateinit var activityRepository: ActivityRepository
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val startTime = LocalTime.of(10, 0)
@@ -245,6 +250,27 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/clean-all-data.sql",
+    "classpath:test_data/seed-reference-data.sql",
+    "classpath:test_data/seed-activity-id-13.sql",
+  )
+  fun `delete cascade - removes an activity and all its child entities`() {
+    val prisonCode = "PVI"
+    val activityId = 1L
+
+    webTestClient.deleteCascade(prisonCode, activityId, listOf("ROLE_NOMIS_ACTIVITIES"))
+      .expectStatus().isOk
+
+    val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
+    assertThat(activity).isNull()
+
+    assertThat(activityRepository.count()).isEqualTo(0)
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
   private fun buildActivityMigrateRequest(
     payRates: List<NomisPayRate> = emptyList(),
     scheduleRules: List<NomisScheduleRule> = emptyList(),
@@ -293,6 +319,12 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     post()
       .uri("/migrate/allocation")
       .bodyValue(request)
+      .headers(setAuthorisation(roles = roles))
+      .exchange()
+
+  private fun WebTestClient.deleteCascade(prisonCode: String, activityId: Long, roles: List<String>) =
+    delete()
+      .uri("/migrate/delete-activity/prison/$prisonCode/id/$activityId")
       .headers(setAuthorisation(roles = roles))
       .exchange()
 
