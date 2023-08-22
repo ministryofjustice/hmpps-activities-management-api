@@ -1,7 +1,7 @@
 -- =============================================
 -- ATTENDANCE SYNC VIEW
 -- =============================================
-
+DROP VIEW v_attendance_sync;
 CREATE OR REPLACE VIEW v_attendance_sync AS
 select a.attendance_id,
        a.scheduled_instance_id,
