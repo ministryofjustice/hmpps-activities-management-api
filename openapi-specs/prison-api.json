@@ -15,7 +15,7 @@
   },
   "servers": [
     {
-      "url": "https://api-dev.prison.service.justice.gov.uk",
+      "url": "https://prison-api-dev.prison.service.justice.gov.uk",
       "description": "Development"
     },
     {
