@@ -42,7 +42,6 @@ class AppointmentOccurrenceController(
     description =
     """
     Update an appointment occurrence or series of appointment occurrences based on the applyTo property.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(
@@ -110,7 +109,6 @@ class AppointmentOccurrenceController(
     description =
     """
     Cancel an appointment occurrence or series of appointment occurrences based on the applyTo property.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(
@@ -178,7 +176,6 @@ class AppointmentOccurrenceController(
     description =
     """
     Uses the supplied prison code and search parameters to filter and return appointment occurrence search results.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(

@@ -33,7 +33,6 @@ class BulkAppointmentController(
     description =
     """
     Create a list of appointments and allocate the supplied prisoner or prisoners to them.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(
@@ -71,7 +70,7 @@ class BulkAppointmentController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun bulkCreateAppointment(
     principal: Principal,
     @Valid

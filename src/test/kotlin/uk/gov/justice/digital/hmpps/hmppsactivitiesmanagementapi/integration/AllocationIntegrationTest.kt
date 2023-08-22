@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import java.time.LocalDate
@@ -80,7 +82,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, "XXX")
       .exchange()
       .expectStatus().isForbidden
@@ -92,7 +94,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -103,7 +105,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -184,7 +186,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       .uri("/allocations/$prisonCode/waiting-list-application")
       .bodyValue(application)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, caseloadId)
       .exchange()
 
@@ -192,7 +194,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/allocations/id/$allocationId")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

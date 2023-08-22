@@ -26,7 +26,7 @@ class SynchronisationController(private val synchronisationService: Synchronisat
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Retrieves Nomis synchronisation details",
-    description = "Retrieves all details required in order to synchronise an attendance with the Nomis database. Requires role NOMIS_ACTIVITIES",
+    description = "Retrieves all details required in order to synchronise an attendance with the Nomis database.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -51,7 +51,7 @@ class SynchronisationController(private val synchronisationService: Synchronisat
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

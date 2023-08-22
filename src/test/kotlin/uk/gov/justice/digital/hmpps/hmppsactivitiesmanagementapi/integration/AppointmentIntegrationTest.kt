@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -105,7 +107,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `get appointment by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -427,7 +429,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentById(id: Long) =
     get()
       .uri("/appointments/$id")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -440,7 +442,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     post()
       .uri("/appointments")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, request.prisonCode)
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

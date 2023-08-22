@@ -129,7 +129,7 @@ class AllocationController(
   @PatchMapping(value = ["/{prisonCode}/allocationId/{allocationId}"])
   @Operation(
     summary = "Update an allocation",
-    description = "Update an allocation. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Update an allocation",
   )
   @ApiResponses(
     value = [
@@ -187,7 +187,7 @@ class AllocationController(
   @PostMapping(value = ["/{prisonCode}/waiting-list-application"])
   @Operation(
     summary = "Add a prisoner to an activity schedule waiting list",
-    description = "Adds the supplied waiting list creation request to the activity schedule. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Adds the supplied waiting list creation request to the activity schedule.",
   )
   @ApiResponses(
     value = [

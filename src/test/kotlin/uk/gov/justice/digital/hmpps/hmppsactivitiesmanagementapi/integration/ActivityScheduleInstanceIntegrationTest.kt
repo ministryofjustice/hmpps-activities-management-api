@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
@@ -59,7 +60,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false))
+        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
         .header(CASELOAD_ID, "MDI")
         .exchange()
         .expectStatus().isForbidden
@@ -71,7 +72,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = true))
+        .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }
@@ -82,7 +83,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+        .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }
@@ -296,7 +297,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
     .uri("/scheduled-instances/$id")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf()))
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isOk
@@ -308,7 +309,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .uri("/scheduled-instances/$id/uncancel")
     .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf()))
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()
 
   private fun WebTestClient.cancelScheduledInstance(
@@ -320,7 +321,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .uri("/scheduled-instances/$id/cancel")
     .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf()))
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()
 
   private fun WebTestClient.getScheduledInstancesBy(
@@ -339,7 +340,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

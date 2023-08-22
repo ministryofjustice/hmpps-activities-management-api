@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
 class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
@@ -31,7 +33,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/waiting-list-applications/$id")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, moorlandPrisonCode)
       .exchange()
       .expectStatus().isOk
@@ -78,9 +80,9 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.update(id: Long, request: WaitingListApplicationUpdateRequest) =
     webTestClient.patch()
-      .uri("/waiting-list-applications/1")
+      .uri("/waiting-list-applications/$id")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, moorlandPrisonCode)
       .bodyValue(request)
       .exchange()

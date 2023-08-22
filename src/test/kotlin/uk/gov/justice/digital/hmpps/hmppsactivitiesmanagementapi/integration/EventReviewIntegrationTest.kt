@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import java.time.LocalDate
 
 class EventReviewIntegrationTest : IntegrationTestBase() {
@@ -154,7 +155,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Test
   fun `should acknowledge 3 events in the list`() {
     // Acknowledge event IDs 1, 2, and 3
-    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), "ACTIVITY_HUB")
+    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), ROLE_ACTIVITY_HUB)
       .exchange()
       .expectStatus().is2xxSuccessful
       .expectBody()

@@ -34,6 +34,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -111,7 +113,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/schedules/1/allocations")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -129,7 +131,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
@@ -187,7 +189,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk
@@ -399,7 +401,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/schedules/1/candidates")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -468,7 +470,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .uri("/schedules/$scheduleId/allocations")
       .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .exchange()
 
   private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) =
@@ -509,7 +511,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf("ROLE_ACTIVITY_HUB")))
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, caseLoadId)
       .exchange()
       .expectStatus().isOk

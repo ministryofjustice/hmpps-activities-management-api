@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.U
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 
+// TODO - Combine this with ActivityScheduleInstanceController - all /scheduled-instances endpoints.
+
 @RestController
 @RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ScheduledInstanceController(
@@ -201,7 +203,7 @@ class ScheduledInstanceController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun uncancelScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
     @Valid
@@ -249,7 +251,7 @@ class ScheduledInstanceController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun cancelScheduledInstance(
     @PathVariable("instanceId")
     instanceId: Long,

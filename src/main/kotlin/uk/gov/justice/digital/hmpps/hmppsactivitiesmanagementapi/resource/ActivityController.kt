@@ -266,6 +266,7 @@ class ActivityController(
   @PostMapping
   @Operation(
     summary = "Create an activity",
+    description = "Create an activity",
   )
   @ApiResponses(
     value = [
@@ -372,6 +373,7 @@ class ActivityController(
   @PatchMapping(value = ["/{prisonCode}/activityId/{activityId}"])
   @Operation(
     summary = "Update an activity",
+    description = "Update an activity",
   )
   @ApiResponses(
     value = [

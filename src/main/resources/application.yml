@@ -27,12 +27,6 @@ spring:
           jwk-set-uri: ${hmpps.auth.url}/.well-known/jwks.json
       client:
         registration:
-          case-notes-api:
-            provider: hmpps-auth
-            client-id: ${system.client.id}
-            client-secret: ${system.client.secret}
-            authorization-grant-type: client_credentials
-            scope: read,write
           prison-api:
             provider: hmpps-auth
             client-id: ${system.client.id}

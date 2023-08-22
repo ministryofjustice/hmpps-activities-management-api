@@ -4,6 +4,8 @@ import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
@@ -11,7 +13,9 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
@@ -130,6 +134,130 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       }
 
     verify(migrateActivityService).migrateAllocation(allocationRequest)
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Migrate allocations")
+    inner class MigrateAllocationsTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Migrate allocation (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.post("/migrate/allocation") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
+      fun `Migrate allocation (ROLE_NOMIS_APPOINTMENTS) - 403`() {
+        mockMvcWithSecurity.post("/migrate/allocation") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Migrate allocation (ROLE_ACTIVITY_HUB) - 403`() {
+        mockMvcWithSecurity.post("/migrate/allocation") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["UNKNOWN"])
+      fun `Migrate allocation (ROLE_UNKNOWN) - 403`() {
+        mockMvcWithSecurity.post("/migrate/allocation") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Migrate activity")
+    inner class MigrateActivityTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Migrate activity (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.post("/migrate/activity") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
+      fun `Migrate activity (ROLE_NOMIS_APPOINTMENTS) - 403`() {
+        mockMvcWithSecurity.post("/migrate/allocation") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Migrate activity (ROLE_ACTIVITY_HUB) - 403`() {
+        mockMvcWithSecurity.post("/migrate/activity") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["UNKNOWN"])
+      fun `Migrate activity (ROLE_UNKNOWN) - 403`() {
+        mockMvcWithSecurity.post("/migrate/activity") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Delete activity")
+    inner class DeleteActivityTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Delete activity (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
+      fun `Delete activity (ROLE_NOMIS_APPOINTMENTS) - 403`() {
+        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Delete activity (ROLE_ACTIVITY_HUB) - 403`() {
+        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["UNKNOWN"])
+      fun `Delete activity (ROLE_UNKNOWN) - 403`() {
+        mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
   }
 
   companion object {

@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -50,7 +51,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   fun `update appointment occurrence by unknown id returns 404 not found`() {
     webTestClient.patch()
       .uri("/appointment-occurrences/-1")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .bodyValue(AppointmentOccurrenceUpdateRequest())
       .exchange()
       .expectStatus().isNotFound
@@ -391,7 +392,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentById(id: Long) =
     get()
       .uri("/appointments/$id")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -405,7 +406,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     patch()
       .uri("/appointment-occurrences/$id")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -419,7 +420,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     put()
       .uri("/appointment-occurrences/$id/cancel")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

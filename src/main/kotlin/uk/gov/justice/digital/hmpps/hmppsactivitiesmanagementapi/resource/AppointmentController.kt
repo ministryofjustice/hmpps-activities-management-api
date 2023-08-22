@@ -81,7 +81,6 @@ class AppointmentController(
     description =
     """
     Create an appointment or series of appointment occurrences and allocate the supplied prisoner or prisoners to them.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(

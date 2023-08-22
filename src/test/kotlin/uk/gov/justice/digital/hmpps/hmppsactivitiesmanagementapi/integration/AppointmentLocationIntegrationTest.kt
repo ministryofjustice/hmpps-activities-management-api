@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 
 class AppointmentLocationIntegrationTest : IntegrationTestBase() {
   @Test
@@ -27,7 +28,7 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentLocations() =
     get()
       .uri("/appointment-locations/{prisonCode}", moorlandPrisonCode)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

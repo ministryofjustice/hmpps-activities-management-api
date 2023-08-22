@@ -3,17 +3,31 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import org.springdoc.core.customizers.OperationCustomizer
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
+import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.expression.BeanFactoryResolver
+import org.springframework.expression.spel.SpelEvaluationException
+import org.springframework.expression.spel.standard.SpelExpressionParser
+import org.springframework.expression.spel.support.StandardEvaluationContext
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.method.HandlerMethod
+import java.util.*
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
   private val version: String = buildProperties.version
+
+  @Autowired
+  private lateinit var context: ApplicationContext
 
   @Bean
   fun customOpenAPI(buildProperties: BuildProperties): OpenAPI? = OpenAPI()
@@ -40,6 +54,35 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
         ),
     )
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt", listOf("read", "write")))
+
+  @Bean
+  fun preAuthorizeCustomizer(): OperationCustomizer {
+    return OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->
+      val preAuthorizeAnnotation: Optional<PreAuthorize> = Optional.ofNullable(
+        handlerMethod.getMethodAnnotation(PreAuthorize::class.java),
+      )
+
+      if (preAuthorizeAnnotation.isPresent) {
+        val preAuthExp = SpelExpressionParser().parseExpression(preAuthorizeAnnotation.get().value)
+        val spelEvalContext = StandardEvaluationContext()
+        spelEvalContext.beanResolver = BeanFactoryResolver(context)
+        spelEvalContext.setRootObject(
+          object {
+            fun hasRole(role: String) = listOf(role)
+            fun hasAnyRole(vararg roles: String) = roles.toList()
+          },
+        )
+
+        val roles = try { preAuthExp.getValue(spelEvalContext) as List<String> } catch (e: SpelEvaluationException) { emptyList() }
+        if (roles.isNotEmpty()) {
+          operation.description = "${operation.description ?: ""}\n\n" +
+            "Requires one of the following roles:\n" +
+            "${roles.joinToString(prefix = "* ", separator = "\n* ")}"
+        }
+      }
+      operation
+    }
+  }
 
   @Bean
   fun enableLocalTimePrimitiveType() {

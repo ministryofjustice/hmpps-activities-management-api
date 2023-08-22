@@ -7,6 +7,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
 class LocationIntegrationTest : IntegrationTestBase() {
 
@@ -25,7 +26,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -47,7 +48,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -68,7 +69,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
       .expectBody()
@@ -90,7 +91,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().is5xxServerError
       .expectBody()
@@ -111,7 +112,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .path("/locations/prison/{prisonCode}/location-groups")
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -131,7 +132,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .path("/locations/prison/{prisonCode}/location-groups")
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_LICENCE_CA", "ROLE_KW_ADMIN")))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -151,7 +152,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .build(prisonCode)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -187,7 +188,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
           .queryParam("groupName", groupName)
           .build(prisonCode)
       }
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectBody(LocationPrefixDto::class.java)

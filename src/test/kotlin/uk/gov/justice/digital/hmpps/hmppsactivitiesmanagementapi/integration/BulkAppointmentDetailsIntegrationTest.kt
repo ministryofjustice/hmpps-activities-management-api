@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,7 +33,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
   fun `get bulk appointment details by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/bulk-appointment-details/-1")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -136,7 +137,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getBulkAppointmentDetailsById(id: Long) =
     get()
       .uri("/bulk-appointment-details/$id")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
