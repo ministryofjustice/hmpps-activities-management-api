@@ -37,8 +37,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -147,8 +147,8 @@ class ActivityScheduleServiceTest {
     verify(repository).saveAndFlush(schedule)
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
-      mapOf(PRISONER_NUMBER_KEY to "1"),
-      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
   }
 
@@ -355,8 +355,8 @@ class ActivityScheduleServiceTest {
 
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_ALLOCATED.value,
-      mapOf(PRISONER_NUMBER_KEY to "654321"),
-      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "654321"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
   }
 

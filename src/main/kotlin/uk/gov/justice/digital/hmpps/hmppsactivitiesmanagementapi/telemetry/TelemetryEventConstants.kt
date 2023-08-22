@@ -1,13 +1,51 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
-const val ACKNOWLEDGED_BY_KEY = "acknowledgedBy"
-const val ACKNOWLEDGED_TIME_KEY = "acknowledgedTime"
-const val ACTIVITY_NAME_KEY = "activityName"
-const val EVENT_REVIEW_IDS_KEY = "eventReviewIds"
-const val NUMBER_OF_RESULTS_KEY = "numberOfResults"
-const val PRISON_NAME_KEY = "prisonName"
-const val PRISONER_NUMBER_KEY = "prisonerNumber"
+/* Property Keys */
+const val ACKNOWLEDGED_BY_PROPERTY_KEY = "acknowledgedBy"
+const val ACKNOWLEDGED_TIME_PROPERTY_KEY = "acknowledgedTime"
+const val ACTIVITY_NAME_PROPERTY_KEY = "activityName"
+const val APPLY_TO_PROPERTY_KEY = "applyTo"
+const val APPOINTMENT_ID_PROPERTY_KEY = "appointmentId"
+const val APPOINTMENT_SERIES_ID_PROPERTY_KEY = "appointmentSeriesId"
+const val APPOINTMENT_SET_ID_PROPERTY_KEY = "appointmentSetId"
+const val CATEGORY_CHANGED_PROPERTY_KEY = "categoryChanged"
+const val CATEGORY_CODE_PROPERTY_KEY = "categoryCode"
+const val EARLIEST_START_TIME_PROPERTY_KEY = "earliestStartTime"
+const val END_DATE_PROPERTY_KEY = "endDate"
+const val END_TIME_CHANGED_PROPERTY_KEY = "endTimeChanged"
+const val END_TIME_PROPERTY_KEY = "endTime"
+const val EVENT_REVIEW_IDS_PROPERTY_KEY = "eventReviewIds"
+const val EXTRA_INFORMATION_CHANGED_PROPERTY_KEY = "extraInformationChanged"
+const val HAS_DESCRIPTION_PROPERTY_KEY = "hasDescription"
+const val HAS_EXTRA_INFORMATION_PROPERTY_KEY = "hasExtraInformation"
+const val IS_REPEAT_PROPERTY_KEY = "isRepeat"
+const val INTERNAL_LOCATION_ID_PROPERTY_KEY = "internalLocationId"
+const val INTERNAL_LOCATION_CHANGED_PROPERTY_KEY = "internalLocationChanged"
+const val LATEST_END_TIME_PROPERTY_KEY = "latestEndTime"
+const val PRISON_NAME_PROPERTY_KEY = "prisonName"
+const val PRISONER_NUMBER_PROPERTY_KEY = "prisonerNumber"
+const val REPEAT_COUNT_PROPERTY_KEY = "repeatCount"
+const val REPEAT_PERIOD_PROPERTY_KEY = "repeatPeriod"
+const val START_DATE_CHANGED_PROPERTY_KEY = "startDateChanged"
+const val START_DATE_PROPERTY_KEY = "startDate"
+const val START_TIME_CHANGED_PROPERTY_KEY = "startTimeChanged"
+const val START_TIME_PROPERTY_KEY = "startTime"
+const val TIME_SLOT_PROPERTY_KEY = "timeSlot"
+const val USER_PROPERTY_KEY = "user"
 
-fun metricsMap() = mapOf(
-  NUMBER_OF_RESULTS_KEY to 1.0,
+/* Metric Keys */
+const val APPOINTMENT_COUNT_METRIC_KEY = "appointmentCount"
+const val APPOINTMENT_INSTANCE_COUNT_METRIC_KEY = "appointmentInstanceCount"
+const val DESCRIPTION_LENGTH_METRIC_KEY = "descriptionLength"
+const val EVENT_TIME_MS_METRIC_KEY = "eventTimeMs"
+const val EXTRA_INFORMATION_COUNT_METRIC_KEY = "extraInformationCount"
+const val EXTRA_INFORMATION_LENGTH_METRIC_KEY = "extraInformationLength"
+const val NUMBER_OF_RESULTS_METRIC_KEY = "numberOfResults"
+const val PRISONER_COUNT_METRIC_KEY = "prisonerCount"
+const val PRISONERS_ADDED_COUNT_METRIC_KEY = "prisonersAddedCount"
+const val PRISONERS_REMOVED_COUNT_METRIC_KEY = "prisonersRemovedCount"
+const val RESULTS_COUNT_METRIC_KEY = "resultsCount"
+
+fun activityMetricsMap() = mapOf(
+  NUMBER_OF_RESULTS_METRIC_KEY to 1.0,
 )

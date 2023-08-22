@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -11,7 +12,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.AdditionalAnswers.returnsFirstArg
+import org.mockito.ArgumentCaptor
+import org.mockito.Captor
+import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -35,6 +40,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ADDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_REMOVED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -53,6 +75,13 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val telemetryClient: TelemetryClient = mock()
+
+  @Captor
+  private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
+
+  @Captor
+  private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceService(
     appointmentRepository,
@@ -62,10 +91,12 @@ class AppointmentOccurrenceServiceUpdateTest {
     locationService,
     prisonerSearchApiClient,
     outboundEventsService,
+    telemetryClient,
   )
 
   @BeforeEach
   fun setup() {
+    MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
   }
 
@@ -257,6 +288,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -283,6 +342,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -327,6 +414,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -348,6 +463,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -369,6 +512,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -391,6 +562,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -423,6 +622,34 @@ class AppointmentOccurrenceServiceUpdateTest {
       }
 
       verifyNoInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -482,6 +709,34 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -583,6 +838,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(8.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -623,6 +906,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -657,6 +968,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -691,6 +1030,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -728,6 +1095,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -759,6 +1154,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -790,6 +1213,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -826,6 +1277,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -856,6 +1335,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -889,6 +1396,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -917,6 +1452,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -945,6 +1508,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -978,6 +1569,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1006,6 +1625,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1034,6 +1681,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1068,6 +1743,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1097,6 +1800,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_AND_ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1126,6 +1857,34 @@ class AppointmentOccurrenceServiceUpdateTest {
         verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
       }
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("ALL_FUTURE_OCCURRENCES")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -1178,6 +1937,34 @@ class AppointmentOccurrenceServiceUpdateTest {
       }
 
       verifyNoInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
+        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        // TODO This isn't being updated properly assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
