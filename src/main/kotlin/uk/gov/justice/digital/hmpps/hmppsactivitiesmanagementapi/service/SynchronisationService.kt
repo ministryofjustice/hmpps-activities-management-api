@@ -10,6 +10,5 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 class SynchronisationService(private val repository: AttendanceSyncRepository) {
   fun findAttendanceSync(attendanceId: Long): AttendanceSync? =
     repository.findAllByAttendanceId(attendanceId)
-      .maxByOrNull { it.allocationStartDate }
       ?.toModel()
 }
