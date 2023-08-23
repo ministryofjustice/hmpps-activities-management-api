@@ -128,7 +128,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ROLE_ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun updateWaitingList(
     @PathVariable("waitingListId") waitingListId: Long,
     principal: Principal,

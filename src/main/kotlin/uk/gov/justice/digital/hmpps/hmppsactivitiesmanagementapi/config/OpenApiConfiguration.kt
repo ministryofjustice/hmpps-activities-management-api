@@ -20,7 +20,6 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.method.HandlerMethod
-import java.util.*
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
@@ -58,12 +57,15 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
   @Bean
   fun preAuthorizeCustomizer(): OperationCustomizer {
     return OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->
-      val preAuthorizeAnnotation: Optional<PreAuthorize> = Optional.ofNullable(
-        handlerMethod.getMethodAnnotation(PreAuthorize::class.java),
-      )
-
-      if (preAuthorizeAnnotation.isPresent) {
-        val preAuthExp = SpelExpressionParser().parseExpression(preAuthorizeAnnotation.get().value)
+      // Get PreAuthorize for method or fallback to class annotation
+      (
+        handlerMethod.getMethodAnnotation(PreAuthorize::class.java)?.let {
+          it.value
+        } ?: handlerMethod.beanType.getAnnotation(PreAuthorize::class.java)?.let {
+          it.value
+        }
+        )?.let {
+        val preAuthExp = SpelExpressionParser().parseExpression(it)
         val spelEvalContext = StandardEvaluationContext()
         spelEvalContext.beanResolver = BeanFactoryResolver(context)
         spelEvalContext.setRootObject(
@@ -80,6 +82,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
             "${roles.joinToString(prefix = "* ", separator = "\n* ")}"
         }
       }
+
       operation
     }
   }

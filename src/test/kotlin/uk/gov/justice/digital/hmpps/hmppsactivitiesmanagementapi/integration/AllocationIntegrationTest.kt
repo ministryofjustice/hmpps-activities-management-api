@@ -26,8 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
@@ -94,7 +94,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -105,7 +105,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/allocations/id/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }

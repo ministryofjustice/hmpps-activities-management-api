@@ -10,7 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwareAuthenticationToken
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 
 class CheckCaseLoadAccessTest {
 
@@ -59,7 +59,7 @@ class CheckCaseLoadAccessTest {
     whenever(token.isUserToken).thenReturn(isUserToken)
 
     if (hasAdminRole) {
-      val roles = setOf(SimpleGrantedAuthority(ACTIVITY_ADMIN))
+      val roles = setOf(SimpleGrantedAuthority(ROLE_ACTIVITY_ADMIN))
       whenever(token.authorities).thenReturn(roles)
     }
   }

@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Synchro
 @RequestMapping("/synchronisation", produces = [MediaType.APPLICATION_JSON_VALUE])
 class SynchronisationController(private val synchronisationService: SynchronisationService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('NOMIS_ACTIVITIES')")
   @GetMapping("/attendance/{attendanceId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(

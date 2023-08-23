@@ -19,8 +19,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -72,7 +72,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+        .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }
@@ -83,7 +83,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+        .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
     }

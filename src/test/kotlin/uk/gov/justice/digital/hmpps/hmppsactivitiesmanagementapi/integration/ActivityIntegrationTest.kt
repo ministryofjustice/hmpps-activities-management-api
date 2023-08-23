@@ -45,8 +45,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
@@ -222,7 +222,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       .uri("/activities")
       .bodyValue(activityCreateRequest)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().is4xxClientError
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -644,7 +644,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/activities/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
@@ -657,7 +657,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     webTestClient.get()
       .uri("/activities/2")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = true, roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
   }
