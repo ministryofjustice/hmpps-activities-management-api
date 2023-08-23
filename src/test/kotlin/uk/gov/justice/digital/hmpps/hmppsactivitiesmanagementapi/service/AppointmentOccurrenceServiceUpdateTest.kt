@@ -1962,7 +1962,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        // TODO This isn't being updated properly assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
       }
     }

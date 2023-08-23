@@ -100,7 +100,7 @@ class AppointmentOccurrenceService(
       }
     }
 
-    telemetryMetricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] = updatedIds.size.toDouble()
+    telemetryMetricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] = (updatedIds.size + (request.removePrisonerNumbers?.size ?: 0) + (request.addPrisonerNumbers?.size ?: 0)).toDouble()
     telemetryMetricsMap[APPOINTMENT_COUNT_METRIC_KEY] = occurrencesToUpdate.size.toDouble()
     logAppointmentEditedMetric(principal, appointmentOccurrenceId, request, updatedAppointment, telemetryPropertiesMap, telemetryMetricsMap, startTime)
     return updatedAppointment.toModel()

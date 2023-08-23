@@ -135,7 +135,7 @@ class AppointmentService(
         createdBy = principal.name,
         createFirstOccurrenceOnly = createFirstOccurrenceOnly,
       ),
-    ).also { }
+    )
 
     if (createFirstOccurrenceOnly) {
       // The remaining occurrences will be created asynchronously by this job
@@ -335,7 +335,7 @@ class AppointmentService(
 
     val metricsMap = mapOf(
       APPOINTMENT_COUNT_METRIC_KEY to appointment.appointments.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointment.appointments.flatMap { it.occurrences }.size.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointment.appointments.flatMap { it.occurrences.flatMap { occurrence -> occurrence.allocations } }.size.toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_COUNT_METRIC_KEY to appointment.appointments.filter { it.comment.isNotEmpty() }.size.toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
