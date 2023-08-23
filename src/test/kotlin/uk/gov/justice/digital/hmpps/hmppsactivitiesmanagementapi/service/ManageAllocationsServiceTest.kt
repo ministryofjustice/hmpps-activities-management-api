@@ -335,32 +335,55 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `pending allocations are correctly activated`() {
-    val prison = rolloutPrison()
-    val schedule = mock<ActivitySchedule>()
-    val activity = mock<Activity>()
-    val pendingAllocation: Allocation = mock {
-      on { prisonerStatus } doReturn PrisonerStatus.PENDING
-    }
-    val activeAllocation: Allocation = mock {
-      on { prisonerStatus } doReturn PrisonerStatus.ACTIVE
+  fun `pending allocations on or before today are correctly activated`() {
+    val prison = rolloutPrison().also {
+      whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it)
     }
 
-    whenever(activity.schedules()).thenReturn(listOf(schedule))
-    whenever(schedule.allocations()).thenReturn(listOf(pendingAllocation, activeAllocation))
-    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
-    whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())).doReturn(
-      listOf(activity),
-    )
+    val pendingAllocationYesterday: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.PENDING
+      on { startDate } doReturn TimeSource.yesterday()
+    }
+
+    val pendingAllocationToday: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.PENDING
+      on { startDate } doReturn TimeSource.today()
+    }
+
+    val pendingAllocationTomorrow: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.PENDING
+      on { startDate } doReturn TimeSource.tomorrow()
+    }
+
+    val activeAllocation: Allocation = mock {
+      on { prisonerStatus } doReturn PrisonerStatus.ACTIVE
+      on { startDate } doReturn TimeSource.yesterday()
+    }
+
+    val allocations = listOf(pendingAllocationYesterday, pendingAllocationToday, pendingAllocationTomorrow, activeAllocation)
+
+    val schedule: ActivitySchedule = mock {
+      on { allocations() } doReturn allocations
+    }
+
+    mock<Activity> {
+      on { schedules() } doReturn listOf(schedule)
+    }.also {
+      whenever(activityRepo.getAllForPrisonAndDate(prison.code, LocalDate.now())) doReturn listOf(it)
+    }
 
     service.allocations(AllocationOperation.STARTING_TODAY)
 
-    verify(pendingAllocation).activate()
-    verify(allocationRepository).saveAndFlush(pendingAllocation)
+    verify(pendingAllocationYesterday).activate()
+    verify(pendingAllocationToday).activate()
+    verify(pendingAllocationTomorrow, never()).activate()
+    verify(activeAllocation, never()).activate()
+
+    verify(allocationRepository).saveAndFlush(pendingAllocationYesterday)
+    verify(allocationRepository).saveAndFlush(pendingAllocationToday)
     verifyNoMoreInteractions(allocationRepository)
 
-    verify(activeAllocation).prisonerStatus
-    verifyNoMoreInteractions(activeAllocation)
+    allocations.forEach { verify(it).startDate }
   }
 
   private fun Allocation.verifyIsActive() {

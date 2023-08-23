@@ -115,15 +115,21 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
-  fun `pending allocation is activated`() {
+  fun `pending allocations on or before today are activated`() {
     with(allocationRepository.findAll()) {
-      size isEqualTo 1
-      prisoner("A11111A") isStatus PENDING
+      size isEqualTo 3
+      prisoner("PAST") isStatus PENDING
+      prisoner("TODAY") isStatus PENDING
+      prisoner("FUTURE") isStatus PENDING
     }
 
     webTestClient.manageAllocations(withActivate = true)
 
-    allocationRepository.findAll().prisoner("A11111A") isStatus ACTIVE
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus ACTIVE
+      prisoner("TODAY") isStatus ACTIVE
+      prisoner("FUTURE") isStatus PENDING
+    }
   }
 
   private infix fun WaitingList.isStatus(status: WaitingListStatus) {
