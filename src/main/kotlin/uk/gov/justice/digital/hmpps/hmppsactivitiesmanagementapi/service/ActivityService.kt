@@ -30,10 +30,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.metricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -135,11 +135,11 @@ class ActivityService(
     checkEducationLevels(request.minimumEducationLevel)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_KEY to request.prisonCode,
-      ACTIVITY_NAME_KEY to request.summary,
+      PRISON_CODE_PROPERTY_KEY to request.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, metricsMap())
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, activityMetricsMap())
 
     val activity = Activity(
       prisonCode = request.prisonCode,
@@ -325,11 +325,11 @@ class ActivityService(
     activityRepository.saveAndFlush(activity)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_KEY to prisonCode,
-      ACTIVITY_NAME_KEY to request.summary,
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, metricsMap())
+    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
 
     return transform(activity)
   }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -12,6 +13,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -41,6 +43,30 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DESCRIPTION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_USERNAME
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -63,6 +89,7 @@ class AppointmentServiceTest {
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val telemetryClient: TelemetryClient = mock()
   private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob = mock()
   private lateinit var principal: Principal
 
@@ -72,6 +99,12 @@ class AppointmentServiceTest {
   @Captor
   private lateinit var bulkAppointmentEntityCaptor: ArgumentCaptor<BulkAppointment>
 
+  @Captor
+  private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
+
+  @Captor
+  private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
+
   private val service = AppointmentService(
     appointmentRepository,
     appointmentCancellationReasonRepository,
@@ -80,6 +113,7 @@ class AppointmentServiceTest {
     locationService,
     prisonerSearchApiClient,
     createAppointmentOccurrencesJob,
+    telemetryClient,
     maxSyncAppointmentInstanceActions = 14,
   )
 
@@ -397,6 +431,36 @@ class AppointmentServiceTest {
           }
         }
       }
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_CREATED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
+        assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
+        assertThat(value[START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
+        assertThat(value[END_TIME_PROPERTY_KEY]).isEqualTo("10:30")
+        assertThat(value[IS_REPEAT_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(value[REPEAT_PERIOD_PROPERTY_KEY]).isEqualTo("")
+        assertThat(value[REPEAT_COUNT_PROPERTY_KEY]).isEqualTo("")
+        assertThat(value[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+        assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
   }
 
@@ -645,6 +709,12 @@ class AppointmentServiceTest {
 
     service.bulkCreateAppointments(request, principal)
 
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SET_CREATED.name),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
     with(bulkAppointmentEntityCaptor.value) {
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(categoryCode).isEqualTo(request.categoryCode)
@@ -668,6 +738,26 @@ class AppointmentServiceTest {
         assertThat(it.comment).isEqualTo("Test comment")
         assertThat(it.appointmentDescription).isEqualTo("Appointment description")
       }
+    }
+
+    with(telemetryPropertyMap) {
+      assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(value[APPOINTMENT_SET_ID_PROPERTY_KEY]).isEqualTo("1")
+      assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
+      assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")
+      assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+      assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[EARLIEST_START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
+      assertThat(value[LATEST_END_TIME_PROPERTY_KEY]).isEqualTo("10:30")
+    }
+
+    with(telemetryMetricsMap) {
+      assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+      assertThat(value[EXTRA_INFORMATION_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
     }
   }
 

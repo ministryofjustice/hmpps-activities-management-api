@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -10,7 +11,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentCaptor
+import org.mockito.Captor
+import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -28,6 +33,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -46,6 +60,13 @@ class AppointmentOccurrenceServiceCancelTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val telemetryClient: TelemetryClient = mock()
+
+  @Captor
+  private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
+
+  @Captor
+  private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceService(
     appointmentRepository,
@@ -55,10 +76,12 @@ class AppointmentOccurrenceServiceCancelTest {
     locationService,
     prisonerSearchApiClient,
     outboundEventsService,
+    telemetryClient,
   )
 
   @BeforeEach
   fun setup() {
+    MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
   }
 
@@ -195,6 +218,26 @@ class AppointmentOccurrenceServiceCancelTest {
         appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
       )
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_DELETED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
 
     @Test
@@ -215,6 +258,26 @@ class AppointmentOccurrenceServiceCancelTest {
         appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
       )
       verifyNoMoreInteractions(outboundEventsService)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_CANCELLED.name),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap) {
+        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+      }
+
+      with(telemetryMetricsMap) {
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      }
     }
   }
 

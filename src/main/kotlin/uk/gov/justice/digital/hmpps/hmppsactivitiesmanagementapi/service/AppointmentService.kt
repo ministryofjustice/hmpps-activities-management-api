@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
@@ -18,6 +20,30 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DESCRIPTION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
@@ -37,6 +63,7 @@ class AppointmentService(
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
+  private val telemetryClient: TelemetryClient,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
@@ -48,8 +75,9 @@ class AppointmentService(
     return appointment
   }
 
-  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal) =
-    require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
+  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal): BulkAppointment {
+    val startTime = System.currentTimeMillis()
+    return require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
       createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
         BulkAppointmentEntity(
           prisonCode = request.prisonCode,
@@ -78,10 +106,13 @@ class AppointmentService(
             )
           }.forEach { appointment -> this.addAppointment(appointment) }
         }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
+          .also { logBulkAppointmentCreatedMetric(principal, it, startTime) }
       }
     }
+  }
 
   fun createAppointment(request: AppointmentCreateRequest, principal: Principal): Appointment {
+    val startTime = System.currentTimeMillis()
     val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
     // Determine if this is a create request for a very large appointment. If it is, this function will only create the first occurrence
     val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
@@ -111,7 +142,7 @@ class AppointmentService(
       createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
     }
 
-    return appointment.toModel()
+    return appointment.toModel().also { logAppointmentCreatedMetric(principal, request, it, startTime) }
   }
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
@@ -260,4 +291,56 @@ class AppointmentService(
     prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
       .filter { prisoner -> prisoner.prisonId == prisonCode }
       .associate { it.prisonerNumber to it.bookingId }
+
+  private fun logAppointmentCreatedMetric(principal: Principal, request: AppointmentCreateRequest, appointment: Appointment, startTimeInMs: Long) {
+    val propertiesMap = mapOf(
+      USER_PROPERTY_KEY to principal.name,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
+      APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.id.toString(),
+      CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
+      HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription?.isNotEmpty()).toString(),
+      INTERNAL_LOCATION_ID_PROPERTY_KEY to appointment.internalLocationId.toString(),
+      START_DATE_PROPERTY_KEY to appointment.startDate.toString(),
+      START_TIME_PROPERTY_KEY to appointment.startTime.toString(),
+      END_TIME_PROPERTY_KEY to appointment.endTime.toString(),
+      IS_REPEAT_PROPERTY_KEY to (request.repeat != null).toString(),
+      REPEAT_PERIOD_PROPERTY_KEY to (request.repeat?.period?.toString() ?: ""),
+      REPEAT_COUNT_PROPERTY_KEY to (request.repeat?.count?.toString() ?: ""),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointment.comment.isNotEmpty()).toString(),
+    )
+
+    val metricsMap = mapOf(
+      PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.repeat?.count ?: 1)).toDouble(),
+      DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
+      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointment.comment.length).toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CREATED.name, propertiesMap, metricsMap)
+  }
+
+  private fun logBulkAppointmentCreatedMetric(principal: Principal, appointment: BulkAppointment, startTimeInMs: Long) {
+    val propertiesMap = mapOf(
+      USER_PROPERTY_KEY to principal.name,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
+      APPOINTMENT_SET_ID_PROPERTY_KEY to appointment.id.toString(),
+      CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
+      HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription != null).toString(),
+      INTERNAL_LOCATION_ID_PROPERTY_KEY to appointment.internalLocationId.toString(),
+      START_DATE_PROPERTY_KEY to appointment.startDate.toString(),
+      EARLIEST_START_TIME_PROPERTY_KEY to appointment.appointments.minOf { it.startTime }.toString(),
+      LATEST_END_TIME_PROPERTY_KEY to appointment.appointments.mapNotNull { it.endTime }.maxOf { it }.toString(),
+    )
+
+    val metricsMap = mapOf(
+      APPOINTMENT_COUNT_METRIC_KEY to appointment.appointments.size.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointment.appointments.flatMap { it.occurrences.flatMap { occurrence -> occurrence.allocations } }.size.toDouble(),
+      DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
+      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointment.appointments.filter { it.comment.isNotEmpty() }.size.toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.name, propertiesMap, metricsMap)
+  }
 }
