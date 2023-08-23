@@ -41,8 +41,8 @@ class ManageAllocationsService(
   fun allocations(operation: AllocationOperation) {
     when (operation) {
       AllocationOperation.STARTING_TODAY -> {
-        log.info("Activating allocations starting today.")
-        activatePendingAllocations()
+        log.info("Activating allocations on or before today.")
+        activatePendingAllocationsOnOrBeforeToday()
       }
 
       AllocationOperation.DEALLOCATE_ENDING -> {
@@ -57,12 +57,16 @@ class ManageAllocationsService(
     }
   }
 
-  private fun activatePendingAllocations() =
+  /**
+   * We consider pending allocations before today in the event we need to (re)run due to something out of a control e.g.
+   * a job fails to run due to a cloud platform issue.
+   */
+  private fun activatePendingAllocationsOnOrBeforeToday() =
     LocalDate.now().let { today ->
       forEachRolledOutPrison()
         .forEach { prison ->
           activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
-            activity.schedules().flatMap { it.allocations() }.activatePending()
+            activity.schedules().flatMap { it.allocations().filter { allocation -> allocation.startDate <= today } }.activatePending()
           }
         }
     }
