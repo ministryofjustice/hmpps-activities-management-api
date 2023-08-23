@@ -17,9 +17,9 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-          - name: create-scheduled-instances-job
-            image: ghcr.io/ministryofjustice/hmpps-devops-tools
-            args:
-              - /bin/sh
-              - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/create-scheduled-instances
+            - name: create-scheduled-instances-job
+              image: ghcr.io/ministryofjustice/hmpps-devops-tools
+              args:
+                - /bin/sh
+                - -c
+                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/create-scheduled-instances
