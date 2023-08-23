@@ -31,7 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -135,7 +135,7 @@ class ActivityService(
     checkEducationLevels(request.minimumEducationLevel)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_PROPERTY_KEY to request.prisonCode,
+      PRISON_CODE_PROPERTY_KEY to request.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 
@@ -325,7 +325,7 @@ class ActivityService(
     activityRepository.saveAndFlush(activity)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_PROPERTY_KEY to prisonCode,
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 

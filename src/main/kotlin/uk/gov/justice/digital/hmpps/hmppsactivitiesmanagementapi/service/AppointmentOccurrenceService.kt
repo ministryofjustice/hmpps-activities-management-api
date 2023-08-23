@@ -32,7 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ADDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_REMOVED_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -395,7 +395,7 @@ class AppointmentOccurrenceService(
     startTimeInMs: Long,
   ) {
     telemetryPropertiesMap[USER_PROPERTY_KEY] = principal.name
-    telemetryPropertiesMap[PRISON_NAME_PROPERTY_KEY] = appointment.prisonCode
+    telemetryPropertiesMap[PRISON_CODE_PROPERTY_KEY] = appointment.prisonCode
     telemetryPropertiesMap[APPOINTMENT_SERIES_ID_PROPERTY_KEY] = appointment.appointmentId.toString()
     telemetryPropertiesMap[APPOINTMENT_ID_PROPERTY_KEY] = appointmentOccurrenceId.toString()
     telemetryPropertiesMap[APPLY_TO_PROPERTY_KEY] = request.applyTo.toString()
@@ -418,7 +418,7 @@ class AppointmentOccurrenceService(
   ) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
-      PRISON_NAME_PROPERTY_KEY to appointment.prisonCode,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.appointmentId.toString(),
       APPOINTMENT_ID_PROPERTY_KEY to appointmentOccurrenceId.toString(),
       APPLY_TO_PROPERTY_KEY to request.applyTo.toString(),
@@ -444,7 +444,7 @@ class AppointmentOccurrenceService(
   ) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
-      PRISON_NAME_PROPERTY_KEY to appointment.prisonCode,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.appointmentId.toString(),
       APPOINTMENT_ID_PROPERTY_KEY to appointmentOccurrenceId.toString(),
       APPLY_TO_PROPERTY_KEY to request.applyTo.toString(),
@@ -462,7 +462,7 @@ class AppointmentOccurrenceService(
   private fun createEditAppointmentTelemetryPropertiesMap() =
     mutableMapOf(
       USER_PROPERTY_KEY to "",
-      PRISON_NAME_PROPERTY_KEY to "",
+      PRISON_CODE_PROPERTY_KEY to "",
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to "",
       APPOINTMENT_ID_PROPERTY_KEY to "",
       CATEGORY_CHANGED_PROPERTY_KEY to false.toString(),

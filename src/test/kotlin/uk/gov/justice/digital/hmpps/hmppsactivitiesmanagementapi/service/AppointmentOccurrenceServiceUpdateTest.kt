@@ -52,7 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ADDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_REMOVED_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_CHANGED_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -297,7 +297,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
@@ -351,7 +351,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -423,7 +423,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -472,7 +472,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -521,7 +521,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -571,7 +571,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -631,7 +631,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -718,7 +718,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
@@ -847,7 +847,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
@@ -915,7 +915,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -977,7 +977,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1039,7 +1039,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1104,7 +1104,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1163,7 +1163,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1222,7 +1222,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1286,7 +1286,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1344,7 +1344,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1405,7 +1405,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1461,7 +1461,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1517,7 +1517,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1578,7 +1578,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1634,7 +1634,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1690,7 +1690,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1752,7 +1752,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1809,7 +1809,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1866,7 +1866,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -1946,7 +1946,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
         assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")

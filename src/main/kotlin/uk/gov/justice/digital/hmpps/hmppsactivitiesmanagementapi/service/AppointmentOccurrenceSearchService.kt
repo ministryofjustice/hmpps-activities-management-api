@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEG
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.RESULTS_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TIME_SLOT_PROPERTY_KEY
@@ -101,7 +101,7 @@ class AppointmentOccurrenceSearchService(
   private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentOccurrenceSearchRequest, results: Int, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
-      PRISON_NAME_PROPERTY_KEY to prisonCode,
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
       START_DATE_PROPERTY_KEY to (request.startDate?.toString() ?: ""),
       END_DATE_PROPERTY_KEY to (request.endDate?.toString() ?: ""),
       TIME_SLOT_PROPERTY_KEY to (request.timeSlot?.toString() ?: ""),

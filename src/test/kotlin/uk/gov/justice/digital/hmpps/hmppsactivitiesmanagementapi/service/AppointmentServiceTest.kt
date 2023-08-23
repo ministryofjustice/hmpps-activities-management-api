@@ -60,7 +60,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
@@ -440,7 +440,7 @@ class AppointmentServiceTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
         assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")
@@ -742,7 +742,7 @@ class AppointmentServiceTest {
 
     with(telemetryPropertyMap) {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[APPOINTMENT_SET_ID_PROPERTY_KEY]).isEqualTo("1")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
       assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")

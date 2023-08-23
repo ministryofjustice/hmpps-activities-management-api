@@ -39,7 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
@@ -227,7 +227,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
@@ -267,7 +267,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
       with(telemetryPropertyMap) {
         assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")

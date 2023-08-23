@@ -37,7 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
@@ -295,7 +295,7 @@ class AppointmentService(
   private fun logAppointmentCreatedMetric(principal: Principal, request: AppointmentCreateRequest, appointment: Appointment, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
-      PRISON_NAME_PROPERTY_KEY to appointment.prisonCode,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
       HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription?.isNotEmpty()).toString(),
@@ -323,7 +323,7 @@ class AppointmentService(
   private fun logBulkAppointmentCreatedMetric(principal: Principal, appointment: BulkAppointment, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
-      PRISON_NAME_PROPERTY_KEY to appointment.prisonCode,
+      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
       APPOINTMENT_SET_ID_PROPERTY_KEY to appointment.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
       HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription != null).toString(),

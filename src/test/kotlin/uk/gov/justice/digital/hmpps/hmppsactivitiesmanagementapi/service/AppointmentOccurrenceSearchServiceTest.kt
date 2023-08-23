@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEG
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.RESULTS_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TIME_SLOT_PROPERTY_KEY
@@ -106,7 +106,7 @@ class AppointmentOccurrenceSearchServiceTest {
 
     with(telemetryPropertyMap) {
       Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      Assertions.assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
       Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
@@ -146,7 +146,7 @@ class AppointmentOccurrenceSearchServiceTest {
 
     with(telemetryPropertyMap) {
       Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      Assertions.assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate.toString())
       Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
@@ -189,7 +189,7 @@ class AppointmentOccurrenceSearchServiceTest {
 
     with(telemetryPropertyMap) {
       Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      Assertions.assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
       Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlot.toString())
@@ -230,7 +230,7 @@ class AppointmentOccurrenceSearchServiceTest {
 
     with(telemetryPropertyMap) {
       Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      Assertions.assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
       Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
@@ -271,7 +271,7 @@ class AppointmentOccurrenceSearchServiceTest {
 
     with(telemetryPropertyMap) {
       Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      Assertions.assertThat(value[PRISON_NAME_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
       Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
