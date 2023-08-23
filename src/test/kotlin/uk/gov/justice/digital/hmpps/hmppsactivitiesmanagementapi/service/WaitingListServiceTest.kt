@@ -33,8 +33,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
@@ -331,8 +331,8 @@ class WaitingListServiceTest {
       verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
       verify(telemetryClient).trackEvent(
         TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
-        mapOf(PRISONER_NUMBER_KEY to "123456"),
-        mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+        mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+        mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
       )
 
       with(waitingListCaptor.firstValue) {
@@ -686,8 +686,8 @@ class WaitingListServiceTest {
 
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_APPROVED_ON_WAITLIST.value,
-      mapOf(PRISONER_NUMBER_KEY to "123456"),
-      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
 
     waitingList.status isEqualTo WaitingListStatus.APPROVED
@@ -713,8 +713,8 @@ class WaitingListServiceTest {
 
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DECLINED_FROM_WAITLIST.value,
-      mapOf(PRISONER_NUMBER_KEY to "123456"),
-      mapOf(NUMBER_OF_RESULTS_KEY to 1.0),
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
 
     waitingList.status isEqualTo WaitingListStatus.DECLINED

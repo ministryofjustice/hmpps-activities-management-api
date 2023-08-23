@@ -12,10 +12,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.E
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventReviewSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewSearchSpecification
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_BY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_TIME_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_REVIEW_IDS_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_BY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACKNOWLEDGED_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_REVIEW_IDS_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDateTime
@@ -78,12 +78,12 @@ class EventReviewService(
     eventReviewRepository.saveAllAndFlush(updatedEvents)
 
     val propertiesMap = mapOf(
-      ACKNOWLEDGED_BY_KEY to name,
-      ACKNOWLEDGED_TIME_KEY to LocalDateTime.now().toString(),
-      EVENT_REVIEW_IDS_KEY to req.eventReviewIds.joinToString { "," },
+      ACKNOWLEDGED_BY_PROPERTY_KEY to name,
+      ACKNOWLEDGED_TIME_PROPERTY_KEY to LocalDateTime.now().toString(),
+      EVENT_REVIEW_IDS_PROPERTY_KEY to req.eventReviewIds.joinToString { "," },
     )
     val metricsMap = mapOf(
-      NUMBER_OF_RESULTS_KEY to 1.0,
+      NUMBER_OF_RESULTS_METRIC_KEY to 1.0,
     )
     telemetryClient.trackEvent(TelemetryEvent.COC.value, propertiesMap, metricsMap)
   }
