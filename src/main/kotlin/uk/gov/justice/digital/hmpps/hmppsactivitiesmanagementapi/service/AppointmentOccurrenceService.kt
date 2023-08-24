@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
@@ -18,8 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -51,56 +49,68 @@ class AppointmentOccurrenceService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
 ) {
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun updateAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentModel {
+    val startTime = System.currentTimeMillis()
+
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
     checkCaseloadAccess(appointment.prisonCode)
 
-    val startTime = System.currentTimeMillis()
     val now = LocalDateTime.now()
 
-    if (appointmentOccurrence.isCancelled()) {
-      throw IllegalArgumentException("Cannot update a cancelled appointment occurrence")
+    require(!appointmentOccurrence.isCancelled()) {
+      "Cannot update a cancelled appointment occurrence"
     }
 
-    if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
-      throw IllegalArgumentException("Cannot update a past appointment occurrence")
+    require(!appointmentOccurrence.isExpired()) {
+      "Cannot update a past appointment occurrence"
+    }
+
+    val categoryMap = if (request.categoryCode?.isEmpty() == true) emptyMap() else referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
+    val locationMap = if (request.internalLocationId == null) emptyMap() else locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+    val prisonerMap = if (request.addPrisonerNumbers.isNullOrEmpty()) {
+      emptyMap()
+    } else {
+      require(appointment.appointmentType != AppointmentType.INDIVIDUAL) {
+        "Cannot add prisoners to an individual appointment occurrence"
+      }
+      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers).block()!!
+        .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
+        .associateBy { prisoner -> prisoner.prisonerNumber }
+        .also {
+          val missingPrisonerNumbers = request.addPrisonerNumbers.filter { number -> !it.containsKey(number) }
+          require(missingPrisonerNumbers.isEmpty()) {
+            "Prisoner(s) with prisoner number(s) '${missingPrisonerNumbers.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+          }
+        }
     }
 
     val occurrencesToUpdate = determineOccurrencesToApplyTo(appointmentOccurrence, request.applyTo, now)
+    var instanceCount = getUpdatedInstanceCount(request, appointment, occurrencesToUpdate)
 
-    val updatedIds = mutableListOf<Long>()
     val telemetryPropertiesMap = createEditAppointmentTelemetryPropertiesMap()
     val telemetryMetricsMap = createEditAppointmentTelemetryMetricsMap()
 
-    applyCategoryCodeUpdate(request, appointment, now, principal.name, updatedIds, telemetryPropertiesMap)
-    applyStartDateUpdate(request, appointment, occurrencesToUpdate, now, principal.name, updatedIds, telemetryPropertiesMap)
-    applyInternalLocationUpdate(request, appointment, occurrencesToUpdate, now, principal.name, updatedIds, telemetryPropertiesMap)
-    applyStartEndTimeUpdate(request, occurrencesToUpdate, now, principal.name, updatedIds, telemetryPropertiesMap)
-    applyCommentUpdate(request, occurrencesToUpdate, now, principal.name, updatedIds, telemetryPropertiesMap)
-    applyAllocationUpdate(request, appointment, occurrencesToUpdate, now, principal.name, updatedIds, telemetryMetricsMap)
+    applyCategoryCodeUpdate(request, appointment, categoryMap, now, principal.name, telemetryPropertiesMap)
+    applyStartDateUpdate(request, appointment, occurrencesToUpdate, now, principal.name, telemetryPropertiesMap)
+    applyInternalLocationUpdate(request, appointment, occurrencesToUpdate, locationMap, now, principal.name, telemetryPropertiesMap)
+    applyStartEndTimeUpdate(request, occurrencesToUpdate, now, principal.name, telemetryPropertiesMap)
+    applyCommentUpdate(request, occurrencesToUpdate, now, principal.name, telemetryPropertiesMap)
+    instanceCount += applyRemovePrisonersUpdate(request, appointment, occurrencesToUpdate)
+    var updatedAppointment = appointmentRepository.saveAndFlush(appointment)
 
-    val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
-
-    updatedIds.sortedBy { it }.forEach {
-      runCatching {
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it)
-      }.onFailure {
-        log.error(
-          "Failed to send appointment instance updated event for appointment instance id $it",
-          it,
-        )
+    // Adding prisoners creates new allocations on the occurrence and publishes create instance events.
+    // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
+    applyAddPrisonersUpdate(request, occurrencesToUpdate, prisonerMap).also {
+      if (it > 0) {
+        updatedAppointment = appointmentRepository.saveAndFlush(appointment)
+        instanceCount += it
       }
     }
 
-    telemetryMetricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] = (updatedIds.size + (request.removePrisonerNumbers?.size ?: 0) + (request.addPrisonerNumbers?.size ?: 0)).toDouble()
+    telemetryMetricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] = instanceCount.toDouble()
     telemetryMetricsMap[APPOINTMENT_COUNT_METRIC_KEY] = occurrencesToUpdate.size.toDouble()
     logAppointmentEditedMetric(principal, appointmentOccurrenceId, request, updatedAppointment, telemetryPropertiesMap, telemetryMetricsMap, startTime)
     return updatedAppointment.toModel()
@@ -131,7 +141,6 @@ class AppointmentOccurrenceService(
 
     occurrencesToUpdate.filter { it.isDeleted() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
-      .forEach { publishDeletion(it) }
       .also {
         logAppointmentDeletedMetric(
           principal,
@@ -146,7 +155,6 @@ class AppointmentOccurrenceService(
 
     occurrencesToUpdate.filter { it.isCancelled() }
       .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
-      .forEach { publishCancellation(it) }
       .also {
         logAppointmentCancelledMetric(
           principal,
@@ -162,25 +170,40 @@ class AppointmentOccurrenceService(
     return updatedAppointment.toModel()
   }
 
+  private fun getUpdatedInstanceCount(
+    request: AppointmentOccurrenceUpdateRequest,
+    appointment: Appointment,
+    occurrencesToUpdate: Collection<AppointmentOccurrence>,
+  ) =
+    if (request.categoryCode != null) {
+      appointment.scheduledOccurrences().flatMap { it.allocations() }.size
+    } else if (request.internalLocationId != null || request.inCell != null || request.startDate != null || request.startTime != null || request.endTime != null || request.comment != null) {
+      occurrencesToUpdate.flatMap { it.allocations() }.size
+    } else {
+      0
+    }
+
   private fun applyCategoryCodeUpdate(
     request: AppointmentOccurrenceUpdateRequest,
     appointment: Appointment,
+    categoryMap: Map<String, ReferenceCode>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
     telemetryPropertiesMap: MutableMap<String, String>,
   ) {
     request.categoryCode?.apply {
-      failIfCategoryNotFound(this)
+      require(categoryMap.containsKey(this)) {
+        "Appointment Category with code $this not found or is not active"
+      }
 
       // Category updates are applied at the appointment level
       appointment.categoryCode = this
 
-      // Mark appointment and occurrences as updated and add associated ids for event publishing
+      // Mark appointment and occurrences as updated
       appointment.updated = updated
       appointment.updatedBy = updatedBy
       appointment.occurrences()
-        .forEach { it.markAsUpdated(updated, updatedBy, updatedIds) }
+        .forEach { it.markAsUpdated(updated, updatedBy) }
         .also { telemetryPropertiesMap[CATEGORY_CHANGED_PROPERTY_KEY] = true.toString() }
     }
   }
@@ -189,22 +212,24 @@ class AppointmentOccurrenceService(
     request: AppointmentOccurrenceUpdateRequest,
     appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
+    locationMap: Map<Long, Location>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
     telemetryPropertiesMap: MutableMap<String, String>,
   ) {
     occurrencesToUpdate.forEach {
       if (request.inCell == true) {
         it.internalLocationId = null
         it.inCell = true
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+        it.markAsUpdated(updated, updatedBy)
       } else {
         request.internalLocationId?.apply {
-          failIfLocationNotFound(this, appointment.prisonCode)
+          require(locationMap.containsKey(this)) {
+            "Appointment location with id $this not found in prison '${appointment.prisonCode}'"
+          }
           it.internalLocationId = this
           it.inCell = false
-          it.markAsUpdated(updated, updatedBy, updatedIds)
+          it.markAsUpdated(updated, updatedBy)
           telemetryPropertiesMap[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY] = true.toString()
         }
       }
@@ -217,16 +242,14 @@ class AppointmentOccurrenceService(
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
     telemetryPropertiesMap: MutableMap<String, String>,
-
   ) {
     // Changing the start date of a repeat appointment changes the start date of all affected appointments based on the original schedule using the new start date
     request.startDate?.apply {
       val scheduleIterator = appointment.scheduleIterator().apply { startDate = request.startDate }
       occurrencesToUpdate.sortedBy { it.sequenceNumber }.forEach {
         it.startDate = scheduleIterator.next()
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+        it.markAsUpdated(updated, updatedBy)
       }.also { telemetryPropertiesMap[START_DATE_CHANGED_PROPERTY_KEY] = true.toString() }
     }
   }
@@ -236,19 +259,18 @@ class AppointmentOccurrenceService(
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
     telemetryPropertiesMap: MutableMap<String, String>,
   ) {
     occurrencesToUpdate.forEach {
       request.startTime?.apply {
         it.startTime = this
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+        it.markAsUpdated(updated, updatedBy)
         telemetryPropertiesMap[START_TIME_CHANGED_PROPERTY_KEY] = true.toString()
       }
 
       request.endTime?.apply {
         it.endTime = this
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+        it.markAsUpdated(updated, updatedBy)
         telemetryPropertiesMap[END_TIME_CHANGED_PROPERTY_KEY] = true.toString()
       }
     }
@@ -259,31 +281,25 @@ class AppointmentOccurrenceService(
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
     telemetryPropertiesMap: MutableMap<String, String>,
   ) {
     occurrencesToUpdate.forEach {
       request.comment?.apply {
         it.comment = this
-        it.markAsUpdated(updated, updatedBy, updatedIds)
+        it.markAsUpdated(updated, updatedBy)
         telemetryPropertiesMap[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY] = true.toString()
       }
     }
   }
 
-  private fun applyAllocationUpdate(
+  private fun applyRemovePrisonersUpdate(
     request: AppointmentOccurrenceUpdateRequest,
     appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
-    updated: LocalDateTime,
-    updatedBy: String,
-    updatedIds: MutableList<Long>,
-    telemetryMetricsMap: MutableMap<String, Double>,
-  ) {
+  ): Int {
+    var removedInstanceCount = 0
     occurrencesToUpdate.forEach { occurrenceToUpdate ->
-
       request.removePrisonerNumbers?.forEach { prisonerToRemove ->
-
         if (appointment.appointmentType == AppointmentType.INDIVIDUAL && request.removePrisonerNumbers.isNotEmpty()) {
           throw IllegalArgumentException("Cannot remove prisoners from an individual appointment occurrence")
         }
@@ -291,26 +307,24 @@ class AppointmentOccurrenceService(
           .filter { it.prisonerNumber == prisonerToRemove }
           .forEach {
             occurrenceToUpdate.removeAllocation(it)
-            // Remove id from updated list as the allocation has now been removed
-            updatedIds.remove(it.appointmentOccurrenceAllocationId)
+            removedInstanceCount++
           }
-        occurrenceToUpdate.updated = updated
-        occurrenceToUpdate.updatedBy = updatedBy
       }
+    }
+    return removedInstanceCount
+  }
 
+  private fun applyAddPrisonersUpdate(
+    request: AppointmentOccurrenceUpdateRequest,
+    occurrencesToUpdate: Collection<AppointmentOccurrence>,
+    prisonerMap: Map<String, Prisoner>,
+  ): Int {
+    var newInstanceCount = 0
+    occurrencesToUpdate.forEach { occurrenceToUpdate ->
       request.addPrisonerNumbers?.apply {
-        if (appointment.appointmentType == AppointmentType.INDIVIDUAL && request.addPrisonerNumbers.isNotEmpty()) {
-          throw IllegalArgumentException("Cannot add prisoners to an individual appointment occurrence")
-        }
-
-        val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(this).block()!!
-          .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
-          .associateBy { prisoner -> prisoner.prisonerNumber }
-
-        failIfMissingPrisoners(this, prisonerMap)
-
         val prisonerAllocationMap = occurrenceToUpdate.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
+          .also { newInstanceCount += it.size }
 
         newPrisoners.forEach { prisoner ->
           occurrenceToUpdate.addAllocation(
@@ -321,41 +335,17 @@ class AppointmentOccurrenceService(
             ),
           )
         }
-
-        occurrenceToUpdate.updated = updated
-        occurrenceToUpdate.updatedBy = updatedBy
       }
     }
+    return newInstanceCount
   }
 
   private fun AppointmentOccurrence.markAsUpdated(
     updated: LocalDateTime,
     updatedBy: String,
-    updatedIds: MutableList<Long>,
   ) {
     this.updated = updated
     this.updatedBy = updatedBy
-    this.allocations().forEach {
-      if (!updatedIds.contains(it.appointmentOccurrenceAllocationId)) {
-        updatedIds.add(it.appointmentOccurrenceAllocationId)
-      }
-    }
-  }
-
-  private fun failIfCategoryNotFound(categoryCode: String) {
-    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
-      ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
-  }
-
-  private fun failIfLocationNotFound(internalLocationId: Long, prisonCode: String) {
-    locationService.getLocationsForAppointmentsMap(prisonCode)[internalLocationId]
-      ?: throw IllegalArgumentException("Appointment location with id $internalLocationId not found in prison '$prisonCode'")
-  }
-
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerMap: Map<String, Prisoner>) {
-    prisonerNumbers.filter { number -> !prisonerMap.containsKey(number) }.let {
-      if (it.any()) throw IllegalArgumentException("Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison.")
-    }
   }
 
   private fun determineOccurrencesToApplyTo(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, currentTime: LocalDateTime) =
@@ -366,24 +356,6 @@ class AppointmentOccurrenceService(
       ApplyTo.ALL_FUTURE_OCCURRENCES -> appointmentOccurrence.appointment.occurrences().filter { LocalDateTime.of(it.startDate, it.startTime) > currentTime }
       else -> listOf(appointmentOccurrence)
     }.filter { !it.isCancelled() }
-
-  private fun publishCancellation(appointmentOccurrenceAllocationId: Long) = runCatching {
-    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, appointmentOccurrenceAllocationId)
-  }.onFailure {
-    log.error(
-      "Failed to send appointment instance cancelled event for appointment instance id $it",
-      it,
-    )
-  }
-
-  private fun publishDeletion(appointmentOccurrenceAllocationId: Long) = runCatching {
-    outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, appointmentOccurrenceAllocationId)
-  }.onFailure {
-    log.error(
-      "Failed to send appointment instance deleted event for appointment instance id $it",
-      it,
-    )
-  }
 
   private fun logAppointmentEditedMetric(
     principal: Principal,

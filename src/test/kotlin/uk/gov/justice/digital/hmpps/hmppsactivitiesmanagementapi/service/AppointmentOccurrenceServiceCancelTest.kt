@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -19,8 +18,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
@@ -31,8 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -59,7 +54,6 @@ class AppointmentOccurrenceServiceCancelTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -75,7 +69,6 @@ class AppointmentOccurrenceServiceCancelTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    outboundEventsService,
     telemetryClient,
   )
 
@@ -136,7 +129,6 @@ class AppointmentOccurrenceServiceCancelTest {
         .hasMessage("Cannot cancel a past appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -149,7 +141,6 @@ class AppointmentOccurrenceServiceCancelTest {
         .hasMessage("Appointment Occurrence -1 not found")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -170,7 +161,6 @@ class AppointmentOccurrenceServiceCancelTest {
         .hasMessage("Appointment Cancellation Reason -1 not found")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
   }
 
@@ -181,7 +171,6 @@ class AppointmentOccurrenceServiceCancelTest {
     private val principal: Principal = mock()
     private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
     private val appointmentOccurrence = appointment.occurrences().first()
-    private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
     private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
     private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
 
@@ -213,12 +202,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(deleted).isTrue
       }
 
-      verify(outboundEventsService).send(
-        OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
-        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
-      )
-      verifyNoMoreInteractions(outboundEventsService)
-
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_DELETED.value),
         telemetryPropertyMap.capture(),
@@ -236,7 +219,7 @@ class AppointmentOccurrenceServiceCancelTest {
       with(telemetryMetricsMap) {
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -252,12 +235,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2L)
         assertThat(deleted).isFalse
       }
-
-      verify(outboundEventsService).send(
-        OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
-        appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId,
-      )
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
@@ -276,7 +253,7 @@ class AppointmentOccurrenceServiceCancelTest {
       with(telemetryMetricsMap) {
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
   }
@@ -338,14 +315,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(cancelledBy).isNull()
         assertThat(deleted).isFalse
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -371,14 +340,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(cancelledBy).isNull()
         assertThat(deleted).isFalse
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -397,19 +358,11 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(map { it.cancellationReason?.appointmentCancellationReasonId }.distinct().single()).isEqualTo(1)
         assertThat(map { it.cancelled }.distinct().single()).isCloseTo(
           LocalDateTime.now(),
-          Assertions.within(60, ChronoUnit.SECONDS),
+          within(60, ChronoUnit.SECONDS),
         )
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isTrue
       }
-
-      appointmentOccurrences.subList(2, appointmentOccurrences.size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -433,14 +386,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isFalse
       }
-
-      appointmentOccurrences.subList(2, appointmentOccurrences.size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -464,14 +409,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isTrue
       }
-
-      appointmentOccurrences.subList(1, appointmentOccurrences.size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_DELETED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -495,14 +432,6 @@ class AppointmentOccurrenceServiceCancelTest {
         assertThat(map { it.cancelledBy }.distinct().single()).isEqualTo("TEST.USER")
         assertThat(map { it.deleted }.distinct().single()).isFalse
       }
-
-      appointmentOccurrences.subList(1, appointmentOccurrences.size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(
-          OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED,
-          it.appointmentOccurrenceAllocationId,
-        )
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test

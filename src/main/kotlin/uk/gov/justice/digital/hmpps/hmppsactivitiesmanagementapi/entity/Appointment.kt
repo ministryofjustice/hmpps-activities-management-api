@@ -87,7 +87,9 @@ data class Appointment(
   @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 
-  fun occurrences() = occurrences.filter { !it.deleted }.toList()
+  fun occurrences() = occurrences.filter { !it.isDeleted() }.toList()
+
+  fun scheduledOccurrences() = occurrences().filter { it.isScheduled() }.toList()
 
   fun occurrenceDetails(
     prisonerMap: Map<String, Prisoner>,

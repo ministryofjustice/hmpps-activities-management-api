@@ -105,7 +105,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
@@ -136,7 +136,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher).send(eventCaptor.capture())
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.cancelled")
@@ -164,7 +164,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     assertThat(updatedAppointment.occurrences).isEmpty()
 
-    verify(eventsPublisher).send(eventCaptor.capture())
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.deleted")

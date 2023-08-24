@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -20,8 +19,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -38,8 +35,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -74,7 +69,6 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -90,7 +84,6 @@ class AppointmentOccurrenceServiceUpdateTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    outboundEventsService,
     telemetryClient,
   )
 
@@ -115,7 +108,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       whenever(principal.name).thenReturn("TEST.USER")
     }
 
-    fun expectGroupAppointment(): AppointmentOccurrence {
+    private fun expectGroupAppointment(): AppointmentOccurrence {
       val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.GROUP)
       val appointmentOccurrence = appointment.occurrences().first()
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
@@ -124,7 +117,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       return appointmentOccurrence
     }
 
-    fun expectIndividualAppointment(): AppointmentOccurrence {
+    private fun expectIndividualAppointment(): AppointmentOccurrence {
       val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
       val appointmentOccurrence = appointment.occurrences().first()
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
@@ -139,7 +132,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Appointment Occurrence -1 not found")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -157,7 +149,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Cannot update a past appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -176,7 +167,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Cannot update a cancelled appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -190,7 +180,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -205,7 +194,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointment.prisonCode}'")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -219,7 +207,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -234,7 +221,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -246,7 +232,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         .hasMessage("Cannot add prisoners to an individual appointment occurrence")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
-      verifyNoInteractions(outboundEventsService)
     }
   }
 
@@ -256,7 +241,6 @@ class AppointmentOccurrenceServiceUpdateTest {
     private val principal: Principal = mock()
     private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
     private val appointmentOccurrence = appointment.occurrences().first()
-    private val appointmentOccurrenceAllocation = appointmentOccurrence.allocations().first()
 
     @BeforeEach
     fun setUp() {
@@ -278,16 +262,13 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -314,7 +295,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -335,13 +316,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.single()) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -368,7 +346,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -386,13 +364,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.single()) {
           assertThat(internalLocationId).isNull()
           assertThat(inCell).isTrue
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -407,13 +382,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
           assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -440,7 +412,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -456,13 +428,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
           assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -489,7 +458,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -505,13 +474,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -538,7 +504,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -555,13 +521,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
           assertThat(comment).isEqualTo(request.comment)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -588,7 +551,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -612,16 +575,14 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(updated).isNull()
         assertThat(updatedBy).isNull()
         with(occurrences.single()) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
           with(allocations.single()) {
             assertThat(prisonerNumber).isEqualTo("A1234BC")
             assertThat(bookingId).isEqualTo(456)
           }
         }
       }
-
-      verifyNoInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -648,7 +609,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(0.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -689,7 +650,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -698,7 +659,7 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(comment).isEqualTo(request.comment)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
           with(allocations.single()) {
             assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -706,9 +667,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           }
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -735,7 +693,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -766,7 +724,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -775,7 +733,7 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(comment).isEqualTo(request.comment)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
           with(allocations.single()) {
             assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -783,9 +741,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           }
         }
       }
-
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, appointmentOccurrenceAllocation.appointmentOccurrenceAllocationId)
-      verifyNoMoreInteractions(outboundEventsService)
     }
   }
 
@@ -826,18 +781,13 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences) {
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -863,8 +813,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(8.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -891,7 +841,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences[2]) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -901,11 +851,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -932,7 +877,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -959,15 +904,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -994,7 +934,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1021,15 +961,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1056,7 +991,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1080,7 +1015,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences[2]) {
           assertThat(internalLocationId).isNull()
           assertThat(inCell).isTrue
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -1090,11 +1025,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1121,7 +1051,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1145,15 +1075,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isNull()
           assertThat(map { it.inCell }.distinct().single()).isTrue
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1180,7 +1105,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1204,15 +1129,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isNull()
           assertThat(map { it.inCell }.distinct().single()).isTrue
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1239,7 +1159,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1263,7 +1183,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences[2]) {
           assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -1272,11 +1192,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1303,7 +1218,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1326,15 +1241,10 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(map { it.updatedBy }.distinct().single()).isNull()
         }
         with(occurrences.subList(2, response.occurrences.size)) {
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1361,7 +1271,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1382,7 +1292,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences[2]) {
           assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -1391,11 +1301,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1422,7 +1327,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1443,15 +1348,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1478,7 +1378,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1499,15 +1399,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1534,7 +1429,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1555,7 +1450,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences[2]) {
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -1564,11 +1459,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1595,7 +1485,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1616,15 +1506,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1651,7 +1536,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1672,15 +1557,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1707,7 +1587,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1729,7 +1609,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences[2]) {
           assertThat(comment).isEqualTo("Updated appointment occurrence level comment")
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(updatedBy).isEqualTo("TEST.USER")
         }
         with(occurrences[3]) {
@@ -1738,11 +1618,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(updatedBy).isNull()
         }
       }
-
-      appointmentOccurrence.allocations().forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1769,7 +1644,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1791,15 +1666,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1826,7 +1696,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1848,15 +1718,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         }
         with(occurrences.subList(1, response.occurrences.size)) {
           assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(1, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1883,7 +1748,7 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1919,8 +1784,8 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
         }
         with(occurrences[2]) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
+          assertThat(updated).isNull()
+          assertThat(updatedBy).isNull()
           assertThat(allocations[0].prisonerNumber).isEqualTo("B2345CD")
           assertThat(allocations[0].bookingId).isEqualTo(457)
           assertThat(allocations[1].prisonerNumber).isEqualTo("C3456DE")
@@ -1935,8 +1800,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(allocations[1].bookingId).isEqualTo(457)
         }
       }
-
-      verifyNoInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_EDITED.value),
@@ -1962,8 +1825,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(3.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
 
@@ -1999,16 +1862,14 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
         }
         with(occurrences.subList(2, response.occurrences.size)) {
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
           assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
           assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
           assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
         }
       }
-
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -2043,16 +1904,14 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(allocations[1].bookingId).isEqualTo(457)
         }
         with(occurrences.subList(1, response.occurrences.size)) {
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
+          assertThat(map { it.updated }.distinct().single()).isNull()
+          assertThat(map { it.updatedBy }.distinct().single()).isNull()
           assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
           assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
           assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
         }
       }
-
-      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -2127,12 +1986,6 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
         }
       }
-
-      appointment.occurrences().subList(0, 2).flatMap { it.allocations() }
-        .union(appointment.occurrences().subList(2, response.occurrences.size).map { it.allocations()[0] }).forEach {
-          verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-        }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -2159,15 +2012,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         with(occurrences.subList(2, response.occurrences.size)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
         }
       }
-
-      appointment.occurrences().subList(2, appointment.occurrences().size).flatMap { it.allocations() }.forEach {
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
-      }
-      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
