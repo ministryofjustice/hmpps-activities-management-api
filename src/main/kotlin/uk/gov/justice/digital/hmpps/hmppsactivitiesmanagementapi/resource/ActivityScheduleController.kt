@@ -161,7 +161,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
     scheduleService.getScheduleById(scheduleId)
 

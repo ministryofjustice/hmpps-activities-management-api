@@ -88,7 +88,7 @@ class ActivityController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   @CaseloadHeader
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
