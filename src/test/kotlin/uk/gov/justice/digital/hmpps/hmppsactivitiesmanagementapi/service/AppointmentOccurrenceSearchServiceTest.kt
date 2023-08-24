@@ -99,7 +99,7 @@ class AppointmentOccurrenceSearchServiceTest {
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SEARCH.name),
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )
@@ -139,7 +139,7 @@ class AppointmentOccurrenceSearchServiceTest {
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SEARCH.name),
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )
@@ -182,7 +182,7 @@ class AppointmentOccurrenceSearchServiceTest {
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SEARCH.name),
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )
@@ -223,7 +223,7 @@ class AppointmentOccurrenceSearchServiceTest {
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SEARCH.name),
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )
@@ -264,7 +264,7 @@ class AppointmentOccurrenceSearchServiceTest {
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SEARCH.name),
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )

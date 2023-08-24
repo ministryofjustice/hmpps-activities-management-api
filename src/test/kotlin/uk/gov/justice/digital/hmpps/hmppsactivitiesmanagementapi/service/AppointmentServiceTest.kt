@@ -433,7 +433,7 @@ class AppointmentServiceTest {
       }
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_CREATED.name),
+        eq(TelemetryEvent.APPOINTMENT_CREATED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -710,7 +710,7 @@ class AppointmentServiceTest {
     service.bulkCreateAppointments(request, principal)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SET_CREATED.name),
+      eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )
