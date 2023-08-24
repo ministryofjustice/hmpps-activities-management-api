@@ -290,7 +290,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -344,7 +344,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -416,7 +416,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -465,7 +465,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -514,7 +514,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -564,7 +564,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -624,7 +624,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -711,7 +711,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -840,7 +840,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -908,7 +908,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -970,7 +970,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1032,7 +1032,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1097,7 +1097,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1156,7 +1156,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1215,7 +1215,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1279,7 +1279,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1337,7 +1337,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1398,7 +1398,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1454,7 +1454,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1510,7 +1510,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1571,7 +1571,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1627,7 +1627,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1683,7 +1683,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1745,7 +1745,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1802,7 +1802,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1859,7 +1859,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -1939,7 +1939,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       verifyNoInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.name),
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )

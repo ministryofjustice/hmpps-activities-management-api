@@ -317,7 +317,7 @@ class AppointmentService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CREATED.name, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CREATED.value, propertiesMap, metricsMap)
   }
 
   private fun logBulkAppointmentCreatedMetric(principal: Principal, appointment: BulkAppointment, startTimeInMs: Long) {
@@ -341,6 +341,6 @@ class AppointmentService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.name, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
   }
 }

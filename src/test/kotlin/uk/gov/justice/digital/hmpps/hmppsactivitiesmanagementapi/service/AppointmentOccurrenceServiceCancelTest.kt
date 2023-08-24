@@ -220,7 +220,7 @@ class AppointmentOccurrenceServiceCancelTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_DELETED.name),
+        eq(TelemetryEvent.APPOINTMENT_DELETED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -260,7 +260,7 @@ class AppointmentOccurrenceServiceCancelTest {
       verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_CANCELLED.name),
+        eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
