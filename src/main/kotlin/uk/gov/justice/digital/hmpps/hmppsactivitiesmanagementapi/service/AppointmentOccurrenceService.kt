@@ -404,7 +404,7 @@ class AppointmentOccurrenceService(
     telemetryMetricsMap[PRISONERS_REMOVED_COUNT_METRIC_KEY] = request.removePrisonerNumbers?.size?.toDouble() ?: 0.0
     telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.name, telemetryPropertiesMap, telemetryMetricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
   }
 
   private fun logAppointmentCancelledMetric(
@@ -430,7 +430,7 @@ class AppointmentOccurrenceService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CANCELLED.name, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CANCELLED.value, propertiesMap, metricsMap)
   }
 
   private fun logAppointmentDeletedMetric(
@@ -456,7 +456,7 @@ class AppointmentOccurrenceService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_DELETED.name, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_DELETED.value, propertiesMap, metricsMap)
   }
 
   private fun createEditAppointmentTelemetryPropertiesMap() =

@@ -114,6 +114,6 @@ class AppointmentOccurrenceSearchService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SEARCH.name, propertiesMap, metricsMap)
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SEARCH.value, propertiesMap, metricsMap)
   }
 }
