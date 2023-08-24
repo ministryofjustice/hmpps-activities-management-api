@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.ValidationException
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -57,6 +58,7 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivityScheduleInstancesByDateRange(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")

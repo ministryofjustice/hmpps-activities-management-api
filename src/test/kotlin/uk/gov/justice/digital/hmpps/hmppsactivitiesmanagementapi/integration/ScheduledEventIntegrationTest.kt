@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -34,7 +35,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       get()
         .uri("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -202,7 +203,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -247,7 +248,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -292,7 +293,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -337,7 +338,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -382,7 +383,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -411,7 +412,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .uri("/scheduled-events/prison/$prisonCode?date=$date")
         .bodyValue(prisonerNumbers)
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
         .exchange()
         .expectStatus().isOk
         .expectHeader().contentType(MediaType.APPLICATION_JSON)

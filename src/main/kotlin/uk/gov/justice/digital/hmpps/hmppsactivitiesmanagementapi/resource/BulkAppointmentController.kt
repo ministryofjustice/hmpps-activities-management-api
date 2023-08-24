@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -32,7 +33,6 @@ class BulkAppointmentController(
     description =
     """
     Create a list of appointments and allocate the supplied prisoner or prisoners to them.
-    Does not require any specific roles
     """,
   )
   @ApiResponses(
@@ -70,6 +70,7 @@ class BulkAppointmentController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun bulkCreateAppointment(
     principal: Principal,
     @Valid

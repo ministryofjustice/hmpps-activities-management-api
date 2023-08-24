@@ -49,7 +49,6 @@ class MigrateActivityService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
@@ -234,7 +233,6 @@ class MigrateActivityService(
     return if (tiers.size > 0) tiers.first() else null
   }
 
-  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")
   @Transactional
   fun migrateAllocation(request: AllocationMigrateRequest): AllocationMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {

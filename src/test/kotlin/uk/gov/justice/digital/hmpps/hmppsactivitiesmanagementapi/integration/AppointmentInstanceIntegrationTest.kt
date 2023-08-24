@@ -8,6 +8,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -61,7 +62,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
   fun `get appointment instance by unknown id returns 404 not found`() {
     webTestClient.get()
       .uri("/appointment-instances/-1")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
@@ -69,7 +70,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentInstanceById(id: Long) =
     get()
       .uri("/appointment-instances/$id")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

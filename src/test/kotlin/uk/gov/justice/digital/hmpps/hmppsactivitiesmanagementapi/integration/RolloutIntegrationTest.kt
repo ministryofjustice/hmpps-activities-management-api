@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import java.time.LocalDate
 
 class RolloutIntegrationTest : IntegrationTestBase() {
@@ -34,7 +34,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/rollout/$code")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

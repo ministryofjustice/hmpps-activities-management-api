@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
@@ -11,6 +13,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -399,6 +402,78 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       }
 
     verify(activityService).updateActivity(any(), any(), any(), any())
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Create activity")
+    inner class CreateAuthTests() {
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `createActivity (ROLE_ACTIVITY_HUB) - 201`() {
+        mockMvcWithSecurity.post("/activities") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityCreateRequest())
+        }.andExpect { status { isCreated() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `createActivity (ROLE_ACTIVITY_ADMIN) - 201`() {
+        mockMvcWithSecurity.post("/activities") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityCreateRequest())
+        }.andExpect { status { isCreated() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `createActivity (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.post("/activities") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityCreateRequest())
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Update activity")
+    inner class UpdateAuthTests() {
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `updateActivity (ROLE_ACTIVITY_HUB) - 202`() {
+        val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
+
+        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateActivityRequest)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `updateActivity (ROLE_ACTIVITY_ADMIN) - 202`() {
+        val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
+
+        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateActivityRequest)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `updateActivity (ROLE_PRISON) - 403`() {
+        val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
+
+        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateActivityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
   }
 
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)

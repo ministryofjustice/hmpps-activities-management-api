@@ -8,7 +8,8 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import java.time.LocalDate
 
 class EventReviewIntegrationTest : IntegrationTestBase() {
@@ -154,7 +155,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   @Test
   fun `should acknowledge 3 events in the list`() {
     // Acknowledge event IDs 1, 2, and 3
-    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), "ACTIVITY_HUB")
+    webTestClient.acknowledge("MDI", eventIds = mutableListOf(1, 2, 3), ROLE_ACTIVITY_HUB)
       .exchange()
       .expectStatus().is2xxSuccessful
       .expectBody()
@@ -180,7 +181,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
     page: Long? = null,
     size: Long? = null,
     prisonerNumber: String? = null,
-    role: String = ACTIVITY_ADMIN,
+    role: String = ROLE_ACTIVITY_ADMIN,
   ) = get().uri { builder ->
     builder
       .path("/event-review/prison/$prisonCode")
@@ -199,7 +200,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.acknowledge(
     prisonCode: String? = "MDI",
     eventIds: List<Long>,
-    role: String = ACTIVITY_ADMIN,
+    role: String = ROLE_ACTIVITY_ADMIN,
   ) = post().uri { builder ->
     builder
       .path("/event-review/prison/$prisonCode/acknowledge")

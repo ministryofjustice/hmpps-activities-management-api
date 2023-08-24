@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
 class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
   @Test
@@ -28,7 +29,7 @@ class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentCategories() =
     get()
       .uri("/appointment-categories")
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

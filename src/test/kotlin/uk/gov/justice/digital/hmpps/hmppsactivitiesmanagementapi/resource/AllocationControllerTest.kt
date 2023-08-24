@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
@@ -9,14 +11,21 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.authentication.TestingAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -99,6 +108,91 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
     mockMvc.waitingListApplication(pentonvillePrisonCode, request).andExpect { status { isNoContent() } }
 
     verify(waitingListService).addPrisoner(pentonvillePrisonCode, request, "USERNAME")
+  }
+
+  fun createAuthentication(role: String = "ROLE_PRISON"): Authentication {
+    val auth = TestingAuthenticationToken("USER", "password", listOf(SimpleGrantedAuthority(role)))
+    SecurityContextHolder.getContext().authentication = auth
+    return auth
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Update allocation")
+    inner class UpdateAllocationTests() {
+      private val updateAllocation = AllocationUpdateRequest(
+        startDate = LocalDate.now().plusDays(1),
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Update allocation (ROLE_ACTIVITY_ADMIN) - 202`() {
+        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateAllocation)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Update allocation (ROLE_ACTIVITY_HUB) - 202`() {
+        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateAllocation)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Update allocation (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(updateAllocation)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Add to waiting list")
+    inner class WaitingListTests() {
+      private val waitingListRequest = WaitingListApplicationRequest(
+        prisonerNumber = "123456",
+        activityScheduleId = 1L,
+        applicationDate = LocalDate.now(),
+        requestedBy = "a".repeat(100),
+        comments = "a".repeat(500),
+        status = WaitingListStatus.PENDING,
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Add to waiting list (ROLE_ACTIVITY_ADMIN) - 204`() {
+        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(waitingListRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Add to waiting list (ROLE_ACTIVITY_HUB) - 204`() {
+        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(waitingListRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Add to waiting list (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(waitingListRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
   }
 
   private fun MockMvc.waitingListApplication(prisonCode: String, request: WaitingListApplicationRequest) =

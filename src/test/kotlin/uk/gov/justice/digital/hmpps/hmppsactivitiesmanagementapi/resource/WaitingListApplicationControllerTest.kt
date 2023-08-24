@@ -1,12 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -55,6 +58,41 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(waitingListApplication))
 
     verify(waitingListService).updateWaitingList(waitingListApplication.id, WaitingListApplicationUpdateRequest(), user.name)
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Waiting list application")
+    inner class WaitingListApplicationTests() {
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Update waiting list application (ROLE_ACTIVITY_ADMIN) - 202`() {
+        mockMvcWithSecurity.patch("/waiting-list-applications/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(WaitingListApplicationUpdateRequest())
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Update waiting list application (ROLE_ACTIVITY_HUB) - 202`() {
+        mockMvcWithSecurity.patch("/waiting-list-applications/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(WaitingListApplicationUpdateRequest())
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Update waiting list application (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.patch("/waiting-list-applications/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(WaitingListApplicationUpdateRequest())
+        }.andExpect { status { isForbidden() } }
+      }
+    }
   }
 
   private fun MockMvc.updatedWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, user: Principal) =

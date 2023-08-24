@@ -34,7 +34,7 @@ import java.time.LocalDate
 class EventReviewController(private val eventReviewService: EventReviewService) {
 
   @GetMapping(value = ["/prison/{prisonCode}"])
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @ResponseBody
   @Operation(
     summary = "Get events for a prison which may indicate that a change of circumstances affecting allocations had occurred",
@@ -154,6 +154,7 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun acknowledgeEvents(
     principal: Principal,
 
