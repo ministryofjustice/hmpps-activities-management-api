@@ -5,7 +5,6 @@ import jakarta.validation.Validation
 import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalTime
@@ -15,7 +14,7 @@ class AppointmentOccurrenceUpdateRequestTest {
 
   @Test
   fun `valid request`() {
-    val request = appointmentCreateRequest()
+    val request = AppointmentOccurrenceUpdateRequest()
     assertThat(validator.validate(request)).isEmpty()
   }
 
