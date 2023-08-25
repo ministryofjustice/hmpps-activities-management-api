@@ -88,7 +88,7 @@ class ScheduledInstanceController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getScheduledInstanceById(
     @PathVariable("instanceId") instanceId: Long,
   ): ActivityScheduleInstance = scheduledInstanceService.getActivityScheduleInstanceById(instanceId)

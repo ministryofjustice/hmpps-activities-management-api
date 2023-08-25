@@ -2,12 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -140,6 +143,23 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
         ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
       )
     }.andExpect { status { isBadRequest() } }
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Get Schedule instance by id")
+    inner class GetScheduleInstanceById() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get schedule instance by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.get("/scheduled-instances/1") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+    }
   }
 
   private fun MockMvc.getScheduledInstanceById(instanceId: String) =

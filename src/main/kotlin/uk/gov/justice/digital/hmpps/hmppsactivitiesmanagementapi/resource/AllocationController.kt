@@ -89,7 +89,7 @@ class AllocationController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)
 
