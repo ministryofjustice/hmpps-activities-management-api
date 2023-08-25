@@ -91,6 +91,8 @@ data class Appointment(
 
   fun scheduledOccurrences() = occurrences().filter { it.isScheduled() }.toList()
 
+  fun scheduledOccurrencesAfter(startDateTime: LocalDateTime) = scheduledOccurrences().filter { it.startDateTime() > startDateTime }.toList()
+
   fun occurrenceDetails(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,

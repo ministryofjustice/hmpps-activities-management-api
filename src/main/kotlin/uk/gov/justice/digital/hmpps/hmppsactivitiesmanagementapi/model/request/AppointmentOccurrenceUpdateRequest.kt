@@ -102,6 +102,8 @@ data class AppointmentOccurrenceUpdateRequest(
   )
   val applyTo: ApplyTo = ApplyTo.THIS_OCCURRENCE,
 ) {
+  fun isPropertyUpdate() = categoryCode != null || internalLocationId != null || inCell != null || startDate != null || startTime != null || endTime != null || comment != null
+
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell != false || internalLocationId != null
 

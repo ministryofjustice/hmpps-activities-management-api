@@ -6,6 +6,7 @@ import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -46,6 +47,54 @@ class AppointmentOccurrenceUpdateRequestTest {
   fun `cannot update start date for all future occurrences`() {
     val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
     assertSingleValidationError(validator.validate(request), "applyTo", "Cannot update start date for all future occurrences")
+  }
+
+  @Test
+  fun `is property update false when no property update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest()
+    request.isPropertyUpdate() isEqualTo false
+  }
+
+  @Test
+  fun `is property update true when category code update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when internal location update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 123)
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when in cell update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(inCell = true)
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when start date update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(startDate = LocalDate.now().plusDays(1))
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when start time update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(11, 30))
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when end time update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(14, 0))
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when comment update is supplied`() {
+    val request = AppointmentOccurrenceUpdateRequest(comment = "New")
+    request.isPropertyUpdate() isEqualTo true
   }
 
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentOccurrenceUpdateRequest>>, propertyName: String, message: String) {
