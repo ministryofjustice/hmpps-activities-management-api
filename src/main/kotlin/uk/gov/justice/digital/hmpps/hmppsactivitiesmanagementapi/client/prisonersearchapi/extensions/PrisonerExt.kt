@@ -5,7 +5,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 fun Prisoner.isOut() = inOutStatus == Prisoner.InOutStatus.OUT
 
 fun Prisoner.lastMovementType(): MovementType? =
-  MovementType.values().firstOrNull { it.nomisShortCode == lastMovementTypeCode }
+  MovementType.entries.firstOrNull { it.nomisShortCode == lastMovementTypeCode }
+
+fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
+
+fun Prisoner.isActiveOut(prisonCode: String): Boolean = status == "ACTIVE OUT" && prisonId == prisonCode
 
 enum class MovementType(val nomisShortCode: String) {
   RELEASE("REL"),

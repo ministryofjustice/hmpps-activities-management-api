@@ -3,6 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveOut
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -27,6 +30,7 @@ class ActivitiesChangedEventHandler(
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val waitingListService: WaitingListService,
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -84,6 +88,8 @@ class ActivitiesChangedEventHandler(
   }
 
   private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) {
+    val deallocationReason = getDeallocationReasonFor(event)
+
     waitingListService.declinePendingOrApprovedApplications(
       event.prisonCode(),
       event.prisonerNumber(),
@@ -92,9 +98,22 @@ class ActivitiesChangedEventHandler(
     )
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE, event)
+      .deallocateAffectedAllocations(deallocationReason, event)
       .removeFutureAttendances(event)
   }
+
+  private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) =
+    prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber()).let { prisoner ->
+      if (prisoner == null) throw NullPointerException("prisoner ${event.prisonerNumber()} not found")
+
+      // TODO only partially implemented, so subject to change - need to check the move type!!!
+
+      when {
+        prisoner.isActiveOut(event.prisonCode()) -> DeallocationReason.TEMPORARY_ABSENCE
+        prisoner.isInactiveOut() -> DeallocationReason.RELEASED
+        else -> throw RuntimeException("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
+      }
+    }
 
   private fun List<Allocation>.deallocateAffectedAllocations(
     reason: DeallocationReason,
