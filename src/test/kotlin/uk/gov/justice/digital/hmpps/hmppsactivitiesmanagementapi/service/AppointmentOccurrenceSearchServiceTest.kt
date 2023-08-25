@@ -1,10 +1,16 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentCaptor
+import org.mockito.Captor
+import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
@@ -19,6 +25,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.RESULTS_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TIME_SLOT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -33,8 +49,15 @@ class AppointmentOccurrenceSearchServiceTest {
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
+  private val telemetryClient: TelemetryClient = mock()
 
   private val principal: Principal = mock()
+
+  @Captor
+  private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
+
+  @Captor
+  private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceSearchService(
     appointmentOccurrenceSearchRepository,
@@ -43,10 +66,12 @@ class AppointmentOccurrenceSearchServiceTest {
     prisonRegimeService,
     referenceCodeService,
     locationService,
+    telemetryClient,
   )
 
   @BeforeEach
   fun setup() {
+    MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
   }
 
@@ -72,6 +97,27 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      Assertions.assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      Assertions.assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
   }
 
   @Test
@@ -91,6 +137,27 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentOccurrenceSearchSpecification).startDateBetween(request.startDate!!, request.endDate!!)
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate.toString())
+      Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      Assertions.assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      Assertions.assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
   }
 
   @Test
@@ -113,6 +180,27 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
     verify(appointmentOccurrenceSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlot.toString())
+      Assertions.assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      Assertions.assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      Assertions.assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
   }
 
   @Test
@@ -133,6 +221,27 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
     verify(appointmentOccurrenceSearchSpecification).categoryCodeEquals(request.categoryCode!!)
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo(request.categoryCode)
+      Assertions.assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      Assertions.assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      Assertions.assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
   }
 
   @Test
@@ -153,6 +262,27 @@ class AppointmentOccurrenceSearchServiceTest {
     verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
     verify(appointmentOccurrenceSearchSpecification).internalLocationIdEquals(request.internalLocationId!!)
     verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      Assertions.assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      Assertions.assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      Assertions.assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      Assertions.assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      Assertions.assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo(request.internalLocationId.toString())
+    }
+
+    with(telemetryMetricsMap) {
+      Assertions.assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      Assertions.assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
   }
 
   @Test

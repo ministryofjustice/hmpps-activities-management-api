@@ -89,6 +89,7 @@ class AllocationController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
     allocationsService.getAllocationById(allocationId)
 
@@ -121,13 +122,14 @@ class AllocationController(
   )
   @GetMapping(value = ["/deallocation-reasons"])
   @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{prisonCode}/allocationId/{allocationId}"])
   @Operation(
     summary = "Update an allocation",
-    description = "Update an allocation. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Update an allocation",
   )
   @ApiResponses(
     value = [
@@ -168,7 +170,7 @@ class AllocationController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun update(
     @PathVariable("allocationId") allocationId: Long,
     @PathVariable("prisonCode") prisonCode: String,
@@ -185,7 +187,7 @@ class AllocationController(
   @PostMapping(value = ["/{prisonCode}/waiting-list-application"])
   @Operation(
     summary = "Add a prisoner to an activity schedule waiting list",
-    description = "Adds the supplied waiting list creation request to the activity schedule. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Adds the supplied waiting list creation request to the activity schedule.",
   )
   @ApiResponses(
     value = [
@@ -236,7 +238,7 @@ class AllocationController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun addToWaitingList(
     @PathVariable("prisonCode") prisonCode: String,
     principal: Principal,

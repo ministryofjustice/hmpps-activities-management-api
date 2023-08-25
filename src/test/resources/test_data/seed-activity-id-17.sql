@@ -40,8 +40,17 @@ values (5, 2, 'A22222A', 10002, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (6, 1, 'A33333A', 10003, 2, '2022-10-20', null, '2022-10-20 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ENDED');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (7, 2, 'A33333A', 10004, 2, '2022-10-20', '2022-10-21', '2022-10-20 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
+
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (8, 2, 'A33333A', 10005, 2, '2022-11-20', null, '2022-11-20 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ENDED');
+
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, 1, now(), '10:00:00', '11:00:00', true, now(), 'Old Canceller', 'Nobody Available', null);
+values (1, 1, now(), '10:00:00', '11:00:00', false, null, null, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (2, 2, now(), '10:00:00', '11:00:00', false, null, null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
 values (1, 1, 'A22222A', 1, 'Attendance Comment', now(), 'Old Recorder', 'COMPLETED', 150, 50, null, false);
@@ -51,4 +60,7 @@ values (2, 1, 'A11111A', null, null, now(), 'Old Recorder', 'WAITING', null, nul
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
 values (3, 1, 'A33333A', 1, null, now(), 'Old Recorder', 'COMPLETED', 200, null, null, null);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (4, 2, 'A33333A', 1, null, now(), 'Old Recorder', 'WAITING', null, null, null, null);
 

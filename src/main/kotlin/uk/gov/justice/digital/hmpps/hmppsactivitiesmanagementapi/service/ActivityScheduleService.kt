@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
@@ -25,9 +24,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.metricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -102,7 +101,6 @@ class ActivityScheduleService(
     repository.findOrThrowNotFound(scheduleId).checkCaseloadAccess().toModelSchedule()
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
@@ -163,7 +161,6 @@ class ActivityScheduleService(
       ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
     log.info("Attempting to deallocate prisoners $request")
 
@@ -195,9 +192,9 @@ class ActivityScheduleService(
 
   private fun logMetric(event: TelemetryEvent, prisonerNumber: String) {
     val propertiesMap = mapOf(
-      PRISONER_NUMBER_KEY to prisonerNumber,
+      PRISONER_NUMBER_PROPERTY_KEY to prisonerNumber,
     )
 
-    telemetryClient.trackEvent(event.value, propertiesMap, metricsMap())
+    telemetryClient.trackEvent(event.value, propertiesMap, activityMetricsMap())
   }
 }

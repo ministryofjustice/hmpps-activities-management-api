@@ -13,6 +13,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -98,7 +99,7 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
     post()
       .uri("/bulk-appointments")
       .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

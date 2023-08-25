@@ -10,15 +10,16 @@ spec:
   successfulJobsHistoryLimit: 5
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 345600 # 4 days
       backoffLimit: 2
       template:
         spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-          - name: manage-attendance-records-job
-            image: ghcr.io/ministryofjustice/hmpps-devops-tools
-            args:
-              - /bin/sh
-              - -c
-              - curl --fail -X POST http://hmpps-activities-management-api/job/manage-attendance-records?withExpiry=true
+            - name: manage-attendance-records-job
+              image: ghcr.io/ministryofjustice/hmpps-devops-tools
+              args:
+                - /bin/sh
+                - -c
+                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/manage-attendance-records?withExpiry=true

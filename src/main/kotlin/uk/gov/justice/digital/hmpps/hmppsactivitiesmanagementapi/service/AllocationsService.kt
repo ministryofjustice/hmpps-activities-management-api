@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
@@ -42,7 +41,6 @@ class AllocationsService(
   }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
       ?: throw EntityNotFoundException("Allocation $allocationId not found.")

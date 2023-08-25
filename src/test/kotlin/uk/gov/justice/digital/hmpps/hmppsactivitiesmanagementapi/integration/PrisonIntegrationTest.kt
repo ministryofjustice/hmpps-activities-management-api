@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -120,7 +121,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/prison/$prisonCode/activity-categories/$categoryId/activities")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -131,7 +132,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/prison/$prisonCode/activities")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -146,7 +147,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     get()
       .uri("/prison/$code/locations?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -262,7 +263,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
           .build(prisonCode)
       }
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf()))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)

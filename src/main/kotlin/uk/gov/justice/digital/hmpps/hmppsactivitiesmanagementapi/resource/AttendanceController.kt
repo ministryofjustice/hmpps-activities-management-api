@@ -78,6 +78,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAttendanceById(
     @PathVariable("attendanceId") instanceId: Long,
   ): Attendance = attendancesService.getAttendanceById(instanceId)
@@ -122,6 +123,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAttendanceByDate(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("sessionDate") sessionDate: LocalDate,
@@ -131,7 +133,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @ResponseBody
   @Operation(
     summary = "Updates attendance records.",
-    description = "Updates the given attendance records with the supplied update request details. Requires the 'ACTIVITY_ADMIN' role.",
+    description = "Updates the given attendance records with the supplied update request details.",
   )
   @ApiResponses(
     value = [
@@ -151,7 +153,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun markAttendances(
     principal: Principal,
     @RequestBody attendances: List<AttendanceUpdateRequest>,

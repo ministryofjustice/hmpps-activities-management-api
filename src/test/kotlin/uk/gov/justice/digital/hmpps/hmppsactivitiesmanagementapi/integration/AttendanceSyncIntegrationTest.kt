@@ -114,6 +114,28 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-17.sql",
   )
   @Test
+  fun `should return correct booking where prisoner has been allocated, ended and reallocated on a different booking id`() {
+    val attendanceSync =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/4")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync) {
+      assertThat(attendanceId).isEqualTo(4)
+      assertThat(bookingId).isEqualTo(10005)
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-17.sql",
+  )
+  @Test
   fun `should return unauthorised`() {
     webTestClient.get()
       .uri("/synchronisation/attendance/1")

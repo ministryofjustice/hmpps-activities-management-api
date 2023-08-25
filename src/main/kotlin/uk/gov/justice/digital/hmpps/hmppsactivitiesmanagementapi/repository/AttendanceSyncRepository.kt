@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository as RepositoryAnnotation
 
 @RepositoryAnnotation
 interface AttendanceSyncRepository : ReadOnlyRepository<AttendanceSync, Long> {
-  fun findAllByAttendanceId(attendanceId: Long): List<AttendanceSync>
+  fun findAllByAttendanceId(attendanceId: Long): AttendanceSync?
 }

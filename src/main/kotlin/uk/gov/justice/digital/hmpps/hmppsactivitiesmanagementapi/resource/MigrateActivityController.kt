@@ -31,7 +31,7 @@ class MigrateActivityController(
   @PostMapping(value = ["/activity"])
   @Operation(
     summary = "Migrate an activity",
-    description = "Migrate an activity. Requires the role 'ROLE_NOMIS_ACTIVITIES'",
+    description = "Migrate an activity.",
   )
   @ApiResponses(
     value = [
@@ -82,7 +82,7 @@ class MigrateActivityController(
   @PostMapping(value = ["/allocation"])
   @Operation(
     summary = "Migrate an allocation",
-    description = "Migrate an allocation from NOMIS. Requires the role 'ROLE_NOMIS_ACTIVITIES'",
+    description = "Migrate an allocation from NOMIS.",
   )
   @ApiResponses(
     value = [
@@ -136,7 +136,6 @@ class MigrateActivityController(
     description = """
       Deletes an activity and all its child entities including schedule, slots, pay, instances, attendances and allocations.
       Only for use via by migration services to undo a failed migration.
-      Requires the role 'ROLE_NOMIS_ACTIVITIES'.
       """,
   )
   @ApiResponses(

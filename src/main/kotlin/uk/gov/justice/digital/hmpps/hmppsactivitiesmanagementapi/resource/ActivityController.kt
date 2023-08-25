@@ -88,6 +88,7 @@ class ActivityController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   @CaseloadHeader
   fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
     activityService.getActivityById(activityId)
@@ -142,6 +143,7 @@ class ActivityController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivityByIdWithFilters(
     @PathVariable("activityId") activityId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)
@@ -199,6 +201,7 @@ class ActivityController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivityKeyIds(
     @PathVariable("activityId") activityId: Long,
   ) = activityService.getActivityBasicById(activityId)
@@ -254,6 +257,7 @@ class ActivityController(
       ),
     ],
   )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivityBasicByPrisonCode(
     @PathVariable("prisonCode") prisonCode: String,
   ) = activityService.getActivityBasicByPrisonCode(prisonCode)
@@ -262,7 +266,7 @@ class ActivityController(
   @PostMapping
   @Operation(
     summary = "Create an activity",
-    description = "Create an activity. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Create an activity",
   )
   @ApiResponses(
     value = [
@@ -302,7 +306,7 @@ class ActivityController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @CaseloadHeader
   fun create(
     principal: Principal,
@@ -361,6 +365,7 @@ class ActivityController(
   )
   @GetMapping(value = ["/{activityId}/schedules"])
   @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> =
     activityService.getSchedulesForActivity(activityId)
 
@@ -368,7 +373,7 @@ class ActivityController(
   @PatchMapping(value = ["/{prisonCode}/activityId/{activityId}"])
   @Operation(
     summary = "Update an activity",
-    description = "Update an activity. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Update an activity",
   )
   @ApiResponses(
     value = [
@@ -424,7 +429,7 @@ class ActivityController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   @CaseloadHeader
   fun update(
     @PathVariable("prisonCode") prisonCode: String,

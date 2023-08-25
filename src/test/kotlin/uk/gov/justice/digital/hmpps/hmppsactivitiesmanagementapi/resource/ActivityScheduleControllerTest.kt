@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -11,6 +13,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -29,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
@@ -193,6 +197,97 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(waitingList)))
+  }
+
+  @Nested
+  @DisplayName("Authorization tests")
+  inner class AuthorizationTests() {
+    @Nested
+    @DisplayName("Allocate offender tests")
+    inner class AllocateOffenderTests() {
+      private var prisonerAllocationRequest = PrisonerAllocationRequest(
+        prisonerNumber = "A1234CB",
+        payBandId = 1,
+        startDate = LocalDate.now().plusDays(1),
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Allocate offender (ROLE_ACTIVITY_ADMIN) - 204`() {
+        mockMvcWithSecurity.post("/schedules/1/allocations") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerAllocationRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Allocate offender (ROLE_ACTIVITY_HUB) - 204`() {
+        mockMvcWithSecurity.post("/schedules/1/allocations") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerAllocationRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Allocate offender (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.post("/schedules/1/allocations") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerAllocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Deallocate offender tests")
+    inner class DeallocateOffenderTests() {
+      private var prisonerDeallocateRequest = PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("654321"),
+        reasonCode = DeallocationReason.RELEASED.name,
+        endDate = TimeSource.tomorrow(),
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Deallocate offender (ROLE_ACTIVITY_ADMIN) - 204`() {
+        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Deallocate offender (ROLE_ACTIVITY_HUB) - 204`() {
+        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
+        }.andExpect { status { isNoContent() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Deallocate offender (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.put("/schedules/1/deallocate") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(prisonerDeallocateRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Get schedule by id")
+    inner class GetScheduleByIdTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get schedule by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.get("/schedules/1") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+    }
   }
 
   private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) =

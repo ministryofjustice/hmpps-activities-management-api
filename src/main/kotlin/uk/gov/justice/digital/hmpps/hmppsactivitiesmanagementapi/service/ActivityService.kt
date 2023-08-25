@@ -5,7 +5,6 @@ import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -30,10 +29,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_NAME_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.metricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -119,7 +118,6 @@ class ActivityService(
   }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun createActivity(request: ActivityCreateRequest, createdBy: String): ModelActivity {
     checkCaseloadAccess(request.prisonCode!!)
 
@@ -135,11 +133,11 @@ class ActivityService(
     checkEducationLevels(request.minimumEducationLevel)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_KEY to request.prisonCode,
-      ACTIVITY_NAME_KEY to request.summary,
+      PRISON_CODE_PROPERTY_KEY to request.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, metricsMap())
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, activityMetricsMap())
 
     val activity = Activity(
       prisonCode = request.prisonCode,
@@ -277,7 +275,6 @@ class ActivityService(
   }
 
   @Transactional
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
   fun updateActivity(
     prisonCode: String,
     activityId: Long,
@@ -325,11 +322,11 @@ class ActivityService(
     activityRepository.saveAndFlush(activity)
 
     val propertiesMap = mapOf(
-      PRISON_NAME_KEY to prisonCode,
-      ACTIVITY_NAME_KEY to request.summary,
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
     )
 
-    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, metricsMap())
+    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
 
     return transform(activity)
   }

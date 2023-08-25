@@ -17,4 +17,10 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, current_date, null);
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (1, 1, 'A11111A', 10001, 1, current_date, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'PENDING');
+values (1, 1, 'TODAY', 10001, 1, current_date, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'PENDING');
+
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (2, 1, 'FUTURE', 20002, 1, current_date + 1, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'PENDING');
+
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (3, 1, 'PAST', 30003, 1, current_date - 1, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'PENDING');

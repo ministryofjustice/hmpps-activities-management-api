@@ -99,6 +99,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAllocationsBy(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
@@ -160,13 +161,14 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
     scheduleService.getScheduleById(scheduleId)
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
     summary = "Allocate offender to schedule",
-    description = "Allocates the supplied offender allocation request to the activity schedule. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Allocates the supplied offender allocation request to the activity schedule.",
   )
   @ApiResponses(
     value = [
@@ -216,7 +218,7 @@ class ActivityScheduleController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun allocate(
     principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,
@@ -235,8 +237,7 @@ class ActivityScheduleController(
   @Operation(
     summary = "Get the suitable candidates for an activity",
     description = "Returns a paginated view of the list of candidates suitable for a given activity schedule." +
-      " Filterable by employment status, workplace risk assessment, and incentive level." +
-      " Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+      " Filterable by employment status, workplace risk assessment, and incentive level.",
   )
   @ApiResponses(
     value = [
@@ -287,7 +288,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun candidates(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
@@ -322,8 +323,7 @@ class ActivityScheduleController(
   @Operation(
     summary = "Gets the suitability details of a candidate for an activity",
     description = "Returns candidate suitability details considering factors such as, workplace risk assessment," +
-      " incentive level, education levels, earliest release date and non-associations" +
-      " Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+      " incentive level, education levels, earliest release date and non-associations",
   )
   @ApiResponses(
     value = [
@@ -379,7 +379,7 @@ class ActivityScheduleController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun allocationSuitability(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "prisonerNumber", required = true)
@@ -391,7 +391,7 @@ class ActivityScheduleController(
   @PutMapping(value = ["/{scheduleId}/deallocate"])
   @Operation(
     summary = "Deallocate offenders",
-    description = "Deallocates offenders from an activity schedule on a future date. Requires any one of the following roles ['ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN'].",
+    description = "Deallocates offenders from an activity schedule on a future date.",
   )
   @ApiResponses(
     value = [
@@ -442,7 +442,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_HUB_LEAD', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun deallocate(
     principal: Principal,
     @PathVariable("scheduleId") scheduleId: Long,
@@ -508,6 +508,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) =
     waitingListService.getWaitingListsBySchedule(scheduleId)
 }
