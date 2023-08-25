@@ -193,6 +193,19 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
         }.andExpect { status { isForbidden() } }
       }
     }
+
+    @Nested
+    @DisplayName("Get allocation by id")
+    inner class GetAllocationByIdTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get allocation by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.get("/allocations/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+    }
   }
 
   private fun MockMvc.waitingListApplication(prisonCode: String, request: WaitingListApplicationRequest) =

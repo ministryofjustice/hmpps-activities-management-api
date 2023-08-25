@@ -474,6 +474,23 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         }.andExpect { status { isForbidden() } }
       }
     }
+
+    @Nested
+    @DisplayName("Authorization tests")
+    inner class AuthorizationTests() {
+      @Nested
+      @DisplayName("Get activity by id")
+      inner class GetActivityByIdTests() {
+        @Test
+        @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+        fun `Get activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+          mockMvcWithSecurity.get("/activities/1") {
+            contentType = MediaType.APPLICATION_JSON
+            header(CASELOAD_ID, "MDI")
+          }.andExpect { status { isOk() } }
+        }
+      }
+    }
   }
 
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)

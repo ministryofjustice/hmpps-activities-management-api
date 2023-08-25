@@ -275,6 +275,19 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         }.andExpect { status { isForbidden() } }
       }
     }
+
+    @Nested
+    @DisplayName("Get schedule by id")
+    inner class GetScheduleByIdTests() {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get schedule by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.get("/schedules/1") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+    }
   }
 
   private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) =
