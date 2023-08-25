@@ -186,7 +186,7 @@ class MigrateActivityService(
       activityTier = mapProgramToTier(request.programServiceCode),
       attendanceRequired = true,
       summary = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
-      description = "Migrated from NOMIS with program service code ${request.programServiceCode}",
+      description = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
       inCell = (request.internalLocationId == null && !request.outsideWork) || request.programServiceCode == TIER2_IN_CELL_ACTIVITY,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
@@ -259,6 +259,8 @@ class MigrateActivityService(
     return incentiveLevel
   }
 
+  // TODO - Check new FRD T2 categories - they've changed!
+  
   fun mapProgramToCategory(programServiceCode: String): ActivityCategory {
     val activityCategories = activityCategoryRepository.findAll()
     val category = when {

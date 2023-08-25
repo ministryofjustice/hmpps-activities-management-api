@@ -143,7 +143,7 @@ class MigrateActivityServiceTest {
       // Check the content of the Activity entity that was passed into saveAndFlush
       with(activityCaptor.firstValue) {
         assertThat(summary).isEqualTo("An activity")
-        assertThat(description).contains("Migrated from NOMIS")
+        assertThat(description).isEqualTo("An activity")
         assertThat(inCell).isFalse
         assertThat(onWing).isFalse
         assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
