@@ -39,7 +39,7 @@ class AppointmentOccurrenceUpdateDomainService(
   fun updateAppointmentOccurrences(
     appointment: Appointment,
     appointmentOccurrenceId: Long,
-    occurrencesToUpdate: Collection<AppointmentOccurrence>,
+    occurrencesToUpdate: List<AppointmentOccurrence>,
     request: AppointmentOccurrenceUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,

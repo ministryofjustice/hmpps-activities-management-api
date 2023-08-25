@@ -47,15 +47,8 @@ class AppointmentOccurrenceService(
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
+    val occurrencesToUpdate = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "update")
     checkCaseloadAccess(appointment.prisonCode)
-
-    require(!appointmentOccurrence.isCancelled()) {
-      "Cannot update a cancelled appointment occurrence"
-    }
-
-    require(!appointmentOccurrence.isExpired()) {
-      "Cannot update a past appointment occurrence"
-    }
 
     if (request.categoryCode != null) {
       referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
@@ -95,7 +88,7 @@ class AppointmentOccurrenceService(
     return appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
       appointment,
       appointmentOccurrenceId,
-      determineOccurrencesToApplyTo(appointment, appointmentOccurrence, request.applyTo),
+      occurrencesToUpdate,
       request,
       prisonerMap,
       now,
@@ -106,19 +99,15 @@ class AppointmentOccurrenceService(
   }
 
   fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
-    val startTime = System.currentTimeMillis()
+    val startTimeInMs = System.currentTimeMillis()
+    val now = LocalDateTime.now()
+
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
+    val occurrencesToUpdate = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
     checkCaseloadAccess(appointment.prisonCode)
 
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
-
-    val now = LocalDateTime.now()
-    if (LocalDateTime.of(appointmentOccurrence.startDate, appointmentOccurrence.startTime) < now) {
-      throw IllegalArgumentException("Cannot cancel a past appointment occurrence")
-    }
-
-    val occurrencesToUpdate = determineOccurrencesToApplyTo(appointment, appointmentOccurrence, request.applyTo)
 
     occurrencesToUpdate.forEach {
       it.cancellationReason = cancellationReason
@@ -139,7 +128,7 @@ class AppointmentOccurrenceService(
           updatedAppointment,
           occurrencesToUpdate.size,
           occurrencesToUpdate.flatMap { it.allocations() }.size,
-          startTime,
+          startTimeInMs,
         )
       }
 
@@ -153,21 +142,12 @@ class AppointmentOccurrenceService(
           updatedAppointment,
           occurrencesToUpdate.size,
           occurrencesToUpdate.flatMap { it.allocations() }.size,
-          startTime,
+          startTimeInMs,
         )
       }
 
     return updatedAppointment.toModel()
   }
-
-  private fun determineOccurrencesToApplyTo(appointment: Appointment, appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo) =
-    when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-        appointment.scheduledOccurrencesAfter(appointmentOccurrence.startDateTime()),
-      )
-      ApplyTo.ALL_FUTURE_OCCURRENCES -> appointment.scheduledOccurrences()
-      else -> listOf(appointmentOccurrence)
-    }
 
   private fun logAppointmentCancelledMetric(
     principal: Principal,
