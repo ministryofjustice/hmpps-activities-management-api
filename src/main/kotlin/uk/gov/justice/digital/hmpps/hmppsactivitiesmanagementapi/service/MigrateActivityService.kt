@@ -102,7 +102,7 @@ class MigrateActivityService(
       activityTier = mapProgramToTier(request.programServiceCode),
       attendanceRequired = true,
       summary = request.description,
-      description = "Migrated from NOMIS with program service code ${request.programServiceCode}",
+      description = request.description,
       inCell = (request.internalLocationId == null && !request.outsideWork) || request.programServiceCode == TIER2_IN_CELL_ACTIVITY,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
