@@ -488,7 +488,11 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    require((request.locationId != null) xor request.onWing!! xor request.inCell!! xor request.offWing!!) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+    if (request.locationId == null && request.onWing == null && request.offWing == null && request.inCell == null) {
+      return
+    }
+
+    require((request.locationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
 
     request.locationId?.apply {
       val scheduleLocation = getLocationForSchedule(activity, this)

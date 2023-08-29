@@ -357,6 +357,7 @@ internal fun activityCreateRequest(
     scheduleWeeks = 1,
     slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
     onWing = false,
+    offWing = false,
   )
 
 internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
