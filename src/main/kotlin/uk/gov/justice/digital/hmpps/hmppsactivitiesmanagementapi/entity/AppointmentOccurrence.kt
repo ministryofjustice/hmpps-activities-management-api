@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Entity
 @Table(name = "appointment_occurrence")
 @Where(clause = "deleted = false")
+@EntityListeners(AppointmentOccurrenceEntityListener::class)
 data class AppointmentOccurrence(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -81,7 +83,9 @@ data class AppointmentOccurrence(
 
   fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
 
-  fun startDateTime() = LocalDateTime.of(startDate, startTime)
+  fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
+
+  fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted()
 
   fun isEdited() = updated != null
 
