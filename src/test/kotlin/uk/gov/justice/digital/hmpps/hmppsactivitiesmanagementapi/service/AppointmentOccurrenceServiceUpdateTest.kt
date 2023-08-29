@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -78,14 +79,12 @@ class AppointmentOccurrenceServiceUpdateTest {
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceService(
-    appointmentRepository,
     appointmentOccurrenceRepository,
-    appointmentCancellationReasonRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
     AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
-    telemetryClient,
+    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient),
   )
 
   @BeforeEach
