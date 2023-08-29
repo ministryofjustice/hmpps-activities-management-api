@@ -31,7 +31,7 @@ class AppointmentOccurrenceEntityListener {
    * sync event should be published.
    *
    * The event type is determined by the state of the occurrence at the time. If an occurrence is cancelled or deleted,
-   * the event is those types. A change to an active appointment is therefor an update event.
+   * the event is those types. A change to an active appointment is therefore an update event.
    */
   @PostUpdate
   fun onUpdate(entity: AppointmentOccurrence) {

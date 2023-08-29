@@ -7,7 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -47,17 +46,15 @@ class AppointmentOccurrenceUpdateDomainService(
     startTimeInMs: Long,
     trackEvent: Boolean,
   ): AppointmentModel {
-    var instanceCount = getUpdatedInstanceCount(request, appointment, occurrencesToUpdate)
-
     val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
-    val telemetryMetricsMap = request.toTelemetryMetricsMap(occurrencesToUpdate.size)
+    val telemetryMetricsMap = request.toTelemetryMetricsMap(occurrencesToUpdate.size, getUpdatedInstanceCount(request, appointment, occurrencesToUpdate))
 
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
     applyInternalLocationUpdate(request, occurrencesToUpdate)
     applyStartEndTimeUpdate(request, occurrencesToUpdate)
     applyCommentUpdate(request, occurrencesToUpdate)
-    instanceCount += applyRemovePrisonersUpdate(request, appointment, occurrencesToUpdate)
+    applyRemovePrisonersUpdate(request, occurrencesToUpdate)
 
     if (request.isPropertyUpdate()) {
       occurrencesToUpdate.forEach {
@@ -66,19 +63,16 @@ class AppointmentOccurrenceUpdateDomainService(
       }
     }
 
-    var updatedAppointment = appointmentRepository.saveAndFlush(appointment)
-
-    // Adding prisoners creates new allocations on the occurrence and publishes create instance events.
-    // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
-    applyAddPrisonersUpdate(request, occurrencesToUpdate, prisonerMap).also {
-      if (it > 0) {
-        updatedAppointment = appointmentRepository.saveAndFlush(appointment)
-        instanceCount += it
-      }
+    if (!request.addPrisonerNumbers.isNullOrEmpty()) {
+      // Adding prisoners creates new allocations on the occurrence and publishes create instance events.
+      // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
+      appointmentRepository.saveAndFlush(appointment)
+      applyAddPrisonersUpdate(request, occurrencesToUpdate, prisonerMap)
     }
 
+    val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
+
     if (trackEvent) {
-      telemetryMetricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] = instanceCount.toDouble()
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
     }
@@ -86,18 +80,38 @@ class AppointmentOccurrenceUpdateDomainService(
     return updatedAppointment.toModel()
   }
 
-  private fun getUpdatedInstanceCount(
+  fun getUpdatedInstanceCount(
     request: AppointmentOccurrenceUpdateRequest,
     appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
-  ) =
-    if (request.categoryCode != null) {
-      appointment.scheduledOccurrences().flatMap { it.allocations() }.size
-    } else if (request.isPropertyUpdate()) {
-      occurrencesToUpdate.flatMap { it.allocations() }.size
-    } else {
-      0
+  ): Int {
+    var instanceCount =
+      if (request.categoryCode != null) {
+        appointment.scheduledOccurrences().flatMap { it.allocations() }.size
+      } else if (request.isPropertyUpdate()) {
+        occurrencesToUpdate.flatMap { it.allocations() }.size
+      } else {
+        0
+      }
+
+    // Removed instance count is implicitly included in above count if a property has changed as those updates will apply
+    // to the occurrence, therefore
+    if (request.removePrisonerNumbers?.isNotEmpty() == true && instanceCount == 0) {
+      // only count allocations that will be removed i.e. where there's an allocation for the requested prison number
+      instanceCount += occurrencesToUpdate.flatMap { it.allocations().filter { allocation -> request.removePrisonerNumbers.contains(allocation.prisonerNumber) } }.size
     }
+
+    if (request.addPrisonerNumbers?.isNotEmpty() == true) {
+      // only count allocations that will be added i.e. where there isn't already an allocation for the requested prison number
+      instanceCount += occurrencesToUpdate.sumOf { occurrence ->
+        request.addPrisonerNumbers.filter {
+          !occurrence.allocations().map { allocation -> allocation.prisonerNumber }.contains(it)
+        }.size
+      }
+    }
+
+    return instanceCount
+  }
 
   private fun applyCategoryCodeUpdate(
     request: AppointmentOccurrenceUpdateRequest,
@@ -179,38 +193,28 @@ class AppointmentOccurrenceUpdateDomainService(
 
   private fun applyRemovePrisonersUpdate(
     request: AppointmentOccurrenceUpdateRequest,
-    appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
-  ): Int {
-    var removedInstanceCount = 0
+  ) {
     occurrencesToUpdate.forEach { occurrenceToUpdate ->
       request.removePrisonerNumbers?.forEach { prisonerToRemove ->
-        if (appointment.appointmentType == AppointmentType.INDIVIDUAL && request.removePrisonerNumbers.isNotEmpty()) {
-          throw IllegalArgumentException("Cannot remove prisoners from an individual appointment occurrence")
-        }
         occurrenceToUpdate.allocations()
           .filter { it.prisonerNumber == prisonerToRemove }
           .forEach {
             occurrenceToUpdate.removeAllocation(it)
-            removedInstanceCount++
           }
       }
     }
-    return removedInstanceCount
   }
 
   private fun applyAddPrisonersUpdate(
     request: AppointmentOccurrenceUpdateRequest,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
     prisonerMap: Map<String, Prisoner>,
-  ): Int {
-    var newInstanceCount = 0
+  ) {
     occurrencesToUpdate.forEach { occurrenceToUpdate ->
       request.addPrisonerNumbers?.apply {
         val prisonerAllocationMap = occurrenceToUpdate.allocations().associateBy { allocation -> allocation.prisonerNumber }
         val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
-          .also { newInstanceCount += it.size }
-
         newPrisoners.forEach { prisoner ->
           occurrenceToUpdate.addAllocation(
             AppointmentOccurrenceAllocation(
@@ -222,6 +226,5 @@ class AppointmentOccurrenceUpdateDomainService(
         }
       }
     }
-    return newInstanceCount
   }
 }

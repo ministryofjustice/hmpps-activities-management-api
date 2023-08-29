@@ -22,10 +22,10 @@ fun AppointmentOccurrenceUpdateRequest.toTelemetryPropertiesMap(
     APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
   )
 
-fun AppointmentOccurrenceUpdateRequest.toTelemetryMetricsMap(appointmentOccurrenceCount: Int) =
+fun AppointmentOccurrenceUpdateRequest.toTelemetryMetricsMap(appointmentOccurrenceCount: Int, appointmentInstanceCount: Int) =
   mutableMapOf(
     APPOINTMENT_COUNT_METRIC_KEY to appointmentOccurrenceCount.toDouble(),
-    APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
+    APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentInstanceCount.toDouble(),
     PRISONERS_REMOVED_COUNT_METRIC_KEY to (this.removePrisonerNumbers?.size?.toDouble() ?: 0.0),
     PRISONERS_ADDED_COUNT_METRIC_KEY to (this.addPrisonerNumbers?.size?.toDouble() ?: 0.0),
     EVENT_TIME_MS_METRIC_KEY to 0.0,

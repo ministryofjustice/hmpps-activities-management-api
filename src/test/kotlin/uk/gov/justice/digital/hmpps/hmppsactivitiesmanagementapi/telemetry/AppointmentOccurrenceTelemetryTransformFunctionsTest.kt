@@ -174,7 +174,7 @@ class AppointmentOccurrenceTelemetryTransformFunctionsTest {
 
   @Test
   fun `to telemetry metrics no property changed`() {
-    AppointmentOccurrenceUpdateRequest().toTelemetryMetricsMap(3) isEqualTo mutableMapOf(
+    AppointmentOccurrenceUpdateRequest().toTelemetryMetricsMap(3, 0) isEqualTo mutableMapOf(
       APPOINTMENT_COUNT_METRIC_KEY to 3.0,
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
       PRISONERS_REMOVED_COUNT_METRIC_KEY to 0.0,
@@ -187,9 +187,9 @@ class AppointmentOccurrenceTelemetryTransformFunctionsTest {
   fun `to telemetry metrics remove prisoners`() {
     AppointmentOccurrenceUpdateRequest(
       removePrisonerNumbers = listOf("A1234BC", "B2345CD"),
-    ).toTelemetryMetricsMap(3) isEqualTo mutableMapOf(
+    ).toTelemetryMetricsMap(3, 6) isEqualTo mutableMapOf(
       APPOINTMENT_COUNT_METRIC_KEY to 3.0,
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 6.0,
       PRISONERS_REMOVED_COUNT_METRIC_KEY to 2.0,
       PRISONERS_ADDED_COUNT_METRIC_KEY to 0.0,
       EVENT_TIME_MS_METRIC_KEY to 0.0,
@@ -200,9 +200,9 @@ class AppointmentOccurrenceTelemetryTransformFunctionsTest {
   fun `to telemetry metrics add prisoners`() {
     AppointmentOccurrenceUpdateRequest(
       addPrisonerNumbers = listOf("A1234BC", "B2345CD", "C3456DE"),
-    ).toTelemetryMetricsMap(3) isEqualTo mutableMapOf(
+    ).toTelemetryMetricsMap(3, 9) isEqualTo mutableMapOf(
       APPOINTMENT_COUNT_METRIC_KEY to 3.0,
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 9.0,
       PRISONERS_REMOVED_COUNT_METRIC_KEY to 0.0,
       PRISONERS_ADDED_COUNT_METRIC_KEY to 3.0,
       EVENT_TIME_MS_METRIC_KEY to 0.0,
