@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
+import java.time.LocalDate
 
 fun Prisoner.isOut() = inOutStatus == Prisoner.InOutStatus.OUT
 
@@ -10,6 +12,12 @@ fun Prisoner.lastMovementType(): MovementType? =
 fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 
 fun Prisoner.isActiveOut(prisonCode: String): Boolean = status == "ACTIVE OUT" && prisonId == prisonCode
+
+fun Prisoner.isTemporarilyReleased(prisonCode: String) =
+  (releaseDate == null || releaseDate.isAfter(LocalDate.now())) && isActiveOut(prisonCode) && lastMovementType() != MovementType.RELEASE
+
+fun Prisoner.isPermanentlyReleased() =
+  isInactiveOut() && releaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
 
 enum class MovementType(val nomisShortCode: String) {
   RELEASE("REL"),

@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
@@ -188,6 +190,18 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
+  fun `allocations are not auto-suspended if a runtime error occurs`() {
+    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doThrow RuntimeException("Error")
+
+    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+
+    outcome.isSuccess() isBool false
+    outcome.message isEqualTo "An error occurred whilst trying to suspend prisoner 123456"
+
+    verifyNoInteractions(waitingListService)
+  }
+
+  @Test
   fun `allocations are ended on end action and waiting lists are declined`() {
     val allocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
@@ -218,7 +232,7 @@ class ActivitiesChangedEventHandlerTest {
       with(it) {
         prisonerStatus isEqualTo PrisonerStatus.ENDED
         deallocatedBy isEqualTo "Activities Management Service"
-        deallocatedReason isEqualTo DeallocationReason.TEMPORARY_ABSENCE
+        deallocatedReason isEqualTo DeallocationReason.TEMPORARILY_RELEASED
         deallocatedTime isCloseTo TimeSource.now()
       }
     }
@@ -226,7 +240,31 @@ class ActivitiesChangedEventHandlerTest {
     verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
   }
 
-  // TODO need to add test cases for null prisoner or active in to cause NPE and runtime exception
+  @Test
+  fun `allocations are not ended on when prisoner not found`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
+
+    val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    outcome.isSuccess() isBool false
+    outcome.message isEqualTo "An error occurred whilst trying to deallocate prisoner 123456"
+
+    verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
+  }
+
+  @Test
+  fun `allocations are not ended on when runtime error occurs`() {
+    whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doThrow RuntimeException("Error")
+
+    val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    outcome.isSuccess() isBool false
+    outcome.message isEqualTo "An error occurred whilst trying to deallocate prisoner 123456"
+
+    verifyNoInteractions(allocationRepository)
+    verifyNoInteractions(waitingListService)
+  }
 
   @Test
   fun `future attendances are not removed on suspend`() {
@@ -266,8 +304,10 @@ class ActivitiesChangedEventHandlerTest {
 
     mock<Prisoner> {
       on { status } doReturn "INACTIVE OUT"
-    }.also { prisoner ->
-      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
+      on { releaseDate } doReturn TimeSource.today()
+      on { lastMovementTypeCode } doReturn "REL"
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
     }
 
     val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
