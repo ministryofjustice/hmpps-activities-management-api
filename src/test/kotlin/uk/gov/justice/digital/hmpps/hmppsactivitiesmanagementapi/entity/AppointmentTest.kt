@@ -1,11 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -14,8 +17,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
@@ -36,10 +41,242 @@ class AppointmentTest {
 
   @Test
   fun `occurrences filters out soft deleted occurrences`() {
-    val entity = appointmentEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3).apply { occurrences().first().deleted = true }
+    val entity = appointmentEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3).apply { occurrences().first().cancellationReason = appointmentDeletedReason() }
     with(entity.occurrences()) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences filters out past occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    with(entity.scheduledOccurrences()) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences filters out cancelled occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[1].cancellationReason = appointmentCancelledReason() }
+    with(entity.scheduledOccurrences()) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences filters out deleted occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
+    with(entity.scheduledOccurrences()) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences after filters out past occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 4,
+    )
+    with(entity.scheduledOccurrencesAfter(LocalDateTime.now().minusDays(4))) {
+      assertThat(size).isEqualTo(3)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L, 4L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences after filters out cancelled occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 4,
+    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
+    with(entity.scheduledOccurrencesAfter(entity.occurrences()[1].startDateTime())) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(4L))
+    }
+  }
+
+  @Test
+  fun `scheduled occurrences after filters out deleted occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 4,
+    ).apply { occurrences()[3].cancellationReason = appointmentDeletedReason() }
+    with(entity.scheduledOccurrencesAfter(entity.occurrences()[1].startDateTime())) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
+    }
+  }
+
+  @Test
+  fun `apply to cannot action past occurrence`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    appointmentOccurrence.startDate = LocalDate.now().minusDays(3)
+    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "update") }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot update a past appointment occurrence")
+  }
+
+  @Test
+  fun `apply to cannot action cancelled occurrence`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    appointmentOccurrence.cancellationReason = appointmentCancelledReason()
+    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot modify a cancelled appointment occurrence")
+  }
+
+  @Test
+  fun `apply to cannot action deleted occurrence`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    appointmentOccurrence.cancellationReason = appointmentDeletedReason()
+    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot cancel a deleted appointment occurrence")
+  }
+
+  @Test
+  fun `apply to this occurrence`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
+    }
+  }
+
+  @Test
+  fun `apply to this and all future occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
+  fun `apply to all future occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(3)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L, 3L))
+    }
+  }
+
+  @Test
+  fun `apply to this and all future occurrences filters out past occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].startDate = LocalDate.now().minusDays(3) }
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+    }
+  }
+
+  @Test
+  fun `apply to this and all future occurrences filters out cancelled occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+    }
+  }
+
+  @Test
+  fun `apply to this and all future occurrences filters out deleted occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+    }
+  }
+
+  @Test
+  fun `apply to all future occurrences filters out past occurrences`() {
+    val entity = appointmentEntity(
+      startDate = LocalDate.now().minusDays(3),
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    )
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
+  fun `apply to all future occurrences filters out cancelled occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+    }
+  }
+
+  @Test
+  fun `apply to all future occurrences filters out deleted occurrences`() {
+    val entity = appointmentEntity(
+      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      numberOfOccurrences = 3,
+    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
+    val appointmentOccurrence = entity.occurrences()[1]
+    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
   }
 

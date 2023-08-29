@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
@@ -198,6 +199,20 @@ internal fun bulkAppointmentEntity(
       count++
     }
   }
+
+internal fun appointmentCancelledReason() =
+  AppointmentCancellationReason(
+    2,
+    "Cancelled",
+    false,
+  )
+
+internal fun appointmentDeletedReason() =
+  AppointmentCancellationReason(
+    1,
+    "Created in error",
+    true,
+  )
 
 private fun appointmentOccurrenceAllocationSearchEntity(appointmentOccurrenceSearch: AppointmentOccurrenceSearch, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
   AppointmentOccurrenceAllocationSearch(

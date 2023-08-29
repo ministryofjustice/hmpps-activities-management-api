@@ -7,12 +7,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
@@ -24,9 +27,94 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod as AppointmentRepeatPeriodEnity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod as AppointmentRepeatPeriodEntity
 
 class AppointmentOccurrenceTest {
+  @Test
+  fun `not cancelled or deleted when cancellation reason is null`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = null
+    }
+    entity.isCancelled() isEqualTo false
+    entity.isDeleted() isEqualTo false
+  }
+
+  @Test
+  fun `cancelled but not deleted when cancellation reason is not deleted`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = appointmentCancelledReason()
+    }
+    entity.isCancelled() isEqualTo true
+    entity.isDeleted() isEqualTo false
+  }
+
+  @Test
+  fun `deleted but not cancelled when cancellation reason is deleted`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = appointmentDeletedReason()
+    }
+    entity.isCancelled() isEqualTo false
+    entity.isDeleted() isEqualTo true
+  }
+
+  @Test
+  fun `expired when start date time is in the past`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().minusMinutes(1)
+    }
+    entity.isExpired() isEqualTo true
+  }
+
+  @Test
+  fun `not expired when start date time is in the future`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+    }
+    entity.isExpired() isEqualTo false
+  }
+
+  @Test
+  fun `scheduled when start date time is in the future, not cancelled or deleted`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = null
+    }
+    entity.isScheduled() isEqualTo true
+  }
+
+  @Test
+  fun `not scheduled when start date time is in the past, not cancelled or deleted`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().minusMinutes(1)
+      cancellationReason = null
+    }
+    entity.isScheduled() isEqualTo false
+  }
+
+  @Test
+  fun `not scheduled when start date time is in the future but is cancelled`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = appointmentCancelledReason()
+    }
+    entity.isScheduled() isEqualTo false
+  }
+
+  @Test
+  fun `not scheduled when start date time is in the future but is deleted`() {
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = appointmentDeletedReason()
+    }
+    entity.isScheduled() isEqualTo false
+  }
+
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentEntity().occurrences().first()
@@ -505,7 +593,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping repeat appointment`() {
-    val appointment = appointmentEntity(repeatPeriod = AppointmentRepeatPeriodEnity.WEEKLY, numberOfOccurrences = 4)
+    val appointment = appointmentEntity(repeatPeriod = AppointmentRepeatPeriodEntity.WEEKLY, numberOfOccurrences = 4)
     val entity = appointment.occurrences().first()
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
