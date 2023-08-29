@@ -41,6 +41,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
           id = 1,
           inCell = false,
           onWing = false,
+          offWing = false,
           minimumIncentiveLevel = "Some incentive level",
           outsideWork = true,
           pieceWork = false,

@@ -47,6 +47,8 @@ data class Activity(
 
   var onWing: Boolean = false,
 
+  var offWing: Boolean = false,
+
   var pieceWork: Boolean = false,
 
   var outsideWork: Boolean = false,
@@ -263,6 +265,7 @@ data class Activity(
     attendanceRequired = attendanceRequired,
     inCell = inCell,
     onWing = onWing,
+    offWing = offWing,
     pieceWork = pieceWork,
     outsideWork = outsideWork,
     payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
