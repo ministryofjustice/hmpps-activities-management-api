@@ -65,6 +65,7 @@ fun transform(activity: EntityActivity) =
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
     onWing = activity.onWing,
+    offWing = activity.offWing,
     pieceWork = activity.pieceWork,
     outsideWork = activity.outsideWork,
     payPerSession = PayPerSession.valueOf(activity.payPerSession.name),

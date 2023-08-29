@@ -122,6 +122,7 @@ class ActivityService(
     checkCaseloadAccess(request.prisonCode!!)
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
+    require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
@@ -148,6 +149,7 @@ class ActivityService(
       description = request.description,
       inCell = request.inCell,
       onWing = request.onWing,
+      offWing = request.offWing,
       startDate = request.startDate,
       riskLevel = request.riskLevel!!,
       minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
@@ -179,7 +181,7 @@ class ActivityService(
     }
 
     activity.let {
-      val scheduleLocation = if (request.inCell || request.onWing) null else getLocationForSchedule(it, request.locationId!!)
+      val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId!!)
 
       activity.addSchedule(
         description = request.description!!,
@@ -301,8 +303,6 @@ class ActivityService(
     applyCapacityUpdate(request, activity)
     applyRiskLevelUpdate(request, activity)
     applyLocationUpdate(request, activity)
-    applyInCellUpdate(request, activity)
-    applyOnWingUpdate(request, activity)
     applyAttendanceRequiredUpdate(request, activity)
     applyMinimumEducationLevelUpdate(request, activity)
     applyPayUpdate(prisonCode, request, activity)
@@ -488,6 +488,8 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
+    require((request.locationId != null) xor request.onWing!! xor request.inCell!! xor request.offWing!!) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+
     request.locationId?.apply {
       val scheduleLocation = getLocationForSchedule(activity, this)
       activity.schedules().forEach {
@@ -496,23 +498,17 @@ class ActivityService(
         it.internalLocationDescription = scheduleLocation.description
       }
     }
-  }
 
-  private fun applyInCellUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
     request.inCell?.apply {
       activity.inCell = this
     }
-  }
 
-  private fun applyOnWingUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
     request.onWing?.apply {
       activity.onWing = this
+    }
+
+    request.offWing?.apply {
+      activity.offWing = this
     }
   }
 
