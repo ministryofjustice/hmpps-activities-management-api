@@ -116,6 +116,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
     onWing = it.onWing,
+    offWing = it.offWing,
     outsidePrison = false, // TODO: Add the outside prison flag to the view
     date = it.sessionDate,
     startTime = it.startTime!!,
