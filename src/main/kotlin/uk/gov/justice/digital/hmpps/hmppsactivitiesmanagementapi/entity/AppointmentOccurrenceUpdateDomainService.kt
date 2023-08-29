@@ -28,11 +28,12 @@ class AppointmentOccurrenceUpdateDomainService(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
+    updateInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
-    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, startTimeInMs, true)
+    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateInstancesCount, startTimeInMs, true)
   }
 
   fun updateAppointmentOccurrences(
@@ -43,11 +44,10 @@ class AppointmentOccurrenceUpdateDomainService(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
+    updateInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
   ): AppointmentModel {
-    val updateInstancesCount = getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
-
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
     applyInternalLocationUpdate(request, occurrencesToUpdate)

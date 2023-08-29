@@ -19,6 +19,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -31,6 +32,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -70,6 +74,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -85,6 +90,8 @@ class AppointmentOccurrenceServiceUpdateTest {
     prisonerSearchApiClient,
     AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
     AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient),
+    updateAppointmentOccurrencesJob,
+    maxSyncAppointmentInstanceActions = 14,
   )
 
   @BeforeEach
@@ -1964,6 +1971,267 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
         }
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("update group repeat appointment asynchronously")
+  inner class UpdateGroupRepeatAppointmentAsynchronously {
+    private val principal: Principal = mock()
+
+    @BeforeEach
+    fun setUp() {
+      whenever(principal.name).thenReturn("TEST.USER")
+      whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
+    }
+
+    @Test
+    fun `update internal location synchronously when update applies to one occurrence with fifteen allocations`() {
+      val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 2,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_OCCURRENCE)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.single { it.id == appointmentOccurrence.appointmentOccurrenceId }.internalLocationId isEqualTo request.internalLocationId
+      response.occurrences.filter { it.id != appointmentOccurrence.appointmentOccurrenceId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+
+      verifyNoInteractions(updateAppointmentOccurrencesJob)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+        any(),
+        any(),
+      )
+    }
+
+    @Test
+    fun `update internal location synchronously when update applies to two occurrence with seven allocations affecting fourteen in total`() {
+      val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 2,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
+
+      verifyNoInteractions(updateAppointmentOccurrencesJob)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+        any(),
+        any(),
+      )
+    }
+
+    @Test
+    fun `update internal location asynchronously when update applies to five occurrence with three allocations affecting fifteen in total`() {
+      val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 5,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.single { it.id == appointmentOccurrence.appointmentOccurrenceId }.internalLocationId isEqualTo request.internalLocationId
+      response.occurrences.filter { it.id != appointmentOccurrence.appointmentOccurrenceId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+
+      verify(updateAppointmentOccurrencesJob).execute(
+        eq(appointment.appointmentId),
+        eq(appointmentOccurrence.appointmentOccurrenceId),
+        eq(appointment.scheduledOccurrences().map { it.appointmentOccurrenceId }.toSet()),
+        eq(request),
+        eq(emptyMap()),
+        any(),
+        eq("TEST.USER"),
+        eq(15),
+        any(),
+      )
+
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `remove prisoners synchronously when removing fourteen allocations across two occurrences`() {
+      val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 2,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.flatMap { it.allocations } hasSize 0
+
+      verifyNoInteractions(updateAppointmentOccurrencesJob)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+        any(),
+        any(),
+      )
+    }
+
+    @Test
+    fun `remove prisoners asynchronously when removing fifteen allocations across five occurrences`() {
+      val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 5,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.single { it.id == appointmentOccurrence.appointmentOccurrenceId }.allocations hasSize 0
+      response.occurrences.filter { it.id != appointmentOccurrence.appointmentOccurrenceId }.flatMap { it.allocations } hasSize 12
+
+      verify(updateAppointmentOccurrencesJob).execute(
+        eq(appointment.appointmentId),
+        eq(appointmentOccurrence.appointmentOccurrenceId),
+        eq(appointment.scheduledOccurrences().map { it.appointmentOccurrenceId }.toSet()),
+        eq(request),
+        eq(emptyMap()),
+        any(),
+        eq("TEST.USER"),
+        eq(15),
+        any(),
+      )
+
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `add prisoners synchronously when adding fourteen allocations across two occurrences`() {
+      val existingPrisonerNumberToBookingIdMap = (1L..2L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val addedPrisonerNumberToBookingIdMap = (3L..9L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = existingPrisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 2,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            addedPrisonerNumberToBookingIdMap.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it.key, bookingId = it.value, prisonId = appointment.prisonCode) },
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.flatMap { it.allocations } hasSize 18
+
+      verifyNoInteractions(updateAppointmentOccurrencesJob)
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+        any(),
+        any(),
+      )
+    }
+
+    @Test
+    fun `add prisoners asynchronously when adding fifteen allocations across five occurrences`() {
+      val existingPrisonerNumberToBookingIdMap = (1L..2L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val addedPrisonerNumberToBookingIdMap = (3L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+      val appointment = appointmentEntity(
+        prisonerNumberToBookingIdMap = existingPrisonerNumberToBookingIdMap,
+        repeatPeriod = AppointmentRepeatPeriod.DAILY,
+        numberOfOccurrences = 5,
+      )
+      val appointmentOccurrence = appointment.occurrences().first()
+      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+        Optional.of(appointmentOccurrence),
+      )
+
+      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+
+      val prisoners = addedPrisonerNumberToBookingIdMap.map {
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = it.key,
+          bookingId = it.value,
+          prisonId = appointment.prisonCode,
+        )
+      }
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
+        .thenReturn(
+          Mono.just(
+            prisoners,
+          ),
+        )
+
+      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+      response.occurrences.flatMap { it.allocations } hasSize 13
+
+      verify(updateAppointmentOccurrencesJob).execute(
+        eq(appointment.appointmentId),
+        eq(appointmentOccurrence.appointmentOccurrenceId),
+        eq(appointment.scheduledOccurrences().map { it.appointmentOccurrenceId }.toSet()),
+        eq(request),
+        eq(prisoners.associateBy { it.prisonerNumber }),
+        any(),
+        eq("TEST.USER"),
+        eq(15),
+        any(),
+      )
+
+      verifyNoInteractions(telemetryClient)
     }
   }
 }
