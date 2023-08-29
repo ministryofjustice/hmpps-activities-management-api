@@ -32,77 +32,86 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 class AppointmentOccurrenceTest {
   @Test
   fun `not cancelled or deleted when cancellation reason is null`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.cancellationReason = null
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = null
+    }
     entity.isCancelled() isEqualTo false
     entity.isDeleted() isEqualTo false
   }
 
   @Test
   fun `cancelled but not deleted when cancellation reason is not deleted`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.cancellationReason = appointmentCancelledReason()
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = appointmentCancelledReason()
+    }
     entity.isCancelled() isEqualTo true
     entity.isDeleted() isEqualTo false
   }
 
   @Test
   fun `deleted but not cancelled when cancellation reason is deleted`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.cancellationReason = appointmentDeletedReason()
+    val entity = appointmentEntity().occurrences().first().apply {
+      cancellationReason = appointmentDeletedReason()
+    }
     entity.isCancelled() isEqualTo false
     entity.isDeleted() isEqualTo true
   }
 
   @Test
   fun `expired when start date time is in the past`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().minusMinutes(1)
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().minusMinutes(1)
+    }
     entity.isExpired() isEqualTo true
   }
 
   @Test
   fun `not expired when start date time is in the future`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().plusMinutes(1)
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+    }
     entity.isExpired() isEqualTo false
   }
 
   @Test
   fun `scheduled when start date time is in the future, not cancelled or deleted`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().plusMinutes(1)
-    entity.cancellationReason = null
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = null
+    }
     entity.isScheduled() isEqualTo true
   }
 
   @Test
   fun `not scheduled when start date time is in the past, not cancelled or deleted`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().minusMinutes(1)
-    entity.cancellationReason = null
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().minusMinutes(1)
+      cancellationReason = null
+    }
     entity.isScheduled() isEqualTo false
   }
 
   @Test
   fun `not scheduled when start date time is in the future but is cancelled`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().plusMinutes(1)
-    entity.cancellationReason = appointmentCancelledReason()
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = appointmentCancelledReason()
+    }
     entity.isScheduled() isEqualTo false
   }
 
   @Test
   fun `not scheduled when start date time is in the future but is deleted`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.startDate = LocalDate.now()
-    entity.startTime = LocalTime.now().plusMinutes(1)
-    entity.cancellationReason = appointmentDeletedReason()
+    val entity = appointmentEntity().occurrences().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.now().plusMinutes(1)
+      cancellationReason = appointmentDeletedReason()
+    }
     entity.isScheduled() isEqualTo false
   }
 

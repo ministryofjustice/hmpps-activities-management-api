@@ -23,7 +23,7 @@ class AppointmentOccurrenceUpdateDomainService(
   fun updateAppointmentOccurrenceIds(
     appointmentId: Long,
     appointmentOccurrenceId: Long,
-    occurrenceIdsToUpdate: List<Long>,
+    occurrenceIdsToUpdate: Set<Long>,
     request: AppointmentOccurrenceUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
@@ -31,14 +31,14 @@ class AppointmentOccurrenceUpdateDomainService(
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
-    val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }
+    val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
     return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, startTimeInMs, true)
   }
 
   fun updateAppointmentOccurrences(
     appointment: Appointment,
     appointmentOccurrenceId: Long,
-    occurrencesToUpdate: List<AppointmentOccurrence>,
+    occurrencesToUpdate: Set<AppointmentOccurrence>,
     request: AppointmentOccurrenceUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
@@ -213,14 +213,14 @@ class AppointmentOccurrenceUpdateDomainService(
   ) {
     occurrencesToUpdate.forEach { occurrenceToUpdate ->
       request.addPrisonerNumbers?.apply {
-        val prisonerAllocationMap = occurrenceToUpdate.allocations().associateBy { allocation -> allocation.prisonerNumber }
-        val newPrisoners = prisonerMap.filter { !prisonerAllocationMap.containsKey(it.key) }.values
-        newPrisoners.forEach { prisoner ->
+        val existingPrisonNumbers = occurrenceToUpdate.allocations().map { allocation -> allocation.prisonerNumber }
+        val newPrisonNumbers = this.filterNot { existingPrisonNumbers.contains(it) }
+        newPrisonNumbers.forEach {
           occurrenceToUpdate.addAllocation(
             AppointmentOccurrenceAllocation(
               appointmentOccurrence = occurrenceToUpdate,
-              prisonerNumber = prisoner.prisonerNumber,
-              bookingId = prisoner.bookingId!!.toLong(),
+              prisonerNumber = it,
+              bookingId = prisonerMap[it]!!.bookingId!!.toLong(),
             ),
           )
         }

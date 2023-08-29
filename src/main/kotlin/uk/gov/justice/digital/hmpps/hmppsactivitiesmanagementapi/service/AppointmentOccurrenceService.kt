@@ -90,7 +90,7 @@ class AppointmentOccurrenceService(
     return appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
       appointment,
       appointmentOccurrenceId,
-      occurrencesToUpdate,
+      occurrencesToUpdate.toSet(),
       request,
       prisonerMap,
       now,

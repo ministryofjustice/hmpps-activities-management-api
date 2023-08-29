@@ -246,7 +246,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
-  fun `appointments cancelled when appointments changed event received with action set to YES`() {
+  fun `appointments deleted when appointments changed event received with action set to YES`() {
     val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
@@ -303,7 +303,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
-  fun `appointments cancelled when offender released event received`() {
+  fun `appointments deleted when offender released event received`() {
     val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
