@@ -124,7 +124,7 @@ class AppointmentOccurrenceService(
     return appointmentOccurrenceCancelDomainService.cancelAppointmentOccurrences(
       appointment,
       appointmentOccurrenceId,
-      occurrencesToUpdate,
+      occurrencesToUpdate.toSet(),
       request,
       now,
       principal.name,
