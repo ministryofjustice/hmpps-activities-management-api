@@ -122,7 +122,7 @@ class ActivitiesChangedEventHandler(
       if (prisoner == null) throw NullPointerException("prisoner ${event.prisonerNumber()} not found")
 
       when {
-        prisoner.isTemporarilyReleased(event.prisonCode()) -> DeallocationReason.TEMPORARILY_RELEASED
+        prisoner.isTemporarilyReleased() -> DeallocationReason.TEMPORARILY_RELEASED
         prisoner.isPermanentlyReleased() -> DeallocationReason.RELEASED
         else -> throw IllegalStateException("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
       }

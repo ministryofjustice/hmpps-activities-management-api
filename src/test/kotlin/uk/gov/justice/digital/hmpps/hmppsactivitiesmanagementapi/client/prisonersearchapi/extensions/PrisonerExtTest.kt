@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import java.time.LocalDate
 
 class PrisonerExtTest {
@@ -35,14 +34,13 @@ class PrisonerExtTest {
 
   @Test
   fun `is temporarily released`() {
-    temporarilyReleasedFromMoorland.isTemporarilyReleased(moorlandPrisonCode) isBool true
-    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.tomorrow()).isTemporarilyReleased(moorlandPrisonCode) isBool true
+    temporarilyReleasedFromMoorland.isTemporarilyReleased() isBool true
+    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.tomorrow()).isTemporarilyReleased() isBool true
   }
 
   @Test
   fun `is not temporarily released`() {
-    temporarilyReleasedFromMoorland.isTemporarilyReleased(pentonvillePrisonCode) isBool false
-    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.today()).isTemporarilyReleased(moorlandPrisonCode) isBool false
+    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.today()).isTemporarilyReleased() isBool false
   }
 
   @Test
