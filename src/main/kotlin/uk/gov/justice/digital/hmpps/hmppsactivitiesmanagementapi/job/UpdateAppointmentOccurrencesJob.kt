@@ -16,7 +16,7 @@ import kotlin.system.measureTimeMillis
  * It is used only when updating very large group appointments in a way that will affect more than 500 of appointment instances
  * representing that appointment. This appointment instance count is configurable via applications.max-sync-appointment-instance-actions.
  *
- * If an update is identified as very large (see updatedAppointmentInstancesCount logic in AppointmentOccurrenceService.updateAppointmentOccurrence)
+ * If an update is identified as very large (see updateFirstOccurrenceOnly logic in AppointmentOccurrenceService.updateAppointmentOccurrence)
  * then only the initial occurrence is updated synchronously. This job is then executed asynchronously to update the remaining occurrences.
  *
  * This means that a usable updated occurrence is returned as quickly as possible, preventing the user having to wait an extended period of time

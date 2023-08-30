@@ -20,11 +20,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
@@ -48,8 +52,10 @@ class AppointmentOccurrenceServiceAsyncTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
+  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
 
   private var updated = argumentCaptor<LocalDateTime>()
+  private var cancelled = argumentCaptor<LocalDateTime>()
   private var startTimeInMs = argumentCaptor<Long>()
 
   private val service = AppointmentOccurrenceService(
@@ -60,10 +66,14 @@ class AppointmentOccurrenceServiceAsyncTest {
     appointmentOccurrenceUpdateDomainService,
     appointmentOccurrenceCancelDomainService,
     updateAppointmentOccurrencesJob,
+    cancelAppointmentOccurrencesJob,
     maxSyncAppointmentInstanceActions = 14,
   )
 
   private val principal: Principal = mock()
+
+  private val appointmentCancelledReason = appointmentCancelledReason()
+  private val appointmentDeletedReason = appointmentDeletedReason()
 
   @BeforeEach
   fun setUp() {
@@ -71,6 +81,12 @@ class AppointmentOccurrenceServiceAsyncTest {
     whenever(locationService.getLocationsForAppointmentsMap("TPR"))
       .thenReturn(mapOf(456L to appointmentLocation(456, "TPR")))
     whenever(principal.name).thenReturn("TEST.USER")
+    whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
+      Optional.of(appointmentCancelledReason),
+    )
+    whenever(appointmentCancellationReasonRepository.findById(appointmentDeletedReason.appointmentCancellationReasonId)).thenReturn(
+      Optional.of(appointmentDeletedReason),
+    )
     whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
   }
 
@@ -425,6 +441,298 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Use the same updated value so that all occurrences have the same updated date time stamp
     updated.firstValue isEqualTo updated.secondValue
+    // Use the same start time so that elapsed time metric is calculated correctly and consistently with the synchronous path
+    startTimeInMs.firstValue isEqualTo startTimeInMs.secondValue
+  }
+
+  @Test
+  fun `cancel synchronously when cancel applies to one occurrence with fifteen allocations`() {
+    val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 2,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.THIS_OCCURRENCE,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Cancel all apply to occurrences synchronously and track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(setOf(appointmentOccurrence)),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(1),
+      eq(15),
+      startTimeInMs.capture(),
+      eq(true),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+
+    // Do not start asynchronous job as cancel is complete
+    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+  }
+
+  @Test
+  fun `cancel synchronously when cancel applies to two occurrence with seven allocations affecting fourteen in total`() {
+    val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 2,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    val scheduledOccurrences = appointment.scheduledOccurrences().toSet()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Cancel all apply to occurrences synchronously and track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(scheduledOccurrences),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(2),
+      eq(14),
+      startTimeInMs.capture(),
+      eq(true),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+
+    // Do not start asynchronous job as cancel is complete
+    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+  }
+
+  @Test
+  fun `cancel asynchronously when cancel applies to five occurrence with three allocations affecting fifteen in total`() {
+    val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 5,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    val scheduledOccurrences = appointment.scheduledOccurrences().toSet()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Cancel only the first occurrence synchronously and do not track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(setOf(appointmentOccurrence)),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+      eq(false),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verifyNoInteractions(telemetryClient)
+
+    // Start asynchronous job to cancel all remaining occurrences
+    verify(cancelAppointmentOccurrencesJob).execute(
+      eq(appointment.appointmentId),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+    )
+
+    // Use the same cancelled value so that all occurrences have the same cancelled date time stamp
+    cancelled.firstValue isEqualTo cancelled.secondValue
+    // Use the same start time so that elapsed time metric is calculated correctly and consistently with the synchronous path
+    startTimeInMs.firstValue isEqualTo startTimeInMs.secondValue
+  }
+
+  @Test
+  fun `delete synchronously when delete applies to one occurrence with fifteen allocations`() {
+    val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 2,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.THIS_OCCURRENCE,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Delete all apply to occurrences synchronously and track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(setOf(appointmentOccurrence)),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(1),
+      eq(15),
+      startTimeInMs.capture(),
+      eq(true),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+
+    // Do not start asynchronous job as delete is complete
+    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+  }
+
+  @Test
+  fun `delete synchronously when delete applies to two occurrence with seven allocations affecting fourteen in total`() {
+    val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 2,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    val scheduledOccurrences = appointment.scheduledOccurrences().toSet()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Delete all apply to occurrences synchronously and track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(scheduledOccurrences),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(2),
+      eq(14),
+      startTimeInMs.capture(),
+      eq(true),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+
+    // Do not start asynchronous job as delete is complete
+    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+  }
+
+  @Test
+  fun `delete asynchronously when delete applies to five occurrence with three allocations affecting fifteen in total`() {
+    val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointment = appointmentEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      numberOfOccurrences = 5,
+    )
+    val appointmentOccurrence = appointment.occurrences().first()
+    val scheduledOccurrences = appointment.scheduledOccurrences().toSet()
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+      Optional.of(appointmentOccurrence),
+    )
+
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+
+    // Delete only the first occurrence synchronously and do not track custom event
+    verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
+      eq(appointment),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(setOf(appointmentOccurrence)),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+      eq(false),
+    )
+
+    assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verifyNoInteractions(telemetryClient)
+
+    // Start asynchronous job to delete all remaining occurrences
+    verify(cancelAppointmentOccurrencesJob).execute(
+      eq(appointment.appointmentId),
+      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(request),
+      cancelled.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+    )
+
+    // Use the same cancelled value so that all occurrences have the same cancelled date time stamp
+    cancelled.firstValue isEqualTo cancelled.secondValue
     // Use the same start time so that elapsed time metric is calculated correctly and consistently with the synchronous path
     startTimeInMs.firstValue isEqualTo startTimeInMs.secondValue
   }

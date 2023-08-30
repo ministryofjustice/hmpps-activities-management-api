@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
@@ -58,6 +59,7 @@ class AppointmentOccurrenceServiceCancelTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
+  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -74,6 +76,7 @@ class AppointmentOccurrenceServiceCancelTest {
     AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
     AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient),
     updateAppointmentOccurrencesJob,
+    cancelAppointmentOccurrencesJob,
   )
 
   @BeforeEach

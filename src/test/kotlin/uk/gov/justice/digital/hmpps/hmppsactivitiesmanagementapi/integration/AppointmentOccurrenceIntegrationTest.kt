@@ -367,7 +367,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     // will be deleted as an asynchronous job
     val appointmentOccurrenceId = 22L
     val request = AppointmentOccurrenceCancelRequest(
-      cancellationReasonId = 2,
+      cancellationReasonId = 1,
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
     )
 
@@ -390,16 +390,17 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
         // The delete events for the specified occurrence's instances are sent first
-        appointmentDetails.occurrences.single { it.id == appointmentOccurrenceId }.allocations.map { AppointmentInstanceInformation(it.id) }
+        listOf(36L, 37L, 38L)
           // Followed by the delete events for the remaining instances
-          .union(appointmentDetails.occurrences.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { AppointmentInstanceInformation(it.id) }),
+          .union(listOf(30L, 31L, 32L, 33L, 34L, 35L, 39L, 40L, 41L))
+          .map { AppointmentInstanceInformation(it) },
       )
     }
 
     verifyNoMoreInteractions(eventsPublisher)
 
     verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
+      eq(TelemetryEvent.APPOINTMENT_DELETED.value),
       telemetryPropertyMap.capture(),
       telemetryMetricsMap.capture(),
     )

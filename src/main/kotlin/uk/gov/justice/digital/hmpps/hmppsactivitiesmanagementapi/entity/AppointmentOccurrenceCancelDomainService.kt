@@ -29,11 +29,13 @@ class AppointmentOccurrenceCancelDomainService(
     request: AppointmentOccurrenceCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
+    cancelOccurrencesCount: Int,
+    cancelInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToCancel = appointment.occurrences().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
-    return cancelAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, startTimeInMs, true)
+    return cancelAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true)
   }
 
   fun cancelAppointmentOccurrences(
@@ -43,11 +45,11 @@ class AppointmentOccurrenceCancelDomainService(
     request: AppointmentOccurrenceCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
+    cancelOccurrencesCount: Int,
+    cancelInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
   ): AppointmentModel {
-    val cancelInstancesCount = getCancelInstancesCount(occurrencesToCancel)
-
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
     occurrencesToCancel.forEach {
@@ -63,7 +65,7 @@ class AppointmentOccurrenceCancelDomainService(
       val customEventName = if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value
       val telemetryPropertiesMap = request.toTelemetryPropertiesMap(cancelledBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
       val telemetryMetricsMap = mapOf(
-        APPOINTMENT_COUNT_METRIC_KEY to occurrencesToCancel.size.toDouble(),
+        APPOINTMENT_COUNT_METRIC_KEY to cancelOccurrencesCount.toDouble(),
         APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to cancelInstancesCount.toDouble(),
         EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
       )
