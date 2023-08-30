@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Repeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -10,15 +10,15 @@ class AppointmentCreatedEvent(
   private val prisonCode: String,
   private val categoryCode: String,
   private val hasDescription: Boolean,
-  private val internalLocationId: String,
+  private val internalLocationId: Long?,
   private val startDate: LocalDate,
   private val startTime: LocalTime,
-  private val endTime: LocalTime,
+  private val endTime: LocalTime?,
   private val isRepeat: Boolean,
-  private val repeatPeriod: Repeat.RepeatPeriod?,
-  private val repeatCount: Int,
+  private val repeatPeriod: AppointmentRepeatPeriod?,
+  private val repeatCount: Int?,
   private val hasExtraInformation: Boolean,
-  private val prisonerNumbers: Set<String>,
+  private val prisonerNumbers: List<String>,
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(

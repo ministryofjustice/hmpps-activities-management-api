@@ -7,6 +7,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -38,6 +40,7 @@ class AppointmentOccurrenceService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentOccurrenceUpdateDomainService: AppointmentOccurrenceUpdateDomainService,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   fun updateAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentModel {
     val startTimeInMs = System.currentTimeMillis()
@@ -132,6 +135,11 @@ class AppointmentOccurrenceService(
           occurrencesToUpdate.flatMap { it.allocations() }.size,
           startTimeInMs,
         )
+        writeAppointmentDeletedAuditEvent(
+          appointmentOccurrenceId,
+          request,
+          appointment,
+        )
       }
 
     occurrencesToUpdate.filter { it.isCancelled() }
@@ -145,6 +153,11 @@ class AppointmentOccurrenceService(
           occurrencesToUpdate.size,
           occurrencesToUpdate.flatMap { it.allocations() }.size,
           startTimeInMs,
+        )
+        writeAppointmentCancelledAuditEvent(
+          appointmentOccurrenceId,
+          request,
+          appointment,
         )
       }
 
@@ -177,6 +190,22 @@ class AppointmentOccurrenceService(
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CANCELLED.value, propertiesMap, metricsMap)
   }
 
+  private fun writeAppointmentCancelledAuditEvent(
+    appointmentOccurrenceId: Long,
+    request: AppointmentOccurrenceCancelRequest,
+    appointment: Appointment,
+  ) {
+    auditService.logEvent(
+      AppointmentCancelledEvent(
+        appointmentId = appointment.appointmentId,
+        appointmentOccurrenceId = appointmentOccurrenceId,
+        prisonCode = appointment.prisonCode,
+        applyTo = request.applyTo,
+        createdAt = LocalDateTime.now(),
+      ),
+    )
+  }
+
   private fun logAppointmentDeletedMetric(
     principal: Principal,
     appointmentOccurrenceId: Long,
@@ -201,5 +230,21 @@ class AppointmentOccurrenceService(
     )
 
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_DELETED.value, propertiesMap, metricsMap)
+  }
+
+  private fun writeAppointmentDeletedAuditEvent(
+    appointmentOccurrenceId: Long,
+    request: AppointmentOccurrenceCancelRequest,
+    appointment: Appointment,
+  ) {
+    auditService.logEvent(
+      AppointmentDeletedEvent(
+        appointmentId = appointment.appointmentId,
+        appointmentOccurrenceId = appointmentOccurrenceId,
+        prisonCode = appointment.prisonCode,
+        applyTo = request.applyTo,
+        createdAt = LocalDateTime.now(),
+      ),
+    )
   }
 }

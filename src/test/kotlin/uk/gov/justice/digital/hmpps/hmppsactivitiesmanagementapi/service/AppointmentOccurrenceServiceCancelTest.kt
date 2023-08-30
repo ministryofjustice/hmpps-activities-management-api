@@ -55,6 +55,7 @@ class AppointmentOccurrenceServiceCancelTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -70,8 +71,9 @@ class AppointmentOccurrenceServiceCancelTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
+    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService),
     telemetryClient,
+    auditService,
   )
 
   @BeforeEach

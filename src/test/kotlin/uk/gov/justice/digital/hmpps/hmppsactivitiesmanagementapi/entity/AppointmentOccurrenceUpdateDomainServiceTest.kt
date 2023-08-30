@@ -10,15 +10,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 
 class AppointmentOccurrenceUpdateDomainServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val auditService: AuditService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
-  private val service = AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient)
+  private val service = AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService)
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointment = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)

@@ -90,6 +90,7 @@ class AppointmentServiceTest {
   private val prisonApiUserClient: PrisonApiUserClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val auditService: AuditService = mock()
   private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob = mock()
   private lateinit var principal: Principal
 
@@ -114,6 +115,7 @@ class AppointmentServiceTest {
     prisonerSearchApiClient,
     createAppointmentOccurrencesJob,
     telemetryClient,
+    auditService,
     maxSyncAppointmentInstanceActions = 14,
   )
 

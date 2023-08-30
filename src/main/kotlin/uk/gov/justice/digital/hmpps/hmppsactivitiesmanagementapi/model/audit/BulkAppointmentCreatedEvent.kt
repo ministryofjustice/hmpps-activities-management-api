@@ -8,9 +8,9 @@ class BulkAppointmentCreatedEvent(
   private val prisonCode: String,
   private val categoryCode: String,
   private val hasDescription: Boolean,
-  private val internalLocationId: String,
+  private val internalLocationId: Long?,
   private val startDate: LocalDate,
-  private val prisonerNumbers: Set<String>,
+  private val prisonerNumbers: List<String>,
   createdAt: LocalDateTime,
 
 ) : AuditableEvent(

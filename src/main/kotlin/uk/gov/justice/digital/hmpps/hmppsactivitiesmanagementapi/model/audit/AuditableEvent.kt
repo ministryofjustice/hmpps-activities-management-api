@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import net.minidev.json.JSONObject
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Repeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import java.time.LocalDate
@@ -57,8 +57,8 @@ abstract class AuditableEvent(
     originalCategoryCode: String? = null,
     categoryCode: String? = null,
     hasDescription: Boolean? = null,
-    originalInternalLocationId: String? = null,
-    internalLocationId: String? = null,
+    originalInternalLocationId: Long? = null,
+    internalLocationId: Long? = null,
     originalStartDate: LocalDate? = null,
     startDate: LocalDate? = null,
     originalStartTime: LocalTime? = null,
@@ -66,10 +66,10 @@ abstract class AuditableEvent(
     originalEndTime: LocalTime? = null,
     endTime: LocalTime? = null,
     isRepeat: Boolean? = null,
-    repeatPeriod: Repeat.RepeatPeriod? = null,
+    repeatPeriod: AppointmentRepeatPeriod? = null,
     repeatCount: Int? = null,
     hasExtraInformation: Boolean? = null,
-    prisonerNumbers: Set<String>? = null,
+    prisonerNumbers: List<String>? = null,
     applyTo: ApplyTo? = null,
     createdAt: LocalDateTime? = null,
     createdBy: String? = null,
