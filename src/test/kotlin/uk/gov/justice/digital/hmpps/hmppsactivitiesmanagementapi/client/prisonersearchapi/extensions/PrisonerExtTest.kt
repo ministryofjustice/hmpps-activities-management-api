@@ -18,7 +18,7 @@ class PrisonerExtTest {
     gender = "Female",
     status = "ACTIVE OUT",
     prisonId = moorlandPrisonCode,
-    releaseDate = null,
+    confirmedReleaseDate = null,
   )
 
   private val permanentlyReleasedFromMoorland = Prisoner(
@@ -29,20 +29,20 @@ class PrisonerExtTest {
     gender = "Female",
     status = "INACTIVE OUT",
     prisonId = moorlandPrisonCode,
-    releaseDate = TimeSource.today(),
+    confirmedReleaseDate = TimeSource.today(),
     lastMovementTypeCode = "REL",
   )
 
   @Test
   fun `is temporarily released`() {
     temporarilyReleasedFromMoorland.isTemporarilyReleased(moorlandPrisonCode) isBool true
-    temporarilyReleasedFromMoorland.copy(releaseDate = TimeSource.tomorrow()).isTemporarilyReleased(moorlandPrisonCode) isBool true
+    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.tomorrow()).isTemporarilyReleased(moorlandPrisonCode) isBool true
   }
 
   @Test
   fun `is not temporarily released`() {
     temporarilyReleasedFromMoorland.isTemporarilyReleased(pentonvillePrisonCode) isBool false
-    temporarilyReleasedFromMoorland.copy(releaseDate = TimeSource.today()).isTemporarilyReleased(moorlandPrisonCode) isBool false
+    temporarilyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.today()).isTemporarilyReleased(moorlandPrisonCode) isBool false
   }
 
   @Test
@@ -52,6 +52,6 @@ class PrisonerExtTest {
 
   @Test
   fun `is not permanently released`() {
-    permanentlyReleasedFromMoorland.copy(releaseDate = TimeSource.tomorrow()).isPermanentlyReleased() isBool false
+    permanentlyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.tomorrow()).isPermanentlyReleased() isBool false
   }
 }

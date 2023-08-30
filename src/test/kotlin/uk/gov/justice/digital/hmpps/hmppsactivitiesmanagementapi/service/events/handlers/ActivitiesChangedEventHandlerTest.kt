@@ -304,7 +304,7 @@ class ActivitiesChangedEventHandlerTest {
 
     mock<Prisoner> {
       on { status } doReturn "INACTIVE OUT"
-      on { releaseDate } doReturn TimeSource.today()
+      on { confirmedReleaseDate } doReturn TimeSource.today()
       on { lastMovementTypeCode } doReturn "REL"
     }.also { permanentlyReleasedPrisoner ->
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner

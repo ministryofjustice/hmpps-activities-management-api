@@ -14,10 +14,10 @@ fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 fun Prisoner.isActiveOut(prisonCode: String): Boolean = status == "ACTIVE OUT" && prisonId == prisonCode
 
 fun Prisoner.isTemporarilyReleased(prisonCode: String) =
-  (releaseDate == null || releaseDate.isAfter(LocalDate.now())) && isActiveOut(prisonCode) && lastMovementType() != MovementType.RELEASE
+  (confirmedReleaseDate == null || confirmedReleaseDate.isAfter(LocalDate.now())) && isActiveOut(prisonCode) && lastMovementType() != MovementType.RELEASE
 
 fun Prisoner.isPermanentlyReleased() =
-  isInactiveOut() && releaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
+  isInactiveOut() && confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
 
 enum class MovementType(val nomisShortCode: String) {
   RELEASE("REL"),
