@@ -46,8 +46,7 @@ class AppointmentOccurrenceUpdateDomainService(
     startTimeInMs: Long,
     trackEvent: Boolean,
   ): AppointmentModel {
-    val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
-    val telemetryMetricsMap = request.toTelemetryMetricsMap(occurrencesToUpdate.size, getUpdatedInstanceCount(request, appointment, occurrencesToUpdate))
+    val updateInstancesCount = getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
 
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
@@ -73,6 +72,8 @@ class AppointmentOccurrenceUpdateDomainService(
     val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
 
     if (trackEvent) {
+      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
+      val telemetryMetricsMap = request.toTelemetryMetricsMap(occurrencesToUpdate.size, updateInstancesCount)
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
     }
@@ -80,7 +81,7 @@ class AppointmentOccurrenceUpdateDomainService(
     return updatedAppointment.toModel()
   }
 
-  fun getUpdatedInstanceCount(
+  fun getUpdateInstancesCount(
     request: AppointmentOccurrenceUpdateRequest,
     appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
