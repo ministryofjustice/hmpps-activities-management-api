@@ -1,16 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
@@ -20,6 +25,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ADDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_REMOVED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_CHANGED_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -37,6 +59,11 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @MockBean
+  private lateinit var telemetryClient: TelemetryClient
+  private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
+  private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
   @Test
   fun `update appointment occurrence authorisation required`() {
@@ -262,6 +289,143 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
+  )
+  @Test
+  fun `cancel large group repeat appointment location asynchronously success`() {
+    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Cancelling all of them
+    // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
+    // cancel only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // will be cancelled as an asynchronous job
+    val appointmentOccurrenceId = 22L
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = 2,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
+
+    // Synchronous cancel. Cancel specified occurrence only
+    with(appointment.occurrences) {
+      single { it.id == appointmentOccurrenceId }.isCancelled() isEqualTo true
+      filter { it.id != appointmentOccurrenceId }.map { it.isCancelled() }.distinct().single() isEqualTo false
+    }
+
+    // Wait for remaining occurrences to be cancelled
+    Thread.sleep(1000)
+    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
+    appointmentDetails.occurrences.map { it.isCancelled() }.distinct().single() isEqualTo true
+
+    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
+      size isEqualTo 12
+      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+        // The cancel events for the specified occurrence's instances are sent first
+        appointmentDetails.occurrences.single { it.id == appointmentOccurrenceId }.allocations.map { AppointmentInstanceInformation(it.id) }
+          // Followed by the cancel events for the remaining instances
+          .union(appointmentDetails.occurrences.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { AppointmentInstanceInformation(it.id) }),
+      )
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    telemetryPropertyMap.allValues hasSize 1
+    telemetryMetricsMap.allValues hasSize 1
+
+    with(telemetryPropertyMap.firstValue) {
+      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
+      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
+    }
+
+    with(telemetryMetricsMap.firstValue) {
+      assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
+      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+    }
+
+    verifyNoMoreInteractions(telemetryClient)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
+  )
+  @Test
+  fun `delete large group repeat appointment location asynchronously success`() {
+    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Deleting all of them
+    // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
+    // delete only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // will be deleted as an asynchronous job
+    val appointmentOccurrenceId = 22L
+    val request = AppointmentOccurrenceCancelRequest(
+      cancellationReasonId = 1,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
+
+    // Synchronous delete. Delete specified occurrence only
+    with(appointment.occurrences) {
+      singleOrNull { it.id == appointmentOccurrenceId } isEqualTo null
+      filter { it.id != appointmentOccurrenceId } hasSize 3
+    }
+
+    // Wait for remaining occurrences to be deleted
+    Thread.sleep(1000)
+    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
+    appointmentDetails.occurrences hasSize 0
+
+    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+      size isEqualTo 12
+      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+        // The delete events for the specified occurrence's instances are sent first
+        listOf(36L, 37L, 38L)
+          // Followed by the delete events for the remaining instances
+          .union(listOf(30L, 31L, 32L, 33L, 34L, 35L, 39L, 40L, 41L))
+          .map { AppointmentInstanceInformation(it) },
+      )
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_DELETED.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    telemetryPropertyMap.allValues hasSize 1
+    telemetryMetricsMap.allValues hasSize 1
+
+    with(telemetryPropertyMap.firstValue) {
+      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
+      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
+    }
+
+    with(telemetryMetricsMap.firstValue) {
+      assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
+      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+    }
+
+    verifyNoMoreInteractions(telemetryClient)
+  }
+
+  @Sql(
     "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
   )
   @Test
@@ -398,6 +562,181 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         map { it.description }.distinct().single(),
       ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
+  )
+  @Test
+  fun `update large group repeat appointment location asynchronously success`() {
+    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Editing all of them
+    // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
+    // update only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // will be updated as an asynchronous job
+    val appointmentOccurrenceId = 22L
+    val request = AppointmentOccurrenceUpdateRequest(
+      internalLocationId = 456,
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
+
+    val appointment = webTestClient.updateAppointmentOccurrence(appointmentOccurrenceId, request)!!
+
+    // Synchronous update. Update specified occurrence only
+    with(appointment.occurrences) {
+      single { it.id == appointmentOccurrenceId }.internalLocationId isEqualTo request.internalLocationId
+      filter { it.id != appointmentOccurrenceId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+    }
+
+    // Wait for remaining occurrences to be updated
+    Thread.sleep(1000)
+    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
+    appointmentDetails.occurrences.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
+
+    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+      size isEqualTo 12
+      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+        // The update events for the specified occurrence's instances are sent first
+        appointmentDetails.occurrences.single { it.id == appointmentOccurrenceId }.allocations.map { AppointmentInstanceInformation(it.id) }
+          // Followed by the update events for the remaining instances
+          .union(appointmentDetails.occurrences.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { AppointmentInstanceInformation(it.id) }),
+      )
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    telemetryPropertyMap.allValues hasSize 1
+    telemetryMetricsMap.allValues hasSize 1
+
+    with(telemetryPropertyMap.firstValue) {
+      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
+      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+      assertThat(this[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
+    }
+
+    with(telemetryMetricsMap.firstValue) {
+      assertThat(this[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+      assertThat(this[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+      assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
+      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+    }
+
+    verifyNoMoreInteractions(telemetryClient)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
+  )
+  @Test
+  fun `update large group repeat appointment allocation asynchronously success`() {
+    // Seed appointment has 4 occurrences. Removing one prisoner and adding two new prisoners to all of them removes and adds
+    // more allocations than the configured max-sync-appointment-instance-actions value. The service will therefore remove and
+    // add allocations on only the first affected occurrence and its allocations synchronously. The remaining occurrences
+    // will have allocations removed and added as an asynchronous job
+    val appointmentOccurrenceId = 22L
+    val request = AppointmentOccurrenceUpdateRequest(
+      removePrisonerNumbers = listOf("A1234BC"),
+      addPrisonerNumbers = listOf("D4567EF", "E5679FG"),
+      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.addPrisonerNumbers!!,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 459, prisonId = "TPR"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E5679FG", bookingId = 460, prisonId = "TPR"),
+      ),
+    )
+
+    val appointment = webTestClient.updateAppointmentOccurrence(appointmentOccurrenceId, request)!!
+
+    // Synchronous update. Update specified occurrence only
+    with(appointment.occurrences) {
+      assertThat(single { it.id == appointmentOccurrenceId }.allocations.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+      assertThat(filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
+    }
+
+    // Wait for remaining occurrences to be updated
+    Thread.sleep(1000)
+    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
+    assertThat(appointmentDetails.occurrences.flatMap { it.allocations }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+
+    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+      assertThat(size).isEqualTo(4)
+      assertThat(map { it.additionalInformation }).containsExactly(
+        // The deleted event for the specified occurrence's allocation is sent first
+        AppointmentInstanceInformation(36),
+        // Followed by the deleted events for the remaining allocations
+        AppointmentInstanceInformation(30),
+        AppointmentInstanceInformation(33),
+        AppointmentInstanceInformation(39),
+      )
+    }
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
+      assertThat(size).isEqualTo(8)
+      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+        // The create events for the specified occurrence's new allocations are sent first
+        appointmentDetails.occurrences.single { it.id == appointmentOccurrenceId }.allocations.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
+          // Followed by the create events for the remaining allocations
+          .union(appointmentDetails.occurrences.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
+      )
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    telemetryPropertyMap.allValues hasSize 1
+    telemetryMetricsMap.allValues hasSize 1
+
+    with(telemetryPropertyMap.firstValue) {
+      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
+      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
+    }
+
+    with(telemetryMetricsMap.firstValue) {
+      assertThat(this[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      assertThat(this[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(2.0)
+      assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
+      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+    }
+
+    verifyNoMoreInteractions(telemetryClient)
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =

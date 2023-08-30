@@ -28,11 +28,13 @@ class AppointmentOccurrenceUpdateDomainService(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
+    updateOccurrencesCount: Int,
+    updateInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
-    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, startTimeInMs, true)
+    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true)
   }
 
   fun updateAppointmentOccurrences(
@@ -43,11 +45,11 @@ class AppointmentOccurrenceUpdateDomainService(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
+    updateOccurrencesCount: Int,
+    updateInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
   ): AppointmentModel {
-    val updateInstancesCount = getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
-
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
     applyInternalLocationUpdate(request, occurrencesToUpdate)
@@ -73,7 +75,7 @@ class AppointmentOccurrenceUpdateDomainService(
 
     if (trackEvent) {
       val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
-      val telemetryMetricsMap = request.toTelemetryMetricsMap(occurrencesToUpdate.size, updateInstancesCount)
+      val telemetryMetricsMap = request.toTelemetryMetricsMap(updateOccurrencesCount, updateInstancesCount)
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
     }
