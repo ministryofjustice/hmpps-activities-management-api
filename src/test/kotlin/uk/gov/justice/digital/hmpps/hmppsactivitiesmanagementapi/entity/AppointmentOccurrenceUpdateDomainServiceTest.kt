@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -66,6 +67,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         emptyMap(),
         updated,
         "TEST.USER",
+        3,
         10,
         startTimeInMs,
       )
@@ -81,6 +83,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         emptyMap(),
         updated,
         "TEST.USER",
+        3,
         10,
         startTimeInMs,
         true,
@@ -88,7 +91,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
     }
 
     @Test
-    fun `track custom event using supplied instances count and start time`() {
+    fun `track custom event using supplied counts and start time`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
@@ -100,6 +103,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         emptyMap(),
         LocalDateTime.now(),
         "TEST.USER",
+        3,
         10,
         startTimeInMs,
       )
@@ -107,6 +111,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
 
       with(telemetryMetricsMap.firstValue) {
+        this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 3.0
         this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 10.0
         assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isCloseTo((System.currentTimeMillis() - startTimeInMs).toDouble(), within(1000.0))
       }

@@ -77,9 +77,10 @@ class AppointmentOccurrenceService(
         }
     }
 
+    val updateOccurrencesCount = occurrencesToUpdate.size
     val updateInstancesCount = appointmentOccurrenceUpdateDomainService.getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
     // Determine if this is an update request that will affect more than one occurrence and a very large number of appointment instances. If it is, only update the first occurrence
-    val updateFirstOccurrenceOnly = occurrencesToUpdate.size > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
+    val updateFirstOccurrenceOnly = updateOccurrencesCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
     val updatedAppointment = appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
       appointment,
@@ -89,6 +90,7 @@ class AppointmentOccurrenceService(
       prisonerMap,
       now,
       principal.name,
+      updateOccurrencesCount,
       updateInstancesCount,
       startTimeInMs,
       !updateFirstOccurrenceOnly,
@@ -99,11 +101,12 @@ class AppointmentOccurrenceService(
       updateAppointmentOccurrencesJob.execute(
         appointment.appointmentId,
         appointmentOccurrenceId,
-        occurrencesToUpdate.map { it.appointmentOccurrenceId }.toSet(),
+        occurrencesToUpdate.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
         request,
         prisonerMap,
         now,
         principal.name,
+        updateOccurrencesCount,
         updateInstancesCount,
         startTimeInMs,
       )

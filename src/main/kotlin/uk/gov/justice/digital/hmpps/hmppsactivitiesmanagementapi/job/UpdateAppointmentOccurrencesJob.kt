@@ -44,6 +44,7 @@ class UpdateAppointmentOccurrencesJob(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
+    updateOccurrencesCount: Int,
     updateInstancesCount: Int,
     startTimeInMs: Long,
   ) {
@@ -59,6 +60,7 @@ class UpdateAppointmentOccurrencesJob(
             prisonerMap,
             updated,
             updatedBy,
+            updateOccurrencesCount,
             updateInstancesCount,
             startTimeInMs,
           )
