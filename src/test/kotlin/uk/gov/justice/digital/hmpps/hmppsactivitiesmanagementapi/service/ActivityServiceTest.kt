@@ -591,8 +591,6 @@ class ActivityServiceTest {
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow(), inCell = true, offWing = true)
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     val activityTier = activityTier()

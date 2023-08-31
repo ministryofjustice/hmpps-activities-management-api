@@ -24,10 +24,10 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
     )
   }
 
-  fun stubSearchByPrisonerNumber(prisonerNumber: String) {
+  fun stubSearchByPrisonerNumbers(vararg prisonerNumber: String) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/prisoner-search/prisoner-numbers"))
-        .withRequestBody(equalToJson(mapper.writeValueAsString(PrisonerNumbers(prisonerNumbers = listOf(prisonerNumber))), true, true))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(PrisonerNumbers(prisonerNumbers = prisonerNumber.asList())), true, true))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -58,6 +58,18 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody("[]")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubSearchByPrisonerNumber(prisonerNumber: String) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/prisoner/$prisonerNumber"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonersearchapi/prisoner-$prisonerNumber.json")
             .withStatus(200),
         ),
     )
