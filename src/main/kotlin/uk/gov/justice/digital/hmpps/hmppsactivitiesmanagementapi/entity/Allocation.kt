@@ -253,7 +253,11 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED
+  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED;
+
+  companion object {
+    fun allExcuding(vararg status: PrisonerStatus) = entries.filterNot { status.contains(it) }.toTypedArray()
+  }
 }
 
 enum class DeallocationReason(val description: String, val displayed: Boolean = false) {

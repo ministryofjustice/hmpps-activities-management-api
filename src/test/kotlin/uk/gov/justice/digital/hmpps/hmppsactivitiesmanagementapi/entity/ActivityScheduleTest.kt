@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
@@ -354,7 +356,12 @@ class ActivityScheduleTest {
   fun `can add two day slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+    schedule.addSlot(
+      1,
+      LocalTime.MIDNIGHT,
+      LocalTime.MIDNIGHT.plusHours(1),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+    )
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -372,7 +379,7 @@ class ActivityScheduleTest {
   fun `can add entire week slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
+    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.entries.toSet())
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -972,7 +979,8 @@ class ActivityScheduleTest {
 
   @Test
   fun `slot removed on update`() {
-    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
 
     assertThat(schedule.slots()).isEmpty()
 
@@ -1117,5 +1125,88 @@ class ActivityScheduleTest {
       schedule.updateSlots(emptyMap())
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Must have at least 1 active slot across the schedule")
+  }
+
+  @Test
+  fun `remove pending allocation from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val pendingAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.tomorrow(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+
+    schedule.removePending(pendingAllocation)
+  }
+
+  @Test
+  fun `can only remove pending allocations from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val activeAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE }
+
+    assertThatThrownBy {
+      schedule.removePending(activeAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+
+    val autoSuspendedAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "234567".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    )
+      .apply { autoSuspend(TimeSource.now(), "test") }
+      .also { it.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED }
+
+    assertThatThrownBy {
+      schedule.removePending(autoSuspendedAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+
+    val endedAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "345678".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    )
+      .apply { deallocateNow() }
+      .also { it.prisonerStatus isEqualTo PrisonerStatus.ENDED }
+
+    assertThatThrownBy {
+      schedule.removePending(endedAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+  }
+
+  @Test
+  fun `can only remove associated pending allocations from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val pendingAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.tomorrow(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+
+    schedule.removePending(pendingAllocation)
+
+    assertThatThrownBy {
+      schedule.removePending(pendingAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. It is not associated with the schedule.")
   }
 }

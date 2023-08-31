@@ -2,9 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -17,13 +15,14 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.SentenceCalcDates
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -41,7 +40,13 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class OffenderReleasedEventHandlerTest {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
+    on { findByCode(moorlandPrisonCode) } doReturn
+      rolloutPrison().copy(
+        activitiesToBeRolledOut = true,
+        activitiesRolloutDate = LocalDate.now().plusDays(-1),
+      )
+  }
   private val allocationRepository: AllocationRepository = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
@@ -59,18 +64,6 @@ class OffenderReleasedEventHandlerTest {
 
   private val prisoner: InmateDetail = mock {
     on { status } doReturn "INACTIVE OUT"
-  }
-
-  @BeforeEach
-  fun beforeTests() {
-    reset(rolloutPrisonRepository, allocationRepository, prisonApiClient)
-    rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
-        rolloutPrison().copy(
-          activitiesToBeRolledOut = true,
-          activitiesRolloutDate = LocalDate.now().plusDays(-1),
-        )
-    }
   }
 
   @Test
@@ -120,21 +113,18 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.suspendedTime).isNull()
     }
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(previouslyActiveAllocations)
-
     val outcome = handler.handle(offenderTemporaryReleasedEvent(moorlandPrisonCode, "123456"))
 
     assertThat(outcome.isSuccess()).isTrue
 
     previouslyActiveAllocations.forEach { assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue }
 
-    verify(allocationRepository, never()).saveAllAndFlush(any<List<Allocation>>())
+    verifyNoInteractions(allocationRepository)
     verifyNoInteractions(waitingListService)
   }
 
   @Test
-  fun `un-ended allocations are ended on release from remand`() {
+  fun `pending allocations are removed and un-ended allocations are ended on release from remand`() {
     val previouslyActiveAllocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456"),
@@ -146,6 +136,18 @@ class OffenderReleasedEventHandlerTest {
       assertThat(it.deallocatedTime).isNull()
     }
 
+    val pendingAllocation = allocation(startDate = TimeSource.tomorrow())
+      .also {
+        it.prisonerStatus isEqualTo PrisonerStatus.PENDING
+        whenever(
+          allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+            moorlandPrisonCode,
+            "123456",
+            PrisonerStatus.PENDING,
+          ),
+        ) doReturn listOf(it)
+      }
+
     val sentenceCalcDatesNoReleaseDateForRemand: SentenceCalcDates = mock { on { releaseDate } doReturn null }
 
     prisoner.stub {
@@ -155,8 +157,9 @@ class OffenderReleasedEventHandlerTest {
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
       .doReturn(Mono.just(prisoner))
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(previouslyActiveAllocations)
+    whenever(allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(moorlandPrisonCode, "123456", *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING))) doReturn previouslyActiveAllocations
+
+    pendingAllocation.activitySchedule.allocations(true).contains(pendingAllocation) isBool true
 
     val outcome = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -170,7 +173,14 @@ class OffenderReleasedEventHandlerTest {
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
+    pendingAllocation.activitySchedule.allocations(true).contains(pendingAllocation) isBool false
+
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      moorlandPrisonCode,
+      "123456",
+      "Released",
+      "Activities Management Service",
+    )
   }
 
   @Test
@@ -196,8 +206,7 @@ class OffenderReleasedEventHandlerTest {
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
       .doReturn(Mono.just(prisoner))
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(previouslyActiveAllocations)
+    whenever(allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(moorlandPrisonCode, "123456", *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING))) doReturn previouslyActiveAllocations
 
     val outcome = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
@@ -211,38 +220,39 @@ class OffenderReleasedEventHandlerTest {
         .isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      moorlandPrisonCode,
+      "123456",
+      "Released",
+      "Activities Management Service",
+    )
   }
 
   @Test
   fun `only un-ended allocations are ended on release of prisoner`() {
-    val previouslyEndedAllocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
-      .also { it.deallocateNowWithReason(DeallocationReason.ENDED) }
     val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
     val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
 
-    val allocations = listOf(previouslyEndedAllocation, previouslySuspendedAllocation, previouslyActiveAllocation)
+    val allocations = listOf(previouslySuspendedAllocation, previouslyActiveAllocation)
 
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
       .doReturn(Mono.just(prisoner))
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(allocations)
+    whenever(allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(moorlandPrisonCode, "123456", *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING))) doReturn allocations
 
     val outcome = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
 
     assertThat(outcome.isSuccess()).isTrue
-
-    with(previouslyEndedAllocation) {
-      assertThat(status(PrisonerStatus.ENDED)).isTrue
-      assertThat(deallocatedTime).isCloseTo(TimeSource.now(), within(2, ChronoUnit.SECONDS))
-    }
-
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
 
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      moorlandPrisonCode,
+      "123456",
+      "Released",
+      "Activities Management Service",
+    )
   }
 
   @Test
@@ -305,7 +315,7 @@ class OffenderReleasedEventHandlerTest {
     }
 
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(moorlandPrisonCode, "123456", *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING))) doReturn it
     }
 
     val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
