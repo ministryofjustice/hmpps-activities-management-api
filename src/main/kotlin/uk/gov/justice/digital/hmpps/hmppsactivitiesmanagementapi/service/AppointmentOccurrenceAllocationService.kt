@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -49,6 +50,7 @@ class AppointmentOccurrenceAllocationService(
                   appointmentOccurrenceId = it.appointmentOccurrenceId,
                   prisonCode = it.prisonCode,
                   prisonerNumber = it.prisonerNumber,
+                  createdAt = LocalDateTime.now(),
                 ),
               )
             }

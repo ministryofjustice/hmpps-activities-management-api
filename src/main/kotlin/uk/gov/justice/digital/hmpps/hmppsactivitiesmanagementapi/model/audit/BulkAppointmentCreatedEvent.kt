@@ -16,7 +16,7 @@ class BulkAppointmentCreatedEvent(
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.BULK_APPOINTMENT_CREATED,
-  details = "An appointment with ID '$bulkAppointmentId' with category $categoryCode and starting on $startDate " +
+  details = "A bulk appointment with ID '$bulkAppointmentId' with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was created",
   createdAt = createdAt,
 ),

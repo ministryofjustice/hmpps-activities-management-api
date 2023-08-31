@@ -7,13 +7,15 @@ class AppointmentCancelledOnTransferEvent(
   private val appointmentOccurrenceId: Long,
   private val prisonCode: String,
   private val prisonerNumber: String,
+  createdAt: LocalDateTime,
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_CANCELLED_ON_TRANSFER,
   details = "An appointment with ID '$appointmentId' and Occurrence ID '$appointmentOccurrenceId' " +
     "at prison $prisonCode was cancelled on transfer of prisoner $prisonerNumber",
-  createdAt = LocalDateTime.now(),
+  createdAt = createdAt,
   createdBy = "cancelled-on-transfer-event",
+
 ),
   HmppsAuditable {
 
