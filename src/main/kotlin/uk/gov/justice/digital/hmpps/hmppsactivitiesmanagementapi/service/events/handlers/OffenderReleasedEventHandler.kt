@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromCustodialSentence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromRemand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedOnDeath
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -49,7 +50,12 @@ class OffenderReleasedEventHandler(
           log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
           cancelFutureOffenderAppointments(event)
 
-          deallocateOffenderAllocationsAndRemoveFutureAttendances(event)
+          getDetailsForReleasedPrisoner(event)?.getDeallocationReasonForReleasedPrisoner(event)?.let { reason ->
+            deletePrisonersPendingAllocations(event)
+            declinePrisonersWaitingListApplications(event)
+            deallocatePrisonerAndRemoveFutureAttendances(reason, event)
+          }
+
           Outcome.success()
         }
 
@@ -71,36 +77,52 @@ class OffenderReleasedEventHandler(
       event.prisonerNumber(),
     )
 
-  private fun deallocateOffenderAllocationsAndRemoveFutureAttendances(event: OffenderReleasedEvent) =
+  private fun getDetailsForReleasedPrisoner(event: OffenderReleasedEvent) =
     prisonApiClient.getPrisonerDetails(
       prisonerNumber = event.prisonerNumber(),
       fullInfo = true,
       extraInfo = true,
-    ).block()?.let { prisoner ->
-      when {
-        prisoner.isReleasedOnDeath() -> DeallocationReason.DIED
-        prisoner.isReleasedFromRemand() -> DeallocationReason.RELEASED
-        prisoner.isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
-        else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
-          .let { null }
-      }
-    }?.let { reason ->
-      waitingListService.declinePendingOrApprovedApplications(
-        event.prisonCode(),
-        event.prisonerNumber(),
-        "Released",
-        ServiceName.SERVICE_NAME.value,
-      )
+    ).block()
 
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-        .deallocateAffectedAllocations(reason, event)
-        .removeFutureAttendances(event)
-        .let { true }
-    } ?: log.warn("Prisoner for $event not found").let { false }
+  private fun InmateDetail.getDeallocationReasonForReleasedPrisoner(event: OffenderReleasedEvent) =
+    when {
+      isReleasedOnDeath() -> DeallocationReason.DIED
+      isReleasedFromRemand() -> DeallocationReason.RELEASED
+      isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
+      else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
+    }
+
+  private fun declinePrisonersWaitingListApplications(event: OffenderReleasedEvent) {
+    waitingListService.declinePendingOrApprovedApplications(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      "Released",
+      ServiceName.SERVICE_NAME.value,
+    )
+  }
+
+  private fun deletePrisonersPendingAllocations(event: OffenderReleasedEvent) {
+    allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      PrisonerStatus.PENDING,
+    ).onEach { it.activitySchedule.removePending(it) }
+  }
+
+  private fun deallocatePrisonerAndRemoveFutureAttendances(
+    reason: DeallocationReason,
+    event: OffenderReleasedEvent,
+  ) =
+    allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING),
+    )
+      .deallocateAffectedAllocations(reason, event)
+      .removeFutureAttendances(event)
 
   private fun List<Allocation>.deallocateAffectedAllocations(reason: DeallocationReason, event: OffenderReleasedEvent) =
-    this.filterNot { it.status(PrisonerStatus.ENDED) }
-      .map { it.deallocateNowWithReason(reason) }
+    onEach { it.deallocateNowWithReason(reason) }
       .also {
         log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
       }
