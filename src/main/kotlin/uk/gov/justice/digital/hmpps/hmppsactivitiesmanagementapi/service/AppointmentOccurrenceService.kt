@@ -1,29 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDateTime
@@ -32,15 +21,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Service
 @Transactional
 class AppointmentOccurrenceService(
-  private val appointmentRepository: AppointmentRepository,
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
-  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentOccurrenceUpdateDomainService: AppointmentOccurrenceUpdateDomainService,
-  private val telemetryClient: TelemetryClient,
-  private val auditService: AuditService,
+  private val appointmentOccurrenceCancelDomainService: AppointmentOccurrenceCancelDomainService,
+  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob,
+  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob,
+  @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
   fun updateAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentModel {
     val startTimeInMs = System.currentTimeMillis()
@@ -90,17 +79,42 @@ class AppointmentOccurrenceService(
         }
     }
 
-    return appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
+    val updateOccurrencesCount = occurrencesToUpdate.size
+    val updateInstancesCount = appointmentOccurrenceUpdateDomainService.getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
+    // Determine if this is an update request that will affect more than one occurrence and a very large number of appointment instances. If it is, only update the first occurrence
+    val updateFirstOccurrenceOnly = updateOccurrencesCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
+
+    val updatedAppointment = appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
       appointment,
       appointmentOccurrenceId,
-      occurrencesToUpdate.toSet(),
+      if (updateFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToUpdate.toSet(),
       request,
       prisonerMap,
       now,
       principal.name,
+      updateOccurrencesCount,
+      updateInstancesCount,
       startTimeInMs,
-      true,
+      !updateFirstOccurrenceOnly,
     )
+
+    if (updateFirstOccurrenceOnly) {
+      // The remaining occurrences will be updated asynchronously by this job
+      updateAppointmentOccurrencesJob.execute(
+        appointment.appointmentId,
+        appointmentOccurrenceId,
+        occurrencesToUpdate.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+        request,
+        prisonerMap,
+        now,
+        principal.name,
+        updateOccurrencesCount,
+        updateInstancesCount,
+        startTimeInMs,
+      )
+    }
+
+    return updatedAppointment
   }
 
   fun cancelAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentModel {
@@ -109,142 +123,42 @@ class AppointmentOccurrenceService(
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointment = appointmentOccurrence.appointment
-    val occurrencesToUpdate = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
+    val occurrencesToCancel = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
     checkCaseloadAccess(appointment.prisonCode)
 
-    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+    val cancelOccurrencesCount = occurrencesToCancel.size
+    val cancelInstancesCount = appointmentOccurrenceCancelDomainService.getCancelInstancesCount(occurrencesToCancel)
+    // Determine if this is a cancel request that will affect more than one occurrence and a very large number of appointment instances. If it is, only cancel the first occurrence
+    val cancelFirstOccurrenceOnly = cancelOccurrencesCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
 
-    occurrencesToUpdate.forEach {
-      it.cancellationReason = cancellationReason
-      it.cancelled = now
-      it.cancelledBy = principal.name
-      it.deleted = cancellationReason.isDelete
+    val cancelledAppointment = appointmentOccurrenceCancelDomainService.cancelAppointmentOccurrences(
+      appointment,
+      appointmentOccurrenceId,
+      if (cancelFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToCancel.toSet(),
+      request,
+      now,
+      principal.name,
+      cancelOccurrencesCount,
+      cancelInstancesCount,
+      startTimeInMs,
+      !cancelFirstOccurrenceOnly,
+    )
+
+    if (cancelFirstOccurrenceOnly) {
+      // The remaining occurrences will be updated asynchronously by this job
+      cancelAppointmentOccurrencesJob.execute(
+        appointment.appointmentId,
+        appointmentOccurrenceId,
+        occurrencesToCancel.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+        request,
+        now,
+        principal.name,
+        cancelOccurrencesCount,
+        cancelInstancesCount,
+        startTimeInMs,
+      )
     }
 
-    val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
-
-    occurrencesToUpdate.filter { it.isDeleted() }
-      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
-      .also {
-        logAppointmentDeletedMetric(
-          principal,
-          appointmentOccurrenceId,
-          request,
-          updatedAppointment,
-          occurrencesToUpdate.size,
-          occurrencesToUpdate.flatMap { it.allocations() }.size,
-          startTimeInMs,
-        )
-        writeAppointmentDeletedAuditEvent(
-          appointmentOccurrenceId,
-          request,
-          appointment,
-        )
-      }
-
-    occurrencesToUpdate.filter { it.isCancelled() }
-      .flatMap { it.allocations().map { alloc -> alloc.appointmentOccurrenceAllocationId } }
-      .also {
-        logAppointmentCancelledMetric(
-          principal,
-          appointmentOccurrenceId,
-          request,
-          updatedAppointment,
-          occurrencesToUpdate.size,
-          occurrencesToUpdate.flatMap { it.allocations() }.size,
-          startTimeInMs,
-        )
-        writeAppointmentCancelledAuditEvent(
-          appointmentOccurrenceId,
-          request,
-          appointment,
-        )
-      }
-
-    return updatedAppointment.toModel()
-  }
-
-  private fun logAppointmentCancelledMetric(
-    principal: Principal,
-    appointmentOccurrenceId: Long,
-    request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
-    occurrencesCancelled: Int,
-    instancesCancelled: Int,
-    startTimeInMs: Long,
-  ) {
-    val propertiesMap = mapOf(
-      USER_PROPERTY_KEY to principal.name,
-      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
-      APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.appointmentId.toString(),
-      APPOINTMENT_ID_PROPERTY_KEY to appointmentOccurrenceId.toString(),
-      APPLY_TO_PROPERTY_KEY to request.applyTo.toString(),
-    )
-
-    val metricsMap = mapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to occurrencesCancelled.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to instancesCancelled.toDouble(),
-      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CANCELLED.value, propertiesMap, metricsMap)
-  }
-
-  private fun writeAppointmentCancelledAuditEvent(
-    appointmentOccurrenceId: Long,
-    request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
-  ) {
-    auditService.logEvent(
-      AppointmentCancelledEvent(
-        appointmentId = appointment.appointmentId,
-        appointmentOccurrenceId = appointmentOccurrenceId,
-        prisonCode = appointment.prisonCode,
-        applyTo = request.applyTo,
-        createdAt = LocalDateTime.now(),
-      ),
-    )
-  }
-
-  private fun logAppointmentDeletedMetric(
-    principal: Principal,
-    appointmentOccurrenceId: Long,
-    request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
-    occurrencesDeleted: Int,
-    instancesDeleted: Int,
-    startTimeInMs: Long,
-  ) {
-    val propertiesMap = mapOf(
-      USER_PROPERTY_KEY to principal.name,
-      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
-      APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.appointmentId.toString(),
-      APPOINTMENT_ID_PROPERTY_KEY to appointmentOccurrenceId.toString(),
-      APPLY_TO_PROPERTY_KEY to request.applyTo.toString(),
-    )
-
-    val metricsMap = mapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to occurrencesDeleted.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to instancesDeleted.toDouble(),
-      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_DELETED.value, propertiesMap, metricsMap)
-  }
-
-  private fun writeAppointmentDeletedAuditEvent(
-    appointmentOccurrenceId: Long,
-    request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
-  ) {
-    auditService.logEvent(
-      AppointmentDeletedEvent(
-        appointmentId = appointment.appointmentId,
-        appointmentOccurrenceId = appointmentOccurrenceId,
-        prisonCode = appointment.prisonCode,
-        applyTo = request.applyTo,
-        createdAt = LocalDateTime.now(),
-      ),
-    )
+    return cancelledAppointment
   }
 }

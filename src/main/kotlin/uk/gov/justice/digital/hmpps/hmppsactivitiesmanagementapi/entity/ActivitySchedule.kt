@@ -288,7 +288,7 @@ data class ActivitySchedule(
     startDate = this.startDate,
     endDate = this.endDate,
   ).apply {
-    if (!this.activity.inCell && !this.activity.onWing) {
+    if (!this.activity.inCell && !this.activity.onWing && !this.activity.offWing) {
       this.internalLocation = InternalLocation(
         id = internalLocationId!!,
         code = internalLocationCode!!,

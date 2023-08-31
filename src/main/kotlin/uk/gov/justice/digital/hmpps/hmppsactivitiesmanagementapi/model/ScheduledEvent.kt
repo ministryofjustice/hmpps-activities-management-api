@@ -68,6 +68,9 @@ data class ScheduledEvent(
   @Schema(description = "Flag to indicate if the location of the activity is on wing", example = "false")
   var onWing: Boolean = false,
 
+  @Schema(description = "Flag to indicate if the location of the activity is off wing and not in a listed location", example = "false")
+  var offWing: Boolean = false,
+
   @Schema(description = "Set to true if this event takes place outside the prison", example = "false")
   val outsidePrison: Boolean = false,
 

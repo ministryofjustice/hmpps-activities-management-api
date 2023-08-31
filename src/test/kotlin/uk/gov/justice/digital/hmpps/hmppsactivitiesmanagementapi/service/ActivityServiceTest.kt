@@ -548,6 +548,70 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `createActivity - Create off-wing activity`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(startDate = TimeSource.tomorrow(), inCell = false, offWing = true)
+
+    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+
+    service().createActivity(createInCellActivityRequest, createdBy)
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(offWing).isTrue
+
+      with(schedules()[0]) {
+        assertThat(internalLocationId).isNull()
+        assertThat(internalLocationCode).isNull()
+        assertThat(internalLocationDescription).isNull()
+      }
+    }
+  }
+
+  @Test
+  fun `createActivity - Cannot be off-wing and in-cell`() {
+    val createdBy = "SCH_ACTIVITY"
+
+    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(startDate = TimeSource.tomorrow(), inCell = true, offWing = true)
+
+    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+
+    val activityCategory = activityCategory()
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
+    val activityTier = activityTier()
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
+    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
+
+    assertThatThrownBy {
+      service().createActivity(createInCellActivityRequest, createdBy)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
+  }
+
+  @Test
   fun `updateActivity - success`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
@@ -1476,6 +1540,46 @@ class ActivityServiceTest {
     week2Schedules.all {
       listOf(tomorrow.plusDays(1).dayOfWeek).contains(it.dayOfWeek())
     }
+  }
+
+  @Test
+  fun `updateActivity - update to off-wing`() {
+    val activity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(offWing).isTrue
+    }
+  }
+
+  @Test
+  fun `updateActivity - cannot be both in-cell and off-wing`() {
+    val activity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    assertThatThrownBy {
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
   }
 
   @Test
