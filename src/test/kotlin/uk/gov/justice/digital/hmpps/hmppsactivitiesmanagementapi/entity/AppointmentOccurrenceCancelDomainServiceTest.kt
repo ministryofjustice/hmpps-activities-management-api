@@ -103,6 +103,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         10,
         startTimeInMs,
         true,
+        false,
       )
     }
 
@@ -164,6 +165,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         10,
         startTimeInMs,
         true,
+        false,
       )
     }
 

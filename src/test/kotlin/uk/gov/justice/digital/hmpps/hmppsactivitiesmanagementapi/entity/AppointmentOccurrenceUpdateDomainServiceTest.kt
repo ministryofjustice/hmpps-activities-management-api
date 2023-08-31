@@ -91,6 +91,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         10,
         startTimeInMs,
         true,
+        false,
       )
     }
 

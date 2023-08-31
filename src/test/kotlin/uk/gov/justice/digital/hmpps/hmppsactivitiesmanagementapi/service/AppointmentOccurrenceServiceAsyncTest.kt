@@ -124,6 +124,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -164,6 +165,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(2),
       eq(14),
       startTimeInMs.capture(),
+      eq(true),
       eq(true),
     )
 
@@ -206,6 +208,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -263,6 +266,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -304,6 +308,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -371,6 +376,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -422,6 +428,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -481,6 +488,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -524,6 +532,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(2),
       eq(14),
       startTimeInMs.capture(),
+      eq(true),
       eq(true),
     )
 
@@ -569,6 +578,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -627,6 +637,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -670,6 +681,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(2),
       eq(14),
       startTimeInMs.capture(),
+      eq(true),
       eq(true),
     )
 
@@ -715,6 +727,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))

@@ -37,7 +37,7 @@ class AppointmentOccurrenceUpdateDomainService(
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
-    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true)
+    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true, false)
   }
 
   fun updateAppointmentOccurrences(
@@ -52,6 +52,7 @@ class AppointmentOccurrenceUpdateDomainService(
     updateInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
+    auditEvent: Boolean,
   ): AppointmentModel {
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
@@ -83,7 +84,10 @@ class AppointmentOccurrenceUpdateDomainService(
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
     }
 
-    writeAppointmentOccurrenceUpdatedAuditRecord(appointmentOccurrenceId, request, appointment, updatedAppointment)
+    if (auditEvent) {
+      writeAppointmentOccurrenceUpdatedAuditRecord(appointmentOccurrenceId, request, appointment, updatedAppointment)
+    }
+
     return updatedAppointment.toModel()
   }
 

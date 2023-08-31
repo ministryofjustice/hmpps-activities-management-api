@@ -39,7 +39,7 @@ class AppointmentOccurrenceCancelDomainService(
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToCancel = appointment.occurrences().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
-    return cancelAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true)
+    return cancelAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true, false)
   }
 
   fun cancelAppointmentOccurrences(
@@ -53,6 +53,7 @@ class AppointmentOccurrenceCancelDomainService(
     cancelInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
+    auditEvent: Boolean,
   ): AppointmentModel {
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
@@ -76,7 +77,10 @@ class AppointmentOccurrenceCancelDomainService(
       telemetryClient.trackEvent(customEventName, telemetryPropertiesMap, telemetryMetricsMap)
     }
 
-    writeAuditEvent(appointmentOccurrenceId, request, appointment, cancellationReason.isDelete)
+    if (auditEvent) {
+      writeAuditEvent(appointmentOccurrenceId, request, appointment, cancellationReason.isDelete)
+    }
+
     return cancelledAppointment.toModel()
   }
 
