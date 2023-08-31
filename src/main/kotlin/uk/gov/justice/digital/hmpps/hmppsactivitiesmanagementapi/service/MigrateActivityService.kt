@@ -68,7 +68,7 @@ class MigrateActivityService(
     val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
 
     // Add the pay rates to the activity but ignore any pay rates with an incentive level code not in our common list
-    request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel }}.forEach {
+    request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
       val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
       if (payBand != null) {
         activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
