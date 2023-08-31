@@ -40,6 +40,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCas
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
@@ -463,6 +465,8 @@ class AppointmentServiceTest {
         assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
       }
+
+      verify(auditService).logEvent(any<AppointmentCreatedEvent>())
     }
   }
 
@@ -761,6 +765,8 @@ class AppointmentServiceTest {
       assertThat(value[EXTRA_INFORMATION_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
     }
+
+    verify(auditService).logEvent(any<BulkAppointmentCreatedEvent>())
   }
 
   @Test

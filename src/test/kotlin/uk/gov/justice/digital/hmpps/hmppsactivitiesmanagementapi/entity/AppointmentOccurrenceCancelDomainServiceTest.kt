@@ -15,6 +15,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
@@ -105,6 +106,8 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         true,
         false,
       )
+
+      verifyNoInteractions(auditService)
     }
 
     @Test
@@ -131,6 +134,8 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 10.0
         assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isCloseTo((System.currentTimeMillis() - startTimeInMs).toDouble(), within(1000.0))
       }
+
+      verifyNoInteractions(auditService)
     }
 
     @Test
@@ -167,6 +172,8 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         true,
         false,
       )
+
+      verifyNoInteractions(auditService)
     }
 
     @Test
@@ -193,6 +200,8 @@ class AppointmentOccurrenceCancelDomainServiceTest {
         this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 10.0
         assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isCloseTo((System.currentTimeMillis() - startTimeInMs).toDouble(), within(1000.0))
       }
+
+      verifyNoInteractions(auditService)
     }
   }
 

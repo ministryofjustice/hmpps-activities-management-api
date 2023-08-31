@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
@@ -495,6 +497,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -540,6 +543,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -599,6 +603,8 @@ class AppointmentOccurrenceServiceAsyncTest {
       startTimeInMs.capture(),
     )
 
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
+
     // Use the same cancelled value so that all occurrences have the same cancelled date time stamp
     cancelled.firstValue isEqualTo cancelled.secondValue
     // Use the same start time so that elapsed time metric is calculated correctly and consistently with the synchronous path
@@ -644,6 +650,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -689,6 +696,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -734,6 +742,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verifyNoInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Start asynchronous job to delete all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
