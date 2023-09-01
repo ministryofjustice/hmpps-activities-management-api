@@ -73,6 +73,7 @@ class MigrateActivityService(
 
     // Add the pay rates to the 1 or 2 activities created
     activityList.forEach { activity ->
+      // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids poor data in NOMIS)
       request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
         val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
         if (payBand != null) {
@@ -113,6 +114,7 @@ class MigrateActivityService(
       return false
     }
 
+    // Risley rule - differentiates between split-regime and not
     if (request.prisonCode == "RSI" && request.description.contains(" AM")) {
       return true
     }
@@ -185,13 +187,13 @@ class MigrateActivityService(
   }
 
   /**
-   * Generic rules.
-   * Take an activity with AM and PM sessions.
+   * Generic rules for splitting an activity.
+   * Take an activity that includes both AM and PM sessions.
    * Split it into 2 activities.
-   * Send Group 1 on the mornings in week 1, afternoons in week 2.
-   * Send Group 2 in the afternoons in week 1, mornings in week 2.
+   * Group 1 on the mornings in week 1, afternoons in week 2.
+   * Group 2 in the afternoons in week 1, mornings in week 2.
    */
-  // TODO: Tests
+  // TODO: Tests - but this code cannot be reached as yet
   fun genericSplitActivity(request: ActivityMigrateRequest): List<Activity> {
     val activity1 = buildActivityEntity(request, true, 2, 1)
 
