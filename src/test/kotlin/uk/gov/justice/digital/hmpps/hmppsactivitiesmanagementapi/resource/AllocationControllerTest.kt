@@ -90,7 +90,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       DeallocationReason.ENDED.name,
       DeallocationReason.EXPIRED.name,
       DeallocationReason.RELEASED.name,
-      DeallocationReason.TEMPORARY_ABSENCE.name,
+      DeallocationReason.TEMPORARILY_RELEASED.name,
     )
   }
 
