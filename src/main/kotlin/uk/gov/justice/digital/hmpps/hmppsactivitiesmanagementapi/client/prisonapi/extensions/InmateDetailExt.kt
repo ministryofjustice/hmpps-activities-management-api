@@ -6,10 +6,10 @@ import java.time.LocalDate
 
 fun InmateDetail.isReleasedOnDeath(): Boolean = this.legalStatus == InmateDetail.LegalStatus.DEAD
 
-fun InmateDetail.isReleasedFromRemand(): Boolean = isInactiveOut() && sentenceDetail?.releaseDate == null
+fun InmateDetail.isReleasedFromRemand(): Boolean = isInactiveOut() && sentenceDetail?.confirmedReleaseDate == null
 
 fun InmateDetail.isReleasedFromCustodialSentence(): Boolean =
-  isInactiveOut() && sentenceDetail?.releaseDate?.onOrBefore(LocalDate.now()) == true
+  isInactiveOut() && sentenceDetail?.confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true
 
 fun InmateDetail.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 

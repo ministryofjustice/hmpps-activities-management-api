@@ -3,6 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isTemporarilyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -27,6 +30,7 @@ class ActivitiesChangedEventHandler(
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val waitingListService: WaitingListService,
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -38,9 +42,9 @@ class ActivitiesChangedEventHandler(
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {
-        Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event).let { Outcome.success() }
-        Action.END -> deallocatePrisonerAndRemoveFutureAttendances(event).let { Outcome.success() }
-        else -> log.warn("Unable to process $event, unknown action").let { Outcome.failed() }
+        Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event)
+        Action.END -> deallocatePrisonerAndRemoveFutureAttendances(event)
+        else -> Outcome.failed().also { log.warn("Unable to process $event, unknown action") }
       }
     }
 
@@ -48,10 +52,18 @@ class ActivitiesChangedEventHandler(
   }
 
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
-    LocalDateTime.now().let { now ->
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-        .suspendPrisonersAllocations(now, event)
-        .suspendPrisonersFutureAttendances(now, event)
+    runCatching {
+      LocalDateTime.now().let { now ->
+        allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+          .suspendPrisonersAllocations(now, event)
+          .suspendPrisonersFutureAttendances(now, event)
+      }
+
+      Outcome.success()
+    }.getOrElse {
+      log.error("An error occurred whilst trying to suspend prisoner ${event.prisonerNumber()}", it)
+
+      Outcome.failed { "An error occurred whilst trying to suspend prisoner ${event.prisonerNumber()}" }
     }
 
   private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
@@ -83,18 +95,38 @@ class ActivitiesChangedEventHandler(
     }
   }
 
-  private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) {
-    waitingListService.declinePendingOrApprovedApplications(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      "Released",
-      ServiceName.SERVICE_NAME.value,
-    )
+  private fun deallocatePrisonerAndRemoveFutureAttendances(event: ActivitiesChangedEvent) =
+    runCatching {
+      val deallocationReason = getDeallocationReasonFor(event)
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-      .deallocateAffectedAllocations(DeallocationReason.TEMPORARY_ABSENCE, event)
-      .removeFutureAttendances(event)
-  }
+      waitingListService.declinePendingOrApprovedApplications(
+        event.prisonCode(),
+        event.prisonerNumber(),
+        "Released",
+        ServiceName.SERVICE_NAME.value,
+      )
+
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+        .deallocateAffectedAllocations(deallocationReason, event)
+        .removeFutureAttendances(event)
+
+      Outcome.success()
+    }.getOrElse {
+      log.error("An error occurred whilst trying to deallocate prisoner ${event.prisonerNumber()}", it)
+
+      Outcome.failed { "An error occurred whilst trying to deallocate prisoner ${event.prisonerNumber()}" }
+    }
+
+  private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) =
+    prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber()).let { prisoner ->
+      if (prisoner == null) throw NullPointerException("prisoner ${event.prisonerNumber()} not found")
+
+      when {
+        prisoner.isTemporarilyReleased() -> DeallocationReason.TEMPORARILY_RELEASED
+        prisoner.isPermanentlyReleased() -> DeallocationReason.RELEASED
+        else -> throw IllegalStateException("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
+      }
+    }
 
   private fun List<Allocation>.deallocateAffectedAllocations(
     reason: DeallocationReason,

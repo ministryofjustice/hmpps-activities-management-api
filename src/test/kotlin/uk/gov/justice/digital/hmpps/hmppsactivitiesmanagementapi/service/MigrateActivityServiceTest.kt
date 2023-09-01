@@ -551,6 +551,40 @@ class MigrateActivityServiceTest {
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }
 
+    @Test
+    fun `Any unrecognised or invalid incentive level codes in pay rates will be silently ignored`() {
+      val nomisPayRates = listOf(
+        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110),
+        NomisPayRate(incentiveLevel = "ENT", nomisPayBand = "1", rate = 120),
+        NomisPayRate(incentiveLevel = "EN2", nomisPayBand = "1", rate = 130),
+      )
+
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue) {
+        assertThat(activityPay().size).isEqualTo(1)
+        assertThat(activityPay().first().rate).isEqualTo(100)
+      }
+    }
+
     private fun buildActivityMigrateRequest(
       payRates: List<NomisPayRate> = emptyList(),
       scheduleRules: List<NomisScheduleRule> = emptyList(),
