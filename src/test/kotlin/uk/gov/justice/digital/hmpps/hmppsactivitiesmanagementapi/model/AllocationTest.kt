@@ -44,6 +44,7 @@ class AllocationTest : ModelTest() {
       ),
       prisonerNumber = "1234",
       scheduleDescription = "Blah blah",
+      activityId = 123,
       scheduleId = 123,
       status = PrisonerStatus.ACTIVE,
       plannedDeallocation = PlannedDeallocation(
