@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -19,9 +20,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -39,6 +42,10 @@ import java.time.temporal.ChronoUnit
 class AppointmentIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @MockBean
+  private lateinit var auditService: AuditService
+
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
@@ -153,6 +160,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentCreatedEvent>())
   }
 
   @Test
@@ -197,6 +206,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(allocationIds[0]),
       AppointmentInstanceInformation(allocationIds[1]),
     )
+
+    verify(auditService).logEvent(any<AppointmentCreatedEvent>())
   }
 
   @Test
@@ -233,6 +244,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(allocationIds[1]),
       AppointmentInstanceInformation(allocationIds[2]),
     )
+
+    verify(auditService).logEvent(any<AppointmentCreatedEvent>())
   }
 
   @Test
@@ -275,6 +288,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
       allocationIds.map { AppointmentInstanceInformation(it) },
     )
+
+    verify(auditService).logEvent(any<AppointmentCreatedEvent>())
   }
 
   @Test
@@ -326,6 +341,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
       allocationIds.map { AppointmentInstanceInformation(it) },
     )
+
+    verify(auditService).logEvent(any<AppointmentCreatedEvent>())
   }
 
   private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {

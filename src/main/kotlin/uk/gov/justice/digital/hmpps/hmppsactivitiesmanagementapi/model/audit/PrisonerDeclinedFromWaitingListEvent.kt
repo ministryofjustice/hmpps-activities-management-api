@@ -35,7 +35,7 @@ class PrisonerDeclinedFromWaitingListEvent(
     message = toString(),
   )
 
-  override fun toJson(): String = generateHmppsAuditJson(
+  override fun toJson(): String = generateHmppsActivityAuditJson(
     activityId = activityId,
     scheduleId = scheduleId,
     activityName = activityName,

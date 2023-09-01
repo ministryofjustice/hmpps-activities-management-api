@@ -36,7 +36,7 @@ class PrisonerDeallocatedEvent(
     message = toString(),
   )
 
-  override fun toJson(): String = generateHmppsAuditJson(
+  override fun toJson(): String = generateHmppsActivityAuditJson(
     activityId = activityId,
     activityName = activityName,
     prisonerNumber = prisonerNumber,

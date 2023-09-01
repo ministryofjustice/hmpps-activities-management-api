@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -14,18 +15,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.util.Optional
 
+@ExtendWith(FakeSecurityContext::class)
 class AppointmentOccurrenceAllocationServiceTest {
 
   private val prisonApiClient = mock<PrisonApiApplicationClient>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentOccurrenceAllocationRepository = mock<AppointmentOccurrenceAllocationRepository>()
+  private val auditService = mock<AuditService>()
 
   private val appointmentOccurrenceAllocationService = AppointmentOccurrenceAllocationService(
     prisonApiClient,
     appointmentInstanceRepository,
     appointmentOccurrenceAllocationRepository,
+    auditService,
   )
 
   @Test
@@ -40,6 +45,8 @@ class AppointmentOccurrenceAllocationServiceTest {
     val parentOccurrence = mock<AppointmentOccurrence>()
 
     whenever(appointmentInstance.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
+    whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
     whenever(
       prisonApiClient.getPrisonerDetails(
@@ -75,6 +82,8 @@ class AppointmentOccurrenceAllocationServiceTest {
     val parentOccurrence = mock<AppointmentOccurrence>()
 
     whenever(appointmentInstance.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
+    whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
     whenever(
       prisonApiClient.getPrisonerDetails(

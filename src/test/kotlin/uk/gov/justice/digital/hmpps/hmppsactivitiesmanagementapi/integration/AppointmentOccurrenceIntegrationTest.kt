@@ -4,6 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
@@ -17,10 +18,14 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -58,6 +63,10 @@ import java.time.temporal.ChronoUnit
 class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @MockBean
+  private lateinit var auditService: AuditService
+
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @MockBean
@@ -140,6 +149,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
   }
 
   @Sql(
@@ -171,6 +182,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been cancelled in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
 
   @Sql(
@@ -199,6 +212,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
 
   @Sql(
@@ -239,6 +254,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         map { it.description }.distinct().single(),
       ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
 
   @Sql(
@@ -286,6 +303,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         map { it.description }.distinct().single(),
       ).isEqualTo("An appointment instance has been cancelled in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
 
   @Sql(
@@ -354,6 +373,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
+
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
   }
 
   @Sql(
@@ -423,6 +444,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
   }
 
   @Sql(
@@ -562,6 +584,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         map { it.description }.distinct().single(),
       ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
+
+    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
   }
 
   @Sql(
@@ -640,6 +664,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
   }
 
   @Sql(
@@ -737,6 +762,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =
