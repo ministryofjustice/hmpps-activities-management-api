@@ -341,18 +341,6 @@ data class ActivitySchedule(
       addSlot(it.first, it.second.first, it.second.second, updates[it]!!)
     }
   }
-
-  fun removePending(allocation: Allocation) {
-    require(allocations.contains(allocation)) {
-      "Allocation ${allocation.allocationId} cannot be removed. It is not associated with the schedule."
-    }
-
-    require(allocation.status(PrisonerStatus.PENDING)) {
-      "Allocation ${allocation.allocationId} cannot be removed. Only pending allocations can be removed."
-    }
-
-    allocations.remove(allocation)
-  }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }

@@ -8,28 +8,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromRemand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedOnDeath
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Component
 @Transactional
 class OffenderReleasedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val allocationRepository: AllocationRepository,
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService,
   private val prisonApiClient: PrisonApiApplicationClient,
-  private val attendanceRepository: AttendanceRepository,
-  private val waitingListService: WaitingListService,
+  private val allocationHandler: PrisonerAllocationHandler,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
@@ -51,9 +41,7 @@ class OffenderReleasedEventHandler(
           cancelFutureOffenderAppointments(event)
 
           getDetailsForReleasedPrisoner(event)?.getDeallocationReasonForReleasedPrisoner(event)?.let { reason ->
-            deletePrisonersPendingAllocations(event)
-            declinePrisonersWaitingListApplications(event)
-            deallocatePrisonerAndRemoveFutureAttendances(reason, event)
+            allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
           }
 
           Outcome.success()
@@ -91,56 +79,4 @@ class OffenderReleasedEventHandler(
       isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
       else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
     }
-
-  private fun declinePrisonersWaitingListApplications(event: OffenderReleasedEvent) {
-    waitingListService.declinePendingOrApprovedApplications(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      "Released",
-      ServiceName.SERVICE_NAME.value,
-    )
-  }
-
-  private fun deletePrisonersPendingAllocations(event: OffenderReleasedEvent) {
-    allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      PrisonerStatus.PENDING,
-    ).onEach { it.activitySchedule.removePending(it) }
-  }
-
-  private fun deallocatePrisonerAndRemoveFutureAttendances(
-    reason: DeallocationReason,
-    event: OffenderReleasedEvent,
-  ) =
-    allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      *PrisonerStatus.allExcuding(PrisonerStatus.ENDED, PrisonerStatus.PENDING),
-    )
-      .deallocateAffectedAllocations(reason, event)
-      .removeFutureAttendances(event)
-
-  private fun List<Allocation>.deallocateAffectedAllocations(reason: DeallocationReason, event: OffenderReleasedEvent) =
-    onEach { it.deallocateNowWithReason(reason) }
-      .also {
-        log.info("Deallocated prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()} from ${it.size} allocations.")
-      }
-
-  private fun List<Allocation>.removeFutureAttendances(event: OffenderReleasedEvent) {
-    val now = LocalDateTime.now()
-
-    forEach { allocation ->
-      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = event.prisonCode(),
-        sessionDate = LocalDate.now(),
-        prisonerNumber = allocation.prisonerNumber,
-      ).filter { attendance ->
-        (attendance.scheduledInstance.sessionDate == now.toLocalDate() && attendance.scheduledInstance.startTime > now.toLocalTime()) ||
-          (attendance.scheduledInstance.sessionDate > now.toLocalDate())
-      }.onEach { futureAttendance ->
-        futureAttendance.scheduledInstance.remove(futureAttendance)
-      }
-    }
-  }
 }
