@@ -262,7 +262,7 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   PLANNED("Duration set by staff"),
   EXPIRED("Expired"),
   RELEASED("Released from prison"),
-  TEMPORARY_ABSENCE("Temporary absence"),
+  TEMPORARILY_RELEASED("Temporarily released or transferred"),
 
   // Displayed reasons
   COMPLETED("Completed course or task", true),
@@ -278,6 +278,6 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
 
   companion object {
     fun toModelDeallocationReasons() =
-      DeallocationReason.values().filter(DeallocationReason::displayed).map(DeallocationReason::toModel)
+      entries.filter(DeallocationReason::displayed).map(DeallocationReason::toModel)
   }
 }

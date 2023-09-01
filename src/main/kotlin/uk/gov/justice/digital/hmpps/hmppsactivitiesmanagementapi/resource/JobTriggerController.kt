@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAtten
 // within the namespace without requiring authentication
 
 @RestController
+@ProtectedByIngress
 @RequestMapping("/job", produces = [MediaType.TEXT_PLAIN_VALUE])
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,

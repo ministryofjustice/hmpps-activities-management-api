@@ -73,7 +73,7 @@ class MigrateActivityService(
 
     // Add the pay rates to the 1 or 2 activities created
     activityList.forEach { activity ->
-      request.payRates.forEach {
+      request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
         val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
         if (payBand != null) {
           activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
@@ -82,8 +82,8 @@ class MigrateActivityService(
         }
       }
 
-      // If no pay rates are provided add a flat rate of 0.00 for all pay band/incentive level combinations
-      if (request.payRates.isEmpty()) {
+      // If still no pay rates then add a flat rate of 0.00 for all pay band/incentive level combinations
+      if (activity.activityPay().isEmpty()) {
         payBands.forEach { pb ->
           commonIncentiveLevels.forEach { incentive ->
             activity.addPay(incentive, mapIncentiveLevel(incentive), pb, 0, null, null)
@@ -320,7 +320,6 @@ class MigrateActivityService(
       "BAS" -> "Basic"
       "STD" -> "Standard"
       "ENH" -> "Enhanced"
-      "EN2" -> "Enhanced2"
       else -> "Unknown"
     }
     return incentiveLevel

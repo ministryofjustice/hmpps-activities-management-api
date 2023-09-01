@@ -35,6 +35,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         attendanceRequired = true,
         inCell = false,
         onWing = false,
+        offWing = false,
         pieceWork = false,
         outsideWork = false,
         payPerSession = PayPerSession.H,

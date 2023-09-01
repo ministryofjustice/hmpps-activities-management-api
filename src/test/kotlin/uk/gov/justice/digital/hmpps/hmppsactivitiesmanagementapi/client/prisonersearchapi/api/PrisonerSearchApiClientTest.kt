@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.web.reactive.function.client.WebClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 
 class PrisonerSearchApiClientTest {
@@ -40,7 +41,7 @@ class PrisonerSearchApiClientTest {
   fun `findByPrisonerNumbers - success`() {
     val prisonerNumber = "G4793VF"
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
     val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()!!
 
     assertThat(prisoners).hasSize(1)
@@ -58,7 +59,7 @@ class PrisonerSearchApiClientTest {
   fun `findByPrisonerNumbersMap - success`() {
     val prisonerNumber = "G4793VF"
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(listOf(prisonerNumber))
 
     assertThat(prisonerMap).hasSize(1)
@@ -74,6 +75,15 @@ class PrisonerSearchApiClientTest {
     runBlocking {
       val prisoners = prisonerSearchApiClient.findByPrisonerNumbersAsync(emptyList())
       assertThat(prisoners).hasSize(0)
+    }
+  }
+
+  @Test
+  fun `findByPrisonerNumber - success`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("G4793VF")
+
+    with(prisonerSearchApiClient.findByPrisonerNumber("G4793VF")!!) {
+      prisonerNumber isEqualTo "G4793VF"
     }
   }
 }

@@ -26,12 +26,12 @@ truncate table waiting_list restart identity;
 truncate table local_audit restart identity;
 
 --Appointments
-truncate table appointment_cancellation_reason;
-truncate table appointment_occurrence_allocation;
-truncate table appointment_occurrence;
-truncate table appointment_schedule;
-truncate table appointment;
-truncate table bulk_appointment_appointment;
-truncate table bulk_appointment;
+truncate table appointment_cancellation_reason restart identity;
+truncate table appointment_occurrence_allocation restart identity;
+truncate table appointment_occurrence restart identity;
+truncate table appointment_schedule restart identity;
+truncate table appointment restart identity;
+truncate table bulk_appointment_appointment restart identity;
+truncate table bulk_appointment restart identity;
 
 SET REFERENTIAL_INTEGRITY TRUE;

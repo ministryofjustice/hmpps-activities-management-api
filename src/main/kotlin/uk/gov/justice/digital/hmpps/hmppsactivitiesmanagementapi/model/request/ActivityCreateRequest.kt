@@ -35,6 +35,9 @@ data class ActivityCreateRequest(
   @Schema(description = "Flag to indicate if the location of the activity is on wing", example = "false")
   var onWing: Boolean,
 
+  @Schema(description = "Flag to indicate if the location of the activity is off wing and not in a listed location", example = "false")
+  var offWing: Boolean,
+
   @Schema(description = "Flag to indicate if the activity is piece work", example = "false")
   var pieceWork: Boolean,
 

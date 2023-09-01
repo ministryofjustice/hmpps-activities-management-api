@@ -10,20 +10,14 @@ interface EventHandler<T : InboundEvent> {
   fun handle(event: T): Outcome
 }
 
-class Outcome(private val success: Boolean) {
+class Outcome private constructor(private val success: Boolean, val message: String? = null) {
 
   companion object {
     fun success() = Outcome(true)
-    fun failed() = Outcome(false)
+    fun failed(lazyMessage: () -> String? = { null }) = Outcome(false, lazyMessage())
   }
 
   fun isSuccess() = success
-
-  fun onSuccess(block: () -> Unit) {
-    if (success) {
-      block()
-    }
-  }
 
   fun onFailure(block: () -> Unit) {
     if (!success) {

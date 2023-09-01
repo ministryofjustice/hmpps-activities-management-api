@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -87,7 +88,33 @@ data class Appointment(
   @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 
-  fun occurrences() = occurrences.filter { !it.deleted }.toList()
+  fun occurrences() = occurrences.filterNot { it.isDeleted() }.toList()
+
+  fun scheduledOccurrences() = occurrences().filter { it.isScheduled() }.toList()
+
+  fun scheduledOccurrencesAfter(startDateTime: LocalDateTime) = scheduledOccurrences().filter { it.startDateTime() > startDateTime }.toList()
+
+  fun applyToOccurrences(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, action: String): List<AppointmentOccurrence> {
+    require(!appointmentOccurrence.isExpired()) {
+      "Cannot $action a past appointment occurrence"
+    }
+
+    require(!appointmentOccurrence.isCancelled()) {
+      "Cannot $action a cancelled appointment occurrence"
+    }
+
+    require(!appointmentOccurrence.isDeleted()) {
+      "Cannot $action a deleted appointment occurrence"
+    }
+
+    return when (applyTo) {
+      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
+        scheduledOccurrencesAfter(appointmentOccurrence.startDateTime()),
+      ).toList()
+      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledOccurrences()
+      else -> listOf(appointmentOccurrence)
+    }
+  }
 
   fun occurrenceDetails(
     prisonerMap: Map<String, Prisoner>,

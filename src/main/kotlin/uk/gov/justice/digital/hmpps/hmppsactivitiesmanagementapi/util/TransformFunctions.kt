@@ -65,6 +65,7 @@ fun transform(activity: EntityActivity) =
     attendanceRequired = activity.attendanceRequired,
     inCell = activity.inCell,
     onWing = activity.onWing,
+    offWing = activity.offWing,
     pieceWork = activity.pieceWork,
     outsideWork = activity.outsideWork,
     payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
@@ -115,6 +116,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
     onWing = it.onWing,
+    offWing = it.offWing,
     outsidePrison = false, // TODO: Add the outside prison flag to the view
     date = it.sessionDate,
     startTime = it.startTime!!,

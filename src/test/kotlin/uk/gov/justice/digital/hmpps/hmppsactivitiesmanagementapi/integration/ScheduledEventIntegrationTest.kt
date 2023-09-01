@@ -52,7 +52,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 1)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
@@ -85,7 +85,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 1)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
       prisonApiMockServer.stubAdjudicationHearing(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
@@ -138,7 +138,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 10, 1)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
@@ -231,7 +231,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       // Appointments not found stub
       prisonApiMockServer.stubGetScheduledAppointmentsNotFound(bookingId, startDate, endDate)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
@@ -276,7 +276,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       // Activities not found stub
       prisonApiMockServer.stubGetScheduledActivitiesNotFound(bookingId, startDate, endDate)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
@@ -321,7 +321,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       // Visits not found stub
       prisonApiMockServer.stubGetScheduledVisitsNotFound(bookingId, startDate, endDate)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
@@ -366,7 +366,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       // Court hearings not found stub
       prisonApiMockServer.stubGetCourtHearingsNotFound(bookingId, startDate, endDate)
 
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)

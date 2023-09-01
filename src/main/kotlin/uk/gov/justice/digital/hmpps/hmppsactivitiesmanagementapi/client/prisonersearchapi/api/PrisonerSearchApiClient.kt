@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisone
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
+import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
@@ -39,4 +40,15 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
       .retrieve()
       .awaitBody()
   }
+
+  fun findByPrisonerNumber(prisonerNumber: String): Prisoner? =
+    prisonerSearchApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/prisoner/{prisonerNumber}")
+          .build(prisonerNumber)
+      }
+      .retrieve()
+      .bodyToMono(typeReference<Prisoner>())
+      .block()
 }

@@ -246,7 +246,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
-  fun `appointments cancelled when appointments changed event received with action set to YES`() {
+  fun `appointments deleted when appointments changed event received with action set to YES`() {
     val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
@@ -303,7 +303,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
-  fun `appointments cancelled when offender released event received`() {
+  fun `appointments deleted when offender released event received`() {
     val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
@@ -549,6 +549,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
   fun `allocations are ended and future attendances are removed on receipt of activities changed event for prisoner`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A22222A")
+
     assertThatAllocationsAreActiveFor(pentonvillePrisonCode, "A22222A")
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(1L, 2L, 3L)
@@ -556,7 +558,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "A22222A", action = Action.END))
 
-    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARY_ABSENCE)
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
