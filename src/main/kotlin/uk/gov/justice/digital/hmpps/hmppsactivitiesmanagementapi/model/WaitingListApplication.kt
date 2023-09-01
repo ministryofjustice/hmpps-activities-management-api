@@ -16,6 +16,12 @@ data class WaitingListApplication(
   val id: Long,
 
   @Schema(
+    description = "The internally-generated ID for the associated activity",
+    example = "1000",
+  )
+  val activityId: Long,
+
+  @Schema(
     description = "The internally-generated ID for the associated activity schedule",
     example = "222222",
   )

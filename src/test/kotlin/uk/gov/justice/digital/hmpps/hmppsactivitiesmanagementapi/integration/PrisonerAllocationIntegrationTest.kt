@@ -35,6 +35,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A11111A",
           bookingId = 10001,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
           prisonPayBand = testPentonvillePayBandOne,
@@ -51,6 +52,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A11111A",
           bookingId = 10001,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
           prisonPayBand = testPentonvillePayBandThree,
@@ -72,6 +74,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A22222A",
           bookingId = 10002,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
           prisonPayBand = testPentonvillePayBandTwo,
@@ -88,6 +91,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A22222A",
           bookingId = 10002,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
           prisonPayBand = testPentonvillePayBandThree,
@@ -113,7 +117,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all allocations for a group of prisoners at Pentonville`() {
-    val prisonerAllocations = webTestClient.getAllocations("PVI", listOf("A11111A", "A22222A", "A33333A"), false)
+    val prisonerAllocations =
+      webTestClient.getAllocations("PVI", listOf("A11111A", "A22222A", "A33333A"), false)
 
     assertThat(prisonerAllocations).hasSize(3)
 
@@ -124,6 +129,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A11111A",
           bookingId = 10001,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
           prisonPayBand = testPentonvillePayBandOne,
@@ -140,6 +146,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A11111A",
           bookingId = 10001,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
           prisonPayBand = testPentonvillePayBandThree,
@@ -161,6 +168,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A22222A",
           bookingId = 10002,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
           prisonPayBand = testPentonvillePayBandTwo,
@@ -177,6 +185,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A22222A",
           bookingId = 10002,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 2,
           scheduleDescription = "Retirement PM",
           prisonPayBand = testPentonvillePayBandThree,
@@ -201,6 +210,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           prisonerNumber = "A33333A",
           bookingId = 10003,
           activitySummary = "Retirement",
+          activityId = 1,
           scheduleId = 1,
           scheduleDescription = "Retirement AM",
           prisonPayBand = testPentonvillePayBandTwo,
@@ -213,8 +223,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           deallocatedBy = "SYSTEM",
           deallocatedReason = DeallocationReason.ENDED.toModel(),
           deallocatedTime = LocalDateTime.of(2022, 10, 11, 9, 0),
-          plannedDeallocation =
-          PlannedDeallocation(
+          plannedDeallocation = PlannedDeallocation(
             id = 1,
             plannedDate = LocalDate.of(2022, 10, 11),
             plannedBy = "MR BLOGS",
@@ -226,7 +235,8 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun List<PrisonerAllocations>.prisoner(prisonerNumber: String) = first { it.prisonerNumber == prisonerNumber }
+  private fun List<PrisonerAllocations>.prisoner(prisonerNumber: String) =
+    first { it.prisonerNumber == prisonerNumber }
 
   @Sql(
     "classpath:test_data/seed-activity-id-6.sql",
@@ -236,7 +246,11 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
     assertThat(webTestClient.getAllocations("MDI", listOf("A11111A", "A22222A"), false)).isEmpty()
   }
 
-  private fun WebTestClient.getAllocations(prisonCode: String, prisonerNumbers: List<String>, activeOnly: Boolean) =
+  private fun WebTestClient.getAllocations(
+    prisonCode: String,
+    prisonerNumbers: List<String>,
+    activeOnly: Boolean,
+  ) =
     post()
       .uri("/prisons/$prisonCode/prisoner-allocations?activeOnly=$activeOnly")
       .bodyValue(prisonerNumbers)

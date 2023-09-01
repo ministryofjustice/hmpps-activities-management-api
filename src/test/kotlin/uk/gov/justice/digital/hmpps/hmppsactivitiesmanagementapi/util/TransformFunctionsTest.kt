@@ -144,6 +144,7 @@ class TransformFunctionsTest {
               allocatedTime = timestamp,
               allocatedBy = "Mr Blogs",
               activitySummary = "Maths",
+              activityId = 1,
               scheduleId = 1,
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
