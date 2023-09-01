@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.slf4j.Logger
@@ -75,6 +76,48 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
+
+    eventCaptor.allValues.forEach { event ->
+      log.info("Event captured on successful activity migration: ${event.eventType}")
+    }
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-risley-rollout.sql")
+  fun `migrate activity - Risley split regime - success`() {
+    val nomisPayRates = listOf(
+      NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),
+    )
+
+    val nomisScheduleRules = listOf(
+      NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
+    )
+
+    // Build a request for Risley that will trigger the split regime rules
+    val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+      prisonCode = "RSI",
+      description = "Maths AM",
+    )
+
+    val response = webTestClient.migrateActivity(
+      requestBody,
+      listOf("ROLE_NOMIS_ACTIVITIES"),
+    )
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ActivityMigrateResponse::class.java)
+      .returnResult().responseBody
+
+    with(response!!) {
+      assertThat(activityId).isNotNull
+      assertThat(splitRegimeActivityId).isNotNull
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     eventCaptor.allValues.forEach { event ->
       log.info("Event captured on successful activity migration: ${event.eventType}")
