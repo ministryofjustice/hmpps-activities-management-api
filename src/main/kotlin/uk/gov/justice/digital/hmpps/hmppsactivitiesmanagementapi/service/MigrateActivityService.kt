@@ -10,9 +10,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
@@ -32,13 +35,9 @@ const val MIGRATION_USER = "MIGRATION"
 const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
 const val TIER2_STRUCTURED_IN_CELL = "T2SOC"
 const val ON_WING_LOCATION = "WOW"
-const val DEFAULT_NOMIS_PAY_BAND = "1"
 const val DEFAULT_RISK_LEVEL = "low"
 const val MAX_ACTIVITY_SUMMARY_SIZE = 50
-
-val commonIncentiveLevels = listOf("BAS", "STD", "ENH")
-val prisonsWithASplitRegime = listOf("RSI")
-val cohortNames = mapOf("RSI" to "group").withDefault { "group" }
+const val RISLEY_PRISON_CODE = "RSI"
 
 @Service
 @Transactional(readOnly = true)
@@ -50,10 +49,15 @@ class MigrateActivityService(
   private val activityTierRepository: ActivityTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val feature: FeatureSwitches,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
+  val commonIncentiveLevels = listOf("BAS", "STD", "ENH")
+  val prisonsWithASplitRegime = listOf(RISLEY_PRISON_CODE)
+  val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
 
   @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
@@ -73,7 +77,7 @@ class MigrateActivityService(
 
     // Add the pay rates to the 1 or 2 activities created
     activityList.forEach { activity ->
-      // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids poor data in NOMIS)
+      // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
       request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
         val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
         if (payBand != null) {
@@ -93,12 +97,10 @@ class MigrateActivityService(
       }
     }
 
-    // Save the activity, schedule, slots and pay rates
-    val savedActivities = activityRepository.saveAllAndFlush(activityList)
-
-    // Get the ID or IDs created
-    val activityId = savedActivities.first().activityId
-    val splitRegimeActivityId = if (savedActivities.size > 1) savedActivities.last().activityId else null
+    // Save the activity, schedule, slots and pay rates and obtain the IDs
+    val (activityId, splitRegimeActivityId) = activityRepository.saveAllAndFlush(activityList).let {
+      it.first().activityId to it.getOrNull(1)?.activityId
+    }
 
     if (splitRegime) {
       log.info("Migrated split-regime activity ${request.description} - IDs $activityId and $splitRegimeActivityId")
@@ -114,8 +116,12 @@ class MigrateActivityService(
       return false
     }
 
-    // Risley rule - differentiates between split-regime and not
-    if (request.prisonCode == "RSI" && request.description.contains(" AM")) {
+    if (!feature.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)) {
+      log.info("Split regime feature flag is OFF and all migrations will be 1-2-1")
+      return false
+    }
+
+    if (request.prisonCode == RISLEY_PRISON_CODE && request.description.contains(" AM")) {
       return true
     }
 
@@ -133,7 +139,7 @@ class MigrateActivityService(
 
   fun buildSplitActivity(request: ActivityMigrateRequest): List<Activity> {
     log.info("Migrating activity ${request.description} as a split regime activity")
-    return if (request.prisonCode == "RSI") {
+    return if (request.prisonCode == RISLEY_PRISON_CODE) {
       risleySplitActivity(request)
     } else {
       genericSplitActivity(request)
@@ -155,30 +161,22 @@ class MigrateActivityService(
 
     // Cohort 1 activity
     val activity1 = buildActivityEntity(request, true, 2, 1)
-
-    // Add the morning sessions to week 1
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
+        // Add the morning sessions to week 1
         activity1.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        // Generate the afternoon sessions for week 2
+        activity1.schedules().first().addSlot(2, pmStart, pmEnd, getRequestDaysOfWeek(it))
       }
-    }
-
-    // Generate the afternoon sessions for week 2
-    request.scheduleRules.forEach {
-      activity1.schedules().first().addSlot(2, pmStart, pmEnd, getRequestDaysOfWeek(it))
     }
 
     // Cohort 2 activity
     val activity2 = buildActivityEntity(request, true, 2, 2)
-
-    // Generate the afternoon sessions for week 1
-    request.scheduleRules.forEach {
-      activity2.schedules().first().addSlot(1, pmStart, pmEnd, getRequestDaysOfWeek(it))
-    }
-
-    // Add the morning sessions to week 2
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
+        // Generate the afternoon sessions for week 1
+        activity2.schedules().first().addSlot(1, pmStart, pmEnd, getRequestDaysOfWeek(it))
+        // Add the morning sessions to week 2
         activity2.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
       }
     }
@@ -187,25 +185,20 @@ class MigrateActivityService(
   }
 
   /**
+   * This code cannot be accessed as the settings exclude it. Here for later expansion for other prisons.
    * Generic rules for splitting an activity.
-   * Take an activity that includes both AM and PM sessions.
-   * Split it into 2 activities.
-   * Group 1 on the mornings in week 1, afternoons in week 2.
-   * Group 2 in the afternoons in week 1, mornings in week 2.
+   * Take an activity that includes both AM and PM sessions and split it into 2 activities.
+   * Group 1 has the morning sessions in week 1, and afternoon sessions in week 2.
+   * Group 2 has the afternoon sessions in week 1, and morning sessions in week 2.
    */
-  // TODO: Tests - but this code cannot be reached as yet
   fun genericSplitActivity(request: ActivityMigrateRequest): List<Activity> {
     val activity1 = buildActivityEntity(request, true, 2, 1)
 
-    // Add the morning sessions to week 1
+    // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
         activity1.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
       }
-    }
-
-    // Add the afternoon sessions to week 2
-    request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
         activity1.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
       }
@@ -213,15 +206,11 @@ class MigrateActivityService(
 
     val activity2 = buildActivityEntity(request, true, 2, 2)
 
-    // Add the afternoon sessions to week 1
+    // Add the afternoon sessions to week 1 and the morning sessions to week 2
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
         activity2.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
       }
-    }
-
-    // Add the morning sessions to week 2
-    request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
         activity2.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
       }
@@ -287,7 +276,7 @@ class MigrateActivityService(
     }
 
     // Specific rule for Risley - remove " AM" or " am" from the description
-    val newDescription = if (prisonCode == "RSI") {
+    val newDescription = if (prisonCode == RISLEY_PRISON_CODE) {
       description.replace(" AM", "", true)
     } else {
       description
@@ -326,8 +315,6 @@ class MigrateActivityService(
     }
     return incentiveLevel
   }
-
-  // TODO - Check new FRD T2 categories - they've changed!
 
   fun mapProgramToCategory(programServiceCode: String): ActivityCategory {
     val activityCategories = activityCategoryRepository.findAll()
@@ -407,8 +394,6 @@ class MigrateActivityService(
       logAndThrowValidationException("Prison ${request.prisonCode} is not rolled out for activities")
     }
 
-    // Is split regime? Find both activities
-
     val activity = activityRepository.findByActivityIdAndPrisonCode(request.activityId, request.prisonCode)
       ?: logAndThrowValidationException("Activity ${request.activityId} was not found at prison ${request.prisonCode}")
 
@@ -444,10 +429,9 @@ class MigrateActivityService(
     }
 
     val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
-
     val prisonPayBand = if (request.nomisPayBand.isNullOrEmpty()) {
-      payBands.find { "${it.nomisPayBand}".trim() == DEFAULT_NOMIS_PAY_BAND }
-        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Pay band default $DEFAULT_NOMIS_PAY_BAND is not valid for ${request.prisonCode}")
+      getLowestRatePayBandForActivity(payBands, activity)
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Could not find the pay band associated with the lowest rate on activity ID ${activity.activityId}")
     } else {
       payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
         ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
@@ -480,6 +464,18 @@ class MigrateActivityService(
   private fun logAndThrowValidationException(msg: String): Nothing {
     log.error(msg)
     throw ValidationException(msg)
+  }
+
+  private fun getLowestRatePayBandForActivity(
+    prisonPayBands: List<PrisonPayBand>,
+    activity: Activity,
+  ): PrisonPayBand? {
+    val sortedActivityRates = activity.activityPay().sortedBy { it.rate }
+    return if (sortedActivityRates.isEmpty()) {
+      null
+    } else {
+      prisonPayBands.find { it.nomisPayBand == sortedActivityRates.first().payBand.nomisPayBand }
+    }
   }
 
   @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES')")

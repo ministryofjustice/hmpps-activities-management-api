@@ -34,6 +34,7 @@ import java.time.LocalTime
     "feature.event.activities.activity-schedule.created=true",
     "feature.event.activities.activity-schedule.amended=true",
     "feature.event.activities.prisoner.allocated=true",
+    "feature.migrate.split.regime.enabled=true",
   ],
 )
 class MigrateActivityIntegrationTest : IntegrationTestBase() {

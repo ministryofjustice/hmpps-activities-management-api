@@ -19,6 +19,8 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -49,6 +51,7 @@ class MigrateActivityServiceTest {
   private val activityTierRepository: ActivityTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val featureSwitches: FeatureSwitches = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -82,6 +85,7 @@ class MigrateActivityServiceTest {
     activityTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
+    featureSwitches,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -110,6 +114,7 @@ class MigrateActivityServiceTest {
       whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
     }
 
     @Test
@@ -1002,14 +1007,14 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Uses a default pay band if none provided`() {
+    fun `No pay band provided - uses the pay band associated with the lowest pay rate on the activity`() {
       val request = buildAllocationMigrateRequest().copy(
         nomisPayBand = null,
       )
 
       val schedule = activityEntity().schedules().first()
 
-      // The expected allocation - required so final check succeeds
+      // A dummy allocation - we check what is saved not what is returned
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
         payBand = lowPayBand,
@@ -1026,7 +1031,7 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand.nomisPayBand).isEqualTo(DEFAULT_NOMIS_PAY_BAND.toInt())
+          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
         }
       }
     }
@@ -1348,18 +1353,28 @@ class MigrateActivityServiceTest {
     @Test
     fun `Not a split regime activity at Risley`() {
       val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one PM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
 
     @Test
     fun `Is a split regime activity at Risley`() {
       val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(true)
     }
 
     @Test
     fun `Is not a split regime at Leeds`() {
       val request = templateRequest.copy(description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
+    }
+
+    @Test
+    fun `Is not a split regime if the feature flag is not allowing it for Risley`() {
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(false)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
   }
