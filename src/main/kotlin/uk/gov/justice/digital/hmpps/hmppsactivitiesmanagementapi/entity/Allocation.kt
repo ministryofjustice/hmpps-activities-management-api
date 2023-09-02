@@ -185,6 +185,7 @@ data class Allocation(
       allocatedTime = allocatedTime,
       allocatedBy = allocatedBy,
       activitySummary = activitySummary(),
+      activityId = activitySchedule.activity.activityId,
       scheduleId = activitySchedule.activityScheduleId,
       scheduleDescription = activitySchedule.description,
       isUnemployment = activitySchedule.activity.isUnemployment(),

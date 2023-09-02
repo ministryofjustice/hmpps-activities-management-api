@@ -20,6 +20,8 @@ data class Allocation(
 
   val activitySummary: String,
 
+  val activityId: Long,
+
   val scheduleId: Long,
 
   val scheduleDescription: String,

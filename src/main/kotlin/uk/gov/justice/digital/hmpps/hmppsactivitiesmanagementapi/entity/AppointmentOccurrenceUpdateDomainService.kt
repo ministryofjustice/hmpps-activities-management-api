@@ -4,9 +4,11 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -19,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentOccurrenceUpdateDomainService(
   private val appointmentRepository: AppointmentRepository,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   fun updateAppointmentOccurrenceIds(
     appointmentId: Long,
@@ -34,7 +37,7 @@ class AppointmentOccurrenceUpdateDomainService(
   ): AppointmentModel {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
-    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true)
+    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true, false)
   }
 
   fun updateAppointmentOccurrences(
@@ -49,6 +52,7 @@ class AppointmentOccurrenceUpdateDomainService(
     updateInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
+    auditEvent: Boolean,
   ): AppointmentModel {
     applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
@@ -78,6 +82,10 @@ class AppointmentOccurrenceUpdateDomainService(
       val telemetryMetricsMap = request.toTelemetryMetricsMap(updateOccurrencesCount, updateInstancesCount)
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
+    }
+
+    if (auditEvent) {
+      writeAppointmentOccurrenceUpdatedAuditRecord(appointmentOccurrenceId, request, appointment, updatedAppointment)
     }
 
     return updatedAppointment.toModel()
@@ -229,5 +237,32 @@ class AppointmentOccurrenceUpdateDomainService(
         }
       }
     }
+  }
+
+  private fun writeAppointmentOccurrenceUpdatedAuditRecord(
+    appointmentOccurrenceId: Long,
+    request: AppointmentOccurrenceUpdateRequest,
+    originalAppointment: Appointment,
+    updatedAppointment: Appointment,
+  ) {
+    auditService.logEvent(
+      AppointmentOccurrenceEditedEvent(
+        appointmentId = originalAppointment.appointmentId,
+        appointmentOccurrenceId = appointmentOccurrenceId,
+        prisonCode = originalAppointment.prisonCode,
+        originalCategoryCode = originalAppointment.categoryCode,
+        categoryCode = updatedAppointment.categoryCode,
+        originalInternalLocationId = originalAppointment.internalLocationId,
+        internalLocationId = updatedAppointment.internalLocationId,
+        originalStartDate = originalAppointment.startDate,
+        startDate = updatedAppointment.startDate,
+        originalStartTime = originalAppointment.startTime,
+        startTime = updatedAppointment.startTime,
+        originalEndTime = originalAppointment.endTime,
+        endTime = updatedAppointment.endTime,
+        applyTo = request.applyTo,
+        createdAt = LocalDateTime.now(),
+      ),
+    )
   }
 }

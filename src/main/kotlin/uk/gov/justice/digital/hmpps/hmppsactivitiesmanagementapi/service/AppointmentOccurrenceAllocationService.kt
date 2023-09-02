@@ -4,8 +4,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -13,6 +15,7 @@ class AppointmentOccurrenceAllocationService(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
+  private val auditService: AuditService,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -40,6 +43,16 @@ class AppointmentOccurrenceAllocationService(
                 allocation.removeFromAppointmentOccurrence()
                 log.info("Removed the appointment occurrence allocation '${it.appointmentOccurrenceAllocationId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
+
+              auditService.logEvent(
+                AppointmentCancelledOnTransferEvent(
+                  appointmentId = it.appointmentId,
+                  appointmentOccurrenceId = it.appointmentOccurrenceId,
+                  prisonCode = it.prisonCode,
+                  prisonerNumber = it.prisonerNumber,
+                  createdAt = LocalDateTime.now(),
+                ),
+              )
             }
         }
     }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.MockitoAnnotations
@@ -42,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
@@ -60,6 +62,7 @@ class AppointmentOccurrenceServiceCancelTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
   private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
+  private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -73,8 +76,8 @@ class AppointmentOccurrenceServiceCancelTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
-    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient),
+    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService),
+    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentOccurrencesJob,
     cancelAppointmentOccurrencesJob,
   )
@@ -173,6 +176,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
   @Nested
   @DisplayName("cancel individual appointment")
+  @ExtendWith(FakeSecurityContext::class)
   inner class CancelIndividualAppointment {
 
     private val principal: Principal = mock()
@@ -267,6 +271,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
   @Nested
   @DisplayName("cancel group repeat appointment")
+  @ExtendWith(FakeSecurityContext::class)
   inner class CancelGroupRepeatAppointment {
 
     private val principal: Principal = mock()

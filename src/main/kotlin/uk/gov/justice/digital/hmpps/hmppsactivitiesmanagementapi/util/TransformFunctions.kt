@@ -459,6 +459,7 @@ fun List<EntityActivityBasic>.toActivityBasicList() = map {
 fun EntityWaitingList.toModel() = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
+  activityId = activitySchedule.activity.activityId,
   scheduleId = activitySchedule.activityScheduleId,
   allocationId = allocation?.allocationId,
   prisonerNumber = prisonerNumber,

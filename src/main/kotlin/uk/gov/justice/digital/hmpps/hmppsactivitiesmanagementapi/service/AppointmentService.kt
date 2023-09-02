@@ -12,6 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
@@ -64,6 +66,7 @@ class AppointmentService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
   private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
@@ -106,7 +109,10 @@ class AppointmentService(
             )
           }.forEach { appointment -> this.addAppointment(appointment) }
         }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
-          .also { logBulkAppointmentCreatedMetric(principal, it, startTime) }
+          .also {
+            logBulkAppointmentCreatedMetric(principal, it, startTime)
+            writeBulkAppointmentCreatedAuditRecord(request, it)
+          }
       }
     }
   }
@@ -142,7 +148,10 @@ class AppointmentService(
       createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
     }
 
-    return appointment.toModel().also { logAppointmentCreatedMetric(principal, request, it, startTime) }
+    return appointment.toModel().also {
+      logAppointmentCreatedMetric(principal, request, it, startTime)
+      writeAppointmentCreatedAuditRecord(request, it)
+    }
   }
 
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal) =
@@ -342,5 +351,40 @@ class AppointmentService(
     )
 
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
+  }
+
+  private fun writeAppointmentCreatedAuditRecord(request: AppointmentCreateRequest, appointment: Appointment) {
+    auditService.logEvent(
+      AppointmentCreatedEvent(
+        appointmentId = appointment.id,
+        prisonCode = appointment.prisonCode,
+        categoryCode = appointment.categoryCode,
+        hasDescription = appointment.appointmentDescription != null,
+        internalLocationId = appointment.internalLocationId,
+        startDate = appointment.startDate,
+        startTime = appointment.startTime,
+        endTime = appointment.endTime,
+        isRepeat = request.repeat != null,
+        repeatPeriod = request.repeat?.period,
+        repeatCount = request.repeat?.count,
+        hasExtraInformation = appointment.comment != null,
+        prisonerNumbers = request.prisonerNumbers,
+        createdAt = LocalDateTime.now(),
+      ),
+    )
+  }
+  private fun writeBulkAppointmentCreatedAuditRecord(request: BulkAppointmentsRequest, appointment: BulkAppointment) {
+    auditService.logEvent(
+      BulkAppointmentCreatedEvent(
+        bulkAppointmentId = appointment.id,
+        prisonCode = appointment.prisonCode,
+        categoryCode = appointment.categoryCode,
+        hasDescription = appointment.appointmentDescription != null,
+        internalLocationId = appointment.internalLocationId,
+        startDate = appointment.startDate,
+        prisonerNumbers = emptyList(), // TODO Where to get prisoner numbers from
+        createdAt = LocalDateTime.now(),
+      ),
+    )
   }
 }
