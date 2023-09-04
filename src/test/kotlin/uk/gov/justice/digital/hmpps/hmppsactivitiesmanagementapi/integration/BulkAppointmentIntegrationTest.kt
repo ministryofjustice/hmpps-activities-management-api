@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -12,8 +13,10 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -32,6 +35,9 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @MockBean
+  private lateinit var auditService: AuditService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -70,6 +76,8 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(response.appointments[0].occurrences[0].allocations[0].id),
       AppointmentInstanceInformation(response.appointments[1].occurrences[0].allocations[0].id),
     )
+
+    verify(auditService).logEvent(any<BulkAppointmentCreatedEvent>())
   }
 
   private fun verifyBulkAppointment(response: BulkAppointment) {

@@ -96,6 +96,7 @@ class AppointmentOccurrenceService(
       updateInstancesCount,
       startTimeInMs,
       !updateFirstOccurrenceOnly,
+      true,
     )
 
     if (updateFirstOccurrenceOnly) {
@@ -142,6 +143,7 @@ class AppointmentOccurrenceService(
       cancelInstancesCount,
       startTimeInMs,
       !cancelFirstOccurrenceOnly,
+      true,
     )
 
     if (cancelFirstOccurrenceOnly) {

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -18,6 +19,8 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -48,6 +51,7 @@ class MigrateActivityServiceTest {
   private val activityTierRepository: ActivityTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val featureSwitches: FeatureSwitches = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -61,29 +65,16 @@ class MigrateActivityServiceTest {
     ActivityCategory(9, "SAA_OTHER", "Other", "desc"),
   )
 
-  private val listOfTiers = listOf(
-    ActivityTier(1, "Tier1", "Tier one"),
-  )
+  private val listOfTiers = listOf(ActivityTier(1, "Tier1", "Tier one"))
+  private val rolledOutMoorland = rolledOutPrison("MDI")
+  private val rolledOutRisley = rolledOutPrison("RSI")
+  private val payBandsMoorland = prisonPayBands("MDI")
+  private val payBandsRisley = prisonPayBands("RSI")
 
-  private val rolledOutPrison = RolloutPrisonPlan(
-    prisonCode = "MDI",
-    activitiesRolledOut = true,
-    activitiesRolloutDate = LocalDate.now().minusDays(1),
-    appointmentsRolledOut = false,
-    appointmentsRolloutDate = null,
-  )
-
-  private val payBands = listOf(
-    PrisonPayBand(1L, "MDI", 1, "1", "Pay band 1", 1),
-    PrisonPayBand(2L, "MDI", 2, "2", "Pay band 2", 2),
-    PrisonPayBand(3L, "MDI", 3, "3", "Pay band 3", 3),
-    PrisonPayBand(4L, "MDI", 4, "4", "Pay band 4", 4),
-    PrisonPayBand(5L, "MDI", 5, "5", "Pay band 5", 5),
-    PrisonPayBand(6L, "MDI", 6, "6", "Pay band 6", 6),
-    PrisonPayBand(7L, "MDI", 7, "7", "Pay band 7", 7),
-    PrisonPayBand(8L, "MDI", 8, "8", "Pay band 8", 8),
-    PrisonPayBand(9L, "MDI", 9, "9", "Pay band 9", 9),
-    PrisonPayBand(10L, "MDI", 10, "10", "Pay band 10", 10),
+  private fun prisonPayBands(prisonCode: String) = listOf(
+    PrisonPayBand(1L, prisonCode, 1, "1", "Pay band 1", 1),
+    PrisonPayBand(2L, prisonCode, 2, "2", "Pay band 2", 2),
+    PrisonPayBand(3L, prisonCode, 3, "3", "Pay band 3", 3),
   )
 
   private val service = MigrateActivityService(
@@ -94,28 +85,40 @@ class MigrateActivityServiceTest {
     activityTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
+    featureSwitches,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
 
   private fun getTier(code: String): ActivityTier? = listOfTiers.find { it.code == code }
 
+  private fun rolledOutPrison(prisonCode: String) = RolloutPrisonPlan(
+    prisonCode = prisonCode,
+    activitiesRolledOut = true,
+    activitiesRolloutDate = LocalDate.now().minusDays(1),
+    appointmentsRolledOut = false,
+    appointmentsRolloutDate = null,
+  )
+
   @Nested
   @DisplayName("Migrate activity")
   inner class MigrateActivity {
 
-    private val activityCaptor = argumentCaptor<Activity>()
+    private val activityCaptor = argumentCaptor<List<Activity>>()
 
     @BeforeEach
     fun setupMocks() {
       whenever(activityCategoryRepository.findAll()).thenReturn(listOfCategories)
       whenever(activityTierRepository.findAll()).thenReturn(listOfTiers)
-      whenever(rolloutPrisonService.getByPrisonCode("MDI")).thenReturn(rolledOutPrison)
-      whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBands)
+      whenever(rolloutPrisonService.getByPrisonCode("MDI")).thenReturn(rolledOutMoorland)
+      whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
+      whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
+      whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
     }
 
     @Test
-    fun `prison job - single pay rate and single time slot`() {
+    fun `prison work - single pay rate and single time slot`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
 
       val nomisScheduleRules = listOf(
@@ -128,7 +131,7 @@ class MigrateActivityServiceTest {
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
@@ -138,10 +141,10 @@ class MigrateActivityServiceTest {
       verify(rolloutPrisonService).getByPrisonCode("MDI")
       verify(activityTierRepository).findAll()
       verify(activityCategoryRepository).findAll()
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
       // Check the content of the Activity entity that was passed into saveAndFlush
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(summary).isEqualTo("An activity")
         assertThat(description).isEqualTo("An activity")
         assertThat(inCell).isFalse
@@ -210,16 +213,16 @@ class MigrateActivityServiceTest {
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(activityPay()).hasSize(3)
 
         with(activityPay()[0]) {
@@ -300,16 +303,16 @@ class MigrateActivityServiceTest {
         programServiceCode = "EDU_MATHS",
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(activityCategory.code).isEqualTo("SAA_EDUCATION")
         assertThat(activityPay()).hasSize(3)
         assertThat(schedules()).hasSize(1)
@@ -349,16 +352,16 @@ class MigrateActivityServiceTest {
         internalLocationDescription = null,
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(inCell).isTrue
         assertThat(activityPay()).hasSize(1)
         assertThat(schedules()).hasSize(1)
@@ -379,21 +382,20 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      // Indicate it is an in-cell activity through the program service code
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         programServiceCode = "T2ICA",
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(inCell).isTrue
       }
     }
@@ -409,22 +411,21 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      // Has a WOW location code
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         internalLocationCode = "WOW",
         internalLocationDescription = "MDI-1-1-WOW",
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(inCell).isFalse
         assertThat(onWing).isTrue
       }
@@ -441,21 +442,20 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      // Request to run on bank holidays
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         runsOnBankHoliday = true,
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         with(schedules().first()) {
           assertThat(slots()).hasSize(1)
           assertThat(runsOnBankHoliday).isTrue
@@ -474,21 +474,20 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      // Request with the outside work flag set
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         outsideWork = true,
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         with(schedules().first()) {
           assertThat(slots()).hasSize(1)
           assertThat(outsideWork).isTrue
@@ -497,7 +496,7 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `No pay rates provided will default to a flat rate of zero`() {
+    fun `No pay rates provided will default to a flat rate of zero for all pay bands and incentive levels`() {
       val nomisPayRates: List<NomisPayRate> = emptyList()
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
@@ -509,24 +508,24 @@ class MigrateActivityServiceTest {
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val response = service.migrateActivity(request)
 
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
-        assertThat(activityPay().size).isEqualTo(30) // BAS, STD, ENH x 10 pay bands
+      with(activityCaptor.firstValue[0]) {
+        assertThat(activityPay().size).isEqualTo(9) // BAS, STD, ENH x 3 pay bands
         assertThat(activityPay().first().rate).isEqualTo(0)
         assertThat(activityPay().last().rate).isEqualTo(0)
       }
     }
 
     @Test
-    fun `An unrecognised nomis pay band will fail the migration of an activity`() {
+    fun `An unrecognised NOMIS pay band will fail the migration of an activity`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "11", rate = 110))
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
@@ -548,7 +547,151 @@ class MigrateActivityServiceTest {
       verify(rolloutPrisonService).getByPrisonCode("MDI")
       verify(prisonPayBandRepository).findByPrisonCode("MDI")
 
-      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+      verify(activityScheduleRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Split regime at Risley creates two activities with generated PM slots`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+          tuesday = true,
+        ),
+      )
+
+      // Trigger the split regime rules for Risley with " AM" in the description
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        prisonCode = "RSI",
+        description = "Maths AM",
+      )
+
+      // Return dummy activities - we check what is saved, not what is returned
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(
+        listOf(
+          activityEntity().copy(prisonCode = "RSI", activityId = 1),
+          activityEntity().copy(prisonCode = "RSI", activityId = 2),
+        ),
+      )
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isEqualTo(2)
+
+      verify(rolloutPrisonService).getByPrisonCode("RSI")
+      verify(activityTierRepository, times(2)).findAll()
+      verify(activityCategoryRepository, times(2)).findAll()
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      // Two activities should be saved
+      assertThat(activityCaptor.firstValue).hasSize(2)
+
+      // Check the content of the 1st Activity entity saved
+      with(activityCaptor.firstValue[0]) {
+        assertThat(summary).isEqualTo("Maths group 1")
+        assertThat(description).isEqualTo("Maths group 1")
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+
+        // Check the pay rates for this activity
+        assertThat(activityPay()).hasSize(1)
+        with(activityPay().first()) {
+          assertThat(incentiveNomisCode).isEqualTo("BAS")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(rate).isEqualTo(110)
+        }
+
+        // Check the schedule attributes
+        assertThat(schedules()).hasSize(1)
+
+        with(schedules().first()) {
+          assertThat(description).isEqualTo("Maths group 1")
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(scheduleWeeks).isEqualTo(2)
+
+          // Check the slots created
+          assertThat(slots()).hasSize(2)
+
+          // Check the AM slot on Mondays and Tuesdays
+          with(slots()[0]) {
+            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(mondayFlag).isTrue
+            assertThat(tuesdayFlag).isTrue
+            assertThat(wednesdayFlag).isFalse
+            assertThat(thursdayFlag).isFalse
+            assertThat(fridayFlag).isFalse
+            assertThat(saturdayFlag).isFalse
+            assertThat(sundayFlag).isFalse
+            assertThat(weekNumber).isEqualTo(1)
+          }
+
+          // Check that a PM slot is generated for the same days
+          with(slots()[1]) {
+            assertThat(startTime).isEqualTo(LocalTime.of(13, 45))
+            assertThat(endTime).isEqualTo(LocalTime.of(16, 45))
+            assertThat(mondayFlag).isTrue
+            assertThat(tuesdayFlag).isTrue
+            assertThat(wednesdayFlag).isFalse
+            assertThat(thursdayFlag).isFalse
+            assertThat(fridayFlag).isFalse
+            assertThat(saturdayFlag).isFalse
+            assertThat(sundayFlag).isFalse
+            assertThat(weekNumber).isEqualTo(2)
+          }
+        }
+      }
+
+      // Check the content of the 2nd Activity entity that was passed into saveAllAndFlush
+      with(activityCaptor.firstValue[1]) {
+        assertThat(summary).isEqualTo("Maths group 2")
+        assertThat(description).isEqualTo("Maths group 2")
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+
+        // Check the schedule attributes
+        assertThat(schedules()).hasSize(1)
+
+        with(schedules().first()) {
+          assertThat(description).isEqualTo("Maths group 2")
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(scheduleWeeks).isEqualTo(2)
+
+          // Check the number of slots created
+          assertThat(slots()).hasSize(2)
+
+          // Check the afternoon slots are generated for week 1
+          with(slots()[0]) {
+            assertThat(startTime).isEqualTo(LocalTime.of(13, 45))
+            assertThat(endTime).isEqualTo(LocalTime.of(16, 45))
+            assertThat(mondayFlag).isTrue
+            assertThat(tuesdayFlag).isTrue
+            assertThat(wednesdayFlag).isFalse
+            assertThat(thursdayFlag).isFalse
+            assertThat(fridayFlag).isFalse
+            assertThat(saturdayFlag).isFalse
+            assertThat(sundayFlag).isFalse
+            assertThat(weekNumber).isEqualTo(1)
+          }
+
+          // Check the morning slots are in week 2
+          with(slots()[1]) {
+            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(mondayFlag).isTrue
+            assertThat(tuesdayFlag).isTrue
+            assertThat(wednesdayFlag).isFalse
+            assertThat(thursdayFlag).isFalse
+            assertThat(fridayFlag).isFalse
+            assertThat(saturdayFlag).isFalse
+            assertThat(sundayFlag).isFalse
+            assertThat(weekNumber).isEqualTo(2)
+          }
+        }
+      }
     }
 
     @Test
@@ -568,7 +711,7 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
@@ -577,9 +720,9 @@ class MigrateActivityServiceTest {
       assertThat(response.activityId).isEqualTo(1)
       assertThat(response.splitRegimeActivityId).isNull()
 
-      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
-      with(activityCaptor.firstValue) {
+      with(activityCaptor.firstValue[0]) {
         assertThat(activityPay().size).isEqualTo(1)
         assertThat(activityPay().first().rate).isEqualTo(100)
       }
@@ -638,8 +781,8 @@ class MigrateActivityServiceTest {
     @BeforeEach
     fun setupMocks() {
       reset(rolloutPrisonService, prisonPayBandRepository, activityRepository, activityScheduleRepository, prisonerSearchApiClient)
-      whenever(rolloutPrisonService.getByPrisonCode("MDI")).thenReturn(rolledOutPrison)
-      whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBands)
+      whenever(rolloutPrisonService.getByPrisonCode("MDI")).thenReturn(rolledOutMoorland)
+      whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(activityRepository.findByActivityIdAndPrisonCode(1L, "MDI")).thenReturn(activityEntity())
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(activityEntity().schedules().first())
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(listOf(prisonerDetail)))
@@ -864,14 +1007,14 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Uses a default pay band if none provided`() {
+    fun `No pay band provided - uses the pay band associated with the lowest pay rate on the activity`() {
       val request = buildAllocationMigrateRequest().copy(
         nomisPayBand = null,
       )
 
       val schedule = activityEntity().schedules().first()
 
-      // The expected allocation - required so final check succeeds
+      // A dummy allocation - we check what is saved not what is returned
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
         payBand = lowPayBand,
@@ -888,7 +1031,7 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand.nomisPayBand).isEqualTo(DEFAULT_NOMIS_PAY_BAND.toInt())
+          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
         }
       }
     }
@@ -1120,6 +1263,119 @@ class MigrateActivityServiceTest {
     fun `Nomis schedule - no days specified`() {
       val nomisScheduleRule = NomisScheduleRule(startTime = LocalTime.now(), endTime = LocalTime.now().plusMinutes(60))
       assertThat(service.getRequestDaysOfWeek(nomisScheduleRule)).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("Split regime name test")
+  inner class SplitRegimeName {
+    @Test
+    fun `Not a split regime - use the description provided`() {
+      val description = "Standard name"
+      assertThat(service.makeNameWithCohortLabel(false, "LEI", description, null))
+        .isEqualTo(description)
+    }
+
+    @Test
+    fun `Not a split regime but is Risley - use the description provided`() {
+      val description = "Standard name"
+      assertThat(service.makeNameWithCohortLabel(false, "RSI", description, null))
+        .isEqualTo(description)
+    }
+
+    @Test
+    fun `Is a split regime but not Risley - use the default cohort label and do not strip AM`() {
+      val description = "Standard name AM"
+      assertThat(service.makeNameWithCohortLabel(true, "LEI", description, 1))
+        .isEqualTo("Standard name AM group 1")
+    }
+
+    @Test
+    fun `Is Risley but description does not contain AM - use Risley cohort label`() {
+      val description = "Standard name"
+      assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
+        .isEqualTo("Standard name group 1")
+    }
+
+    @Test
+    fun `Is a split regime and matches the pattern - use Risley cohort label and remove AM`() {
+      val description = "Maths level one AM"
+      assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
+        .isEqualTo("Maths level one group 1")
+    }
+
+    @Test
+    fun `Is a split regime and matches pattern - generate a new name for cohort 2`() {
+      val description = "Maths level two AM"
+      assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 2))
+        .isEqualTo("Maths level two group 2")
+    }
+
+    @Test
+    fun `Is a split regime and matches lowercase am token - generate a new name for cohort 1`() {
+      val description = "Split regime am"
+      assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
+        .isEqualTo("Split regime group 1")
+    }
+
+    @Test
+    fun `Is Risley, split regime and AM - truncates a long activity name to 50 chars`() {
+      val description = "0123456789 0123456789 0123456789 01234567890 0123456789 AM"
+      assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
+        .isEqualTo("0123456789 0123456789 0123456789 0123456789 group 1")
+    }
+  }
+
+  @Nested
+  @DisplayName("Is split regime")
+  inner class IsSplitRegime {
+    val templateRequest = ActivityMigrateRequest(
+      programServiceCode = "XXX",
+      prisonCode = "LEI",
+      startDate = LocalDate.now().minusDays(1),
+      capacity = 1,
+      description = "Maths",
+      internalLocationId = null,
+      internalLocationCode = null,
+      internalLocationDescription = null,
+      payPerSession = "H",
+      minimumIncentiveLevel = "STD",
+      scheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(9, 0),
+          endTime = LocalTime.of(11, 30),
+          monday = true,
+        ),
+      ),
+      payRates = listOf(NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100)),
+    )
+
+    @Test
+    fun `Not a split regime activity at Risley`() {
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one PM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
+    }
+
+    @Test
+    fun `Is a split regime activity at Risley`() {
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(true)
+    }
+
+    @Test
+    fun `Is not a split regime at Leeds`() {
+      val request = templateRequest.copy(description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
+    }
+
+    @Test
+    fun `Is not a split regime if the feature flag is not allowing it for Risley`() {
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one AM")
+      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(false)
+      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
   }
 }

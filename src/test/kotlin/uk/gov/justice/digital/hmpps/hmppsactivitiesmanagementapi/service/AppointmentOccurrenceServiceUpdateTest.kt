@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.AdditionalAnswers.returnsFirstArg
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -56,6 +58,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
@@ -74,6 +77,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
   private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
+  private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   @Captor
@@ -87,8 +91,8 @@ class AppointmentOccurrenceServiceUpdateTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient),
-    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient),
+    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService),
+    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentOccurrencesJob,
     cancelAppointmentOccurrencesJob,
     maxSyncAppointmentInstanceActions = 14,
@@ -218,6 +222,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
   @Nested
   @DisplayName("update individual appointment")
+  @ExtendWith(FakeSecurityContext::class)
   inner class UpdateIndividualAppointment {
     private val principal: Principal = mock()
     private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
@@ -727,6 +732,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
   @Nested
   @DisplayName("update group repeat appointment")
+  @ExtendWith(FakeSecurityContext::class)
   inner class UpdateGroupRepeatAppointment {
     private val principal: Principal = mock()
     private val appointment = appointmentEntity(
@@ -801,6 +807,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -864,6 +872,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -921,6 +931,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -978,6 +990,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1038,6 +1052,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1092,6 +1108,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1146,6 +1164,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1205,6 +1225,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1258,6 +1280,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1314,6 +1338,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1365,6 +1391,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1416,6 +1444,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1472,6 +1502,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1523,6 +1555,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1574,6 +1608,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1631,6 +1667,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1683,6 +1721,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1735,6 +1775,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1813,6 +1855,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(2.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test

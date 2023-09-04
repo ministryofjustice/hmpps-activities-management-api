@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.AdditionalAnswers.returnsFirstArg
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -27,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
@@ -34,18 +37,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.security.Principal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 
+@ExtendWith(FakeSecurityContext::class)
 class AppointmentOccurrenceServiceAsyncTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
+  private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val appointmentOccurrenceUpdateDomainService = spy(AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient))
-  private val appointmentOccurrenceCancelDomainService = spy(AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient))
+  private val appointmentOccurrenceUpdateDomainService = spy(AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService))
+  private val appointmentOccurrenceCancelDomainService = spy(AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -120,6 +126,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -160,6 +167,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(2),
       eq(14),
       startTimeInMs.capture(),
+      eq(true),
       eq(true),
     )
 
@@ -202,6 +210,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -259,6 +268,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -300,6 +310,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -367,6 +378,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -418,6 +430,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -477,12 +490,14 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -521,12 +536,14 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -565,6 +582,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -584,6 +602,8 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
     )
+
+    verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Use the same cancelled value so that all occurrences have the same cancelled date time stamp
     cancelled.firstValue isEqualTo cancelled.secondValue
@@ -623,12 +643,14 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -667,12 +689,14 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(14),
       startTimeInMs.capture(),
       eq(true),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
     verifyNoInteractions(cancelAppointmentOccurrencesJob)
@@ -711,12 +735,14 @@ class AppointmentOccurrenceServiceAsyncTest {
       eq(15),
       startTimeInMs.capture(),
       eq(false),
+      eq(true),
     )
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
     verifyNoInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Start asynchronous job to delete all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
