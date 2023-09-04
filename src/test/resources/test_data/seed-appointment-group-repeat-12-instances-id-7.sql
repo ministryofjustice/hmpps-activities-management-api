@@ -4,14 +4,14 @@ VALUES (2, 'WEEKLY', 4);
 INSERT INTO appointment (appointment_id, appointment_type, category_code, prison_code, internal_location_id, in_cell, start_date, start_time, end_time, appointment_schedule_id, comment, created, created_by)
 VALUES (7, 'GROUP', 'AC1', 'TPR', 123, false, now()::date + 1, '09:00', '10:30', 2, 'Appointment level comment', now()::timestamp, 'TEST.USER');
 
-INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, internal_location_id, in_cell, start_date, start_time, end_time, comment)
-VALUES (20, 7, 1, 123, false, now()::date + 1, '09:00', '10:30', 'Appointment occurrence level comment');
-INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, internal_location_id, in_cell, start_date, start_time, end_time, comment)
-VALUES (21, 7, 2, 123, false, now()::date + 8, '09:00', '10:30', 'Appointment occurrence level comment');
-INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, internal_location_id, in_cell, start_date, start_time, end_time, comment)
-VALUES (22, 7, 3, 123, false, now()::date + 15, '09:00', '10:30', 'Appointment occurrence level comment');
-INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, internal_location_id, in_cell, start_date, start_time, end_time, comment)
-VALUES (23, 7, 4, 123, false, now()::date + 22, '09:00', '10:30', 'Appointment occurrence level comment');
+INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, category_code, internal_location_id, in_cell, start_date, start_time, end_time, comment)
+VALUES (20, 7, 1, 'AC1', 123, false, now()::date + 1, '09:00', '10:30', 'Appointment occurrence level comment');
+INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, category_code, internal_location_id, in_cell, start_date, start_time, end_time, comment)
+VALUES (21, 7, 2, 'AC1', 123, false, now()::date + 8, '09:00', '10:30', 'Appointment occurrence level comment');
+INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, category_code, internal_location_id, in_cell, start_date, start_time, end_time, comment)
+VALUES (22, 7, 3, 'AC1', 123, false, now()::date + 15, '09:00', '10:30', 'Appointment occurrence level comment');
+INSERT INTO appointment_occurrence (appointment_occurrence_id, appointment_id, sequence_number, category_code, internal_location_id, in_cell, start_date, start_time, end_time, comment)
+VALUES (23, 7, 4, 'AC1', 123, false, now()::date + 22, '09:00', '10:30', 'Appointment occurrence level comment');
 
 INSERT INTO appointment_occurrence_allocation (appointment_occurrence_allocation_id, appointment_occurrence_id, prisoner_number, booking_id)
 VALUES (30, 20, 'A1234BC', 456);
