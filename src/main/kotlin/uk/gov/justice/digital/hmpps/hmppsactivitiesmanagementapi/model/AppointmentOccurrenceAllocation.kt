@@ -5,14 +5,17 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  The allocation of a prisoner to an appointment occurrence. Appointments of type INDIVIDUAL will have one prisoner
-  allocated to each appointment occurrence. Appointments of type GROUP can have more than one prisoner allocated to each
-  appointment occurrence
+  Described on the UI as an "Attendee". The allocation of a prisoner to an appointment occurrence.
   """,
 )
 data class AppointmentOccurrenceAllocation(
   @Schema(
-    description = "The internally generated identifier for this appointment occurrence allocation",
+    description =
+    """
+    The internally generated identifier for this appointment occurrence allocation.
+    N.B. this is used as the appointment instance id due to there being a one to one relationship between appointment
+    occurrence allocations and appointment instances.
+    """,
     example = "123456",
   )
   val id: Long,

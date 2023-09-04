@@ -11,8 +11,7 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Describes an appointment or series of appointment occurrences to be created, the initial property values and prisoner or
-  prisoners to allocate. 
+  Describes how to update one or more appointment occurrences.
   """,
 )
 data class AppointmentOccurrenceUpdateRequest(

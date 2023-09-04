@@ -18,7 +18,8 @@ import java.time.LocalTime
   description =
   """
   Describes an appointment or series of appointment occurrences to be created, the initial property values and prisoner or
-  prisoners to allocate. 
+  prisoners to allocate. N.B. the full series of appointment occurrences specified by the repeat value and prisoner numbers
+  will be created in advanced and synced to NOMIS.
   """,
 )
 data class AppointmentCreateRequest(

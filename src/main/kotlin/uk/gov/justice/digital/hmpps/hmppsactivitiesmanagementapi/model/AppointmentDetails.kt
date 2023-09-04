@@ -10,8 +10,16 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  The top level appointment details for display purposes. Contains only properties needed to make additional API calls
-  and to display.
+  Described on the UI as an "Appointment series" and only shown for repeat appointments.
+  The top level of the standard appointment hierarchy containing full details of the initial property values common to
+  all appointment occurrences in the series for display purposes.
+  Contains the summary collection of all the child appointment occurrences in the series plus the repeat definition if
+  the appointment repeats.
+  The properties at this level cannot be changed via the API however the child occurrence property values can be changed
+  independently to support rescheduling, cancelling and altered attendee lists per occurrence.
+  N.B. there is no collection of allocated prisoners at this top level as all allocations are per occurrence. This is to
+  support attendee modification for each scheduled occurrence and to prevent altering the past by editing allocations
+  in an appointment series where some occurrences have past.
   """,
 )
 data class AppointmentDetails(

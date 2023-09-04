@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  Describes an appointment or series of appointment occurrences to be cancelled. 
+  Describes how to cancel or delete one or more appointment occurrences. 
   """,
 )
 data class AppointmentOccurrenceCancelRequest(
@@ -13,7 +13,7 @@ data class AppointmentOccurrenceCancelRequest(
   @Schema(
     description =
     """
-    Specifies the id of the reason for the cancellation. The cancellation reason, identified byt this ID, will determine 
+    Specifies the id of the reason for the cancellation. The cancellation reason, identified by this id, will determine 
     whether the cancellation is also treated as a soft delete
     """,
     example = "1234",

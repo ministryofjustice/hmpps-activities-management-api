@@ -10,9 +10,10 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Details of a specific appointment occurrence. Will contain copies of the parent appointment's properties unless they
-  have been changed on this appointment occurrence. Contains only properties needed to make additional API calls
-  and to display.
+  Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
+  Contains the full details of all the appointment occurrence properties, any properties specified by the parent
+  appointment and the summary collection of prisoners allocated to this occurrence.
+  All updates and cancellations happen at this occurrence level with the parent appointment being immutable.
   """,
 )
 data class AppointmentOccurrenceDetails(

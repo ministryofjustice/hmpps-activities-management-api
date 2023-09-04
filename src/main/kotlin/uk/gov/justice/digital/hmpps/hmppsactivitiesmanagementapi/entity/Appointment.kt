@@ -141,6 +141,7 @@ data class Appointment(
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
     appointmentDescription = appointmentDescription,
@@ -149,7 +150,7 @@ data class Appointment(
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    appointmentType = appointmentType,
+    repeat = schedule?.toRepeat(),
     comment = comment,
     created = created,
     createdBy = createdBy,

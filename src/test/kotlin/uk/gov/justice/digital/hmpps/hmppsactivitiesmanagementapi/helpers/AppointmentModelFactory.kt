@@ -39,6 +39,7 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     LocalDate.now().plusDays(1),
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
+    null,
     "Appointment level comment",
     created,
     "CREATE.USER",

@@ -9,13 +9,8 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Represents a specific appointment occurrence. Non recurring appointments will have a single appointment occurrence
-  containing the same property values as the parent appointment. The same start date, time and end time. Recurring
-  appointments will have a series of occurrences. The first in the series will also contain the same property values
-  as the parent appointment and subsequent occurrences will have start dates following on from the original start date
-  incremented as specified by the appointment's schedule. Each occurrence can be edited independently of the parent.
-  All properties of an occurrence override those of the parent appointment with a null coalesce back to the parent for
-  nullable properties. The full series of occurrences specified by the schedule will be created in advance.
+  Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
+  All updates and cancellations happen at this occurrence level with the parent appointment being immutable.
   """,
 )
 data class AppointmentOccurrence(

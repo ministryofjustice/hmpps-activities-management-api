@@ -3,10 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(
-  description = "Summarises a set of appointments created as part of a single bulk operation",
+  description =
+  """
+  Described on the UI as an "Appointment set" or "set of back-to-back appointments".
+  Contains the limited summary information needed to display the fact that an appointment occurrence was created as
+  part of a set.
+  """,
 )
 data class BulkAppointmentSummary(
-
   @Schema(
     description = "The internally generated identifier for this set of appointments",
     example = "12345",

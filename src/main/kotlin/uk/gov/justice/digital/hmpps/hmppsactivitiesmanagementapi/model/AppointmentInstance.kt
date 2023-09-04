@@ -11,30 +11,46 @@ import java.time.LocalTime
   description =
   """
   Represents an appointment instance for a specific prisoner to attend at the specified location, date and time.
-  The fully denormalised representation of the appointment occurrences and allocations.
+  The fully denormalised representation of the appointments, appointment occurrences and allocations equivalent to a
+  row in the NOMIS OFFENDER_IND_SCHEDULES table.
+  Appointment instances do not exist as database records and are the product of the join between appointment occurrence
+  allocations, appointment occurrences and appointments. 
+  The appointment occurrence allocation id is used for the appointment instance id as there is a one to one relationship
+  between appointment occurrence allocations and appointment instances.
+  Appointment instances are used primarily for the one way sync to NOMIS.
   """,
 )
 data class AppointmentInstance(
   @Schema(
-    description = "The internally generated identifier for this appointment instance",
+    description =
+    """
+    The internally generated identifier for this appointment instance. N.B. this is the appointment occurrence
+    allocation id due to there being a one to one relationship between appointment occurrence allocations and
+    appointment instances.
+    """,
     example = "123456",
   )
   val id: Long,
 
   @Schema(
-    description = "The internally generated identifier for the parent appointment",
+    description = "The internally generated identifier for the appointment",
     example = "1234",
   )
   val appointmentId: Long,
 
   @Schema(
-    description = "The internally generated identifier for the parent appointment occurrence",
+    description = "The internally generated identifier for the appointment occurrence",
     example = "12345",
   )
   val appointmentOccurrenceId: Long,
 
   @Schema(
-    description = "The internally generated identifier for the parent appointment occurrence allocation",
+    description =
+    """
+    The internally generated identifier for the appointment occurrence allocation. N.B. this is used as the appointment
+    instance id due to there being a one to one relationship between appointment occurrence allocations and appointment
+    instances.
+    """,
     example = "123456",
   )
   val appointmentOccurrenceAllocationId: Long,
