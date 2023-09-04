@@ -69,6 +69,8 @@ fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceI
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointment = appointment,
     sequenceNumber = sequenceNumber,
+    categoryCode = appointment.categoryCode,
+    appointmentDescription = appointment.appointmentDescription,
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
     startDate = startDate,

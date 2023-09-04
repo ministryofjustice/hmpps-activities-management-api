@@ -47,7 +47,7 @@ data class AppointmentInstance(
 
   val endTime: LocalTime?,
 
-  val comment: String? = null,
+  val comment: String?,
 
   val created: LocalDateTime = LocalDateTime.now(),
 
@@ -55,9 +55,9 @@ data class AppointmentInstance(
 
   val isCancelled: Boolean,
 
-  val updated: LocalDateTime? = null,
+  val updated: LocalDateTime?,
 
-  val updatedBy: String? = null,
+  val updatedBy: String?,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,

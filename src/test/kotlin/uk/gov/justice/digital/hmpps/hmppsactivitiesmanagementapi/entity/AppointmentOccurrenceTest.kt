@@ -153,7 +153,7 @@ class AppointmentOccurrenceTest {
     val entity = appointmentEntity().occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")).isEqualTo(
+    assertThat(entity.toSummary("TPR", locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
         1,
@@ -176,7 +176,7 @@ class AppointmentOccurrenceTest {
     val entity = appointmentEntity().occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(listOf(entity).toSummary("TPR", locationMap, userMap, "Appointment level comment")).isEqualTo(
+    assertThat(listOf(entity).toSummary("TPR", locationMap, userMap)).isEqualTo(
       listOf(
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
@@ -202,20 +202,9 @@ class AppointmentOccurrenceTest {
     entity.internalLocationId = 123
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
+    with(entity.toSummary("TPR", locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
-    }
-  }
-
-  @Test
-  fun `entity to summary mapping defaults to appointment level comment`() {
-    val entity = appointmentEntity().occurrences().first()
-    entity.comment = null
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
-      assertThat(comment).isEqualTo("Appointment level comment")
     }
   }
 
@@ -224,7 +213,7 @@ class AppointmentOccurrenceTest {
     val entity = appointmentEntity(updatedBy = null).occurrences().first()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", locationMap, userMap, "Appointment level comment")) {
+    with(entity.toSummary("TPR", locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
     }

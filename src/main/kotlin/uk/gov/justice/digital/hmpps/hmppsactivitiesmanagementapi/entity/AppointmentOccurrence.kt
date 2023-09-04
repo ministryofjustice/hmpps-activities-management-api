@@ -43,6 +43,10 @@ data class AppointmentOccurrence(
 
   val sequenceNumber: Int,
 
+  var categoryCode: String,
+
+  var appointmentDescription: String?,
+
   var internalLocationId: Long?,
 
   var inCell: Boolean,
@@ -53,7 +57,7 @@ data class AppointmentOccurrence(
 
   var endTime: LocalTime?,
 
-  var comment: String? = null,
+  var comment: String?,
 
   var updated: LocalDateTime? = null,
 
@@ -116,7 +120,6 @@ data class AppointmentOccurrence(
     prisonCode: String,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-    appointmentComment: String,
   ) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
@@ -133,7 +136,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment ?: appointmentComment,
+      comment,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
       updated = updated,
@@ -167,7 +170,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment ?: appointment.comment,
+      comment,
       appointment.schedule?.toRepeat(),
       isEdited(),
       isCancelled(),
@@ -201,8 +204,7 @@ fun List<AppointmentOccurrence>.toSummary(
   prisonCode: String,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
-  appointmentComment: String,
-) = map { it.toSummary(prisonCode, locationMap, userMap, appointmentComment) }
+) = map { it.toSummary(prisonCode, locationMap, userMap) }
 
 fun List<AppointmentOccurrence>.toDetails(
   prisonCode: String,

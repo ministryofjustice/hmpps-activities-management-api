@@ -128,7 +128,7 @@ data class AppointmentDetails(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",

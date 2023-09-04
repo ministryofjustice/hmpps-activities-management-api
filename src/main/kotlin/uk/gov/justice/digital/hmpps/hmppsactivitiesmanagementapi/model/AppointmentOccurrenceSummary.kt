@@ -74,7 +74,7 @@ data class AppointmentOccurrenceSummary(
     """,
     example = "This appointment occurrence has been rescheduled due to staff availability",
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description =

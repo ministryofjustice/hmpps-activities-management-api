@@ -68,7 +68,7 @@ data class Appointment(
   @JoinColumn(name = "appointment_schedule_id")
   var schedule: AppointmentSchedule? = null,
 
-  var comment: String,
+  var comment: String?,
 
   val created: LocalDateTime = LocalDateTime.now(),
 
@@ -191,7 +191,7 @@ data class Appointment(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(prisonCode, locationMap, userMap, comment),
+      occurrences().toSummary(prisonCode, locationMap, userMap),
     )
 }
 

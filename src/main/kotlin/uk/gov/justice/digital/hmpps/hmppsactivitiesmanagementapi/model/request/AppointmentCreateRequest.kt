@@ -124,7 +124,7 @@ data class AppointmentCreateRequest(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String = "",
+  val comment: String? = null,
 ) {
   @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
   private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2

@@ -63,11 +63,14 @@ class CreateAppointmentOccurrencesJob(
               AppointmentOccurrence(
                 appointment = appointment,
                 sequenceNumber = sequenceNumber,
+                categoryCode = appointment.categoryCode,
+                appointmentDescription = appointment.appointmentDescription,
                 internalLocationId = appointment.internalLocationId,
                 inCell = appointment.inCell,
                 startDate = it.value,
                 startTime = appointment.startTime,
                 endTime = appointment.endTime,
+                comment = appointment.comment,
               ).apply {
                 prisonerBookings.forEach { prisonerBooking ->
                   this.addAllocation(

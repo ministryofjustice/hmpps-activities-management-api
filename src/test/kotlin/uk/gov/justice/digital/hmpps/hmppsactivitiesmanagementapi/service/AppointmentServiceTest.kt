@@ -159,7 +159,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -188,7 +188,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -220,7 +220,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -254,7 +254,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -280,7 +280,7 @@ class AppointmentServiceTest {
       prisonCode = request.prisonCode!!,
       prisonerNumbers = listOf(request.prisonerNumber!!),
       prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString()),
-      categoryCode = request.categoryCode,
+      categoryCode = request.categoryCode!!,
       internalLocationId = request.internalLocationId,
       startDate = request.startDate,
       startTime = request.startTime,
@@ -306,7 +306,7 @@ class AppointmentServiceTest {
       prisonCode = request.prisonCode!!,
       prisonerNumbers = request.prisonerNumbers,
       prisonerBookings = emptyMap(),
-      categoryCode = request.categoryCode,
+      categoryCode = request.categoryCode!!,
       appointmentDescription = request.appointmentDescription,
       internalLocationId = request.internalLocationId,
       inCell = request.inCell,
@@ -420,7 +420,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
           assertThat(updated).isNull()
@@ -845,7 +845,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
@@ -893,7 +893,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
