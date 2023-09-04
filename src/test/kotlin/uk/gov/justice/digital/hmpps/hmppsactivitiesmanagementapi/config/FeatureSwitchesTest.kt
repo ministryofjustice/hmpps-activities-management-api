@@ -17,6 +17,7 @@ class FeatureSwitchesTest {
 
   @TestPropertySource(
     properties = [
+      "feature.migrate.split.regime.enabled=true",
       "feature.audit.service.hmpps.enabled=true",
       "feature.audit.service.local.enabled=true",
       "feature.events.sns.enabled=true",
@@ -90,6 +91,7 @@ class FeatureSwitchesTest {
       assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, true)).isTrue
       assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED, true)).isTrue
+      assertThat(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, true)).isTrue
     }
   }
 }
