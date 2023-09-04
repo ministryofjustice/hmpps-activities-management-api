@@ -54,7 +54,7 @@ class AppointmentOccurrenceUpdateDomainService(
     trackEvent: Boolean,
     auditEvent: Boolean,
   ): AppointmentModel {
-    applyCategoryCodeUpdate(request, appointment, updated, updatedBy)
+    applyCategoryCodeUpdate(request, occurrencesToUpdate)
     applyStartDateUpdate(request, appointment, occurrencesToUpdate)
     applyInternalLocationUpdate(request, occurrencesToUpdate)
     applyStartEndTimeUpdate(request, occurrencesToUpdate)
@@ -96,14 +96,7 @@ class AppointmentOccurrenceUpdateDomainService(
     appointment: Appointment,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
   ): Int {
-    var instanceCount =
-      if (request.categoryCode != null) {
-        appointment.scheduledOccurrences().flatMap { it.allocations() }.size
-      } else if (request.isPropertyUpdate()) {
-        occurrencesToUpdate.flatMap { it.allocations() }.size
-      } else {
-        0
-      }
+    var instanceCount = if (request.isPropertyUpdate()) occurrencesToUpdate.flatMap { it.allocations() }.size else 0
 
     // Removed instance count is implicitly included in above count if a property has changed as those updates will apply
     // to the occurrence, therefore
@@ -126,21 +119,11 @@ class AppointmentOccurrenceUpdateDomainService(
 
   private fun applyCategoryCodeUpdate(
     request: AppointmentOccurrenceUpdateRequest,
-    appointment: Appointment,
-    updated: LocalDateTime,
-    updatedBy: String,
+    occurrencesToUpdate: Collection<AppointmentOccurrence>,
   ) {
-    request.categoryCode?.apply {
-      // Category updates are applied at the appointment level
-      appointment.categoryCode = this
-
-      // Mark appointment and occurrences as updated
-      appointment.updated = updated
-      appointment.updatedBy = updatedBy
-
-      appointment.scheduledOccurrences().forEach {
-        it.updated = updated
-        it.updatedBy = updatedBy
+    occurrencesToUpdate.forEach {
+      request.categoryCode?.apply {
+        it.categoryCode = this
       }
     }
   }

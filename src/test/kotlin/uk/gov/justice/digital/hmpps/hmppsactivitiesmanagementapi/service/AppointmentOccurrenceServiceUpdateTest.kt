@@ -238,54 +238,6 @@ class AppointmentOccurrenceServiceUpdateTest {
     }
 
     @Test
-    fun `update appointment category code success`() {
-      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
-
-      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(occurrences.single()) {
-          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
-        }
-      }
-
-      verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
-        telemetryPropertyMap.capture(),
-        telemetryMetricsMap.capture(),
-      )
-
-      with(telemetryPropertyMap) {
-        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
-        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
-        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
-      }
-
-      with(telemetryMetricsMap) {
-        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
-      }
-    }
-
-    @Test
     fun `update internal location id success`() {
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
 
@@ -628,7 +580,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
       with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(categoryCode).isEqualTo("TEST")
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
         assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
@@ -636,9 +588,10 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
         with(occurrences.single()) {
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
           assertThat(startDate).isEqualTo(request.startDate)
@@ -682,52 +635,6 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
     }
-
-    @Test
-    fun `update all properties`() {
-      val request = AppointmentOccurrenceUpdateRequest(
-        categoryCode = "NEW",
-        internalLocationId = 456,
-        startDate = LocalDate.now().plusDays(3),
-        startTime = LocalTime.of(13, 30),
-        endTime = LocalTime.of(15, 0),
-        comment = "Updated appointment occurrence level comment",
-      )
-
-      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
-      whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
-        .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, appointment.prisonCode)))
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(internalLocationId).isEqualTo(123)
-        assertThat(inCell).isFalse
-        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(comment).isEqualTo("Appointment level comment")
-        assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(occurrences.single()) {
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(inCell).isFalse
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isEqualTo(request.comment)
-          assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(updatedBy).isEqualTo("TEST.USER")
-          with(allocations.single()) {
-            assertThat(prisonerNumber).isEqualTo("A1234BC")
-            assertThat(bookingId).isEqualTo(456L)
-          }
-        }
-      }
-    }
   }
 
   @Nested
@@ -755,60 +662,6 @@ class AppointmentOccurrenceServiceUpdateTest {
       }
 
       whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<Appointment>())
-    }
-
-    @Test
-    fun `update appointment category code success`() {
-      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
-
-      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-        .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!, "New Category")))
-
-      val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
-
-      with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
-        with(occurrences[0]) {
-          assertThat(updated).isNull()
-          assertThat(updatedBy).isNull()
-        }
-        with(occurrences.subList(1, response.occurrences.size)) {
-          assertThat(map { it.updated }.distinct().single()).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("TEST.USER")
-        }
-      }
-
-      verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_EDITED.value),
-        telemetryPropertyMap.capture(),
-        telemetryMetricsMap.capture(),
-      )
-
-      with(telemetryPropertyMap) {
-        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
-        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("3")
-        assertThat(value[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("true")
-        assertThat(value[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
-      }
-
-      with(telemetryMetricsMap) {
-        assertThat(value[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-        assertThat(value[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(6.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
-      }
-
-      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
     }
 
     @Test
@@ -1974,7 +1827,7 @@ class AppointmentOccurrenceServiceUpdateTest {
       val response = service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
 
       with(response) {
-        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(categoryCode).isEqualTo("TEST")
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
         assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
@@ -1982,13 +1835,14 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(updatedBy).isEqualTo("TEST.USER")
+        assertThat(updated).isNull()
+        assertThat(updatedBy).isNull()
         assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
         assertThat(occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
         assertThat(occurrences[2].startDate).isEqualTo(request.startDate)
         assertThat(occurrences[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
         with(occurrences[0]) {
+          assertThat(categoryCode).isEqualTo("TEST")
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isFalse
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
@@ -2002,6 +1856,7 @@ class AppointmentOccurrenceServiceUpdateTest {
           assertThat(allocations[1].bookingId).isEqualTo(457)
         }
         with(occurrences.subList(3, occurrences.size)) {
+          assertThat(map { it.categoryCode }.distinct().single()).isEqualTo(request.categoryCode)
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
           assertThat(map { it.inCell }.distinct().single()).isFalse
           assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)

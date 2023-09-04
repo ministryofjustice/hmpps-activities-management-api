@@ -15,9 +15,11 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -35,10 +37,10 @@ import java.util.Optional
 class AppointmentOccurrenceUpdateDomainServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val auditService: AuditService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
-  private val auditService: AuditService = mock()
   private val service = spy(AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
@@ -90,8 +92,8 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         3,
         10,
         startTimeInMs,
-        true,
-        false,
+        trackEvent = true,
+        auditEvent = false,
       )
     }
 
@@ -124,6 +126,128 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   }
 
   @Nested
+  @DisplayName("update occurrences - used by service and async update appointment occurrences job")
+  inner class UpdateAppointmentOccurrences {
+    @Test
+    fun `updates category code`() {
+      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
+      val response = service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThisAndAllFuture,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        "TEST.USER",
+        3,
+        10,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointment.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
+      appointment.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+
+      response.occurrences.filter { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
+      response.occurrences.filterNot { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+    }
+
+    @Test
+    fun `track custom event using supplied counts and start time`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val startTimeInMs = System.currentTimeMillis()
+      service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThis,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        "TEST.USER",
+        1,
+        3,
+        startTimeInMs,
+        trackEvent = true,
+        auditEvent = false,
+      )
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+
+      with(telemetryMetricsMap.firstValue) {
+        this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 1.0
+        this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 3.0
+        assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isCloseTo((System.currentTimeMillis() - startTimeInMs).toDouble(), within(1000.0))
+      }
+    }
+
+    @Test
+    fun `do not track custom event`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val startTimeInMs = System.currentTimeMillis()
+      service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThis,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        "TEST.USER",
+        1,
+        3,
+        startTimeInMs,
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `track audit event`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThis,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        "TEST.USER",
+        1,
+        3,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = true,
+      )
+
+      verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    }
+
+    @Test
+    fun `do not track audit event`() {
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThis,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        "TEST.USER",
+        1,
+        3,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      verifyNoInteractions(auditService)
+    }
+  }
+
+  @Nested
   @DisplayName("instance count")
   inner class UpdateAppointmentOccurrenceInstanceCount {
     @Test
@@ -136,7 +260,11 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
     @Test
     fun `update category code`() {
       val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
-      service.getUpdateInstancesCount(request, appointment, applyToThis) isEqualTo 12
+      service.getUpdateInstancesCount(
+        request,
+        appointment,
+        applyToThis,
+      ) isEqualTo applyToThis.flatMap { it.allocations() }.size
     }
 
     @Test
