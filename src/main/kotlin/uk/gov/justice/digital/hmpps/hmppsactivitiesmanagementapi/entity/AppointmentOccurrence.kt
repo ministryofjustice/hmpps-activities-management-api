@@ -102,6 +102,8 @@ data class AppointmentOccurrence(
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     sequenceNumber = sequenceNumber,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
@@ -118,12 +120,16 @@ data class AppointmentOccurrence(
 
   fun toSummary(
     prisonCode: String,
+    referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -157,10 +163,10 @@ data class AppointmentOccurrence(
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,
-      referenceCodeMap[appointment.categoryCode].toAppointmentName(appointment.categoryCode, appointment.appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
       allocations().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
-      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
-      appointment.appointmentDescription,
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -202,9 +208,10 @@ fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
 
 fun List<AppointmentOccurrence>.toSummary(
   prisonCode: String,
+  referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
-) = map { it.toSummary(prisonCode, locationMap, userMap) }
+) = map { it.toSummary(prisonCode, referenceCodeMap, locationMap, userMap) }
 
 fun List<AppointmentOccurrence>.toDetails(
   prisonCode: String,

@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -151,12 +152,16 @@ class AppointmentOccurrenceTest {
   @Test
   fun `entity to summary mapping`() {
     val entity = appointmentEntity().occurrences().first()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(entity.toSummary("TPR", locationMap, userMap)).isEqualTo(
+    assertThat(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
         1,
+        "Appointment description (Test Category)",
+        appointmentCategorySummary(),
+        "Appointment description",
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now().plusDays(1),
@@ -174,13 +179,17 @@ class AppointmentOccurrenceTest {
   @Test
   fun `entity list to summary list mapping`() {
     val entity = appointmentEntity().occurrences().first()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(listOf(entity).toSummary("TPR", locationMap, userMap)).isEqualTo(
+    assertThat(listOf(entity).toSummary("TPR", referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
           1,
+          "Appointment description (Test Category)",
+          appointmentCategorySummary(),
+          "Appointment description",
           AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
           entity.inCell,
           entity.startDate,
@@ -200,9 +209,10 @@ class AppointmentOccurrenceTest {
   fun `entity to summary mapping in cell nullifies internal location`() {
     val entity = appointmentEntity(inCell = true).occurrences().first()
     entity.internalLocationId = 123
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", locationMap, userMap)) {
+    with(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -211,9 +221,10 @@ class AppointmentOccurrenceTest {
   @Test
   fun `entity to summary mapping updated by null`() {
     val entity = appointmentEntity(updatedBy = null).occurrences().first()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", locationMap, userMap)) {
+    with(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
     }

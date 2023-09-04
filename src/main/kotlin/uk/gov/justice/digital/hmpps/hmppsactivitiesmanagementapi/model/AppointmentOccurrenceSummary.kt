@@ -29,6 +29,32 @@ data class AppointmentOccurrenceSummary(
   @Schema(
     description =
     """
+    The appointment occurrence's name
+    """,
+  )
+  val appointmentName: String,
+
+  @Schema(
+    description =
+    """
+    The summary of the appointment occurrence's category. Can be different to the parent appointment if this occurrence
+    has been edited.
+    """,
+  )
+  val category: AppointmentCategorySummary,
+
+  @Schema(
+    description =
+    """
+    Free text description for an appointment occurrence. This is used to add more context to the category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
+
+  @Schema(
+    description =
+    """
     The summary of the internal location this appointment occurrence will take place. Can be different to the parent
     appointment if this occurrence has been edited.
     Will be null if in cell = true

@@ -32,6 +32,21 @@ data class AppointmentOccurrence(
   val sequenceNumber: Int,
 
   @Schema(
+    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
+    example = "CHAP",
+  )
+  val categoryCode: String,
+
+  @Schema(
+    description =
+    """
+    Free text description for an appointment occurrence. This is used to add more context to the appointment category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
+
+  @Schema(
     description =
     """
     The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
@@ -44,7 +59,7 @@ data class AppointmentOccurrence(
   @Schema(
     description =
     """
-    Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
+    Flag to indicate if the location of the appointment occurrence is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
     example = "false",

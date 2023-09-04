@@ -58,7 +58,7 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
-    The appointment name
+    The appointment occurrence's name
     """,
   )
   val appointmentName: String,
@@ -75,7 +75,8 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
-    The summary of the parent appointment's category
+    The summary of the appointment occurrence's category. Can be different to the parent appointment if this occurrence
+    has been edited.
     """,
   )
   val category: AppointmentCategorySummary,
@@ -83,7 +84,7 @@ data class AppointmentOccurrenceDetails(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text description for an appointment occurrence. This is used to add more context to the category.
     """,
     example = "Meeting with the governor",
   )

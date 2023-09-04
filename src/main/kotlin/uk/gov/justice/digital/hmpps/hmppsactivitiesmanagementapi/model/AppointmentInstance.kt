@@ -72,7 +72,7 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text description for an appointment. This is used to add more context to the appointment category.
     """,
     example = "Meeting with the governor",
   )

@@ -191,7 +191,7 @@ data class Appointment(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(prisonCode, locationMap, userMap),
+      occurrences().toSummary(prisonCode, referenceCodeMap, locationMap, userMap),
     )
 }
 

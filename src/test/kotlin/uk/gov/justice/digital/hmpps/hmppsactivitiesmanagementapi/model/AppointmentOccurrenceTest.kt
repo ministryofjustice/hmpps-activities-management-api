@@ -22,6 +22,8 @@ class AppointmentOccurrenceTest : ModelTest() {
     val appointmentOccurrence = AppointmentOccurrence(
       id = 1,
       sequenceNumber = 1,
+      categoryCode = "AC1",
+      appointmentDescription = null,
       internalLocationId = null,
       comment = "Blah",
       startDate = originalStartDate,
