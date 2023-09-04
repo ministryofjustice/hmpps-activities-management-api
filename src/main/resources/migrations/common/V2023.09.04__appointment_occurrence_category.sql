@@ -10,6 +10,10 @@ ALTER TABLE appointment_occurrence ALTER COLUMN category_code SET NOT NULL;
 CREATE INDEX idx_appointment_occurrence_category_code ON appointment_occurrence (category_code);
 CREATE INDEX idx_appointment_occurrence_appointment_description ON appointment_occurrence (appointment_description);
 
+-- Remove default and not null constraint on appointment comment as null implies no comment was set
+ALTER TABLE appointment ALTER COLUMN comment DROP DEFAULT;
+ALTER TABLE appointment ALTER COLUMN comment DROP NOT NULL;
+
 CREATE OR REPLACE VIEW v_appointment_instance AS
 SELECT aoa.appointment_occurrence_allocation_id                                      AS appointment_instance_id,
        a.appointment_id,
