@@ -44,11 +44,12 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   private val service = spy(AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointment = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
+  private val appointment = appointmentEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
   private val appointmentOccurrence = appointment.occurrences()[1]
   private val applyToThis = appointment.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "").toSet()
   private val applyToThisAndAllFuture = appointment.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
   private val applyToAllFuture = appointment.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val updatedBy = "TEST.USER"
 
   @BeforeEach
   fun setUp() {
@@ -72,7 +73,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         updated,
-        "TEST.USER",
+        updatedBy,
         3,
         10,
         startTimeInMs,
@@ -88,7 +89,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         updated,
-        "TEST.USER",
+        updatedBy,
         3,
         10,
         startTimeInMs,
@@ -109,7 +110,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         3,
         10,
         startTimeInMs,
@@ -139,7 +140,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         3,
         10,
         System.currentTimeMillis(),
@@ -155,6 +156,76 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
     }
 
     @Test
+    fun `sets updated and updated by on appointment and occurrence when property changed`() {
+      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val updated = LocalDateTime.now()
+      val response = service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToThisAndAllFuture,
+        request,
+        emptyMap(),
+        updated,
+        updatedBy,
+        3,
+        10,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointment.updated isEqualTo updated
+      appointment.updatedBy isEqualTo updatedBy
+      with(appointment.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }) {
+        this.map { it.updated }.distinct().single() isEqualTo updated
+        this.map { it.updatedBy }.distinct().single() isEqualTo updatedBy
+      }
+      with(appointment.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }) {
+        this.map { it.updated }.distinct().single() isEqualTo null
+        this.map { it.updatedBy }.distinct().single() isEqualTo null
+      }
+
+      with(response.occurrences.filter { ids.contains(it.id) }) {
+        this.map { it.updated }.distinct().single() isEqualTo updated
+        this.map { it.updatedBy }.distinct().single() isEqualTo updatedBy
+      }
+      with(response.occurrences.filterNot { ids.contains(it.id) }) {
+        this.map { it.updated }.distinct().single() isEqualTo null
+        this.map { it.updatedBy }.distinct().single() isEqualTo null
+      }
+    }
+
+    @Test
+    fun `does not set updated and updated by on appointment and occurrence when no properties have changed`() {
+      val ids = applyToAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val request = AppointmentOccurrenceUpdateRequest()
+      val updated = LocalDateTime.now()
+      val response = service.updateAppointmentOccurrences(
+        appointment,
+        appointmentOccurrence.appointmentOccurrenceId,
+        applyToAllFuture,
+        request,
+        emptyMap(),
+        updated,
+        updatedBy,
+        3,
+        10,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointment.updated isEqualTo null
+      appointment.updatedBy isEqualTo null
+      appointment.occurrences().map { it.updated }.distinct().single() isEqualTo null
+      appointment.occurrences().map { it.updatedBy }.distinct().single() isEqualTo null
+
+      response.occurrences.map { it.updated }.distinct().single() isEqualTo null
+      response.occurrences.map { it.updatedBy }.distinct().single() isEqualTo null
+    }
+
+    @Test
     fun `track custom event using supplied counts and start time`() {
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
@@ -165,7 +236,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         1,
         3,
         startTimeInMs,
@@ -193,7 +264,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         1,
         3,
         startTimeInMs,
@@ -214,7 +285,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         1,
         3,
         System.currentTimeMillis(),
@@ -235,7 +306,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         request,
         emptyMap(),
         LocalDateTime.now(),
-        "TEST.USER",
+        updatedBy,
         1,
         3,
         System.currentTimeMillis(),

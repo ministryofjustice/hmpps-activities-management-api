@@ -127,8 +127,6 @@ data class AppointmentOccurrenceSummary(
     description =
     """
     The date and time this appointment occurrence was last edited.
-    Will be null if the appointment occurrence has not been independently changed from the original state it was in when
-    it was created as part of a recurring series
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -137,8 +135,7 @@ data class AppointmentOccurrenceSummary(
   @Schema(
     description =
     """
-    The summary of the last user to edit this appointment occurrence. Will be null if the appointment occurrence has not
-    been independently changed from the original state it was in when it was created as part of a recurring series
+    The summary of the last user to edit this appointment occurrence.
     """,
   )
   val updatedBy: UserSummary?,

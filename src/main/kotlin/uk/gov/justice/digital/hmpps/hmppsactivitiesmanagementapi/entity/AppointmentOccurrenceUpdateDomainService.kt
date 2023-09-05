@@ -62,6 +62,8 @@ class AppointmentOccurrenceUpdateDomainService(
     applyRemovePrisonersUpdate(request, occurrencesToUpdate)
 
     if (request.isPropertyUpdate()) {
+      appointment.updated = updated
+      appointment.updatedBy = updatedBy
       occurrencesToUpdate.forEach {
         it.updated = updated
         it.updatedBy = updatedBy

@@ -134,8 +134,7 @@ data class Appointment(
   @Schema(
     description =
     """
-    The date and time this appointment was last changed.
-    Will be null if the appointment has not been altered since it was created
+    The date and time one or more occurrences of this appointment was last changed.
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -144,8 +143,7 @@ data class Appointment(
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that edited the appointment.
-    Will be null if the appointment has not been altered since it was created
+    The username of the user authenticated via HMPPS auth that last edited one or more occurrences of this appointment.
     """,
     example = "AAA01U",
   )

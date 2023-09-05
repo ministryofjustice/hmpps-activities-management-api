@@ -249,8 +249,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(inCell).isFalse
@@ -297,8 +297,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(internalLocationId).isNull()
           assertThat(inCell).isTrue
@@ -316,8 +316,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -362,8 +362,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -408,8 +408,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(endTime).isEqualTo(request.endTime)
           assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -455,8 +455,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(comment).isEqualTo(request.comment)
           assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
@@ -588,8 +588,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.single()) {
           assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -676,8 +676,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -741,8 +741,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -800,8 +800,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences[0]) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isFalse
@@ -856,8 +856,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -918,8 +918,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
           assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -974,8 +974,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(internalLocationId).isEqualTo(123)
         assertThat(inCell).isFalse
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences[0]) {
           assertThat(internalLocationId).isEqualTo(123)
           assertThat(inCell).isFalse
@@ -1029,8 +1029,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         assertThat(response.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
         assertThat(response.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
         assertThat(response.occurrences[2].startDate).isEqualTo(request.startDate)
@@ -1090,8 +1090,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         assertThat(response.occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
         assertThat(response.occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
         assertThat(response.occurrences[2].startDate).isEqualTo(request.startDate)
@@ -1145,8 +1145,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1203,8 +1203,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1256,8 +1256,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences[0]) {
           assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
           assertThat(updated).isNull()
@@ -1309,8 +1309,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1367,8 +1367,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1420,8 +1420,8 @@ class AppointmentOccurrenceServiceUpdateTest {
 
       with(response) {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences[0]) {
           assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
           assertThat(updated).isNull()
@@ -1474,8 +1474,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1533,8 +1533,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences.subList(0, 2)) {
           assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
           assertThat(map { it.updated }.distinct().single()).isNull()
@@ -1587,8 +1587,8 @@ class AppointmentOccurrenceServiceUpdateTest {
       with(response) {
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         with(occurrences[0]) {
           assertThat(comment).isEqualTo("Appointment occurrence level comment")
           assertThat(updated).isNull()
@@ -1835,8 +1835,8 @@ class AppointmentOccurrenceServiceUpdateTest {
         assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
         assertThat(comment).isEqualTo("Appointment level comment")
         assertThat(appointmentDescription).isEqualTo("Appointment description")
-        assertThat(updated).isNull()
-        assertThat(updatedBy).isNull()
+        assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("TEST.USER")
         assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
         assertThat(occurrences[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
         assertThat(occurrences[2].startDate).isEqualTo(request.startDate)

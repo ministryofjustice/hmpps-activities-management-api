@@ -155,8 +155,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The date and time this appointment was last changed.
-    Will be null if the appointment has not been edited since it was created
+    The date and time one or more occurrences of this appointment was last changed.
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -165,8 +164,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the last user to edit this appointment. Will be null if the appointment has not been altered since
-    it was created
+    The summary of the user that last edited one or more occurrences of this appointment.
     """,
   )
   val updatedBy: UserSummary?,

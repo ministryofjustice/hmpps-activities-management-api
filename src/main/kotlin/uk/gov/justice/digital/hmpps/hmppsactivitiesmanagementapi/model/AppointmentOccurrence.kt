@@ -125,8 +125,6 @@ data class AppointmentOccurrence(
     description =
     """
     The date and time this appointment occurrence was last changed.
-    Will be null if the appointment occurrence has not been altered independently from the parent appointment
-    since it was created
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -136,8 +134,6 @@ data class AppointmentOccurrence(
     description =
     """
     The username of the user authenticated via HMPPS auth that edited this appointment instance.
-    Usually a NOMIS username. Will be null if the appointment occurrence has not been altered independently from the
-    parent appointment since it was created
     """,
     example = "AAA01U",
   )
