@@ -475,8 +475,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping in cell nullifies internal location`() {
-    val appointment = appointmentEntity(inCell = true)
-    appointment.internalLocationId = 123
+    val appointment = appointmentEntity(internalLocationId = 123, inCell = true)
     val entity = appointment.occurrences().first()
     entity.internalLocationId = 123
     val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))

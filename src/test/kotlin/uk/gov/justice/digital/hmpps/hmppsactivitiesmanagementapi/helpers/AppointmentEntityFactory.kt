@@ -38,7 +38,7 @@ internal fun appointmentEntity(
   prisonCode = "TPR",
   categoryCode = "TEST",
   appointmentDescription = appointmentDescription,
-  internalLocationId = if (inCell) null else internalLocationId,
+  internalLocationId = internalLocationId,
   inCell = inCell,
   startDate = startDate,
   startTime = startTime,
