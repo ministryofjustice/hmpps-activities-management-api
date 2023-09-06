@@ -39,6 +39,7 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     LocalDate.now().plusDays(1),
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
+    null,
     "Appointment level comment",
     created,
     "CREATE.USER",
@@ -54,6 +55,8 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
   AppointmentOccurrence(
     1,
     1,
+    "TEST",
+    "Appointment description",
     123,
     false,
     LocalDate.now().plusDays(1),
@@ -216,6 +219,9 @@ fun appointmentDetails(
     AppointmentOccurrenceSummary(
       1,
       1,
+      if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+      category = category,
+      appointmentDescription,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
       LocalDate.now().plusDays(1),

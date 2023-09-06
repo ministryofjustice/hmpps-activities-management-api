@@ -18,7 +18,8 @@ import java.time.LocalTime
   description =
   """
   Describes an appointment or series of appointment occurrences to be created, the initial property values and prisoner or
-  prisoners to allocate. 
+  prisoners to allocate. N.B. the full series of appointment occurrences specified by the repeat value and prisoner numbers
+  will be created in advanced and synced to NOMIS.
   """,
 )
 data class AppointmentCreateRequest(
@@ -124,7 +125,7 @@ data class AppointmentCreateRequest(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String = "",
+  val comment: String? = null,
 ) {
   @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
   private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2

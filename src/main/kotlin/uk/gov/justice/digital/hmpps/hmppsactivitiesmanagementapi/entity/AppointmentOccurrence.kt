@@ -43,6 +43,10 @@ data class AppointmentOccurrence(
 
   val sequenceNumber: Int,
 
+  var categoryCode: String,
+
+  var appointmentDescription: String?,
+
   var internalLocationId: Long?,
 
   var inCell: Boolean,
@@ -53,7 +57,7 @@ data class AppointmentOccurrence(
 
   var endTime: LocalTime?,
 
-  var comment: String? = null,
+  var comment: String?,
 
   var updated: LocalDateTime? = null,
 
@@ -98,6 +102,8 @@ data class AppointmentOccurrence(
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     sequenceNumber = sequenceNumber,
+    categoryCode = categoryCode,
+    appointmentDescription = appointmentDescription,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
@@ -114,13 +120,16 @@ data class AppointmentOccurrence(
 
   fun toSummary(
     prisonCode: String,
+    referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-    appointmentComment: String,
   ) =
     AppointmentOccurrenceSummary(
       appointmentOccurrenceId,
       sequenceNumber,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -133,7 +142,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment ?: appointmentComment,
+      comment,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
       updated = updated,
@@ -154,10 +163,10 @@ data class AppointmentOccurrence(
       appointment.appointmentType,
       sequenceNumber,
       prisonCode,
-      referenceCodeMap[appointment.categoryCode].toAppointmentName(appointment.categoryCode, appointment.appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
       allocations().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
-      referenceCodeMap[appointment.categoryCode].toAppointmentCategorySummary(appointment.categoryCode),
-      appointment.appointmentDescription,
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentDescription,
       if (inCell) {
         null
       } else {
@@ -167,7 +176,7 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment ?: appointment.comment,
+      comment,
       appointment.schedule?.toRepeat(),
       isEdited(),
       isCancelled(),
@@ -199,10 +208,10 @@ fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
 
 fun List<AppointmentOccurrence>.toSummary(
   prisonCode: String,
+  referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
-  appointmentComment: String,
-) = map { it.toSummary(prisonCode, locationMap, userMap, appointmentComment) }
+) = map { it.toSummary(prisonCode, referenceCodeMap, locationMap, userMap) }
 
 fun List<AppointmentOccurrence>.toDetails(
   prisonCode: String,

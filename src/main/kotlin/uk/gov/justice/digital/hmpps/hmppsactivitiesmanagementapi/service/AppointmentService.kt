@@ -130,7 +130,7 @@ class AppointmentService(
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = prisonerBookings,
         inCell = request.inCell,
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
         internalLocationId = request.internalLocationId,
         startDate = request.startDate,
@@ -161,13 +161,13 @@ class AppointmentService(
         prisonCode = request.prisonCode!!,
         prisonerNumbers = listOf(request.prisonerNumber),
         prisonerBookings = prisonerBookings,
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         internalLocationId = request.internalLocationId,
         inCell = false,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        comment = request.comment ?: "",
+        comment = request.comment,
         created = request.created!!,
         createdBy = request.createdBy!!,
         updated = request.updated,
@@ -209,7 +209,7 @@ class AppointmentService(
     prisonCode: String,
     prisonerNumbers: List<String>,
     prisonerBookings: Map<String, String?>,
-    categoryCode: String? = null,
+    categoryCode: String,
     appointmentDescription: String? = null,
     internalLocationId: Long? = null,
     inCell: Boolean = false,
@@ -217,7 +217,7 @@ class AppointmentService(
     startTime: LocalTime?,
     endTime: LocalTime?,
     repeat: AppointmentRepeat? = null,
-    comment: String = "",
+    comment: String? = null,
     created: LocalDateTime = LocalDateTime.now(),
     createdBy: String,
     updated: LocalDateTime? = null,
@@ -230,7 +230,7 @@ class AppointmentService(
 
     if (!isMigrated) {
       checkCaseloadAccess(prisonCode)
-      failIfCategoryNotFound(categoryCode!!)
+      failIfCategoryNotFound(categoryCode)
       failIfLocationNotFound(inCell, prisonCode, internalLocationId)
       failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
     }
@@ -238,7 +238,7 @@ class AppointmentService(
     return AppointmentEntity(
       appointmentType = appointmentType!!,
       prisonCode = prisonCode,
-      categoryCode = categoryCode ?: "",
+      categoryCode = categoryCode,
       appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
@@ -267,11 +267,14 @@ class AppointmentService(
           AppointmentOccurrenceEntity(
             appointment = this,
             sequenceNumber = it.index + 1,
+            categoryCode = categoryCode,
+            appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
             internalLocationId = this.internalLocationId,
             inCell = this.inCell,
             startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
+            comment = comment,
             updated = updated,
             updatedBy = updatedBy,
           ).apply {
@@ -315,14 +318,14 @@ class AppointmentService(
       IS_REPEAT_PROPERTY_KEY to (request.repeat != null).toString(),
       REPEAT_PERIOD_PROPERTY_KEY to (request.repeat?.period?.toString() ?: ""),
       REPEAT_COUNT_PROPERTY_KEY to (request.repeat?.count?.toString() ?: ""),
-      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointment.comment.isNotEmpty()).toString(),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointment.comment?.isNotEmpty() == true).toString(),
     )
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.repeat?.count ?: 1)).toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointment.comment.length).toDouble(),
+      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointment.comment?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
@@ -346,7 +349,7 @@ class AppointmentService(
       APPOINTMENT_COUNT_METRIC_KEY to appointment.appointments.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointment.appointments.flatMap { it.occurrences.flatMap { occurrence -> occurrence.allocations } }.size.toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointment.appointments.filter { it.comment.isNotEmpty() }.size.toDouble(),
+      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointment.appointments.filterNot { it.comment.isNullOrEmpty() }.size.toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
@@ -367,7 +370,7 @@ class AppointmentService(
         isRepeat = request.repeat != null,
         repeatPeriod = request.repeat?.period,
         repeatCount = request.repeat?.count,
-        hasExtraInformation = appointment.comment != null,
+        hasExtraInformation = appointment.comment?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
         createdAt = LocalDateTime.now(),
       ),
@@ -382,7 +385,7 @@ class AppointmentService(
         hasDescription = appointment.appointmentDescription != null,
         internalLocationId = appointment.internalLocationId,
         startDate = appointment.startDate,
-        prisonerNumbers = emptyList(), // TODO Where to get prisoner numbers from
+        prisonerNumbers = request.appointments.map { it.prisonerNumber },
         createdAt = LocalDateTime.now(),
       ),
     )

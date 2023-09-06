@@ -25,20 +25,21 @@ class AppointmentTest : ModelTest() {
 
     val appointment = Appointment(
       id = 1,
-      categoryCode = "C11",
+      appointmentType = AppointmentType.INDIVIDUAL,
       prisonCode = "PVI",
-      internalLocationId = null,
-      comment = "Blah",
+      categoryCode = "C11",
       appointmentDescription = "Appointment description",
+      internalLocationId = null,
+      inCell = true,
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
-      appointmentType = AppointmentType.INDIVIDUAL,
+      repeat = null,
+      comment = "Blah",
       created = originalCreatedTime,
       createdBy = "A. Jones",
-      inCell = true,
-      updatedBy = "A.Jones",
       updated = originalUpdatedTime,
+      updatedBy = "A.Jones",
     )
 
     val json = objectMapper.writeValueAsString(appointment)

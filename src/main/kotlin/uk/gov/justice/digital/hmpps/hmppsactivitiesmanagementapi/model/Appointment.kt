@@ -10,12 +10,15 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  The top level appointment containing the initial values for all appointment properties.
-  Joins together one or more appointment occurrences and optionally a schedule if the appointment is recurring.
-  The child appointment occurrences will by default have the same property values.
-  The occurrence property values can be changed independently to support rescheduling, cancelling and altered
-  attendee lists at an individual occurrence level.
-  Editing a property at the appointment level will cascade the edit to all *future* child occurrences
+  Described on the UI as an "Appointment series" and only shown for repeat appointments.
+  The top level of the standard appointment hierarchy containing the initial property values common to all appointment
+  occurrences in the series.
+  Contains the collection of all the child appointment occurrences in the series plus the repeat definition if the appointment repeats.
+  The properties at this level cannot be changed via the API however the child occurrence property values can be changed
+  independently to support rescheduling, cancelling and altered attendee lists per occurrence.
+  N.B. there is no collection of allocated prisoners at this top level as all allocations are per occurrence. This is to
+  support attendee modification for each scheduled occurrence and to prevent altering the past by editing allocations
+  in an appointment series where some occurrences have past.
   """,
 )
 data class Appointment(
@@ -46,7 +49,7 @@ data class Appointment(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text description for an appointment. This is used to add more context to the appointment category.
     """,
     example = "Meeting with the governor",
   )
@@ -95,12 +98,22 @@ data class Appointment(
   @Schema(
     description =
     """
+    Describes how an appointment was specified to repeat if at all. The period or frequency of the occurrences and how
+    many occurrences there are in total in the series. Note that the presence of this property does not mean there is
+    always more than one occurrence as a repeat count of one is valid.
+    """,
+  )
+  val repeat: AppointmentRepeat?,
+
+  @Schema(
+    description =
+    """
     Notes relating to the appointment.
     The default value if no notes are specified at the occurrence or instance levels
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",
@@ -121,8 +134,7 @@ data class Appointment(
   @Schema(
     description =
     """
-    The date and time this appointment was last changed.
-    Will be null if the appointment has not been altered since it was created
+    The date and time one or more occurrences of this appointment was last changed.
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -131,22 +143,11 @@ data class Appointment(
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that edited the appointment.
-    Will be null if the appointment has not been altered since it was created
+    The username of the user authenticated via HMPPS auth that last edited one or more occurrences of this appointment.
     """,
     example = "AAA01U",
   )
   val updatedBy: String?,
-
-  @Schema(
-    description =
-    """
-    Indicates that the appointment is a recurring series if not null.
-    The appointment schedule properties will specify when each occurrence in the series reoccurs and on which date
-    the series ends.
-    """,
-  )
-  val schedule: AppointmentSchedule? = null,
 
   @Schema(
     description =

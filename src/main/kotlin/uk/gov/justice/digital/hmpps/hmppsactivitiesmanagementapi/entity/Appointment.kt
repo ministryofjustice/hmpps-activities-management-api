@@ -50,25 +50,25 @@ data class Appointment(
 
   val prisonCode: String,
 
-  var categoryCode: String,
+  val categoryCode: String,
 
-  var appointmentDescription: String?,
+  val appointmentDescription: String?,
 
-  var internalLocationId: Long?,
+  val internalLocationId: Long?,
 
-  var inCell: Boolean,
+  val inCell: Boolean,
 
-  var startDate: LocalDate,
+  val startDate: LocalDate,
 
-  var startTime: LocalTime,
+  val startTime: LocalTime,
 
-  var endTime: LocalTime?,
+  val endTime: LocalTime?,
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "appointment_schedule_id")
   var schedule: AppointmentSchedule? = null,
 
-  var comment: String,
+  val comment: String?,
 
   val created: LocalDateTime = LocalDateTime.now(),
 
@@ -141,6 +141,7 @@ data class Appointment(
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
     appointmentDescription = appointmentDescription,
@@ -149,7 +150,7 @@ data class Appointment(
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    appointmentType = appointmentType,
+    repeat = schedule?.toRepeat(),
     comment = comment,
     created = created,
     createdBy = createdBy,
@@ -191,7 +192,7 @@ data class Appointment(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(prisonCode, locationMap, userMap, comment),
+      occurrences().toSummary(prisonCode, referenceCodeMap, locationMap, userMap),
     )
 }
 
