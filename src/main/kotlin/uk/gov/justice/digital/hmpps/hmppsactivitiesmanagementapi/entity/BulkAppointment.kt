@@ -1,15 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.CascadeType
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
-import jakarta.persistence.OneToMany
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -25,16 +16,18 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
 
 @Entity
-@Table(name = "bulk_appointment")
+@Table(name = "appointment_set")
 data class BulkAppointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_set_id")
   val bulkAppointmentId: Long = 0,
 
   val prisonCode: String,
 
   var categoryCode: String,
 
+  @Column(name = "custom_name")
   var appointmentDescription: String?,
 
   var internalLocationId: Long?,
@@ -43,13 +36,14 @@ data class BulkAppointment(
 
   var startDate: LocalDate,
 
+  @Column(name = "created_time")
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 ) {
   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinTable(
-    name = "bulk_appointment_appointment",
+    name = "appointment_set_appointment_series",
     joinColumns = [JoinColumn(name = "bulkAppointmentId")],
     inverseJoinColumns = [JoinColumn(name = "appointmentId")],
   )

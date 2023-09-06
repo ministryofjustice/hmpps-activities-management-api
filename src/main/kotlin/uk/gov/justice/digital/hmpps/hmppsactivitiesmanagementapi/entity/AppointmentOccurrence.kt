@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
@@ -30,21 +31,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment_occurrence")
-@Where(clause = "deleted = false")
+@Where(clause = "NOT is_deleted")
 @EntityListeners(AppointmentOccurrenceEntityListener::class)
 data class AppointmentOccurrence(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_id")
   val appointmentOccurrenceId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "appointment_id", nullable = false)
+  @JoinColumn(name = "appointment_series_id", nullable = false)
   val appointment: Appointment,
 
   val sequenceNumber: Int,
 
   var categoryCode: String,
 
+  @Column(name = "custom_name")
   var appointmentDescription: String?,
 
   var internalLocationId: Long?,
@@ -57,12 +60,15 @@ data class AppointmentOccurrence(
 
   var endTime: LocalTime?,
 
+  @Column(name = "extra_information")
   var comment: String?,
 
+  @Column(name = "updated_time")
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
 ) {
+  @Column(name = "cancelled_time")
   var cancelled: LocalDateTime? = null
 
   @OneToOne(fetch = FetchType.EAGER)
@@ -71,6 +77,7 @@ data class AppointmentOccurrence(
 
   var cancelledBy: String? = null
 
+  @Column(name = "is_deleted")
   var deleted: Boolean = false
 
   @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)

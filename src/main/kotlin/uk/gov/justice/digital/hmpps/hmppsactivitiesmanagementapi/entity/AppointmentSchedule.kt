@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -14,18 +15,21 @@ import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
 
 @Entity
-@Table(name = "appointment_schedule")
+@Table(name = "appointment_series_schedule")
 data class AppointmentSchedule(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_series_schedule_id")
   val appointmentScheduleId: Long = 0,
 
   @OneToOne(mappedBy = "schedule", fetch = FetchType.EAGER)
   val appointment: Appointment,
 
   @Enumerated(EnumType.STRING)
+  @Column(name = "frequency")
   var repeatPeriod: AppointmentRepeatPeriod,
 
+  @Column(name = "number_of_appointments")
   var repeatCount: Int,
 ) {
   fun toRepeat() = AppointmentRepeat(

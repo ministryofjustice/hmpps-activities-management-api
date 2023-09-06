@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -31,15 +32,16 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Entity
-@Table(name = "appointment")
+@Table(name = "appointment_series")
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_series_id")
   val appointmentId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinTable(
-    name = "bulk_appointment_appointment",
+    name = "appointment_set_appointment_series",
     joinColumns = [JoinColumn(name = "appointmentId")],
     inverseJoinColumns = [JoinColumn(name = "bulkAppointmentId")],
   )
@@ -52,6 +54,7 @@ data class Appointment(
 
   val categoryCode: String,
 
+  @Column(name = "custom_name")
   val appointmentDescription: String?,
 
   val internalLocationId: Long?,
@@ -65,15 +68,18 @@ data class Appointment(
   val endTime: LocalTime?,
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumn(name = "appointment_schedule_id")
+  @JoinColumn(name = "appointment_series_schedule_id")
   var schedule: AppointmentSchedule? = null,
 
+  @Column(name = "extra_information")
   val comment: String?,
 
+  @Column(name = "created_time")
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 
+  @Column(name = "updated_time")
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
