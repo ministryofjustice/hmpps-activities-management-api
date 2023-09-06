@@ -1,6 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -52,8 +63,8 @@ data class BulkAppointment(
   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinTable(
     name = "appointment_set_appointment_series",
-    joinColumns = [JoinColumn(name = "bulkAppointmentId")],
-    inverseJoinColumns = [JoinColumn(name = "appointmentId")],
+    joinColumns = [JoinColumn(name = "appointment_set_id")],
+    inverseJoinColumns = [JoinColumn(name = "appointment_series_id")],
   )
   private val appointments: MutableList<Appointment> = mutableListOf()
 
