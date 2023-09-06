@@ -30,7 +30,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence as AppointmentOccurrenceModel
 
 @Entity
-@Table(name = "appointment_occurrence")
+@Table(name = "appointment")
 @Where(clause = "NOT is_deleted")
 @EntityListeners(AppointmentOccurrenceEntityListener::class)
 data class AppointmentOccurrence(
@@ -45,10 +45,20 @@ data class AppointmentOccurrence(
 
   val sequenceNumber: Int,
 
+  val prisonCode: String,
+
   var categoryCode: String,
 
   @Column(name = "custom_name")
   var appointmentDescription: String?,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_tier_id")
+  var appointmentTier: AppointmentTier,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_host_id")
+  var appointmentHost: AppointmentHost? = null,
 
   var internalLocationId: Long?,
 
@@ -62,6 +72,11 @@ data class AppointmentOccurrence(
 
   @Column(name = "extra_information")
   var comment: String?,
+
+  @Column(name = "created_time")
+  val created: LocalDateTime,
+
+  val createdBy: String,
 
   @Column(name = "updated_time")
   var updated: LocalDateTime? = null,
@@ -106,6 +121,8 @@ data class AppointmentOccurrence(
 
   fun isDeleted() = cancellationReason?.isDelete == true
 
+  fun usernames() = listOf(createdBy, updatedBy, cancelledBy).filterNotNull()
+
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentOccurrenceId,
     sequenceNumber = sequenceNumber,
@@ -126,7 +143,6 @@ data class AppointmentOccurrence(
   )
 
   fun toSummary(
-    prisonCode: String,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
@@ -157,7 +173,6 @@ data class AppointmentOccurrence(
     )
 
   fun toDetails(
-    prisonCode: String,
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
@@ -214,16 +229,14 @@ data class AppointmentOccurrence(
 fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
 
 fun List<AppointmentOccurrence>.toSummary(
-  prisonCode: String,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
-) = map { it.toSummary(prisonCode, referenceCodeMap, locationMap, userMap) }
+) = map { it.toSummary(referenceCodeMap, locationMap, userMap) }
 
 fun List<AppointmentOccurrence>.toDetails(
-  prisonCode: String,
   prisonerMap: Map<String, Prisoner>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
-) = map { it.toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap) }
+) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }

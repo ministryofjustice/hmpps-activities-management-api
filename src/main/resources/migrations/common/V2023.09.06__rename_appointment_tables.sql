@@ -10,7 +10,8 @@ CREATE TABLE appointment_tier
 INSERT INTO appointment_tier
 VALUES   (1, 'Tier 1'),
          (2, 'Tier 2'),
-         (3, 'No tier, this activity is not considered ''purposeful'' for reporting');
+         (3, 'No tier, this activity is not considered ''purposeful'' for reporting'),
+         (4, 'Not specified');
 
 CREATE TABLE appointment_host
 (

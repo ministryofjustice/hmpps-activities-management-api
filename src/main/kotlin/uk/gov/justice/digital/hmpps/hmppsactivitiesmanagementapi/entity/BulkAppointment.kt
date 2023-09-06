@@ -30,6 +30,14 @@ data class BulkAppointment(
   @Column(name = "custom_name")
   var appointmentDescription: String?,
 
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_tier_id")
+  var appointmentTier: AppointmentTier,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_host_id")
+  var appointmentHost: AppointmentHost? = null,
+
   var internalLocationId: Long?,
 
   var inCell: Boolean,

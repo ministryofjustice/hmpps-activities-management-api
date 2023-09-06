@@ -42,8 +42,8 @@ data class Appointment(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinTable(
     name = "appointment_set_appointment_series",
-    joinColumns = [JoinColumn(name = "appointmentId")],
-    inverseJoinColumns = [JoinColumn(name = "bulkAppointmentId")],
+    joinColumns = [JoinColumn(name = "appointment_series_id")],
+    inverseJoinColumns = [JoinColumn(name = "appointment_set_id")],
   )
   val bulkAppointment: BulkAppointment? = null,
 
@@ -56,6 +56,14 @@ data class Appointment(
 
   @Column(name = "custom_name")
   val appointmentDescription: String?,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_tier_id")
+  var appointmentTier: AppointmentTier,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_host_id")
+  var appointmentHost: AppointmentHost? = null,
 
   val internalLocationId: Long?,
 
@@ -127,7 +135,7 @@ data class Appointment(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ) = occurrences().toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
+  ) = occurrences().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
@@ -143,7 +151,7 @@ data class Appointment(
   }
 
   fun usernames() =
-    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> listOf(occurrence.updatedBy, occurrence.cancelledBy) }).filterNotNull()
+    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> occurrence.usernames() }).filterNotNull()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
@@ -198,7 +206,7 @@ data class Appointment(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(prisonCode, referenceCodeMap, locationMap, userMap),
+      occurrences().toSummary(referenceCodeMap, locationMap, userMap),
     )
 }
 
