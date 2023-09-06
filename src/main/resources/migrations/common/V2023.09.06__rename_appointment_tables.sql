@@ -181,6 +181,7 @@ CREATE INDEX idx_appointment_set_appointment_series_id ON appointment_set_appoin
 -- UPDATED VIEWS USING NEW TABLES AND COLUMNS
 -- =============================================
 
+DROP VIEW v_appointment_instance;
 CREATE OR REPLACE VIEW v_appointment_instance AS
 SELECT aa.appointment_attendee_id                                                    AS appointment_instance_id,
        a.appointment_series_id,
