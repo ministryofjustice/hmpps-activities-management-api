@@ -40,7 +40,7 @@ class AppointmentEntityListener {
         outboundEventsService.send(
           when {
             entity.isCancelled() -> OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
-            entity.isDeleted() -> OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+            entity.isDeleted -> OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 
             else -> { OutboundEvent.APPOINTMENT_INSTANCE_UPDATED }
           },

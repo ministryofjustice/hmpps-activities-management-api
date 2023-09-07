@@ -13,8 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
@@ -55,9 +55,9 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee as AppointmentOccurrenceAllocationEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet as BulkAppointmentEntity
 
 @Service
@@ -382,31 +382,31 @@ class AppointmentService(
 
   private fun writeAppointmentCreatedAuditRecord(request: AppointmentCreateRequest, appointment: Appointment) {
     auditService.logEvent(
-      AppointmentCreatedEvent(
-        appointmentId = appointment.id,
+      AppointmentSeriesCreatedEvent(
+        appointmentSeriesId = appointment.id,
         prisonCode = appointment.prisonCode,
         categoryCode = appointment.categoryCode,
-        hasDescription = appointment.appointmentDescription != null,
+        hasCustomName = appointment.appointmentDescription != null,
         internalLocationId = appointment.internalLocationId,
         startDate = appointment.startDate,
         startTime = appointment.startTime,
         endTime = appointment.endTime,
         isRepeat = request.repeat != null,
-        repeatPeriod = request.repeat?.period,
-        repeatCount = request.repeat?.count,
+        frequency = request.repeat?.period,
+        numberOfAppointments = request.repeat?.count,
         hasExtraInformation = appointment.comment?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
-        createdAt = LocalDateTime.now(),
+        createdTime = LocalDateTime.now(),
       ),
     )
   }
   private fun writeBulkAppointmentCreatedAuditRecord(request: BulkAppointmentsRequest, appointment: BulkAppointment) {
     auditService.logEvent(
-      BulkAppointmentCreatedEvent(
-        bulkAppointmentId = appointment.id,
+      AppointmentSetCreatedEvent(
+        appointmentSetId = appointment.id,
         prisonCode = appointment.prisonCode,
         categoryCode = appointment.categoryCode,
-        hasDescription = appointment.appointmentDescription != null,
+        hasCustomName = appointment.appointmentDescription != null,
         internalLocationId = appointment.internalLocationId,
         startDate = appointment.startDate,
         prisonerNumbers = request.appointments.map { it.prisonerNumber },

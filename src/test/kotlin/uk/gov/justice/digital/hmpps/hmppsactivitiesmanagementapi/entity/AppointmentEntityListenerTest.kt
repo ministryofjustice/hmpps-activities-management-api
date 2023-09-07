@@ -7,11 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.LocalDateTime
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
@@ -37,7 +36,7 @@ class AppointmentEntityListenerTest(@Autowired private val listener: Appointment
 
   @Test
   fun `appointment instance cancelled events raised on appointment update when appointment is cancelled`() {
-    appointment.cancellationReason = appointmentCancelledReason()
+    appointment.cancelledTime = LocalDateTime.now()
     listener.onUpdate(appointment)
 
     appointment.attendees().forEach {
@@ -48,7 +47,7 @@ class AppointmentEntityListenerTest(@Autowired private val listener: Appointment
 
   @Test
   fun `appointment instance deleted events raised on appointment update when appointment is deleted`() {
-    appointment.cancellationReason = appointmentDeletedReason()
+    appointment.isDeleted = true
     listener.onUpdate(appointment)
 
     appointment.attendees().forEach {

@@ -16,12 +16,12 @@ abstract class AuditableEvent(
 
   val auditType: AuditType,
   val auditEventType: AuditEventType,
-  val createdAt: LocalDateTime,
+  val createdTime: LocalDateTime,
   private val details: String,
   val createdBy: String = SecurityUtils.getUserNameForLoggedInUser(),
 ) {
-  override fun toString() = "$details. Event created on ${createdAt.toLocalDate()} " +
-    "at ${createdAt.format(DateTimeFormatter.ofPattern("HH:mm:ss"))} by $createdBy."
+  override fun toString() = "$details. Event created on ${createdTime.toLocalDate()} " +
+    "at ${createdTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))} by $createdBy."
 
   fun generateHmppsActivityAuditJson(
     activityId: Long? = null,
@@ -56,7 +56,7 @@ abstract class AuditableEvent(
     prisonCode: String? = null,
     originalCategoryCode: String? = null,
     categoryCode: String? = null,
-    hasDescription: Boolean? = null,
+    hasCustomName: Boolean? = null,
     originalInternalLocationId: Long? = null,
     internalLocationId: Long? = null,
     originalStartDate: LocalDate? = null,
@@ -66,12 +66,12 @@ abstract class AuditableEvent(
     originalEndTime: LocalTime? = null,
     endTime: LocalTime? = null,
     isRepeat: Boolean? = null,
-    repeatPeriod: AppointmentFrequency? = null,
-    repeatCount: Int? = null,
+    frequency: AppointmentFrequency? = null,
+    numberOfAppointments: Int? = null,
     hasExtraInformation: Boolean? = null,
     prisonerNumbers: List<String>? = null,
     applyTo: ApplyTo? = null,
-    createdAt: LocalDateTime? = null,
+    createdTime: LocalDateTime? = null,
     createdBy: String? = null,
   ): String = JSONObject.toJSONString(
     buildMap<String, Any> {
@@ -81,7 +81,7 @@ abstract class AuditableEvent(
       prisonCode?.let { put("prisonCode", it) }
       originalCategoryCode?.let { put("originalCategoryCode", it) }
       categoryCode?.let { put("categoryCode", it) }
-      hasDescription?.let { put("hasDescription", it) }
+      hasCustomName?.let { put("hasCustomName", it) }
       originalInternalLocationId?.let { put("originalInternalLocationId", it) }
       internalLocationId?.let { put("internalLocationId", it) }
       originalStartDate?.let { put("originalStartDate", it.toIsoDate()) }
@@ -91,12 +91,12 @@ abstract class AuditableEvent(
       originalEndTime?.let { put("originalEndTime", it.toIsoTime()) }
       endTime?.let { put("endTime", it.toIsoTime()) }
       isRepeat?.let { put("isRepeat", it) }
-      repeatPeriod?.let { put("repeatPeriod", it) }
-      repeatCount?.let { put("repeatCount", it) }
+      frequency?.let { put("frequency", it) }
+      numberOfAppointments?.let { put("numberOfAppointments", it) }
       hasExtraInformation?.let { put("hasExtraInformation", it) }
       prisonerNumbers?.let { put("prisonerNumbers", it) }
       applyTo?.let { put("applyTo", it) }
-      createdAt?.let { put("createdAt", it.toIsoDateTime()) }
+      createdTime?.let { put("createdTime", it.toIsoDateTime()) }
       createdBy?.let { put("createdBy", it) }
     },
   )

@@ -21,10 +21,10 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
@@ -136,7 +136,7 @@ class AppointmentOccurrenceServiceCancelTest {
           principal,
         )
       }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Cannot cancel a past appointment occurrence")
+        .hasMessage("Cannot cancel a past appointment")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
     }
@@ -148,7 +148,7 @@ class AppointmentOccurrenceServiceCancelTest {
       assertThatThrownBy { service.cancelAppointmentOccurrence(-1, request, mock()) }.isInstanceOf(
         EntityNotFoundException::class.java,
       )
-        .hasMessage("Appointment Occurrence -1 not found")
+        .hasMessage("Appointment -1 not found")
 
       verify(appointmentRepository, never()).saveAndFlush(any())
     }

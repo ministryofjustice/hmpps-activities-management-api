@@ -104,7 +104,7 @@ data class AppointmentSeries(
   @OrderBy("sequenceNumber ASC")
   private val appointments: MutableList<Appointment> = mutableListOf()
 
-  fun appointments() = appointments.filterNot { it.isDeleted() }.toList()
+  fun appointments() = appointments.filterNot { it.isDeleted }.toList()
 
   fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
@@ -119,7 +119,7 @@ data class AppointmentSeries(
       "Cannot $action a cancelled appointment"
     }
 
-    require(!appointment.isDeleted()) {
+    require(!appointment.isDeleted) {
       "Cannot $action a deleted appointment"
     }
 

@@ -21,7 +21,7 @@ class IncentiveLevelWarningGivenForActivityAttendanceEvent(
   auditEventType = AuditEventType.INCENTIVE_LEVEL_WARNING_GIVEN_FOR_ACTIVITY_ATTENDANCE,
   details = "An incentive level warning was given to prisoner $prisonerNumber " +
     "for activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
-  createdAt = createdAt,
+  createdTime = createdAt,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -30,7 +30,7 @@ class IncentiveLevelWarningGivenForActivityAttendanceEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdAt,
+    recordedTime = createdTime,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -47,7 +47,7 @@ class IncentiveLevelWarningGivenForActivityAttendanceEvent(
     date = date,
     startTime = startTime,
     endTime = endTime,
-    createdAt = createdAt,
+    createdAt = createdTime,
     createdBy = createdBy,
   )
 }

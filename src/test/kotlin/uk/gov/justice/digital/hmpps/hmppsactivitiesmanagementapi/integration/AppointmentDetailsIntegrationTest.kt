@@ -87,7 +87,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
             LocalDate.now().plusDays(1),
             LocalTime.of(9, 0),
             LocalTime.of(10, 30),
-            "Appointment occurrence level comment",
+            "Appointment level comment",
             isEdited = false,
             isCancelled = false,
             null,

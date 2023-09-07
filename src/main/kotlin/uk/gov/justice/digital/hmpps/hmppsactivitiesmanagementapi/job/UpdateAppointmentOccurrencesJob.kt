@@ -28,8 +28,8 @@ import kotlin.system.measureTimeMillis
  */
 @Component
 class UpdateAppointmentOccurrencesJob(
-    private val jobRunner: SafeJobRunner,
-    private val service: AppointmentUpdateDomainService,
+  private val jobRunner: SafeJobRunner,
+  private val service: AppointmentUpdateDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)

@@ -23,12 +23,12 @@ class AppointmentEditedEvent(
   private val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
 
-  ) : AuditableEvent(
+) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_OCCURRENCE_EDITED,
-  details = "An appointment with id '$appointmentId' with category $categoryCode and starting on $startDate " +
-    "from series id '$appointmentSeriesId' at prison $prisonCode was edited",
-  createdAt = createdAt,
+  details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' with category $categoryCode " +
+    "and starting on $startDate at prison $prisonCode was edited",
+  createdTime = createdAt,
 ),
   HmppsAuditable {
 
@@ -47,7 +47,7 @@ class AppointmentEditedEvent(
     originalEndTime = originalEndTime,
     endTime = endTime,
     applyTo = applyTo,
-    createdAt = createdAt,
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 }

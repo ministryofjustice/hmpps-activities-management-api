@@ -31,7 +31,7 @@ class AppointmentOccurrenceSearchSpecification {
     Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Long>("inCell"), inCell) }
 
   fun prisonerNumbersIn(prisonerNumbers: List<String>) =
-    Specification<AppointmentSearch> { root, _, _ -> root.join<AppointmentSearch, AppointmentAttendeeSearch>("allocations").get<String>("prisonerNumber").`in`(prisonerNumbers) }
+    Specification<AppointmentSearch> { root, _, _ -> root.join<AppointmentSearch, AppointmentAttendeeSearch>("attendees").get<String>("prisonerNumber").`in`(prisonerNumbers) }
 
   fun createdByEquals(createdBy: String) =
     Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<String>("createdBy"), createdBy) }

@@ -3,11 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class BulkAppointmentCreatedEvent(
-  private val bulkAppointmentId: Long,
+class AppointmentSetCreatedEvent(
+  private val appointmentSetId: Long,
   private val prisonCode: String,
   private val categoryCode: String,
-  private val hasDescription: Boolean,
+  private val hasCustomName: Boolean,
   private val internalLocationId: Long?,
   private val startDate: LocalDate,
   private val prisonerNumbers: List<String>,
@@ -15,22 +15,22 @@ class BulkAppointmentCreatedEvent(
 
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
-  auditEventType = AuditEventType.BULK_APPOINTMENT_CREATED,
-  details = "A bulk appointment with ID '$bulkAppointmentId' with category $categoryCode and starting on $startDate " +
+  auditEventType = AuditEventType.APPOINTMENT_SET_CREATED,
+  details = "An appointment set with id '$appointmentSetId' with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was created",
-  createdAt = createdAt,
+  createdTime = createdAt,
 ),
   HmppsAuditable {
 
   override fun toJson(): String = generateHmppsAppointmentAuditJson(
-    appointmentSetId = bulkAppointmentId,
+    appointmentSetId = appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    hasDescription = hasDescription,
+    hasCustomName = hasCustomName,
     internalLocationId = internalLocationId,
     startDate = startDate,
     prisonerNumbers = prisonerNumbers,
-    createdAt = createdAt,
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 }

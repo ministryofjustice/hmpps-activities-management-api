@@ -17,7 +17,7 @@ class PrisonerDeclinedFromWaitingListEvent(
   auditEventType = AuditEventType.PRISONER_DECLINED_FROM_WAITING_LIST,
   details = "Prisoner $prisonerNumber was declined from the waiting list ($waitingListId) for " +
     "activity '$activityName'($activityId)",
-  createdAt = declinedAt,
+  createdTime = declinedAt,
   createdBy = declinedBy,
 ),
   HmppsAuditable,
@@ -27,7 +27,7 @@ class PrisonerDeclinedFromWaitingListEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdAt,
+    recordedTime = createdTime,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -41,7 +41,7 @@ class PrisonerDeclinedFromWaitingListEvent(
     activityName = activityName,
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,
-    createdAt = createdAt,
+    createdAt = createdTime,
     createdBy = createdBy,
   )
 }

@@ -18,7 +18,7 @@ class PrisonerAllocatedEvent(
   details = "Prisoner $prisonerNumber was allocated to " +
     "activity '$activityName'($activityId) and schedule $scheduleDescription($scheduleId)" +
     (waitingListId?.let { " for waiting list '$it'" } ?: ""),
-  createdAt = createdAt,
+  createdTime = createdAt,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -27,7 +27,7 @@ class PrisonerAllocatedEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdAt,
+    recordedTime = createdTime,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -41,7 +41,7 @@ class PrisonerAllocatedEvent(
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,
     scheduleId = scheduleId,
-    createdAt = createdAt,
+    createdAt = createdTime,
     createdBy = createdBy,
   )
 }

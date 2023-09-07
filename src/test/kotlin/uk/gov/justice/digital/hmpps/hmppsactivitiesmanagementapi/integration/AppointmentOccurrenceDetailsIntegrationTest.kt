@@ -92,7 +92,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
-        "Appointment occurrence level comment",
+        "Appointment level comment",
         null,
         false,
         false,
@@ -110,7 +110,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-bulk-appointment-id-6.sql",
+    "classpath:test_data/seed-appointment-set-id-6.sql",
   )
   @Test
   fun `get occurrence details from a set of appointments created in bulk`() {

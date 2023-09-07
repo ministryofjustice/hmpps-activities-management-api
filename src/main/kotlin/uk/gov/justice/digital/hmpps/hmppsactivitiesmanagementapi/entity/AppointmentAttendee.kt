@@ -41,7 +41,7 @@ data class AppointmentAttendee(
   var removedTime: LocalDateTime? = null,
 
   var removedBy: String? = null,
-  ) {
+) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentAttendeeId,
     prisonerNumber = prisonerNumber,

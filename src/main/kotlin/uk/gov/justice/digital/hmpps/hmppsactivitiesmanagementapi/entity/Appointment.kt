@@ -111,15 +111,13 @@ data class Appointment(
 
   fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
 
-  fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted()
+  fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted
 
   fun isEdited() = updatedTime != null
 
-  fun isCancelled() = cancellationReason?.isDelete == false
+  fun isCancelled() = cancelledTime != null && !isDeleted
 
   fun isExpired() = startDateTime() < LocalDateTime.now()
-
-  fun isDeleted() = cancellationReason?.isDelete == true
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy)
 

@@ -23,17 +23,17 @@ import org.springframework.security.core.context.SecurityContextHolder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -41,8 +41,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCas
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -152,7 +152,7 @@ class AppointmentServiceTest {
   @Test
   fun `getAppointmentById throws entity not found exception for unknown appointment id`() {
     assertThatThrownBy { service.getAppointmentById(0) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment 0 not found")
+      .hasMessage("Appointment Series 0 not found")
   }
 
   @Test
@@ -476,11 +476,11 @@ class AppointmentServiceTest {
         assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
-        assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
+        assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(32.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
 
-      verify(auditService).logEvent(any<AppointmentCreatedEvent>())
+      verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
     }
   }
 
@@ -781,7 +781,7 @@ class AppointmentServiceTest {
       assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
-    verify(auditService).logEvent(any<BulkAppointmentCreatedEvent>())
+    verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
   }
 
   @Test

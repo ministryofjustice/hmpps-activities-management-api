@@ -10,12 +10,12 @@ class AppointmentDeletedEvent(
   private val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
 
-  ) : AuditableEvent(
+) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_DELETED,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was deleted",
-  createdAt = createdAt,
+  createdTime = createdAt,
 ),
   HmppsAuditable {
 
@@ -24,7 +24,7 @@ class AppointmentDeletedEvent(
     appointmentId = appointmentId,
     prisonCode = prisonCode,
     applyTo = applyTo,
-    createdAt = createdAt,
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 }

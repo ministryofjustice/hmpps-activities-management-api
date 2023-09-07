@@ -10,12 +10,12 @@ class AppointmentCancelledEvent(
   private val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
 
-  ) : AuditableEvent(
+) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_CANCELLED,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was cancelled",
-  createdAt = createdAt,
+  createdTime = createdAt,
 ),
   HmppsAuditable {
 
@@ -24,7 +24,7 @@ class AppointmentCancelledEvent(
     appointmentId = appointmentId,
     prisonCode = prisonCode,
     applyTo = applyTo,
-    createdAt = createdAt,
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 }

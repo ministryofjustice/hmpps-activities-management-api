@@ -59,7 +59,7 @@ class CreateAppointmentOccurrencesJobTest {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     entity.appointments().forEach {
-      whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
+      whenever(appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
 
     job.execute(entity.appointmentSeriesId, prisonerBookings)
@@ -74,7 +74,7 @@ class CreateAppointmentOccurrencesJobTest {
       entity.removeAppointment(it)
     }
     entity.appointments().forEach {
-      whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
+      whenever(appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(appointmentOccurrenceRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(mock())

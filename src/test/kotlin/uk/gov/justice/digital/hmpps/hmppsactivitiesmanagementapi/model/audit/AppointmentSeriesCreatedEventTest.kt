@@ -7,18 +7,18 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class AppointmentCreatedEventTest : AuditableEventTestBase() {
+class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
     val event = createEvent()
-    assertThat(event.auditEventType).isEqualTo(AuditEventType.APPOINTMENT_CREATED)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.APPOINTMENT_SERIES_CREATED)
   }
 
   @Test
   fun `returns correct string representation`() {
     val event = createEvent()
-    val expectedToString = "An appointment with ID '1' with category C and starting on 2023-03-23 at prison PBI was created. Event created on 2023-03-22 at 09:00:03 by Bob."
+    val expectedToString = "An appointment series with id '1' category C and starting on 2023-03-23 at prison PBI was created. Event created on 2023-03-22 at 09:00:03 by Bob."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }
 
@@ -26,30 +26,30 @@ class AppointmentCreatedEventTest : AuditableEventTestBase() {
   fun `returns the correct json representation`() {
     val event = createEvent()
     val expectedJson =
-      """{"appointmentId":1,"prisonCode":"PBI","categoryCode":"C","hasDescription":true,"internalLocationId":2,"startDate":"2023-03-23","startTime":"09:00:00","endTime":"10:30:00","isRepeat":true,"repeatPeriod":"DAILY","repeatCount":20,"hasExtraInformation":true,"prisonerNumbers":["123456"],"createdAt":"2023-03-22T09:00:03","createdBy":"Bob"}"""
+      """{"appointmentSeriesId":1,"prisonCode":"PBI","categoryCode":"C","hasCustomName":true,"internalLocationId":2,"startDate":"2023-03-23","startTime":"09:00:00","endTime":"10:30:00","isRepeat":true,"frequency":"DAILY","numberOfAppointments":20,"hasExtraInformation":true,"prisonerNumbers":["123456"],"createdTime":"2023-03-22T09:00:03","createdBy":"Bob"}"""
     assertThat(event.toJson()).isEqualTo(expectedJson)
   }
 
-  private fun createEvent(): AppointmentCreatedEvent {
+  private fun createEvent(): AppointmentSeriesCreatedEvent {
     val startDate = LocalDate.of(2023, 3, 23)
     val startTime = LocalTime.of(9, 0)
     val endTime = LocalTime.of(10, 30)
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
-    return AppointmentCreatedEvent(
-      appointmentId = 1,
+    return AppointmentSeriesCreatedEvent(
+      appointmentSeriesId = 1,
       prisonCode = "PBI",
       categoryCode = "C",
-      hasDescription = true,
+      hasCustomName = true,
       internalLocationId = 2,
       startDate = startDate,
       startTime = startTime,
       endTime = endTime,
       isRepeat = true,
-      repeatPeriod = AppointmentFrequency.DAILY,
-      repeatCount = 20,
+      frequency = AppointmentFrequency.DAILY,
+      numberOfAppointments = 20,
       hasExtraInformation = true,
       prisonerNumbers = listOf("123456"),
-      createdAt = createdAt,
+      createdTime = createdAt,
     )
   }
 }

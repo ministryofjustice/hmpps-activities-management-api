@@ -7,21 +7,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -32,30 +30,32 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 
 class AppointmentTest {
   @Test
-  fun `not cancelled or deleted when cancellation reason is null`() {
+  fun `not cancelled or deleted when cancelled time is null`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
-      cancellationReason = null
+      cancelledTime = null
     }
     entity.isCancelled() isEqualTo false
-    entity.isDeleted() isEqualTo false
+    entity.isDeleted isEqualTo false
   }
 
   @Test
-  fun `cancelled but not deleted when cancellation reason is not deleted`() {
+  fun `cancelled but not deleted when cancelled time is not null and is deleted = false`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
-      cancellationReason = appointmentCancelledReason()
+      cancelledTime = LocalDateTime.now()
+      isDeleted = false
     }
     entity.isCancelled() isEqualTo true
-    entity.isDeleted() isEqualTo false
+    entity.isDeleted isEqualTo false
   }
 
   @Test
-  fun `deleted but not cancelled when cancellation reason is deleted`() {
+  fun `deleted but not cancelled when cancelled time is not null and is deleted = true`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
-      cancellationReason = appointmentDeletedReason()
+      cancelledTime = LocalDateTime.now()
+      isDeleted = true
     }
     entity.isCancelled() isEqualTo false
-    entity.isDeleted() isEqualTo true
+    entity.isDeleted isEqualTo true
   }
 
   @Test
@@ -81,7 +81,8 @@ class AppointmentTest {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
-      cancellationReason = null
+      cancelledTime = null
+      isDeleted = false
     }
     entity.isScheduled() isEqualTo true
   }
@@ -91,7 +92,8 @@ class AppointmentTest {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().minusMinutes(1)
-      cancellationReason = null
+      cancelledTime = null
+      isDeleted = false
     }
     entity.isScheduled() isEqualTo false
   }
@@ -101,7 +103,8 @@ class AppointmentTest {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
-      cancellationReason = appointmentCancelledReason()
+      cancelledTime = LocalDateTime.now()
+      isDeleted = false
     }
     entity.isScheduled() isEqualTo false
   }
@@ -111,7 +114,8 @@ class AppointmentTest {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
-      cancellationReason = appointmentDeletedReason()
+      cancelledTime = LocalDateTime.now()
+      isDeleted = true
     }
     entity.isScheduled() isEqualTo false
   }
@@ -693,13 +697,19 @@ class AppointmentTest {
 
   @Test
   fun `isCancelled is false when cancellation reason deleted is true`() {
-    val entity = appointmentSeriesEntity().appointments().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
+    val entity = appointmentSeriesEntity().appointments().first().apply {
+      cancelledTime = LocalDateTime.now()
+      isDeleted = true
+    }
     assertThat(entity.isCancelled()).isFalse
   }
 
   @Test
   fun `isCancelled is true when cancellation reason deleted is false`() {
-    val entity = appointmentSeriesEntity().appointments().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
+    val entity = appointmentSeriesEntity().appointments().first().apply {
+      cancelledTime = LocalDateTime.now()
+      isDeleted = false
+    }
     assertThat(entity.isCancelled()).isTrue
   }
 }

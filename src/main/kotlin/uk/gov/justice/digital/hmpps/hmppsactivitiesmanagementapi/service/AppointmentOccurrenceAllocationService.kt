@@ -46,8 +46,8 @@ class AppointmentOccurrenceAllocationService(
 
               auditService.logEvent(
                 AppointmentCancelledOnTransferEvent(
-                  appointmentId = it.appointmentSeriesId,
-                  appointmentOccurrenceId = it.appointmentId,
+                  appointmentSeriesId = it.appointmentSeriesId,
+                  appointmentId = it.appointmentId,
                   prisonCode = it.prisonCode,
                   prisonerNumber = it.prisonerNumber,
                   createdAt = LocalDateTime.now(),

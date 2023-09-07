@@ -98,7 +98,7 @@ class BulkAppointmentDetailsServiceTest {
   @Test
   fun `getBulkAppointmentDetailsById throws entity not found exception for unknown bulk appointment id`() {
     assertThatThrownBy { service.getBulkAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Bulk Appointment -1 not found")
+      .hasMessage("Appointment Set -1 not found")
   }
 
   @Test

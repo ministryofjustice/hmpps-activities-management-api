@@ -104,7 +104,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated appointment occurrence level comment",
+      comment = "Updated Appointment level comment",
       applyTo = ApplyTo.THIS_OCCURRENCE,
     )
 
@@ -459,7 +459,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated appointment occurrence level comment",
+      comment = "Updated Appointment level comment",
       addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
       removePrisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
@@ -497,7 +497,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
-        assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment level comment")
         assertThat(map { it.updated }.distinct().single()).isNull()
         assertThat(map { it.updatedBy }.distinct().single()).isNull()
         assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
@@ -511,7 +511,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
-        assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated Appointment level comment")
         assertThat(map { it.updated }.distinct().single()).isCloseTo(
           LocalDateTime.now(),
           within(60, ChronoUnit.SECONDS),

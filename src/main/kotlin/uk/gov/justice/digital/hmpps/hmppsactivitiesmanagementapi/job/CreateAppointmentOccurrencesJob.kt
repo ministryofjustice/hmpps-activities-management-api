@@ -55,7 +55,7 @@ class CreateAppointmentOccurrencesJob(
 
       appointmentSeries.scheduleIterator().withIndex().forEach {
         val sequenceNumber = it.index + 1
-        val occurrence = appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(appointmentSeries, sequenceNumber)
+        val occurrence = appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(appointmentSeries, sequenceNumber)
         if (occurrence == null) {
           log.info("Creating occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
           runCatching {

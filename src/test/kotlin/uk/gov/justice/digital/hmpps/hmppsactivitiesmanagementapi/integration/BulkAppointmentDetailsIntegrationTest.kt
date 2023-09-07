@@ -39,7 +39,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-bulk-appointment-id-6.sql",
+    "classpath:test_data/seed-appointment-set-id-6.sql",
   )
   @Test
   fun `get bulk appointment details`() {

@@ -12,8 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -111,7 +111,7 @@ class AppointmentDetailsServiceTest {
             occurrenceEntity.startDate,
             occurrenceEntity.startTime,
             occurrenceEntity.endTime,
-            "Appointment occurrence level comment",
+            "Appointment level comment",
             isEdited = true,
             isCancelled = false,
             occurrenceEntity.updatedTime,
@@ -125,7 +125,7 @@ class AppointmentDetailsServiceTest {
   @Test
   fun `getAppointmentDetailsById throws entity not found exception for unknown appointment id`() {
     assertThatThrownBy { service.getAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment -1 not found")
+      .hasMessage("Appointment Series -1 not found")
   }
 
   @Test

@@ -1,18 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeSearch
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISON_STAFF_APPOINTMENT_HOST_ID
@@ -129,11 +129,15 @@ internal fun appointmentInstanceEntity(
     categoryCode = categoryCode,
     customName = appointmentDescription,
     internalLocationId = if (inCell) null else internalLocationId,
+    customLocation = null,
     inCell = inCell,
+    onWing = false,
+    offWing = true,
     appointmentDate = appointmentDate,
     startTime = LocalTime.of(9, 0),
     endTime = LocalTime.of(10, 30),
-    extraInformation = "Appointment instance level comment",
+    unlockNotes = null,
+    extraInformation = "Appointment level comment",
     createdTime = LocalDateTime.now().minusDays(1),
     createdBy = createdBy,
     isCancelled = false,
@@ -157,13 +161,17 @@ internal fun appointmentSearchEntity(
     categoryCode = "TEST",
     customName = null,
     internalLocationId = if (inCell) null else internalLocationId,
+    customLocation = null,
     inCell = inCell,
+    onWing = false,
+    offWing = true,
     startDate = startDate.plusDays(1),
     startTime = LocalTime.of(9, 0),
     endTime = LocalTime.of(10, 30),
     isRepeat = false,
     sequenceNumber = 1,
     maxSequenceNumber = 1,
+    unlockNotes = null,
     extraInformation = "Appointment level comment",
     createdBy = createdBy,
     isEdited = false,

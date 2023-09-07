@@ -1,1 +1,1 @@
-UPDATErppointment SET appointment_description = null WHERE TRIM(BOTH FROM appointment_description) = '';
+UPDATE appointment SET appointment_description = null WHERE TRIM(BOTH FROM appointment_description) = '';

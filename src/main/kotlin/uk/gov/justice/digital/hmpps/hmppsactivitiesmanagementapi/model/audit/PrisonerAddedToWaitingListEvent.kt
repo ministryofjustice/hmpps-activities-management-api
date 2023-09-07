@@ -18,7 +18,7 @@ class PrisonerAddedToWaitingListEvent(
   auditEventType = AuditEventType.PRISONER_ADDED_TO_WAITING_LIST,
   details = "Prisoner $prisonerNumber was added to the waiting list for " +
     "activity '$activityName'($activityId) with a status of $status",
-  createdAt = createdAt,
+  createdTime = createdAt,
   createdBy = createdBy,
 ),
   HmppsAuditable,
@@ -28,7 +28,7 @@ class PrisonerAddedToWaitingListEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdAt,
+    recordedTime = createdTime,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -42,7 +42,7 @@ class PrisonerAddedToWaitingListEvent(
     activityName = activityName,
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,
-    createdAt = createdAt,
+    createdAt = createdTime,
     createdBy = createdBy,
   )
 }
