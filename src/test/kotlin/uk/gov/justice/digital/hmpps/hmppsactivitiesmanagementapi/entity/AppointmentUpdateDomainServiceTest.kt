@@ -35,7 +35,7 @@ import java.time.LocalTime
 import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
-class AppointmentOccurrenceUpdateDomainServiceTest {
+class AppointmentUpdateDomainServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
@@ -45,11 +45,11 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   private val service = spy(AppointmentUpdateDomainService(appointmentRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 4)
-  private val appointmentOccurrence = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "").toSet()
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
+  private val appointment = appointmentSeries.appointments()[1]
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "").toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
   private val updatedBy = "TEST.USER"
 
   @BeforeEach
@@ -59,17 +59,17 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   }
 
   @Nested
-  @DisplayName("update by ids - used by async update appointment occurrences job")
-  inner class UpdateAppointmentOccurrenceIds {
+  @DisplayName("update by ids - used by async update appointments job")
+  inner class UpdateAppointmentIds {
     @Test
-    fun `updates occurrences with supplied ids`() {
+    fun `updates appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val updated = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.updateAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         emptyMap(),
@@ -85,7 +85,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
       verify(service).updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         applyToThisAndAllFuture.toSet(),
         request,
         emptyMap(),
@@ -106,7 +106,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         emptyMap(),
@@ -128,23 +128,23 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   }
 
   @Nested
-  @DisplayName("update occurrences - used by service and async update appointment occurrences job")
-  inner class UpdateAppointmentOccurrences {
+  @DisplayName("update appointments - used by service and async update appointments job")
+  inner class UpdateAppointments {
     @Test
     fun `updates category code`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -161,19 +161,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates internal location id`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -190,19 +190,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates in cell = true`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(inCell = true)
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -233,19 +233,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates start date`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
+      val appointmentsToUpdate = applyToThisAndAllFuture
       val weekFromNow = LocalDate.now().plusWeeks(2)
       val request = AppointmentOccurrenceUpdateRequest(startDate = weekFromNow)
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -270,19 +270,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates start time`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(13, 30))
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -299,19 +299,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates end time`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(15, 0))
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -328,49 +328,49 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `updates comment`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment occurrence level comment")
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment level comment")
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
       )
 
       appointmentSeries.extraInformation isEqualTo "Appointment level comment"
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment occurrence level comment"
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment occurrence level comment"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
 
       response.comment isEqualTo "Appointment level comment"
-      response.occurrences.filter { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment occurrence level comment"
-      response.occurrences.filterNot { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Appointment occurrence level comment"
+      response.occurrences.filter { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment level comment"
+      response.occurrences.filterNot { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Appointment level comment"
     }
 
     @Test
     fun `sets updated and updated by on appointment series and appointment when property changed`() {
-      val occurrencesToUpdate = applyToThisAndAllFuture
-      val ids = occurrencesToUpdate.map { it.appointmentId }.toSet()
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val updated = LocalDateTime.now()
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         updated,
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -401,19 +401,19 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `does not set updated and updated by on appointment series and appointment when no properties have changed`() {
-      val occurrencesToUpdate = applyToAllFuture
+      val appointmentsToUpdate = applyToAllFuture
       val request = AppointmentOccurrenceUpdateRequest()
       val updated = LocalDateTime.now()
       val response = service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         updated,
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -432,13 +432,13 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `track custom event using supplied counts and start time`() {
-      val occurrencesToUpdate = applyToThis
+      val appointmentsToUpdate = applyToThis
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
@@ -461,13 +461,13 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `do not track custom event`() {
-      val occurrencesToUpdate = applyToThis
+      val appointmentsToUpdate = applyToThis
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
@@ -484,18 +484,18 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `track audit event`() {
-      val occurrencesToUpdate = applyToThis
+      val appointmentsToUpdate = applyToThis
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = true,
@@ -506,18 +506,18 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
     @Test
     fun `do not track audit event`() {
-      val occurrencesToUpdate = applyToThis
+      val appointmentsToUpdate = applyToThis
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       service.updateAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
-        occurrencesToUpdate,
+        appointment.appointmentId,
+        appointmentsToUpdate,
         request,
         emptyMap(),
         LocalDateTime.now(),
         updatedBy,
-        occurrencesToUpdate.size,
-        occurrencesToUpdate.flatMap { it.attendees() }.size,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
         System.currentTimeMillis(),
         trackEvent = false,
         auditEvent = false,
@@ -529,7 +529,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
   @Nested
   @DisplayName("instance count")
-  inner class UpdateAppointmentOccurrenceInstanceCount {
+  inner class UpdateInstanceCount {
     @Test
     fun `no updates`() {
       val request = AppointmentOccurrenceUpdateRequest()

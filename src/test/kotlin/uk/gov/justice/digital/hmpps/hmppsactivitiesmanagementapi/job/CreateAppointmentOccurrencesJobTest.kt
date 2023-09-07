@@ -56,7 +56,7 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job does not create any occurrences when all exist`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     entity.appointments().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
@@ -69,7 +69,7 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job creates all remaining occurrences`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
     entity.appointments().filter { it.sequenceNumber > 1 }.forEach {
       entity.removeAppointment(it)
     }

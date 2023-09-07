@@ -30,7 +30,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency as AppointmentRepeatPeriodEntity
 
-class AppointmentOccurrenceTest {
+class AppointmentTest {
   @Test
   fun `not cancelled or deleted when cancellation reason is null`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
@@ -141,11 +141,11 @@ class AppointmentOccurrenceTest {
     val entity = appointmentSeriesEntity(
       appointmentType = AppointmentType.GROUP,
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456),
-      numberOfOccurrences = 2,
+      numberOfAppointments = 2,
     )
-    val occurrence = entity.appointments().first()
-    entity.appointments().map { it.attendees() }.flatten().forEach { occurrence.addAttendee(it) }
-    assertThat(occurrence.attendees().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
+    val appointment = entity.appointments().first()
+    entity.appointments().map { it.attendees() }.flatten().forEach { appointment.addAttendee(it) }
+    assertThat(appointment.attendees().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
     assertThat(entity.prisonerNumbers()).containsExactly("A1234BC")
   }
 
@@ -167,7 +167,7 @@ class AppointmentOccurrenceTest {
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
-        "Appointment occurrence level comment",
+        "Appointment level comment",
         isEdited = true,
         isCancelled = false,
         updated = entity.updatedTime,
@@ -195,7 +195,7 @@ class AppointmentOccurrenceTest {
           entity.startDate,
           entity.startTime,
           entity.endTime,
-          "Appointment occurrence level comment",
+          "Appointment level comment",
           isEdited = true,
           isCancelled = false,
           entity.updatedTime,
@@ -592,7 +592,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping repeat appointment`() {
-    val appointmentSeries = appointmentSeriesEntity(repeatPeriod = AppointmentRepeatPeriodEntity.WEEKLY, numberOfOccurrences = 4)
+    val appointmentSeries = appointmentSeriesEntity(frequency = AppointmentRepeatPeriodEntity.WEEKLY, numberOfAppointments = 4)
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
@@ -617,7 +617,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping includes appointment description in name`() {
-    val appointmentSeries = appointmentSeriesEntity(appointmentDescription = "appointment name")
+    val appointmentSeries = appointmentSeriesEntity(customName = "appointment name")
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(
       appointmentSeries.categoryCode to appointmentCategoryReferenceCode(
@@ -646,7 +646,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping does not include appointment description in name`() {
-    val appointmentSeries = appointmentSeriesEntity(appointmentDescription = null)
+    val appointmentSeries = appointmentSeriesEntity(customName = null)
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(
       appointmentSeries.categoryCode to appointmentCategoryReferenceCode(

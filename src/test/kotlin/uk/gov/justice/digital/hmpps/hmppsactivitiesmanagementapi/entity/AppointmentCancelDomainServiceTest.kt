@@ -36,7 +36,7 @@ import java.time.LocalDateTime
 import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
-class AppointmentOccurrenceCancelDomainServiceTest {
+class AppointmentCancelDomainServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val auditService: AuditService = mock()
@@ -48,11 +48,11 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   private val service = spy(AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 4)
-  private val appointmentOccurrence = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")
+  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
+  private val appointment = appointmentSeries.appointments()[1]
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "")
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")
 
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentDeletedReason()
@@ -70,17 +70,17 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   }
 
   @Nested
-  @DisplayName("cancel by ids - used by async cancel appointment occurrences job")
-  inner class CancelAppointmentOccurrenceIds {
+  @DisplayName("cancel by ids - used by async cancel appointments job")
+  inner class CancelAppointmentIds {
     @Test
-    fun `cancels occurrences with supplied ids`() {
+    fun `cancels appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         cancelled,
@@ -95,7 +95,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
       verify(service).cancelAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         applyToThisAndAllFuture.toSet(),
         request,
         cancelled,
@@ -117,7 +117,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         LocalDateTime.now(),
@@ -139,14 +139,14 @@ class AppointmentOccurrenceCancelDomainServiceTest {
     }
 
     @Test
-    fun `deletes occurrences with supplied ids`() {
+    fun `deletes appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         cancelled,
@@ -161,7 +161,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
       verify(service).cancelAppointments(
         appointmentSeries,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         applyToThisAndAllFuture.toSet(),
         request,
         cancelled,
@@ -183,7 +183,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentId,
+        appointment.appointmentId,
         ids,
         request,
         LocalDateTime.now(),
@@ -207,19 +207,19 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
   @Nested
   @DisplayName("instance count")
-  inner class CancelAppointmentOccurrenceInstanceCount {
+  inner class CancelInstanceCount {
     @Test
-    fun `this occurrence`() {
+    fun `this appointment`() {
       service.getCancelInstancesCount(applyToThis) isEqualTo applyToThis.flatMap { it.attendees() }.size
     }
 
     @Test
-    fun `this and all future occurrences`() {
+    fun `this and all future appointments`() {
       service.getCancelInstancesCount(applyToThisAndAllFuture) isEqualTo applyToThisAndAllFuture.flatMap { it.attendees() }.size
     }
 
     @Test
-    fun `all future occurrences`() {
+    fun `all future appointments`() {
       service.getCancelInstancesCount(applyToAllFuture) isEqualTo applyToAllFuture.flatMap { it.attendees() }.size
     }
   }

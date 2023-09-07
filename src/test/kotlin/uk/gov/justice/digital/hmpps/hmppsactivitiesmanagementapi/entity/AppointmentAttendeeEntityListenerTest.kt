@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
-class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val listener: AppointmentAttendeeEntityListener) {
+class AppointmentAttendeeEntityListenerTest(@Autowired private val listener: AppointmentAttendeeEntityListener) {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService

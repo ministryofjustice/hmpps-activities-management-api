@@ -539,7 +539,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(repeatPeriod = AppointmentFrequency.WEEKLY, numberOfOccurrences = 3))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
 
     service.createAppointment(request, principal)
 

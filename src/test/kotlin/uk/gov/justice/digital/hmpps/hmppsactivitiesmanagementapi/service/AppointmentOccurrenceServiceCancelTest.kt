@@ -279,8 +279,8 @@ class AppointmentOccurrenceServiceCancelTest {
       startDate = LocalDate.now().minusDays(3),
       updatedBy = null,
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457),
-      repeatPeriod = AppointmentFrequency.WEEKLY,
-      numberOfOccurrences = 4,
+      frequency = AppointmentFrequency.WEEKLY,
+      numberOfAppointments = 4,
     )
     private val appointmentOccurrences = appointmentSeries.appointments()
     private val appointmentOccurrence = appointmentOccurrences[2]

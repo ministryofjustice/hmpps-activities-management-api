@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
-class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: AppointmentEntityListener) {
+class AppointmentEntityListenerTest(@Autowired private val listener: AppointmentEntityListener) {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -23,35 +23,35 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
   private val appointmentSeries = appointmentSeriesEntity(
     prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 457),
   )
-  private var appointmentOccurrence = appointmentSeries.appointments().first()
+  private var appointment = appointmentSeries.appointments().first()
 
   @Test
-  fun `appointment instance updated events raised on occurrence update`() {
-    listener.onUpdate(appointmentOccurrence)
+  fun `appointment instance updated events raised on appointment update`() {
+    listener.onUpdate(appointment)
 
-    appointmentOccurrence.attendees().forEach {
+    appointment.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test
-  fun `appointment instance cancelled events raised on occurrence update when occurrence is cancelled`() {
-    appointmentOccurrence.cancellationReason = appointmentCancelledReason()
-    listener.onUpdate(appointmentOccurrence)
+  fun `appointment instance cancelled events raised on appointment update when appointment is cancelled`() {
+    appointment.cancellationReason = appointmentCancelledReason()
+    listener.onUpdate(appointment)
 
-    appointmentOccurrence.attendees().forEach {
+    appointment.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test
-  fun `appointment instance deleted events raised on occurrence update when occurrence is deleted`() {
-    appointmentOccurrence.cancellationReason = appointmentDeletedReason()
-    listener.onUpdate(appointmentOccurrence)
+  fun `appointment instance deleted events raised on appointment update when appointment is deleted`() {
+    appointment.cancellationReason = appointmentDeletedReason()
+    listener.onUpdate(appointment)
 
-    appointmentOccurrence.attendees().forEach {
+    appointment.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)

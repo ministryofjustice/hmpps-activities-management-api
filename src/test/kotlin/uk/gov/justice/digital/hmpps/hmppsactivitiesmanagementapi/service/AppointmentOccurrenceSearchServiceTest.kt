@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
@@ -86,7 +86,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by start date`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now())
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -126,7 +126,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by start and end date`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusWeeks(1))
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -166,7 +166,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by time slot`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), timeSlot = TimeSlot.AM)
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlot!!))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
@@ -209,7 +209,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by category code`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), categoryCode = "TEST")
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -250,7 +250,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by internal location id`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), internalLocationId = 123)
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -291,7 +291,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by in cell`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), inCell = true)
-    val result = appointmentOccurrenceSearchEntity(inCell = true)
+    val result = appointmentSearchEntity(inCell = true)
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -311,7 +311,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by prisoner numbers`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), prisonerNumbers = listOf("A1234BC"))
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -331,7 +331,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Test
   fun `search by created by`() {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -352,7 +352,7 @@ class AppointmentOccurrenceSearchServiceTest {
   fun `search throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
-    val result = appointmentOccurrenceSearchEntity()
+    val result = appointmentSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)

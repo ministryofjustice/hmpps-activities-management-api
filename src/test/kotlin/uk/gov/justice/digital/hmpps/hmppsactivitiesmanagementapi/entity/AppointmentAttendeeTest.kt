@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceAllocationModel
 
-class AppointmentOccurrenceAllocationTest {
+class AppointmentAttendeeTest {
   @Test
   fun `entity to model mapping`() {
     val expectedModel = appointmentOccurrenceAllocationModel()
