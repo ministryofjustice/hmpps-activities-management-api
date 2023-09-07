@@ -82,6 +82,8 @@ data class AppointmentSeries(
   @JoinColumn(name = "appointment_series_schedule_id")
   var schedule: AppointmentSeriesSchedule? = null,
 
+  var unlockNotes: String? = null,
+
   val extraInformation: String? = null,
 
   val createdTime: LocalDateTime = LocalDateTime.now(),
@@ -100,7 +102,7 @@ data class AppointmentSeries(
 
   @OneToMany(mappedBy = "appointmentSeries", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @OrderBy("sequenceNumber ASC")
-  private val appointments: MutableList<AppointmentOccurrence> = mutableListOf()
+  private val appointments: MutableList<Appointment> = mutableListOf()
 
   fun appointments() = appointments.filterNot { it.isDeleted() }.toList()
 
@@ -108,7 +110,7 @@ data class AppointmentSeries(
 
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
-  fun applyToAppointments(appointment: AppointmentOccurrence, applyTo: ApplyTo, action: String): List<AppointmentOccurrence> {
+  fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String): List<Appointment> {
     require(!appointment.isExpired()) {
       "Cannot $action a past appointment"
     }
@@ -137,9 +139,9 @@ data class AppointmentSeries(
     userMap: Map<String, UserDetail>,
   ) = appointments().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
-  fun addAppointment(occurrence: AppointmentOccurrence) = appointments.add(occurrence)
+  fun addAppointment(occurrence: Appointment) = appointments.add(occurrence)
 
-  fun removeAppointment(occurrence: AppointmentOccurrence) = appointments.remove(occurrence)
+  fun removeAppointment(occurrence: Appointment) = appointments.remove(occurrence)
 
   fun internalLocationIds() =
     listOf(internalLocationId).union(appointments().map { appointment -> appointment.internalLocationId }).filterNotNull()

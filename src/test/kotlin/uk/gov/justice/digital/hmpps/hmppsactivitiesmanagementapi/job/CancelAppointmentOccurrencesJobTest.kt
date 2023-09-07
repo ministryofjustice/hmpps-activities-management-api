@@ -38,8 +38,8 @@ class CancelAppointmentOccurrencesJobTest {
   fun `job type is cancel appointment occurrences`() {
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
-      applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+      appointmentOccurrence.appointmentId,
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet(),
       AppointmentOccurrenceCancelRequest(cancellationReasonId = 1),
       LocalDateTime.now(),
       "TEST.USER",
@@ -56,15 +56,15 @@ class CancelAppointmentOccurrencesJobTest {
   @Test
   fun `job calls cancel appointment occurrence ids`() {
     val occurrenceIdsToCancel =
-      applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }
-        .map { it.appointmentOccurrenceId }.toSet()
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }
+        .map { it.appointmentId }.toSet()
     val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = 2)
     val cancelled = LocalDateTime.now()
     val startTimeInMs = System.currentTimeMillis()
 
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
+      appointmentOccurrence.appointmentId,
       occurrenceIdsToCancel,
       request,
       cancelled,
@@ -76,7 +76,7 @@ class CancelAppointmentOccurrencesJobTest {
 
     verify(service).cancelAppointmentOccurrenceIds(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
+      appointmentOccurrence.appointmentId,
       occurrenceIdsToCancel,
       request,
       cancelled,

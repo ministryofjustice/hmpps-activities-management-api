@@ -32,10 +32,10 @@ class AppointmentOccurrenceAllocationService(
           appointmentOccurrenceAllocationRepository.findById(it.appointmentOccurrenceAllocationId)
             .ifPresent { allocation ->
               if (allocation.isIndividualAppointment()) {
-                allocation.removeOccurrence(allocation.appointmentOccurrence)
+                allocation.removeOccurrence(allocation.appointment)
 
                 log.info(
-                  "Removed appointment occurrence '${allocation.appointmentOccurrence.appointmentOccurrenceId}' " +
+                  "Removed appointment occurrence '${allocation.appointment.appointmentId}' " +
                     "as it is part of an individual appointment. This will also remove allocation '${allocation.appointmentOccurrenceAllocationId}' " +
                     "for prisoner '$prisonerNumber'.",
                 )

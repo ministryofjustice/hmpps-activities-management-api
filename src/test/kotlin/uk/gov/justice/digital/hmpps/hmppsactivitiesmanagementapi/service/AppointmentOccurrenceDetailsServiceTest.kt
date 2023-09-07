@@ -45,7 +45,7 @@ class AppointmentOccurrenceDetailsServiceTest {
     addCaseloadIdToRequestHeader("TPR")
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
+    whenever(appointmentOccurrenceRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode))
@@ -70,12 +70,12 @@ class AppointmentOccurrenceDetailsServiceTest {
     )
     assertThat(service.getAppointmentOccurrenceDetailsById(1)).isEqualTo(
       appointmentOccurrenceDetails(
-        entity.appointmentOccurrenceId,
+        entity.appointmentId,
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = entity.sequenceNumber,
         appointmentDescription = "Appointment description",
         created = appointmentSeries.createdTime,
-        updated = entity.updated,
+        updated = entity.updatedTime,
       ),
     )
   }
@@ -91,7 +91,7 @@ class AppointmentOccurrenceDetailsServiceTest {
     addCaseloadIdToRequestHeader("WRONG")
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
-    assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(entity.appointmentOccurrenceId) }.isInstanceOf(CaseloadAccessException::class.java)
+    whenever(appointmentOccurrenceRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(entity.appointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }

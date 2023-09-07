@@ -101,7 +101,7 @@ class AppointmentDetailsServiceTest {
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
         occurrences = listOf(
           AppointmentOccurrenceSummary(
-            occurrenceEntity.appointmentOccurrenceId,
+            occurrenceEntity.appointmentId,
             1,
             "Appointment description (Test Category)",
             AppointmentCategorySummary(entity.categoryCode, "Test Category"),
@@ -114,7 +114,7 @@ class AppointmentDetailsServiceTest {
             "Appointment occurrence level comment",
             isEdited = true,
             isCancelled = false,
-            occurrenceEntity.updated,
+            occurrenceEntity.updatedTime,
             UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
           ),
         ),

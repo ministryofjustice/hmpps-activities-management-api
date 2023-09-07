@@ -105,18 +105,18 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_OCCURRENCE)
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       eq(emptyMap()),
@@ -147,18 +147,18 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(emptyMap()),
@@ -189,18 +189,18 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update only the first occurrence synchronously and do not track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       eq(emptyMap()),
@@ -221,8 +221,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentOccurrence.appointmentId),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -247,18 +247,18 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
     val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(emptyMap()),
@@ -289,18 +289,18 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
     val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update only the first occurrence synchronously and do not track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       eq(emptyMap()),
@@ -321,8 +321,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentOccurrence.appointmentId),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -348,7 +348,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -363,12 +363,12 @@ class AppointmentOccurrenceServiceAsyncTest {
     }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(prisoners))
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
@@ -400,7 +400,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -415,12 +415,12 @@ class AppointmentOccurrenceServiceAsyncTest {
     }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(prisoners))
 
-    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Update only the first occurrence synchronously and do not track custom event
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
@@ -441,8 +441,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentOccurrence.appointmentId),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
       updated.capture(),
@@ -467,7 +467,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -476,12 +476,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.THIS_OCCURRENCE,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Cancel all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       cancelled.capture(),
@@ -513,7 +513,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -522,12 +522,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Cancel all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(scheduledOccurrences),
       eq(request),
       cancelled.capture(),
@@ -559,7 +559,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -568,12 +568,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Cancel only the first occurrence synchronously and do not track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       cancelled.capture(),
@@ -593,8 +593,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     // Start asynchronous job to cancel all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentOccurrence.appointmentId),
+      eq(scheduledOccurrences.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
       eq(request),
       cancelled.capture(),
       eq("TEST.USER"),
@@ -620,7 +620,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfOccurrences = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -629,12 +629,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.THIS_OCCURRENCE,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Delete all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       cancelled.capture(),
@@ -666,7 +666,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -675,12 +675,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Delete all apply to occurrences synchronously and track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(scheduledOccurrences),
       eq(request),
       cancelled.capture(),
@@ -712,7 +712,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
+    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -721,12 +721,12 @@ class AppointmentOccurrenceServiceAsyncTest {
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
     )
 
-    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentOccurrenceId, request, principal)
+    service.cancelAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal)
 
     // Delete only the first occurrence synchronously and do not track custom event
     verify(appointmentOccurrenceCancelDomainService).cancelAppointmentOccurrences(
       eq(appointmentSeries),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
+      eq(appointmentOccurrence.appointmentId),
       eq(setOf(appointmentOccurrence)),
       eq(request),
       cancelled.capture(),
@@ -747,8 +747,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     // Start asynchronous job to delete all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
-      eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentOccurrence.appointmentId),
+      eq(scheduledOccurrences.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
       eq(request),
       cancelled.capture(),
       eq("TEST.USER"),

@@ -434,13 +434,13 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isEqualTo(request.comment)
-          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(extraInformation).isEqualTo(request.comment)
+          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
-          assertThat(updated).isNull()
+          assertThat(updatedTime).isNull()
           assertThat(updatedBy).isNull()
-          assertThat(deleted).isFalse
-          with(allocations()) {
+          assertThat(isDeleted).isFalse
+          with(attendees()) {
             assertThat(size).isEqualTo(1)
             with(first()) {
               assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
@@ -512,7 +512,7 @@ class AppointmentServiceTest {
     with(appointmentEntityCaptor.value) {
       with(appointments()) {
         assertThat(size).isEqualTo(1)
-        assertThat(appointments().first().allocations().toModel()).containsAll(
+        assertThat(appointments().first().attendees().toModel()).containsAll(
           listOf(
             AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
             AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
@@ -577,7 +577,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       appointments() hasSize 1
-      appointments().flatMap { it.allocations() } hasSize 15
+      appointments().flatMap { it.attendees() } hasSize 15
     }
 
     verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
@@ -611,7 +611,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       appointments() hasSize 1
-      appointments().flatMap { it.allocations() } hasSize 15
+      appointments().flatMap { it.attendees() } hasSize 15
     }
 
     verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
@@ -645,7 +645,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       appointments() hasSize 2
-      appointments().flatMap { it.allocations() } hasSize 14
+      appointments().flatMap { it.attendees() } hasSize 14
     }
 
     verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
@@ -679,7 +679,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       appointments() hasSize 1
-      appointments().flatMap { it.allocations() } hasSize 3
+      appointments().flatMap { it.attendees() } hasSize 3
     }
 
     verify(createAppointmentOccurrencesJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap())
@@ -745,8 +745,8 @@ class AppointmentServiceTest {
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
       assertThat(appointmentSeries()).hasSize(2)
-      assertThat(appointmentSeries()[0].appointments()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(appointmentSeries()[1].appointments()[0].allocations()[0].prisonerNumber).isEqualTo("A1234BD")
+      assertThat(appointmentSeries()[0].appointments()[0].attendees()[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(appointmentSeries()[1].appointments()[0].attendees()[0].prisonerNumber).isEqualTo("A1234BD")
 
       appointmentSeries().forEach {
         assertThat(it.categoryCode).isEqualTo("TEST")
@@ -860,13 +860,13 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isEqualTo(request.comment)
-          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(extraInformation).isEqualTo(request.comment)
+          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
-          assertThat(updated).isNull()
+          assertThat(updatedTime).isNull()
           assertThat(updatedBy).isNull()
-          assertThat(deleted).isFalse
-          with(allocations()) {
+          assertThat(isDeleted).isFalse
+          with(attendees()) {
             assertThat(size).isEqualTo(1)
             with(first()) {
               assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
@@ -908,13 +908,13 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isEqualTo(request.comment)
-          assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(extraInformation).isEqualTo(request.comment)
+          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
-          assertThat(updated).isNull()
+          assertThat(updatedTime).isNull()
           assertThat(updatedBy).isNull()
-          assertThat(deleted).isFalse
-          with(allocations()) {
+          assertThat(isDeleted).isFalse
+          with(attendees()) {
             assertThat(size).isEqualTo(1)
             with(first()) {
               assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
@@ -956,7 +956,7 @@ class AppointmentServiceTest {
       assertThat(updatedTime).isEqualTo(request.updated)
       assertThat(updatedBy).isEqualTo(request.updatedBy)
       with(appointments().first()) {
-        assertThat(updated).isEqualTo(request.updated)
+        assertThat(updatedTime).isEqualTo(request.updated)
         assertThat(updatedBy).isEqualTo(request.updatedBy)
       }
     }
@@ -972,7 +972,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       with(appointments().first()) {
-        assertThat(cancelled).isNull()
+        assertThat(cancelledTime).isNull()
         assertThat(cancellationReason).isNull()
         assertThat(cancelledBy).isNull()
       }
@@ -990,7 +990,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       with(appointments().first()) {
-        assertThat(cancelled).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(cancellationReason).isEqualTo(cancellationReason)
         assertThat(cancelledBy).isEqualTo(request.createdBy)
       }
@@ -1012,7 +1012,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       with(appointments().first()) {
-        assertThat(cancelled).isEqualTo(request.updated)
+        assertThat(cancelledTime).isEqualTo(request.updated)
         assertThat(cancellationReason).isEqualTo(cancellationReason)
         assertThat(cancelledBy).isEqualTo(request.updatedBy)
       }
@@ -1036,7 +1036,7 @@ class AppointmentServiceTest {
 
     with(appointmentEntityCaptor.value) {
       with(appointments().first()) {
-        assertThat(cancelled).isEqualTo(request.created)
+        assertThat(cancelledTime).isEqualTo(request.created)
         assertThat(cancellationReason).isEqualTo(cancellationReason)
         assertThat(cancelledBy).isEqualTo(request.createdBy)
       }

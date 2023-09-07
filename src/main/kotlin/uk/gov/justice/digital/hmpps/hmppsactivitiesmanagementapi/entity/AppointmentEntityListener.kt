@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
 @Component
-class AppointmentOccurrenceEntityListener {
+class AppointmentEntityListener {
 
   @Autowired
   private lateinit var outboundEventsService: OutboundEventsService
@@ -19,23 +19,23 @@ class AppointmentOccurrenceEntityListener {
   }
 
   /**
-   * Appointment instances are provided by a view that joins allocations, occurrences and appointments to create
-   * a per prisoner per date individual appointment instance. This resulting appointment instance uses the allocation id
-   * as there is a one-to-one relationship between allocations and instances. This is therefore the id that should be
+   * Appointment instances are provided by a view that joins attendees, appointments and appointment series to create
+   * a per prisoner per date individual appointment instance. This resulting appointment instance uses the attendee id
+   * as there is a one-to-one relationship between attendees and instances. This is therefore the id that should be
    * used for the /appointment-instances/:id endpoint. Appointment instances are compatible with NOMIS appointments
    * stored in the OFFENDER_IND_SCHEDULES table. The appointment instance events and associated endpoint are used
    * primarily for sync purposes.
    *
-   * As an appointment occurrence has a child collection of allocations and allocations represent appointment instances,
-   * an update to an appointment occurrence implicitly applies to each child allocation. As a result an appointment instance
+   * As an appointment has a child collection of attendees and attendees represent appointment instances,
+   * an update to an appointment implicitly applies to each child attendee. As a result an appointment instance
    * sync event should be published.
    *
-   * The event type is determined by the state of the occurrence at the time. If an occurrence is cancelled or deleted,
+   * The event type is determined by the state of the appointment at the time. If an appointment is cancelled or deleted,
    * the event is those types. A change to an active appointment is therefore an update event.
    */
   @PostUpdate
-  fun onUpdate(entity: AppointmentOccurrence) {
-    entity.allocations().forEach { allocation ->
+  fun onUpdate(entity: Appointment) {
+    entity.attendees().forEach { attendee ->
       runCatching {
         outboundEventsService.send(
           when {
@@ -44,11 +44,11 @@ class AppointmentOccurrenceEntityListener {
 
             else -> { OutboundEvent.APPOINTMENT_INSTANCE_UPDATED }
           },
-          allocation.appointmentOccurrenceAllocationId,
+          attendee.appointmentOccurrenceAllocationId,
         )
       }.onFailure {
         log.error(
-          "Failed to send appointment instance updated event for appointment instance id ${allocation.appointmentOccurrenceAllocationId}",
+          "Failed to send appointment instance updated event for appointment instance id ${attendee.appointmentOccurrenceAllocationId}",
           it,
         )
       }

@@ -119,14 +119,14 @@ class AppointmentOccurrenceTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSeriesEntity().appointments().first()
-    val expectedModel = appointmentOccurrenceModel(entity.updated)
+    val expectedModel = appointmentOccurrenceModel(entity.updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entityList = appointmentSeriesEntity().appointments()
-    val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updated))
+    val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updatedTime))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 
@@ -144,8 +144,8 @@ class AppointmentOccurrenceTest {
       numberOfOccurrences = 2,
     )
     val occurrence = entity.appointments().first()
-    entity.appointments().map { it.allocations() }.flatten().forEach { occurrence.addAllocation(it) }
-    assertThat(occurrence.allocations().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
+    entity.appointments().map { it.attendees() }.flatten().forEach { occurrence.addAttendee(it) }
+    assertThat(occurrence.attendees().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
     assertThat(entity.prisonerNumbers()).containsExactly("A1234BC")
   }
 
@@ -157,7 +157,7 @@ class AppointmentOccurrenceTest {
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     assertThat(entity.toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceSummary(
-        entity.appointmentOccurrenceId,
+        entity.appointmentId,
         1,
         "Appointment description (Test Category)",
         appointmentCategorySummary(),
@@ -170,7 +170,7 @@ class AppointmentOccurrenceTest {
         "Appointment occurrence level comment",
         isEdited = true,
         isCancelled = false,
-        updated = entity.updated,
+        updated = entity.updatedTime,
         updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
@@ -185,7 +185,7 @@ class AppointmentOccurrenceTest {
     assertThat(listOf(entity).toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
         AppointmentOccurrenceSummary(
-          entity.appointmentOccurrenceId,
+          entity.appointmentId,
           1,
           "Appointment description (Test Category)",
           appointmentCategorySummary(),
@@ -198,7 +198,7 @@ class AppointmentOccurrenceTest {
           "Appointment occurrence level comment",
           isEdited = true,
           isCancelled = false,
-          entity.updated,
+          entity.updatedTime,
           updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
         ),
       ),
@@ -252,12 +252,12 @@ class AppointmentOccurrenceTest {
     )
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentOccurrenceDetails(
-        entity.appointmentOccurrenceId,
+        entity.appointmentId,
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = 1,
         appointmentDescription = appointmentSeries.customName,
         created = appointmentSeries.createdTime,
-        updated = entity.updated,
+        updated = entity.updatedTime,
       ),
     )
   }
@@ -285,12 +285,12 @@ class AppointmentOccurrenceTest {
     assertThat(listOf(entity).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
         appointmentOccurrenceDetails(
-          entity.appointmentOccurrenceId,
+          entity.appointmentId,
           appointmentSeries.appointmentSeriesId,
           sequenceNumber = 1,
           appointmentDescription = appointmentSeries.customName,
           created = appointmentSeries.createdTime,
-          updated = entity.updated,
+          updated = entity.updatedTime,
         ),
       ),
     )
@@ -530,7 +530,7 @@ class AppointmentOccurrenceTest {
   fun `entity to details mapping cancelled by`() {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
-    entity.cancelled = LocalDateTime.now()
+    entity.cancelledTime = LocalDateTime.now()
     entity.cancellationReason = AppointmentCancellationReason(2, "Cancelled", false)
     entity.cancelledBy = "CANCEL.USER"
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
@@ -552,7 +552,7 @@ class AppointmentOccurrenceTest {
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isTrue
-      assertThat(cancelled).isEqualTo(entity.cancelled)
+      assertThat(cancelled).isEqualTo(entity.cancelledTime)
       assertThat(cancelledBy).isNotNull
       assertThat(cancelledBy!!.id).isEqualTo(3)
       assertThat(cancelledBy!!.username).isEqualTo("CANCEL.USER")
@@ -565,7 +565,7 @@ class AppointmentOccurrenceTest {
   fun `entity to details mapping cancelled by null`() {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
-    entity.cancelled = null
+    entity.cancelledTime = null
     entity.cancellationReason = null
     entity.cancelledBy = null
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))

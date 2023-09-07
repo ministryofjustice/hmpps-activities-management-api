@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
-class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: AppointmentOccurrenceEntityListener) {
+class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: AppointmentEntityListener) {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -29,7 +29,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
   fun `appointment instance updated events raised on occurrence update`() {
     listener.onUpdate(appointmentOccurrence)
 
-    appointmentOccurrence.allocations().forEach {
+    appointmentOccurrence.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
     }
     verifyNoMoreInteractions(outboundEventsService)
@@ -40,7 +40,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
     appointmentOccurrence.cancellationReason = appointmentCancelledReason()
     listener.onUpdate(appointmentOccurrence)
 
-    appointmentOccurrence.allocations().forEach {
+    appointmentOccurrence.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentOccurrenceAllocationId)
     }
     verifyNoMoreInteractions(outboundEventsService)
@@ -51,7 +51,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
     appointmentOccurrence.cancellationReason = appointmentDeletedReason()
     listener.onUpdate(appointmentOccurrence)
 
-    appointmentOccurrence.allocations().forEach {
+    appointmentOccurrence.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentOccurrenceAllocationId)
     }
     verifyNoMoreInteractions(outboundEventsService)

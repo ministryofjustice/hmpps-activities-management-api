@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
@@ -60,12 +60,12 @@ class CreateAppointmentOccurrencesJob(
           log.info("Creating occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
           runCatching {
             appointmentOccurrenceRepository.saveAndFlush(
-              AppointmentOccurrence(
+              Appointment(
                 appointmentSeries = appointmentSeries,
                 sequenceNumber = sequenceNumber,
                 prisonCode = appointmentSeries.prisonCode,
                 categoryCode = appointmentSeries.categoryCode,
-                appointmentDescription = appointmentSeries.customName,
+                customName = appointmentSeries.customName,
                 appointmentTier = appointmentSeries.appointmentTier,
                 appointmentHost = appointmentSeries.appointmentHost,
                 internalLocationId = appointmentSeries.internalLocationId,
@@ -73,14 +73,14 @@ class CreateAppointmentOccurrencesJob(
                 startDate = it.value,
                 startTime = appointmentSeries.startTime,
                 endTime = appointmentSeries.endTime,
-                comment = appointmentSeries.extraInformation,
-                created = appointmentSeries.createdTime,
+                extraInformation = appointmentSeries.extraInformation,
+                createdTime = appointmentSeries.createdTime,
                 createdBy = appointmentSeries.createdBy,
               ).apply {
                 prisonerBookings.forEach { prisonerBooking ->
-                  this.addAllocation(
+                  this.addAttendee(
                     AppointmentOccurrenceAllocation(
-                      appointmentOccurrence = this,
+                      appointment = this,
                       prisonerNumber = prisonerBooking.key,
                       bookingId = prisonerBooking.value!!.toLong(),
                     ),

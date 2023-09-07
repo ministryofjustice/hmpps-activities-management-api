@@ -20,7 +20,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance created event raised on creation`() {
-    val entity = appointmentSeriesEntity().appointments().first().allocations().first()
+    val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onCreate(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
@@ -29,7 +29,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance updated event raised on update`() {
-    val entity = appointmentSeriesEntity().appointments().first().allocations().first()
+    val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onUpdate(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentOccurrenceAllocationId)
@@ -38,7 +38,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance deleted event raised on deletion`() {
-    val entity = appointmentSeriesEntity().appointments().first().allocations().first()
+    val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onDelete(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentOccurrenceAllocationId)

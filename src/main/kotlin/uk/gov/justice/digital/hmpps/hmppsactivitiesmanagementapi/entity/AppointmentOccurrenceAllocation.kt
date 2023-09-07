@@ -23,26 +23,26 @@ data class AppointmentOccurrenceAllocation(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_id", nullable = false)
-  val appointmentOccurrence: AppointmentOccurrence,
+  val appointment: Appointment,
 
   val prisonerNumber: String,
 
   val bookingId: Long,
 
-) {
+  ) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
     id = appointmentOccurrenceAllocationId,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
   )
 
-  fun isIndividualAppointment() = appointmentOccurrence.appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL
+  fun isIndividualAppointment() = appointment.appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL
 
-  fun isGroupAppointment() = appointmentOccurrence.appointmentSeries.appointmentType == AppointmentType.GROUP
+  fun isGroupAppointment() = appointment.appointmentSeries.appointmentType == AppointmentType.GROUP
 
-  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointmentSeries.removeAppointment(occurrence)
+  fun removeOccurrence(occurrence: Appointment) = appointment.appointmentSeries.removeAppointment(occurrence)
 
-  fun removeFromAppointmentOccurrence() = appointmentOccurrence.removeAllocation(this)
+  fun removeFromAppointmentOccurrence() = appointment.removeAttendee(this)
 }
 
 fun List<AppointmentOccurrenceAllocation>.toModel() = map { it.toModel() }

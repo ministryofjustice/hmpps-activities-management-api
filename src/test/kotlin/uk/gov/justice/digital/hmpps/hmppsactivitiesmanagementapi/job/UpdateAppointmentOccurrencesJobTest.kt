@@ -39,8 +39,8 @@ class UpdateAppointmentOccurrencesJobTest {
   fun `job type is update appointment occurrences`() {
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
-      applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+      appointmentOccurrence.appointmentId,
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet(),
       AppointmentOccurrenceUpdateRequest(internalLocationId = 456),
       emptyMap(),
       LocalDateTime.now(),
@@ -58,8 +58,8 @@ class UpdateAppointmentOccurrencesJobTest {
   @Test
   fun `job calls update appointment occurrence ids`() {
     val occurrenceIdsToUpdate =
-      applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }
-        .map { it.appointmentOccurrenceId }.toSet()
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }
+        .map { it.appointmentId }.toSet()
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, addPrisonerNumbers = listOf("D4567EF", "E5679FG"))
     val prisonerMap = mapOf(
       "D4567EF" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 459, prisonId = "TPR"),
@@ -70,7 +70,7 @@ class UpdateAppointmentOccurrencesJobTest {
 
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
+      appointmentOccurrence.appointmentId,
       occurrenceIdsToUpdate,
       request,
       prisonerMap,
@@ -83,7 +83,7 @@ class UpdateAppointmentOccurrencesJobTest {
 
     verify(service).updateAppointmentOccurrenceIds(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentOccurrenceId,
+      appointmentOccurrence.appointmentId,
       occurrenceIdsToUpdate,
       request,
       prisonerMap,

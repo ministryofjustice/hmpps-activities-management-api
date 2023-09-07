@@ -4,7 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
@@ -73,35 +73,35 @@ internal fun appointmentSeriesEntity(
 }
 
 fun appointmentOccurrenceEntity(appointmentSeries: AppointmentSeries, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointmentSeries.startTime, updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
-  AppointmentOccurrence(
-    appointmentOccurrenceId = appointmentOccurrenceId,
+  Appointment(
+    appointmentId = appointmentOccurrenceId,
     appointmentSeries = appointmentSeries,
     sequenceNumber = sequenceNumber,
     prisonCode = appointmentSeries.prisonCode,
     categoryCode = appointmentSeries.categoryCode,
-    appointmentDescription = appointmentSeries.customName,
+    customName = appointmentSeries.customName,
     appointmentTier = appointmentSeries.appointmentTier,
     internalLocationId = appointmentSeries.internalLocationId,
     inCell = appointmentSeries.inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = appointmentSeries.endTime,
-    comment = "Appointment occurrence level comment",
-    created = appointmentSeries.createdTime,
+    extraInformation = "Appointment occurrence level comment",
+    createdTime = appointmentSeries.createdTime,
     createdBy = appointmentSeries.createdBy,
-    updated = updated,
+    updatedTime = updated,
     updatedBy = updatedBy,
   ).apply {
     prisonerNumberToBookingIdMap.map {
-      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * (appointmentOccurrenceId - 1) + this.allocations().size + 1
-      this.addAllocation(appointmentOccurrenceAllocationEntity(this, appointmentOccurrenceAllocationId, it.key, it.value))
+      val appointmentOccurrenceAllocationId = prisonerNumberToBookingIdMap.size * (appointmentOccurrenceId - 1) + this.attendees().size + 1
+      this.addAttendee(appointmentOccurrenceAllocationEntity(this, appointmentOccurrenceAllocationId, it.key, it.value))
     }
   }
 
-private fun appointmentOccurrenceAllocationEntity(appointmentOccurrence: AppointmentOccurrence, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
+private fun appointmentOccurrenceAllocationEntity(appointment: Appointment, appointmentOccurrenceAllocationId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
   AppointmentOccurrenceAllocation(
     appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
-    appointmentOccurrence = appointmentOccurrence,
+    appointment = appointment,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
   )

@@ -74,13 +74,13 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   inner class CancelAppointmentOccurrenceIds {
     @Test
     fun `cancels occurrences with supplied ids`() {
-      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentOccurrenceIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         ids,
         request,
         cancelled,
@@ -95,7 +95,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
       verify(service).cancelAppointmentOccurrences(
         appointmentSeries,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         applyToThisAndAllFuture.toSet(),
         request,
         cancelled,
@@ -112,12 +112,12 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
     @Test
     fun `track cancelled custom event using supplied counts and start time`() {
-      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentOccurrenceIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         ids,
         request,
         LocalDateTime.now(),
@@ -140,13 +140,13 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
     @Test
     fun `deletes occurrences with supplied ids`() {
-      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentOccurrenceIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         ids,
         request,
         cancelled,
@@ -161,7 +161,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
       verify(service).cancelAppointmentOccurrences(
         appointmentSeries,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         applyToThisAndAllFuture.toSet(),
         request,
         cancelled,
@@ -178,12 +178,12 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
     @Test
     fun `track deleted custom event using supplied counts and start time`() {
-      val ids = applyToThisAndAllFuture.map { it.appointmentOccurrenceId }.toSet()
+      val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentOccurrenceIds(
         appointmentSeries.appointmentSeriesId,
-        appointmentOccurrence.appointmentOccurrenceId,
+        appointmentOccurrence.appointmentId,
         ids,
         request,
         LocalDateTime.now(),
@@ -210,17 +210,17 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   inner class CancelAppointmentOccurrenceInstanceCount {
     @Test
     fun `this occurrence`() {
-      service.getCancelInstancesCount(applyToThis) isEqualTo applyToThis.flatMap { it.allocations() }.size
+      service.getCancelInstancesCount(applyToThis) isEqualTo applyToThis.flatMap { it.attendees() }.size
     }
 
     @Test
     fun `this and all future occurrences`() {
-      service.getCancelInstancesCount(applyToThisAndAllFuture) isEqualTo applyToThisAndAllFuture.flatMap { it.allocations() }.size
+      service.getCancelInstancesCount(applyToThisAndAllFuture) isEqualTo applyToThisAndAllFuture.flatMap { it.attendees() }.size
     }
 
     @Test
     fun `all future occurrences`() {
-      service.getCancelInstancesCount(applyToAllFuture) isEqualTo applyToAllFuture.flatMap { it.allocations() }.size
+      service.getCancelInstancesCount(applyToAllFuture) isEqualTo applyToAllFuture.flatMap { it.attendees() }.size
     }
   }
 }

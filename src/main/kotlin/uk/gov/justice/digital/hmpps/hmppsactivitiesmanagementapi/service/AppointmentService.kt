@@ -56,7 +56,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet as BulkAppointmentEntity
 
@@ -288,23 +288,23 @@ class AppointmentService(
             sequenceNumber = it.index + 1,
             prisonCode = this.prisonCode,
             categoryCode = this.categoryCode,
-            appointmentDescription = this.customName,
+            customName = this.customName,
             internalLocationId = this.internalLocationId,
             appointmentTier = this.appointmentTier,
             inCell = this.inCell,
             startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
-            comment = this.extraInformation,
-            created = this.createdTime,
+            extraInformation = this.extraInformation,
+            createdTime = this.createdTime,
             createdBy = this.createdBy,
-            updated = this.updatedTime,
+            updatedTime = this.updatedTime,
             updatedBy = this.updatedBy,
           ).apply {
             prisonerBookings.forEach { prisonerBooking ->
-              this.addAllocation(
+              this.addAttendee(
                 AppointmentOccurrenceAllocationEntity(
-                  appointmentOccurrence = this,
+                  appointment = this,
                   prisonerNumber = prisonerBooking.key,
                   bookingId = prisonerBooking.value!!.toLong(),
                 ),
@@ -312,7 +312,7 @@ class AppointmentService(
             }
 
             if (isCancelled) {
-              cancelled = updated ?: created
+              cancelledTime = updated ?: created
               cancellationReason =
                 appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
               cancelledBy = updatedBy ?: createdBy

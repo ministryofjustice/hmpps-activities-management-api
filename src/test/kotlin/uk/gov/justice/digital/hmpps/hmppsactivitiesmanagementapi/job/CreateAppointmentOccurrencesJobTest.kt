@@ -13,7 +13,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.CREATE_APPOINTMENT_OCCURRENCES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -32,7 +32,7 @@ class CreateAppointmentOccurrencesJobTest {
   private val job = CreateAppointmentOccurrencesJob(safeJobRunner, appointmentRepository, appointmentOccurrenceRepository)
 
   @Captor
-  private lateinit var appointmentOccurrenceEntityCaptor: ArgumentCaptor<AppointmentOccurrence>
+  private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
 
   private val prisonerNumberToBookingIdMap = (1L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
   private val prisonerBookings = prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap()
@@ -77,11 +77,11 @@ class CreateAppointmentOccurrencesJobTest {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
-    whenever(appointmentOccurrenceRepository.saveAndFlush(appointmentOccurrenceEntityCaptor.capture())).thenReturn(mock())
+    whenever(appointmentOccurrenceRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(mock())
 
     job.execute(entity.appointmentSeriesId, prisonerBookings)
 
-    appointmentOccurrenceEntityCaptor.allValues hasSize 2
-    assertThat(appointmentOccurrenceEntityCaptor.allValues.map { it.sequenceNumber }).contains(2, 3)
+    appointmentEntityCaptor.allValues hasSize 2
+    assertThat(appointmentEntityCaptor.allValues.map { it.sequenceNumber }).contains(2, 3)
   }
 }

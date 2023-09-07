@@ -104,7 +104,7 @@ class AppointmentOccurrenceService(
       updateAppointmentOccurrencesJob.execute(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
-        occurrencesToUpdate.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+        occurrencesToUpdate.filterNot { it.appointmentId == appointmentOccurrenceId }.map { it.appointmentId }.toSet(),
         request,
         prisonerMap,
         now,
@@ -151,7 +151,7 @@ class AppointmentOccurrenceService(
       cancelAppointmentOccurrencesJob.execute(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
-        occurrencesToCancel.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
+        occurrencesToCancel.filterNot { it.appointmentId == appointmentOccurrenceId }.map { it.appointmentId }.toSet(),
         request,
         now,
         principal.name,

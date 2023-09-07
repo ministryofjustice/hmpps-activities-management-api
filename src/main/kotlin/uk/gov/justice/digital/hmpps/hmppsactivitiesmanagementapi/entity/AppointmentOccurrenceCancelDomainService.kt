@@ -38,14 +38,14 @@ class AppointmentOccurrenceCancelDomainService(
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentSeriesId)
-    val occurrencesToCancel = appointmentSeries.appointments().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
+    val occurrencesToCancel = appointmentSeries.appointments().filter { occurrenceIdsToCancel.contains(it.appointmentId) }
     return cancelAppointmentOccurrences(appointmentSeries, appointmentId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true, false)
   }
 
   fun cancelAppointmentOccurrences(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
-    occurrencesToCancel: Set<AppointmentOccurrence>,
+    occurrencesToCancel: Set<Appointment>,
     request: AppointmentOccurrenceCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
@@ -58,10 +58,10 @@ class AppointmentOccurrenceCancelDomainService(
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
     occurrencesToCancel.forEach {
-      it.cancelled = cancelled
+      it.cancelledTime = cancelled
       it.cancellationReason = cancellationReason
       it.cancelledBy = cancelledBy
-      it.deleted = cancellationReason.isDelete
+      it.isDeleted = cancellationReason.isDelete
     }
 
     val cancelledAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
@@ -85,8 +85,8 @@ class AppointmentOccurrenceCancelDomainService(
   }
 
   fun getCancelInstancesCount(
-    occurrencesToCancel: Collection<AppointmentOccurrence>,
-  ) = occurrencesToCancel.flatMap { it.allocations() }.size
+    occurrencesToCancel: Collection<Appointment>,
+  ) = occurrencesToCancel.flatMap { it.attendees() }.size
 
   private fun writeAuditEvent(
     appointmentOccurrenceId: Long,

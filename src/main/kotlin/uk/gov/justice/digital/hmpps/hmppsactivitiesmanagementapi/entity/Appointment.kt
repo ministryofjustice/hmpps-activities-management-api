@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
@@ -32,12 +31,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Entity
 @Table(name = "appointment")
 @Where(clause = "NOT is_deleted")
-@EntityListeners(AppointmentOccurrenceEntityListener::class)
-data class AppointmentOccurrence(
+@EntityListeners(AppointmentEntityListener::class)
+data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "appointment_id")
-  val appointmentOccurrenceId: Long = 0,
+  val appointmentId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_series_id", nullable = false)
@@ -49,8 +47,7 @@ data class AppointmentOccurrence(
 
   var categoryCode: String,
 
-  @Column(name = "custom_name")
-  var appointmentDescription: String?,
+  var customName: String?,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
@@ -76,21 +73,19 @@ data class AppointmentOccurrence(
 
   var endTime: LocalTime?,
 
-  @Column(name = "extra_information")
-  var comment: String?,
+  var unlockNotes: String? = null,
 
-  @Column(name = "created_time")
-  val created: LocalDateTime,
+  var extraInformation: String? = null,
+
+  val createdTime: LocalDateTime,
 
   val createdBy: String,
 
-  @Column(name = "updated_time")
-  var updated: LocalDateTime? = null,
+  var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
 ) {
-  @Column(name = "cancelled_time")
-  var cancelled: LocalDateTime? = null
+  var cancelledTime: LocalDateTime? = null
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "cancellation_reason_id")
@@ -98,28 +93,27 @@ data class AppointmentOccurrence(
 
   var cancelledBy: String? = null
 
-  @Column(name = "is_deleted")
-  var deleted: Boolean = false
+  var isDeleted: Boolean = false
 
-  @OneToMany(mappedBy = "appointmentOccurrence", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  private val allocations: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
+  @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  private val attendees: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
 
-  fun allocations() = allocations.toList()
+  fun attendees() = attendees.toList()
 
-  fun addAllocation(allocation: AppointmentOccurrenceAllocation) {
+  fun addAttendee(attendee: AppointmentOccurrenceAllocation) {
     failIfIndividualAppointmentAlreadyAllocated()
-    allocations.add(allocation)
+    attendees.add(attendee)
   }
 
-  fun removeAllocation(allocation: AppointmentOccurrenceAllocation) = allocations.remove(allocation)
+  fun removeAttendee(attendee: AppointmentOccurrenceAllocation) = attendees.remove(attendee)
 
-  fun prisonerNumbers() = allocations().map { allocation -> allocation.prisonerNumber }.distinct()
+  fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
 
   fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
 
   fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted()
 
-  fun isEdited() = updated != null
+  fun isEdited() = updatedTime != null
 
   fun isCancelled() = cancellationReason?.isDelete == false
 
@@ -127,25 +121,25 @@ data class AppointmentOccurrence(
 
   fun isDeleted() = cancellationReason?.isDelete == true
 
-  fun usernames() = listOf(createdBy, updatedBy, cancelledBy).filterNotNull()
+  fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy)
 
   fun toModel() = AppointmentOccurrenceModel(
-    id = appointmentOccurrenceId,
+    id = appointmentId,
     sequenceNumber = sequenceNumber,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    appointmentDescription = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    comment = comment,
-    cancelled = cancelled,
+    comment = extraInformation,
+    cancelled = cancelledTime,
     cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
-    updated = updated,
+    updated = updatedTime,
     updatedBy = updatedBy,
-    allocations = allocations().toModel(),
+    allocations = attendees().toModel(),
   )
 
   fun toSummary(
@@ -154,11 +148,11 @@ data class AppointmentOccurrence(
     userMap: Map<String, UserDetail>,
   ) =
     AppointmentOccurrenceSummary(
-      appointmentOccurrenceId,
+      appointmentId,
       sequenceNumber,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentDescription,
+      customName,
       if (inCell) {
         null
       } else {
@@ -171,10 +165,10 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment,
+      extraInformation,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
-      updated = updated,
+      updated = updatedTime,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
     )
 
@@ -185,16 +179,16 @@ data class AppointmentOccurrence(
     userMap: Map<String, UserDetail>,
   ) =
     AppointmentOccurrenceDetails(
-      appointmentOccurrenceId,
+      appointmentId,
       appointmentSeries.appointmentSeriesId,
       appointmentSeries.appointmentSet?.toSummary(),
       appointmentSeries.appointmentType,
       sequenceNumber,
       prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
-      allocations().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+      attendees().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentDescription,
+      customName,
       if (inCell) {
         null
       } else {
@@ -204,20 +198,20 @@ data class AppointmentOccurrence(
       startDate,
       startTime,
       endTime,
-      comment,
+      extraInformation,
       appointmentSeries.schedule?.toRepeat(),
       isEdited(),
       isCancelled(),
       isExpired(),
       appointmentSeries.createdTime,
       userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
-      updated,
+      updatedTime,
       if (updatedBy == null) {
         null
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      cancelled,
+      cancelledTime,
       if (cancelledBy == null) {
         null
       } else {
@@ -226,21 +220,21 @@ data class AppointmentOccurrence(
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {
-    if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && allocations().isNotEmpty()) {
+    if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && attendees().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
     }
   }
 }
 
-fun List<AppointmentOccurrence>.toModel() = map { it.toModel() }
+fun List<Appointment>.toModel() = map { it.toModel() }
 
-fun List<AppointmentOccurrence>.toSummary(
+fun List<Appointment>.toSummary(
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
 ) = map { it.toSummary(referenceCodeMap, locationMap, userMap) }
 
-fun List<AppointmentOccurrence>.toDetails(
+fun List<Appointment>.toDetails(
   prisonerMap: Map<String, Prisoner>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,

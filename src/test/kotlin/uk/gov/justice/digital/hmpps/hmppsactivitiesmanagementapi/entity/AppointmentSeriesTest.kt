@@ -28,14 +28,14 @@ class AppointmentSeriesTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updated)
+    val expectedModel = appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = listOf(appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updated))
+    val expectedModel = listOf(appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime))
     assertThat(listOf(entity).toModel()).isEqualTo(expectedModel)
   }
 
@@ -44,7 +44,7 @@ class AppointmentSeriesTest {
     val entity = appointmentSeriesEntity(repeatPeriod = AppointmentFrequency.WEEKLY, numberOfOccurrences = 3).apply { appointments().first().cancellationReason = appointmentDeletedReason() }
     with(entity.appointments()) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
   }
 
@@ -57,7 +57,7 @@ class AppointmentSeriesTest {
     )
     with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
   }
 
@@ -70,7 +70,7 @@ class AppointmentSeriesTest {
     ).apply { appointments()[1].cancellationReason = appointmentCancelledReason() }
     with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(1)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(3L))
     }
   }
 
@@ -83,7 +83,7 @@ class AppointmentSeriesTest {
     ).apply { appointments()[2].cancellationReason = appointmentDeletedReason() }
     with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(1)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L))
     }
   }
 
@@ -96,7 +96,7 @@ class AppointmentSeriesTest {
     )
     with(entity.scheduledAppointmentsAfter(LocalDateTime.now().minusDays(4))) {
       assertThat(size).isEqualTo(3)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L, 4L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L, 4L))
     }
   }
 
@@ -109,7 +109,7 @@ class AppointmentSeriesTest {
     ).apply { appointments()[2].cancellationReason = appointmentCancelledReason() }
     with(entity.scheduledAppointmentsAfter(entity.appointments()[1].startDateTime())) {
       assertThat(size).isEqualTo(1)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(4L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(4L))
     }
   }
 
@@ -122,7 +122,7 @@ class AppointmentSeriesTest {
     ).apply { appointments()[3].cancellationReason = appointmentDeletedReason() }
     with(entity.scheduledAppointmentsAfter(entity.appointments()[1].startDateTime())) {
       assertThat(size).isEqualTo(1)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(3L))
     }
   }
 
@@ -171,7 +171,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")) {
       assertThat(size).isEqualTo(1)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L))
     }
   }
 
@@ -184,7 +184,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
   }
 
@@ -197,7 +197,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(3)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L, 3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L, 3L))
     }
   }
 
@@ -210,7 +210,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
   }
 
@@ -223,7 +223,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
   }
 
@@ -236,7 +236,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
   }
 
@@ -250,7 +250,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
   }
 
@@ -263,7 +263,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
   }
 
@@ -276,7 +276,7 @@ class AppointmentSeriesTest {
     val appointmentOccurrence = entity.appointments()[1]
     with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
-      assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
   }
 

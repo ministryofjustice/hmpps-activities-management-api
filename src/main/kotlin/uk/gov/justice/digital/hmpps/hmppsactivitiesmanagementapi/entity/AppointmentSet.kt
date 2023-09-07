@@ -36,7 +36,7 @@ data class AppointmentSet(
 
   var categoryCode: String,
 
-  var customName: String?,
+  var customName: String? = null,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
@@ -48,13 +48,23 @@ data class AppointmentSet(
 
   var internalLocationId: Long?,
 
-  var inCell: Boolean,
+  val customLocation: String? = null,
+
+  val inCell: Boolean = false,
+
+  val onWing: Boolean = false,
+
+  val offWing: Boolean = true,
 
   var startDate: LocalDate,
 
   val createdTime: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
+
+  var updatedTime: LocalDateTime? = null,
+
+  var updatedBy: String? = null,
 ) {
   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinTable(
@@ -72,7 +82,7 @@ data class AppointmentSet(
 
   fun usernames() = listOf(createdBy).union(appointmentSeries().map { appointment -> appointment.usernames() }.flatten()).distinct()
 
-  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
+  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
 
   fun toModel() = BulkAppointmentModel(
     id = this.appointmentSetId,
