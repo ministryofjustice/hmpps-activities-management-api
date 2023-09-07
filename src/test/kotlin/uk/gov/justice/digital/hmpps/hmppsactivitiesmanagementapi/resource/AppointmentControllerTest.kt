@@ -17,22 +17,22 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
 @WebMvcTest(controllers = [AppointmentController::class])
 @ContextConfiguration(classes = [AppointmentController::class])
 class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   @MockBean
-  private lateinit var appointmentService: AppointmentService
+  private lateinit var appointmentSeriesService: AppointmentSeriesService
 
-  override fun controller() = AppointmentController(appointmentService)
+  override fun controller() = AppointmentController(appointmentSeriesService)
 
   @Test
   fun `200 response when get appointment by valid id`() {
     val appointmentSeries = appointmentSeriesEntity().toModel()
 
-    whenever(appointmentService.getAppointmentById(1)).thenReturn(appointmentSeries)
+    whenever(appointmentSeriesService.getAppointmentSeriesById(1)).thenReturn(appointmentSeries)
 
     val response = mockMvc.getAppointmentById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -41,12 +41,12 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentSeries))
 
-    verify(appointmentService).getAppointmentById(1)
+    verify(appointmentSeriesService).getAppointmentSeriesById(1)
   }
 
   @Test
   fun `404 response when get appointment by invalid id`() {
-    whenever(appointmentService.getAppointmentById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+    whenever(appointmentSeriesService.getAppointmentSeriesById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
 
     val response = mockMvc.getAppointmentById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -55,7 +55,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     assertThat(response.contentAsString).contains("Appointment -1 not found")
 
-    verify(appointmentService).getAppointmentById(-1)
+    verify(appointmentSeriesService).getAppointmentSeriesById(-1)
   }
 
   @Test
@@ -81,7 +81,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         }
       }
 
-    verifyNoInteractions(appointmentService)
+    verifyNoInteractions(appointmentSeriesService)
   }
 
   @Test
@@ -91,7 +91,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentService.createAppointment(request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentSeriesService.createAppointmentSeries(request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response =
       mockMvc.post("/appointments") {

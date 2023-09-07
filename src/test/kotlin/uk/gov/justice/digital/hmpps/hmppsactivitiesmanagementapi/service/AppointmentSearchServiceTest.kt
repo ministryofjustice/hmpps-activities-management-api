@@ -45,7 +45,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @ExtendWith(FakeSecurityContext::class)
-class AppointmentOccurrenceSearchServiceTest {
+class AppointmentSearchServiceTest {
   private val appointmentSearchRepository: AppointmentSearchRepository = mock()
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
   private val appointmentSearchSpecification: AppointmentSearchSpecification = spy()
@@ -62,7 +62,7 @@ class AppointmentOccurrenceSearchServiceTest {
   @Captor
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
-  private val service = AppointmentOccurrenceSearchService(
+  private val service = AppointmentSearchService(
     appointmentSearchRepository,
     appointmentAttendeeSearchRepository,
     appointmentSearchSpecification,
@@ -95,7 +95,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -135,7 +135,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateBetween(request.startDate!!, request.endDate!!)
@@ -177,7 +177,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -218,7 +218,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -259,7 +259,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -300,7 +300,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(emptyMap())
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -320,7 +320,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -340,7 +340,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    service.searchAppointmentOccurrences("TPR", request, principal)
+    service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
     verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
@@ -361,7 +361,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
       .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
 
-    assertThatThrownBy { service.searchAppointmentOccurrences("TPR", request, principal) }
+    assertThatThrownBy { service.searchAppointments("TPR", request, principal) }
       .isInstanceOf(CaseloadAccessException::class.java)
   }
 }

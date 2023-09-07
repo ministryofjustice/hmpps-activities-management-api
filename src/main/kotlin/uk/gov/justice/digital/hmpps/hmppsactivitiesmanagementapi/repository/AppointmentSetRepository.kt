@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 
 @Repository
-interface BulkAppointmentRepository : JpaRepository<AppointmentSet, Long>
+interface AppointmentSetRepository : JpaRepository<AppointmentSet, Long>

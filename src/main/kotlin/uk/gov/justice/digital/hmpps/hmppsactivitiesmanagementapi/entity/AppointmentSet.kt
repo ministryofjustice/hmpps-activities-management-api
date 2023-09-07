@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as AppointmentSetModel
 
 @Entity
 @Table(name = "appointment_set")
@@ -84,7 +84,7 @@ data class AppointmentSet(
 
   fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
 
-  fun toModel() = BulkAppointmentModel(
+  fun toModel() = AppointmentSetModel(
     id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,

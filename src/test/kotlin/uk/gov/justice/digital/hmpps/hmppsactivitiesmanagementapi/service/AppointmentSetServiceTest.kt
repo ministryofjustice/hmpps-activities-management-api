@@ -12,24 +12,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.util.Optional
 
-class BulkAppointmentDetailsServiceTest {
-  private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
+class AppointmentSetServiceTest {
+  private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
-  private val service = BulkAppointmentDetailsService(
-    bulkAppointmentRepository,
+  private val service = AppointmentSetService(
+    appointmentSetRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -47,9 +47,9 @@ class BulkAppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getBulkAppointmentDetailsById returns mapped appointment details for known bulk appointment id`() {
-    val entity = bulkAppointmentEntity()
-    whenever(bulkAppointmentRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+  fun `getAppointmentSetDetailsById returns mapped appointment details for known appointment set id`() {
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
@@ -88,7 +88,7 @@ class BulkAppointmentDetailsServiceTest {
         ),
       ),
     )
-    assertThat(service.getBulkAppointmentDetailsById(1)).isEqualTo(
+    assertThat(service.getAppointmentSetDetailsById(1)).isEqualTo(
       bulkAppointmentDetails(
         created = entity.createdTime,
       ),
@@ -96,16 +96,16 @@ class BulkAppointmentDetailsServiceTest {
   }
 
   @Test
-  fun `getBulkAppointmentDetailsById throws entity not found exception for unknown bulk appointment id`() {
-    assertThatThrownBy { service.getBulkAppointmentDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+  fun `getAppointmentSetDetailsById throws entity not found exception for unknown appointment set id`() {
+    assertThatThrownBy { service.getAppointmentSetDetailsById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment Set -1 not found")
   }
 
   @Test
-  fun `getBulkAppointmentDetailsById throws caseload access exception when caseload id header is different`() {
+  fun `getAppointmentSetDetailsById throws caseload access exception when caseload id header is different`() {
     addCaseloadIdToRequestHeader("WRONG")
-    val entity = bulkAppointmentEntity()
-    whenever(bulkAppointmentRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
-    assertThatThrownBy { service.getBulkAppointmentDetailsById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getAppointmentSetDetailsById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }

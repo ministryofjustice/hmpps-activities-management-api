@@ -24,7 +24,7 @@ import java.security.Principal
 
 @Service
 @Transactional(readOnly = true)
-class AppointmentOccurrenceSearchService(
+class AppointmentSearchService(
   private val appointmentSearchRepository: AppointmentSearchRepository,
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
   private val appointmentSearchSpecification: AppointmentSearchSpecification,
@@ -33,7 +33,7 @@ class AppointmentOccurrenceSearchService(
   private val locationService: LocationService,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun searchAppointmentOccurrences(
+  fun searchAppointments(
     prisonCode: String,
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
@@ -87,7 +87,7 @@ class AppointmentOccurrenceSearchService(
 
     val results = appointmentSearchRepository.findAll(spec)
 
-    val allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })
+    val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
@@ -95,7 +95,7 @@ class AppointmentOccurrenceSearchService(
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
     logAppointmentSearchMetric(principal, prisonCode, request, results.size, startTime)
-    return results.toResults(allocationsMap, referenceCodeMap, locationMap)
+    return results.toResults(attendeeMap, referenceCodeMap, locationMap)
   }
 
   private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentOccurrenceSearchRequest, results: Int, startTimeInMs: Long) {

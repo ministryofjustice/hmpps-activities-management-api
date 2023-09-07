@@ -13,20 +13,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
-class AppointmentOccurrenceAllocationServiceTest {
+class AppointmentAttendeeServiceTest {
 
   private val prisonApiClient = mock<PrisonApiApplicationClient>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val auditService = mock<AuditService>()
 
-  private val appointmentOccurrenceAllocationService = AppointmentOccurrenceAllocationService(
+  private val appointmentAttendeeService = AppointmentAttendeeService(
     prisonApiClient,
     appointmentInstanceRepository,
     appointmentAttendeeRepository,
@@ -35,16 +35,16 @@ class AppointmentOccurrenceAllocationServiceTest {
 
   @Test
   fun `cancels all future appointments`() {
-    val appointmentOccurrenceAllocationId = 42L
+    val appointmentAttendeeId = 42L
     val prisonCode = "PVI"
     val prisonerNumber = "ABC123"
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
     val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAllocation = mock<AppointmentAttendee>()
-    val parentOccurrence = mock<Appointment>()
+    val parentAppointmentAttendee = mock<AppointmentAttendee>()
+    val parentAppointment = mock<Appointment>()
 
-    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
     whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
@@ -59,29 +59,29 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentAttendeeRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
-    whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
-    whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
-    whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
-    whenever(parentAllocation.isIndividualAppointment()).thenReturn(false)
+    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(parentAppointmentAttendee))
+    whenever(parentAppointmentAttendee.appointment).thenReturn(parentAppointment)
+    whenever(parentAppointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
+    whenever(parentAppointment.appointmentSeries).thenReturn(parentAppointmentSeries)
+    whenever(parentAppointmentAttendee.isIndividualAppointment()).thenReturn(false)
 
-    appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAllocation).removeFromAppointment()
+    verify(parentAppointmentAttendee).removeFromAppointment()
   }
 
   @Test
   fun `cancels all future appointments and deletes orphaned individual appointment `() {
-    val appointmentOccurrenceAllocationId = 42L
+    val appointmentAttendeeId = 42L
     val prisonCode = "PVI"
     val prisonerNumber = "ABC123"
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
     val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAllocation = mock<AppointmentAttendee>()
-    val parentOccurrence = mock<Appointment>()
+    val parentAppointmentAttendee = mock<AppointmentAttendee>()
+    val parentAppointment = mock<Appointment>()
 
-    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
     whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
@@ -96,15 +96,15 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentAttendeeRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
-    whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
-    whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
-    whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
-    whenever(parentAllocation.isIndividualAppointment()).thenReturn(true)
+    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(parentAppointmentAttendee))
+    whenever(parentAppointmentAttendee.appointment).thenReturn(parentAppointment)
+    whenever(parentAppointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
+    whenever(parentAppointment.appointmentSeries).thenReturn(parentAppointmentSeries)
+    whenever(parentAppointmentAttendee.isIndividualAppointment()).thenReturn(true)
 
-    appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAllocation).removeAppointment(parentOccurrence)
+    verify(parentAppointmentAttendee).removeAppointment(parentAppointment)
   }
 
   @Test
@@ -124,7 +124,7 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf())
 
-    appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
     verifyNoInteractions(appointmentAttendeeRepository)
   }

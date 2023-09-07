@@ -21,13 +21,13 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentController(
-  private val appointmentService: AppointmentService,
+  private val appointmentSeriesService: AppointmentSeriesService,
 ) {
   @GetMapping(value = ["/{appointmentId}"])
   @ResponseBody
@@ -72,7 +72,7 @@ class AppointmentController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
-    appointmentService.getAppointmentById(appointmentId)
+    appointmentSeriesService.getAppointmentSeriesById(appointmentId)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping
@@ -128,5 +128,5 @@ class AppointmentController(
       required = true,
     )
     request: AppointmentCreateRequest,
-  ): Appointment = appointmentService.createAppointment(request, principal)
+  ): Appointment = appointmentSeriesService.createAppointmentSeries(request, principal)
 }

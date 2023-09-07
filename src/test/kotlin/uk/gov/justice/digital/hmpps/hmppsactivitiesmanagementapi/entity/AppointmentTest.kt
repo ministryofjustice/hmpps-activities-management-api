@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
@@ -301,8 +301,8 @@ class AppointmentTest {
   }
 
   @Test
-  fun `entity to details mapping bulk appointment`() {
-    val appointmentSeries = bulkAppointmentEntity().appointmentSeries().first()
+  fun `entity to details mapping appointment set`() {
+    val appointmentSeries = appointmentSetEntity().appointmentSeries().first()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))

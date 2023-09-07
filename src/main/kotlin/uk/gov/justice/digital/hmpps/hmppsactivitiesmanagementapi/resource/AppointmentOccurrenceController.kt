@@ -25,15 +25,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceSearchService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
 
 @RestController
 @RequestMapping("/appointment-occurrences", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentOccurrenceController(
-  private val appointmentOccurrenceService: AppointmentOccurrenceService,
-  private val appointmentOccurrenceSearchService: AppointmentOccurrenceSearchService,
+  private val appointmentService: AppointmentService,
+  private val appointmentSearchService: AppointmentSearchService,
 ) {
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{appointmentOccurrenceId}"])
@@ -100,7 +100,7 @@ class AppointmentOccurrenceController(
     )
     request: AppointmentOccurrenceUpdateRequest,
     principal: Principal,
-  ): Appointment = appointmentOccurrenceService.updateAppointmentOccurrence(appointmentOccurrenceId, request, principal)
+  ): Appointment = appointmentService.updateAppointment(appointmentOccurrenceId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentOccurrenceId}/cancel"])
@@ -167,7 +167,7 @@ class AppointmentOccurrenceController(
     )
     request: AppointmentOccurrenceCancelRequest,
     principal: Principal,
-  ) = appointmentOccurrenceService.cancelAppointmentOccurrence(appointmentOccurrenceId, request, principal)
+  ) = appointmentService.cancelAppointment(appointmentOccurrenceId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PostMapping(value = ["/{prisonCode}/search"])
@@ -224,5 +224,5 @@ class AppointmentOccurrenceController(
     )
     request: AppointmentOccurrenceSearchRequest,
     principal: Principal,
-  ): List<AppointmentOccurrenceSearchResult> = appointmentOccurrenceSearchService.searchAppointmentOccurrences(prisonCode, request, principal)
+  ): List<AppointmentOccurrenceSearchResult> = appointmentSearchService.searchAppointments(prisonCode, request, principal)
 }

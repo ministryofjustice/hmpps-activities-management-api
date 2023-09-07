@@ -12,20 +12,20 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 
 @WebMvcTest(controllers = [MigrateAppointmentController::class])
 @ContextConfiguration(classes = [MigrateAppointmentController::class])
 class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentController>() {
 
   @MockBean
-  private lateinit var appointmentService: AppointmentService
+  private lateinit var appointmentSeriesService: AppointmentSeriesService
 
-  override fun controller() = MigrateAppointmentController(appointmentService)
+  override fun controller() = MigrateAppointmentController(appointmentSeriesService)
 
   @BeforeEach
   fun resetMocks() {
-    reset(appointmentService)
+    reset(appointmentSeriesService)
   }
 
   @Nested

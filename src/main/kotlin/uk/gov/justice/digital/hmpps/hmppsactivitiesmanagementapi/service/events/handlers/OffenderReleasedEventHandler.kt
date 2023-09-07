@@ -10,14 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 
 @Component
 @Transactional
 class OffenderReleasedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService,
+  private val appointmentAttendeeService: AppointmentAttendeeService,
   private val prisonApiClient: PrisonApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
 ) : EventHandler<OffenderReleasedEvent> {
@@ -60,7 +60,7 @@ class OffenderReleasedEventHandler(
   }
 
   private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
-    appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(
+    appointmentAttendeeService.cancelFutureOffenderAppointments(
       event.prisonCode(),
       event.prisonerNumber(),
     )

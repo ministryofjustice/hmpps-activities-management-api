@@ -186,7 +186,7 @@ internal fun appointmentSearchEntity(
     )
   }
 
-internal fun bulkAppointmentEntity(
+internal fun appointmentSetEntity(
   bulkAppointmentId: Long = 1,
   inCell: Boolean = false,
   appointmentDescription: String? = null,

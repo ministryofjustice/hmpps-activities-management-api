@@ -5,13 +5,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import java.time.LocalDateTime
 
 @Service
 @Transactional
-class AppointmentOccurrenceAllocationService(
+class AppointmentAttendeeService(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
@@ -30,18 +30,18 @@ class AppointmentOccurrenceAllocationService(
       appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber)
         .forEach {
           appointmentAttendeeRepository.findById(it.appointmentAttendeeId)
-            .ifPresent { allocation ->
-              if (allocation.isIndividualAppointment()) {
-                allocation.removeAppointment(allocation.appointment)
+            .ifPresent { attendee ->
+              if (attendee.isIndividualAppointment()) {
+                attendee.removeAppointment(attendee.appointment)
 
                 log.info(
-                  "Removed appointment occurrence '${allocation.appointment.appointmentId}' " +
-                    "as it is part of an individual appointment. This will also remove allocation '${allocation.appointmentAttendeeId}' " +
+                  "Removed appointment '${attendee.appointment.appointmentId}' " +
+                    "as it is part of an individual appointment series. This will also remove attendee '${attendee.appointmentAttendeeId}' " +
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
-                allocation.removeFromAppointment()
-                log.info("Removed the appointment occurrence allocation '${it.appointmentAttendeeId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
+                attendee.removeFromAppointment()
+                log.info("Removed the appointment attendee '${it.appointmentAttendeeId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
 
               auditService.logEvent(

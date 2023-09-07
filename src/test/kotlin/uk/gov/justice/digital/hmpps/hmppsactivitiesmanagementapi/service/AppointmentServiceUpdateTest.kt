@@ -26,7 +26,7 @@ import java.security.Principal
 import java.time.LocalDate
 import java.util.Optional
 
-class AppointmentOccurrenceServiceUpdateTest {
+class AppointmentServiceUpdateTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
@@ -36,7 +36,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
 
-  private val service = AppointmentOccurrenceService(
+  private val service = AppointmentService(
     appointmentRepository,
     referenceCodeService,
     locationService,
@@ -62,90 +62,90 @@ class AppointmentOccurrenceServiceUpdateTest {
   }
 
   @Test
-  fun `updateAppointmentOccurrence throws entity not found exception for unknown appointment occurrence id`() {
-    assertThatThrownBy { service.updateAppointmentOccurrence(-1, AppointmentOccurrenceUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
+  fun `updateAppointment throws entity not found exception for unknown appointment id`() {
+    assertThatThrownBy { service.updateAppointment(-1, AppointmentOccurrenceUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment -1 not found")
   }
 
   @Test
   fun `update appointment throws caseload access exception if caseload id header does not match`() {
-    val appointmentOccurrence = expectIndividualAppointment()
+    val appointment = expectIndividualAppointment()
     addCaseloadIdToRequestHeader("WRONG")
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }
       .isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test
   fun `update category code throws illegal argument exception when requested category code is not found`() {
-    val appointmentOccurrence = expectGroupAppointment()
+    val appointment = expectGroupAppointment()
     val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NOT_FOUND")
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
 
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
   }
 
   @Test
   fun `update internal location throws illegal argument exception when inCell = false and requested internal location id is not found`() {
-    val appointmentOccurrence = expectGroupAppointment()
-    val appointment = appointmentOccurrence.appointmentSeries
+    val appointment = expectGroupAppointment()
+    val appointmentSeries = appointment.appointmentSeries
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = -1)
 
-    whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode)).thenReturn(emptyMap())
+    whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
 
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointment.prisonCode}'")
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
   }
 
   @Test
   fun `update prisoner list throws illegal argument exception when prisoner is not found`() {
-    val appointmentOccurrence = expectGroupAppointment()
+    val appointment = expectGroupAppointment()
     val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("NOT_FOUND"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(emptyList()))
 
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
   }
 
   @Test
   fun `update prisoner list throws illegal argument exception when prisoner is not a resident of requested prison code`() {
-    val appointmentOccurrence = expectGroupAppointment()
+    val appointment = expectGroupAppointment()
     val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
       .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
 
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
   }
 
   @Test
   fun `update prisoner list throws illegal argument exception when adding prisoner to individual appointment`() {
-    val appointmentOccurrence = expectIndividualAppointment()
+    val appointment = expectIndividualAppointment()
     val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("A1234BC", "BC2345D"))
 
-    assertThatThrownBy { service.updateAppointmentOccurrence(appointmentOccurrence.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Cannot add prisoners to an individual appointment occurrence")
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add prisoners to an individual appointment")
   }
 
   private fun expectGroupAppointment(): Appointment {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.GROUP)
-    val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
-      Optional.of(appointmentOccurrence),
+    val appointment = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
+      Optional.of(appointment),
     )
-    return appointmentOccurrence
+    return appointment
   }
 
   private fun expectIndividualAppointment(): Appointment {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
-    val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
-      Optional.of(appointmentOccurrence),
+    val appointment = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
+      Optional.of(appointment),
     )
-    return appointmentOccurrence
+    return appointment
   }
 }

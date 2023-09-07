@@ -46,8 +46,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
@@ -84,15 +84,15 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentRepeatPeriodModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentFrequencyModel
 
 @ExtendWith(FakeSecurityContext::class)
-class AppointmentServiceTest {
+class AppointmentSeriesServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
-  private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
+  private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonApiUserClient: PrisonApiUserClient = mock()
@@ -103,7 +103,7 @@ class AppointmentServiceTest {
   private lateinit var principal: Principal
 
   @Captor
-  private lateinit var appointmentEntityCaptor: ArgumentCaptor<AppointmentSeries>
+  private lateinit var appointmentSeriesEntityCaptor: ArgumentCaptor<AppointmentSeries>
 
   @Captor
   private lateinit var appointmentSetEntityCaptor: ArgumentCaptor<AppointmentSet>
@@ -114,12 +114,12 @@ class AppointmentServiceTest {
   @Captor
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
-  private val service = AppointmentService(
+  private val service = AppointmentSeriesService(
     appointmentSeriesRepository,
     appointmentTierRepository,
     appointmentHostRepository,
     appointmentCancellationReasonRepository,
-    bulkAppointmentRepository,
+    appointmentSetRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -143,33 +143,33 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `getAppointmentById returns an appointment for known appointment id`() {
+  fun `getAppointmentSeriesById returns an appointment for known appointment series id`() {
     val entity = appointmentSeriesEntity()
     whenever(appointmentSeriesRepository.findById(1)).thenReturn(Optional.of(entity))
-    assertThat(service.getAppointmentById(1)).isEqualTo(entity.toModel())
+    assertThat(service.getAppointmentSeriesById(1)).isEqualTo(entity.toModel())
   }
 
   @Test
-  fun `getAppointmentById throws entity not found exception for unknown appointment id`() {
-    assertThatThrownBy { service.getAppointmentById(0) }.isInstanceOf(EntityNotFoundException::class.java)
+  fun `getAppointmentSeriesById throws entity not found exception for unknown appointment series id`() {
+    assertThatThrownBy { service.getAppointmentSeriesById(0) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment Series 0 not found")
   }
 
   @Test
-  fun `buildValidAppointmentEntity throws caseload access exception when requested prison code is not in user's case load`() {
+  fun `buildValidAppointmentSeriesEntity throws caseload access exception when requested prison code is not in user's case load`() {
     addCaseloadIdToRequestHeader("DIFFERENT")
     val request = appointmentCreateRequest()
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
 
     assertThatThrownBy {
-      service.buildValidAppointmentEntity(
+      service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        appointmentDescription = request.appointmentDescription,
+        customName = request.appointmentDescription,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -177,7 +177,7 @@ class AppointmentServiceTest {
         startTime = request.startTime,
         endTime = request.endTime,
         repeat = request.repeat,
-        comment = request.comment,
+        extraInformation = request.comment,
         createdBy = principal.name,
       )
     }.isInstanceOf(CaseloadAccessException::class.java)
@@ -186,20 +186,20 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `buildValidAppointmentEntity throws illegal argument exception when requested category code is not found`() {
+  fun `buildValidAppointmentSeriesEntity throws illegal argument exception when requested category code is not found`() {
     val request = appointmentCreateRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
     assertThatThrownBy {
-      service.buildValidAppointmentEntity(
+      service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        appointmentDescription = request.appointmentDescription,
+        customName = request.appointmentDescription,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -207,7 +207,7 @@ class AppointmentServiceTest {
         startTime = request.startTime,
         endTime = request.endTime,
         repeat = request.repeat,
-        comment = request.comment,
+        extraInformation = request.comment,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -217,7 +217,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `buildValidAppointmentEntity throws illegal argument exception when inCell = false and requested internal location id is not found`() {
+  fun `buildValidAppointmentSeriesEntity throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val request = appointmentCreateRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -226,13 +226,13 @@ class AppointmentServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!)).thenReturn(emptyMap())
 
     assertThatThrownBy {
-      service.buildValidAppointmentEntity(
+      service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        appointmentDescription = request.appointmentDescription,
+        customName = request.appointmentDescription,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -240,7 +240,7 @@ class AppointmentServiceTest {
         startTime = request.startTime,
         endTime = request.endTime,
         repeat = request.repeat,
-        comment = request.comment,
+        extraInformation = request.comment,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -250,7 +250,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `buildValidAppointmentEntity throws illegal argument exception when prisoner is not found`() {
+  fun `buildValidAppointmentSeriesEntity throws illegal argument exception when prisoner is not found`() {
     val request = appointmentCreateRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -261,13 +261,13 @@ class AppointmentServiceTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
     assertThatThrownBy {
-      service.buildValidAppointmentEntity(
+      service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        appointmentDescription = request.appointmentDescription,
+        customName = request.appointmentDescription,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -275,7 +275,7 @@ class AppointmentServiceTest {
         startTime = request.startTime,
         endTime = request.endTime,
         repeat = request.repeat,
-        comment = request.comment,
+        extraInformation = request.comment,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -285,10 +285,10 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun`buildValidAppointmentEntity does not perform any validation if the appointment is a migration`() {
+  fun`buildValidAppointmentSeriesEntity does not perform any validation if the appointment is a migration`() {
     val request = appointmentMigrateRequest()
 
-    service.buildValidAppointmentEntity(
+    service.buildValidAppointmentSeriesEntity(
       appointmentType = AppointmentType.INDIVIDUAL,
       prisonCode = request.prisonCode!!,
       prisonerNumbers = listOf(request.prisonerNumber!!),
@@ -299,7 +299,7 @@ class AppointmentServiceTest {
       startDate = request.startDate,
       startTime = request.startTime,
       endTime = request.endTime,
-      comment = request.comment!!,
+      extraInformation = request.comment!!,
       createdBy = "MIGRATION.USER",
       isMigrated = true,
     )
@@ -309,18 +309,18 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun`buildValidAppointmentEntity converts a blank appointment description to null`() {
+  fun`buildValidAppointmentSeriesEntity converts a blank custom name to null`() {
     val request = appointmentCreateRequest(appointmentDescription = "    ")
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
 
-    val appointment = service.buildValidAppointmentEntity(
+    val appointment = service.buildValidAppointmentSeriesEntity(
       appointmentType = request.appointmentType,
       prisonCode = request.prisonCode!!,
       prisonerNumbers = request.prisonerNumbers,
       prisonerBookings = emptyMap(),
       categoryCode = request.categoryCode!!,
-      appointmentDescription = request.appointmentDescription,
+      customName = request.appointmentDescription,
       appointmentTier = appointmentTierNotSpecified(),
       internalLocationId = request.internalLocationId,
       inCell = request.inCell,
@@ -328,7 +328,7 @@ class AppointmentServiceTest {
       startTime = request.startTime,
       endTime = request.endTime,
       repeat = request.repeat,
-      comment = request.comment,
+      extraInformation = request.comment,
       createdBy = principal.name,
       isMigrated = true,
     )
@@ -337,7 +337,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
+  fun `createAppointmentSeries throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = appointmentCreateRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -349,7 +349,7 @@ class AppointmentServiceTest {
       .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), prisonId = "DIFFERENT"))))
 
     assertThatThrownBy {
-      service.createAppointment(request, principal)
+      service.createAppointmentSeries(request, principal)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
@@ -357,11 +357,11 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment group repeat appointment throws error if occurrence allocations exceeds 20,000`() {
+  fun `createAppointmentSeries group repeat appointment series throws error if appointment instances exceeds 20,000`() {
     val prisonerList = MutableList(60) { prisoner -> "A11${prisoner}BC" }
     val request = appointmentCreateRequest(
       prisonerNumbers = prisonerList,
-      repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 350),
+      repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 350),
     )
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -383,7 +383,7 @@ class AppointmentServiceTest {
       )
 
     assertThatThrownBy {
-      service.createAppointment(request, principal)
+      service.createAppointmentSeries(request, principal)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("You cannot schedule more than 333 appointments for this number of attendees.")
 
@@ -391,7 +391,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment single appointment single prisoner success`() {
+  fun `createAppointmentSeries single appointment single prisoner success`() {
     val request = appointmentCreateRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -407,11 +407,11 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -451,7 +451,7 @@ class AppointmentServiceTest {
       }
 
       verify(telemetryClient).trackEvent(
-        eq(TelemetryEvent.APPOINTMENT_CREATED.value),
+        eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
       )
@@ -485,7 +485,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment group appointment two prisoners success`() {
+  fun `createAppointmentSeries group appointment two prisoners success`() {
     val request = appointmentCreateRequest(
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
@@ -505,11 +505,11 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       with(appointments()) {
         assertThat(size).isEqualTo(1)
         assertThat(appointments().first().attendees().toModel()).containsAll(
@@ -523,8 +523,8 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment individual repeat appointment success`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.WEEKLY, 3))
+  fun `createAppointmentSeries individual repeat appointment success`() {
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentFrequencyModel.WEEKLY, 3))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -539,18 +539,18 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value.appointments()) {
+    with(appointmentSeriesEntityCaptor.value.appointments()) {
       assertThat(size).isEqualTo(3)
       assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
     }
   }
 
   @Test
-  fun `createAppointment for fifteen prisoners synchronously when it does not repeat creating fifteen appointment instances`() {
+  fun `createAppointmentSeries for fifteen prisoners synchronously when it does not repeat creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = null)
 
@@ -571,11 +571,11 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 15
     }
@@ -584,9 +584,9 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment for fifteen prisoners synchronously when it repeats once creating fifteen appointment instances`() {
+  fun `createAppointmentSeries for fifteen prisoners synchronously when it repeats once creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 1))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 1))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -605,11 +605,11 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 15
     }
@@ -618,9 +618,9 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment for seven prisoners synchronously when it repeats twice creating fourteen appointment instances`() {
+  fun `createAppointmentSeries for seven prisoners synchronously when it repeats twice creating fourteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 2))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 2))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -639,11 +639,11 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       appointments() hasSize 2
       appointments().flatMap { it.attendees() } hasSize 14
     }
@@ -652,9 +652,9 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `createAppointment for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
+  fun `createAppointmentSeries for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentRepeatPeriodModel.DAILY, 5))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 5))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -673,11 +673,11 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
-    service.createAppointment(request, principal)
+    service.createAppointmentSeries(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 3
     }
@@ -686,7 +686,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `create bulk appointment success`() {
+  fun `create appointment set success`() {
     val request = bulkAppointmentRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
@@ -711,7 +711,7 @@ class AppointmentServiceTest {
         ),
       )
 
-    whenever(bulkAppointmentRepository.saveAndFlush(appointmentSetEntityCaptor.capture())).thenReturn(
+    whenever(appointmentSetRepository.saveAndFlush(appointmentSetEntityCaptor.capture())).thenReturn(
       AppointmentSet(
         appointmentSetId = 1,
         prisonCode = request.prisonCode,
@@ -728,7 +728,7 @@ class AppointmentServiceTest {
       },
     )
 
-    service.bulkCreateAppointments(request, principal)
+    service.createAppointmentSet(request, principal)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value),
@@ -785,7 +785,7 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `create bulk appointment throws illegal argument exception when prisoner is not a resident of requested prison code`() {
+  fun `create appointment set throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = bulkAppointmentRequest()
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
@@ -811,7 +811,7 @@ class AppointmentServiceTest {
       )
 
     assertThatThrownBy {
-      service.bulkCreateAppointments(request, principal)
+      service.createAppointmentSet(request, principal)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.appointments[0].prisonerNumber}' not found, were inactive or are residents of a different prison.")
 
@@ -819,11 +819,11 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `create bulk appointment fails if no appointments provided`() {
+  fun `create appointment set fails if no appointments provided`() {
     val request = bulkAppointmentRequest().copy(appointments = emptyList())
 
     assertThatThrownBy {
-      service.bulkCreateAppointments(request, principal)
+      service.createAppointmentSet(request, principal)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("One or more appointments must be supplied.")
 
@@ -831,61 +831,13 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `migrateAppointment with comment under 40 characters success`() {
+  fun `migrateAppointment success`() {
     val request = appointmentMigrateRequest()
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(prisonCode).isEqualTo(request.prisonCode)
-      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(startTime).isEqualTo(request.startTime)
-      assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(extraInformation).isEqualTo(request.comment)
-      assertThat(customName).isNull()
-      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo(request.createdBy)
-      assertThat(updatedTime).isNull()
-      assertThat(updatedBy).isNull()
-      assertThat(isMigrated).isTrue
-      with(appointments()) {
-        assertThat(size).isEqualTo(1)
-        with(appointments().first()) {
-          assertThat(categoryCode).isEqualTo(request.categoryCode)
-          assertThat(prisonCode).isEqualTo(request.prisonCode)
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(extraInformation).isEqualTo(request.comment)
-          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo(request.createdBy)
-          assertThat(updatedTime).isNull()
-          assertThat(updatedBy).isNull()
-          assertThat(isDeleted).isFalse
-          with(attendees()) {
-            assertThat(size).isEqualTo(1)
-            with(first()) {
-              assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
-              assertThat(bookingId).isEqualTo(request.bookingId)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with comment over 40 characters success`() {
-    val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -932,11 +884,11 @@ class AppointmentServiceTest {
       created = LocalDateTime.of(2022, 10, 23, 10, 30),
       createdBy = "DPS.USER",
     )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       assertThat(createdTime).isEqualTo(request.created)
       assertThat(createdBy).isEqualTo(request.createdBy)
     }
@@ -948,11 +900,11 @@ class AppointmentServiceTest {
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       assertThat(updatedTime).isEqualTo(request.updated)
       assertThat(updatedBy).isEqualTo(request.updatedBy)
       with(appointments().first()) {
@@ -966,11 +918,11 @@ class AppointmentServiceTest {
   fun `migrateAppointment isCancelled defaults to false`() {
     val request = appointmentMigrateRequest(isCancelled = null)
 
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       with(appointments().first()) {
         assertThat(cancelledTime).isNull()
         assertThat(cancellationReason).isNull()
@@ -984,11 +936,11 @@ class AppointmentServiceTest {
     val request = appointmentMigrateRequest(isCancelled = true)
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       with(appointments().first()) {
         assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(cancellationReason).isEqualTo(cancellationReason)
@@ -1006,11 +958,11 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       with(appointments().first()) {
         assertThat(cancelledTime).isEqualTo(request.updated)
         assertThat(cancellationReason).isEqualTo(cancellationReason)
@@ -1030,11 +982,11 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
-    with(appointmentEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.value) {
       with(appointments().first()) {
         assertThat(cancelledTime).isEqualTo(request.created)
         assertThat(cancellationReason).isEqualTo(cancellationReason)
