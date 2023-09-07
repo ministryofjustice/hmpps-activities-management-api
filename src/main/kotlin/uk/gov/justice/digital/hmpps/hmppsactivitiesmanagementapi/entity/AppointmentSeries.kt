@@ -36,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 data class AppointmentSeries(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "appointment_series_id")
   val appointmentSeriesId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -45,7 +44,7 @@ data class AppointmentSeries(
     joinColumns = [JoinColumn(name = "appointment_series_id")],
     inverseJoinColumns = [JoinColumn(name = "appointment_set_id")],
   )
-  val bulkAppointment: BulkAppointment? = null,
+  val appointmentSet: AppointmentSet? = null,
 
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,

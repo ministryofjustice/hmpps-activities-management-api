@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISON_STAFF_APPOINTMENT_HOST_ID
@@ -24,7 +24,7 @@ import java.time.LocalTime
 
 internal fun appointmentSeriesEntity(
   appointmentSeriesId: Long = 1,
-  bulkAppointment: BulkAppointment? = null,
+  appointmentSet: AppointmentSet? = null,
   appointmentType: AppointmentType? = null,
   appointmentDescription: String? = "Appointment description",
   internalLocationId: Long = 123,
@@ -40,7 +40,7 @@ internal fun appointmentSeriesEntity(
   numberOfOccurrences: Int = 1,
 ) = AppointmentSeries(
   appointmentSeriesId = appointmentSeriesId,
-  bulkAppointment = bulkAppointment,
+  appointmentSet = appointmentSet,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
   categoryCode = "TEST",
@@ -57,7 +57,7 @@ internal fun appointmentSeriesEntity(
   updated = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
 ).apply {
-  bulkAppointment?.addAppointment(this)
+  appointmentSet?.addAppointment(this)
 
   repeatPeriod?.let {
     this.schedule = AppointmentSchedule(
@@ -187,8 +187,8 @@ internal fun bulkAppointmentEntity(
   endTime: LocalTime = LocalTime.of(10, 30),
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
 ) =
-  BulkAppointment(
-    bulkAppointmentId = bulkAppointmentId,
+  AppointmentSet(
+    appointmentSetId = bulkAppointmentId,
     prisonCode = "TPR",
     categoryCode = "TEST",
     appointmentDescription = appointmentDescription,

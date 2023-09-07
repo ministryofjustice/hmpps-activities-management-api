@@ -49,7 +49,7 @@ class BulkAppointmentDetailsServiceTest {
   @Test
   fun `getBulkAppointmentDetailsById returns mapped appointment details for known bulk appointment id`() {
     val entity = bulkAppointmentEntity()
-    whenever(bulkAppointmentRepository.findById(entity.bulkAppointmentId)).thenReturn(Optional.of(entity))
+    whenever(bulkAppointmentRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
@@ -105,7 +105,7 @@ class BulkAppointmentDetailsServiceTest {
   fun `getBulkAppointmentDetailsById throws caseload access exception when caseload id header is different`() {
     addCaseloadIdToRequestHeader("WRONG")
     val entity = bulkAppointmentEntity()
-    whenever(bulkAppointmentRepository.findById(entity.bulkAppointmentId)).thenReturn(Optional.of(entity))
-    assertThatThrownBy { service.getBulkAppointmentDetailsById(entity.bulkAppointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
+    whenever(bulkAppointmentRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getBulkAppointmentDetailsById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }

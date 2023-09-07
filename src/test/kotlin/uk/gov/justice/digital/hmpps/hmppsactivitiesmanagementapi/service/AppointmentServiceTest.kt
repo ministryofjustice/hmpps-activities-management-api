@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
@@ -106,7 +106,7 @@ class AppointmentServiceTest {
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<AppointmentSeries>
 
   @Captor
-  private lateinit var bulkAppointmentEntityCaptor: ArgumentCaptor<BulkAppointment>
+  private lateinit var appointmentSetEntityCaptor: ArgumentCaptor<AppointmentSet>
 
   @Captor
   private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
@@ -711,9 +711,9 @@ class AppointmentServiceTest {
         ),
       )
 
-    whenever(bulkAppointmentRepository.saveAndFlush(bulkAppointmentEntityCaptor.capture())).thenReturn(
-      BulkAppointment(
-        bulkAppointmentId = 1,
+    whenever(bulkAppointmentRepository.saveAndFlush(appointmentSetEntityCaptor.capture())).thenReturn(
+      AppointmentSet(
+        appointmentSetId = 1,
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         appointmentDescription = request.appointmentDescription,
@@ -723,8 +723,8 @@ class AppointmentServiceTest {
         startDate = request.startDate,
         createdBy = "TEST.USER",
       ).apply {
-        this.addAppointment(appointmentSeriesEntity(appointmentSeriesId = 1, bulkAppointment = this))
-        this.addAppointment(appointmentSeriesEntity(appointmentSeriesId = 2, bulkAppointment = this))
+        this.addAppointment(appointmentSeriesEntity(appointmentSeriesId = 1, appointmentSet = this))
+        this.addAppointment(appointmentSeriesEntity(appointmentSeriesId = 2, appointmentSet = this))
       },
     )
 
@@ -736,7 +736,7 @@ class AppointmentServiceTest {
       telemetryMetricsMap.capture(),
     )
 
-    with(bulkAppointmentEntityCaptor.value) {
+    with(appointmentSetEntityCaptor.value) {
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(appointmentDescription).isEqualTo(request.appointmentDescription)

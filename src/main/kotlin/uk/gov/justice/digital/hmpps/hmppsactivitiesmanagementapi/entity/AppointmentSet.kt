@@ -28,11 +28,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppoi
 
 @Entity
 @Table(name = "appointment_set")
-data class BulkAppointment(
+data class AppointmentSet(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "appointment_set_id")
-  val bulkAppointmentId: Long = 0,
+  val appointmentSetId: Long = 0,
 
   val prisonCode: String,
 
@@ -79,7 +78,7 @@ data class BulkAppointment(
   fun occurrences() = appointments().map { appointment -> appointment.occurrences() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
 
   fun toModel() = BulkAppointmentModel(
-    id = this.bulkAppointmentId,
+    id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
     appointmentDescription = appointmentDescription,
@@ -92,7 +91,7 @@ data class BulkAppointment(
   )
 
   fun toSummary() = BulkAppointmentSummary(
-    id = this.bulkAppointmentId,
+    id = this.appointmentSetId,
     appointmentCount = this.appointments().size,
   )
 
@@ -103,7 +102,7 @@ data class BulkAppointment(
     userMap: Map<String, UserDetail>,
   ): BulkAppointmentDetails {
     return BulkAppointmentDetails(
-      bulkAppointmentId,
+      appointmentSetId,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),

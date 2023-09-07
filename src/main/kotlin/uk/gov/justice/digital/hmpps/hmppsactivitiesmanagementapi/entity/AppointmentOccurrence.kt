@@ -181,7 +181,7 @@ data class AppointmentOccurrence(
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
       appointmentSeries.appointmentSeriesId,
-      appointmentSeries.bulkAppointment?.toSummary(),
+      appointmentSeries.appointmentSet?.toSummary(),
       appointmentSeries.appointmentType,
       sequenceNumber,
       prisonCode,

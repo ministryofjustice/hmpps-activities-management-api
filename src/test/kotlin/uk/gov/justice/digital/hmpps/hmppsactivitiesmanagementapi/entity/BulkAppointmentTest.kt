@@ -19,7 +19,7 @@ class BulkAppointmentTest {
   fun `entity to model mapping`() {
     val entity = bulkAppointmentEntity()
     val expectedModel = BulkAppointmentModel(
-      entity.bulkAppointmentId,
+      entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,
       entity.appointmentDescription,
