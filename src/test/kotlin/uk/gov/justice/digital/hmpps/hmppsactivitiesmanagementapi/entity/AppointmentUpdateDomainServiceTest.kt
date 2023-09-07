@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -47,9 +47,9 @@ class AppointmentUpdateDomainServiceTest {
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "").toSet()
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "").toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "").toSet()
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "").toSet()
   private val updatedBy = "TEST.USER"
 
   @BeforeEach
@@ -64,7 +64,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `updates appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val updated = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.updateAppointmentIds(
@@ -102,7 +102,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `track custom event using supplied counts and start time`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointmentIds(
         appointmentSeries.appointmentSeriesId,
@@ -134,7 +134,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates category code`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
+      val request = AppointmentUpdateRequest(categoryCode = "NEW")
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -163,7 +163,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates internal location id`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -192,7 +192,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates in cell = true`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(inCell = true)
+      val request = AppointmentUpdateRequest(inCell = true)
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -235,7 +235,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates start date`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val weekFromNow = LocalDate.now().plusWeeks(2)
-      val request = AppointmentOccurrenceUpdateRequest(startDate = weekFromNow)
+      val request = AppointmentUpdateRequest(startDate = weekFromNow)
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -272,7 +272,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates start time`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(startTime = LocalTime.of(13, 30))
+      val request = AppointmentUpdateRequest(startTime = LocalTime.of(13, 30))
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -301,7 +301,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates end time`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(endTime = LocalTime.of(15, 0))
+      val request = AppointmentUpdateRequest(endTime = LocalTime.of(15, 0))
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -330,7 +330,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates comment`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(comment = "Updated appointment level comment")
+      val request = AppointmentUpdateRequest(extraInformation = "Updated appointment level comment")
       val response = service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -359,7 +359,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `sets updated and updated by on appointment series and appointment when property changed`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val updated = LocalDateTime.now()
       val response = service.updateAppointments(
         appointmentSeries,
@@ -402,7 +402,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `does not set updated and updated by on appointment series and appointment when no properties have changed`() {
       val appointmentsToUpdate = applyToAllFuture
-      val request = AppointmentOccurrenceUpdateRequest()
+      val request = AppointmentUpdateRequest()
       val updated = LocalDateTime.now()
       val response = service.updateAppointments(
         appointmentSeries,
@@ -433,7 +433,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `track custom event using supplied counts and start time`() {
       val appointmentsToUpdate = applyToThis
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointments(
         appointmentSeries,
@@ -462,7 +462,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `do not track custom event`() {
       val appointmentsToUpdate = applyToThis
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointments(
         appointmentSeries,
@@ -485,7 +485,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `track audit event`() {
       val appointmentsToUpdate = applyToThis
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -507,7 +507,7 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `do not track audit event`() {
       val appointmentsToUpdate = applyToThis
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       service.updateAppointments(
         appointmentSeries,
         appointment.appointmentId,
@@ -532,14 +532,14 @@ class AppointmentUpdateDomainServiceTest {
   inner class UpdateInstanceCount {
     @Test
     fun `no updates`() {
-      val request = AppointmentOccurrenceUpdateRequest()
+      val request = AppointmentUpdateRequest()
       val appointmentSeries = appointmentSeriesEntity()
       service.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()) isEqualTo 0
     }
 
     @Test
     fun `update category code`() {
-      val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NEW")
+      val request = AppointmentUpdateRequest(categoryCode = "NEW")
       service.getUpdateInstancesCount(
         request,
         appointmentSeries,
@@ -549,7 +549,7 @@ class AppointmentUpdateDomainServiceTest {
 
     @Test
     fun `update location`() {
-      val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
+      val request = AppointmentUpdateRequest(internalLocationId = 456)
       service.getUpdateInstancesCount(
         request,
         appointmentSeries,
@@ -560,21 +560,21 @@ class AppointmentUpdateDomainServiceTest {
     @Test
     fun `remove prisoners`() {
       // Only A1234BC is currently allocated
-      val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = listOf("A1234BC", "D4567EF"))
+      val request = AppointmentUpdateRequest(removePrisonerNumbers = listOf("A1234BC", "D4567EF"))
       service.getUpdateInstancesCount(request, appointmentSeries, applyToAllFuture) isEqualTo applyToAllFuture.size
     }
 
     @Test
     fun `add prisoners`() {
       // C3456DE is already allocated
-      val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"))
+      val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"))
       service.getUpdateInstancesCount(request, appointmentSeries, applyToThis) isEqualTo applyToThis.size * 2
     }
 
     @Test
     fun `remove and add prisoners`() {
       // Only A1234BC is currently allocated
-      val request = AppointmentOccurrenceUpdateRequest(
+      val request = AppointmentUpdateRequest(
         removePrisonerNumbers = listOf("A1234BC"),
         addPrisonerNumbers = listOf("D4567EF", "E5678FG"),
       )
@@ -587,7 +587,7 @@ class AppointmentUpdateDomainServiceTest {
 
     @Test
     fun `does not include removed prisoners when a property is also updated`() {
-      val request = AppointmentOccurrenceUpdateRequest(
+      val request = AppointmentUpdateRequest(
         startTime = LocalTime.of(8, 30),
         removePrisonerNumbers = listOf("A1234BC", "D4567EF"),
       )
@@ -600,7 +600,7 @@ class AppointmentUpdateDomainServiceTest {
 
     @Test
     fun `includes added prisoners when a property is also updated`() {
-      val request = AppointmentOccurrenceUpdateRequest(
+      val request = AppointmentUpdateRequest(
         endTime = LocalTime.of(11, 0),
         addPrisonerNumbers = listOf("D4567EF", "E5678FG"),
       )
@@ -613,8 +613,8 @@ class AppointmentUpdateDomainServiceTest {
 
     @Test
     fun `update a property, remove a prisoner and add two prisoners`() {
-      val request = AppointmentOccurrenceUpdateRequest(
-        comment = "New",
+      val request = AppointmentUpdateRequest(
+        extraInformation = "New",
         removePrisonerNumbers = listOf("A1234BC", "D4567EF"),
         addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"),
       )

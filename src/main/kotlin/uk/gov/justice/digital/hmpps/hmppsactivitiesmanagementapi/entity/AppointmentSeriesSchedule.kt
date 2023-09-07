@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentFrequencyModel
 
@@ -28,7 +28,7 @@ data class AppointmentSeriesSchedule(
 
   var numberOfAppointments: Int,
 ) {
-  fun toRepeat() = AppointmentRepeat(
+  fun toRepeat() = AppointmentSchedule(
     AppointmentFrequencyModel.valueOf(frequency.toString()),
     numberOfAppointments,
   )

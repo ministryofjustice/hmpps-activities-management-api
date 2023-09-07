@@ -9,7 +9,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -25,7 +25,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   fun `search appointment occurrences authorisation required`() {
     webTestClient.post()
       .uri("/appointment-occurrences/MDI/search")
-      .bodyValue(AppointmentOccurrenceSearchRequest())
+      .bodyValue(AppointmentSearchRequest())
       .exchange()
       .expectStatus().isUnauthorized
   }
@@ -35,7 +35,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences in prison with no appointments`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
@@ -59,7 +59,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences in other prison`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
@@ -82,7 +82,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences that are part of a group appointment`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       appointmentType = AppointmentType.GROUP,
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -107,7 +107,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences starting today`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
     )
 
@@ -130,7 +130,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences starting within a week`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusWeeks(1),
     )
@@ -159,7 +159,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences starting in the AM timeslot`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       timeSlot = TimeSlot.AM,
@@ -188,7 +188,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences that are part of an appointment with category AC1`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       categoryCode = "AC1",
@@ -213,7 +213,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences with internal location id 123`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       internalLocationId = 123,
@@ -238,7 +238,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for in cell appointment occurrences`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       inCell = true,
@@ -263,7 +263,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences created by DIFFERENT USER`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       createdBy = "DIFFERENT.USER",
@@ -290,7 +290,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search for appointment occurrences for prisoner number B2345CD`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
       prisonerNumbers = listOf("B2345CD"),
@@ -317,7 +317,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search returns edited appointment occurrences`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
@@ -341,7 +341,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `search returns cancelled appointment occurrences`() {
-    val request = AppointmentOccurrenceSearchRequest(
+    val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
@@ -362,7 +362,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.searchAppointmentOccurrences(
     prisonCode: String,
-    request: AppointmentOccurrenceSearchRequest,
+    request: AppointmentSearchRequest,
   ) =
     post()
       .uri("/appointment-occurrences/$prisonCode/search")

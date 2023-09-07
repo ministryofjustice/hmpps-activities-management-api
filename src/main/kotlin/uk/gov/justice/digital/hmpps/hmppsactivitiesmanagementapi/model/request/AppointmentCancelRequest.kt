@@ -5,10 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  Describes how to cancel or delete one or more appointment occurrences. 
+  Describes how to cancel or delete one or more appointments. 
   """,
 )
-data class AppointmentOccurrenceCancelRequest(
+data class AppointmentCancelRequest(
 
   @Schema(
     description =
@@ -23,11 +23,11 @@ data class AppointmentOccurrenceCancelRequest(
   @Schema(
     description =
     """
-    Specifies which appointment occurrence or occurrences this cancellation should apply to.
-    Defaults to THIS_OCCURRENCE meaning the cancellation will be applied to the appointment occurrence specified by the
+    Specifies which appointment or appointments this cancellation should apply to.
+    Defaults to THIS_APPOINTMENT meaning the cancellation will be applied to the appointment specified by the
     supplied id only.
     """,
-    example = "THIS_OCCURRENCE",
+    example = "THIS_APPOINTMENT",
   )
-  val applyTo: ApplyTo = ApplyTo.THIS_OCCURRENCE,
+  val applyTo: ApplyTo = ApplyTo.THIS_APPOINTMENT,
 )

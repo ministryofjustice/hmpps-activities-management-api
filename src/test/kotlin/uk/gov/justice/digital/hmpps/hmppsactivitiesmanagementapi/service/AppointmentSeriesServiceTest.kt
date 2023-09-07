@@ -40,7 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -169,15 +169,15 @@ class AppointmentSeriesServiceTest {
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        repeat = request.repeat,
-        extraInformation = request.comment,
+        repeat = request.schedule,
+        extraInformation = request.extraInformation,
         createdBy = principal.name,
       )
     }.isInstanceOf(CaseloadAccessException::class.java)
@@ -199,15 +199,15 @@ class AppointmentSeriesServiceTest {
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        repeat = request.repeat,
-        extraInformation = request.comment,
+        repeat = request.schedule,
+        extraInformation = request.extraInformation,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -232,15 +232,15 @@ class AppointmentSeriesServiceTest {
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        repeat = request.repeat,
-        extraInformation = request.comment,
+        repeat = request.schedule,
+        extraInformation = request.extraInformation,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -267,15 +267,15 @@ class AppointmentSeriesServiceTest {
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
         categoryCode = request.categoryCode!!,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        repeat = request.repeat,
-        extraInformation = request.comment,
+        repeat = request.schedule,
+        extraInformation = request.extraInformation,
         createdBy = principal.name,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -320,15 +320,15 @@ class AppointmentSeriesServiceTest {
       prisonerNumbers = request.prisonerNumbers,
       prisonerBookings = emptyMap(),
       categoryCode = request.categoryCode!!,
-      customName = request.appointmentDescription,
+      customName = request.customName,
       appointmentTier = appointmentTierNotSpecified(),
       internalLocationId = request.internalLocationId,
       inCell = request.inCell,
       startDate = request.startDate,
       startTime = request.startTime,
       endTime = request.endTime,
-      repeat = request.repeat,
-      extraInformation = request.comment,
+      repeat = request.schedule,
+      extraInformation = request.extraInformation,
       createdBy = principal.name,
       isMigrated = true,
     )
@@ -361,7 +361,7 @@ class AppointmentSeriesServiceTest {
     val prisonerList = MutableList(60) { prisoner -> "A11${prisoner}BC" }
     val request = appointmentCreateRequest(
       prisonerNumbers = prisonerList,
-      repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 350),
+      repeat = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 350),
     )
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -419,7 +419,7 @@ class AppointmentSeriesServiceTest {
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(extraInformation).isEqualTo(request.comment)
+      assertThat(extraInformation).isEqualTo(request.extraInformation)
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
       assertThat(updatedTime).isNull()
@@ -434,7 +434,7 @@ class AppointmentSeriesServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(extraInformation).isEqualTo(request.comment)
+          assertThat(extraInformation).isEqualTo(request.extraInformation)
           assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
           assertThat(updatedTime).isNull()
@@ -524,7 +524,7 @@ class AppointmentSeriesServiceTest {
 
   @Test
   fun `createAppointmentSeries individual repeat appointment success`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(AppointmentFrequencyModel.WEEKLY, 3))
+    val request = appointmentCreateRequest(repeat = AppointmentSchedule(AppointmentFrequencyModel.WEEKLY, 3))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -586,7 +586,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for fifteen prisoners synchronously when it repeats once creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 1))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 1))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -620,7 +620,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for seven prisoners synchronously when it repeats twice creating fourteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 2))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 2))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -654,7 +654,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentRepeat(AppointmentFrequencyModel.DAILY, 5))
+    val request = appointmentCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), repeat = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 5))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -716,7 +716,7 @@ class AppointmentSeriesServiceTest {
         appointmentSetId = 1,
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
@@ -739,7 +739,7 @@ class AppointmentSeriesServiceTest {
     with(appointmentSetEntityCaptor.value) {
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(customName).isEqualTo(request.appointmentDescription)
+      assertThat(customName).isEqualTo(request.customName)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
       assertThat(startDate).isEqualTo(request.startDate)

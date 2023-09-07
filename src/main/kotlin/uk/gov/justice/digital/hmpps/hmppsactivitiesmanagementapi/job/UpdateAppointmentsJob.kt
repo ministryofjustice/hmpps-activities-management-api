@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
@@ -40,7 +40,7 @@ class UpdateAppointmentsJob(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToUpdate: Set<Long>,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,

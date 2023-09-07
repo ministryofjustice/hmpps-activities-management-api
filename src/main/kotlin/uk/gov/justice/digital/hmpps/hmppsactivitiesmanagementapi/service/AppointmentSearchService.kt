@@ -4,7 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchRepository
@@ -35,7 +35,7 @@ class AppointmentSearchService(
 ) {
   fun searchAppointments(
     prisonCode: String,
-    request: AppointmentOccurrenceSearchRequest,
+    request: AppointmentSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> {
     checkCaseloadAccess(prisonCode)
@@ -98,7 +98,7 @@ class AppointmentSearchService(
     return results.toResults(attendeeMap, referenceCodeMap, locationMap)
   }
 
-  private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentOccurrenceSearchRequest, results: Int, startTimeInMs: Long) {
+  private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentSearchRequest, results: Int, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to prisonCode,

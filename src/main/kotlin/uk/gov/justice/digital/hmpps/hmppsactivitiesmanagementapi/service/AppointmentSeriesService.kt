@@ -11,13 +11,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -85,7 +85,7 @@ class AppointmentSeriesService(
   }
 
   // TODO: Create AppointmentSetService and move this function
-  fun createAppointmentSet(request: BulkAppointmentsRequest, principal: Principal): BulkAppointment {
+  fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): BulkAppointment {
     val startTime = System.currentTimeMillis()
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
@@ -95,7 +95,7 @@ class AppointmentSeriesService(
         AppointmentSetEntity(
           prisonCode = request.prisonCode,
           categoryCode = request.categoryCode,
-          customName = request.appointmentDescription,
+          customName = request.customName,
           appointmentTier = appointmentTier,
           internalLocationId = request.internalLocationId,
           inCell = request.inCell,
@@ -109,14 +109,14 @@ class AppointmentSeriesService(
               prisonerNumbers = listOf(it.prisonerNumber),
               prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
               categoryCode = request.categoryCode,
-              customName = request.appointmentDescription,
+              customName = request.customName,
               appointmentTier = appointmentTier,
               internalLocationId = request.internalLocationId,
               inCell = request.inCell,
               startDate = request.startDate,
               startTime = it.startTime,
               endTime = it.endTime,
-              extraInformation = it.comment,
+              extraInformation = it.extraInformation,
               createdBy = principal.name,
             )
           }.forEach { appointmentSeries -> this.addAppointmentSeries(appointmentSeries) }
@@ -129,14 +129,14 @@ class AppointmentSeriesService(
     }
   }
 
-  fun createAppointmentSeries(request: AppointmentCreateRequest, principal: Principal): Appointment {
+  fun createAppointmentSeries(request: AppointmentSeriesCreateRequest, principal: Principal): Appointment {
     val startTime = System.currentTimeMillis()
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
 
     val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
-    val createFirstAppointmentOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
+    val createFirstAppointmentOnly = request.schedule?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
       buildValidAppointmentSeriesEntity(
@@ -146,14 +146,14 @@ class AppointmentSeriesService(
         prisonerBookings = prisonerBookings,
         inCell = request.inCell,
         categoryCode = request.categoryCode!!,
-        customName = request.appointmentDescription,
+        customName = request.customName,
         appointmentTier = appointmentTier,
         internalLocationId = request.internalLocationId,
         startDate = request.startDate,
         startTime = request.startTime,
         endTime = request.endTime,
-        repeat = request.repeat,
-        extraInformation = request.comment,
+        repeat = request.schedule,
+        extraInformation = request.extraInformation,
         createdBy = principal.name,
         createFirstAppointmentOnly = createFirstAppointmentOnly,
       ),
@@ -215,7 +215,7 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: AppointmentRepeat?) {
+  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: AppointmentSchedule?) {
     val repeatCount = repeat?.count ?: 1
     require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
       "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
@@ -235,7 +235,7 @@ class AppointmentSeriesService(
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
-    repeat: AppointmentRepeat? = null,
+    repeat: AppointmentSchedule? = null,
     extraInformation: String? = null,
     createdTime: LocalDateTime = LocalDateTime.now(),
     createdBy: String,
@@ -275,7 +275,7 @@ class AppointmentSeriesService(
       this.schedule = repeat?.let {
         AppointmentSeriesSchedule(
           appointmentSeries = this,
-          frequency = AppointmentFrequency.valueOf(repeat.period!!.name),
+          frequency = AppointmentFrequency.valueOf(repeat.frequency!!.name),
           numberOfAppointments = repeat.count!!,
         )
       }
@@ -329,7 +329,7 @@ class AppointmentSeriesService(
       .filter { prisoner -> prisoner.prisonId == prisonCode }
       .associate { it.prisonerNumber to it.bookingId }
 
-  private fun logAppointmentSeriesCreatedMetric(principal: Principal, request: AppointmentCreateRequest, appointmentSeries: Appointment, startTimeInMs: Long) {
+  private fun logAppointmentSeriesCreatedMetric(principal: Principal, request: AppointmentSeriesCreateRequest, appointmentSeries: Appointment, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to appointmentSeries.prisonCode,
@@ -340,15 +340,15 @@ class AppointmentSeriesService(
       START_DATE_PROPERTY_KEY to appointmentSeries.startDate.toString(),
       START_TIME_PROPERTY_KEY to appointmentSeries.startTime.toString(),
       END_TIME_PROPERTY_KEY to appointmentSeries.endTime.toString(),
-      IS_REPEAT_PROPERTY_KEY to (request.repeat != null).toString(),
-      REPEAT_PERIOD_PROPERTY_KEY to (request.repeat?.period?.toString() ?: ""),
-      REPEAT_COUNT_PROPERTY_KEY to (request.repeat?.count?.toString() ?: ""),
+      IS_REPEAT_PROPERTY_KEY to (request.schedule != null).toString(),
+      REPEAT_PERIOD_PROPERTY_KEY to (request.schedule?.frequency?.toString() ?: ""),
+      REPEAT_COUNT_PROPERTY_KEY to (request.schedule?.count?.toString() ?: ""),
       HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointmentSeries.comment?.isNotEmpty() == true).toString(),
     )
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.repeat?.count ?: 1)).toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.count ?: 1)).toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSeries.appointmentDescription?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.comment?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
@@ -381,7 +381,7 @@ class AppointmentSeriesService(
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
   }
 
-  private fun writeAppointmentCreatedAuditRecord(request: AppointmentCreateRequest, appointment: Appointment) {
+  private fun writeAppointmentCreatedAuditRecord(request: AppointmentSeriesCreateRequest, appointment: Appointment) {
     auditService.logEvent(
       AppointmentSeriesCreatedEvent(
         appointmentSeriesId = appointment.id,
@@ -392,16 +392,16 @@ class AppointmentSeriesService(
         startDate = appointment.startDate,
         startTime = appointment.startTime,
         endTime = appointment.endTime,
-        isRepeat = request.repeat != null,
-        frequency = request.repeat?.period,
-        numberOfAppointments = request.repeat?.count,
+        isRepeat = request.schedule != null,
+        frequency = request.schedule?.frequency,
+        numberOfAppointments = request.schedule?.count,
         hasExtraInformation = appointment.comment?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
         createdTime = LocalDateTime.now(),
       ),
     )
   }
-  private fun writeAppointmentSetCreatedAuditRecord(request: BulkAppointmentsRequest, appointment: BulkAppointment) {
+  private fun writeAppointmentSetCreatedAuditRecord(request: AppointmentSetCreateRequest, appointment: BulkAppointment) {
     auditService.logEvent(
       AppointmentSetCreatedEvent(
         appointmentSetId = appointment.id,

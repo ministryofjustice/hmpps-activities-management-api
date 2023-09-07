@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import java.time.LocalDateTime
 
@@ -27,7 +27,7 @@ class CancelAppointmentsJobTest {
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "").toSet()
 
   @BeforeEach
   fun setUp() {
@@ -40,7 +40,7 @@ class CancelAppointmentsJobTest {
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
       applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }.map { it.appointmentId }.toSet(),
-      AppointmentOccurrenceCancelRequest(cancellationReasonId = 1),
+      AppointmentCancelRequest(cancellationReasonId = 1),
       LocalDateTime.now(),
       "TEST.USER",
       3,
@@ -58,7 +58,7 @@ class CancelAppointmentsJobTest {
     val appointmentIdsToCancel =
       applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }
         .map { it.appointmentId }.toSet()
-    val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = 2)
+    val request = AppointmentCancelRequest(cancellationReasonId = 2)
     val cancelled = LocalDateTime.now()
     val startTimeInMs = System.currentTimeMillis()
 

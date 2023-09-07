@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -115,7 +115,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment throws illegal argument exception when appointment is in the past`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(1, ApplyTo.THIS_APPOINTMENT)
 
       val appointmentSeries = appointmentSeriesEntity(
         appointmentSeriesId = 2,
@@ -143,7 +143,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment throws entity not found exception for unknown appointment id`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(1, ApplyTo.THIS_APPOINTMENT)
 
       assertThatThrownBy { service.cancelAppointment(-1, request, mock()) }.isInstanceOf(
         EntityNotFoundException::class.java,
@@ -155,7 +155,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment throws entity not found exception for unknown appointment cancellation reason id`() {
-      val request = AppointmentOccurrenceCancelRequest(-1, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(-1, ApplyTo.THIS_APPOINTMENT)
 
       whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
         Optional.of(appointment),
@@ -202,7 +202,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with reason that triggers soft delete success`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(1, ApplyTo.THIS_APPOINTMENT)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -236,7 +236,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with reason that does not trigger soft delete success`() {
-      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(2, ApplyTo.THIS_APPOINTMENT)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -306,7 +306,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that triggers a soft delete and that applies to this appointment only`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(1, ApplyTo.THIS_APPOINTMENT)
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
       with(appointments.subList(0, 2)) {
@@ -331,7 +331,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this appointment only`() {
-      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_OCCURRENCE)
+      val request = AppointmentCancelRequest(2, ApplyTo.THIS_APPOINTMENT)
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
       with(appointments.subList(0, 2)) {
@@ -356,7 +356,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that triggers a soft delete and that applies to this and all future appointments`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentCancelRequest(1, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -379,7 +379,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that does not trigger a soft delete and that applies to this and all future appointments`() {
-      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentCancelRequest(2, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -402,7 +402,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that triggers a soft delete and that applies to all future appointments`() {
-      val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentCancelRequest(1, ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -425,7 +425,7 @@ class AppointmentServiceCancelTest {
 
     @Test
     fun `cancel appointment with a reason that does not trigger a soft delete and that applies to all future appointments`() {
-      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentCancelRequest(2, ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
       service.cancelAppointment(appointment.appointmentId, request, principal)
 
@@ -449,7 +449,7 @@ class AppointmentServiceCancelTest {
     @Test
     fun `cancel appointment throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
-      val request = AppointmentOccurrenceCancelRequest(2, ApplyTo.ALL_FUTURE_OCCURRENCES)
+      val request = AppointmentCancelRequest(2, ApplyTo.ALL_FUTURE_APPOINTMENTS)
       assertThatThrownBy { service.cancelAppointment(appointment.appointmentId, request, principal) }
         .isInstanceOf(CaseloadAccessException::class.java)
     }

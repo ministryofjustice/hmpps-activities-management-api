@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
@@ -127,6 +127,6 @@ class AppointmentController(
       description = "The create request with the new appointment or series of appointment occurrences details",
       required = true,
     )
-    request: AppointmentCreateRequest,
+    request: AppointmentSeriesCreateRequest,
   ): Appointment = appointmentSeriesService.createAppointmentSeries(request, principal)
 }

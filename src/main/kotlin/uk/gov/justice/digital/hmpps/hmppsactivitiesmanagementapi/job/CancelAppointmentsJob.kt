@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
@@ -39,7 +39,7 @@ class CancelAppointmentsJob(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToCancel: Set<Long>,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
     cancelAppointmentsCount: Int,

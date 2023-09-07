@@ -124,10 +124,10 @@ data class AppointmentSeries(
     }
 
     return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointment).union(
+      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> listOf(appointment).union(
         scheduledAppointmentsAfter(appointment.startDateTime()),
       ).toList()
-      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledAppointments()
+      ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
       else -> listOf(appointment)
     }
   }

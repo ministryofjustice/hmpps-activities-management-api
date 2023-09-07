@@ -17,8 +17,8 @@ import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
@@ -41,7 +41,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
   @Test
   fun `404 not found response when update appointment occurrence by invalid id`() {
-    val request = AppointmentOccurrenceUpdateRequest()
+    val request = AppointmentUpdateRequest()
     val mockPrincipal: Principal = mock()
 
     whenever(appointmentService.updateAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment Occurrence -1 not found"))
@@ -59,7 +59,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
   @Test
   fun `400 bad request response when update appointment occurrence with invalid json`() {
-    val request = AppointmentOccurrenceUpdateRequest(
+    val request = AppointmentUpdateRequest(
       inCell = false,
       startDate = LocalDate.now().minusDays(1),
       startTime = LocalTime.of(10, 30),
@@ -88,7 +88,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
   @Test
   fun `202 accepted response when update appointment occurrence with valid json`() {
-    val request = AppointmentOccurrenceUpdateRequest()
+    val request = AppointmentUpdateRequest()
     val expectedResponse = appointmentSeriesEntity().toModel()
 
     val mockPrincipal: Principal = mock()
@@ -106,7 +106,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
   @Test
   fun `400 bad request response when search appointment occurrences with invalid json`() {
-    val request = AppointmentOccurrenceSearchRequest()
+    val request = AppointmentSearchRequest()
     val mockPrincipal: Principal = mock()
 
     mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
@@ -127,7 +127,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
   @Test
   fun `202 accepted response when search appointment occurrences with valid json`() {
-    val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now())
+    val request = AppointmentSearchRequest(startDate = LocalDate.now())
     val expectedResponse = listOf(appointmentOccurrenceSearchResultModel())
 
     val mockPrincipal: Principal = mock()
@@ -143,7 +143,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
 
-  private fun MockMvc.updateAppointmentOccurrence(id: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal) =
+  private fun MockMvc.updateAppointmentOccurrence(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
     patch("/appointment-occurrences/{appointmentOccurrenceId}", id) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
@@ -152,7 +152,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
       )
     }
 
-  private fun MockMvc.searchAppointmentOccurrences(prisonCode: String, request: AppointmentOccurrenceSearchRequest, principal: Principal) =
+  private fun MockMvc.searchAppointmentOccurrences(prisonCode: String, request: AppointmentSearchRequest, principal: Principal) =
     post("/appointment-occurrences/{prisonCode}/search", prisonCode) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON

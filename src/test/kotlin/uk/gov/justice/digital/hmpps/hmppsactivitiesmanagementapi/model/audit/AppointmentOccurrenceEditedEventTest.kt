@@ -52,7 +52,7 @@ class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
       startTime = startTime,
       originalEndTime = originalEndTime,
       endTime = endTime,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
       createdAt = createdAt,
     )
   }

@@ -9,8 +9,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -31,7 +31,7 @@ class AppointmentService(
   private val cancelAppointmentsJob: CancelAppointmentsJob,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
-  fun updateAppointment(appointmentId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentSeriesModel {
+  fun updateAppointment(appointmentId: Long, request: AppointmentUpdateRequest, principal: Principal): AppointmentSeriesModel {
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 
@@ -118,7 +118,7 @@ class AppointmentService(
     return updatedAppointment
   }
 
-  fun cancelAppointment(appointmentId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentSeriesModel {
+  fun cancelAppointment(appointmentId: Long, request: AppointmentCancelRequest, principal: Principal): AppointmentSeriesModel {
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 

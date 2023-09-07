@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
@@ -79,6 +79,6 @@ class BulkAppointmentController(
       description = "The create request containing the new appointments",
       required = true,
     )
-    request: BulkAppointmentsRequest,
+    request: AppointmentSetCreateRequest,
   ): BulkAppointment = appointmentSeriesService.createAppointmentSet(request, principal)
 }

@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 
-fun AppointmentOccurrenceUpdateRequest.toTelemetryPropertiesMap(
+fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   user: String,
   prisonCode: String,
   appointmentSeriesId: Long,
@@ -19,11 +19,11 @@ fun AppointmentOccurrenceUpdateRequest.toTelemetryPropertiesMap(
     START_DATE_CHANGED_PROPERTY_KEY to (this.startDate != null).toString(),
     START_TIME_CHANGED_PROPERTY_KEY to (this.startTime != null).toString(),
     END_TIME_CHANGED_PROPERTY_KEY to (this.endTime != null).toString(),
-    EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to (this.comment != null).toString(),
+    EXTRA_INFORMATION_CHANGED_PROPERTY_KEY to (this.extraInformation != null).toString(),
     APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
   )
 
-fun AppointmentOccurrenceUpdateRequest.toTelemetryMetricsMap(appointmentCount: Int, appointmentInstanceCount: Int) =
+fun AppointmentUpdateRequest.toTelemetryMetricsMap(appointmentCount: Int, appointmentInstanceCount: Int) =
   mutableMapOf(
     APPOINTMENT_COUNT_METRIC_KEY to appointmentCount.toDouble(),
     APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentInstanceCount.toDouble(),
@@ -32,7 +32,7 @@ fun AppointmentOccurrenceUpdateRequest.toTelemetryMetricsMap(appointmentCount: I
     EVENT_TIME_MS_METRIC_KEY to 0.0,
   )
 
-fun AppointmentOccurrenceCancelRequest.toTelemetryPropertiesMap(
+fun AppointmentCancelRequest.toTelemetryPropertiesMap(
   user: String,
   prisonCode: String,
   appointmentSeriesId: Long,

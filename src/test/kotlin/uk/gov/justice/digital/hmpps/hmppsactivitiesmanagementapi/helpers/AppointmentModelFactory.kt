@@ -10,14 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.IndividualAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import java.time.LocalDate
@@ -109,9 +109,9 @@ fun appointmentCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   comment: String = "Appointment level comment",
-  repeat: AppointmentRepeat? = null,
+  repeat: AppointmentSchedule? = null,
 ) =
-  AppointmentCreateRequest(
+  AppointmentSeriesCreateRequest(
     appointmentType,
     prisonCode,
     prisonerNumbers,
@@ -138,19 +138,19 @@ fun bulkAppointmentRequest(
   appointmentDescription: String = "Appointment description",
   prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
 ) =
-  BulkAppointmentsRequest(
+  AppointmentSetCreateRequest(
     categoryCode = categoryCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    appointmentDescription = appointmentDescription,
+    customName = appointmentDescription,
     appointments = prisonerNumbers.map {
       IndividualAppointment(
         prisonerNumber = it,
         startTime = startTime,
         endTime = endTime,
-        comment = comment,
+        extraInformation = comment,
       )
     }.toList(),
   )

@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import java.time.LocalDate
 import java.time.LocalTime
 
-class AppointmentCreateRequestTest {
+class AppointmentSeriesCreateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
@@ -95,19 +95,19 @@ class AppointmentCreateRequestTest {
 
   @Test
   fun `repeat period must be supplied`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = null, count = 6))
+    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = null, count = 6))
     assertSingleValidationError(validator.validate(request), "repeat.period", "Repeat period must be supplied")
   }
 
   @Test
   fun `repeat count must be supplied`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentFrequency.FORTNIGHTLY, count = null))
+    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, count = null))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
   }
 
   @Test
   fun `repeat count must be greater than 0`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentFrequency.MONTHLY, count = 0))
+    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = AppointmentFrequency.MONTHLY, count = 0))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 
@@ -123,7 +123,7 @@ class AppointmentCreateRequestTest {
     assertSingleValidationError(validator.validate(request), "comment", "Appointment comment must not exceed 4000 characters")
   }
 
-  private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentCreateRequest>>, propertyName: String, message: String) {
+  private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentSeriesCreateRequest>>, propertyName: String, message: String) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)
     assertThat(validate.first().message).isEqualTo(message)

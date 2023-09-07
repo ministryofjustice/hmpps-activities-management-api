@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -132,7 +132,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.startDate = LocalDate.now().minusDays(3)
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "update") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "update") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot update a past appointment")
   }
 
@@ -144,7 +144,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.cancelledTime = LocalDateTime.now()
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot modify a cancelled appointment")
   }
 
@@ -156,7 +156,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.isDeleted = true
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot cancel a deleted appointment")
   }
 
@@ -167,7 +167,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L))
     }
@@ -180,7 +180,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
@@ -193,7 +193,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(3)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L, 3L))
     }
@@ -206,7 +206,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].startDate = LocalDate.now().minusDays(3) }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -219,7 +219,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].cancelledTime = LocalDateTime.now() }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -232,7 +232,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].isDeleted = true }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -246,7 +246,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
@@ -259,7 +259,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].cancelledTime = LocalDateTime.now() }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -272,7 +272,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].isDeleted = true }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -531,7 +531,7 @@ class AppointmentSeriesTest {
       ),
     )
     with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
-      assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
+      assertThat(repeat).isEqualTo(AppointmentSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
     }
   }
 

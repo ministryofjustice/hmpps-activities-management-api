@@ -19,9 +19,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -216,7 +216,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create individual repeat appointment success`() {
     val request =
-      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentFrequency.FORTNIGHTLY, 3))
+      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -260,7 +260,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentRepeat(AppointmentFrequency.DAILY, 2),
+      repeat = AppointmentSchedule(AppointmentFrequency.DAILY, 2),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -306,7 +306,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentRepeat(AppointmentFrequency.DAILY, 4),
+      repeat = AppointmentSchedule(AppointmentFrequency.DAILY, 4),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -348,21 +348,21 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
   }
 
-  private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
+  private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentSeriesCreateRequest) {
     assertThat(appointment).isEqualTo(
       Appointment(
         appointment.id,
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
-        request.appointmentDescription,
+        request.customName,
         request.internalLocationId,
         request.inCell,
         request.startDate!!,
         request.startTime!!,
         request.endTime,
         null,
-        request.comment,
+        request.extraInformation,
         appointment.created,
         "test-client",
         null,
@@ -372,13 +372,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             appointment.occurrences.first().id,
             1,
             request.categoryCode!!,
-            request.appointmentDescription,
+            request.customName,
             request.internalLocationId,
             request.inCell,
             request.startDate!!,
             request.startTime!!,
             request.endTime,
-            request.comment,
+            request.extraInformation,
             null,
             null,
             null,
@@ -402,21 +402,21 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(appointment.occurrences.first().allocations.first().id).isGreaterThan(0)
   }
 
-  private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentCreateRequest) {
+  private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentSeriesCreateRequest) {
     assertThat(appointment).isEqualTo(
       Appointment(
         appointment.id,
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
-        request.appointmentDescription,
+        request.customName,
         request.internalLocationId,
         request.inCell,
         request.startDate!!,
         request.startTime!!,
         request.endTime,
         null,
-        request.comment,
+        request.extraInformation,
         appointment.created,
         "test-client",
         null,
@@ -426,13 +426,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             appointment.occurrences.first().id,
             1,
             request.categoryCode!!,
-            request.appointmentDescription,
+            request.customName,
             request.internalLocationId,
             request.inCell,
             request.startDate!!,
             request.startTime!!,
             request.endTime,
-            request.comment,
+            request.extraInformation,
             null,
             null,
             null,
@@ -463,7 +463,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .returnResult().responseBody
 
   private fun WebTestClient.createAppointment(
-    request: AppointmentCreateRequest,
+    request: AppointmentSeriesCreateRequest,
   ) =
     post()
       .uri("/appointments")

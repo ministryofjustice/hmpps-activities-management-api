@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
@@ -98,7 +98,7 @@ class AppointmentOccurrenceController(
       description = "The update request with the new appointment occurrence details and how to apply the update",
       required = true,
     )
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     principal: Principal,
   ): Appointment = appointmentService.updateAppointment(appointmentOccurrenceId, request, principal)
 
@@ -165,7 +165,7 @@ class AppointmentOccurrenceController(
       description = "The cancel request with the appointment occurrence details and how to apply the cancellation",
       required = true,
     )
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     principal: Principal,
   ) = appointmentService.cancelAppointment(appointmentOccurrenceId, request, principal)
 
@@ -222,7 +222,7 @@ class AppointmentOccurrenceController(
       description = "The search parameters to use to filter appointment occurrences",
       required = true,
     )
-    request: AppointmentOccurrenceSearchRequest,
+    request: AppointmentSearchRequest,
     principal: Principal,
   ): List<AppointmentOccurrenceSearchResult> = appointmentSearchService.searchAppointments(prisonCode, request, principal)
 }

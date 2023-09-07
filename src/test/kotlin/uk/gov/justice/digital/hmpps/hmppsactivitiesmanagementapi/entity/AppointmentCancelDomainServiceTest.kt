@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -50,9 +50,9 @@ class AppointmentCancelDomainServiceTest {
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_OCCURRENCE, "")
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_OCCURRENCES, "")
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")
 
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentDeletedReason()
@@ -75,7 +75,7 @@ class AppointmentCancelDomainServiceTest {
     @Test
     fun `cancels appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
+      val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentIds(
@@ -113,7 +113,7 @@ class AppointmentCancelDomainServiceTest {
     @Test
     fun `track cancelled custom event using supplied counts and start time`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
+      val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
@@ -141,7 +141,7 @@ class AppointmentCancelDomainServiceTest {
     @Test
     fun `deletes appointments with supplied ids`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
+      val request = AppointmentCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentIds(
@@ -179,7 +179,7 @@ class AppointmentCancelDomainServiceTest {
     @Test
     fun `track deleted custom event using supplied counts and start time`() {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
-      val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
+      val request = AppointmentCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,

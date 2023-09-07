@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -63,7 +63,7 @@ class AppointmentServiceUpdateTest {
 
   @Test
   fun `updateAppointment throws entity not found exception for unknown appointment id`() {
-    assertThatThrownBy { service.updateAppointment(-1, AppointmentOccurrenceUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service.updateAppointment(-1, AppointmentUpdateRequest(), mock()) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Appointment -1 not found")
   }
 
@@ -71,7 +71,7 @@ class AppointmentServiceUpdateTest {
   fun `update appointment throws caseload access exception if caseload id header does not match`() {
     val appointment = expectIndividualAppointment()
     addCaseloadIdToRequestHeader("WRONG")
-    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }
       .isInstanceOf(CaseloadAccessException::class.java)
   }
@@ -79,7 +79,7 @@ class AppointmentServiceUpdateTest {
   @Test
   fun `update category code throws illegal argument exception when requested category code is not found`() {
     val appointment = expectGroupAppointment()
-    val request = AppointmentOccurrenceUpdateRequest(categoryCode = "NOT_FOUND")
+    val request = AppointmentUpdateRequest(categoryCode = "NOT_FOUND")
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
 
@@ -91,7 +91,7 @@ class AppointmentServiceUpdateTest {
   fun `update internal location throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val appointment = expectGroupAppointment()
     val appointmentSeries = appointment.appointmentSeries
-    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = -1)
+    val request = AppointmentUpdateRequest(internalLocationId = -1)
 
     whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
 
@@ -102,7 +102,7 @@ class AppointmentServiceUpdateTest {
   @Test
   fun `update prisoner list throws illegal argument exception when prisoner is not found`() {
     val appointment = expectGroupAppointment()
-    val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("NOT_FOUND"))
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("NOT_FOUND"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(emptyList()))
 
@@ -113,7 +113,7 @@ class AppointmentServiceUpdateTest {
   @Test
   fun `update prisoner list throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val appointment = expectGroupAppointment()
-    val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
       .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
@@ -125,7 +125,7 @@ class AppointmentServiceUpdateTest {
   @Test
   fun `update prisoner list throws illegal argument exception when adding prisoner to individual appointment`() {
     val appointment = expectIndividualAppointment()
-    val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = listOf("A1234BC", "BC2345D"))
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("A1234BC", "BC2345D"))
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot add prisoners to an individual appointment")

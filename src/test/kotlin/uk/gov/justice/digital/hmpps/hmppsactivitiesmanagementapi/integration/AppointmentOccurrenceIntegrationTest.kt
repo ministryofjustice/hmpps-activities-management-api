@@ -22,8 +22,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -78,7 +78,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   fun `update appointment occurrence authorisation required`() {
     webTestClient.patch()
       .uri("/appointment-occurrences/1")
-      .bodyValue(AppointmentOccurrenceUpdateRequest())
+      .bodyValue(AppointmentUpdateRequest())
       .exchange()
       .expectStatus().isUnauthorized
   }
@@ -88,7 +88,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     webTestClient.patch()
       .uri("/appointment-occurrences/-1")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .bodyValue(AppointmentOccurrenceUpdateRequest())
+      .bodyValue(AppointmentUpdateRequest())
       .exchange()
       .expectStatus().isNotFound
   }
@@ -98,14 +98,14 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `update single appointment occurrence`() {
-    val request = AppointmentOccurrenceUpdateRequest(
+    val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       internalLocationId = 456,
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated Appointment level comment",
-      applyTo = ApplyTo.THIS_OCCURRENCE,
+      extraInformation = "Updated Appointment level comment",
+      applyTo = ApplyTo.THIS_APPOINTMENT,
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -132,7 +132,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(startDate).isEqualTo(request.startDate)
         assertThat(startTime).isEqualTo(request.startTime)
         assertThat(endTime).isEqualTo(request.endTime)
-        assertThat(comment).isEqualTo(request.comment)
+        assertThat(comment).isEqualTo(request.extraInformation)
         assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("test-client")
         with(allocations.single()) {
@@ -159,8 +159,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `cancel single appointment occurrence with a reason that does NOT trigger a soft delete`() {
-    val request = AppointmentOccurrenceCancelRequest(
-      applyTo = ApplyTo.THIS_OCCURRENCE,
+    val request = AppointmentCancelRequest(
+      applyTo = ApplyTo.THIS_APPOINTMENT,
       cancellationReasonId = 2,
     )
 
@@ -192,8 +192,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `cancel single appointment occurrence with a reason that triggers a soft delete`() {
-    val request = AppointmentOccurrenceCancelRequest(
-      applyTo = ApplyTo.THIS_OCCURRENCE,
+    val request = AppointmentCancelRequest(
+      applyTo = ApplyTo.THIS_APPOINTMENT,
       cancellationReasonId = 1,
     )
 
@@ -222,8 +222,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `cancel group repeat appointment this and all future occurrences with a reason that triggers a soft delete`() {
-    val request = AppointmentOccurrenceCancelRequest(
-      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+    val request = AppointmentCancelRequest(
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
       cancellationReasonId = 1,
     )
 
@@ -264,8 +264,8 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `cancel group repeat appointment this and all future occurrences with a reason that does NOT trigger a soft delete`() {
-    val request = AppointmentOccurrenceCancelRequest(
-      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+    val request = AppointmentCancelRequest(
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
       cancellationReasonId = 2,
     )
 
@@ -318,9 +318,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     // cancel only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
     // will be cancelled as an asynchronous job
     val appointmentOccurrenceId = 22L
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = 2,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
@@ -388,9 +388,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     // delete only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
     // will be deleted as an asynchronous job
     val appointmentOccurrenceId = 22L
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = 1,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
@@ -453,16 +453,16 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `update group repeat appointment this and all future occurrences`() {
-    val request = AppointmentOccurrenceUpdateRequest(
+    val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       internalLocationId = 456,
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated Appointment level comment",
+      extraInformation = "Updated Appointment level comment",
       addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
       removePrisonerNumbers = listOf("A1234BC"),
-      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -583,9 +583,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     // update only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
     // will be updated as an asynchronous job
     val appointmentOccurrenceId = 22L
-    val request = AppointmentOccurrenceUpdateRequest(
+    val request = AppointmentUpdateRequest(
       internalLocationId = 456,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
@@ -662,10 +662,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     // add allocations on only the first affected occurrence and its allocations synchronously. The remaining occurrences
     // will have allocations removed and added as an asynchronous job
     val appointmentOccurrenceId = 22L
-    val request = AppointmentOccurrenceUpdateRequest(
+    val request = AppointmentUpdateRequest(
       removePrisonerNumbers = listOf("A1234BC"),
       addPrisonerNumbers = listOf("D4567EF", "E5679FG"),
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -762,7 +762,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.updateAppointmentOccurrence(
     id: Long,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
   ) =
     patch()
       .uri("/appointment-occurrences/$id")
@@ -776,7 +776,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.cancelAppointmentOccurrence(
     id: Long,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
   ) =
     put()
       .uri("/appointment-occurrences/$id/cancel")

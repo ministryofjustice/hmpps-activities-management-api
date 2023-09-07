@@ -34,7 +34,7 @@ class AppointmentCancelledEventTest : AuditableEventTestBase() {
       appointmentSeriesId = 1,
       appointmentId = 2,
       prisonCode = "PBI",
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
       createdAt = createdAt,
     )
   }

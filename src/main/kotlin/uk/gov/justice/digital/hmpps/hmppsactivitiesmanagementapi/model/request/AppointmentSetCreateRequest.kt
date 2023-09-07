@@ -12,11 +12,10 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Describes a list appointment occurrences to be created in bulk
+  Describes a list of appointment series each with one appointment and one attendee to be created as a connected set
   """,
 )
-data class BulkAppointmentsRequest(
-
+data class AppointmentSetCreateRequest(
   @field:NotEmpty(message = "Prison code must be supplied")
   @field:Size(max = 3, message = "Prison code should not exceed {max} characters")
   @Schema(
@@ -32,15 +31,16 @@ data class BulkAppointmentsRequest(
   )
   val categoryCode: String,
 
-  @field:Size(max = 40, message = "Appointment description should not exceed {max} characters")
+  @field:Size(max = 40, message = "Custom name should not exceed {max} characters")
   @Schema(
     description =
     """
-    Free text description for these appointments.  This is used to add more context to the appointment category.
+    Free text name further describing the appointment series. Will be used to create the appointment name using the
+    format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
@@ -84,7 +84,7 @@ data class IndividualAppointment(
 
   @field:NotNull(message = "A prisoner number must be supplied")
   @Schema(
-    description = "The prisoner to allocate to the created appointment",
+    description = "The prisoner attending the appointment",
     example = "A1234BC",
   )
   val prisonerNumber: String,
@@ -105,13 +105,13 @@ data class IndividualAppointment(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
-  @field:Size(max = 4000, message = "Appointment comment must not exceed {max} characters")
   @Schema(
     description =
     """
-    Notes relating to the appointment.
+    Extra information for the prisoner or prisoners attending the appointment. Shown only on the appointments details
+    page and on printed movement slips. Wing staff will be notified there is extra information via the unlock list.
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String = "",
+  val extraInformation: String? = null,
 )

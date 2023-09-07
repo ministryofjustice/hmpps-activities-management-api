@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -27,7 +27,7 @@ class AppointmentUpdateDomainService(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToUpdate: Set<Long>,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
@@ -44,7 +44,7 @@ class AppointmentUpdateDomainService(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
     appointmentsToUpdate: Set<Appointment>,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
@@ -94,7 +94,7 @@ class AppointmentUpdateDomainService(
   }
 
   fun getUpdateInstancesCount(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentSeries: AppointmentSeries,
     appointmentsToUpdate: Collection<Appointment>,
   ): Int {
@@ -120,7 +120,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyCategoryCodeUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -131,7 +131,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyInternalLocationUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -148,7 +148,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyStartDateUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentSeries: AppointmentSeries,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
@@ -162,7 +162,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyStartEndTimeUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -177,18 +177,18 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyCommentUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
-      request.comment?.apply {
+      request.extraInformation?.apply {
         it.extraInformation = this
       }
     }
   }
 
   private fun applyRemovePrisonersUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach { appointmentToUpdate ->
@@ -203,7 +203,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyAddPrisonersUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
     prisonerMap: Map<String, Prisoner>,
   ) {
@@ -226,7 +226,7 @@ class AppointmentUpdateDomainService(
 
   private fun writeAppointmentUpdatedAuditRecord(
     appointmentId: Long,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     originalAppointmentSeries: AppointmentSeries,
     updatedAppointmentSeries: AppointmentSeries,
   ) {

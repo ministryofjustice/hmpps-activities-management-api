@@ -127,7 +127,7 @@ data class AppointmentDetails(
     always more than one occurrence as a repeat count of one is valid.
     """,
   )
-  val repeat: AppointmentRepeat?,
+  val repeat: AppointmentSchedule?,
 
   @Schema(
     description =
