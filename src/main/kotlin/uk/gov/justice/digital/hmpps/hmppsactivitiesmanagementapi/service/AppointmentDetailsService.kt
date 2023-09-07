@@ -19,17 +19,17 @@ class AppointmentDetailsService(
   private val prisonApiClient: PrisonApiClient,
 ) {
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
-    checkCaseloadAccess(appointment.prisonCode)
+    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointment.prisonerNumbers()).block()!!
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointmentSeries.prisonerNumbers()).block()!!
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
 
-    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
+    val userMap = prisonApiClient.getUserDetailsList(appointmentSeries.usernames()).associateBy { it.username }
 
-    return appointment.toDetails(prisoners, referenceCodeMap, locationMap, userMap)
+    return appointmentSeries.toDetails(prisoners, referenceCodeMap, locationMap, userMap)
   }
 }

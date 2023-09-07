@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -50,7 +50,7 @@ class AppointmentDetailsServiceTest {
   @Test
   fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {
     addCaseloadIdToRequestHeader("TPR")
-    val entity = appointmentEntity()
+    val entity = appointmentSeriesEntity()
     val occurrenceEntity = entity.occurrences().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
@@ -131,7 +131,7 @@ class AppointmentDetailsServiceTest {
   @Test
   fun `getAppointmentDetailsById throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
-    val entity = appointmentEntity()
+    val entity = appointmentSeriesEntity()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
 
     assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentId) }.isInstanceOf(CaseloadAccessException::class.java)

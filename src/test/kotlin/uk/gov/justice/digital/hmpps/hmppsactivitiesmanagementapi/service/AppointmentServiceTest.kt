@@ -23,7 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
@@ -31,7 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
@@ -103,7 +103,7 @@ class AppointmentServiceTest {
   private lateinit var principal: Principal
 
   @Captor
-  private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
+  private lateinit var appointmentEntityCaptor: ArgumentCaptor<AppointmentSeries>
 
   @Captor
   private lateinit var bulkAppointmentEntityCaptor: ArgumentCaptor<BulkAppointment>
@@ -144,7 +144,7 @@ class AppointmentServiceTest {
 
   @Test
   fun `getAppointmentById returns an appointment for known appointment id`() {
-    val entity = appointmentEntity()
+    val entity = appointmentSeriesEntity()
     whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
     assertThat(service.getAppointmentById(1)).isEqualTo(entity.toModel())
   }
@@ -407,7 +407,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointment(request, principal)
 
@@ -505,7 +505,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointment(request, principal)
 
@@ -539,7 +539,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3))
 
     service.createAppointment(request, principal)
 
@@ -571,7 +571,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -605,7 +605,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -639,7 +639,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -673,7 +673,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -723,8 +723,8 @@ class AppointmentServiceTest {
         startDate = request.startDate,
         createdBy = "TEST.USER",
       ).apply {
-        this.addAppointment(appointmentEntity(appointmentId = 1, bulkAppointment = this))
-        this.addAppointment(appointmentEntity(appointmentId = 2, bulkAppointment = this))
+        this.addAppointment(appointmentSeriesEntity(appointmentId = 1, bulkAppointment = this))
+        this.addAppointment(appointmentSeriesEntity(appointmentId = 2, bulkAppointment = this))
       },
     )
 
@@ -833,7 +833,7 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment with comment under 40 characters success`() {
     val request = appointmentMigrateRequest()
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -881,7 +881,7 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment with comment over 40 characters success`() {
     val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -932,7 +932,7 @@ class AppointmentServiceTest {
       created = LocalDateTime.of(2022, 10, 23, 10, 30),
       createdBy = "DPS.USER",
     )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -948,7 +948,7 @@ class AppointmentServiceTest {
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -966,7 +966,7 @@ class AppointmentServiceTest {
   fun `migrateAppointment isCancelled defaults to false`() {
     val request = appointmentMigrateRequest(isCancelled = null)
 
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -984,7 +984,7 @@ class AppointmentServiceTest {
     val request = appointmentMigrateRequest(isCancelled = true)
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -1006,7 +1006,7 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -1030,7 +1030,7 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentEntity())
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 

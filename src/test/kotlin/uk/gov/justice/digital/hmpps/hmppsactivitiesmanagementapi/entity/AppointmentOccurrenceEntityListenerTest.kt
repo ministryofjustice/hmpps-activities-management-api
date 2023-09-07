@@ -9,7 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
@@ -20,10 +20,10 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
 
-  private val appointment = appointmentEntity(
+  private val appointmentSeries = appointmentSeriesEntity(
     prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 457),
   )
-  private var appointmentOccurrence = appointment.occurrences().first()
+  private var appointmentOccurrence = appointmentSeries.occurrences().first()
 
   @Test
   fun `appointment instance updated events raised on occurrence update`() {

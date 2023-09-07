@@ -66,11 +66,11 @@ data class BulkAppointment(
     joinColumns = [JoinColumn(name = "appointment_set_id")],
     inverseJoinColumns = [JoinColumn(name = "appointment_series_id")],
   )
-  private val appointments: MutableList<Appointment> = mutableListOf()
+  private val appointments: MutableList<AppointmentSeries> = mutableListOf()
 
   fun appointments() = appointments.toList()
 
-  fun addAppointment(appointment: Appointment) = appointments.add(appointment)
+  fun addAppointment(appointmentSeries: AppointmentSeries) = appointments.add(appointmentSeries)
 
   fun prisonerNumbers() = appointments().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
 

@@ -23,7 +23,7 @@ data class AppointmentSchedule(
   val appointmentScheduleId: Long = 0,
 
   @OneToOne(mappedBy = "schedule", fetch = FetchType.EAGER)
-  val appointment: Appointment,
+  val appointmentSeries: AppointmentSeries,
 
   @Enumerated(EnumType.STRING)
   @Column(name = "frequency")

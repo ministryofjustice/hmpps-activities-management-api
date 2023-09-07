@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
@@ -33,7 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 class AppointmentOccurrenceTest {
   @Test
   fun `not cancelled or deleted when cancellation reason is null`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       cancellationReason = null
     }
     entity.isCancelled() isEqualTo false
@@ -42,7 +42,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `cancelled but not deleted when cancellation reason is not deleted`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       cancellationReason = appointmentCancelledReason()
     }
     entity.isCancelled() isEqualTo true
@@ -51,7 +51,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `deleted but not cancelled when cancellation reason is deleted`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       cancellationReason = appointmentDeletedReason()
     }
     entity.isCancelled() isEqualTo false
@@ -60,7 +60,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `expired when start date time is in the past`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().minusMinutes(1)
     }
@@ -69,7 +69,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `not expired when start date time is in the future`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
     }
@@ -78,7 +78,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `scheduled when start date time is in the future, not cancelled or deleted`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
       cancellationReason = null
@@ -88,7 +88,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `not scheduled when start date time is in the past, not cancelled or deleted`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().minusMinutes(1)
       cancellationReason = null
@@ -98,7 +98,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `not scheduled when start date time is in the future but is cancelled`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
       cancellationReason = appointmentCancelledReason()
@@ -108,7 +108,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `not scheduled when start date time is in the future but is deleted`() {
-    val entity = appointmentEntity().occurrences().first().apply {
+    val entity = appointmentSeriesEntity().occurrences().first().apply {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
       cancellationReason = appointmentDeletedReason()
@@ -118,27 +118,27 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to model mapping`() {
-    val entity = appointmentEntity().occurrences().first()
+    val entity = appointmentSeriesEntity().occurrences().first()
     val expectedModel = appointmentOccurrenceModel(entity.updated)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
-    val entityList = appointmentEntity().occurrences()
+    val entityList = appointmentSeriesEntity().occurrences()
     val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updated))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `prisoner numbers concatenates allocations`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789)).occurrences().first()
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789)).occurrences().first()
     assertThat(entity.prisonerNumbers()).containsExactly("A1234BC", "B2345CD")
   }
 
   @Test
   fun `prisoner numbers removes duplicates`() {
-    val entity = appointmentEntity(
+    val entity = appointmentSeriesEntity(
       appointmentType = AppointmentType.GROUP,
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456),
       numberOfOccurrences = 2,
@@ -151,7 +151,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to summary mapping`() {
-    val entity = appointmentEntity().occurrences().first()
+    val entity = appointmentSeriesEntity().occurrences().first()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
@@ -178,7 +178,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity list to summary list mapping`() {
-    val entity = appointmentEntity().occurrences().first()
+    val entity = appointmentSeriesEntity().occurrences().first()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
@@ -207,7 +207,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to summary mapping in cell nullifies internal location`() {
-    val entity = appointmentEntity(inCell = true).occurrences().first()
+    val entity = appointmentSeriesEntity(inCell = true).occurrences().first()
     entity.internalLocationId = 123
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
@@ -220,7 +220,7 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to summary mapping updated by null`() {
-    val entity = appointmentEntity(updatedBy = null).occurrences().first()
+    val entity = appointmentSeriesEntity(updatedBy = null).occurrences().first()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
@@ -232,12 +232,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -253,10 +253,10 @@ class AppointmentOccurrenceTest {
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
-        appointment.appointmentId,
+        appointmentSeries.appointmentId,
         sequenceNumber = 1,
-        appointmentDescription = appointment.appointmentDescription,
-        created = appointment.created,
+        appointmentDescription = appointmentSeries.appointmentDescription,
+        created = appointmentSeries.created,
         updated = entity.updated,
       ),
     )
@@ -264,12 +264,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity list to details list mapping`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -286,10 +286,10 @@ class AppointmentOccurrenceTest {
       listOf(
         appointmentOccurrenceDetails(
           entity.appointmentOccurrenceId,
-          appointment.appointmentId,
+          appointmentSeries.appointmentId,
           sequenceNumber = 1,
-          appointmentDescription = appointment.appointmentDescription,
-          created = appointment.created,
+          appointmentDescription = appointmentSeries.appointmentDescription,
+          created = appointmentSeries.created,
           updated = entity.updated,
         ),
       ),
@@ -298,12 +298,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping bulk appointment`() {
-    val appointment = bulkAppointmentEntity().appointments().first()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = bulkAppointmentEntity().appointments().first()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -320,12 +320,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping prisoner not found`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = emptyMap<String, Prisoner>()
@@ -344,12 +344,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping map single prisoner`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonersMap = mapOf(
@@ -385,12 +385,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping reference code not found`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -404,19 +404,19 @@ class AppointmentOccurrenceTest {
       ),
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      assertThat(category.code).isEqualTo(appointment.categoryCode)
-      assertThat(category.description).isEqualTo(appointment.categoryCode)
+      assertThat(category.code).isEqualTo(appointmentSeries.categoryCode)
+      assertThat(category.description).isEqualTo(appointmentSeries.categoryCode)
     }
   }
 
   @Test
   fun `entity to details mapping location not found`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = emptyMap<Long, Location>()
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -439,10 +439,10 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping users not found`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     entity.cancelledBy = "CANCEL.USER"
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = emptyMap<String, UserDetail>()
     val prisonerMap = mapOf(
@@ -475,13 +475,13 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping in cell nullifies internal location`() {
-    val appointment = appointmentEntity(internalLocationId = 123, inCell = true)
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity(internalLocationId = 123, inCell = true)
+    val entity = appointmentSeries.occurrences().first()
     entity.internalLocationId = 123
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -502,13 +502,13 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping updated by null`() {
-    val appointment = appointmentEntity(updatedBy = null)
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity(updatedBy = null)
+    val entity = appointmentSeries.occurrences().first()
     entity.updatedBy = null
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -528,15 +528,15 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping cancelled by`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     entity.cancelled = LocalDateTime.now()
     entity.cancellationReason = AppointmentCancellationReason(2, "Cancelled", false)
     entity.cancelledBy = "CANCEL.USER"
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
       entity.cancelledBy!! to userDetail(3, "CANCEL.USER", "CANCEL", "USER"),
     )
@@ -563,15 +563,15 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping cancelled by null`() {
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     entity.cancelled = null
     entity.cancellationReason = null
     entity.cancelledBy = null
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -592,12 +592,12 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping repeat appointment`() {
-    val appointment = appointmentEntity(repeatPeriod = AppointmentRepeatPeriodEntity.WEEKLY, numberOfOccurrences = 4)
-    val entity = appointment.occurrences().first()
-    val referenceCodeMap = mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode))
+    val appointmentSeries = appointmentSeriesEntity(repeatPeriod = AppointmentRepeatPeriodEntity.WEEKLY, numberOfOccurrences = 4)
+    val entity = appointmentSeries.occurrences().first()
+    val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = mapOf(
@@ -617,17 +617,17 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping includes appointment description in name`() {
-    val appointment = appointmentEntity(appointmentDescription = "appointment name")
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity(appointmentDescription = "appointment name")
+    val entity = appointmentSeries.occurrences().first()
     val referenceCodeMap = mapOf(
-      appointment.categoryCode to appointmentCategoryReferenceCode(
-        appointment.categoryCode,
+      appointmentSeries.categoryCode to appointmentCategoryReferenceCode(
+        appointmentSeries.categoryCode,
         "test category",
       ),
     )
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -646,17 +646,17 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `entity to details mapping does not include appointment description in name`() {
-    val appointment = appointmentEntity(appointmentDescription = null)
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity(appointmentDescription = null)
+    val entity = appointmentSeries.occurrences().first()
     val referenceCodeMap = mapOf(
-      appointment.categoryCode to appointmentCategoryReferenceCode(
-        appointment.categoryCode,
+      appointmentSeries.categoryCode to appointmentCategoryReferenceCode(
+        appointmentSeries.categoryCode,
         "test category",
       ),
     )
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
-      appointment.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      appointmentSeries.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -678,7 +678,7 @@ class AppointmentOccurrenceTest {
     assertThrows<IllegalArgumentException>(
       "Cannot allocate multiple prisoners to an individual appointment",
     ) {
-      appointmentEntity(
+      appointmentSeriesEntity(
         appointmentType = AppointmentType.INDIVIDUAL,
         prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789),
       )
@@ -687,19 +687,19 @@ class AppointmentOccurrenceTest {
 
   @Test
   fun `isCancelled is false when cancellation reason is false`() {
-    val entity = appointmentEntity().occurrences().first()
+    val entity = appointmentSeriesEntity().occurrences().first()
     assertThat(entity.isCancelled()).isFalse
   }
 
   @Test
   fun `isCancelled is false when cancellation reason deleted is true`() {
-    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
+    val entity = appointmentSeriesEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", true) }
     assertThat(entity.isCancelled()).isFalse
   }
 
   @Test
   fun `isCancelled is true when cancellation reason deleted is false`() {
-    val entity = appointmentEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
+    val entity = appointmentSeriesEntity().occurrences().first().apply { cancellationReason = AppointmentCancellationReason(1, "", false) }
     assertThat(entity.isCancelled()).isTrue
   }
 }

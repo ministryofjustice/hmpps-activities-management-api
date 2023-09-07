@@ -36,11 +36,11 @@ data class AppointmentOccurrenceAllocation(
     bookingId = bookingId,
   )
 
-  fun isIndividualAppointment() = appointmentOccurrence.appointment.appointmentType == AppointmentType.INDIVIDUAL
+  fun isIndividualAppointment() = appointmentOccurrence.appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL
 
-  fun isGroupAppointment() = appointmentOccurrence.appointment.appointmentType == AppointmentType.GROUP
+  fun isGroupAppointment() = appointmentOccurrence.appointmentSeries.appointmentType == AppointmentType.GROUP
 
-  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointment.removeOccurrence(occurrence)
+  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointmentSeries.removeOccurrence(occurrence)
 
   fun removeFromAppointmentOccurrence() = appointmentOccurrence.removeAllocation(this)
 }

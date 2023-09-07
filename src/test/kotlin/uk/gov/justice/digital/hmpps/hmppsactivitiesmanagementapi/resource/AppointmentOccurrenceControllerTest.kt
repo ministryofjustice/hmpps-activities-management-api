@@ -15,7 +15,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
@@ -89,7 +89,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   @Test
   fun `202 accepted response when update appointment occurrence with valid json`() {
     val request = AppointmentOccurrenceUpdateRequest()
-    val expectedResponse = appointmentEntity().toModel()
+    val expectedResponse = appointmentSeriesEntity().toModel()
 
     val mockPrincipal: Principal = mock()
 

@@ -36,9 +36,9 @@ class AppointmentOccurrenceService(
     val now = LocalDateTime.now()
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
-    val appointment = appointmentOccurrence.appointment
-    val occurrencesToUpdate = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "update")
-    checkCaseloadAccess(appointment.prisonCode)
+    val appointmentSeries = appointmentOccurrence.appointmentSeries
+    val occurrencesToUpdate = appointmentSeries.applyToOccurrences(appointmentOccurrence, request.applyTo, "update")
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
     if (request.categoryCode != null) {
       referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
@@ -50,26 +50,26 @@ class AppointmentOccurrenceService(
     }
 
     if (request.internalLocationId != null) {
-      locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+      locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
         .also {
           require(it.containsKey(request.internalLocationId)) {
-            "Appointment location with id ${request.internalLocationId} not found in prison '${appointment.prisonCode}'"
+            "Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'"
           }
         }
     }
 
-    require(request.removePrisonerNumbers.isNullOrEmpty() || appointment.appointmentType != AppointmentType.INDIVIDUAL) {
+    require(request.removePrisonerNumbers.isNullOrEmpty() || appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
       "Cannot remove prisoners from an individual appointment occurrence"
     }
 
     val prisonerMap = if (request.addPrisonerNumbers.isNullOrEmpty()) {
       emptyMap()
     } else {
-      require(appointment.appointmentType != AppointmentType.INDIVIDUAL) {
+      require(appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
         "Cannot add prisoners to an individual appointment occurrence"
       }
       prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers).block()!!
-        .filter { prisoner -> prisoner.prisonId == appointment.prisonCode }
+        .filter { prisoner -> prisoner.prisonId == appointmentSeries.prisonCode }
         .associateBy { prisoner -> prisoner.prisonerNumber }
         .also {
           val missingPrisonerNumbers = request.addPrisonerNumbers.filter { number -> !it.containsKey(number) }
@@ -80,12 +80,12 @@ class AppointmentOccurrenceService(
     }
 
     val updateOccurrencesCount = occurrencesToUpdate.size
-    val updateInstancesCount = appointmentOccurrenceUpdateDomainService.getUpdateInstancesCount(request, appointment, occurrencesToUpdate)
+    val updateInstancesCount = appointmentOccurrenceUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, occurrencesToUpdate)
     // Determine if this is an update request that will affect more than one occurrence and a very large number of appointment instances. If it is, only update the first occurrence
     val updateFirstOccurrenceOnly = updateOccurrencesCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
     val updatedAppointment = appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
-      appointment,
+      appointmentSeries,
       appointmentOccurrenceId,
       if (updateFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToUpdate.toSet(),
       request,
@@ -102,7 +102,7 @@ class AppointmentOccurrenceService(
     if (updateFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
       updateAppointmentOccurrencesJob.execute(
-        appointment.appointmentId,
+        appointmentSeries.appointmentId,
         appointmentOccurrenceId,
         occurrencesToUpdate.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
         request,
@@ -123,9 +123,9 @@ class AppointmentOccurrenceService(
     val now = LocalDateTime.now()
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
-    val appointment = appointmentOccurrence.appointment
-    val occurrencesToCancel = appointment.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
-    checkCaseloadAccess(appointment.prisonCode)
+    val appointmentSeries = appointmentOccurrence.appointmentSeries
+    val occurrencesToCancel = appointmentSeries.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val cancelOccurrencesCount = occurrencesToCancel.size
     val cancelInstancesCount = appointmentOccurrenceCancelDomainService.getCancelInstancesCount(occurrencesToCancel)
@@ -133,7 +133,7 @@ class AppointmentOccurrenceService(
     val cancelFirstOccurrenceOnly = cancelOccurrencesCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
 
     val cancelledAppointment = appointmentOccurrenceCancelDomainService.cancelAppointmentOccurrences(
-      appointment,
+      appointmentSeries,
       appointmentOccurrenceId,
       if (cancelFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToCancel.toSet(),
       request,
@@ -149,7 +149,7 @@ class AppointmentOccurrenceService(
     if (cancelFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
       cancelAppointmentOccurrencesJob.execute(
-        appointment.appointmentId,
+        appointmentSeries.appointmentId,
         appointmentOccurrenceId,
         occurrencesToCancel.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
         request,

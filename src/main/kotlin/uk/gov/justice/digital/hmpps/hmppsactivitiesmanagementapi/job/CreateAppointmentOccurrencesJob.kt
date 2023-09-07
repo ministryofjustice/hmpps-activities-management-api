@@ -51,31 +51,31 @@ class CreateAppointmentOccurrencesJob(
     log.info("Creating remaining occurrences for appointment with id $appointmentId")
 
     val elapsed = measureTimeMillis {
-      val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+      val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
 
-      appointment.scheduleIterator().withIndex().forEach {
+      appointmentSeries.scheduleIterator().withIndex().forEach {
         val sequenceNumber = it.index + 1
-        val occurrence = appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(appointment, sequenceNumber)
+        val occurrence = appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(appointmentSeries, sequenceNumber)
         if (occurrence == null) {
           log.info("Creating occurrence $sequenceNumber with ${prisonerBookings.size} allocations for appointment with id $appointmentId")
           runCatching {
             appointmentOccurrenceRepository.saveAndFlush(
               AppointmentOccurrence(
-                appointment = appointment,
+                appointmentSeries = appointmentSeries,
                 sequenceNumber = sequenceNumber,
-                prisonCode = appointment.prisonCode,
-                categoryCode = appointment.categoryCode,
-                appointmentDescription = appointment.appointmentDescription,
-                appointmentTier = appointment.appointmentTier,
-                appointmentHost = appointment.appointmentHost,
-                internalLocationId = appointment.internalLocationId,
-                inCell = appointment.inCell,
+                prisonCode = appointmentSeries.prisonCode,
+                categoryCode = appointmentSeries.categoryCode,
+                appointmentDescription = appointmentSeries.appointmentDescription,
+                appointmentTier = appointmentSeries.appointmentTier,
+                appointmentHost = appointmentSeries.appointmentHost,
+                internalLocationId = appointmentSeries.internalLocationId,
+                inCell = appointmentSeries.inCell,
                 startDate = it.value,
-                startTime = appointment.startTime,
-                endTime = appointment.endTime,
-                comment = appointment.comment,
-                created = appointment.created,
-                createdBy = appointment.createdBy,
+                startTime = appointmentSeries.startTime,
+                endTime = appointmentSeries.endTime,
+                comment = appointmentSeries.comment,
+                created = appointmentSeries.created,
+                createdBy = appointmentSeries.createdBy,
               ).apply {
                 prisonerBookings.forEach { prisonerBooking ->
                   this.addAllocation(

@@ -20,7 +20,7 @@ class AppointmentOccurrenceDetailsService(
 ) {
   fun getAppointmentOccurrenceDetailsById(appointmentOccurrenceId: Long): AppointmentOccurrenceDetails {
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
-    checkCaseloadAccess(appointmentOccurrence.appointment.prisonCode)
+    checkCaseloadAccess(appointmentOccurrence.appointmentSeries.prisonCode)
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentOccurrence.prisonerNumbers())
 

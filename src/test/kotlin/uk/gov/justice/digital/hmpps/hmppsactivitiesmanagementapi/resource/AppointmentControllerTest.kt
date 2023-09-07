@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
 
@@ -30,16 +30,16 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   @Test
   fun `200 response when get appointment by valid id`() {
-    val appointment = appointmentEntity().toModel()
+    val appointmentSeries = appointmentSeriesEntity().toModel()
 
-    whenever(appointmentService.getAppointmentById(1)).thenReturn(appointment)
+    whenever(appointmentService.getAppointmentById(1)).thenReturn(appointmentSeries)
 
     val response = mockMvc.getAppointmentById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointment))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentSeries))
 
     verify(appointmentService).getAppointmentById(1)
   }
@@ -87,7 +87,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   @Test
   fun `create appointment with valid json returns 201 created and appointment model`() {
     val request = appointmentCreateRequest()
-    val expectedResponse = appointmentEntity().toModel()
+    val expectedResponse = appointmentSeriesEntity().toModel()
 
     val mockPrincipal: Principal = mock()
 

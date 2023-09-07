@@ -55,7 +55,7 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment as BulkAppointmentEntity
@@ -78,10 +78,10 @@ class AppointmentService(
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long): Appointment {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
-    checkCaseloadAccess(appointment.prisonCode)
+    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
-    return appointment
+    return appointmentSeries
   }
 
   fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal): BulkAppointment {
@@ -137,7 +137,7 @@ class AppointmentService(
     // Determine if this is a create request for a very large appointment. If it is, this function will only create the first occurrence
     val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
-    val appointment = appointmentRepository.saveAndFlush(
+    val appointmentSeries = appointmentRepository.saveAndFlush(
       buildValidAppointmentEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
@@ -160,10 +160,10 @@ class AppointmentService(
 
     if (createFirstOccurrenceOnly) {
       // The remaining occurrences will be created asynchronously by this job
-      createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
+      createAppointmentOccurrencesJob.execute(appointmentSeries.appointmentId, prisonerBookings)
     }
 
-    return appointment.toModel().also {
+    return appointmentSeries.toModel().also {
       logAppointmentCreatedMetric(principal, request, it, startTime)
       writeAppointmentCreatedAuditRecord(request, it)
     }
@@ -273,7 +273,7 @@ class AppointmentService(
     ).apply {
       this.schedule = repeat?.let {
         AppointmentSchedule(
-          appointment = this,
+          appointmentSeries = this,
           repeatPeriod = AppointmentRepeatPeriod.valueOf(repeat.period!!.name),
           repeatCount = repeat.count!!,
         )
@@ -284,7 +284,7 @@ class AppointmentService(
 
         this.addOccurrence(
           AppointmentOccurrenceEntity(
-            appointment = this,
+            appointmentSeries = this,
             sequenceNumber = it.index + 1,
             prisonCode = this.prisonCode,
             categoryCode = this.categoryCode,

@@ -41,7 +41,7 @@ data class AppointmentOccurrence(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_series_id", nullable = false)
-  val appointment: Appointment,
+  val appointmentSeries: AppointmentSeries,
 
   val sequenceNumber: Int,
 
@@ -180,9 +180,9 @@ data class AppointmentOccurrence(
   ) =
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
-      appointment.appointmentId,
-      appointment.bulkAppointment?.toSummary(),
-      appointment.appointmentType,
+      appointmentSeries.appointmentId,
+      appointmentSeries.bulkAppointment?.toSummary(),
+      appointmentSeries.appointmentType,
       sequenceNumber,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
@@ -199,12 +199,12 @@ data class AppointmentOccurrence(
       startTime,
       endTime,
       comment,
-      appointment.schedule?.toRepeat(),
+      appointmentSeries.schedule?.toRepeat(),
       isEdited(),
       isCancelled(),
       isExpired(),
-      appointment.created,
-      userMap[appointment.createdBy].toSummary(appointment.createdBy),
+      appointmentSeries.created,
+      userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
       updated,
       if (updatedBy == null) {
         null
@@ -220,7 +220,7 @@ data class AppointmentOccurrence(
     )
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {
-    if (appointment.appointmentType == AppointmentType.INDIVIDUAL && allocations().isNotEmpty()) {
+    if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && allocations().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
     }
   }

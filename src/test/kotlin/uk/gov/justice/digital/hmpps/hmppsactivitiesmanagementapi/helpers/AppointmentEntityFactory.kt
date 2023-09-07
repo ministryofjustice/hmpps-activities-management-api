@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -22,7 +22,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-internal fun appointmentEntity(
+internal fun appointmentSeriesEntity(
   appointmentId: Long = 1,
   bulkAppointment: BulkAppointment? = null,
   appointmentType: AppointmentType? = null,
@@ -38,7 +38,7 @@ internal fun appointmentEntity(
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
   repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
-) = Appointment(
+) = AppointmentSeries(
   appointmentId = appointmentId,
   bulkAppointment = bulkAppointment,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
@@ -61,7 +61,7 @@ internal fun appointmentEntity(
 
   repeatPeriod?.let {
     this.schedule = AppointmentSchedule(
-      appointment = this,
+      appointmentSeries = this,
       repeatPeriod = it,
       repeatCount = numberOfOccurrences,
     )
@@ -72,23 +72,23 @@ internal fun appointmentEntity(
   }
 }
 
-fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointment.startTime, updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+fun appointmentOccurrenceEntity(appointmentSeries: AppointmentSeries, appointmentOccurrenceId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointmentSeries.startTime, updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   AppointmentOccurrence(
     appointmentOccurrenceId = appointmentOccurrenceId,
-    appointment = appointment,
+    appointmentSeries = appointmentSeries,
     sequenceNumber = sequenceNumber,
-    prisonCode = appointment.prisonCode,
-    categoryCode = appointment.categoryCode,
-    appointmentDescription = appointment.appointmentDescription,
-    appointmentTier = appointment.appointmentTier,
-    internalLocationId = appointment.internalLocationId,
-    inCell = appointment.inCell,
+    prisonCode = appointmentSeries.prisonCode,
+    categoryCode = appointmentSeries.categoryCode,
+    appointmentDescription = appointmentSeries.appointmentDescription,
+    appointmentTier = appointmentSeries.appointmentTier,
+    internalLocationId = appointmentSeries.internalLocationId,
+    inCell = appointmentSeries.inCell,
     startDate = startDate,
     startTime = startTime,
-    endTime = appointment.endTime,
+    endTime = appointmentSeries.endTime,
     comment = "Appointment occurrence level comment",
-    created = appointment.created,
-    createdBy = appointment.createdBy,
+    created = appointmentSeries.created,
+    createdBy = appointmentSeries.createdBy,
     updated = updated,
     updatedBy = updatedBy,
   ).apply {
@@ -201,7 +201,7 @@ internal fun bulkAppointmentEntity(
   ).apply {
     var count = 0L
     prisonerNumberToBookingIdMap.forEach {
-      appointmentEntity(
+      appointmentSeriesEntity(
         count + 1,
         this,
         appointmentDescription = appointmentDescription,

@@ -35,13 +35,13 @@ class AppointmentOccurrenceUpdateDomainService(
     updateInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
-    val occurrencesToUpdate = appointment.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
-    return updateAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true, false)
+    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val occurrencesToUpdate = appointmentSeries.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
+    return updateAppointmentOccurrences(appointmentSeries, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true, false)
   }
 
   fun updateAppointmentOccurrences(
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
     appointmentOccurrenceId: Long,
     occurrencesToUpdate: Set<AppointmentOccurrence>,
     request: AppointmentOccurrenceUpdateRequest,
@@ -55,15 +55,15 @@ class AppointmentOccurrenceUpdateDomainService(
     auditEvent: Boolean,
   ): AppointmentModel {
     applyCategoryCodeUpdate(request, occurrencesToUpdate)
-    applyStartDateUpdate(request, appointment, occurrencesToUpdate)
+    applyStartDateUpdate(request, appointmentSeries, occurrencesToUpdate)
     applyInternalLocationUpdate(request, occurrencesToUpdate)
     applyStartEndTimeUpdate(request, occurrencesToUpdate)
     applyCommentUpdate(request, occurrencesToUpdate)
     applyRemovePrisonersUpdate(request, occurrencesToUpdate)
 
     if (request.isPropertyUpdate()) {
-      appointment.updated = updated
-      appointment.updatedBy = updatedBy
+      appointmentSeries.updated = updated
+      appointmentSeries.updatedBy = updatedBy
       occurrencesToUpdate.forEach {
         it.updated = updated
         it.updatedBy = updatedBy
@@ -73,21 +73,21 @@ class AppointmentOccurrenceUpdateDomainService(
     if (!request.addPrisonerNumbers.isNullOrEmpty()) {
       // Adding prisoners creates new allocations on the occurrence and publishes create instance events.
       // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
-      appointmentRepository.saveAndFlush(appointment)
+      appointmentRepository.saveAndFlush(appointmentSeries)
       applyAddPrisonersUpdate(request, occurrencesToUpdate, prisonerMap)
     }
 
-    val updatedAppointment = appointmentRepository.saveAndFlush(appointment)
+    val updatedAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
-      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
+      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointmentSeries.prisonCode, appointmentSeries.appointmentId, appointmentOccurrenceId)
       val telemetryMetricsMap = request.toTelemetryMetricsMap(updateOccurrencesCount, updateInstancesCount)
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
     }
 
     if (auditEvent) {
-      writeAppointmentOccurrenceUpdatedAuditRecord(appointmentOccurrenceId, request, appointment, updatedAppointment)
+      writeAppointmentOccurrenceUpdatedAuditRecord(appointmentOccurrenceId, request, appointmentSeries, updatedAppointment)
     }
 
     return updatedAppointment.toModel()
@@ -95,7 +95,7 @@ class AppointmentOccurrenceUpdateDomainService(
 
   fun getUpdateInstancesCount(
     request: AppointmentOccurrenceUpdateRequest,
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
   ): Int {
     var instanceCount = if (request.isPropertyUpdate()) occurrencesToUpdate.flatMap { it.allocations() }.size else 0
@@ -149,12 +149,12 @@ class AppointmentOccurrenceUpdateDomainService(
 
   private fun applyStartDateUpdate(
     request: AppointmentOccurrenceUpdateRequest,
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
     occurrencesToUpdate: Collection<AppointmentOccurrence>,
   ) {
     // Changing the start date of a repeat appointment changes the start date of all affected appointments based on the original schedule using the new start date
     request.startDate?.apply {
-      val scheduleIterator = appointment.scheduleIterator().apply { startDate = request.startDate }
+      val scheduleIterator = appointmentSeries.scheduleIterator().apply { startDate = request.startDate }
       occurrencesToUpdate.sortedBy { it.sequenceNumber }.forEach {
         it.startDate = scheduleIterator.next()
       }
@@ -227,24 +227,24 @@ class AppointmentOccurrenceUpdateDomainService(
   private fun writeAppointmentOccurrenceUpdatedAuditRecord(
     appointmentOccurrenceId: Long,
     request: AppointmentOccurrenceUpdateRequest,
-    originalAppointment: Appointment,
-    updatedAppointment: Appointment,
+    originalAppointmentSeries: AppointmentSeries,
+    updatedAppointmentSeries: AppointmentSeries,
   ) {
     auditService.logEvent(
       AppointmentOccurrenceEditedEvent(
-        appointmentId = originalAppointment.appointmentId,
+        appointmentId = originalAppointmentSeries.appointmentId,
         appointmentOccurrenceId = appointmentOccurrenceId,
-        prisonCode = originalAppointment.prisonCode,
-        originalCategoryCode = originalAppointment.categoryCode,
-        categoryCode = updatedAppointment.categoryCode,
-        originalInternalLocationId = originalAppointment.internalLocationId,
-        internalLocationId = updatedAppointment.internalLocationId,
-        originalStartDate = originalAppointment.startDate,
-        startDate = updatedAppointment.startDate,
-        originalStartTime = originalAppointment.startTime,
-        startTime = updatedAppointment.startTime,
-        originalEndTime = originalAppointment.endTime,
-        endTime = updatedAppointment.endTime,
+        prisonCode = originalAppointmentSeries.prisonCode,
+        originalCategoryCode = originalAppointmentSeries.categoryCode,
+        categoryCode = updatedAppointmentSeries.categoryCode,
+        originalInternalLocationId = originalAppointmentSeries.internalLocationId,
+        internalLocationId = updatedAppointmentSeries.internalLocationId,
+        originalStartDate = originalAppointmentSeries.startDate,
+        startDate = updatedAppointmentSeries.startDate,
+        originalStartTime = originalAppointmentSeries.startTime,
+        startTime = updatedAppointmentSeries.startTime,
+        originalEndTime = originalAppointmentSeries.endTime,
+        endTime = updatedAppointmentSeries.endTime,
         applyTo = request.applyTo,
         createdAt = LocalDateTime.now(),
       ),

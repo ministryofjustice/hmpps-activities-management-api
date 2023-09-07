@@ -11,7 +11,7 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
@@ -25,9 +25,9 @@ class CancelAppointmentOccurrencesJobTest {
   private val job = CancelAppointmentOccurrencesJob(safeJobRunner, service)
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointment = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
-  private val appointmentOccurrence = appointment.occurrences()[1]
-  private val applyToThisAndAllFuture = appointment.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
+  private val appointmentOccurrence = appointmentSeries.occurrences()[1]
+  private val applyToThisAndAllFuture = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
 
   @BeforeEach
   fun setUp() {
@@ -37,7 +37,7 @@ class CancelAppointmentOccurrencesJobTest {
   @Test
   fun `job type is cancel appointment occurrences`() {
     job.execute(
-      appointment.appointmentId,
+      appointmentSeries.appointmentId,
       appointmentOccurrence.appointmentOccurrenceId,
       applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
       AppointmentOccurrenceCancelRequest(cancellationReasonId = 1),
@@ -63,7 +63,7 @@ class CancelAppointmentOccurrencesJobTest {
     val startTimeInMs = System.currentTimeMillis()
 
     job.execute(
-      appointment.appointmentId,
+      appointmentSeries.appointmentId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToCancel,
       request,
@@ -75,7 +75,7 @@ class CancelAppointmentOccurrencesJobTest {
     )
 
     verify(service).cancelAppointmentOccurrenceIds(
-      appointment.appointmentId,
+      appointmentSeries.appointmentId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToCancel,
       request,

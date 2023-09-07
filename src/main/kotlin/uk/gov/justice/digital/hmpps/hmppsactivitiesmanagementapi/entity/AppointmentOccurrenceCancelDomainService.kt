@@ -37,13 +37,13 @@ class AppointmentOccurrenceCancelDomainService(
     cancelInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
-    val occurrencesToCancel = appointment.occurrences().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
-    return cancelAppointmentOccurrences(appointment, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true, false)
+    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val occurrencesToCancel = appointmentSeries.occurrences().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
+    return cancelAppointmentOccurrences(appointmentSeries, appointmentOccurrenceId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true, false)
   }
 
   fun cancelAppointmentOccurrences(
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
     appointmentOccurrenceId: Long,
     occurrencesToCancel: Set<AppointmentOccurrence>,
     request: AppointmentOccurrenceCancelRequest,
@@ -64,11 +64,11 @@ class AppointmentOccurrenceCancelDomainService(
       it.deleted = cancellationReason.isDelete
     }
 
-    val cancelledAppointment = appointmentRepository.saveAndFlush(appointment)
+    val cancelledAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
       val customEventName = if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value
-      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(cancelledBy, appointment.prisonCode, appointment.appointmentId, appointmentOccurrenceId)
+      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(cancelledBy, appointmentSeries.prisonCode, appointmentSeries.appointmentId, appointmentOccurrenceId)
       val telemetryMetricsMap = mapOf(
         APPOINTMENT_COUNT_METRIC_KEY to cancelOccurrencesCount.toDouble(),
         APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to cancelInstancesCount.toDouble(),
@@ -78,7 +78,7 @@ class AppointmentOccurrenceCancelDomainService(
     }
 
     if (auditEvent) {
-      writeAuditEvent(appointmentOccurrenceId, request, appointment, cancellationReason.isDelete)
+      writeAuditEvent(appointmentOccurrenceId, request, appointmentSeries, cancellationReason.isDelete)
     }
 
     return cancelledAppointment.toModel()
@@ -91,25 +91,25 @@ class AppointmentOccurrenceCancelDomainService(
   private fun writeAuditEvent(
     appointmentOccurrenceId: Long,
     request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
     isDelete: Boolean,
   ) {
     if (isDelete) {
-      writeAppointmentDeletedAuditEvent(appointmentOccurrenceId, request, appointment)
+      writeAppointmentDeletedAuditEvent(appointmentOccurrenceId, request, appointmentSeries)
     } else {
-      writeAppointmentCancelledAuditEvent(appointmentOccurrenceId, request, appointment)
+      writeAppointmentCancelledAuditEvent(appointmentOccurrenceId, request, appointmentSeries)
     }
   }
   private fun writeAppointmentCancelledAuditEvent(
     appointmentOccurrenceId: Long,
     request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
   ) {
     auditService.logEvent(
       AppointmentCancelledEvent(
-        appointmentId = appointment.appointmentId,
+        appointmentId = appointmentSeries.appointmentId,
         appointmentOccurrenceId = appointmentOccurrenceId,
-        prisonCode = appointment.prisonCode,
+        prisonCode = appointmentSeries.prisonCode,
         applyTo = request.applyTo,
         createdAt = LocalDateTime.now(),
       ),
@@ -119,13 +119,13 @@ class AppointmentOccurrenceCancelDomainService(
   private fun writeAppointmentDeletedAuditEvent(
     appointmentOccurrenceId: Long,
     request: AppointmentOccurrenceCancelRequest,
-    appointment: Appointment,
+    appointmentSeries: AppointmentSeries,
   ) {
     auditService.logEvent(
       AppointmentDeletedEvent(
-        appointmentId = appointment.appointmentId,
+        appointmentId = appointmentSeries.appointmentId,
         appointmentOccurrenceId = appointmentOccurrenceId,
-        prisonCode = appointment.prisonCode,
+        prisonCode = appointmentSeries.prisonCode,
         applyTo = request.applyTo,
         createdAt = LocalDateTime.now(),
       ),

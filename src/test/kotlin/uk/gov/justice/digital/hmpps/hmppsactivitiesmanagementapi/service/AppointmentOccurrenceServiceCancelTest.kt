@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -98,8 +98,8 @@ class AppointmentOccurrenceServiceCancelTest {
   inner class CancelIndividualAppointmentValidation {
 
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
-    private val appointmentOccurrence = appointment.occurrences().first()
+    private val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
+    private val appointmentOccurrence = appointmentSeries.occurrences().first()
     private val cancellationReason = AppointmentCancellationReason(1L, "Cancelled", false)
 
     @BeforeEach
@@ -117,13 +117,13 @@ class AppointmentOccurrenceServiceCancelTest {
     fun `cancel appointment throws illegal argument exception when appointment occurrence is in the past`() {
       val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
 
-      val appointment = appointmentEntity(
+      val appointmentSeries = appointmentSeriesEntity(
         appointmentId = 2,
         startDate = LocalDate.now(),
         startTime = LocalTime.now().minusMinutes(1),
         endTime = LocalTime.now().plusHours(1),
       )
-      val appointmentOccurrence = appointment.occurrences().first()
+      val appointmentOccurrence = appointmentSeries.occurrences().first()
 
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
@@ -180,8 +180,8 @@ class AppointmentOccurrenceServiceCancelTest {
   inner class CancelIndividualAppointment {
 
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
-    private val appointmentOccurrence = appointment.occurrences().first()
+    private val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
+    private val appointmentOccurrence = appointmentSeries.occurrences().first()
     private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
     private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
 
@@ -197,7 +197,7 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
-      whenever(appointmentRepository.saveAndFlush(appointment)).thenReturn(appointment)
+      whenever(appointmentRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
     }
 
     @Test
@@ -275,14 +275,14 @@ class AppointmentOccurrenceServiceCancelTest {
   inner class CancelGroupRepeatAppointment {
 
     private val principal: Principal = mock()
-    private val appointment = appointmentEntity(
+    private val appointmentSeries = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
       updatedBy = null,
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457),
       repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
       numberOfOccurrences = 4,
     )
-    private val appointmentOccurrences = appointment.occurrences()
+    private val appointmentOccurrences = appointmentSeries.occurrences()
     private val appointmentOccurrence = appointmentOccurrences[2]
     private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
     private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
@@ -290,7 +290,7 @@ class AppointmentOccurrenceServiceCancelTest {
     @BeforeEach
     fun setUp() {
       whenever(principal.name).thenReturn("TEST.USER")
-      appointment.occurrences().forEach {
+      appointmentSeries.occurrences().forEach {
         whenever(appointmentOccurrenceRepository.findById(it.appointmentOccurrenceId)).thenReturn(
           Optional.of(it),
         )
@@ -301,7 +301,7 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(cancellationReason),
       )
-      whenever(appointmentRepository.saveAndFlush(appointment)).thenReturn(appointment)
+      whenever(appointmentRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
     }
 
     @Test

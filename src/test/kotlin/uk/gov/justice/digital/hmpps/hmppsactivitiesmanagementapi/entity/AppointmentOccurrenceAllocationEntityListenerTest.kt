@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
@@ -20,7 +20,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance created event raised on creation`() {
-    val entity = appointmentEntity().occurrences().first().allocations().first()
+    val entity = appointmentSeriesEntity().occurrences().first().allocations().first()
     listener.onCreate(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
@@ -29,7 +29,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance updated event raised on update`() {
-    val entity = appointmentEntity().occurrences().first().allocations().first()
+    val entity = appointmentSeriesEntity().occurrences().first().allocations().first()
     listener.onUpdate(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentOccurrenceAllocationId)
@@ -38,7 +38,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
 
   @Test
   fun `appointment instance deleted event raised on deletion`() {
-    val entity = appointmentEntity().occurrences().first().allocations().first()
+    val entity = appointmentSeriesEntity().occurrences().first().allocations().first()
     listener.onDelete(entity)
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentOccurrenceAllocationId)

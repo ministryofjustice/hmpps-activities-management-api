@@ -10,7 +10,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -43,14 +43,14 @@ class AppointmentOccurrenceDetailsServiceTest {
   @Test
   fun `getAppointmentOccurrenceDetailsById returns mapped appointment details for known appointment id`() {
     addCaseloadIdToRequestHeader("TPR")
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf(appointment.categoryCode to appointmentCategoryReferenceCode(appointment.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(appointment.prisonCode))
+      .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
-    whenever(prisonApiClient.getUserDetailsList(appointment.usernames())).thenReturn(
+    whenever(prisonApiClient.getUserDetailsList(appointmentSeries.usernames())).thenReturn(
       listOf(
         userDetail(1, "CREATE.USER", "CREATE", "USER"),
         userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
@@ -71,10 +71,10 @@ class AppointmentOccurrenceDetailsServiceTest {
     assertThat(service.getAppointmentOccurrenceDetailsById(1)).isEqualTo(
       appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
-        appointment.appointmentId,
+        appointmentSeries.appointmentId,
         sequenceNumber = entity.sequenceNumber,
         appointmentDescription = "Appointment description",
-        created = appointment.created,
+        created = appointmentSeries.created,
         updated = entity.updated,
       ),
     )
@@ -89,8 +89,8 @@ class AppointmentOccurrenceDetailsServiceTest {
   @Test
   fun `getAppointmentOccurrenceDetailsById throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
-    val appointment = appointmentEntity()
-    val entity = appointment.occurrences().first()
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.occurrences().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
     assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(entity.appointmentOccurrenceId) }.isInstanceOf(CaseloadAccessException::class.java)
   }

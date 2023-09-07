@@ -16,7 +16,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.CREATE_APPOINTMENT_OCCURRENCES
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -44,7 +44,7 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job type is create appointment occurrences`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap)
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
 
     job.execute(entity.appointmentId, prisonerBookings)
@@ -56,7 +56,7 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job does not create any occurrences when all exist`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     entity.occurrences().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
@@ -69,7 +69,7 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job creates all remaining occurrences`() {
-    val entity = appointmentEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
     entity.occurrences().filter { it.sequenceNumber > 1 }.forEach {
       entity.removeOccurrence(it)
     }

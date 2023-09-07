@@ -33,7 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment_series")
-data class Appointment(
+data class AppointmentSeries(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "appointment_series_id")
@@ -98,7 +98,7 @@ data class Appointment(
     schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) }
       ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
 
-  @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "appointmentSeries", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @OrderBy("sequenceNumber ASC")
   private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
 
@@ -210,7 +210,7 @@ data class Appointment(
     )
 }
 
-fun List<Appointment>.toModel() = map { it.toModel() }
+fun List<AppointmentSeries>.toModel() = map { it.toModel() }
 
 enum class AppointmentType {
   INDIVIDUAL,
