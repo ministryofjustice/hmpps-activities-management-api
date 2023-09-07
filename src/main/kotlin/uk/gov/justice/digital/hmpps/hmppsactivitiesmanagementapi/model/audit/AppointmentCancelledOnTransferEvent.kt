@@ -20,8 +20,8 @@ class AppointmentCancelledOnTransferEvent(
   HmppsAuditable {
 
   override fun toJson(): String = generateHmppsAppointmentAuditJson(
-    appointmentId = appointmentId,
-    appointmentOccurrenceId = appointmentOccurrenceId,
+    appointmentSeriesId = appointmentId,
+    appointmentId = appointmentOccurrenceId,
     prisonCode = prisonCode,
     prisonerNumbers = listOf(prisonerNumber),
     createdAt = createdAt,

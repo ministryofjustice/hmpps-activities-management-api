@@ -180,7 +180,7 @@ data class AppointmentOccurrence(
   ) =
     AppointmentOccurrenceDetails(
       appointmentOccurrenceId,
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentSeries.bulkAppointment?.toSummary(),
       appointmentSeries.appointmentType,
       sequenceNumber,

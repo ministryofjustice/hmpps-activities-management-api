@@ -31,8 +31,8 @@ class AppointmentDeletedEventTest : AuditableEventTestBase() {
   private fun createEvent(): AppointmentDeletedEvent {
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
     return AppointmentDeletedEvent(
-      appointmentId = 1,
-      appointmentOccurrenceId = 2,
+      appointmentSeriesId = 1,
+      appointmentId = 2,
       prisonCode = "PBI",
       applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
       createdAt = createdAt,

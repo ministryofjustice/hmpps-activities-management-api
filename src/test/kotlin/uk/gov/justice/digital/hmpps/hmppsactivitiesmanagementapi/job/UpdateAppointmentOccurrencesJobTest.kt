@@ -38,7 +38,7 @@ class UpdateAppointmentOccurrencesJobTest {
   @Test
   fun `job type is update appointment occurrences`() {
     job.execute(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
       AppointmentOccurrenceUpdateRequest(internalLocationId = 456),
@@ -69,7 +69,7 @@ class UpdateAppointmentOccurrencesJobTest {
     val startTimeInMs = System.currentTimeMillis()
 
     job.execute(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToUpdate,
       request,
@@ -82,7 +82,7 @@ class UpdateAppointmentOccurrencesJobTest {
     )
 
     verify(service).updateAppointmentOccurrenceIds(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToUpdate,
       request,

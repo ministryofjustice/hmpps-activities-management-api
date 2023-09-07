@@ -52,7 +52,7 @@ class AppointmentDetailsServiceTest {
     addCaseloadIdToRequestHeader("TPR")
     val entity = appointmentSeriesEntity()
     val occurrenceEntity = entity.occurrences().first()
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
@@ -79,7 +79,7 @@ class AppointmentDetailsServiceTest {
     )
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
       AppointmentDetails(
-        entity.appointmentId,
+        entity.appointmentSeriesId,
         AppointmentType.INDIVIDUAL,
         entity.prisonCode,
         "Appointment description (Test Category)",
@@ -132,8 +132,8 @@ class AppointmentDetailsServiceTest {
   fun `getAppointmentDetailsById throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
     val entity = appointmentSeriesEntity()
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
 
-    assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
+    assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentSeriesId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 }

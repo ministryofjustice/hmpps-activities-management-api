@@ -36,8 +36,8 @@ class CancelAppointmentOccurrencesJob(
 
   @Async("asyncExecutor")
   fun execute(
+    appointmentSeriesId: Long,
     appointmentId: Long,
-    appointmentOccurrenceId: Long,
     occurrenceIdsToCancel: Set<Long>,
     request: AppointmentOccurrenceCancelRequest,
     cancelled: LocalDateTime,
@@ -48,11 +48,11 @@ class CancelAppointmentOccurrencesJob(
   ) {
     jobRunner.runJob(
       JobDefinition(JobType.CANCEL_APPOINTMENT_OCCURRENCES) {
-        log.info("Cancelling remaining occurrences for appointment with id $appointmentId")
+        log.info("Cancelling remaining appointments for series with id $appointmentSeriesId")
         val elapsed = measureTimeMillis {
           service.cancelAppointmentOccurrenceIds(
+            appointmentSeriesId,
             appointmentId,
-            appointmentOccurrenceId,
             occurrenceIdsToCancel,
             request,
             cancelled,
@@ -62,7 +62,7 @@ class CancelAppointmentOccurrencesJob(
             startTimeInMs,
           )
         }
-        log.info("Cancelling remaining occurrences for appointment with id $appointmentId took ${elapsed}ms")
+        log.info("Cancelling remaining appointments for series with id $appointmentSeriesId took ${elapsed}ms")
       },
     )
   }

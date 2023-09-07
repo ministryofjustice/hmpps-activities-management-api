@@ -39,8 +39,8 @@ class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
     val endTime = LocalTime.of(10, 30)
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
     return AppointmentOccurrenceEditedEvent(
-      appointmentId = 1,
-      appointmentOccurrenceId = 2,
+      appointmentSeriesId = 1,
+      appointmentId = 2,
       prisonCode = "PBI",
       originalCategoryCode = "A",
       categoryCode = "C",

@@ -54,7 +54,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
   @BeforeEach
   fun setUp() {
-    whenever(appointmentRepository.findById(appointmentSeries.appointmentId)).thenReturn(Optional.of(appointmentSeries))
+    whenever(appointmentRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
     whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
   }
 
@@ -68,7 +68,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       val updated = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.updateAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,
@@ -105,7 +105,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456)
       val startTimeInMs = System.currentTimeMillis()
       service.updateAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,

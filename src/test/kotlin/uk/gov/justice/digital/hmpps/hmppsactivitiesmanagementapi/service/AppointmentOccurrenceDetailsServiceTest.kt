@@ -71,7 +71,7 @@ class AppointmentOccurrenceDetailsServiceTest {
     assertThat(service.getAppointmentOccurrenceDetailsById(1)).isEqualTo(
       appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         sequenceNumber = entity.sequenceNumber,
         appointmentDescription = "Appointment description",
         created = appointmentSeries.created,

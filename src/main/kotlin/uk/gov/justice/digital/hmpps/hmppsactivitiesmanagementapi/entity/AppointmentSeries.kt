@@ -37,7 +37,7 @@ data class AppointmentSeries(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "appointment_series_id")
-  val appointmentId: Long = 0,
+  val appointmentSeriesId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinTable(
@@ -154,7 +154,7 @@ data class AppointmentSeries(
     listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> occurrence.usernames() }).filterNotNull()
 
   fun toModel() = AppointmentModel(
-    id = appointmentId,
+    id = appointmentSeriesId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
@@ -180,7 +180,7 @@ data class AppointmentSeries(
     userMap: Map<String, UserDetail>,
   ) =
     AppointmentDetails(
-      appointmentId,
+      appointmentSeriesId,
       appointmentType,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),

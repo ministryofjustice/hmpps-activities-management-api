@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 internal fun appointmentSeriesEntity(
-  appointmentId: Long = 1,
+  appointmentSeriesId: Long = 1,
   bulkAppointment: BulkAppointment? = null,
   appointmentType: AppointmentType? = null,
   appointmentDescription: String? = "Appointment description",
@@ -39,7 +39,7 @@ internal fun appointmentSeriesEntity(
   repeatPeriod: AppointmentRepeatPeriod? = null,
   numberOfOccurrences: Int = 1,
 ) = AppointmentSeries(
-  appointmentId = appointmentId,
+  appointmentSeriesId = appointmentSeriesId,
   bulkAppointment = bulkAppointment,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = "TPR",
@@ -68,7 +68,7 @@ internal fun appointmentSeriesEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addOccurrence(appointmentOccurrenceEntity(this, appointmentId * (it.index + 1L), it.index + 1, it.value, this.startTime, updated, updatedBy, prisonerNumberToBookingIdMap))
+    this.addOccurrence(appointmentOccurrenceEntity(this, appointmentSeriesId * (it.index + 1L), it.index + 1, it.value, this.startTime, updated, updatedBy, prisonerNumberToBookingIdMap))
   }
 }
 

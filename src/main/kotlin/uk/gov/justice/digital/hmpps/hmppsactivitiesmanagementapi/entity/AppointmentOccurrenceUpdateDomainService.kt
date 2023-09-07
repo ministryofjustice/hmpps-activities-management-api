@@ -80,7 +80,7 @@ class AppointmentOccurrenceUpdateDomainService(
     val updatedAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
-      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointmentSeries.prisonCode, appointmentSeries.appointmentId, appointmentOccurrenceId)
+      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointmentSeries.prisonCode, appointmentSeries.appointmentSeriesId, appointmentOccurrenceId)
       val telemetryMetricsMap = request.toTelemetryMetricsMap(updateOccurrencesCount, updateInstancesCount)
       telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
       telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
@@ -232,8 +232,8 @@ class AppointmentOccurrenceUpdateDomainService(
   ) {
     auditService.logEvent(
       AppointmentOccurrenceEditedEvent(
-        appointmentId = originalAppointmentSeries.appointmentId,
-        appointmentOccurrenceId = appointmentOccurrenceId,
+        appointmentSeriesId = originalAppointmentSeries.appointmentSeriesId,
+        appointmentId = appointmentOccurrenceId,
         prisonCode = originalAppointmentSeries.prisonCode,
         originalCategoryCode = originalAppointmentSeries.categoryCode,
         categoryCode = updatedAppointmentSeries.categoryCode,

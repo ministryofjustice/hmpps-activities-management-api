@@ -118,7 +118,7 @@ class AppointmentOccurrenceServiceCancelTest {
       val request = AppointmentOccurrenceCancelRequest(1, ApplyTo.THIS_OCCURRENCE)
 
       val appointmentSeries = appointmentSeriesEntity(
-        appointmentId = 2,
+        appointmentSeriesId = 2,
         startDate = LocalDate.now(),
         startTime = LocalTime.now().minusMinutes(1),
         endTime = LocalTime.now().plusHours(1),

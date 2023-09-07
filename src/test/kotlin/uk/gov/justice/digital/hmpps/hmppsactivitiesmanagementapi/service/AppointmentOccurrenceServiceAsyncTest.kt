@@ -220,7 +220,7 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
-      eq(appointmentSeries.appointmentId),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
       eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
@@ -320,7 +320,7 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
-      eq(appointmentSeries.appointmentId),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
       eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
@@ -440,7 +440,7 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Start asynchronous job to apply update to all remaining occurrences
     verify(updateAppointmentOccurrencesJob).execute(
-      eq(appointmentSeries.appointmentId),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
       eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
@@ -592,7 +592,7 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Start asynchronous job to cancel all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
-      eq(appointmentSeries.appointmentId),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
       eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
@@ -746,7 +746,7 @@ class AppointmentOccurrenceServiceAsyncTest {
 
     // Start asynchronous job to delete all remaining occurrences
     verify(cancelAppointmentOccurrencesJob).execute(
-      eq(appointmentSeries.appointmentId),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
       eq(scheduledOccurrences.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),

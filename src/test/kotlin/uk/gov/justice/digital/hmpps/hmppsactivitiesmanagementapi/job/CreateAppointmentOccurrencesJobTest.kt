@@ -45,9 +45,9 @@ class CreateAppointmentOccurrencesJobTest {
   @Test
   fun `job type is create appointment occurrences`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap)
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
 
-    job.execute(entity.appointmentId, prisonerBookings)
+    job.execute(entity.appointmentSeriesId, prisonerBookings)
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
@@ -57,12 +57,12 @@ class CreateAppointmentOccurrencesJobTest {
   @Test
   fun `job does not create any occurrences when all exist`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     entity.occurrences().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
 
-    job.execute(entity.appointmentId, prisonerBookings)
+    job.execute(entity.appointmentSeriesId, prisonerBookings)
 
     verify(appointmentOccurrenceRepository, never()).saveAndFlush(any())
   }
@@ -76,10 +76,10 @@ class CreateAppointmentOccurrencesJobTest {
     entity.occurrences().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(appointmentOccurrenceRepository.saveAndFlush(appointmentOccurrenceEntityCaptor.capture())).thenReturn(mock())
 
-    job.execute(entity.appointmentId, prisonerBookings)
+    job.execute(entity.appointmentSeriesId, prisonerBookings)
 
     appointmentOccurrenceEntityCaptor.allValues hasSize 2
     assertThat(appointmentOccurrenceEntityCaptor.allValues.map { it.sequenceNumber }).contains(2, 3)

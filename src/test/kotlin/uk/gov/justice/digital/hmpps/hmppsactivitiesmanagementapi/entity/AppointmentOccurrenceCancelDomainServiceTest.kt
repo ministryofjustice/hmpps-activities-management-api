@@ -59,7 +59,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
 
   @BeforeEach
   fun setUp() {
-    whenever(appointmentRepository.findById(appointmentSeries.appointmentId)).thenReturn(Optional.of(appointmentSeries))
+    whenever(appointmentRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
     whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
       Optional.of(appointmentCancelledReason),
     )
@@ -79,7 +79,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,
@@ -116,7 +116,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,
@@ -145,7 +145,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
       val response = service.cancelAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,
@@ -182,7 +182,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
       service.cancelAppointmentOccurrenceIds(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentOccurrenceId,
         ids,
         request,

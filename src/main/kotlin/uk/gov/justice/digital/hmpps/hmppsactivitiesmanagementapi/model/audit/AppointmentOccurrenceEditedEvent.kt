@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AppointmentOccurrenceEditedEvent(
+  private val appointmentSeriesId: Long,
   private val appointmentId: Long,
-  private val appointmentOccurrenceId: Long,
   private val prisonCode: String,
   private val originalCategoryCode: String,
   private val categoryCode: String,
@@ -23,18 +23,18 @@ class AppointmentOccurrenceEditedEvent(
   private val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(
+  ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_OCCURRENCE_EDITED,
-  details = "An appointment with ID '$appointmentId' with category $categoryCode and starting on $startDate " +
-    "at prison $prisonCode was edited",
+  details = "An appointment with id '$appointmentId' with category $categoryCode and starting on $startDate " +
+    "from series id '$appointmentSeriesId' at prison $prisonCode was edited",
   createdAt = createdAt,
 ),
   HmppsAuditable {
 
   override fun toJson(): String = generateHmppsAppointmentAuditJson(
+    appointmentSeriesId = appointmentSeriesId,
     appointmentId = appointmentId,
-    appointmentOccurrenceId = appointmentOccurrenceId,
     prisonCode = prisonCode,
     originalCategoryCode = originalCategoryCode,
     categoryCode = categoryCode,

@@ -23,7 +23,7 @@ class BulkAppointmentCreatedEvent(
   HmppsAuditable {
 
   override fun toJson(): String = generateHmppsAppointmentAuditJson(
-    bulkAppointmentId = bulkAppointmentId,
+    appointmentSetId = bulkAppointmentId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
     hasDescription = hasDescription,

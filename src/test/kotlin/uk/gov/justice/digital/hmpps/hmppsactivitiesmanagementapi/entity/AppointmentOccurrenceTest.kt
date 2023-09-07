@@ -253,7 +253,7 @@ class AppointmentOccurrenceTest {
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         sequenceNumber = 1,
         appointmentDescription = appointmentSeries.appointmentDescription,
         created = appointmentSeries.created,
@@ -286,7 +286,7 @@ class AppointmentOccurrenceTest {
       listOf(
         appointmentOccurrenceDetails(
           entity.appointmentOccurrenceId,
-          appointmentSeries.appointmentId,
+          appointmentSeries.appointmentSeriesId,
           sequenceNumber = 1,
           appointmentDescription = appointmentSeries.appointmentDescription,
           created = appointmentSeries.created,

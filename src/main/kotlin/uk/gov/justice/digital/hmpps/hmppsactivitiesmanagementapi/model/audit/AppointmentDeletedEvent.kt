@@ -4,24 +4,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import java.time.LocalDateTime
 
 class AppointmentDeletedEvent(
+  private val appointmentSeriesId: Long,
   private val appointmentId: Long,
-  private val appointmentOccurrenceId: Long,
   private val prisonCode: String,
   private val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
 
-) : AuditableEvent(
+  ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_DELETED,
-  details = "An appointment with ID '$appointmentId' and Occurrence ID '$appointmentOccurrenceId' " +
+  details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was deleted",
   createdAt = createdAt,
 ),
   HmppsAuditable {
 
   override fun toJson(): String = generateHmppsAppointmentAuditJson(
+    appointmentSeriesId = appointmentSeriesId,
     appointmentId = appointmentId,
-    appointmentOccurrenceId = appointmentOccurrenceId,
     prisonCode = prisonCode,
     applyTo = applyTo,
     createdAt = createdAt,

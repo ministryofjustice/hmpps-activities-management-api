@@ -50,9 +50,9 @@ abstract class AuditableEvent(
   )
 
   fun generateHmppsAppointmentAuditJson(
+    appointmentSeriesId: Long? = null,
+    appointmentSetId: Long? = null,
     appointmentId: Long? = null,
-    bulkAppointmentId: Long? = null,
-    appointmentOccurrenceId: Long? = null,
     prisonCode: String? = null,
     originalCategoryCode: String? = null,
     categoryCode: String? = null,
@@ -75,9 +75,9 @@ abstract class AuditableEvent(
     createdBy: String? = null,
   ): String = JSONObject.toJSONString(
     buildMap<String, Any> {
+      appointmentSeriesId?.let { put("appointmentSeriesId", it) }
+      appointmentSetId?.let { put("appointmentSetId", it) }
       appointmentId?.let { put("appointmentId", it) }
-      bulkAppointmentId?.let { put("bulkAppointmentId", it) }
-      appointmentOccurrenceId?.let { put("appointmentOccurrenceId", it) }
       prisonCode?.let { put("prisonCode", it) }
       originalCategoryCode?.let { put("originalCategoryCode", it) }
       categoryCode?.let { put("categoryCode", it) }

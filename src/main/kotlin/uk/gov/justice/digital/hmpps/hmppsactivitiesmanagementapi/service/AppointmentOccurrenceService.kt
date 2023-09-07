@@ -102,7 +102,7 @@ class AppointmentOccurrenceService(
     if (updateFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
       updateAppointmentOccurrencesJob.execute(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
         occurrencesToUpdate.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
         request,
@@ -149,7 +149,7 @@ class AppointmentOccurrenceService(
     if (cancelFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
       cancelAppointmentOccurrencesJob.execute(
-        appointmentSeries.appointmentId,
+        appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
         occurrencesToCancel.filterNot { it.appointmentOccurrenceId == appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
         request,

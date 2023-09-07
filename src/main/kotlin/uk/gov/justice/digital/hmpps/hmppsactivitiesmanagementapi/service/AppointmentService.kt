@@ -160,7 +160,7 @@ class AppointmentService(
 
     if (createFirstOccurrenceOnly) {
       // The remaining occurrences will be created asynchronously by this job
-      createAppointmentOccurrencesJob.execute(appointmentSeries.appointmentId, prisonerBookings)
+      createAppointmentOccurrencesJob.execute(appointmentSeries.appointmentSeriesId, prisonerBookings)
     }
 
     return appointmentSeries.toModel().also {

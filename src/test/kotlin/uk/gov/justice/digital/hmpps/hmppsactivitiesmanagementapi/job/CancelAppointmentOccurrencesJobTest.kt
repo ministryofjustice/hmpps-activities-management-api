@@ -37,7 +37,7 @@ class CancelAppointmentOccurrencesJobTest {
   @Test
   fun `job type is cancel appointment occurrences`() {
     job.execute(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       applyToThisAndAllFuture.filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet(),
       AppointmentOccurrenceCancelRequest(cancellationReasonId = 1),
@@ -63,7 +63,7 @@ class CancelAppointmentOccurrencesJobTest {
     val startTimeInMs = System.currentTimeMillis()
 
     job.execute(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToCancel,
       request,
@@ -75,7 +75,7 @@ class CancelAppointmentOccurrencesJobTest {
     )
 
     verify(service).cancelAppointmentOccurrenceIds(
-      appointmentSeries.appointmentId,
+      appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentOccurrenceId,
       occurrenceIdsToCancel,
       request,
