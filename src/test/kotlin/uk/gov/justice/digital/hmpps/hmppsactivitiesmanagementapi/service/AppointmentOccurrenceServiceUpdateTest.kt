@@ -14,8 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
@@ -33,8 +33,8 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService = mock()
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
-  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
-  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
+  private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
+  private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
 
   private val service = AppointmentOccurrenceService(
     appointmentOccurrenceRepository,
@@ -43,8 +43,8 @@ class AppointmentOccurrenceServiceUpdateTest {
     prisonerSearchApiClient,
     appointmentUpdateDomainService,
     appointmentCancelDomainService,
-    updateAppointmentOccurrencesJob,
-    cancelAppointmentOccurrencesJob,
+    updateAppointmentsJob,
+    cancelAppointmentsJob,
     maxSyncAppointmentInstanceActions = 14,
   )
 

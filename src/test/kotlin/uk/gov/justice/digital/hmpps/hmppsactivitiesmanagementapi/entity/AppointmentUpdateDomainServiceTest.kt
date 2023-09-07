@@ -346,11 +346,11 @@ class AppointmentUpdateDomainServiceTest {
         auditEvent = false,
       )
 
-      appointmentSeries.extraInformation isEqualTo "Appointment level comment"
+      appointmentSeries.extraInformation isEqualTo "Appointment series level comment"
       appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
       appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
 
-      response.comment isEqualTo "Appointment level comment"
+      response.comment isEqualTo "Appointment series level comment"
       response.occurrences.filter { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment level comment"
       response.occurrences.filterNot { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Appointment level comment"
     }

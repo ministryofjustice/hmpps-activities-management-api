@@ -26,8 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -60,8 +60,8 @@ class AppointmentOccurrenceServiceCancelTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
-  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
+  private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
+  private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
@@ -78,8 +78,8 @@ class AppointmentOccurrenceServiceCancelTest {
     prisonerSearchApiClient,
     AppointmentUpdateDomainService(appointmentRepository, telemetryClient, auditService),
     AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
-    updateAppointmentOccurrencesJob,
-    cancelAppointmentOccurrencesJob,
+    updateAppointmentsJob,
+    cancelAppointmentsJob,
   )
 
   @BeforeEach

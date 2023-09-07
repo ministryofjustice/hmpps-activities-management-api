@@ -90,7 +90,7 @@ fun appointmentInstanceModel(
   LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
-  "Appointment instance level comment",
+  "Appointment level comment",
   created = created,
   "CREATE.USER",
   updated = updated,

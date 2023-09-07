@@ -11,22 +11,22 @@ import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
 /**
- * This job is used to asynchronously cancel the remaining occurrences and the allocations to those occurrences for an appointment.
- * It is used only when cancelling very large group appointments in a way that will affect more than 500 of appointment instances
- * representing that appointment. This appointment instance count is configurable via applications.max-sync-appointment-instance-actions.
+ * This job is used to asynchronously cancel the remaining appointments and the attendees of those appointments for an appointment series.
+ * It is used only when cancelling very large group appointment series in a way that will affect more than 500 of appointment instances
+ * representing that appointment series. This appointment instance count is configurable via applications.max-sync-appointment-instance-actions.
  *
- * If a cancel is identified as very large (see cancelFirstOccurrenceOnly logic in AppointmentOccurrenceService.cancelAppointmentOccurrence)
- * then only the initial occurrence is cancelled synchronously. This job is then executed asynchronously to cancel the remaining occurrences.
+ * If a cancel is identified as very large (see cancelFirstAppointmentOnly logic in AppointmentService.cancelAppointment)
+ * then only the initial appointment is cancelled synchronously. This job is then executed asynchronously to cancel the remaining appointments.
  *
- * This means that a usable cancelled occurrence is returned as quickly as possible, preventing the user having to wait an extended period of time
- * for feedback. This was needed as certain cancellations of a 360 attendee repeating weekly appointment, the largest seen in production, would
+ * This means that a usable cancelled appointment is returned as quickly as possible, preventing the user having to wait an extended period of time
+ * for feedback. This was needed as certain cancellations of a 360 attendee repeating weekly appointment series, the largest seen in production, would
  * take a minute and cause timeouts on the frontend.
  *
  * The side effect of this approach is that the user will not see all the cancellations of appointments within a series until this job has completed.
- * This is only for a short time window (minutes) and only affects the 1% of very large appointments cancelled in the service.
+ * This is only for a short time window (minutes) and only affects the 1% of very large appointment series cancelled in the service.
  */
 @Component
-class CancelAppointmentOccurrencesJob(
+class CancelAppointmentsJob(
   private val jobRunner: SafeJobRunner,
   private val service: AppointmentCancelDomainService,
 ) {
@@ -38,11 +38,11 @@ class CancelAppointmentOccurrencesJob(
   fun execute(
     appointmentSeriesId: Long,
     appointmentId: Long,
-    occurrenceIdsToCancel: Set<Long>,
+    appointmentIdsToCancel: Set<Long>,
     request: AppointmentOccurrenceCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
-    cancelOccurrencesCount: Int,
+    cancelAppointmentsCount: Int,
     cancelInstancesCount: Int,
     startTimeInMs: Long,
   ) {
@@ -53,11 +53,11 @@ class CancelAppointmentOccurrencesJob(
           service.cancelAppointmentIds(
             appointmentSeriesId,
             appointmentId,
-            occurrenceIdsToCancel,
+            appointmentIdsToCancel,
             request,
             cancelled,
             cancelledBy,
-            cancelOccurrencesCount,
+            cancelAppointmentsCount,
             cancelInstancesCount,
             startTimeInMs,
           )

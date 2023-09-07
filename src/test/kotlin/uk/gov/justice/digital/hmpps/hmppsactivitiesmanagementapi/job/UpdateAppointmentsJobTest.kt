@@ -18,17 +18,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
 
-class UpdateAppointmentOccurrencesJobTest {
+class UpdateAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val service: AppointmentUpdateDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = UpdateAppointmentOccurrencesJob(safeJobRunner, service)
+  private val job = UpdateAppointmentsJob(safeJobRunner, service)
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
-  private val appointmentOccurrence = appointmentSeries.appointments()[1]
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val appointment = appointmentSeries.appointments()[1]
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
 
   @BeforeEach
   fun setUp() {
@@ -36,11 +36,11 @@ class UpdateAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job type is update appointment occurrences`() {
+  fun `job type is update appointments`() {
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet(),
+      appointment.appointmentId,
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }.map { it.appointmentId }.toSet(),
       AppointmentOccurrenceUpdateRequest(internalLocationId = 456),
       emptyMap(),
       LocalDateTime.now(),
@@ -56,9 +56,9 @@ class UpdateAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job calls update appointment occurrence ids`() {
-    val occurrenceIdsToUpdate =
-      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }
+  fun `job calls update appointment ids`() {
+    val appointmentIdsToUpdate =
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }
         .map { it.appointmentId }.toSet()
     val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, addPrisonerNumbers = listOf("D4567EF", "E5679FG"))
     val prisonerMap = mapOf(
@@ -70,8 +70,8 @@ class UpdateAppointmentOccurrencesJobTest {
 
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      occurrenceIdsToUpdate,
+      appointment.appointmentId,
+      appointmentIdsToUpdate,
       request,
       prisonerMap,
       updated,
@@ -83,8 +83,8 @@ class UpdateAppointmentOccurrencesJobTest {
 
     verify(service).updateAppointmentIds(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      occurrenceIdsToUpdate,
+      appointment.appointmentId,
+      appointmentIdsToUpdate,
       request,
       prisonerMap,
       updated,

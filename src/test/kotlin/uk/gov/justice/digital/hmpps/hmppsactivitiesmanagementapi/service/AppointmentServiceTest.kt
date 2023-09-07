@@ -38,7 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
@@ -99,7 +99,7 @@ class AppointmentServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob = mock()
+  private val createAppointmentsJob: CreateAppointmentsJob = mock()
   private lateinit var principal: Principal
 
   @Captor
@@ -123,7 +123,7 @@ class AppointmentServiceTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    createAppointmentOccurrencesJob,
+    createAppointmentsJob,
     telemetryClient,
     auditService,
     maxSyncAppointmentInstanceActions = 14,
@@ -580,7 +580,7 @@ class AppointmentServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any())
   }
 
   @Test
@@ -614,7 +614,7 @@ class AppointmentServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any())
   }
 
   @Test
@@ -648,7 +648,7 @@ class AppointmentServiceTest {
       appointments().flatMap { it.attendees() } hasSize 14
     }
 
-    verify(createAppointmentOccurrencesJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any())
   }
 
   @Test
@@ -682,7 +682,7 @@ class AppointmentServiceTest {
       appointments().flatMap { it.attendees() } hasSize 3
     }
 
-    verify(createAppointmentOccurrencesJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap())
+    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap())
   }
 
   @Test

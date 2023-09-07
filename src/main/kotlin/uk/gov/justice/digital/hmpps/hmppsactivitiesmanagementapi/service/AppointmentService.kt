@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
@@ -70,7 +70,7 @@ class AppointmentService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
+  private val createAppointmentsJob: CreateAppointmentsJob,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
@@ -160,7 +160,7 @@ class AppointmentService(
 
     if (createFirstOccurrenceOnly) {
       // The remaining occurrences will be created asynchronously by this job
-      createAppointmentOccurrencesJob.execute(appointmentSeries.appointmentSeriesId, prisonerBookings)
+      createAppointmentsJob.execute(appointmentSeries.appointmentSeriesId, prisonerBookings)
     }
 
     return appointmentSeries.toModel().also {

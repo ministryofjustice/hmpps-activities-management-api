@@ -7,8 +7,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
@@ -27,8 +27,8 @@ class AppointmentOccurrenceService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
-  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob,
-  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob,
+  private val updateAppointmentsJob: UpdateAppointmentsJob,
+  private val cancelAppointmentsJob: CancelAppointmentsJob,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
   fun updateAppointmentOccurrence(appointmentOccurrenceId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentModel {
@@ -101,7 +101,7 @@ class AppointmentOccurrenceService(
 
     if (updateFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
-      updateAppointmentOccurrencesJob.execute(
+      updateAppointmentsJob.execute(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
         occurrencesToUpdate.filterNot { it.appointmentId == appointmentOccurrenceId }.map { it.appointmentId }.toSet(),
@@ -148,7 +148,7 @@ class AppointmentOccurrenceService(
 
     if (cancelFirstOccurrenceOnly) {
       // The remaining occurrences will be updated asynchronously by this job
-      cancelAppointmentOccurrencesJob.execute(
+      cancelAppointmentsJob.execute(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrenceId,
         occurrencesToCancel.filterNot { it.appointmentId == appointmentOccurrenceId }.map { it.appointmentId }.toSet(),

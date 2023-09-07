@@ -23,13 +23,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import java.util.Optional
 
-class CreateAppointmentOccurrencesJobTest {
+class CreateAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = CreateAppointmentOccurrencesJob(safeJobRunner, appointmentRepository, appointmentOccurrenceRepository)
+  private val job = CreateAppointmentsJob(safeJobRunner, appointmentRepository, appointmentOccurrenceRepository)
 
   @Captor
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
@@ -43,7 +43,7 @@ class CreateAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job type is create appointment occurrences`() {
+  fun `job type is create appointments`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap)
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
 
@@ -55,7 +55,7 @@ class CreateAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job does not create any occurrences when all exist`() {
+  fun `job does not create any appointments when all exist`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     entity.appointments().forEach {
@@ -68,7 +68,7 @@ class CreateAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job creates all remaining occurrences`() {
+  fun `job creates all remaining appointments`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
     entity.appointments().filter { it.sequenceNumber > 1 }.forEach {
       entity.removeAppointment(it)

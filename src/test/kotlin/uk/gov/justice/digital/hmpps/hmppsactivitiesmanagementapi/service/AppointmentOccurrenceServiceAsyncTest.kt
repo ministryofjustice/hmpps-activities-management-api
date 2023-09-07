@@ -26,8 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -57,8 +57,8 @@ class AppointmentOccurrenceServiceAsyncTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
-  private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
+  private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
+  private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
 
   private var updated = argumentCaptor<LocalDateTime>()
   private var cancelled = argumentCaptor<LocalDateTime>()
@@ -71,8 +71,8 @@ class AppointmentOccurrenceServiceAsyncTest {
     prisonerSearchApiClient,
     appointmentUpdateDomainService,
     appointmentCancelDomainService,
-    updateAppointmentOccurrencesJob,
-    cancelAppointmentOccurrencesJob,
+    updateAppointmentsJob,
+    cancelAppointmentsJob,
     maxSyncAppointmentInstanceActions = 14,
   )
 
@@ -135,7 +135,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), any(), any())
 
     // Do not start asynchronous job as update is complete
-    verifyNoInteractions(updateAppointmentOccurrencesJob)
+    verifyNoInteractions(updateAppointmentsJob)
   }
 
   @Test
@@ -177,7 +177,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), any(), any())
 
     // Do not start asynchronous job as update is complete
-    verifyNoInteractions(updateAppointmentOccurrencesJob)
+    verifyNoInteractions(updateAppointmentsJob)
   }
 
   @Test
@@ -219,7 +219,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verifyNoInteractions(telemetryClient)
 
     // Start asynchronous job to apply update to all remaining occurrences
-    verify(updateAppointmentOccurrencesJob).execute(
+    verify(updateAppointmentsJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
@@ -277,7 +277,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), any(), any())
 
     // Do not start asynchronous job as update is complete
-    verifyNoInteractions(updateAppointmentOccurrencesJob)
+    verifyNoInteractions(updateAppointmentsJob)
   }
 
   @Test
@@ -319,7 +319,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verifyNoInteractions(telemetryClient)
 
     // Start asynchronous job to apply update to all remaining occurrences
-    verify(updateAppointmentOccurrencesJob).execute(
+    verify(updateAppointmentsJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
@@ -387,7 +387,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_EDITED.value), any(), any())
 
     // Do not start asynchronous job as update is complete
-    verifyNoInteractions(updateAppointmentOccurrencesJob)
+    verifyNoInteractions(updateAppointmentsJob)
   }
 
   @Test
@@ -439,7 +439,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verifyNoInteractions(telemetryClient)
 
     // Start asynchronous job to apply update to all remaining occurrences
-    verify(updateAppointmentOccurrencesJob).execute(
+    verify(updateAppointmentsJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentId),
       eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
@@ -500,7 +500,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
-    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+    verifyNoInteractions(cancelAppointmentsJob)
   }
 
   @Test
@@ -546,7 +546,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
     // Do not start asynchronous job as cancel is complete
-    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+    verifyNoInteractions(cancelAppointmentsJob)
   }
 
   @Test
@@ -591,7 +591,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verifyNoInteractions(telemetryClient)
 
     // Start asynchronous job to cancel all remaining occurrences
-    verify(cancelAppointmentOccurrencesJob).execute(
+    verify(cancelAppointmentsJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentId),
       eq(scheduledOccurrences.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),
@@ -653,7 +653,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
-    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+    verifyNoInteractions(cancelAppointmentsJob)
   }
 
   @Test
@@ -699,7 +699,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Do not start asynchronous job as delete is complete
-    verifyNoInteractions(cancelAppointmentOccurrencesJob)
+    verifyNoInteractions(cancelAppointmentsJob)
   }
 
   @Test
@@ -745,7 +745,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
     // Start asynchronous job to delete all remaining occurrences
-    verify(cancelAppointmentOccurrencesJob).execute(
+    verify(cancelAppointmentsJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentId),
       eq(scheduledOccurrences.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet()),

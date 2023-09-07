@@ -17,17 +17,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import java.time.LocalDateTime
 
-class CancelAppointmentOccurrencesJobTest {
+class CancelAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val service: AppointmentCancelDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = CancelAppointmentOccurrencesJob(safeJobRunner, service)
+  private val job = CancelAppointmentsJob(safeJobRunner, service)
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
-  private val appointmentOccurrence = appointmentSeries.appointments()[1]
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val appointment = appointmentSeries.appointments()[1]
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
 
   @BeforeEach
   fun setUp() {
@@ -35,11 +35,11 @@ class CancelAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job type is cancel appointment occurrences`() {
+  fun `job type is cancel appointments`() {
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }.map { it.appointmentId }.toSet(),
+      appointment.appointmentId,
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }.map { it.appointmentId }.toSet(),
       AppointmentOccurrenceCancelRequest(cancellationReasonId = 1),
       LocalDateTime.now(),
       "TEST.USER",
@@ -54,9 +54,9 @@ class CancelAppointmentOccurrencesJobTest {
   }
 
   @Test
-  fun `job calls cancel appointment occurrence ids`() {
-    val occurrenceIdsToCancel =
-      applyToThisAndAllFuture.filterNot { it.appointmentId == appointmentOccurrence.appointmentId }
+  fun `job calls cancel appointment ids`() {
+    val appointmentIdsToCancel =
+      applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }
         .map { it.appointmentId }.toSet()
     val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = 2)
     val cancelled = LocalDateTime.now()
@@ -64,8 +64,8 @@ class CancelAppointmentOccurrencesJobTest {
 
     job.execute(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      occurrenceIdsToCancel,
+      appointment.appointmentId,
+      appointmentIdsToCancel,
       request,
       cancelled,
       "TEST.USER",
@@ -76,8 +76,8 @@ class CancelAppointmentOccurrencesJobTest {
 
     verify(service).cancelAppointmentIds(
       appointmentSeries.appointmentSeriesId,
-      appointmentOccurrence.appointmentId,
-      occurrenceIdsToCancel,
+      appointment.appointmentId,
+      appointmentIdsToCancel,
       request,
       cancelled,
       "TEST.USER",
