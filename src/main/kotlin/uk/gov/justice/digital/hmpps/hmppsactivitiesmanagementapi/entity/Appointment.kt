@@ -96,16 +96,16 @@ data class Appointment(
   var isDeleted: Boolean = false
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  private val attendees: MutableList<AppointmentOccurrenceAllocation> = mutableListOf()
+  private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
 
   fun attendees() = attendees.toList()
 
-  fun addAttendee(attendee: AppointmentOccurrenceAllocation) {
+  fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
   }
 
-  fun removeAttendee(attendee: AppointmentOccurrenceAllocation) = attendees.remove(attendee)
+  fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
 
   fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
 

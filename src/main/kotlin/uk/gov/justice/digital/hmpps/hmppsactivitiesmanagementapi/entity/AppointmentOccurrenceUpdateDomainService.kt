@@ -213,7 +213,7 @@ class AppointmentOccurrenceUpdateDomainService(
         val newPrisonNumbers = this.filterNot { existingPrisonNumbers.contains(it) }
         newPrisonNumbers.forEach {
           occurrenceToUpdate.addAttendee(
-            AppointmentOccurrenceAllocation(
+            AppointmentAttendee(
               appointment = occurrenceToUpdate,
               prisonerNumber = it,
               bookingId = prisonerMap[it]!!.bookingId!!.toLong(),

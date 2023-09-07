@@ -34,7 +34,7 @@ fun List<AppointmentInstance>.toScheduledEvent(
     eventType = eventType,
     eventTypeDesc = eventTypeDesc,
     eventClass = eventClass,
-    eventId = it.appointmentOccurrenceId,
+    eventId = it.appointmentId,
     eventStatus = eventStatus,
     eventDate = it.appointmentDate,
     eventSource = eventSource,
@@ -60,7 +60,7 @@ fun List<AppointmentInstance>.toPrisonerSchedule(
   val category = referenceCodeMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode)
   PrisonApiPrisonerSchedule(
     cellLocation = prisonerLookup[it.prisonerNumber]?.cellLocation!!,
-    comment = it.comment,
+    comment = it.extraInformation,
     event = category.code,
     eventDescription = category.description,
     eventLocation = locationLookup[it.internalLocationId]?.userDescription,

@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
-class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val listener: AppointmentOccurrenceAllocationEntityListener) {
+class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val listener: AppointmentAttendeeEntityListener) {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -23,7 +23,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
     val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onCreate(entity)
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentOccurrenceAllocationId)
+    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, entity.appointmentAttendeeId)
     verifyNoMoreInteractions(outboundEventsService)
   }
 
@@ -32,7 +32,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
     val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onUpdate(entity)
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentOccurrenceAllocationId)
+    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentAttendeeId)
     verifyNoMoreInteractions(outboundEventsService)
   }
 
@@ -41,7 +41,7 @@ class AppointmentOccurrenceAllocationEntityListenerTest(@Autowired private val l
     val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onDelete(entity)
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentOccurrenceAllocationId)
+    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentAttendeeId)
     verifyNoMoreInteractions(outboundEventsService)
   }
 }

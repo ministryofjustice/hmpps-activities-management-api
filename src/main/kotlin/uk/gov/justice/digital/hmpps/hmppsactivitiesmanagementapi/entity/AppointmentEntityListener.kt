@@ -44,11 +44,11 @@ class AppointmentEntityListener {
 
             else -> { OutboundEvent.APPOINTMENT_INSTANCE_UPDATED }
           },
-          attendee.appointmentOccurrenceAllocationId,
+          attendee.appointmentAttendeeId,
         )
       }.onFailure {
         log.error(
-          "Failed to send appointment instance updated event for appointment instance id ${attendee.appointmentOccurrenceAllocationId}",
+          "Failed to send appointment instance updated event for appointment instance id ${attendee.appointmentAttendeeId}",
           it,
         )
       }

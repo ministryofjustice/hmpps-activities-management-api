@@ -87,8 +87,8 @@ class AppointmentOccurrenceSearchService(
 
     val results = appointmentOccurrenceSearchRepository.findAll(spec)
 
-    val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentOccurrenceId })
-      .groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentId })
+      .groupBy { it.appointmentSearch.appointmentId }
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 

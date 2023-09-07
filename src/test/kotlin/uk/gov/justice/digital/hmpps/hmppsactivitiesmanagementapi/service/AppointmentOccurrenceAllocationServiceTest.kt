@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -41,10 +41,10 @@ class AppointmentOccurrenceAllocationServiceTest {
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
     val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAllocation = mock<AppointmentOccurrenceAllocation>()
+    val parentAllocation = mock<AppointmentAttendee>()
     val parentOccurrence = mock<Appointment>()
 
-    whenever(appointmentInstance.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
     whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
@@ -61,7 +61,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     whenever(appointmentOccurrenceAllocationRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
     whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
-    whenever(parentAllocation.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
     whenever(parentAllocation.isIndividualAppointment()).thenReturn(false)
 
@@ -78,10 +78,10 @@ class AppointmentOccurrenceAllocationServiceTest {
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
     val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAllocation = mock<AppointmentOccurrenceAllocation>()
+    val parentAllocation = mock<AppointmentAttendee>()
     val parentOccurrence = mock<Appointment>()
 
-    whenever(appointmentInstance.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
     whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
@@ -98,7 +98,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     whenever(appointmentOccurrenceAllocationRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
     whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
-    whenever(parentAllocation.appointmentOccurrenceAllocationId).thenReturn(appointmentOccurrenceAllocationId)
+    whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
     whenever(parentAllocation.isIndividualAppointment()).thenReturn(true)
 

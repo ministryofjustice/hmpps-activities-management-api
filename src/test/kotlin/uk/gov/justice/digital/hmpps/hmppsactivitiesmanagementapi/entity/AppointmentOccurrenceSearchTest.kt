@@ -14,7 +14,7 @@ class AppointmentOccurrenceSearchTest {
     val expectedModel = appointmentOccurrenceSearchResultModel()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    assertThat(entity.toResult(entity.allocations, referenceCodeMap, locationMap)).isEqualTo(expectedModel)
+    assertThat(entity.toResult(entity.attendees, referenceCodeMap, locationMap)).isEqualTo(expectedModel)
   }
 
   @Test
@@ -23,7 +23,7 @@ class AppointmentOccurrenceSearchTest {
     val expectedModel = listOf(appointmentOccurrenceSearchResultModel())
     val referenceCodeMap = mapOf(entityList.first().categoryCode to appointmentCategoryReferenceCode(entityList.first().categoryCode))
     val locationMap = mapOf(entityList.first().internalLocationId!! to appointmentLocation(entityList.first().internalLocationId!!, "TPR"))
-    assertThat(entityList.toResults(mapOf(entityList.first().appointmentOccurrenceId to entityList.first().allocations), referenceCodeMap, locationMap)).isEqualTo(expectedModel)
+    assertThat(entityList.toResults(mapOf(entityList.first().appointmentId to entityList.first().attendees), referenceCodeMap, locationMap)).isEqualTo(expectedModel)
   }
 
   @Test
@@ -32,7 +32,7 @@ class AppointmentOccurrenceSearchTest {
     entity.internalLocationId = 123
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    with(entity.toResult(entity.allocations, referenceCodeMap, locationMap)) {
+    with(entity.toResult(entity.attendees, referenceCodeMap, locationMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }

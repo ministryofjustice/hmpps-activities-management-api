@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
@@ -14,26 +13,25 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment_attendee")
-@EntityListeners(AppointmentOccurrenceAllocationEntityListener::class)
-data class AppointmentOccurrenceAllocationSearch(
+@EntityListeners(AppointmentAttendeeEntityListener::class)
+data class AppointmentAttendeeSearch(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "appointment_attendee_id")
-  val appointmentOccurrenceAllocationId: Long = 0,
+  val appointmentAttendeeId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "appointment_id", nullable = false)
-  val appointmentOccurrenceSearch: AppointmentOccurrenceSearch,
+  val appointmentSearch: AppointmentSearch,
 
   val prisonerNumber: String,
 
   val bookingId: Long,
 ) {
   fun toModel() = AppointmentOccurrenceAllocationModel(
-    id = appointmentOccurrenceAllocationId,
+    id = appointmentAttendeeId,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
   )
 }
 
-fun List<AppointmentOccurrenceAllocationSearch>.toModel() = map { it.toModel() }
+fun List<AppointmentAttendeeSearch>.toModel() = map { it.toModel() }

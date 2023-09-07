@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -79,7 +79,7 @@ class CreateAppointmentOccurrencesJob(
               ).apply {
                 prisonerBookings.forEach { prisonerBooking ->
                   this.addAttendee(
-                    AppointmentOccurrenceAllocation(
+                    AppointmentAttendee(
                       appointment = this,
                       prisonerNumber = prisonerBooking.key,
                       bookingId = prisonerBooking.value!!.toLong(),

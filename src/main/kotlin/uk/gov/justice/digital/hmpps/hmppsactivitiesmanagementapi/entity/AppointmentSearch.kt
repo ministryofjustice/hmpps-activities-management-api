@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -20,13 +19,11 @@ import java.time.LocalTime
 
 @Entity
 @Table(name = "v_appointment_search")
-data class AppointmentOccurrenceSearch(
-  @Column(name = "appointment_series_id")
-  val appointmentId: Long,
+data class AppointmentSearch(
+  val appointmentSeriesId: Long,
 
   @Id
-  @Column(name = "appointment_id")
-  val appointmentOccurrenceId: Long,
+  val appointmentId: Long,
 
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,
@@ -35,12 +32,17 @@ data class AppointmentOccurrenceSearch(
 
   val categoryCode: String,
 
-  @Column(name = "custom_name")
-  val appointmentDescription: String?,
+  val customName: String?,
 
   var internalLocationId: Long?,
 
+  val customLocation: String?,
+
   val inCell: Boolean,
+
+  val onWing: Boolean,
+
+  val offWing: Boolean,
 
   val startDate: LocalDate,
 
@@ -54,8 +56,9 @@ data class AppointmentOccurrenceSearch(
 
   val maxSequenceNumber: Int,
 
-  @Column(name = "extra_information")
-  val comment: String?,
+  var unlockNotes: String?,
+
+  val extraInformation: String?,
 
   val createdBy: String,
 
@@ -63,22 +66,22 @@ data class AppointmentOccurrenceSearch(
 
   val isCancelled: Boolean,
 ) {
-  @OneToMany(mappedBy = "appointmentOccurrenceSearch", fetch = FetchType.LAZY)
-  var allocations: List<AppointmentOccurrenceAllocationSearch> = listOf()
+  @OneToMany(mappedBy = "appointmentSearch", fetch = FetchType.LAZY)
+  var attendees: List<AppointmentAttendeeSearch> = listOf()
 
   fun toResult(
-    allocations: List<AppointmentOccurrenceAllocationSearch>,
+    attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
   ) = AppointmentOccurrenceSearchResult(
+    appointmentSeriesId,
     appointmentId,
-    appointmentOccurrenceId,
     appointmentType,
     prisonCode,
-    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
-    allocations = allocations.toModel(),
+    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    allocations = attendees.toModel(),
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-    appointmentDescription,
+    customName,
     if (inCell) {
       null
     } else {
@@ -99,8 +102,8 @@ data class AppointmentOccurrenceSearch(
   fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
 }
 
-fun List<AppointmentOccurrenceSearch>.toResults(
-  allocationsMap: Map<Long, List<AppointmentOccurrenceAllocationSearch>>,
-  referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
-) = map { it.toResult(allocationsMap[it.appointmentOccurrenceId] ?: emptyList(), referenceCodeMap, locationMap) }
+fun List<AppointmentSearch>.toResults(
+    allocationsMap: Map<Long, List<AppointmentAttendeeSearch>>,
+    referenceCodeMap: Map<String, ReferenceCode>,
+    locationMap: Map<Long, Location>,
+) = map { it.toResult(allocationsMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }

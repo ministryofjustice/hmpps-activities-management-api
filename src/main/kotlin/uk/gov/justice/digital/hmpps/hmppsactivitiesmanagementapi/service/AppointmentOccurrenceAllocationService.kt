@@ -29,25 +29,25 @@ class AppointmentOccurrenceAllocationService(
     ).block()?.let {
       appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber)
         .forEach {
-          appointmentOccurrenceAllocationRepository.findById(it.appointmentOccurrenceAllocationId)
+          appointmentOccurrenceAllocationRepository.findById(it.appointmentAttendeeId)
             .ifPresent { allocation ->
               if (allocation.isIndividualAppointment()) {
                 allocation.removeOccurrence(allocation.appointment)
 
                 log.info(
                   "Removed appointment occurrence '${allocation.appointment.appointmentId}' " +
-                    "as it is part of an individual appointment. This will also remove allocation '${allocation.appointmentOccurrenceAllocationId}' " +
+                    "as it is part of an individual appointment. This will also remove allocation '${allocation.appointmentAttendeeId}' " +
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
                 allocation.removeFromAppointmentOccurrence()
-                log.info("Removed the appointment occurrence allocation '${it.appointmentOccurrenceAllocationId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
+                log.info("Removed the appointment occurrence allocation '${it.appointmentAttendeeId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
 
               auditService.logEvent(
                 AppointmentCancelledOnTransferEvent(
-                  appointmentId = it.appointmentId,
-                  appointmentOccurrenceId = it.appointmentOccurrenceId,
+                  appointmentId = it.appointmentSeriesId,
+                  appointmentOccurrenceId = it.appointmentId,
                   prisonCode = it.prisonCode,
                   prisonerNumber = it.prisonerNumber,
                   createdAt = LocalDateTime.now(),

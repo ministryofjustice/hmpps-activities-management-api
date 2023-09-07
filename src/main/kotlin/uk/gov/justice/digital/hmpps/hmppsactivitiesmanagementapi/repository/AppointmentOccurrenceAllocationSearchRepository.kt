@@ -2,13 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocationSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeSearch
 
 @Repository
-interface AppointmentOccurrenceAllocationSearchRepository : ReadOnlyRepository<AppointmentOccurrenceAllocationSearch, Long> {
+interface AppointmentOccurrenceAllocationSearchRepository : ReadOnlyRepository<AppointmentAttendeeSearch, Long> {
   @Query(
-    value = "FROM AppointmentOccurrenceAllocationSearch aoa " +
-      "WHERE aoa.appointmentOccurrenceSearch.appointmentOccurrenceId IN :appointmentOccurrenceIds",
+    value = "FROM AppointmentAttendeeSearch aoa " +
+      "WHERE aoa.appointmentSearch.appointmentId IN :appointmentOccurrenceIds",
   )
-  fun findByAppointmentOccurrenceIds(appointmentOccurrenceIds: List<Long>): List<AppointmentOccurrenceAllocationSearch>
+  fun findByAppointmentOccurrenceIds(appointmentOccurrenceIds: List<Long>): List<AppointmentAttendeeSearch>
 }

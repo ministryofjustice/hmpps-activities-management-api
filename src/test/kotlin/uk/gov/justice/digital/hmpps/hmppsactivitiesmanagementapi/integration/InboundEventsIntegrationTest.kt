@@ -301,7 +301,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
     assertThat(allocationsMap[201]).hasSize(1)
@@ -315,7 +315,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).isNull()
     assertThat(allocationsMap[201]).hasSize(1)
@@ -358,7 +358,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
     assertThat(allocationsMap[201]).hasSize(1)
@@ -372,7 +372,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).isNull()
     assertThat(allocationsMap[201]).hasSize(1)
@@ -415,7 +415,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
     assertThat(allocationsMap[201]).hasSize(1)
@@ -429,7 +429,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
       appointmentOccurrenceIds,
-    ).groupBy { it.appointmentOccurrenceSearch.appointmentOccurrenceId }
+    ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
     assertThat(allocationsMap[201]).hasSize(1)

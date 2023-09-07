@@ -89,7 +89,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -129,7 +129,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -171,7 +171,7 @@ class AppointmentOccurrenceSearchServiceTest {
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlot!!))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -212,7 +212,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -253,7 +253,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -294,7 +294,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity(inCell = true)
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -314,7 +314,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -334,7 +334,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -355,7 +355,7 @@ class AppointmentOccurrenceSearchServiceTest {
     val result = appointmentOccurrenceSearchEntity()
 
     whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentOccurrenceId))).thenReturn(result.allocations)
+    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))

@@ -30,7 +30,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
     listener.onUpdate(appointmentOccurrence)
 
     appointmentOccurrence.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentOccurrenceAllocationId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
@@ -41,7 +41,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
     listener.onUpdate(appointmentOccurrence)
 
     appointmentOccurrence.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentOccurrenceAllocationId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
@@ -52,7 +52,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
     listener.onUpdate(appointmentOccurrence)
 
     appointmentOccurrence.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentOccurrenceAllocationId)
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
