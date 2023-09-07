@@ -7,18 +7,13 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyActivityMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_PENDING_COUNT_METRIC_KEY
@@ -44,8 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Component
 class ActivityMetricsJob(
@@ -53,7 +46,7 @@ class ActivityMetricsJob(
   private val activityTierRepository: ActivityTierRepository,
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
-  private val waitingListRepository: WaitingListRepository,
+  private val dailyActivityMetricsService: DailyActivityMetricsService,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -112,71 +105,8 @@ class ActivityMetricsJob(
     )
 
     val activities = activityRepository.findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode, activityTier, activityCategory)
-    generateActivityMetrics(metricsMap, activities)
+    dailyActivityMetricsService.generateActivityMetrics(metricsMap, activities)
 
     telemetryClient.trackEvent(TelemetryEvent.ACTIVITIES_DAILY_STATS.value, propertiesMap, metricsMap)
-  }
-
-  private fun generateActivityMetrics(metricsMap: MutableMap<String, Double>, activities: List<Activity>) {
-    activities.forEach {
-      incrementMetric(metricsMap, ACTIVITIES_TOTAL_COUNT_METRIC_KEY)
-
-      if (it.isActive(LocalDate.now())) {
-        incrementMetric(metricsMap, ACTIVITIES_ACTIVE_COUNT_METRIC_KEY)
-      } else {
-        if (it.endDate?.isBefore(LocalDate.now()) == true) {
-          incrementMetric(metricsMap, ACTIVITIES_ENDED_COUNT_METRIC_KEY)
-        }
-
-        if (it.startDate.isAfter(LocalDate.now())) {
-          incrementMetric(metricsMap, ACTIVITIES_PENDING_COUNT_METRIC_KEY)
-        }
-      }
-
-      if (it.schedules().first().scheduleWeeks > 1) {
-        incrementMetric(metricsMap, MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY)
-      }
-
-      val attendences = it.schedules().flatMap { schedule -> schedule.instances() }.flatMap { instance -> instance.attendances }
-
-      val allocations = it.schedules().flatMap { schedule -> schedule.allocations() }
-      generateAllocationMetrics(metricsMap, allocations)
-
-      val waitingLists = it.schedules().flatMap { schedule -> waitingListRepository.findByActivitySchedule(schedule) }
-      generateWaitingListMetrics(metricsMap, waitingLists)
-    }
-  }
-
-  private fun generateAllocationMetrics(metricsMap: MutableMap<String, Double>, allocations: List<Allocation>) {
-    incrementMetric(metricsMap, ALLOCATIONS_TOTAL_COUNT_METRIC_KEY)
-    allocations.forEach {
-      when (it.prisonerStatus) {
-        PrisonerStatus.ENDED -> incrementMetric(metricsMap, ALLOCATIONS_ENDED_COUNT_METRIC_KEY)
-        PrisonerStatus.ACTIVE -> incrementMetric(metricsMap, ALLOCATIONS_ACTIVE_COUNT_METRIC_KEY)
-        PrisonerStatus.SUSPENDED -> incrementMetric(metricsMap, ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY)
-        PrisonerStatus.AUTO_SUSPENDED -> incrementMetric(metricsMap, ALLOCATIONS_AUTO_SUSPENDED_COUNT_METRIC_KEY)
-        PrisonerStatus.PENDING -> incrementMetric(metricsMap, ALLOCATIONS_PENDING_COUNT_METRIC_KEY)
-      }
-
-      if (it.deallocatedTime?.isBefore(LocalDateTime.now()) == true) {
-        incrementMetric(metricsMap, ALLOCATIONS_DELETED_COUNT_METRIC_KEY)
-      }
-    }
-  }
-
-  private fun generateWaitingListMetrics(metricsMap: MutableMap<String, Double>, waitingLists: List<WaitingList>) {
-    incrementMetric(metricsMap, APPLICATIONS_TOTAL_COUNT_METRIC_KEY)
-
-    waitingLists.forEach {
-    }
-  }
-
-  private fun generateAttendanceMetrics(metricsMap: MutableMap<String, Double>, attendances: List<Attendance>) {
-    attendances.forEach {
-    }
-  }
-
-  private fun incrementMetric(metricsMap: MutableMap<String, Double>, metricKey: String, increment: Int = 1) {
-    metricsMap[metricKey] = ((metricsMap[metricKey] ?: 0.0) + increment)
   }
 }
