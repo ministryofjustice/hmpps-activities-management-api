@@ -76,7 +76,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
         null,
-        "Appointment level comment",
+        "Appointment series level comment",
         appointment.created,
         "TEST.USER",
         null,
