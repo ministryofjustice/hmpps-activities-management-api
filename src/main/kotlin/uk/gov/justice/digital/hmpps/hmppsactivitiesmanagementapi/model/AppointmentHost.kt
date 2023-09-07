@@ -13,7 +13,7 @@ data class AppointmentHost(
     description = "The internally generated identifier for this appointment host",
     example = "12345",
   )
-  val appointmentHostId: Long,
+  val id: Long,
 
   @Schema(
     description = "The description of the appointment host",

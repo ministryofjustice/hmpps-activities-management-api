@@ -13,7 +13,7 @@ data class AppointmentTier(
     description = "The internally generated identifier for this appointment tier",
     example = "12345",
   )
-  val appointmentTierId: Long,
+  val id: Long,
 
   @Schema(
     description = "The description of the appointment tier",

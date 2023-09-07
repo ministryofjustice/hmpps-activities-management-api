@@ -18,7 +18,7 @@ data class AppointmentHost(
 
 ) {
   fun toModel() = ModelAppointmentHost(
-    appointmentHostId = appointmentHostId,
+    id = appointmentHostId,
     description = description,
   )
 }

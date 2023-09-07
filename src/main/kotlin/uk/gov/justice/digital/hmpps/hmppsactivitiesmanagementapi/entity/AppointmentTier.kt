@@ -17,7 +17,7 @@ data class AppointmentTier(
   val description: String,
 ) {
   fun toModel() = ModelAppointmentTier(
-    appointmentTierId = appointmentTierId,
+    id = appointmentTierId,
     description = description,
   )
 }
