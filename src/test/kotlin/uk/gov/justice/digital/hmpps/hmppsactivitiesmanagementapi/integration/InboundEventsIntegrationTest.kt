@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -138,9 +137,14 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     with(allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }) {
-      size isEqualTo 2
+      size isEqualTo 3
       single { it.allocationId == 1L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
       single { it.allocationId == 4L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
+      single { it.allocationId == 6L }.let { allocation ->
+        allocation.prisonerStatus isEqualTo PrisonerStatus.ENDED
+        allocation.startDate isEqualTo TimeSource.tomorrow()
+        allocation.endDate isEqualTo TimeSource.today()
+      }
     }
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
@@ -148,25 +152,12 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
 
-    verify(hmppsAuditApiClient, times(3)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
 
-    with(hmppsAuditEventCaptor.firstValue) {
-      assertThat(what).isEqualTo("PRISONER_DECLINED_FROM_WAITING_LIST")
-      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
-      assertThatJson(details).isEqualTo("{\"activityId\":2,\"activityName\":\"English\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":3,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
-    }
-
-    with(hmppsAuditEventCaptor.secondValue) {
-      assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
-      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
-    }
-
-    with(hmppsAuditEventCaptor.thirdValue) {
-      assertThat(what).isEqualTo("PRISONER_DEALLOCATED")
-      assertThat(who).isEqualTo(ServiceName.SERVICE_NAME.value)
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"PVI\",\"prisonerNumber\":\"A11111A\",\"scheduleId\":2,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"Activities Management Service\"}")
-    }
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_DECLINED_FROM_WAITING_LIST"
+    hmppsAuditEventCaptor.secondValue.what isEqualTo "PRISONER_DEALLOCATED"
+    hmppsAuditEventCaptor.thirdValue.what isEqualTo "PRISONER_DEALLOCATED"
+    hmppsAuditEventCaptor.lastValue.what isEqualTo "PRISONER_DEALLOCATED"
   }
 
   @Test
@@ -210,9 +201,14 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     with(allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }) {
-      size isEqualTo 2
+      size isEqualTo 3
       single { it.allocationId == 1L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
       single { it.allocationId == 4L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
+      single { it.allocationId == 6L }.let { allocation ->
+        allocation.prisonerStatus isEqualTo PrisonerStatus.ENDED
+        allocation.startDate isEqualTo TimeSource.tomorrow()
+        allocation.endDate isEqualTo TimeSource.today()
+      }
     }
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
@@ -243,9 +239,14 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
     with(allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }) {
-      size isEqualTo 2
+      size isEqualTo 3
       single { it.allocationId == 1L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
       single { it.allocationId == 4L }.prisonerStatus isEqualTo PrisonerStatus.ENDED
+      single { it.allocationId == 6L }.let { allocation ->
+        allocation.prisonerStatus isEqualTo PrisonerStatus.ENDED
+        allocation.startDate isEqualTo TimeSource.tomorrow()
+        allocation.endDate isEqualTo TimeSource.today()
+      }
     }
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.DIED)

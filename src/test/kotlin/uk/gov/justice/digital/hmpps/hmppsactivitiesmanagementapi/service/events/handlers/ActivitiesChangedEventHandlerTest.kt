@@ -25,14 +25,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import java.time.LocalDate
@@ -52,16 +50,16 @@ class ActivitiesChangedEventHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
-  private val waitingListService: WaitingListService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
 
   private val handler = ActivitiesChangedEventHandler(
     rolloutPrisonRepository,
     allocationRepository,
     attendanceRepository,
     attendanceReasonRepository,
-    waitingListService,
     prisonerSearchApiClient,
+    prisonerAllocationHandler,
   )
 
   @Test
@@ -72,7 +70,6 @@ class ActivitiesChangedEventHandlerTest {
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -83,7 +80,6 @@ class ActivitiesChangedEventHandlerTest {
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
     verifyNoInteractions(allocationRepository)
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -112,7 +108,6 @@ class ActivitiesChangedEventHandlerTest {
       assertThat(it.suspendedReason).isEqualTo("Temporary absence")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -166,7 +161,6 @@ class ActivitiesChangedEventHandlerTest {
     verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
     verify(todaysFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
     verify(tomorrowsFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
@@ -186,34 +180,25 @@ class ActivitiesChangedEventHandlerTest {
     assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
     assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
   fun `allocations are not auto-suspended if a runtime error occurs`() {
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doThrow RuntimeException("Error")
+    whenever(
+      allocationRepository.findByPrisonCodeAndPrisonerNumber(
+        moorlandPrisonCode,
+        "123456",
+      ),
+    ) doThrow RuntimeException("Error")
 
     val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
     outcome.isSuccess() isBool false
     outcome.message isEqualTo "An error occurred whilst trying to suspend prisoner 123456"
-
-    verifyNoInteractions(waitingListService)
   }
 
   @Test
-  fun `allocations are ended on end action and waiting lists are declined`() {
-    val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    ).onEach {
-      it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
-      it.deallocatedBy isEqualTo null
-      it.deallocatedReason isEqualTo null
-      it.deallocatedTime isEqualTo null
-    }
-
+  fun `temporarily released prisoner is deallocated on 'END'`() {
     mock<Prisoner> {
       on { status } doReturn "ACTIVE OUT"
       on { prisonId } doReturn moorlandPrisonCode
@@ -221,49 +206,19 @@ class ActivitiesChangedEventHandlerTest {
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
     }
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(allocations)
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool true }
 
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
-
-    outcome.isSuccess() isBool true
-
-    allocations.forEach {
-      with(it) {
-        prisonerStatus isEqualTo PrisonerStatus.ENDED
-        deallocatedBy isEqualTo "Activities Management Service"
-        deallocatedReason isEqualTo DeallocationReason.TEMPORARILY_RELEASED
-        deallocatedTime isCloseTo TimeSource.now()
-      }
-    }
-
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
+    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
   }
 
   @Test
-  fun `allocations are not ended on when prisoner not found`() {
+  fun `allocations are not deallocated on 'END' when prisoner not found`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
 
     val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
 
     outcome.isSuccess() isBool false
-    outcome.message isEqualTo "An error occurred whilst trying to deallocate prisoner 123456"
-
-    verifyNoInteractions(allocationRepository)
-    verifyNoInteractions(waitingListService)
-  }
-
-  @Test
-  fun `allocations are not ended on when runtime error occurs`() {
-    whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doThrow RuntimeException("Error")
-
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
-
-    outcome.isSuccess() isBool false
-    outcome.message isEqualTo "An error occurred whilst trying to deallocate prisoner 123456"
-
-    verifyNoInteractions(allocationRepository)
-    verifyNoInteractions(waitingListService)
+    outcome.message isEqualTo "Unable to determine release reason for prisoner 123456"
   }
 
   @Test
@@ -296,52 +251,6 @@ class ActivitiesChangedEventHandlerTest {
     verify(tomorrowsScheduledInstance, never()).remove(tomorrowsFutureAttendance)
   }
 
-  @Test
-  fun `only future attendances are removed on end and waiting lists are declined`() {
-    val allocation = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
-    }.single()
-
-    mock<Prisoner> {
-      on { status } doReturn "INACTIVE OUT"
-      on { confirmedReleaseDate } doReturn TimeSource.today()
-      on { lastMovementTypeCode } doReturn "REL"
-    }.also { permanentlyReleasedPrisoner ->
-      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
-    }
-
-    val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
-    val todaysHistoricAttendance = attendanceFor(todaysHistoricScheduledInstance)
-
-    val todaysFutureScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().plusMinutes(1))
-    val todaysFutureAttendance = attendanceFor(todaysFutureScheduledInstance)
-
-    val tomorrowsScheduledInstance = scheduledInstanceOn(TimeSource.tomorrow(), LocalTime.now().plusMinutes(1))
-    val tomorrowsFutureAttendance = attendanceFor(tomorrowsScheduledInstance)
-
-    whenever(
-      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = moorlandPrisonCode,
-        sessionDate = LocalDate.now(),
-        prisonerNumber = "123456",
-      ),
-    ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
-
-    allocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
-
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
-
-    with(allocation) {
-      prisonerStatus isEqualTo PrisonerStatus.ENDED
-      deallocatedReason isEqualTo DeallocationReason.RELEASED
-    }
-
-    verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
-    verify(todaysFutureScheduledInstance).remove(todaysFutureAttendance)
-    verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
-    verify(waitingListService).declinePendingOrApprovedApplications(moorlandPrisonCode, "123456", "Released", "Activities Management Service")
-  }
-
   private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {
     on { sessionDate } doReturn date
     on { startTime } doReturn time
@@ -350,5 +259,20 @@ class ActivitiesChangedEventHandlerTest {
   private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {
     on { scheduledInstance } doReturn instance
     on { editable() } doReturn true
+  }
+
+  @Test
+  fun `released prisoner is deallocated on 'END'`() {
+    mock<Prisoner> {
+      on { status } doReturn "INACTIVE OUT"
+      on { confirmedReleaseDate } doReturn TimeSource.today()
+      on { lastMovementTypeCode } doReturn "REL"
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
+    }
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 }
