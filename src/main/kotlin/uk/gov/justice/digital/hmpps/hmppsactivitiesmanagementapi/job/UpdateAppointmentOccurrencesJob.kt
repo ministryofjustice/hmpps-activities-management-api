@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import java.time.LocalDateTime
@@ -28,8 +28,8 @@ import kotlin.system.measureTimeMillis
  */
 @Component
 class UpdateAppointmentOccurrencesJob(
-  private val jobRunner: SafeJobRunner,
-  private val service: AppointmentOccurrenceUpdateDomainService,
+    private val jobRunner: SafeJobRunner,
+    private val service: AppointmentUpdateDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -49,10 +49,10 @@ class UpdateAppointmentOccurrencesJob(
     startTimeInMs: Long,
   ) {
     jobRunner.runJob(
-      JobDefinition(JobType.UPDATE_APPOINTMENT_OCCURRENCES) {
+      JobDefinition(JobType.UPDATE_APPOINTMENTS) {
         log.info("Updating remaining occurrences for appointment with id $appointmentId")
         val elapsed = measureTimeMillis {
-          service.updateAppointmentOccurrenceIds(
+          service.updateAppointmentIds(
             appointmentId,
             appointmentOccurrenceId,
             occurrenceIdsToUpdate,

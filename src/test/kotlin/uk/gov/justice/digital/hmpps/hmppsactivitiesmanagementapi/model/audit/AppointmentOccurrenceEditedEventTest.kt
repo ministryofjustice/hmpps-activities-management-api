@@ -30,7 +30,7 @@ class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
     assertThat(event.toJson()).isEqualTo(expectedJson)
   }
 
-  private fun createEvent(): AppointmentOccurrenceEditedEvent {
+  private fun createEvent(): AppointmentEditedEvent {
     val originalStartDate = LocalDate.of(2023, 3, 22)
     val startDate = LocalDate.of(2023, 3, 23)
     val originalStartTime = LocalTime.of(8, 0)
@@ -38,7 +38,7 @@ class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
     val originalEndTime = LocalTime.of(10, 15)
     val endTime = LocalTime.of(10, 30)
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
-    return AppointmentOccurrenceEditedEvent(
+    return AppointmentEditedEvent(
       appointmentSeriesId = 1,
       appointmentId = 2,
       prisonCode = "PBI",

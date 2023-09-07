@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import java.time.LocalDateTime
@@ -28,7 +28,7 @@ import kotlin.system.measureTimeMillis
 @Component
 class CancelAppointmentOccurrencesJob(
   private val jobRunner: SafeJobRunner,
-  private val service: AppointmentOccurrenceCancelDomainService,
+  private val service: AppointmentCancelDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -47,10 +47,10 @@ class CancelAppointmentOccurrencesJob(
     startTimeInMs: Long,
   ) {
     jobRunner.runJob(
-      JobDefinition(JobType.CANCEL_APPOINTMENT_OCCURRENCES) {
+      JobDefinition(JobType.CANCEL_APPOINTMENTS) {
         log.info("Cancelling remaining appointments for series with id $appointmentSeriesId")
         val elapsed = measureTimeMillis {
-          service.cancelAppointmentOccurrenceIds(
+          service.cancelAppointmentIds(
             appointmentSeriesId,
             appointmentId,
             occurrenceIdsToCancel,

@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
@@ -25,8 +25,8 @@ class AppointmentOccurrenceService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val appointmentOccurrenceUpdateDomainService: AppointmentOccurrenceUpdateDomainService,
-  private val appointmentOccurrenceCancelDomainService: AppointmentOccurrenceCancelDomainService,
+  private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
+  private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob,
   private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
@@ -80,11 +80,11 @@ class AppointmentOccurrenceService(
     }
 
     val updateOccurrencesCount = occurrencesToUpdate.size
-    val updateInstancesCount = appointmentOccurrenceUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, occurrencesToUpdate)
+    val updateInstancesCount = appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, occurrencesToUpdate)
     // Determine if this is an update request that will affect more than one occurrence and a very large number of appointment instances. If it is, only update the first occurrence
     val updateFirstOccurrenceOnly = updateOccurrencesCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
-    val updatedAppointment = appointmentOccurrenceUpdateDomainService.updateAppointmentOccurrences(
+    val updatedAppointment = appointmentUpdateDomainService.updateAppointments(
       appointmentSeries,
       appointmentOccurrenceId,
       if (updateFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToUpdate.toSet(),
@@ -128,11 +128,11 @@ class AppointmentOccurrenceService(
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val cancelOccurrencesCount = occurrencesToCancel.size
-    val cancelInstancesCount = appointmentOccurrenceCancelDomainService.getCancelInstancesCount(occurrencesToCancel)
+    val cancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(occurrencesToCancel)
     // Determine if this is a cancel request that will affect more than one occurrence and a very large number of appointment instances. If it is, only cancel the first occurrence
     val cancelFirstOccurrenceOnly = cancelOccurrencesCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
 
-    val cancelledAppointment = appointmentOccurrenceCancelDomainService.cancelAppointmentOccurrences(
+    val cancelledAppointment = appointmentCancelDomainService.cancelAppointments(
       appointmentSeries,
       appointmentOccurrenceId,
       if (cancelFirstOccurrenceOnly) setOf(appointmentOccurrence) else occurrencesToCancel.toSet(),

@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
@@ -151,7 +151,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
     }
 
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -570,7 +570,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
 
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -649,7 +649,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -747,7 +747,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =

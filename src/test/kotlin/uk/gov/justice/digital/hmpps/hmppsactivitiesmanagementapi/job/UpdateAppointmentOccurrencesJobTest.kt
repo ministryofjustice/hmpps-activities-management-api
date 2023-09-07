@@ -8,7 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 class UpdateAppointmentOccurrencesJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
-  private val service: AppointmentOccurrenceUpdateDomainService = mock()
+  private val service: AppointmentUpdateDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = UpdateAppointmentOccurrencesJob(safeJobRunner, service)
 
@@ -52,7 +52,7 @@ class UpdateAppointmentOccurrencesJobTest {
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.UPDATE_APPOINTMENT_OCCURRENCES)
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.UPDATE_APPOINTMENTS)
   }
 
   @Test
@@ -81,7 +81,7 @@ class UpdateAppointmentOccurrencesJobTest {
       startTimeInMs,
     )
 
-    verify(service).updateAppointmentOccurrenceIds(
+    verify(service).updateAppointmentIds(
       appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentId,
       occurrenceIdsToUpdate,

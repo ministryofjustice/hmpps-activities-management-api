@@ -52,9 +52,9 @@ data class AppointmentAttendee(
 
   fun isGroupAppointment() = appointment.appointmentSeries.appointmentType == AppointmentType.GROUP
 
-  fun removeOccurrence(occurrence: Appointment) = appointment.appointmentSeries.removeAppointment(occurrence)
+  fun removeAppointment(appointment: Appointment) = this.appointment.appointmentSeries.removeAppointment(appointment)
 
-  fun removeFromAppointmentOccurrence() = appointment.removeAttendee(this)
+  fun removeFromAppointment() = appointment.removeAttendee(this)
 }
 
 fun List<AppointmentAttendee>.toModel() = map { it.toModel() }

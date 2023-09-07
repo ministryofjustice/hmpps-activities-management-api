@@ -61,11 +61,11 @@ data class Appointment(
 
   val customLocation: String? = null,
 
-  val inCell: Boolean = false,
+  var inCell: Boolean = false,
 
-  val onWing: Boolean = false,
+  var onWing: Boolean = false,
 
-  val offWing: Boolean = true,
+  var offWing: Boolean = true,
 
   var startDate: LocalDate,
 

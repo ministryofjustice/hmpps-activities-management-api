@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class AppointmentOccurrenceEditedEvent(
+class AppointmentEditedEvent(
   private val appointmentSeriesId: Long,
   private val appointmentId: Long,
   private val prisonCode: String,

@@ -45,7 +45,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
-  private val service = spy(AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
+  private val service = spy(AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 4)
@@ -78,7 +78,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
-      val response = service.cancelAppointmentOccurrenceIds(
+      val response = service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentId,
         ids,
@@ -93,7 +93,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       response.occurrences.filter { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo true
       response.occurrences.filterNot { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo false
 
-      verify(service).cancelAppointmentOccurrences(
+      verify(service).cancelAppointments(
         appointmentSeries,
         appointmentOccurrence.appointmentId,
         applyToThisAndAllFuture.toSet(),
@@ -115,7 +115,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
-      service.cancelAppointmentOccurrenceIds(
+      service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentId,
         ids,
@@ -144,7 +144,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val cancelled = LocalDateTime.now()
       val startTimeInMs = System.currentTimeMillis()
-      val response = service.cancelAppointmentOccurrenceIds(
+      val response = service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentId,
         ids,
@@ -159,7 +159,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       response.occurrences.filter { ids.contains(it.id) } hasSize 0
       response.occurrences.filterNot { ids.contains(it.id) } hasSize 1
 
-      verify(service).cancelAppointmentOccurrences(
+      verify(service).cancelAppointments(
         appointmentSeries,
         appointmentOccurrence.appointmentId,
         applyToThisAndAllFuture.toSet(),
@@ -181,7 +181,7 @@ class AppointmentOccurrenceCancelDomainServiceTest {
       val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
       val request = AppointmentOccurrenceCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
       val startTimeInMs = System.currentTimeMillis()
-      service.cancelAppointmentOccurrenceIds(
+      service.cancelAppointmentIds(
         appointmentSeries.appointmentSeriesId,
         appointmentOccurrence.appointmentId,
         ids,

@@ -8,7 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 class CancelAppointmentOccurrencesJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
-  private val service: AppointmentOccurrenceCancelDomainService = mock()
+  private val service: AppointmentCancelDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = CancelAppointmentOccurrencesJob(safeJobRunner, service)
 
@@ -50,7 +50,7 @@ class CancelAppointmentOccurrencesJobTest {
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.CANCEL_APPOINTMENT_OCCURRENCES)
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.CANCEL_APPOINTMENTS)
   }
 
   @Test
@@ -74,7 +74,7 @@ class CancelAppointmentOccurrencesJobTest {
       startTimeInMs,
     )
 
-    verify(service).cancelAppointmentOccurrenceIds(
+    verify(service).cancelAppointmentIds(
       appointmentSeries.appointmentSeriesId,
       appointmentOccurrence.appointmentId,
       occurrenceIdsToCancel,

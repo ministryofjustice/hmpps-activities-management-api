@@ -22,8 +22,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
@@ -76,8 +76,8 @@ class AppointmentOccurrenceServiceCancelTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService),
-    AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
+    AppointmentUpdateDomainService(appointmentRepository, telemetryClient, auditService),
+    AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentOccurrencesJob,
     cancelAppointmentOccurrencesJob,
   )

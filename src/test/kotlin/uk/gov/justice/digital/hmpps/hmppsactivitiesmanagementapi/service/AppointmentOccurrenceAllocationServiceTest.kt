@@ -67,7 +67,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAllocation).removeFromAppointmentOccurrence()
+    verify(parentAllocation).removeFromAppointment()
   }
 
   @Test
@@ -104,7 +104,7 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAllocation).removeOccurrence(parentOccurrence)
+    verify(parentAllocation).removeAppointment(parentOccurrence)
   }
 
   @Test

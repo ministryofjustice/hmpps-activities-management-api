@@ -9,7 +9,7 @@ enum class AppointmentFrequency {
       var date = startDate
       if (startDate.dayOfWeek == DayOfWeek.SATURDAY || startDate.dayOfWeek == DayOfWeek.SUNDAY) {
         // User has specified that an appointment repeating on weekdays (Monday to Friday) starts on a weekend.
-        // That is not supported by the default calculation below so either return the start date for the first occurrence...
+        // That is not supported by the default calculation below so either return the start date for the first appointment...
         if (sequenceNumber == 1) {
           return startDate
         }

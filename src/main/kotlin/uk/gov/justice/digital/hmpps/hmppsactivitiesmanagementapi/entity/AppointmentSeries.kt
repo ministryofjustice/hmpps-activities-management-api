@@ -139,9 +139,9 @@ data class AppointmentSeries(
     userMap: Map<String, UserDetail>,
   ) = appointments().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
-  fun addAppointment(occurrence: Appointment) = appointments.add(occurrence)
+  fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
-  fun removeAppointment(occurrence: Appointment) = appointments.remove(occurrence)
+  fun removeAppointment(appointment: Appointment) = appointments.remove(appointment)
 
   fun internalLocationIds() =
     listOf(internalLocationId).union(appointments().map { appointment -> appointment.internalLocationId }).filterNotNull()

@@ -10,8 +10,8 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
@@ -31,8 +31,8 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val appointmentOccurrenceUpdateDomainService: AppointmentOccurrenceUpdateDomainService = mock()
-  private val appointmentOccurrenceCancelDomainService: AppointmentOccurrenceCancelDomainService = mock()
+  private val appointmentUpdateDomainService: AppointmentUpdateDomainService = mock()
+  private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentOccurrencesJob: UpdateAppointmentOccurrencesJob = mock()
   private val cancelAppointmentOccurrencesJob: CancelAppointmentOccurrencesJob = mock()
 
@@ -41,8 +41,8 @@ class AppointmentOccurrenceServiceUpdateTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    appointmentOccurrenceUpdateDomainService,
-    appointmentOccurrenceCancelDomainService,
+    appointmentUpdateDomainService,
+    appointmentCancelDomainService,
     updateAppointmentOccurrencesJob,
     cancelAppointmentOccurrencesJob,
     maxSyncAppointmentInstanceActions = 14,

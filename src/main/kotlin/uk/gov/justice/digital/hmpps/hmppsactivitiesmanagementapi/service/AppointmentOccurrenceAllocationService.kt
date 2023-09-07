@@ -32,7 +32,7 @@ class AppointmentOccurrenceAllocationService(
           appointmentOccurrenceAllocationRepository.findById(it.appointmentAttendeeId)
             .ifPresent { allocation ->
               if (allocation.isIndividualAppointment()) {
-                allocation.removeOccurrence(allocation.appointment)
+                allocation.removeAppointment(allocation.appointment)
 
                 log.info(
                   "Removed appointment occurrence '${allocation.appointment.appointmentId}' " +
@@ -40,7 +40,7 @@ class AppointmentOccurrenceAllocationService(
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
-                allocation.removeFromAppointmentOccurrence()
+                allocation.removeFromAppointment()
                 log.info("Removed the appointment occurrence allocation '${it.appointmentAttendeeId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
 

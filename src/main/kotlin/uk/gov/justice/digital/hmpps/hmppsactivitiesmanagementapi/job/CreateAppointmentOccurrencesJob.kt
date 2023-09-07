@@ -41,7 +41,7 @@ class CreateAppointmentOccurrencesJob(
   @Async("asyncExecutor")
   fun execute(appointmentId: Long, prisonerBookings: Map<String, String?>) {
     jobRunner.runJob(
-      JobDefinition(JobType.CREATE_APPOINTMENT_OCCURRENCES) {
+      JobDefinition(JobType.CREATE_APPOINTMENTS) {
         createAppointmentOccurrences(appointmentId, prisonerBookings)
       },
     )
