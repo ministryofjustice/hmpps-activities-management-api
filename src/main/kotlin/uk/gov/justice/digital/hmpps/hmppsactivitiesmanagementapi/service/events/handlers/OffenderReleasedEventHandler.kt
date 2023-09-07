@@ -19,7 +19,7 @@ class OffenderReleasedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService,
   private val prisonApiClient: PrisonApiApplicationClient,
-  private val allocationHandler: PrisonerAllocationHandler,
+  private val allocationHandler: PrisonerDeallocationHandler,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {

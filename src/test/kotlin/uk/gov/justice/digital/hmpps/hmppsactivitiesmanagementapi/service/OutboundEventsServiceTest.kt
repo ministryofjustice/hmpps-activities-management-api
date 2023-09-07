@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerDeallocatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
 import java.time.LocalDateTime
@@ -137,10 +138,23 @@ class OutboundEventsServiceTest {
   }
 
   @Test
+  fun `prisoner allocation deleted event with id 1 is sent to the events publisher`() {
+    featureSwitches.stub { on { isEnabled(OutboundEvent.PRISONER_ALLOCATION_DELETED) } doReturn true }
+
+    outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_DELETED, 1L)
+
+    verify(
+      expectedEventType = "activities.prisoner.allocation-deleted",
+      expectedAdditionalInformation = PrisonerDeallocatedInformation(1),
+      expectedDescription = "A prisoner has been removed from an activity in the activities management service",
+    )
+  }
+
+  @Test
   fun `events are not published for any outbound event when not enabled`() {
     featureSwitches.stub { on { isEnabled(any<OutboundEvent>(), any()) } doReturn false }
 
-    OutboundEvent.values().forEach { outboundEventsService.send(it, 1L) }
+    OutboundEvent.entries.forEach { outboundEventsService.send(it, 1L) }
 
     verifyNoInteractions(eventsPublisher)
   }

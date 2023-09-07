@@ -147,6 +147,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_DELETED, 6L)
 
     verify(hmppsAuditApiClient, times(3)).createEvent(hmppsAuditEventCaptor.capture())
 

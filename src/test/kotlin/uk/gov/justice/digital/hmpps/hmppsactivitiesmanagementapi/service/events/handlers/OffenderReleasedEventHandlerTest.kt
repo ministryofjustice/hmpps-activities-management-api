@@ -34,13 +34,13 @@ class OffenderReleasedEventHandlerTest {
   }
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
-  private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
+  private val prisonerDeallocationHandler: PrisonerDeallocationHandler = mock()
 
   private val handler = OffenderReleasedEventHandler(
     rolloutPrisonRepository,
     appointmentOccurrenceAllocationService,
     prisonApiClient,
-    prisonerAllocationHandler,
+    prisonerDeallocationHandler,
   )
 
   private val prisoner: InmateDetail = mock {
@@ -61,7 +61,7 @@ class OffenderReleasedEventHandlerTest {
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(prisonerAllocationHandler)
+    verifyNoInteractions(prisonerDeallocationHandler)
   }
 
   @Test
@@ -72,7 +72,7 @@ class OffenderReleasedEventHandlerTest {
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
-    verifyNoInteractions(prisonerAllocationHandler)
+    verifyNoInteractions(prisonerDeallocationHandler)
   }
 
   @Test
@@ -89,7 +89,7 @@ class OffenderReleasedEventHandlerTest {
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
-    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    verify(prisonerDeallocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 
   @Test

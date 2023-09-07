@@ -1126,4 +1126,87 @@ class ActivityScheduleTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Must have at least 1 active slot across the schedule")
   }
+
+  @Test
+  fun `remove pending allocation from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val pendingAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.tomorrow(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+
+    schedule.removePending(pendingAllocation)
+  }
+
+  @Test
+  fun `can only remove pending allocations from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val activeAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE }
+
+    assertThatThrownBy {
+      schedule.removePending(activeAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+
+    val autoSuspendedAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "234567".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    )
+      .apply { autoSuspend(TimeSource.now(), "test") }
+      .also { it.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED }
+
+    assertThatThrownBy {
+      schedule.removePending(autoSuspendedAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+
+    val endedAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "345678".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.today(),
+    )
+      .apply { deallocateNow() }
+      .also { it.prisonerStatus isEqualTo PrisonerStatus.ENDED }
+
+    assertThatThrownBy {
+      schedule.removePending(endedAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. Only pending allocations can be removed.")
+  }
+
+  @Test
+  fun `can only remove associated pending allocations from schedule`() {
+    val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
+
+    val pendingAllocation = schedule.allocatePrisoner(
+      prisonerNumber = "123456".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      allocatedBy = "FRED",
+      startDate = TimeSource.tomorrow(),
+    ).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+
+    schedule.removePending(pendingAllocation)
+
+    assertThatThrownBy {
+      schedule.removePending(pendingAllocation)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation ${activeAllocation.allocationId} cannot be removed. It is not associated with the schedule.")
+  }
 }

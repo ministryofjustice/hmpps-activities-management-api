@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.PostPersist
+import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -34,6 +35,15 @@ class AllocationEntityListener {
       OutboundEvent.PRISONER_ALLOCATION_AMENDED,
       allocation.allocationId,
       "Failed to send prisoner allocation amended event for allocation ${allocation.allocationId}",
+    )
+  }
+
+  @PostRemove
+  fun onDelete(allocation: Allocation) {
+    send(
+      OutboundEvent.PRISONER_ALLOCATION_DELETED,
+      allocation.allocationId,
+      "Failed to send prisoner allocation deleted event for allocation ${allocation.allocationId}",
     )
   }
 

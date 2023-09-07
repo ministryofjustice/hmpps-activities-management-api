@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -24,14 +25,14 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-class PrisonerAllocationHandlerTest {
+class PrisonerDeallocationHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val waitingListService: WaitingListService = mock()
-  private val handler = PrisonerAllocationHandler(allocationRepository, attendanceRepository, waitingListService)
+  private val handler = PrisonerDeallocationHandler(allocationRepository, attendanceRepository, waitingListService)
 
   @Test
-  fun `un-ended allocations are ended on release from remand`() {
+  fun `pending allocations are removed and un-ended allocations are ended on release from remand`() {
     val previouslyActiveAllocations = listOf(
       allocation().copy(allocationId = 1, prisonerNumber = "123456"),
       allocation().copy(allocationId = 2, prisonerNumber = "123456"),
@@ -43,7 +44,17 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime).isNull()
     }
 
-    val pendingAllocation = allocation(startDate = TimeSource.tomorrow()).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+    val pendingAllocation = allocation(startDate = TimeSource.tomorrow())
+      .also {
+        it.prisonerStatus isEqualTo PrisonerStatus.PENDING
+        whenever(
+          allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+            moorlandPrisonCode,
+            "123456",
+            PrisonerStatus.PENDING,
+          ),
+        ) doReturn listOf(it)
+      }
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
@@ -53,9 +64,13 @@ class PrisonerAllocationHandlerTest {
           PrisonerStatus.ENDED,
         ),
       ),
-    ) doReturn previouslyActiveAllocations.plus(pendingAllocation)
+    ) doReturn previouslyActiveAllocations
+
+    pendingAllocation.activitySchedule.allocations(true).contains(pendingAllocation) isBool true
 
     handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+
+    pendingAllocation.activitySchedule.allocations(true).contains(pendingAllocation) isBool false
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue

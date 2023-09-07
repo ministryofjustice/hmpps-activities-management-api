@@ -34,4 +34,12 @@ class AllocationEntityListenerTest(@Autowired private val listener: AllocationEn
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId)
     verifyNoMoreInteractions(outboundEventsService)
   }
+
+  @Test
+  fun `prisoner allocation deleted event raised on deletion`() {
+    listener.onDelete(allocation)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_DELETED, allocation.allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
 }

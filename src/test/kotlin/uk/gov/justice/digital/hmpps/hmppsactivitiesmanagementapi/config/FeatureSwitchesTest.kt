@@ -29,6 +29,7 @@ class FeatureSwitchesTest {
       "feature.event.activities.activity-schedule.amended=true",
       "feature.event.activities.scheduled-instance.amended=true",
       "feature.event.activities.prisoner.allocation-amended=true",
+      "feature.event.activities.prisoner.allocation-deleted=true",
       "feature.event.activities.prisoner.attendance-created=true",
       "feature.event.activities.prisoner.attendance-amended=true",
       "feature.event.activities.prisoner.attendance-expired=true",
@@ -50,15 +51,15 @@ class FeatureSwitchesTest {
   inner class EnabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are enabled`() {
-      Feature.values().forEach {
+      Feature.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} not enabled").isTrue
       }
 
-      OutboundEvent.values().forEach {
+      OutboundEvent.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
       }
 
-      InboundEventType.values().forEach {
+      InboundEventType.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
       }
     }
@@ -69,15 +70,15 @@ class FeatureSwitchesTest {
   inner class DisabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are disabled by default`() {
-      Feature.values().forEach {
+      Feature.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} enabled").isFalse
       }
 
-      OutboundEvent.values().forEach {
+      OutboundEvent.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
       }
 
-      InboundEventType.values().forEach {
+      InboundEventType.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
       }
     }

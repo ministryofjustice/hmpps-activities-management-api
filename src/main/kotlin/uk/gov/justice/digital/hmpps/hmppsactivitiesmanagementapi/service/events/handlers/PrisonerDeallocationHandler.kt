@@ -13,7 +13,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
-class PrisonerAllocationHandler(
+class PrisonerDeallocationHandler(
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val waitingListService: WaitingListService,
@@ -23,6 +23,7 @@ class PrisonerAllocationHandler(
   }
 
   internal fun deallocate(prisonCode: String, prisonerNumber: String, reason: DeallocationReason) {
+    deletePrisonersPendingAllocations(prisonCode, prisonerNumber)
     declinePrisonersWaitingListApplications(prisonCode, prisonerNumber)
     deallocatePrisonerAndRemoveFutureAttendances(reason, prisonCode, prisonerNumber)
   }
@@ -34,6 +35,14 @@ class PrisonerAllocationHandler(
       "Released",
       ServiceName.SERVICE_NAME.value,
     )
+  }
+
+  private fun deletePrisonersPendingAllocations(prisonCode: String, prisonerNumber: String) {
+    allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+      prisonCode,
+      prisonerNumber,
+      PrisonerStatus.PENDING,
+    ).onEach { it.activitySchedule.removePending(it) }
   }
 
   private fun deallocatePrisonerAndRemoveFutureAttendances(
