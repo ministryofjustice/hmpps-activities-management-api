@@ -37,7 +37,7 @@ class AppointmentOccurrenceService(
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointmentSeries = appointmentOccurrence.appointmentSeries
-    val occurrencesToUpdate = appointmentSeries.applyToOccurrences(appointmentOccurrence, request.applyTo, "update")
+    val occurrencesToUpdate = appointmentSeries.applyToAppointments(appointmentOccurrence, request.applyTo, "update")
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     if (request.categoryCode != null) {
@@ -124,7 +124,7 @@ class AppointmentOccurrenceService(
 
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointmentSeries = appointmentOccurrence.appointmentSeries
-    val occurrencesToCancel = appointmentSeries.applyToOccurrences(appointmentOccurrence, request.applyTo, "cancel")
+    val occurrencesToCancel = appointmentSeries.applyToAppointments(appointmentOccurrence, request.applyTo, "cancel")
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val cancelOccurrencesCount = occurrencesToCancel.size

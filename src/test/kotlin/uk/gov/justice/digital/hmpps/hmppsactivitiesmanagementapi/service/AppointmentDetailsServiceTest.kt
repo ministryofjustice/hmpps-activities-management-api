@@ -51,7 +51,7 @@ class AppointmentDetailsServiceTest {
   fun `getAppointmentDetailsById returns mapped appointment details for known appointment id`() {
     addCaseloadIdToRequestHeader("TPR")
     val entity = appointmentSeriesEntity()
-    val occurrenceEntity = entity.occurrences().first()
+    val occurrenceEntity = entity.appointments().first()
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
@@ -94,10 +94,10 @@ class AppointmentDetailsServiceTest {
         entity.startTime,
         entity.endTime,
         null,
-        entity.comment,
-        entity.created,
+        entity.extraInformation,
+        entity.createdTime,
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-        entity.updated,
+        entity.updatedTime,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
         occurrences = listOf(
           AppointmentOccurrenceSummary(

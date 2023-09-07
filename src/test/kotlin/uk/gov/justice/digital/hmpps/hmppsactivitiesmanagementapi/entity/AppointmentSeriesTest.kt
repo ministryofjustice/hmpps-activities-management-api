@@ -22,27 +22,27 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod as AppointmentRepeatPeriodModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentRepeatPeriodModel
 
 class AppointmentSeriesTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = appointmentModel(entity.created, entity.updated, entity.occurrences().first().updated)
+    val expectedModel = appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updated)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = listOf(appointmentModel(entity.created, entity.updated, entity.occurrences().first().updated))
+    val expectedModel = listOf(appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updated))
     assertThat(listOf(entity).toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `occurrences filters out soft deleted occurrences`() {
-    val entity = appointmentSeriesEntity(repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3).apply { occurrences().first().cancellationReason = appointmentDeletedReason() }
-    with(entity.occurrences()) {
+    val entity = appointmentSeriesEntity(repeatPeriod = AppointmentFrequency.WEEKLY, numberOfOccurrences = 3).apply { appointments().first().cancellationReason = appointmentDeletedReason() }
+    with(entity.appointments()) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
     }
@@ -52,10 +52,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences filters out past occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    with(entity.scheduledOccurrences()) {
+    with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
     }
@@ -65,10 +65,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences filters out cancelled occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[1].cancellationReason = appointmentCancelledReason() }
-    with(entity.scheduledOccurrences()) {
+    ).apply { appointments()[1].cancellationReason = appointmentCancelledReason() }
+    with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
     }
@@ -78,10 +78,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences filters out deleted occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
-    with(entity.scheduledOccurrences()) {
+    ).apply { appointments()[2].cancellationReason = appointmentDeletedReason() }
+    with(entity.scheduledAppointments()) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
     }
@@ -91,10 +91,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences after filters out past occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 4,
     )
-    with(entity.scheduledOccurrencesAfter(LocalDateTime.now().minusDays(4))) {
+    with(entity.scheduledAppointmentsAfter(LocalDateTime.now().minusDays(4))) {
       assertThat(size).isEqualTo(3)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L, 4L))
     }
@@ -104,10 +104,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences after filters out cancelled occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 4,
-    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
-    with(entity.scheduledOccurrencesAfter(entity.occurrences()[1].startDateTime())) {
+    ).apply { appointments()[2].cancellationReason = appointmentCancelledReason() }
+    with(entity.scheduledAppointmentsAfter(entity.appointments()[1].startDateTime())) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(4L))
     }
@@ -117,10 +117,10 @@ class AppointmentSeriesTest {
   fun `scheduled occurrences after filters out deleted occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 4,
-    ).apply { occurrences()[3].cancellationReason = appointmentDeletedReason() }
-    with(entity.scheduledOccurrencesAfter(entity.occurrences()[1].startDateTime())) {
+    ).apply { appointments()[3].cancellationReason = appointmentDeletedReason() }
+    with(entity.scheduledAppointmentsAfter(entity.appointments()[1].startDateTime())) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(3L))
     }
@@ -129,47 +129,47 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to cannot action past occurrence`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
+    val appointmentOccurrence = entity.appointments()[1]
     appointmentOccurrence.startDate = LocalDate.now().minusDays(3)
-    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "update") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "update") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot update a past appointment occurrence")
   }
 
   @Test
   fun `apply to cannot action cancelled occurrence`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
+    val appointmentOccurrence = entity.appointments()[1]
     appointmentOccurrence.cancellationReason = appointmentCancelledReason()
-    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot modify a cancelled appointment occurrence")
   }
 
   @Test
   fun `apply to cannot action deleted occurrence`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
+    val appointmentOccurrence = entity.appointments()[1]
     appointmentOccurrence.cancellationReason = appointmentDeletedReason()
-    assertThatThrownBy { entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot cancel a deleted appointment occurrence")
   }
 
   @Test
   fun `apply to this occurrence`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")) {
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L))
     }
@@ -178,11 +178,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to this and all future occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")) {
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
     }
@@ -191,11 +191,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to all future occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(3)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L, 3L))
     }
@@ -204,11 +204,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to this and all future occurrences filters out past occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].startDate = LocalDate.now().minusDays(3) }
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    ).apply { appointments()[2].startDate = LocalDate.now().minusDays(3) }
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
@@ -217,11 +217,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to this and all future occurrences filters out cancelled occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    ).apply { appointments()[2].cancellationReason = appointmentCancelledReason() }
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
@@ -230,11 +230,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to this and all future occurrences filters out deleted occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    ).apply { appointments()[2].cancellationReason = appointmentDeletedReason() }
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
@@ -244,11 +244,11 @@ class AppointmentSeriesTest {
   fun `apply to all future occurrences filters out past occurrences`() {
     val entity = appointmentSeriesEntity(
       startDate = LocalDate.now().minusDays(3),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
     )
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(2L, 3L))
     }
@@ -257,11 +257,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to all future occurrences filters out cancelled occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].cancellationReason = appointmentCancelledReason() }
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    ).apply { appointments()[2].cancellationReason = appointmentCancelledReason() }
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
@@ -270,11 +270,11 @@ class AppointmentSeriesTest {
   @Test
   fun `apply to all future occurrences filters out deleted occurrences`() {
     val entity = appointmentSeriesEntity(
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 3,
-    ).apply { occurrences()[2].cancellationReason = appointmentDeletedReason() }
-    val appointmentOccurrence = entity.occurrences()[1]
-    with(entity.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
+    ).apply { appointments()[2].cancellationReason = appointmentDeletedReason() }
+    val appointmentOccurrence = entity.appointments()[1]
+    with(entity.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentOccurrenceId }).isEqualTo(listOf(1L, 2L))
     }
@@ -282,19 +282,19 @@ class AppointmentSeriesTest {
 
   @Test
   fun `internal location ids includes occurrence ids`() {
-    val entity = appointmentSeriesEntity(123).apply { occurrences().first().internalLocationId = 124 }
+    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = 124 }
     assertThat(entity.internalLocationIds()).containsExactly(123, 124)
   }
 
   @Test
   fun `internal location ids removes duplicates`() {
-    val entity = appointmentSeriesEntity(123).apply { occurrences().first().internalLocationId = 123 }
+    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = 123 }
     assertThat(entity.internalLocationIds()).containsExactly(123)
   }
 
   @Test
   fun `internal location ids removes null`() {
-    val entity = appointmentSeriesEntity(123).apply { occurrences().first().internalLocationId = null }
+    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = null }
     assertThat(entity.internalLocationIds()).containsExactly(123)
   }
 
@@ -307,52 +307,52 @@ class AppointmentSeriesTest {
   @Test
   fun `prisoner numbers uses prisoners allocated to the first future occurrence`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.occurrences().first().let {
+    entity.appointments().first().let {
       it.startDate = LocalDate.now()
       it.startTime = LocalTime.now().minusMinutes(1)
     }
-    entity.addOccurrence(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().plusMinutes(1), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
-    entity.addOccurrence(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().plusMinutes(2), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
+    entity.addAppointment(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().plusMinutes(1), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
+    entity.addAppointment(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().plusMinutes(2), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
     assertThat(entity.prisonerNumbers()).containsExactly("B2345CD")
   }
 
   @Test
   fun `prisoner numbers uses prisoners allocated to the last occurrence if all occurrences have past`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.occurrences().first().let {
+    entity.appointments().first().let {
       it.startDate = LocalDate.now()
       it.startTime = LocalTime.now().minusMinutes(3)
     }
-    entity.addOccurrence(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().minusMinutes(2), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
-    entity.addOccurrence(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().minusMinutes(1), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
+    entity.addAppointment(appointmentOccurrenceEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().minusMinutes(2), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
+    entity.addAppointment(appointmentOccurrenceEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().minusMinutes(1), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
     assertThat(entity.prisonerNumbers()).containsExactly("C3456DE")
   }
 
   @Test
   fun `prisoner numbers uses empty list if there are no occurrences`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.removeOccurrence(entity.occurrences().first())
+    entity.removeAppointment(entity.appointments().first())
     assertThat(entity.prisonerNumbers()).isEmpty()
   }
 
   @Test
   fun `usernames includes created by, updated by and occurrence updated by and cancelled by`() {
     val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = "UPDATE.USER").apply {
-      occurrences().first().updatedBy = "OCCURRENCE.UPDATE.USER"
-      occurrences().first().cancelledBy = "OCCURRENCE.CANCEL.USER"
+      appointments().first().updatedBy = "OCCURRENCE.UPDATE.USER"
+      appointments().first().cancelledBy = "OCCURRENCE.CANCEL.USER"
     }
     assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "OCCURRENCE.UPDATE.USER", "OCCURRENCE.CANCEL.USER")
   }
 
   @Test
   fun `usernames removes null`() {
-    val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = null).apply { occurrences().first().updatedBy = "OCCURRENCE.UPDATE.USER" }
+    val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = null).apply { appointments().first().updatedBy = "OCCURRENCE.UPDATE.USER" }
     assertThat(entity.usernames()).containsExactly("CREATE.USER", "OCCURRENCE.UPDATE.USER")
   }
 
   @Test
   fun `usernames removes duplicates`() {
-    val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = "CREATE.USER").apply { occurrences().first().updatedBy = "CREATE.USER" }
+    val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = "CREATE.USER").apply { appointments().first().updatedBy = "CREATE.USER" }
     assertThat(entity.usernames()).containsExactly("CREATE.USER")
   }
 
@@ -378,8 +378,8 @@ class AppointmentSeriesTest {
     assertThat(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentDetails(
         appointmentDescription = "Appointment description",
-        created = entity.created,
-        updated = entity.updated,
+        created = entity.createdTime,
+        updated = entity.updatedTime,
         updatedBy = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
@@ -516,7 +516,7 @@ class AppointmentSeriesTest {
 
   @Test
   fun `entity to details mapping schedule to repeat`() {
-    val entity = appointmentSeriesEntity(updatedBy = null, repeatPeriod = AppointmentRepeatPeriod.FORTNIGHTLY, numberOfOccurrences = 2)
+    val entity = appointmentSeriesEntity(updatedBy = null, repeatPeriod = AppointmentFrequency.FORTNIGHTLY, numberOfOccurrences = 2)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(
@@ -605,7 +605,7 @@ class AppointmentSeriesTest {
   @Test
   fun `schedule values populates iterator`() {
     val today = LocalDate.now()
-    val entity = appointmentSeriesEntity(startDate = today, repeatPeriod = AppointmentRepeatPeriod.WEEKLY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(startDate = today, repeatPeriod = AppointmentFrequency.WEEKLY, numberOfOccurrences = 3)
     assertThat(entity.scheduleIterator().asSequence().toList()).containsExactly(
       today,
       today.plusWeeks(1),

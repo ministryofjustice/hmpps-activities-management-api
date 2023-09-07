@@ -133,7 +133,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
   private fun expectGroupAppointment(): AppointmentOccurrence {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.GROUP)
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -142,7 +142,7 @@ class AppointmentOccurrenceServiceUpdateTest {
 
   private fun expectIndividualAppointment(): AppointmentOccurrence {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )

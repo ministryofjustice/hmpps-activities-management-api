@@ -36,7 +36,7 @@ class AppointmentOccurrenceUpdateDomainService(
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
-    val occurrencesToUpdate = appointmentSeries.occurrences().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
+    val occurrencesToUpdate = appointmentSeries.appointments().filter { occurrenceIdsToUpdate.contains(it.appointmentOccurrenceId) }.toSet()
     return updateAppointmentOccurrences(appointmentSeries, appointmentOccurrenceId, occurrencesToUpdate, request, prisonerMap, updated, updatedBy, updateOccurrencesCount, updateInstancesCount, startTimeInMs, true, false)
   }
 
@@ -62,7 +62,7 @@ class AppointmentOccurrenceUpdateDomainService(
     applyRemovePrisonersUpdate(request, occurrencesToUpdate)
 
     if (request.isPropertyUpdate()) {
-      appointmentSeries.updated = updated
+      appointmentSeries.updatedTime = updated
       appointmentSeries.updatedBy = updatedBy
       occurrencesToUpdate.forEach {
         it.updated = updated

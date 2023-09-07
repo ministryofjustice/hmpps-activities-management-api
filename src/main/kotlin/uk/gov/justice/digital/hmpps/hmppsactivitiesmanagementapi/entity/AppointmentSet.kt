@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -37,8 +36,7 @@ data class AppointmentSet(
 
   var categoryCode: String,
 
-  @Column(name = "custom_name")
-  var appointmentDescription: String?,
+  var customName: String?,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
@@ -54,8 +52,7 @@ data class AppointmentSet(
 
   var startDate: LocalDate,
 
-  @Column(name = "created_time")
-  val created: LocalDateTime = LocalDateTime.now(),
+  val createdTime: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 ) {
@@ -65,34 +62,34 @@ data class AppointmentSet(
     joinColumns = [JoinColumn(name = "appointment_set_id")],
     inverseJoinColumns = [JoinColumn(name = "appointment_series_id")],
   )
-  private val appointments: MutableList<AppointmentSeries> = mutableListOf()
+  private val appointmentSeries: MutableList<AppointmentSeries> = mutableListOf()
 
-  fun appointments() = appointments.toList()
+  fun appointmentSeries() = appointmentSeries.toList()
 
-  fun addAppointment(appointmentSeries: AppointmentSeries) = appointments.add(appointmentSeries)
+  fun addAppointmentSeries(appointmentSeries: AppointmentSeries) = this.appointmentSeries.add(appointmentSeries)
 
-  fun prisonerNumbers() = appointments().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
+  fun prisonerNumbers() = appointmentSeries().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
 
-  fun usernames() = listOf(createdBy).union(appointments().map { appointment -> appointment.usernames() }.flatten()).distinct()
+  fun usernames() = listOf(createdBy).union(appointmentSeries().map { appointment -> appointment.usernames() }.flatten()).distinct()
 
-  fun occurrences() = appointments().map { appointment -> appointment.occurrences() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
+  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<AppointmentOccurrence> { it.startDate }.thenBy { it.startTime })
 
   fun toModel() = BulkAppointmentModel(
     id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    appointmentDescription = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    appointments = this.appointments().toModel(),
-    created = created,
+    appointments = this.appointmentSeries().toModel(),
+    created = createdTime,
     createdBy = createdBy,
   )
 
   fun toSummary() = BulkAppointmentSummary(
     id = this.appointmentSetId,
-    appointmentCount = this.appointments().size,
+    appointmentCount = this.appointmentSeries().size,
   )
 
   fun toDetails(
@@ -104,9 +101,9 @@ data class AppointmentSet(
     return BulkAppointmentDetails(
       appointmentSetId,
       prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentDescription,
+      customName,
       if (inCell) {
         null
       } else {
@@ -114,8 +111,8 @@ data class AppointmentSet(
       },
       inCell,
       startDate,
-      appointments().map { it.occurrenceDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
-      created,
+      appointmentSeries().map { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
+      createdTime,
       userMap[createdBy].toSummary(createdBy),
     )
   }

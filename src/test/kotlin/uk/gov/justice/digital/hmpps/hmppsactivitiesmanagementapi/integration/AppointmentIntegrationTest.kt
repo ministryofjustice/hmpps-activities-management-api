@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -216,7 +216,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create individual repeat appointment success`() {
     val request =
-      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentRepeatPeriod.FORTNIGHTLY, 3))
+      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentRepeat(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -260,7 +260,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 2),
+      repeat = AppointmentRepeat(AppointmentFrequency.DAILY, 2),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -306,7 +306,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentRepeat(AppointmentRepeatPeriod.DAILY, 4),
+      repeat = AppointmentRepeat(AppointmentFrequency.DAILY, 4),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)

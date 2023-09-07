@@ -44,7 +44,7 @@ class AppointmentOccurrenceDetailsServiceTest {
   fun `getAppointmentOccurrenceDetailsById returns mapped appointment details for known appointment id`() {
     addCaseloadIdToRequestHeader("TPR")
     val appointmentSeries = appointmentSeriesEntity()
-    val entity = appointmentSeries.occurrences().first()
+    val entity = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
@@ -74,7 +74,7 @@ class AppointmentOccurrenceDetailsServiceTest {
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = entity.sequenceNumber,
         appointmentDescription = "Appointment description",
-        created = appointmentSeries.created,
+        created = appointmentSeries.createdTime,
         updated = entity.updated,
       ),
     )
@@ -90,7 +90,7 @@ class AppointmentOccurrenceDetailsServiceTest {
   fun `getAppointmentOccurrenceDetailsById throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
     val appointmentSeries = appointmentSeriesEntity()
-    val entity = appointmentSeries.occurrences().first()
+    val entity = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(entity.appointmentOccurrenceId)).thenReturn(Optional.of(entity))
     assertThatThrownBy { service.getAppointmentOccurrenceDetailsById(entity.appointmentOccurrenceId) }.isInstanceOf(CaseloadAccessException::class.java)
   }

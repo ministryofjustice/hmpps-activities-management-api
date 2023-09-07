@@ -22,12 +22,12 @@ class BulkAppointmentTest {
       entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,
-      entity.appointmentDescription,
+      entity.customName,
       entity.internalLocationId,
       entity.inCell,
       entity.startDate,
-      entity.appointments().toModel(),
-      entity.created,
+      entity.appointmentSeries().toModel(),
+      entity.createdTime,
       entity.createdBy,
     )
     assertThat(entity.toModel()).isEqualTo(expectedModel)
@@ -54,9 +54,9 @@ class BulkAppointmentTest {
   @Test
   fun `usernames includes created by, appointment updated by and occurrence updated by`() {
     val entity = bulkAppointmentEntity().apply {
-      appointments().first().apply {
+      appointmentSeries().first().apply {
         updatedBy = "APPOINTMENT.UPDATE.USER"
-        occurrences().first().updatedBy = "OCCURRENCE.UPDATE.USER"
+        appointments().first().updatedBy = "OCCURRENCE.UPDATE.USER"
       }
     }
     assertThat(entity.usernames()).containsExactly("CREATE.USER", "APPOINTMENT.UPDATE.USER", "OCCURRENCE.UPDATE.USER")
@@ -65,9 +65,9 @@ class BulkAppointmentTest {
   @Test
   fun `usernames removes duplicates`() {
     val entity = bulkAppointmentEntity().apply {
-      appointments().first().apply {
+      appointmentSeries().first().apply {
         updatedBy = "CREATE.USER"
-        occurrences().first().updatedBy = "CREATE.USER"
+        appointments().first().updatedBy = "CREATE.USER"
       }
     }
     assertThat(entity.usernames()).containsExactly("CREATE.USER")
@@ -85,7 +85,7 @@ class BulkAppointmentTest {
     val prisonerMap = getPrisonerMap()
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      bulkAppointmentDetails(created = entity.created),
+      bulkAppointmentDetails(created = entity.createdTime),
     )
   }
 

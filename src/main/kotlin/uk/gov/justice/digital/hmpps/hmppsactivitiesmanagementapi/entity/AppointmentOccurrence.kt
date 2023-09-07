@@ -62,7 +62,13 @@ data class AppointmentOccurrence(
 
   var internalLocationId: Long?,
 
-  var inCell: Boolean,
+  val customLocation: String? = null,
+
+  val inCell: Boolean = false,
+
+  val onWing: Boolean = false,
+
+  val offWing: Boolean = true,
 
   var startDate: LocalDate,
 
@@ -203,7 +209,7 @@ data class AppointmentOccurrence(
       isEdited(),
       isCancelled(),
       isExpired(),
-      appointmentSeries.created,
+      appointmentSeries.createdTime,
       userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
       updated,
       if (updatedBy == null) {

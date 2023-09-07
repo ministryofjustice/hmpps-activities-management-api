@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -101,10 +101,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -143,10 +143,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -159,7 +159,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().toSet()),
+      eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -185,10 +185,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 5,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -222,7 +222,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -243,10 +243,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -259,7 +259,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().toSet()),
+      eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -285,10 +285,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 5,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -322,7 +322,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -344,10 +344,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val addedPrisonerNumberToBookingIdMap = (3L..9L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = existingPrisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -369,7 +369,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(appointmentOccurrenceUpdateDomainService).updateAppointmentOccurrences(
       eq(appointmentSeries),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().toSet()),
+      eq(appointmentSeries.scheduledAppointments().toSet()),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
       updated.capture(),
@@ -396,10 +396,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val addedPrisonerNumberToBookingIdMap = (3L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = existingPrisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 5,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -442,7 +442,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     verify(updateAppointmentOccurrencesJob).execute(
       eq(appointmentSeries.appointmentSeriesId),
       eq(appointmentOccurrence.appointmentOccurrenceId),
-      eq(appointmentSeries.scheduledOccurrences().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentOccurrenceId == appointmentOccurrence.appointmentOccurrenceId }.map { it.appointmentOccurrenceId }.toSet()),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
       updated.capture(),
@@ -463,10 +463,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -508,11 +508,11 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
-    val scheduledOccurrences = appointmentSeries.scheduledOccurrences().toSet()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
+    val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -554,11 +554,11 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 5,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
-    val scheduledOccurrences = appointmentSeries.scheduledOccurrences().toSet()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
+    val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -616,10 +616,10 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -661,11 +661,11 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 2,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
-    val scheduledOccurrences = appointmentSeries.scheduledOccurrences().toSet()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
+    val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
@@ -707,11 +707,11 @@ class AppointmentOccurrenceServiceAsyncTest {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       numberOfOccurrences = 5,
     )
-    val appointmentOccurrence = appointmentSeries.occurrences().first()
-    val scheduledOccurrences = appointmentSeries.scheduledOccurrences().toSet()
+    val appointmentOccurrence = appointmentSeries.appointments().first()
+    val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
     whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )

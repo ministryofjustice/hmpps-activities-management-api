@@ -38,7 +38,7 @@ class AppointmentOccurrenceCancelDomainService(
     startTimeInMs: Long,
   ): AppointmentModel {
     val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentSeriesId)
-    val occurrencesToCancel = appointmentSeries.occurrences().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
+    val occurrencesToCancel = appointmentSeries.appointments().filter { occurrenceIdsToCancel.contains(it.appointmentOccurrenceId) }
     return cancelAppointmentOccurrences(appointmentSeries, appointmentId, occurrencesToCancel.toSet(), request, cancelled, cancelledBy, cancelOccurrencesCount, cancelInstancesCount, startTimeInMs, true, false)
   }
 

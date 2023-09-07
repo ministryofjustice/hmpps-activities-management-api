@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
@@ -94,7 +94,7 @@ class AppointmentService(
         BulkAppointmentEntity(
           prisonCode = request.prisonCode,
           categoryCode = request.categoryCode,
-          appointmentDescription = request.appointmentDescription,
+          customName = request.appointmentDescription,
           appointmentTier = appointmentTier,
           internalLocationId = request.internalLocationId,
           inCell = request.inCell,
@@ -118,7 +118,7 @@ class AppointmentService(
               comment = it.comment,
               createdBy = principal.name,
             )
-          }.forEach { appointment -> this.addAppointment(appointment) }
+          }.forEach { appointment -> this.addAppointmentSeries(appointment) }
         }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
           .also {
             logBulkAppointmentCreatedMetric(principal, it, startTime)
@@ -257,48 +257,48 @@ class AppointmentService(
       appointmentType = appointmentType!!,
       prisonCode = prisonCode,
       categoryCode = categoryCode,
-      appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
+      customName = appointmentDescription?.takeUnless(String::isBlank),
       appointmentTier = appointmentTier,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
       startTime = startTime!!,
       endTime = endTime,
-      comment = comment,
-      created = created,
+      extraInformation = comment,
+      createdTime = created,
       createdBy = createdBy,
-      updated = updated,
+      updatedTime = updated,
       updatedBy = updatedBy,
       isMigrated = isMigrated,
     ).apply {
       this.schedule = repeat?.let {
-        AppointmentSchedule(
+        AppointmentSeriesSchedule(
           appointmentSeries = this,
-          repeatPeriod = AppointmentRepeatPeriod.valueOf(repeat.period!!.name),
-          repeatCount = repeat.count!!,
+          frequency = AppointmentFrequency.valueOf(repeat.period!!.name),
+          numberOfAppointments = repeat.count!!,
         )
       }
 
       this.scheduleIterator().withIndex().forEach {
         if (createFirstOccurrenceOnly && it.index > 0) return@forEach
 
-        this.addOccurrence(
+        this.addAppointment(
           AppointmentOccurrenceEntity(
             appointmentSeries = this,
             sequenceNumber = it.index + 1,
             prisonCode = this.prisonCode,
             categoryCode = this.categoryCode,
-            appointmentDescription = this.appointmentDescription,
+            appointmentDescription = this.customName,
             internalLocationId = this.internalLocationId,
             appointmentTier = this.appointmentTier,
             inCell = this.inCell,
             startDate = it.value,
             startTime = this.startTime,
             endTime = this.endTime,
-            comment = this.comment,
-            created = this.created,
+            comment = this.extraInformation,
+            created = this.createdTime,
             createdBy = this.createdBy,
-            updated = this.updated,
+            updated = this.updatedTime,
             updatedBy = this.updatedBy,
           ).apply {
             prisonerBookings.forEach { prisonerBooking ->

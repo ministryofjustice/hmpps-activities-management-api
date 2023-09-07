@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -53,8 +52,7 @@ data class AppointmentSeries(
 
   val categoryCode: String,
 
-  @Column(name = "custom_name")
-  val appointmentDescription: String?,
+  val customName: String? = null,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
@@ -66,7 +64,13 @@ data class AppointmentSeries(
 
   val internalLocationId: Long?,
 
-  val inCell: Boolean,
+  val customLocation: String? = null,
+
+  val inCell: Boolean = false,
+
+  val onWing: Boolean = false,
+
+  val offWing: Boolean = true,
 
   val startDate: LocalDate,
 
@@ -76,100 +80,97 @@ data class AppointmentSeries(
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "appointment_series_schedule_id")
-  var schedule: AppointmentSchedule? = null,
+  var schedule: AppointmentSeriesSchedule? = null,
 
-  @Column(name = "extra_information")
-  val comment: String?,
+  val extraInformation: String? = null,
 
-  @Column(name = "created_time")
-  val created: LocalDateTime = LocalDateTime.now(),
+  val createdTime: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 
-  @Column(name = "updated_time")
-  var updated: LocalDateTime? = null,
+  var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
 
   val isMigrated: Boolean = false,
 ) {
   fun scheduleIterator() =
-    schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) }
-      ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
+    schedule?.let { AppointmentSeriesScheduleIterator(startDate, schedule!!.frequency, schedule!!.numberOfAppointments) }
+      ?: AppointmentSeriesScheduleIterator(startDate, AppointmentFrequency.DAILY, 1)
 
   @OneToMany(mappedBy = "appointmentSeries", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @OrderBy("sequenceNumber ASC")
-  private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
+  private val appointments: MutableList<AppointmentOccurrence> = mutableListOf()
 
-  fun occurrences() = occurrences.filterNot { it.isDeleted() }.toList()
+  fun appointments() = appointments.filterNot { it.isDeleted() }.toList()
 
-  fun scheduledOccurrences() = occurrences().filter { it.isScheduled() }.toList()
+  fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
-  fun scheduledOccurrencesAfter(startDateTime: LocalDateTime) = scheduledOccurrences().filter { it.startDateTime() > startDateTime }.toList()
+  fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
-  fun applyToOccurrences(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, action: String): List<AppointmentOccurrence> {
-    require(!appointmentOccurrence.isExpired()) {
-      "Cannot $action a past appointment occurrence"
+  fun applyToAppointments(appointment: AppointmentOccurrence, applyTo: ApplyTo, action: String): List<AppointmentOccurrence> {
+    require(!appointment.isExpired()) {
+      "Cannot $action a past appointment"
     }
 
-    require(!appointmentOccurrence.isCancelled()) {
-      "Cannot $action a cancelled appointment occurrence"
+    require(!appointment.isCancelled()) {
+      "Cannot $action a cancelled appointment"
     }
 
-    require(!appointmentOccurrence.isDeleted()) {
-      "Cannot $action a deleted appointment occurrence"
+    require(!appointment.isDeleted()) {
+      "Cannot $action a deleted appointment"
     }
 
     return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-        scheduledOccurrencesAfter(appointmentOccurrence.startDateTime()),
+      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointment).union(
+        scheduledAppointmentsAfter(appointment.startDateTime()),
       ).toList()
-      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledOccurrences()
-      else -> listOf(appointmentOccurrence)
+      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledAppointments()
+      else -> listOf(appointment)
     }
   }
 
-  fun occurrenceDetails(
+  fun appointmentDetails(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ) = occurrences().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  ) = appointments().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
-  fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
+  fun addAppointment(occurrence: AppointmentOccurrence) = appointments.add(occurrence)
 
-  fun removeOccurrence(occurrence: AppointmentOccurrence) = occurrences.remove(occurrence)
+  fun removeAppointment(occurrence: AppointmentOccurrence) = appointments.remove(occurrence)
 
   fun internalLocationIds() =
-    listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
+    listOf(internalLocationId).union(appointments().map { appointment -> appointment.internalLocationId }).filterNotNull()
 
   fun prisonerNumbers(): List<String> {
-    val orderedOccurrences = occurrences().sortedBy { it.startDateTime() }
-    if (orderedOccurrences.isEmpty()) return emptyList()
-    return (orderedOccurrences.firstOrNull { !it.isExpired() } ?: orderedOccurrences.last()).prisonerNumbers()
+    val orderedAppointments = appointments().sortedBy { it.startDateTime() }
+    if (orderedAppointments.isEmpty()) return emptyList()
+    return (orderedAppointments.firstOrNull { !it.isExpired() } ?: orderedAppointments.last()).prisonerNumbers()
   }
 
   fun usernames() =
-    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> occurrence.usernames() }).filterNotNull()
+    listOf(createdBy, updatedBy).union(appointments().flatMap { appointment -> appointment.usernames() }).filterNotNull()
 
   fun toModel() = AppointmentModel(
     id = appointmentSeriesId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    appointmentDescription = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
     repeat = schedule?.toRepeat(),
-    comment = comment,
-    created = created,
+    comment = extraInformation,
+    created = createdTime,
     createdBy = createdBy,
-    updated = updated,
+    updated = updatedTime,
     updatedBy = updatedBy,
-    occurrences = occurrences().toModel(),
+    occurrences = appointments().toModel(),
   )
 
   fun toDetails(
@@ -182,10 +183,10 @@ data class AppointmentSeries(
       appointmentSeriesId,
       appointmentType,
       prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
       prisoners.toSummary(),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentDescription,
+      customName,
       if (inCell) {
         null
       } else {
@@ -196,16 +197,16 @@ data class AppointmentSeries(
       startTime,
       endTime,
       schedule?.toRepeat(),
-      comment,
-      created,
+      extraInformation,
+      createdTime,
       userMap[createdBy].toSummary(createdBy),
-      updated,
+      updatedTime,
       if (updatedBy == null) {
         null
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(referenceCodeMap, locationMap, userMap),
+      appointments().toSummary(referenceCodeMap, locationMap, userMap),
     )
 }
 

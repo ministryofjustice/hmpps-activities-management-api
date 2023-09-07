@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class AppointmentScheduleIteratorTest {
+class AppointmentSeriesScheduleIteratorTest {
   @Test
   fun `weekday repeat period for two weeks over month end`() {
     val wednesdayFeb22nd2023 = LocalDate.of(2023, 2, 22)
-    val iterator = AppointmentScheduleIterator(wednesdayFeb22nd2023, AppointmentRepeatPeriod.WEEKDAY, 10)
+    val iterator = AppointmentSeriesScheduleIterator(wednesdayFeb22nd2023, AppointmentFrequency.WEEKDAY, 10)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -29,7 +29,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `weekday repeat period for two weeks starting on saturday`() {
     val saturdayFeb25th2023 = LocalDate.of(2023, 2, 25)
-    val iterator = AppointmentScheduleIterator(saturdayFeb25th2023, AppointmentRepeatPeriod.WEEKDAY, 10)
+    val iterator = AppointmentSeriesScheduleIterator(saturdayFeb25th2023, AppointmentFrequency.WEEKDAY, 10)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -49,7 +49,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `weekday repeat period for two weeks starting on sunday`() {
     val sundayFeb26th2023 = LocalDate.of(2023, 2, 26)
-    val iterator = AppointmentScheduleIterator(sundayFeb26th2023, AppointmentRepeatPeriod.WEEKDAY, 10)
+    val iterator = AppointmentSeriesScheduleIterator(sundayFeb26th2023, AppointmentFrequency.WEEKDAY, 10)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -69,7 +69,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `daily repeat period for two weeks over month end`() {
     val wednesdayFeb22nd2023 = LocalDate.of(2023, 2, 22)
-    val iterator = AppointmentScheduleIterator(wednesdayFeb22nd2023, AppointmentRepeatPeriod.DAILY, 14)
+    val iterator = AppointmentSeriesScheduleIterator(wednesdayFeb22nd2023, AppointmentFrequency.DAILY, 14)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -93,7 +93,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `weekly repeat period for four weeks over month end`() {
     val wednesdayFeb15th2023 = LocalDate.of(2023, 2, 15)
-    val iterator = AppointmentScheduleIterator(wednesdayFeb15th2023, AppointmentRepeatPeriod.WEEKLY, 4)
+    val iterator = AppointmentSeriesScheduleIterator(wednesdayFeb15th2023, AppointmentFrequency.WEEKLY, 4)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -107,7 +107,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `Fortnightly repeat period for eight weeks over month end`() {
     val wednesdayFeb15th2023 = LocalDate.of(2023, 2, 15)
-    val iterator = AppointmentScheduleIterator(wednesdayFeb15th2023, AppointmentRepeatPeriod.FORTNIGHTLY, 4)
+    val iterator = AppointmentSeriesScheduleIterator(wednesdayFeb15th2023, AppointmentFrequency.FORTNIGHTLY, 4)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -121,7 +121,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `monthly uses same date for all months`() {
     val mondayJan31st2022 = LocalDate.of(2022, 1, 15)
-    val iterator = AppointmentScheduleIterator(mondayJan31st2022, AppointmentRepeatPeriod.MONTHLY, 12)
+    val iterator = AppointmentSeriesScheduleIterator(mondayJan31st2022, AppointmentFrequency.MONTHLY, 12)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -143,7 +143,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `monthly last day of month uses nearest last day for all months with less than 31 days`() {
     val mondayJan31st2022 = LocalDate.of(2022, 1, 31)
-    val iterator = AppointmentScheduleIterator(mondayJan31st2022, AppointmentRepeatPeriod.MONTHLY, 12)
+    val iterator = AppointmentSeriesScheduleIterator(mondayJan31st2022, AppointmentFrequency.MONTHLY, 12)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -165,7 +165,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `monthly last day of month uses nearest last day for all months with less than 31 days - leap year`() {
     val wednesdayJan31st2024 = LocalDate.of(2024, 1, 31)
-    val iterator = AppointmentScheduleIterator(wednesdayJan31st2024, AppointmentRepeatPeriod.MONTHLY, 12)
+    val iterator = AppointmentSeriesScheduleIterator(wednesdayJan31st2024, AppointmentFrequency.MONTHLY, 12)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(
@@ -187,7 +187,7 @@ class AppointmentScheduleIteratorTest {
   @Test
   fun `monthly second to last day of month uses nearest last day for all months with less than 31 days`() {
     val sundayJan30st2022 = LocalDate.of(2022, 1, 30)
-    val iterator = AppointmentScheduleIterator(sundayJan30st2022, AppointmentRepeatPeriod.MONTHLY, 12)
+    val iterator = AppointmentSeriesScheduleIterator(sundayJan30st2022, AppointmentFrequency.MONTHLY, 12)
     val dates = iterator.asSequence().map { it.format(DateTimeFormatter.ofPattern("E d MMMM")) }.toList()
 
     assertThat(dates).containsExactly(

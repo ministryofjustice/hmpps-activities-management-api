@@ -48,11 +48,11 @@ class AppointmentOccurrenceCancelDomainServiceTest {
   private val service = spy(AppointmentOccurrenceCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
-  private val appointmentOccurrence = appointmentSeries.occurrences()[1]
-  private val applyToThis = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")
-  private val applyToThisAndAllFuture = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")
-  private val applyToAllFuture = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")
+  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 4)
+  private val appointmentOccurrence = appointmentSeries.appointments()[1]
+  private val applyToThis = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "")
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "")
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "")
 
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentDeletedReason()

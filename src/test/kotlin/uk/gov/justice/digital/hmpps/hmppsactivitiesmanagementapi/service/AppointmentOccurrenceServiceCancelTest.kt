@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceUpdateDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentOccurrencesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentOccurrencesJob
@@ -99,7 +99,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
     private val principal: Principal = mock()
     private val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
-    private val appointmentOccurrence = appointmentSeries.occurrences().first()
+    private val appointmentOccurrence = appointmentSeries.appointments().first()
     private val cancellationReason = AppointmentCancellationReason(1L, "Cancelled", false)
 
     @BeforeEach
@@ -123,7 +123,7 @@ class AppointmentOccurrenceServiceCancelTest {
         startTime = LocalTime.now().minusMinutes(1),
         endTime = LocalTime.now().plusHours(1),
       )
-      val appointmentOccurrence = appointmentSeries.occurrences().first()
+      val appointmentOccurrence = appointmentSeries.appointments().first()
 
       whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentOccurrenceId)).thenReturn(
         Optional.of(appointmentOccurrence),
@@ -181,7 +181,7 @@ class AppointmentOccurrenceServiceCancelTest {
 
     private val principal: Principal = mock()
     private val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null)
-    private val appointmentOccurrence = appointmentSeries.occurrences().first()
+    private val appointmentOccurrence = appointmentSeries.appointments().first()
     private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
     private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
 
@@ -279,10 +279,10 @@ class AppointmentOccurrenceServiceCancelTest {
       startDate = LocalDate.now().minusDays(3),
       updatedBy = null,
       prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457),
-      repeatPeriod = AppointmentRepeatPeriod.WEEKLY,
+      repeatPeriod = AppointmentFrequency.WEEKLY,
       numberOfOccurrences = 4,
     )
-    private val appointmentOccurrences = appointmentSeries.occurrences()
+    private val appointmentOccurrences = appointmentSeries.appointments()
     private val appointmentOccurrence = appointmentOccurrences[2]
     private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
     private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
@@ -290,7 +290,7 @@ class AppointmentOccurrenceServiceCancelTest {
     @BeforeEach
     fun setUp() {
       whenever(principal.name).thenReturn("TEST.USER")
-      appointmentSeries.occurrences().forEach {
+      appointmentSeries.appointments().forEach {
         whenever(appointmentOccurrenceRepository.findById(it.appointmentOccurrenceId)).thenReturn(
           Optional.of(it),
         )

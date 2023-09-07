@@ -65,7 +65,7 @@ class CreateAppointmentOccurrencesJob(
                 sequenceNumber = sequenceNumber,
                 prisonCode = appointmentSeries.prisonCode,
                 categoryCode = appointmentSeries.categoryCode,
-                appointmentDescription = appointmentSeries.appointmentDescription,
+                appointmentDescription = appointmentSeries.customName,
                 appointmentTier = appointmentSeries.appointmentTier,
                 appointmentHost = appointmentSeries.appointmentHost,
                 internalLocationId = appointmentSeries.internalLocationId,
@@ -73,8 +73,8 @@ class CreateAppointmentOccurrencesJob(
                 startDate = it.value,
                 startTime = appointmentSeries.startTime,
                 endTime = appointmentSeries.endTime,
-                comment = appointmentSeries.comment,
-                created = appointmentSeries.created,
+                comment = appointmentSeries.extraInformation,
+                created = appointmentSeries.createdTime,
                 createdBy = appointmentSeries.createdBy,
               ).apply {
                 prisonerBookings.forEach { prisonerBooking ->

@@ -14,7 +14,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.CREATE_APPOINTMENT_OCCURRENCES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -56,9 +56,9 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job does not create any occurrences when all exist`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 3)
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
-    entity.occurrences().forEach {
+    entity.appointments().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
 
@@ -69,11 +69,11 @@ class CreateAppointmentOccurrencesJobTest {
 
   @Test
   fun `job creates all remaining occurrences`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 3)
-    entity.occurrences().filter { it.sequenceNumber > 1 }.forEach {
-      entity.removeOccurrence(it)
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 3)
+    entity.appointments().filter { it.sequenceNumber > 1 }.forEach {
+      entity.removeAppointment(it)
     }
-    entity.occurrences().forEach {
+    entity.appointments().forEach {
       whenever(appointmentOccurrenceRepository.findByAppointmentAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
     whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))

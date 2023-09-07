@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-enum class AppointmentRepeatPeriod {
+enum class AppointmentFrequency {
   @Schema(
     description = "Repeats every day Monday to Friday",
   )

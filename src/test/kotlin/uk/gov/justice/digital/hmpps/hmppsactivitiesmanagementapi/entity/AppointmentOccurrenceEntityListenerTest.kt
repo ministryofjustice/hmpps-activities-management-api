@@ -23,7 +23,7 @@ class AppointmentOccurrenceEntityListenerTest(@Autowired private val listener: A
   private val appointmentSeries = appointmentSeriesEntity(
     prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 457),
   )
-  private var appointmentOccurrence = appointmentSeries.occurrences().first()
+  private var appointmentOccurrence = appointmentSeries.appointments().first()
 
   @Test
   fun `appointment instance updated events raised on occurrence update`() {

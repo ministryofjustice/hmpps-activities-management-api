@@ -40,7 +40,7 @@ data class AppointmentOccurrenceAllocation(
 
   fun isGroupAppointment() = appointmentOccurrence.appointmentSeries.appointmentType == AppointmentType.GROUP
 
-  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointmentSeries.removeOccurrence(occurrence)
+  fun removeOccurrence(occurrence: AppointmentOccurrence) = appointmentOccurrence.appointmentSeries.removeAppointment(occurrence)
 
   fun removeFromAppointmentOccurrence() = appointmentOccurrence.removeAllocation(this)
 }

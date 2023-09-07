@@ -4,7 +4,7 @@ import net.minidev.json.JSONObject
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import java.time.LocalDate
@@ -66,7 +66,7 @@ abstract class AuditableEvent(
     originalEndTime: LocalTime? = null,
     endTime: LocalTime? = null,
     isRepeat: Boolean? = null,
-    repeatPeriod: AppointmentRepeatPeriod? = null,
+    repeatPeriod: AppointmentFrequency? = null,
     repeatCount: Int? = null,
     hasExtraInformation: Boolean? = null,
     prisonerNumbers: List<String>? = null,

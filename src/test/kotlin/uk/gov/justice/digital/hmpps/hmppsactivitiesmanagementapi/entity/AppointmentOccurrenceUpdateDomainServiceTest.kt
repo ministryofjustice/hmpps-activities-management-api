@@ -45,11 +45,11 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
   private val service = spy(AppointmentOccurrenceUpdateDomainService(appointmentRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentRepeatPeriod.DAILY, numberOfOccurrences = 4)
-  private val appointmentOccurrence = appointmentSeries.occurrences()[1]
-  private val applyToThis = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "").toSet()
-  private val applyToThisAndAllFuture = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
-  private val applyToAllFuture = appointmentSeries.applyToOccurrences(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, repeatPeriod = AppointmentFrequency.DAILY, numberOfOccurrences = 4)
+  private val appointmentOccurrence = appointmentSeries.appointments()[1]
+  private val applyToThis = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_OCCURRENCE, "").toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES, "").toSet()
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointmentOccurrence, ApplyTo.ALL_FUTURE_OCCURRENCES, "").toSet()
   private val updatedBy = "TEST.USER"
 
   @BeforeEach
@@ -151,8 +151,8 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       )
 
       appointmentSeries.categoryCode isEqualTo "TEST"
-      appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
-      appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
 
       response.categoryCode isEqualTo "TEST"
       response.occurrences.filter { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
@@ -180,8 +180,8 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       )
 
       appointmentSeries.internalLocationId isEqualTo 123
-      appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
 
       response.internalLocationId isEqualTo 123
       response.occurrences.filter { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
@@ -210,11 +210,11 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
 
       appointmentSeries.internalLocationId isEqualTo 123
       appointmentSeries.inCell isEqualTo false
-      with(appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }) {
+      with(appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }) {
         this.map { it.internalLocationId }.distinct().single() isEqualTo null
         this.map { it.inCell }.distinct().single() isEqualTo true
       }
-      with(appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }) {
+      with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }) {
         this.map { it.internalLocationId }.distinct().single() isEqualTo 123
         this.map { it.inCell }.distinct().single() isEqualTo false
       }
@@ -252,7 +252,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       )
 
       appointmentSeries.startDate isEqualTo LocalDate.now().plusDays(1)
-      with(appointmentSeries.occurrences()) {
+      with(appointmentSeries.appointments()) {
         get(0).startDate isEqualTo LocalDate.now().plusDays(1)
         get(1).startDate isEqualTo weekFromNow
         get(2).startDate isEqualTo weekFromNow.plusDays(1)
@@ -289,8 +289,8 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       )
 
       appointmentSeries.startTime isEqualTo LocalTime.of(9, 0)
-      appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
-      appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
 
       response.startTime isEqualTo LocalTime.of(9, 0)
       response.occurrences.filter { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
@@ -318,8 +318,8 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
       )
 
       appointmentSeries.endTime isEqualTo LocalTime.of(10, 30)
-      appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
-      appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
 
       response.endTime isEqualTo LocalTime.of(10, 30)
       response.occurrences.filter { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
@@ -346,9 +346,9 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         auditEvent = false,
       )
 
-      appointmentSeries.comment isEqualTo "Appointment level comment"
-      appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment occurrence level comment"
-      appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.comment }.distinct().single() isEqualTo "Appointment occurrence level comment"
+      appointmentSeries.extraInformation isEqualTo "Appointment level comment"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment occurrence level comment"
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }.map { it.comment }.distinct().single() isEqualTo "Appointment occurrence level comment"
 
       response.comment isEqualTo "Appointment level comment"
       response.occurrences.filter { ids.contains(it.id) }.map { it.comment }.distinct().single() isEqualTo "Updated appointment occurrence level comment"
@@ -376,13 +376,13 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         auditEvent = false,
       )
 
-      appointmentSeries.updated isEqualTo updated
+      appointmentSeries.updatedTime isEqualTo updated
       appointmentSeries.updatedBy isEqualTo updatedBy
-      with(appointmentSeries.occurrences().filter { ids.contains(it.appointmentOccurrenceId) }) {
+      with(appointmentSeries.appointments().filter { ids.contains(it.appointmentOccurrenceId) }) {
         this.map { it.updated }.distinct().single() isEqualTo updated
         this.map { it.updatedBy }.distinct().single() isEqualTo updatedBy
       }
-      with(appointmentSeries.occurrences().filterNot { ids.contains(it.appointmentOccurrenceId) }) {
+      with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentOccurrenceId) }) {
         this.map { it.updated }.distinct().single() isEqualTo null
         this.map { it.updatedBy }.distinct().single() isEqualTo null
       }
@@ -419,10 +419,10 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
         auditEvent = false,
       )
 
-      appointmentSeries.updated isEqualTo null
+      appointmentSeries.updatedTime isEqualTo null
       appointmentSeries.updatedBy isEqualTo null
-      appointmentSeries.occurrences().map { it.updated }.distinct().single() isEqualTo null
-      appointmentSeries.occurrences().map { it.updatedBy }.distinct().single() isEqualTo null
+      appointmentSeries.appointments().map { it.updated }.distinct().single() isEqualTo null
+      appointmentSeries.appointments().map { it.updatedBy }.distinct().single() isEqualTo null
 
       response.updated isEqualTo null
       response.updatedBy isEqualTo null
@@ -534,7 +534,7 @@ class AppointmentOccurrenceUpdateDomainServiceTest {
     fun `no updates`() {
       val request = AppointmentOccurrenceUpdateRequest()
       val appointmentSeries = appointmentSeriesEntity()
-      service.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.occurrences()) isEqualTo 0
+      service.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()) isEqualTo 0
     }
 
     @Test

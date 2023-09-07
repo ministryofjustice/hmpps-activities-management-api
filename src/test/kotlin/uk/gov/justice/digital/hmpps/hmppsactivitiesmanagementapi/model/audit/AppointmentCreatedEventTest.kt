@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -45,7 +45,7 @@ class AppointmentCreatedEventTest : AuditableEventTestBase() {
       startTime = startTime,
       endTime = endTime,
       isRepeat = true,
-      repeatPeriod = AppointmentRepeatPeriod.DAILY,
+      repeatPeriod = AppointmentFrequency.DAILY,
       repeatCount = 20,
       hasExtraInformation = true,
       prisonerNumbers = listOf("123456"),
