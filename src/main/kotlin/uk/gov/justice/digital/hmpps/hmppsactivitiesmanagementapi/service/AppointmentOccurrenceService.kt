@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Service
 @Transactional
 class AppointmentOccurrenceService(
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
+  private val appointmentRepository: AppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -35,7 +35,7 @@ class AppointmentOccurrenceService(
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 
-    val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
+    val appointmentOccurrence = appointmentRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointmentSeries = appointmentOccurrence.appointmentSeries
     val occurrencesToUpdate = appointmentSeries.applyToAppointments(appointmentOccurrence, request.applyTo, "update")
     checkCaseloadAccess(appointmentSeries.prisonCode)
@@ -122,7 +122,7 @@ class AppointmentOccurrenceService(
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 
-    val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
+    val appointmentOccurrence = appointmentRepository.findOrThrowNotFound(appointmentOccurrenceId)
     val appointmentSeries = appointmentOccurrence.appointmentSeries
     val occurrencesToCancel = appointmentSeries.applyToAppointments(appointmentOccurrence, request.applyTo, "cancel")
     checkCaseloadAccess(appointmentSeries.prisonCode)

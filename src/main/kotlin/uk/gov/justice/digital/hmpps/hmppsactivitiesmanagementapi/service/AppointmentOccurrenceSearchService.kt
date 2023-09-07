@@ -6,9 +6,9 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -25,9 +25,9 @@ import java.security.Principal
 @Service
 @Transactional(readOnly = true)
 class AppointmentOccurrenceSearchService(
-  private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository,
-  private val appointmentOccurrenceAllocationSearchRepository: AppointmentOccurrenceAllocationSearchRepository,
-  private val appointmentOccurrenceSearchSpecification: AppointmentOccurrenceSearchSpecification,
+  private val appointmentSearchRepository: AppointmentSearchRepository,
+  private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
+  private val appointmentSearchSpecification: AppointmentSearchSpecification,
   private val prisonRegimeService: PrisonRegimeService,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
@@ -41,7 +41,7 @@ class AppointmentOccurrenceSearchService(
     checkCaseloadAccess(prisonCode)
 
     val startTime = System.currentTimeMillis()
-    var spec = appointmentOccurrenceSearchSpecification.prisonCodeEquals(prisonCode)
+    var spec = appointmentSearchSpecification.prisonCodeEquals(prisonCode)
 
     with(request) {
       appointmentType?.apply {
@@ -49,15 +49,15 @@ class AppointmentOccurrenceSearchService(
       }
 
       spec = if (endDate != null) {
-        spec.and(appointmentOccurrenceSearchSpecification.startDateBetween(startDate!!, endDate))
+        spec.and(appointmentSearchSpecification.startDateBetween(startDate!!, endDate))
       } else {
-        spec.and(appointmentOccurrenceSearchSpecification.startDateEquals(startDate!!))
+        spec.and(appointmentSearchSpecification.startDateEquals(startDate!!))
       }
 
       timeSlot?.apply {
         val timeRange = timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
         spec = spec.and(
-          appointmentOccurrenceSearchSpecification.startTimeBetween(
+          appointmentSearchSpecification.startTimeBetween(
             timeRange.start,
             timeRange.end.minusMinutes(1),
           ),
@@ -65,29 +65,29 @@ class AppointmentOccurrenceSearchService(
       }
 
       categoryCode?.apply {
-        spec = spec.and(appointmentOccurrenceSearchSpecification.categoryCodeEquals(categoryCode))
+        spec = spec.and(appointmentSearchSpecification.categoryCodeEquals(categoryCode))
       }
 
       internalLocationId?.apply {
-        spec = spec.and(appointmentOccurrenceSearchSpecification.internalLocationIdEquals(internalLocationId))
+        spec = spec.and(appointmentSearchSpecification.internalLocationIdEquals(internalLocationId))
       }
 
       inCell?.apply {
-        spec = spec.and(appointmentOccurrenceSearchSpecification.inCellEquals(inCell))
+        spec = spec.and(appointmentSearchSpecification.inCellEquals(inCell))
       }
 
       if (prisonerNumbers?.isEmpty() == false) {
-        spec = spec.and(appointmentOccurrenceSearchSpecification.prisonerNumbersIn(prisonerNumbers))
+        spec = spec.and(appointmentSearchSpecification.prisonerNumbersIn(prisonerNumbers))
       }
 
       createdBy?.apply {
-        spec = spec.and(appointmentOccurrenceSearchSpecification.createdByEquals(createdBy))
+        spec = spec.and(appointmentSearchSpecification.createdByEquals(createdBy))
       }
     }
 
-    val results = appointmentOccurrenceSearchRepository.findAll(spec)
+    val results = appointmentSearchRepository.findAll(spec)
 
-    val allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(results.map { it.appointmentId })
+    val allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)

@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
@@ -62,7 +62,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 
 @Service
 class AppointmentService(
-  private val appointmentRepository: AppointmentRepository,
+  private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentTierRepository: AppointmentTierRepository,
   private val appointmentHostRepository: AppointmentHostRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
@@ -78,7 +78,7 @@ class AppointmentService(
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long): Appointment {
-    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentId).toModel()
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     return appointmentSeries
@@ -137,7 +137,7 @@ class AppointmentService(
     // Determine if this is a create request for a very large appointment. If it is, this function will only create the first occurrence
     val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
-    val appointmentSeries = appointmentRepository.saveAndFlush(
+    val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
       buildValidAppointmentEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
@@ -191,7 +191,7 @@ class AppointmentService(
       updatedBy = request.updatedBy,
       isCancelled = request.isCancelled ?: false,
       isMigrated = true,
-    ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
+    ).let { (appointmentSeriesRepository.saveAndFlush(it)).toModel() }
   }
 
   private fun failIfCategoryNotFound(categoryCode: String) {

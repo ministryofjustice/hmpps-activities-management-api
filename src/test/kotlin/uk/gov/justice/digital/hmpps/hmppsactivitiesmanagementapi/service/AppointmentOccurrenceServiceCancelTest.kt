@@ -31,8 +31,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -54,8 +54,8 @@ import java.time.temporal.ChronoUnit
 import java.util.Optional
 
 class AppointmentOccurrenceServiceCancelTest {
+  private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
@@ -72,12 +72,12 @@ class AppointmentOccurrenceServiceCancelTest {
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceService(
-    appointmentOccurrenceRepository,
+    appointmentRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    AppointmentUpdateDomainService(appointmentRepository, telemetryClient, auditService),
-    AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
+    AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService),
+    AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentsJob,
     cancelAppointmentsJob,
   )
@@ -108,7 +108,7 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(cancellationReason),
       )
-      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+      whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
     }
@@ -125,7 +125,7 @@ class AppointmentOccurrenceServiceCancelTest {
       )
       val appointmentOccurrence = appointmentSeries.appointments().first()
 
-      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+      whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
 
@@ -138,7 +138,7 @@ class AppointmentOccurrenceServiceCancelTest {
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Cannot cancel a past appointment")
 
-      verify(appointmentRepository, never()).saveAndFlush(any())
+      verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }
 
     @Test
@@ -150,14 +150,14 @@ class AppointmentOccurrenceServiceCancelTest {
       )
         .hasMessage("Appointment -1 not found")
 
-      verify(appointmentRepository, never()).saveAndFlush(any())
+      verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }
 
     @Test
     fun `cancel appointment throws entity not found exception for unknown appointment cancellation reason id`() {
       val request = AppointmentOccurrenceCancelRequest(-1, ApplyTo.THIS_OCCURRENCE)
 
-      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+      whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
 
@@ -170,7 +170,7 @@ class AppointmentOccurrenceServiceCancelTest {
       }.isInstanceOf(EntityNotFoundException::class.java)
         .hasMessage("Appointment Cancellation Reason -1 not found")
 
-      verify(appointmentRepository, never()).saveAndFlush(any())
+      verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }
   }
 
@@ -194,10 +194,10 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(cancellationReason),
       )
-      whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+      whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
         Optional.of(appointmentOccurrence),
       )
-      whenever(appointmentRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
+      whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
     }
 
     @Test
@@ -291,7 +291,7 @@ class AppointmentOccurrenceServiceCancelTest {
     fun setUp() {
       whenever(principal.name).thenReturn("TEST.USER")
       appointmentSeries.appointments().forEach {
-        whenever(appointmentOccurrenceRepository.findById(it.appointmentId)).thenReturn(
+        whenever(appointmentRepository.findById(it.appointmentId)).thenReturn(
           Optional.of(it),
         )
       }
@@ -301,7 +301,7 @@ class AppointmentOccurrenceServiceCancelTest {
       whenever(appointmentCancellationReasonRepository.findById(cancellationReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(cancellationReason),
       )
-      whenever(appointmentRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
+      whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeries)).thenReturn(appointmentSeries)
     }
 
     @Test

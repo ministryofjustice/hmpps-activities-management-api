@@ -45,7 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
@@ -88,7 +88,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
-  private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
@@ -115,7 +115,7 @@ class AppointmentServiceTest {
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentService(
-    appointmentRepository,
+    appointmentSeriesRepository,
     appointmentTierRepository,
     appointmentHostRepository,
     appointmentCancellationReasonRepository,
@@ -145,7 +145,7 @@ class AppointmentServiceTest {
   @Test
   fun `getAppointmentById returns an appointment for known appointment id`() {
     val entity = appointmentSeriesEntity()
-    whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
+    whenever(appointmentSeriesRepository.findById(1)).thenReturn(Optional.of(entity))
     assertThat(service.getAppointmentById(1)).isEqualTo(entity.toModel())
   }
 
@@ -182,7 +182,7 @@ class AppointmentServiceTest {
       )
     }.isInstanceOf(CaseloadAccessException::class.java)
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -213,7 +213,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment Category with code ${request.categoryCode} not found or is not active")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -246,7 +246,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${request.prisonCode}'")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -281,7 +281,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -353,7 +353,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.prisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -387,7 +387,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("You cannot schedule more than 333 appointments for this number of attendees.")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -407,7 +407,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointment(request, principal)
 
@@ -505,7 +505,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointment(request, principal)
 
@@ -539,7 +539,7 @@ class AppointmentServiceTest {
           ),
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
 
     service.createAppointment(request, principal)
 
@@ -571,7 +571,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -605,7 +605,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -639,7 +639,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -673,7 +673,7 @@ class AppointmentServiceTest {
           },
         ),
       )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointment(request, principal)
 
@@ -815,7 +815,7 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.appointments[0].prisonerNumber}' not found, were inactive or are residents of a different prison.")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -827,13 +827,13 @@ class AppointmentServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("One or more appointments must be supplied.")
 
-    verify(appointmentRepository, never()).saveAndFlush(any())
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 
   @Test
   fun `migrateAppointment with comment under 40 characters success`() {
     val request = appointmentMigrateRequest()
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -881,7 +881,7 @@ class AppointmentServiceTest {
   @Test
   fun `migrateAppointment with comment over 40 characters success`() {
     val request = appointmentMigrateRequest(comment = "A".padEnd(41, 'Z'))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -932,7 +932,7 @@ class AppointmentServiceTest {
       created = LocalDateTime.of(2022, 10, 23, 10, 30),
       createdBy = "DPS.USER",
     )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -948,7 +948,7 @@ class AppointmentServiceTest {
       updated = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -966,7 +966,7 @@ class AppointmentServiceTest {
   fun `migrateAppointment isCancelled defaults to false`() {
     val request = appointmentMigrateRequest(isCancelled = null)
 
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -984,7 +984,7 @@ class AppointmentServiceTest {
     val request = appointmentMigrateRequest(isCancelled = true)
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -1006,7 +1006,7 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 
@@ -1030,7 +1030,7 @@ class AppointmentServiceTest {
     )
     val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.migrateAppointment(request, principal)
 

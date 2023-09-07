@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import kotlin.system.measureTimeMillis
 
@@ -31,8 +31,8 @@ import kotlin.system.measureTimeMillis
 @Component
 class CreateAppointmentsJob(
   private val jobRunner: SafeJobRunner,
+  private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentRepository: AppointmentRepository,
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -51,15 +51,15 @@ class CreateAppointmentsJob(
     log.info("Creating remaining appointments for appointment series with id $appointmentSeriesId")
 
     val elapsed = measureTimeMillis {
-      val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentSeriesId)
+      val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
 
       appointmentSeries.scheduleIterator().withIndex().forEach {
         val sequenceNumber = it.index + 1
-        val appointment = appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(appointmentSeries, sequenceNumber)
+        val appointment = appointmentRepository.findByAppointmentSeriesAndSequenceNumber(appointmentSeries, sequenceNumber)
         if (appointment == null) {
           log.info("Creating appointment $sequenceNumber with ${prisonerBookings.size} attendees for appointment series with id $appointmentSeriesId")
           runCatching {
-            appointmentOccurrenceRepository.saveAndFlush(
+            appointmentRepository.saveAndFlush(
               Appointment(
                 appointmentSeries = appointmentSeries,
                 sequenceNumber = sequenceNumber,

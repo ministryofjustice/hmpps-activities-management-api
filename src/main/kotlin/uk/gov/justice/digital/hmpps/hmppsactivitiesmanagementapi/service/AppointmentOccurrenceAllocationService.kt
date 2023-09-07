@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import java.time.LocalDateTime
 
 @Service
@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 class AppointmentOccurrenceAllocationService(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
-  private val appointmentOccurrenceAllocationRepository: AppointmentOccurrenceAllocationRepository,
+  private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
   private val auditService: AuditService,
 ) {
   companion object {
@@ -29,7 +29,7 @@ class AppointmentOccurrenceAllocationService(
     ).block()?.let {
       appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber)
         .forEach {
-          appointmentOccurrenceAllocationRepository.findById(it.appointmentAttendeeId)
+          appointmentAttendeeRepository.findById(it.appointmentAttendeeId)
             .ifPresent { allocation ->
               if (allocation.isIndividualAppointment()) {
                 allocation.removeAppointment(allocation.appointment)

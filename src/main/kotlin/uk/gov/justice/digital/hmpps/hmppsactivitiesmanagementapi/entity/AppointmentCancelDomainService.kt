@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Service
 @Transactional
 class AppointmentCancelDomainService(
-  private val appointmentRepository: AppointmentRepository,
+  private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
@@ -37,7 +37,7 @@ class AppointmentCancelDomainService(
     cancelInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
-    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentSeriesId)
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToCancel.contains(it.appointmentId) }
     return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelled, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
   }
@@ -64,7 +64,7 @@ class AppointmentCancelDomainService(
       it.isDeleted = cancellationReason.isDelete
     }
 
-    val cancelledAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
+    val cancelledAppointment = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
       val customEventName = if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value

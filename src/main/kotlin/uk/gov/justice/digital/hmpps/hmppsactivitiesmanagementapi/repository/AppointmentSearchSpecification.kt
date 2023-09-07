@@ -8,7 +8,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @Component
-class AppointmentOccurrenceSearchSpecification {
+class AppointmentSearchSpecification {
   fun prisonCodeEquals(prisonCode: String) =
     Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<String>("prisonCode"), prisonCode) }
 

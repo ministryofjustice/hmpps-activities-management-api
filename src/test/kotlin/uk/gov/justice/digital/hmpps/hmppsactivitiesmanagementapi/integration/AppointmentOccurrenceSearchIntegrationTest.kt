@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
@@ -19,7 +19,7 @@ import java.time.LocalTime
 
 class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var appointmentRepository: AppointmentRepository
+  private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
 
   @Test
   fun `search appointment occurrences authorisation required`() {
@@ -280,7 +280,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
-    val appointments = appointmentRepository.findAllById(results.map { it.appointmentId })
+    val appointments = appointmentSeriesRepository.findAllById(results.map { it.appointmentId })
 
     assertThat(appointments.map { it.createdBy }.distinct().single()).isEqualTo(request.createdBy)
   }

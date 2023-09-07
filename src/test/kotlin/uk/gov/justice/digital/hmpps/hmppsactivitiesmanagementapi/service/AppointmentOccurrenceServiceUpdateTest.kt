@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -27,7 +27,7 @@ import java.time.LocalDate
 import java.util.Optional
 
 class AppointmentOccurrenceServiceUpdateTest {
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
+  private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -37,7 +37,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
 
   private val service = AppointmentOccurrenceService(
-    appointmentOccurrenceRepository,
+    appointmentRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -134,7 +134,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private fun expectGroupAppointment(): Appointment {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.GROUP)
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
     return appointmentOccurrence
@@ -143,7 +143,7 @@ class AppointmentOccurrenceServiceUpdateTest {
   private fun expectIndividualAppointment(): Appointment {
     val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().plusDays(1), updatedBy = null, appointmentType = AppointmentType.INDIVIDUAL)
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
     return appointmentOccurrence

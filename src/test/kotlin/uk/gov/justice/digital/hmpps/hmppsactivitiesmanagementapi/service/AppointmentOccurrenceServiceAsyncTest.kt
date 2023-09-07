@@ -34,8 +34,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -46,14 +46,14 @@ import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentOccurrenceServiceAsyncTest {
-  private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentRepository, telemetryClient, auditService))
-  private val appointmentCancelDomainService = spy(AppointmentCancelDomainService(appointmentRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
+  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService))
+  private val appointmentCancelDomainService = spy(AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
+  private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -65,7 +65,7 @@ class AppointmentOccurrenceServiceAsyncTest {
   private var startTimeInMs = argumentCaptor<Long>()
 
   private val service = AppointmentOccurrenceService(
-    appointmentOccurrenceRepository,
+    appointmentRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -93,7 +93,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     whenever(appointmentCancellationReasonRepository.findById(appointmentDeletedReason.appointmentCancellationReasonId)).thenReturn(
       Optional.of(appointmentDeletedReason),
     )
-    whenever(appointmentRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<AppointmentSeries>())
+    whenever(appointmentSeriesRepository.saveAndFlush(any())).thenAnswer(returnsFirstArg<AppointmentSeries>())
   }
 
   @Test
@@ -105,7 +105,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -147,7 +147,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -189,7 +189,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -247,7 +247,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -289,7 +289,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -348,7 +348,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -400,7 +400,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 5,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -467,7 +467,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -513,7 +513,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -559,7 +559,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -620,7 +620,7 @@ class AppointmentOccurrenceServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -666,7 +666,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 
@@ -712,7 +712,7 @@ class AppointmentOccurrenceServiceAsyncTest {
     )
     val appointmentOccurrence = appointmentSeries.appointments().first()
     val scheduledOccurrences = appointmentSeries.scheduledAppointments().toSet()
-    whenever(appointmentOccurrenceRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
+    whenever(appointmentRepository.findById(appointmentOccurrence.appointmentId)).thenReturn(
       Optional.of(appointmentOccurrence),
     )
 

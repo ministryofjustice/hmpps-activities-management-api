@@ -24,8 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -72,10 +72,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   private lateinit var waitingListRepository: WaitingListRepository
 
   @Autowired
-  private lateinit var appointmentOccurrenceRepository: AppointmentOccurrenceRepository
+  private lateinit var appointmentRepository: AppointmentRepository
 
   @Autowired
-  private lateinit var appointmentOccurrenceAllocationSearchRepository: AppointmentOccurrenceAllocationSearchRepository
+  private lateinit var appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository
 
   @MockBean
   private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
@@ -299,7 +299,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
-    var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -313,7 +313,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(appointmentsChangedEvent(prisonerNumber = "A1234BC"))
 
-    allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -325,14 +325,14 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(2)
     assertThat(allocationsMap[212]).hasSize(1)
 
-    assertThat(appointmentOccurrenceRepository.existsById(200)).isFalse()
-    assertThat(appointmentOccurrenceRepository.existsById(202)).isFalse()
+    assertThat(appointmentRepository.existsById(200)).isFalse()
+    assertThat(appointmentRepository.existsById(202)).isFalse()
 
-    assertThat(appointmentOccurrenceRepository.existsById(201)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(203)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(210)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(211)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(212)).isTrue()
+    assertThat(appointmentRepository.existsById(201)).isTrue()
+    assertThat(appointmentRepository.existsById(203)).isTrue()
+    assertThat(appointmentRepository.existsById(210)).isTrue()
+    assertThat(appointmentRepository.existsById(211)).isTrue()
+    assertThat(appointmentRepository.existsById(212)).isTrue()
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 300L)
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 302L)
@@ -356,7 +356,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
     }
 
-    var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -370,7 +370,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(offenderReleasedEvent(prisonerNumber = "A1234BC", prisonCode = "MDI"))
 
-    allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -382,14 +382,14 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(2)
     assertThat(allocationsMap[212]).hasSize(1)
 
-    assertThat(appointmentOccurrenceRepository.existsById(200)).isFalse()
-    assertThat(appointmentOccurrenceRepository.existsById(202)).isFalse()
+    assertThat(appointmentRepository.existsById(200)).isFalse()
+    assertThat(appointmentRepository.existsById(202)).isFalse()
 
-    assertThat(appointmentOccurrenceRepository.existsById(201)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(203)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(210)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(211)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(212)).isTrue()
+    assertThat(appointmentRepository.existsById(201)).isTrue()
+    assertThat(appointmentRepository.existsById(203)).isTrue()
+    assertThat(appointmentRepository.existsById(210)).isTrue()
+    assertThat(appointmentRepository.existsById(211)).isTrue()
+    assertThat(appointmentRepository.existsById(212)).isTrue()
 
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 300L)
     verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 302L)
@@ -413,7 +413,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.status(PrisonerStatus.ACTIVE))
     }
 
-    var allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -427,7 +427,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(appointmentsChangedEvent(prisonerNumber = "A1234BC", action = "NO"))
 
-    allocationsMap = appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(
+    allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentOccurrenceIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
@@ -439,13 +439,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(3)
     assertThat(allocationsMap[212]).hasSize(2)
 
-    assertThat(appointmentOccurrenceRepository.existsById(200)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(201)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(202)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(203)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(210)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(211)).isTrue()
-    assertThat(appointmentOccurrenceRepository.existsById(212)).isTrue()
+    assertThat(appointmentRepository.existsById(200)).isTrue()
+    assertThat(appointmentRepository.existsById(201)).isTrue()
+    assertThat(appointmentRepository.existsById(202)).isTrue()
+    assertThat(appointmentRepository.existsById(203)).isTrue()
+    assertThat(appointmentRepository.existsById(210)).isTrue()
+    assertThat(appointmentRepository.existsById(211)).isTrue()
+    assertThat(appointmentRepository.existsById(212)).isTrue()
 
     verifyNoInteractions(outboundEventsService)
   }

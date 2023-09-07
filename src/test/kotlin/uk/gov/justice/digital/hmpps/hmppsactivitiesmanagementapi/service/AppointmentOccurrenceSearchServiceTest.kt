@@ -23,9 +23,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -46,9 +46,9 @@ import java.time.LocalTime
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentOccurrenceSearchServiceTest {
-  private val appointmentOccurrenceSearchRepository: AppointmentOccurrenceSearchRepository = mock()
-  private val appointmentOccurrenceAllocationSearchRepository: AppointmentOccurrenceAllocationSearchRepository = mock()
-  private val appointmentOccurrenceSearchSpecification: AppointmentOccurrenceSearchSpecification = spy()
+  private val appointmentSearchRepository: AppointmentSearchRepository = mock()
+  private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
+  private val appointmentSearchSpecification: AppointmentSearchSpecification = spy()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
@@ -63,9 +63,9 @@ class AppointmentOccurrenceSearchServiceTest {
   private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
 
   private val service = AppointmentOccurrenceSearchService(
-    appointmentOccurrenceSearchRepository,
-    appointmentOccurrenceAllocationSearchRepository,
-    appointmentOccurrenceSearchSpecification,
+    appointmentSearchRepository,
+    appointmentAttendeeSearchRepository,
+    appointmentSearchSpecification,
     prisonRegimeService,
     referenceCodeService,
     locationService,
@@ -88,8 +88,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now())
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -97,9 +97,9 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
@@ -128,8 +128,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusWeeks(1))
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -137,9 +137,9 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateBetween(request.startDate!!, request.endDate!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateBetween(request.startDate!!, request.endDate!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
@@ -170,8 +170,8 @@ class AppointmentOccurrenceSearchServiceTest {
 
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlot!!))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -179,10 +179,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
+    verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
@@ -211,8 +211,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), categoryCode = "TEST")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -220,10 +220,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).categoryCodeEquals(request.categoryCode!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).categoryCodeEquals(request.categoryCode!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
@@ -252,8 +252,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), internalLocationId = 123)
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -261,10 +261,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).internalLocationIdEquals(request.internalLocationId!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).internalLocationIdEquals(request.internalLocationId!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
       eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
@@ -293,8 +293,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), inCell = true)
     val result = appointmentSearchEntity(inCell = true)
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -302,10 +302,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).inCellEquals(request.inCell!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).inCellEquals(request.inCell!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
   }
 
   @Test
@@ -313,8 +313,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), prisonerNumbers = listOf("A1234BC"))
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -322,10 +322,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).prisonerNumbersIn(request.prisonerNumbers!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).prisonerNumbersIn(request.prisonerNumbers!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
   }
 
   @Test
@@ -333,8 +333,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
@@ -342,10 +342,10 @@ class AppointmentOccurrenceSearchServiceTest {
 
     service.searchAppointmentOccurrences("TPR", request, principal)
 
-    verify(appointmentOccurrenceSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentOccurrenceSearchSpecification).startDateEquals(request.startDate!!)
-    verify(appointmentOccurrenceSearchSpecification).createdByEquals(request.createdBy!!)
-    verifyNoMoreInteractions(appointmentOccurrenceSearchSpecification)
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).createdByEquals(request.createdBy!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
   }
 
   @Test
@@ -354,8 +354,8 @@ class AppointmentOccurrenceSearchServiceTest {
     val request = AppointmentOccurrenceSearchRequest(startDate = LocalDate.now(), createdBy = "CREATE.USER")
     val result = appointmentSearchEntity()
 
-    whenever(appointmentOccurrenceSearchRepository.findAll(any())).thenReturn(listOf(result))
-    whenever(appointmentOccurrenceAllocationSearchRepository.findByAppointmentOccurrenceIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))

@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Service
 @Transactional
 class AppointmentUpdateDomainService(
-  private val appointmentRepository: AppointmentRepository,
+  private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
@@ -35,7 +35,7 @@ class AppointmentUpdateDomainService(
     updateInstancesCount: Int,
     startTimeInMs: Long,
   ): AppointmentModel {
-    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentSeriesId)
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToUpdate = appointmentSeries.appointments().filter { appointmentIdsToUpdate.contains(it.appointmentId) }.toSet()
     return updateAppointments(appointmentSeries, appointmentId, appointmentsToUpdate, request, prisonerMap, updated, updatedBy, updateAppointmentsCount, updateInstancesCount, startTimeInMs, true, false)
   }
@@ -73,11 +73,11 @@ class AppointmentUpdateDomainService(
     if (!request.addPrisonerNumbers.isNullOrEmpty()) {
       // Adding prisoners creates new attendees on the appointment and publishes create instance events.
       // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
-      appointmentRepository.saveAndFlush(appointmentSeries)
+      appointmentSeriesRepository.saveAndFlush(appointmentSeries)
       applyAddPrisonersUpdate(request, appointmentsToUpdate, prisonerMap)
     }
 
-    val updatedAppointment = appointmentRepository.saveAndFlush(appointmentSeries)
+    val updatedAppointment = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
       val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointmentSeries.prisonCode, appointmentSeries.appointmentSeriesId, appointmentId)

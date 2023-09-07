@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceAllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.util.Optional
 
@@ -23,13 +23,13 @@ class AppointmentOccurrenceAllocationServiceTest {
 
   private val prisonApiClient = mock<PrisonApiApplicationClient>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
-  private val appointmentOccurrenceAllocationRepository = mock<AppointmentOccurrenceAllocationRepository>()
+  private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val auditService = mock<AuditService>()
 
   private val appointmentOccurrenceAllocationService = AppointmentOccurrenceAllocationService(
     prisonApiClient,
     appointmentInstanceRepository,
-    appointmentOccurrenceAllocationRepository,
+    appointmentAttendeeRepository,
     auditService,
   )
 
@@ -59,7 +59,7 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentOccurrenceAllocationRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
+    whenever(appointmentAttendeeRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
     whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
     whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
@@ -96,7 +96,7 @@ class AppointmentOccurrenceAllocationServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentOccurrenceAllocationRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
+    whenever(appointmentAttendeeRepository.findById(appointmentOccurrenceAllocationId)).thenReturn(Optional.of(parentAllocation))
     whenever(parentAllocation.appointment).thenReturn(parentOccurrence)
     whenever(parentAllocation.appointmentAttendeeId).thenReturn(appointmentOccurrenceAllocationId)
     whenever(parentOccurrence.appointmentSeries).thenReturn(parentAppointmentSeries)
@@ -126,6 +126,6 @@ class AppointmentOccurrenceAllocationServiceTest {
 
     appointmentOccurrenceAllocationService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verifyNoInteractions(appointmentOccurrenceAllocationRepository)
+    verifyNoInteractions(appointmentAttendeeRepository)
   }
 }

@@ -21,21 +21,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.util.Optional
 
 class AppointmentDetailsServiceTest {
-  private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
   private val service = AppointmentDetailsService(
-    appointmentRepository,
+    appointmentSeriesRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -52,7 +52,7 @@ class AppointmentDetailsServiceTest {
     addCaseloadIdToRequestHeader("TPR")
     val entity = appointmentSeriesEntity()
     val occurrenceEntity = entity.appointments().first()
-    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
+    whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
@@ -132,7 +132,7 @@ class AppointmentDetailsServiceTest {
   fun `getAppointmentDetailsById throws caseload access exception if caseload id header does not match`() {
     addCaseloadIdToRequestHeader("WRONG")
     val entity = appointmentSeriesEntity()
-    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
+    whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
 
     assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentSeriesId) }.isInstanceOf(CaseloadAccessException::class.java)
   }

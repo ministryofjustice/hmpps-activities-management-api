@@ -18,18 +18,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.CREATE_APPOINTMENTS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentOccurrenceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import java.util.Optional
 
 class CreateAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
+  private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
-  private val appointmentOccurrenceRepository: AppointmentOccurrenceRepository = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = CreateAppointmentsJob(safeJobRunner, appointmentRepository, appointmentOccurrenceRepository)
+  private val job = CreateAppointmentsJob(safeJobRunner, appointmentSeriesRepository, appointmentRepository)
 
   @Captor
   private lateinit var appointmentEntityCaptor: ArgumentCaptor<Appointment>
@@ -45,7 +45,7 @@ class CreateAppointmentsJobTest {
   @Test
   fun `job type is create appointments`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap)
-    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
+    whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
 
     job.execute(entity.appointmentSeriesId, prisonerBookings)
 
@@ -57,14 +57,14 @@ class CreateAppointmentsJobTest {
   @Test
   fun `job does not create any appointments when all exist`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3)
-    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
+    whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
     entity.appointments().forEach {
-      whenever(appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
+      whenever(appointmentRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
 
     job.execute(entity.appointmentSeriesId, prisonerBookings)
 
-    verify(appointmentOccurrenceRepository, never()).saveAndFlush(any())
+    verify(appointmentRepository, never()).saveAndFlush(any())
   }
 
   @Test
@@ -74,10 +74,10 @@ class CreateAppointmentsJobTest {
       entity.removeAppointment(it)
     }
     entity.appointments().forEach {
-      whenever(appointmentOccurrenceRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
+      whenever(appointmentRepository.findByAppointmentSeriesAndSequenceNumber(entity, it.sequenceNumber)).thenReturn(it)
     }
-    whenever(appointmentRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
-    whenever(appointmentOccurrenceRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(mock())
+    whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
+    whenever(appointmentRepository.saveAndFlush(appointmentEntityCaptor.capture())).thenReturn(mock())
 
     job.execute(entity.appointmentSeriesId, prisonerBookings)
 

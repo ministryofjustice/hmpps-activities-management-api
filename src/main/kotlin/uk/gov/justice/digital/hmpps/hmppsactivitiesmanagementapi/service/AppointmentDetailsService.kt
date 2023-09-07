@@ -5,21 +5,21 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 
 @Service
 @Transactional(readOnly = true)
 class AppointmentDetailsService(
-  private val appointmentRepository: AppointmentRepository,
+  private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
 ) {
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
-    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentId)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(appointmentSeries.prisonerNumbers()).block()!!
