@@ -19,7 +19,7 @@ class PrisonerDeallocatedEvent(
   auditEventType = AuditEventType.PRISONER_DEALLOCATED,
   details = "Prisoner $prisonerNumber was deallocated from " +
     "activity '$activityName'($activityId) and schedule ($scheduleId) on ${deallocationTime.toLocalDate()} at ${deallocationTime.toLocalTime()}",
-  createdTime = createdAt,
+  createdAt = createdAt,
   createdBy = deallocatedBy,
 ),
   HmppsAuditable,
@@ -28,7 +28,7 @@ class PrisonerDeallocatedEvent(
     username = deallocatedBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdTime,
+    recordedTime = createdAt,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -42,7 +42,7 @@ class PrisonerDeallocatedEvent(
     prisonerNumber = prisonerNumber,
     prisonCode = prisonCode,
     scheduleId = scheduleId,
-    createdAt = createdTime,
+    createdAt = createdAt,
     createdBy = deallocatedBy,
   )
 }

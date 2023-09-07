@@ -21,7 +21,7 @@ class PrisonerSuspendedFromActivityEvent(
   auditEventType = AuditEventType.PRISONER_SUSPENDED_FROM_ACTIVITY,
   details = "Prisoner $prisonerNumber was suspended from " +
     "activity '$activityName'($activityId) scheduled on $date between $startTime and $endTime (scheduleId = $scheduleId)",
-  createdTime = createdAt,
+  createdAt = createdAt,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -30,7 +30,7 @@ class PrisonerSuspendedFromActivityEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdTime,
+    recordedTime = createdAt,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     activityId = activityId,
@@ -47,7 +47,7 @@ class PrisonerSuspendedFromActivityEvent(
     date = date,
     startTime = startTime,
     endTime = endTime,
-    createdAt = createdTime,
+    createdAt = createdAt,
     createdBy = createdBy,
   )
 }

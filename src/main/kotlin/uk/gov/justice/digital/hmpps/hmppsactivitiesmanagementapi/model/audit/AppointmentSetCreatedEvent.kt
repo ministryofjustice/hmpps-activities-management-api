@@ -18,7 +18,7 @@ class AppointmentSetCreatedEvent(
   auditEventType = AuditEventType.APPOINTMENT_SET_CREATED,
   details = "An appointment set with id '$appointmentSetId' with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was created",
-  createdTime = createdAt,
+  createdAt = createdAt,
 ),
   HmppsAuditable {
 
@@ -30,7 +30,7 @@ class AppointmentSetCreatedEvent(
     internalLocationId = internalLocationId,
     startDate = startDate,
     prisonerNumbers = prisonerNumbers,
-    createdTime = createdTime,
+    createdTime = createdAt,
     createdBy = createdBy,
   )
 }

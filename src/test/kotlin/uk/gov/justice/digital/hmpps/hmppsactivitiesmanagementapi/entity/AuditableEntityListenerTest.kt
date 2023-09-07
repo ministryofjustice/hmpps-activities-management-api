@@ -63,7 +63,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
       assertThat(prisonCode).isEqualTo(caseLoad)
       assertThat(categoryCode).isEqualTo("category name")
       assertThat(startDate).isNotNull
-      assertThat(createdTime).isNotNull
+      assertThat(createdAt).isNotNull
     }
   }
 
@@ -83,7 +83,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
       assertThat(deallocatedBy).isEqualTo(ServiceName.SERVICE_NAME.value)
       assertThat(deallocationTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(reason).isEqualTo("Allocation end date reached")
-      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(createdAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
   }
 }

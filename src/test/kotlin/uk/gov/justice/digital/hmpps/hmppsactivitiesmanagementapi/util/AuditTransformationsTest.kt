@@ -28,7 +28,7 @@ class AuditTransformationsTest {
       assertThat(deallocatedBy).isEqualTo(allocation.deallocatedBy)
       assertThat(deallocationTime).isEqualTo(allocation.deallocatedTime)
       assertThat(reason).isEqualTo(allocation.deallocatedReason?.description)
-      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(createdAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
   }
 
@@ -52,7 +52,7 @@ class AuditTransformationsTest {
       prisonCode isEqualTo waitingList.activity.prisonCode
       prisonerNumber isEqualTo waitingList.prisonerNumber
       status isEqualTo waitingList.status
-      createdTime isEqualTo waitingList.creationTime
+      createdAt isEqualTo waitingList.creationTime
     }
   }
 }

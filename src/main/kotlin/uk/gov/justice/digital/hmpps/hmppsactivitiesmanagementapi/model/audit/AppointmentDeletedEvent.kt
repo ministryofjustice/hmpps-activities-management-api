@@ -15,7 +15,7 @@ class AppointmentDeletedEvent(
   auditEventType = AuditEventType.APPOINTMENT_DELETED,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was deleted",
-  createdTime = createdAt,
+  createdAt = createdAt,
 ),
   HmppsAuditable {
 
@@ -24,7 +24,7 @@ class AppointmentDeletedEvent(
     appointmentId = appointmentId,
     prisonCode = prisonCode,
     applyTo = applyTo,
-    createdTime = createdTime,
+    createdTime = createdAt,
     createdBy = createdBy,
   )
 }

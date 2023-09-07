@@ -13,7 +13,7 @@ class AppointmentCancelledOnTransferEvent(
   auditEventType = AuditEventType.APPOINTMENT_CANCELLED_ON_TRANSFER,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was cancelled on transfer of prisoner $prisonerNumber",
-  createdTime = createdAt,
+  createdAt = createdAt,
   createdBy = "cancelled-on-transfer-event",
 
 ),
@@ -24,7 +24,7 @@ class AppointmentCancelledOnTransferEvent(
     appointmentId = appointmentId,
     prisonCode = prisonCode,
     prisonerNumbers = listOf(prisonerNumber),
-    createdTime = createdTime,
+    createdTime = createdAt,
     createdBy = createdBy,
   )
 }

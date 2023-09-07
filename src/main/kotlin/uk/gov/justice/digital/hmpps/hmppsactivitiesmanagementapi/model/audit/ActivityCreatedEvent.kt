@@ -17,7 +17,7 @@ class ActivityCreatedEvent(
   auditEventType = AuditEventType.ACTIVITY_CREATED,
   details = "An activity called '$activityName'($activityId) with category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was created",
-  createdTime = createdAt,
+  createdAt = createdAt,
 ),
   HmppsAuditable,
   LocalAuditable {
@@ -26,7 +26,7 @@ class ActivityCreatedEvent(
     username = createdBy,
     auditType = auditType,
     detailType = auditEventType,
-    recordedTime = createdTime,
+    recordedTime = createdAt,
     prisonCode = prisonCode,
     activityId = activityId,
     message = toString(),
@@ -36,7 +36,7 @@ class ActivityCreatedEvent(
     activityId = activityId,
     activityName = activityName,
     prisonCode = prisonCode,
-    createdAt = createdTime,
+    createdAt = createdAt,
     createdBy = createdBy,
   )
 }

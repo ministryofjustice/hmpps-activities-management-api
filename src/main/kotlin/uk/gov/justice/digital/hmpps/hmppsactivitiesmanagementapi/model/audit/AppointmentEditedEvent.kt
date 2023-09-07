@@ -28,7 +28,7 @@ class AppointmentEditedEvent(
   auditEventType = AuditEventType.APPOINTMENT_OCCURRENCE_EDITED,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' with category $categoryCode " +
     "and starting on $startDate at prison $prisonCode was edited",
-  createdTime = createdAt,
+  createdAt = createdAt,
 ),
   HmppsAuditable {
 
@@ -47,7 +47,7 @@ class AppointmentEditedEvent(
     originalEndTime = originalEndTime,
     endTime = endTime,
     applyTo = applyTo,
-    createdTime = createdTime,
+    createdTime = createdAt,
     createdBy = createdBy,
   )
 }

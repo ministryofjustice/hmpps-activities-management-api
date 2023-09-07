@@ -16,12 +16,12 @@ abstract class AuditableEvent(
 
   val auditType: AuditType,
   val auditEventType: AuditEventType,
-  val createdTime: LocalDateTime,
+  val createdAt: LocalDateTime,
   private val details: String,
   val createdBy: String = SecurityUtils.getUserNameForLoggedInUser(),
 ) {
-  override fun toString() = "$details. Event created on ${createdTime.toLocalDate()} " +
-    "at ${createdTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))} by $createdBy."
+  override fun toString() = "$details. Event created on ${createdAt.toLocalDate()} " +
+    "at ${createdAt.format(DateTimeFormatter.ofPattern("HH:mm:ss"))} by $createdBy."
 
   fun generateHmppsActivityAuditJson(
     activityId: Long? = null,

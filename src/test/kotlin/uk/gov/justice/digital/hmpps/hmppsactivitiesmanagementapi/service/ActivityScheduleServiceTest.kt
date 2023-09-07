@@ -350,7 +350,7 @@ class ActivityScheduleServiceTest {
       scheduleId isEqualTo 200
       scheduleDescription isEqualTo schedule.description
       waitingListId isEqualTo null
-      createdTime isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
+      createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
 
     verify(telemetryClient).trackEvent(
@@ -418,7 +418,7 @@ class ActivityScheduleServiceTest {
       scheduleId isEqualTo 200
       scheduleDescription isEqualTo schedule.description
       waitingListId isEqualTo 300
-      createdTime isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
+      createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
   }
 

@@ -943,7 +943,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "A"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
 
     with(declinedEventCaptor.secondValue) {
@@ -953,7 +953,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "A"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
   }
 
@@ -1019,7 +1019,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "A"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
 
     with(declinedEventCaptor.secondValue) {
@@ -1029,7 +1029,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "A"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
 
     with(declinedEventCaptor.thirdValue) {
@@ -1039,7 +1039,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "B"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
 
     with(declinedEventCaptor.lastValue) {
@@ -1049,7 +1049,7 @@ class WaitingListServiceTest {
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "B"
-      createdTime isCloseTo TimeSource.now()
+      createdAt isCloseTo TimeSource.now()
     }
   }
 }
