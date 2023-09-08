@@ -4,7 +4,7 @@ import net.minidev.json.JSONObject
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
 import java.time.LocalDate
@@ -50,13 +50,13 @@ abstract class AuditableEvent(
   )
 
   fun generateHmppsAppointmentAuditJson(
+    appointmentSeriesId: Long? = null,
+    appointmentSetId: Long? = null,
     appointmentId: Long? = null,
-    bulkAppointmentId: Long? = null,
-    appointmentOccurrenceId: Long? = null,
     prisonCode: String? = null,
     originalCategoryCode: String? = null,
     categoryCode: String? = null,
-    hasDescription: Boolean? = null,
+    hasCustomName: Boolean? = null,
     originalInternalLocationId: Long? = null,
     internalLocationId: Long? = null,
     originalStartDate: LocalDate? = null,
@@ -66,22 +66,22 @@ abstract class AuditableEvent(
     originalEndTime: LocalTime? = null,
     endTime: LocalTime? = null,
     isRepeat: Boolean? = null,
-    repeatPeriod: AppointmentRepeatPeriod? = null,
-    repeatCount: Int? = null,
+    frequency: AppointmentFrequency? = null,
+    numberOfAppointments: Int? = null,
     hasExtraInformation: Boolean? = null,
     prisonerNumbers: List<String>? = null,
     applyTo: ApplyTo? = null,
-    createdAt: LocalDateTime? = null,
+    createdTime: LocalDateTime? = null,
     createdBy: String? = null,
   ): String = JSONObject.toJSONString(
     buildMap<String, Any> {
+      appointmentSeriesId?.let { put("appointmentSeriesId", it) }
+      appointmentSetId?.let { put("appointmentSetId", it) }
       appointmentId?.let { put("appointmentId", it) }
-      bulkAppointmentId?.let { put("bulkAppointmentId", it) }
-      appointmentOccurrenceId?.let { put("appointmentOccurrenceId", it) }
       prisonCode?.let { put("prisonCode", it) }
       originalCategoryCode?.let { put("originalCategoryCode", it) }
       categoryCode?.let { put("categoryCode", it) }
-      hasDescription?.let { put("hasDescription", it) }
+      hasCustomName?.let { put("hasCustomName", it) }
       originalInternalLocationId?.let { put("originalInternalLocationId", it) }
       internalLocationId?.let { put("internalLocationId", it) }
       originalStartDate?.let { put("originalStartDate", it.toIsoDate()) }
@@ -91,12 +91,12 @@ abstract class AuditableEvent(
       originalEndTime?.let { put("originalEndTime", it.toIsoTime()) }
       endTime?.let { put("endTime", it.toIsoTime()) }
       isRepeat?.let { put("isRepeat", it) }
-      repeatPeriod?.let { put("repeatPeriod", it) }
-      repeatCount?.let { put("repeatCount", it) }
+      frequency?.let { put("frequency", it) }
+      numberOfAppointments?.let { put("numberOfAppointments", it) }
       hasExtraInformation?.let { put("hasExtraInformation", it) }
       prisonerNumbers?.let { put("prisonerNumbers", it) }
       applyTo?.let { put("applyTo", it) }
-      createdAt?.let { put("createdAt", it.toIsoDateTime()) }
+      createdTime?.let { put("createdTime", it.toIsoDateTime()) }
       createdBy?.let { put("createdBy", it) }
     },
   )

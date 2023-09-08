@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BulkAppointmentDetailsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 
 @RestController
 @RequestMapping("/bulk-appointment-details", produces = [MediaType.APPLICATION_JSON_VALUE])
 class BulkAppointmentDetailsController(
-  private val bulkAppointmentDetailsService: BulkAppointmentDetailsService,
+  private val appointmentSetService: AppointmentSetService,
 ) {
   @GetMapping(value = ["/{bulkAppointmentId}"])
   @ResponseBody
@@ -64,5 +64,5 @@ class BulkAppointmentDetailsController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getBulkAppointmentDetailsById(@PathVariable("bulkAppointmentId") bulkAppointmentId: Long): BulkAppointmentDetails =
-    bulkAppointmentDetailsService.getBulkAppointmentDetailsById(bulkAppointmentId)
+    appointmentSetService.getAppointmentSetDetailsById(bulkAppointmentId)
 }

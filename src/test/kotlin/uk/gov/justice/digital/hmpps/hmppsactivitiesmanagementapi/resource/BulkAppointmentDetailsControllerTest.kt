@@ -12,21 +12,21 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BulkAppointmentDetailsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 
 @WebMvcTest(controllers = [BulkAppointmentDetailsController::class])
 @ContextConfiguration(classes = [BulkAppointmentDetailsController::class])
 class BulkAppointmentDetailsControllerTest : ControllerTestBase<BulkAppointmentDetailsController>() {
   @MockBean
-  private lateinit var bulkAppointmentDetailsService: BulkAppointmentDetailsService
+  private lateinit var appointmentSetService: AppointmentSetService
 
-  override fun controller() = BulkAppointmentDetailsController(bulkAppointmentDetailsService)
+  override fun controller() = BulkAppointmentDetailsController(appointmentSetService)
 
   @Test
   fun `200 response when get bulk appointment details by valid id`() {
     val details = bulkAppointmentDetails()
 
-    whenever(bulkAppointmentDetailsService.getBulkAppointmentDetailsById(1)).thenReturn(details)
+    whenever(appointmentSetService.getAppointmentSetDetailsById(1)).thenReturn(details)
 
     val response = mockMvc.getBulkAppointmentDetailsById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -35,12 +35,12 @@ class BulkAppointmentDetailsControllerTest : ControllerTestBase<BulkAppointmentD
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(details))
 
-    verify(bulkAppointmentDetailsService).getBulkAppointmentDetailsById(1)
+    verify(appointmentSetService).getAppointmentSetDetailsById(1)
   }
 
   @Test
   fun `404 response when get bulk appointment details by invalid id`() {
-    whenever(bulkAppointmentDetailsService.getBulkAppointmentDetailsById(-1)).thenThrow(EntityNotFoundException("Bulk appointment -1 not found"))
+    whenever(appointmentSetService.getAppointmentSetDetailsById(-1)).thenThrow(EntityNotFoundException("Bulk appointment -1 not found"))
 
     val response = mockMvc.getBulkAppointmentDetailsById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -49,7 +49,7 @@ class BulkAppointmentDetailsControllerTest : ControllerTestBase<BulkAppointmentD
 
     assertThat(response.contentAsString).contains("Bulk appointment -1 not found")
 
-    verify(bulkAppointmentDetailsService).getBulkAppointmentDetailsById(-1)
+    verify(appointmentSetService).getAppointmentSetDetailsById(-1)
   }
 
   private fun MockMvc.getBulkAppointmentDetailsById(id: Long) = get("/bulk-appointment-details/{bulkAppointmentId}", id)

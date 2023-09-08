@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
 @RestController
 @RequestMapping("/bulk-appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class BulkAppointmentController(
-  private val appointmentService: AppointmentService,
+  private val appointmentSeriesService: AppointmentSeriesService,
 ) {
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping()
@@ -80,5 +80,5 @@ class BulkAppointmentController(
       required = true,
     )
     request: BulkAppointmentsRequest,
-  ): BulkAppointment = appointmentService.bulkCreateAppointments(request, principal)
+  ): BulkAppointment = appointmentSeriesService.createAppointmentSet(request, principal)
 }

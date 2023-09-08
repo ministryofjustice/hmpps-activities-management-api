@@ -5,14 +5,14 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
 
 class AppointmentChangedEventHandlerTest {
 
-  private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
+  private val appointmentAttendeeService: AppointmentAttendeeService = mock()
 
-  private val appointmentChangedEventHandler = AppointmentChangedEventHandler(appointmentOccurrenceAllocationService)
+  private val appointmentChangedEventHandler = AppointmentChangedEventHandler(appointmentAttendeeService)
 
   @Test
   fun `cancels future appointments if cancelAppointments flag is set`() {
@@ -26,7 +26,7 @@ class AppointmentChangedEventHandlerTest {
 
     appointmentChangedEventHandler.handle(event)
 
-    verify(appointmentOccurrenceAllocationService).cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
   }
 
   @Test
@@ -41,6 +41,6 @@ class AppointmentChangedEventHandlerTest {
 
     appointmentChangedEventHandler.handle(event)
 
-    verifyNoInteractions(appointmentOccurrenceAllocationService)
+    verifyNoInteractions(appointmentAttendeeService)
   }
 }

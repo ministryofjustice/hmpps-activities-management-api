@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentOccurrenceEditedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
@@ -104,7 +104,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated appointment occurrence level comment",
+      comment = "Updated Appointment level comment",
       applyTo = ApplyTo.THIS_OCCURRENCE,
     )
 
@@ -121,7 +121,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-      assertThat(comment).isEqualTo("Appointment level comment")
+      assertThat(comment).isEqualTo("Appointment series level comment")
       assertThat(appointmentDescription).isEqualTo("Appointment description")
       assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(updatedBy).isEqualTo("test-client")
@@ -151,7 +151,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
     }
 
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -459,7 +459,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
       endTime = LocalTime.of(15, 0),
-      comment = "Updated appointment occurrence level comment",
+      comment = "Updated Appointment level comment",
       addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
       removePrisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES,
@@ -484,7 +484,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
-      assertThat(comment).isEqualTo("Appointment level comment")
+      assertThat(comment).isEqualTo("Appointment series level comment")
       assertThat(updated).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(updatedBy).isEqualTo("test-client")
       assertThat(occurrences[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
@@ -497,7 +497,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
-        assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment occurrence level comment")
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Appointment level comment")
         assertThat(map { it.updated }.distinct().single()).isNull()
         assertThat(map { it.updatedBy }.distinct().single()).isNull()
         assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
@@ -511,7 +511,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
         assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
-        assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated appointment occurrence level comment")
+        assertThat(map { it.comment }.distinct().single()).isEqualTo("Updated Appointment level comment")
         assertThat(map { it.updated }.distinct().single()).isCloseTo(
           LocalDateTime.now(),
           within(60, ChronoUnit.SECONDS),
@@ -570,7 +570,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       ).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
 
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -649,7 +649,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   @Sql(
@@ -747,7 +747,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoMoreInteractions(telemetryClient)
-    verify(auditService).logEvent(any<AppointmentOccurrenceEditedEvent>())
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =

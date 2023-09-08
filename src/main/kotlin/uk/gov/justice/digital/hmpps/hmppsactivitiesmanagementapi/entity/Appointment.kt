@@ -1,27 +1,24 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
+import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinTable
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
+import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -29,33 +26,28 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence as AppointmentOccurrenceModel
 
 @Entity
-@Table(name = "appointment_series")
+@Table(name = "appointment")
+@Where(clause = "NOT is_deleted")
+@EntityListeners(AppointmentEntityListener::class)
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "appointment_series_id")
   val appointmentId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinTable(
-    name = "appointment_set_appointment_series",
-    joinColumns = [JoinColumn(name = "appointment_series_id")],
-    inverseJoinColumns = [JoinColumn(name = "appointment_set_id")],
-  )
-  val bulkAppointment: BulkAppointment? = null,
+  @JoinColumn(name = "appointment_series_id", nullable = false)
+  val appointmentSeries: AppointmentSeries,
 
-  @Enumerated(EnumType.STRING)
-  val appointmentType: AppointmentType,
+  val sequenceNumber: Int,
 
   val prisonCode: String,
 
-  val categoryCode: String,
+  var categoryCode: String,
 
-  @Column(name = "custom_name")
-  val appointmentDescription: String?,
+  var customName: String?,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
@@ -65,128 +57,136 @@ data class Appointment(
   @JoinColumn(name = "appointment_host_id")
   var appointmentHost: AppointmentHost? = null,
 
-  val internalLocationId: Long?,
+  var internalLocationId: Long?,
 
-  val inCell: Boolean,
+  val customLocation: String? = null,
 
-  val startDate: LocalDate,
+  var inCell: Boolean = false,
 
-  val startTime: LocalTime,
+  var onWing: Boolean = false,
 
-  val endTime: LocalTime?,
+  var offWing: Boolean = true,
 
-  @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumn(name = "appointment_series_schedule_id")
-  var schedule: AppointmentSchedule? = null,
+  var startDate: LocalDate,
 
-  @Column(name = "extra_information")
-  val comment: String?,
+  var startTime: LocalTime,
 
-  @Column(name = "created_time")
-  val created: LocalDateTime = LocalDateTime.now(),
+  var endTime: LocalTime?,
+
+  var unlockNotes: String? = null,
+
+  var extraInformation: String? = null,
+
+  val createdTime: LocalDateTime,
 
   val createdBy: String,
 
-  @Column(name = "updated_time")
-  var updated: LocalDateTime? = null,
+  var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
-
-  val isMigrated: Boolean = false,
 ) {
-  fun scheduleIterator() =
-    schedule?.let { AppointmentScheduleIterator(startDate, schedule!!.repeatPeriod, schedule!!.repeatCount) }
-      ?: AppointmentScheduleIterator(startDate, AppointmentRepeatPeriod.DAILY, 1)
+  var cancelledTime: LocalDateTime? = null
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "cancellation_reason_id")
+  var cancellationReason: AppointmentCancellationReason? = null
+
+  var cancelledBy: String? = null
+
+  var isDeleted: Boolean = false
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @OrderBy("sequenceNumber ASC")
-  private val occurrences: MutableList<AppointmentOccurrence> = mutableListOf()
+  private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
 
-  fun occurrences() = occurrences.filterNot { it.isDeleted() }.toList()
+  fun attendees() = attendees.toList()
 
-  fun scheduledOccurrences() = occurrences().filter { it.isScheduled() }.toList()
-
-  fun scheduledOccurrencesAfter(startDateTime: LocalDateTime) = scheduledOccurrences().filter { it.startDateTime() > startDateTime }.toList()
-
-  fun applyToOccurrences(appointmentOccurrence: AppointmentOccurrence, applyTo: ApplyTo, action: String): List<AppointmentOccurrence> {
-    require(!appointmentOccurrence.isExpired()) {
-      "Cannot $action a past appointment occurrence"
-    }
-
-    require(!appointmentOccurrence.isCancelled()) {
-      "Cannot $action a cancelled appointment occurrence"
-    }
-
-    require(!appointmentOccurrence.isDeleted()) {
-      "Cannot $action a deleted appointment occurrence"
-    }
-
-    return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointmentOccurrence).union(
-        scheduledOccurrencesAfter(appointmentOccurrence.startDateTime()),
-      ).toList()
-      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledOccurrences()
-      else -> listOf(appointmentOccurrence)
-    }
+  fun addAttendee(attendee: AppointmentAttendee) {
+    failIfIndividualAppointmentAlreadyAllocated()
+    attendees.add(attendee)
   }
 
-  fun occurrenceDetails(
-    prisonerMap: Map<String, Prisoner>,
-    referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
-  ) = occurrences().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
 
-  fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
+  fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
 
-  fun removeOccurrence(occurrence: AppointmentOccurrence) = occurrences.remove(occurrence)
+  fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
 
-  fun internalLocationIds() =
-    listOf(internalLocationId).union(occurrences().map { occurrence -> occurrence.internalLocationId }).filterNotNull()
+  fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted
 
-  fun prisonerNumbers(): List<String> {
-    val orderedOccurrences = occurrences().sortedBy { it.startDateTime() }
-    if (orderedOccurrences.isEmpty()) return emptyList()
-    return (orderedOccurrences.firstOrNull { !it.isExpired() } ?: orderedOccurrences.last()).prisonerNumbers()
-  }
+  fun isEdited() = updatedTime != null
 
-  fun usernames() =
-    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> occurrence.usernames() }).filterNotNull()
+  fun isCancelled() = cancelledTime != null && !isDeleted
 
-  fun toModel() = AppointmentModel(
+  fun isExpired() = startDateTime() < LocalDateTime.now()
+
+  fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy)
+
+  fun toModel() = AppointmentOccurrenceModel(
     id = appointmentId,
-    appointmentType = appointmentType,
-    prisonCode = prisonCode,
+    sequenceNumber = sequenceNumber,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    appointmentDescription = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    repeat = schedule?.toRepeat(),
-    comment = comment,
-    created = created,
-    createdBy = createdBy,
-    updated = updated,
+    comment = extraInformation,
+    cancelled = cancelledTime,
+    cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
+    cancelledBy = cancelledBy,
+    updated = updatedTime,
     updatedBy = updatedBy,
-    occurrences = occurrences().toModel(),
+    allocations = attendees().toModel(),
   )
 
-  fun toDetails(
-    prisoners: List<Prisoner>,
+  fun toSummary(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
-    AppointmentDetails(
+    AppointmentOccurrenceSummary(
       appointmentId,
-      appointmentType,
-      prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, appointmentDescription),
-      prisoners.toSummary(),
+      sequenceNumber,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentDescription,
+      customName,
+      if (inCell) {
+        null
+      } else {
+        locationMap[internalLocationId].toAppointmentLocationSummary(
+          internalLocationId!!,
+          prisonCode,
+        )
+      },
+      inCell,
+      startDate,
+      startTime,
+      endTime,
+      extraInformation,
+      isEdited = isEdited(),
+      isCancelled = isCancelled(),
+      updated = updatedTime,
+      updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
+    )
+
+  fun toDetails(
+    prisonerMap: Map<String, Prisoner>,
+    referenceCodeMap: Map<String, ReferenceCode>,
+    locationMap: Map<Long, Location>,
+    userMap: Map<String, UserDetail>,
+  ) =
+    AppointmentOccurrenceDetails(
+      appointmentId,
+      appointmentSeries.appointmentSeriesId,
+      appointmentSeries.appointmentSet?.toSummary(),
+      appointmentSeries.appointmentType,
+      sequenceNumber,
+      prisonCode,
+      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+      attendees().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
+      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      customName,
       if (inCell) {
         null
       } else {
@@ -196,23 +196,45 @@ data class Appointment(
       startDate,
       startTime,
       endTime,
-      schedule?.toRepeat(),
-      comment,
-      created,
-      userMap[createdBy].toSummary(createdBy),
-      updated,
+      extraInformation,
+      appointmentSeries.schedule?.toRepeat(),
+      isEdited(),
+      isCancelled(),
+      isExpired(),
+      appointmentSeries.createdTime,
+      userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
+      updatedTime,
       if (updatedBy == null) {
         null
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(referenceCodeMap, locationMap, userMap),
+      cancelledTime,
+      if (cancelledBy == null) {
+        null
+      } else {
+        userMap[cancelledBy].toSummary(cancelledBy!!)
+      },
     )
+
+  private fun failIfIndividualAppointmentAlreadyAllocated() {
+    if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && attendees().isNotEmpty()) {
+      throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
+    }
+  }
 }
 
 fun List<Appointment>.toModel() = map { it.toModel() }
 
-enum class AppointmentType {
-  INDIVIDUAL,
-  GROUP,
-}
+fun List<Appointment>.toSummary(
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+) = map { it.toSummary(referenceCodeMap, locationMap, userMap) }
+
+fun List<Appointment>.toDetails(
+  prisonerMap: Map<String, Prisoner>,
+  referenceCodeMap: Map<String, ReferenceCode>,
+  locationMap: Map<Long, Location>,
+  userMap: Map<String, UserDetail>,
+) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }

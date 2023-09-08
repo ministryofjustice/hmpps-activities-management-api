@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -19,14 +18,11 @@ data class AppointmentInstance(
   @Id
   val appointmentInstanceId: Long,
 
-  @Column(name = "appointment_series_id")
+  val appointmentSeriesId: Long,
+
   val appointmentId: Long,
 
-  @Column(name = "appointment_id")
-  val appointmentOccurrenceId: Long,
-
-  @Column(name = "appointment_attendee_id")
-  val appointmentOccurrenceAllocationId: Long,
+  val appointmentAttendeeId: Long,
 
   @Enumerated(EnumType.STRING)
   val appointmentType: AppointmentType,
@@ -39,12 +35,17 @@ data class AppointmentInstance(
 
   val categoryCode: String,
 
-  @Column(name = "custom_name")
-  val appointmentDescription: String?,
+  val customName: String?,
 
   val internalLocationId: Long?,
 
+  val customLocation: String?,
+
   val inCell: Boolean,
+
+  val onWing: Boolean,
+
+  val offWing: Boolean,
 
   val appointmentDate: LocalDate,
 
@@ -52,16 +53,15 @@ data class AppointmentInstance(
 
   val endTime: LocalTime?,
 
-  @Column(name = "extra_information")
-  val comment: String?,
+  var unlockNotes: String?,
 
-  @Column(name = "created_time")
-  val created: LocalDateTime = LocalDateTime.now(),
+  val extraInformation: String?,
+
+  val createdTime: LocalDateTime,
 
   val createdBy: String,
 
-  @Column(name = "updated_time")
-  val updated: LocalDateTime?,
+  val updatedTime: LocalDateTime?,
 
   val updatedBy: String?,
 
@@ -69,24 +69,24 @@ data class AppointmentInstance(
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,
-    appointmentId = appointmentId,
-    appointmentOccurrenceId = appointmentOccurrenceId,
-    appointmentOccurrenceAllocationId = appointmentOccurrenceAllocationId,
+    appointmentId = appointmentSeriesId,
+    appointmentOccurrenceId = appointmentId,
+    appointmentOccurrenceAllocationId = appointmentAttendeeId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    appointmentDescription = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,
-    comment = comment,
-    created = created,
+    comment = extraInformation,
+    created = createdTime,
     createdBy = createdBy,
-    updated = updated,
+    updated = updatedTime,
     updatedBy = updatedBy,
   )
 }

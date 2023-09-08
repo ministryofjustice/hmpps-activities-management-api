@@ -9,14 +9,14 @@ class AppointmentInstanceTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentInstanceEntity()
-    val expectedModel = appointmentInstanceModel(entity.created, entity.updated)
+    val expectedModel = appointmentInstanceModel(entity.createdTime, entity.updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entity = appointmentInstanceEntity()
-    val expectedModel = listOf(appointmentInstanceModel(entity.created, entity.updated))
+    val expectedModel = listOf(appointmentInstanceModel(entity.createdTime, entity.updatedTime))
     assertThat(listOf(entity).toModel()).isEqualTo(expectedModel)
   }
 }
