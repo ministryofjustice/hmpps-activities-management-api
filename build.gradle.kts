@@ -3,9 +3,9 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.4.0"
-  kotlin("plugin.spring") version "1.9.0"
-  kotlin("plugin.jpa") version "1.9.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.4.1"
+  kotlin("plugin.spring") version "1.9.10"
+  kotlin("plugin.jpa") version "1.9.10"
   jacoco
   id("org.openapi.generator") version "6.6.0"
 }
@@ -30,12 +30,12 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.0.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.25.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.10.0")
@@ -45,7 +45,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.6.0")
 
   // Test dependencies
-  testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
+  testImplementation("org.wiremock:wiremock:3.0.3")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
