@@ -52,7 +52,7 @@ data class Allocation(
 
   var endDate: LocalDate? = null
     set(value) {
-      require(value == null || value >= startDate) {
+      require(value == null || value >= startDate || prisonerStatus == PrisonerStatus.ENDED) {
         "Allocation end date for prisoner $prisonerNumber cannot be before allocation start date."
       }
 
@@ -253,7 +253,11 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED
+  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED;
+
+  companion object {
+    fun allExcuding(vararg status: PrisonerStatus) = entries.filterNot { status.contains(it) }.toTypedArray()
+  }
 }
 
 enum class DeallocationReason(val description: String, val displayed: Boolean = false) {

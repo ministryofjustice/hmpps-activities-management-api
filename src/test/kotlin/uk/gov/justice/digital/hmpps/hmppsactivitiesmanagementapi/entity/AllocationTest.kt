@@ -4,10 +4,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -333,5 +335,15 @@ class AllocationTest {
       allocation.endDate = allocation.startDate.minusDays(1)
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation end date for prisoner 123456 cannot be before allocation start date.")
+  }
+
+  @Test
+  fun `allocation end date must be on or after the start date unless ended`() {
+    val allocation = allocation().copy(prisonerNumber = "123456", startDate = TimeSource.tomorrow()).also { it.endDate isEqualTo null }
+
+    assertDoesNotThrow { allocation.deallocateNow() }
+
+    allocation.startDate isEqualTo TimeSource.tomorrow()
+    allocation.endDate isEqualTo TimeSource.today()
   }
 }
