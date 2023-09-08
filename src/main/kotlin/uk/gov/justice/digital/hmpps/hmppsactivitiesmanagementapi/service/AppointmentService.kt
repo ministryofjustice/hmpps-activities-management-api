@@ -1,417 +1,166 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentOccurrencesJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DESCRIPTION_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_DESCRIPTION_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence as AppointmentOccurrenceEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment as BulkAppointmentEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentSeriesModel
 
 @Service
+@Transactional
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
-  private val appointmentTierRepository: AppointmentTierRepository,
-  private val appointmentHostRepository: AppointmentHostRepository,
-  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
-  private val bulkAppointmentRepository: BulkAppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val createAppointmentOccurrencesJob: CreateAppointmentOccurrencesJob,
-  private val telemetryClient: TelemetryClient,
-  private val auditService: AuditService,
-  @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
+  private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
+  private val appointmentCancelDomainService: AppointmentCancelDomainService,
+  private val updateAppointmentsJob: UpdateAppointmentsJob,
+  private val cancelAppointmentsJob: CancelAppointmentsJob,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
-  @Transactional(readOnly = true)
-  fun getAppointmentById(appointmentId: Long): Appointment {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId).toModel()
-    checkCaseloadAccess(appointment.prisonCode)
+  fun updateAppointment(appointmentId: Long, request: AppointmentOccurrenceUpdateRequest, principal: Principal): AppointmentSeriesModel {
+    val startTimeInMs = System.currentTimeMillis()
+    val now = LocalDateTime.now()
 
-    return appointment
-  }
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val appointmentSeries = appointment.appointmentSeries
+    val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update")
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
-  fun bulkCreateAppointments(request: BulkAppointmentsRequest, principal: Principal): BulkAppointment {
-    val startTime = System.currentTimeMillis()
-
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-
-    return require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
-      createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
-        BulkAppointmentEntity(
-          prisonCode = request.prisonCode,
-          categoryCode = request.categoryCode,
-          appointmentDescription = request.appointmentDescription,
-          appointmentTier = appointmentTier,
-          internalLocationId = request.internalLocationId,
-          inCell = request.inCell,
-          startDate = request.startDate,
-          createdBy = principal.name,
-        ).apply {
-          request.appointments.map {
-            buildValidAppointmentEntity(
-              appointmentType = AppointmentType.INDIVIDUAL,
-              prisonCode = request.prisonCode,
-              prisonerNumbers = listOf(it.prisonerNumber),
-              prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
-              categoryCode = request.categoryCode,
-              appointmentDescription = request.appointmentDescription,
-              appointmentTier = appointmentTier,
-              internalLocationId = request.internalLocationId,
-              inCell = request.inCell,
-              startDate = request.startDate,
-              startTime = it.startTime,
-              endTime = it.endTime,
-              comment = it.comment,
-              createdBy = principal.name,
-            )
-          }.forEach { appointment -> this.addAppointment(appointment) }
-        }.let { bulkAppointmentRepository.saveAndFlush(it).toModel() }
-          .also {
-            logBulkAppointmentCreatedMetric(principal, it, startTime)
-            writeBulkAppointmentCreatedAuditRecord(request, it)
+    if (request.categoryCode != null) {
+      referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
+        .also {
+          require(it.containsKey(request.categoryCode)) {
+            "Appointment Category with code ${request.categoryCode} not found or is not active"
           }
+        }
+    }
+
+    if (request.internalLocationId != null) {
+      locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
+        .also {
+          require(it.containsKey(request.internalLocationId)) {
+            "Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'"
+          }
+        }
+    }
+
+    require(request.removePrisonerNumbers.isNullOrEmpty() || appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
+      "Cannot remove prisoners from an individual appointment"
+    }
+
+    val prisonerMap = if (request.addPrisonerNumbers.isNullOrEmpty()) {
+      emptyMap()
+    } else {
+      require(appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
+        "Cannot add prisoners to an individual appointment"
       }
+      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers).block()!!
+        .filter { prisoner -> prisoner.prisonId == appointmentSeries.prisonCode }
+        .associateBy { prisoner -> prisoner.prisonerNumber }
+        .also {
+          val missingPrisonerNumbers = request.addPrisonerNumbers.filter { number -> !it.containsKey(number) }
+          require(missingPrisonerNumbers.isEmpty()) {
+            "Prisoner(s) with prisoner number(s) '${missingPrisonerNumbers.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+          }
+        }
     }
-  }
 
-  fun createAppointment(request: AppointmentCreateRequest, principal: Principal): Appointment {
-    val startTime = System.currentTimeMillis()
+    val updateAppointmentsCount = appointmentsToUpdate.size
+    val updateInstancesCount = appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentsToUpdate)
+    // Determine if this is an update request that will affect more than one appointment and a very large number of appointment instances. If it is, only update the first appointment
+    val updateFirstAppointmentOnly = updateAppointmentsCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-
-    val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
-    // Determine if this is a create request for a very large appointment. If it is, this function will only create the first occurrence
-    val createFirstOccurrenceOnly = request.repeat?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
-
-    val appointment = appointmentRepository.saveAndFlush(
-      buildValidAppointmentEntity(
-        appointmentType = request.appointmentType,
-        prisonCode = request.prisonCode!!,
-        prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = prisonerBookings,
-        inCell = request.inCell,
-        categoryCode = request.categoryCode!!,
-        appointmentDescription = request.appointmentDescription,
-        appointmentTier = appointmentTier,
-        internalLocationId = request.internalLocationId,
-        startDate = request.startDate,
-        startTime = request.startTime,
-        endTime = request.endTime,
-        repeat = request.repeat,
-        comment = request.comment,
-        createdBy = principal.name,
-        createFirstOccurrenceOnly = createFirstOccurrenceOnly,
-      ),
+    val updatedAppointment = appointmentUpdateDomainService.updateAppointments(
+      appointmentSeries,
+      appointmentId,
+      if (updateFirstAppointmentOnly) setOf(appointment) else appointmentsToUpdate.toSet(),
+      request,
+      prisonerMap,
+      now,
+      principal.name,
+      updateAppointmentsCount,
+      updateInstancesCount,
+      startTimeInMs,
+      !updateFirstAppointmentOnly,
+      true,
     )
 
-    if (createFirstOccurrenceOnly) {
-      // The remaining occurrences will be created asynchronously by this job
-      createAppointmentOccurrencesJob.execute(appointment.appointmentId, prisonerBookings)
+    if (updateFirstAppointmentOnly) {
+      // The remaining appointments will be updated asynchronously by this job
+      updateAppointmentsJob.execute(
+        appointmentSeries.appointmentSeriesId,
+        appointmentId,
+        appointmentsToUpdate.filterNot { it.appointmentId == appointmentId }.map { it.appointmentId }.toSet(),
+        request,
+        prisonerMap,
+        now,
+        principal.name,
+        updateAppointmentsCount,
+        updateInstancesCount,
+        startTimeInMs,
+      )
     }
 
-    return appointment.toModel().also {
-      logAppointmentCreatedMetric(principal, request, it, startTime)
-      writeAppointmentCreatedAuditRecord(request, it)
-    }
+    return updatedAppointment
   }
 
-  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): Appointment {
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-    val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())
-    return buildValidAppointmentEntity(
-      appointmentType = AppointmentType.INDIVIDUAL,
-      prisonCode = request.prisonCode!!,
-      prisonerNumbers = listOf(request.prisonerNumber),
-      prisonerBookings = prisonerBookings,
-      categoryCode = request.categoryCode!!,
-      appointmentTier = appointmentTier,
-      internalLocationId = request.internalLocationId,
-      inCell = false,
-      startDate = request.startDate,
-      startTime = request.startTime,
-      endTime = request.endTime,
-      comment = request.comment,
-      created = request.created!!,
-      createdBy = request.createdBy!!,
-      updated = request.updated,
-      updatedBy = request.updatedBy,
-      isCancelled = request.isCancelled ?: false,
-      isMigrated = true,
-    ).let { (appointmentRepository.saveAndFlush(it)).toModel() }
-  }
+  fun cancelAppointment(appointmentId: Long, request: AppointmentOccurrenceCancelRequest, principal: Principal): AppointmentSeriesModel {
+    val startTimeInMs = System.currentTimeMillis()
+    val now = LocalDateTime.now()
 
-  private fun failIfCategoryNotFound(categoryCode: String) {
-    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
-      ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
-  }
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val appointmentSeries = appointment.appointmentSeries
+    val appointmentsToCancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "cancel")
+    checkCaseloadAccess(appointmentSeries.prisonCode)
 
-  private fun failIfLocationNotFound(inCell: Boolean, prisonCode: String?, internalLocationId: Long?) {
-    if (!inCell) {
-      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]
-        ?: throw IllegalArgumentException("Appointment location with id $internalLocationId not found in prison '$prisonCode'")
-    }
-  }
+    val cancelAppointmentsCount = appointmentsToCancel.size
+    val cancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(appointmentsToCancel)
+    // Determine if this is a cancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only cancel the first appointment
+    val cancelFirstAppointmentOnly = cancelAppointmentsCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
 
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerBookings: Map<String, String?>) {
-    prisonerNumbers.filterNot(prisonerBookings::containsKey).let {
-      require(it.isEmpty()) {
-        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
-      }
-    }
-  }
-
-  private fun failIfMaximumOccurrencesExceeded(prisonerNumbers: List<String>, repeat: AppointmentRepeat?) {
-    val repeatCount = repeat?.count ?: 1
-    require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
-      "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
-    }
-  }
-
-  fun buildValidAppointmentEntity(
-    appointmentType: AppointmentType? = null,
-    prisonCode: String,
-    prisonerNumbers: List<String>,
-    prisonerBookings: Map<String, String?>,
-    categoryCode: String,
-    appointmentDescription: String? = null,
-    appointmentTier: AppointmentTier,
-    internalLocationId: Long? = null,
-    inCell: Boolean = false,
-    startDate: LocalDate?,
-    startTime: LocalTime?,
-    endTime: LocalTime?,
-    repeat: AppointmentRepeat? = null,
-    comment: String? = null,
-    created: LocalDateTime = LocalDateTime.now(),
-    createdBy: String,
-    updated: LocalDateTime? = null,
-    updatedBy: String? = null,
-    isCancelled: Boolean = false,
-    isMigrated: Boolean = false,
-    createFirstOccurrenceOnly: Boolean = false,
-  ): AppointmentEntity {
-    failIfMaximumOccurrencesExceeded(prisonerNumbers, repeat)
-
-    if (!isMigrated) {
-      checkCaseloadAccess(prisonCode)
-      failIfCategoryNotFound(categoryCode)
-      failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-      failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
-    }
-
-    return AppointmentEntity(
-      appointmentType = appointmentType!!,
-      prisonCode = prisonCode,
-      categoryCode = categoryCode,
-      appointmentDescription = appointmentDescription?.takeUnless(String::isBlank),
-      appointmentTier = appointmentTier,
-      internalLocationId = if (inCell) null else internalLocationId,
-      inCell = inCell,
-      startDate = startDate!!,
-      startTime = startTime!!,
-      endTime = endTime,
-      comment = comment,
-      created = created,
-      createdBy = createdBy,
-      updated = updated,
-      updatedBy = updatedBy,
-      isMigrated = isMigrated,
-    ).apply {
-      this.schedule = repeat?.let {
-        AppointmentSchedule(
-          appointment = this,
-          repeatPeriod = AppointmentRepeatPeriod.valueOf(repeat.period!!.name),
-          repeatCount = repeat.count!!,
-        )
-      }
-
-      this.scheduleIterator().withIndex().forEach {
-        if (createFirstOccurrenceOnly && it.index > 0) return@forEach
-
-        this.addOccurrence(
-          AppointmentOccurrenceEntity(
-            appointment = this,
-            sequenceNumber = it.index + 1,
-            prisonCode = this.prisonCode,
-            categoryCode = this.categoryCode,
-            appointmentDescription = this.appointmentDescription,
-            internalLocationId = this.internalLocationId,
-            appointmentTier = this.appointmentTier,
-            inCell = this.inCell,
-            startDate = it.value,
-            startTime = this.startTime,
-            endTime = this.endTime,
-            comment = this.comment,
-            created = this.created,
-            createdBy = this.createdBy,
-            updated = this.updated,
-            updatedBy = this.updatedBy,
-          ).apply {
-            prisonerBookings.forEach { prisonerBooking ->
-              this.addAllocation(
-                AppointmentOccurrenceAllocationEntity(
-                  appointmentOccurrence = this,
-                  prisonerNumber = prisonerBooking.key,
-                  bookingId = prisonerBooking.value!!.toLong(),
-                ),
-              )
-            }
-
-            if (isCancelled) {
-              cancelled = updated ?: created
-              cancellationReason =
-                appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID)
-              cancelledBy = updatedBy ?: createdBy
-            }
-          },
-        )
-      }
-    }
-  }
-
-  private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
-    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
-      .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associate { it.prisonerNumber to it.bookingId }
-
-  private fun logAppointmentCreatedMetric(principal: Principal, request: AppointmentCreateRequest, appointment: Appointment, startTimeInMs: Long) {
-    val propertiesMap = mapOf(
-      USER_PROPERTY_KEY to principal.name,
-      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
-      APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointment.id.toString(),
-      CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription?.isNotEmpty()).toString(),
-      INTERNAL_LOCATION_ID_PROPERTY_KEY to appointment.internalLocationId.toString(),
-      START_DATE_PROPERTY_KEY to appointment.startDate.toString(),
-      START_TIME_PROPERTY_KEY to appointment.startTime.toString(),
-      END_TIME_PROPERTY_KEY to appointment.endTime.toString(),
-      IS_REPEAT_PROPERTY_KEY to (request.repeat != null).toString(),
-      REPEAT_PERIOD_PROPERTY_KEY to (request.repeat?.period?.toString() ?: ""),
-      REPEAT_COUNT_PROPERTY_KEY to (request.repeat?.count?.toString() ?: ""),
-      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointment.comment?.isNotEmpty() == true).toString(),
+    val cancelledAppointment = appointmentCancelDomainService.cancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      if (cancelFirstAppointmentOnly) setOf(appointment) else appointmentsToCancel.toSet(),
+      request,
+      now,
+      principal.name,
+      cancelAppointmentsCount,
+      cancelInstancesCount,
+      startTimeInMs,
+      !cancelFirstAppointmentOnly,
+      true,
     )
 
-    val metricsMap = mapOf(
-      PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.repeat?.count ?: 1)).toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointment.comment?.length ?: 0).toDouble(),
-      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-    )
+    if (cancelFirstAppointmentOnly) {
+      // The remaining appointments will be updated asynchronously by this job
+      cancelAppointmentsJob.execute(
+        appointmentSeries.appointmentSeriesId,
+        appointmentId,
+        appointmentsToCancel.filterNot { it.appointmentId == appointmentId }.map { it.appointmentId }.toSet(),
+        request,
+        now,
+        principal.name,
+        cancelAppointmentsCount,
+        cancelInstancesCount,
+        startTimeInMs,
+      )
+    }
 
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_CREATED.value, propertiesMap, metricsMap)
-  }
-
-  private fun logBulkAppointmentCreatedMetric(principal: Principal, appointment: BulkAppointment, startTimeInMs: Long) {
-    val propertiesMap = mapOf(
-      USER_PROPERTY_KEY to principal.name,
-      PRISON_CODE_PROPERTY_KEY to appointment.prisonCode,
-      APPOINTMENT_SET_ID_PROPERTY_KEY to appointment.id.toString(),
-      CATEGORY_CODE_PROPERTY_KEY to appointment.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointment.appointmentDescription != null).toString(),
-      INTERNAL_LOCATION_ID_PROPERTY_KEY to appointment.internalLocationId.toString(),
-      START_DATE_PROPERTY_KEY to appointment.startDate.toString(),
-      EARLIEST_START_TIME_PROPERTY_KEY to appointment.appointments.minOf { it.startTime }.toString(),
-      LATEST_END_TIME_PROPERTY_KEY to appointment.appointments.mapNotNull { it.endTime }.maxOf { it }.toString(),
-    )
-
-    val metricsMap = mapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to appointment.appointments.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointment.appointments.flatMap { it.occurrences.flatMap { occurrence -> occurrence.allocations } }.size.toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointment.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointment.appointments.filterNot { it.comment.isNullOrEmpty() }.size.toDouble(),
-      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
-  }
-
-  private fun writeAppointmentCreatedAuditRecord(request: AppointmentCreateRequest, appointment: Appointment) {
-    auditService.logEvent(
-      AppointmentCreatedEvent(
-        appointmentId = appointment.id,
-        prisonCode = appointment.prisonCode,
-        categoryCode = appointment.categoryCode,
-        hasDescription = appointment.appointmentDescription != null,
-        internalLocationId = appointment.internalLocationId,
-        startDate = appointment.startDate,
-        startTime = appointment.startTime,
-        endTime = appointment.endTime,
-        isRepeat = request.repeat != null,
-        repeatPeriod = request.repeat?.period,
-        repeatCount = request.repeat?.count,
-        hasExtraInformation = appointment.comment?.isNotEmpty() == true,
-        prisonerNumbers = request.prisonerNumbers,
-        createdAt = LocalDateTime.now(),
-      ),
-    )
-  }
-  private fun writeBulkAppointmentCreatedAuditRecord(request: BulkAppointmentsRequest, appointment: BulkAppointment) {
-    auditService.logEvent(
-      BulkAppointmentCreatedEvent(
-        bulkAppointmentId = appointment.id,
-        prisonCode = appointment.prisonCode,
-        categoryCode = appointment.categoryCode,
-        hasDescription = appointment.appointmentDescription != null,
-        internalLocationId = appointment.internalLocationId,
-        startDate = appointment.startDate,
-        prisonerNumbers = request.appointments.map { it.prisonerNumber },
-        createdAt = LocalDateTime.now(),
-      ),
-    )
+    return cancelledAppointment
   }
 }

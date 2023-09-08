@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -223,17 +223,17 @@ class TransformFunctionsTest {
           internalLocationCode = "LOC123",
           internalLocationDescription = "User location desc",
           eventId = null,
-          appointmentId = entity.appointmentId,
-          appointmentOccurrenceId = entity.appointmentOccurrenceId,
+          appointmentId = entity.appointmentSeriesId,
+          appointmentOccurrenceId = entity.appointmentId,
           appointmentInstanceId = entity.appointmentInstanceId,
-          appointmentDescription = entity.appointmentDescription,
+          appointmentDescription = entity.customName,
           oicHearingId = null,
           cancelled = entity.isCancelled,
           suspended = false,
           categoryCode = entity.categoryCode,
           categoryDescription = "Test Category",
           summary = "Test Category",
-          comments = entity.comment,
+          comments = entity.extraInformation,
           prisonerNumber = entity.prisonerNumber,
           inCell = entity.inCell,
           outsidePrison = false,
@@ -300,7 +300,7 @@ class TransformFunctionsTest {
 
     private fun transform(appointmentInstance: AppointmentInstance): List<ScheduledEvent> {
       val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
-      val result = appointmentOccurrenceSearchEntity()
+      val result = appointmentSearchEntity()
 
       return transformAppointmentInstanceToScheduledEvents(
         "TPR",

@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
 @RestController
 @RequestMapping("/migrate-appointment", produces = [MediaType.APPLICATION_JSON_VALUE])
 class MigrateAppointmentController(
-  private val appointmentService: AppointmentService,
+  private val appointmentSeriesService: AppointmentSeriesService,
 ) {
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping()
@@ -79,5 +79,5 @@ class MigrateAppointmentController(
       required = true,
     )
     request: AppointmentMigrateRequest,
-  ): Appointment = appointmentService.migrateAppointment(request, principal)
+  ): Appointment = appointmentSeriesService.migrateAppointment(request, principal)
 }

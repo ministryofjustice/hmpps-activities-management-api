@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceAllocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
@@ -33,12 +33,12 @@ class OffenderReleasedEventHandlerTest {
       )
   }
   private val prisonApiClient: PrisonApiApplicationClient = mock()
-  private val appointmentOccurrenceAllocationService: AppointmentOccurrenceAllocationService = mock()
+  private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
 
   private val handler = OffenderReleasedEventHandler(
     rolloutPrisonRepository,
-    appointmentOccurrenceAllocationService,
+    appointmentAttendeeService,
     prisonApiClient,
     prisonerAllocationHandler,
   )
@@ -147,6 +147,6 @@ class OffenderReleasedEventHandlerTest {
     )
 
     assertThat(outcome.isSuccess()).isTrue()
-    verify(appointmentOccurrenceAllocationService).cancelFutureOffenderAppointments(moorlandPrisonCode, "12345")
+    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(moorlandPrisonCode, "12345")
   }
 }

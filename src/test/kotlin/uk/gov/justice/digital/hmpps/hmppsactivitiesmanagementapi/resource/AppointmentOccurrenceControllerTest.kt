@@ -15,12 +15,12 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceSearchService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentOccurrenceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -29,14 +29,14 @@ import java.time.LocalTime
 @ContextConfiguration(classes = [AppointmentOccurrenceController::class])
 class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurrenceController>() {
   @MockBean
-  private lateinit var appointmentOccurrenceService: AppointmentOccurrenceService
+  private lateinit var appointmentService: AppointmentService
 
   @MockBean
-  private lateinit var appointmentOccurrenceSearchService: AppointmentOccurrenceSearchService
+  private lateinit var appointmentSearchService: AppointmentSearchService
 
   override fun controller() = AppointmentOccurrenceController(
-    appointmentOccurrenceService,
-    appointmentOccurrenceSearchService,
+    appointmentService,
+    appointmentSearchService,
   )
 
   @Test
@@ -44,7 +44,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     val request = AppointmentOccurrenceUpdateRequest()
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentOccurrenceService.updateAppointmentOccurrence(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment Occurrence -1 not found"))
+    whenever(appointmentService.updateAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment Occurrence -1 not found"))
 
     val response = mockMvc.updateAppointmentOccurrence(-1, request, mockPrincipal)
       .andDo { print() }
@@ -54,7 +54,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
     assertThat(response.contentAsString).contains("Appointment Occurrence -1 not found")
 
-    verify(appointmentOccurrenceService).updateAppointmentOccurrence(-1, request, mockPrincipal)
+    verify(appointmentService).updateAppointment(-1, request, mockPrincipal)
   }
 
   @Test
@@ -83,17 +83,17 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
         }
       }
 
-    verifyNoInteractions(appointmentOccurrenceService)
+    verifyNoInteractions(appointmentService)
   }
 
   @Test
   fun `202 accepted response when update appointment occurrence with valid json`() {
     val request = AppointmentOccurrenceUpdateRequest()
-    val expectedResponse = appointmentEntity().toModel()
+    val expectedResponse = appointmentSeriesEntity().toModel()
 
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentOccurrenceService.updateAppointmentOccurrence(1, request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentService.updateAppointment(1, request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response = mockMvc.updateAppointmentOccurrence(1, request, mockPrincipal)
       .andDo { print() }
@@ -122,7 +122,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
         }
       }
 
-    verifyNoInteractions(appointmentOccurrenceService)
+    verifyNoInteractions(appointmentService)
   }
 
   @Test
@@ -132,7 +132,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentOccurrenceSearchService.searchAppointmentOccurrences("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentSearchService.searchAppointments("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response = mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
       .andDo { print() }

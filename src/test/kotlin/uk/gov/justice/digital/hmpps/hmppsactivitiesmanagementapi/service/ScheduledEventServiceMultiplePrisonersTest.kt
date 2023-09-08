@@ -243,17 +243,21 @@ class ScheduledEventServiceMultiplePrisonersTest {
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     categoryCode = categoryCode,
-    appointmentDescription = appointmentDescription,
+    customName = appointmentDescription,
     internalLocationId = internalLocationId,
+    customLocation = null,
     inCell = inCell,
+    onWing = false,
+    offWing = true,
     appointmentDate = appointmentDate,
     startTime = startTime,
     endTime = endTime,
-    comment = comment,
-    created = created,
+    unlockNotes = null,
+    extraInformation = comment,
+    createdTime = created,
     createdBy = createdBy,
     isCancelled = false,
-    updated = updated,
+    updatedTime = updated,
     updatedBy = updatedBy,
   )
 
@@ -577,9 +581,9 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
           assertThat(it.eventId).isNull()
-          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
+          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentOccurrenceId)
+          assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentId)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.internalLocationId).isEqualTo(101L)

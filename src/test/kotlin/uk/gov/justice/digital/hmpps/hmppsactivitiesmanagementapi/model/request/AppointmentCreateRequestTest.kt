@@ -7,8 +7,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeatPeriod
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -101,13 +101,13 @@ class AppointmentCreateRequestTest {
 
   @Test
   fun `repeat count must be supplied`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentRepeatPeriod.FORTNIGHTLY, count = null))
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentFrequency.FORTNIGHTLY, count = null))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
   }
 
   @Test
   fun `repeat count must be greater than 0`() {
-    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentRepeatPeriod.MONTHLY, count = 0))
+    val request = appointmentCreateRequest(repeat = AppointmentRepeat(period = AppointmentFrequency.MONTHLY, count = 0))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 

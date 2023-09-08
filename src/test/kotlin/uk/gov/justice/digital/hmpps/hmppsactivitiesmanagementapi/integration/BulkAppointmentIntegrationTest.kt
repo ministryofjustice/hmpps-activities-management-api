@@ -13,7 +13,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.BulkAppointmentsRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -77,7 +77,7 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(response.appointments[1].occurrences[0].allocations[0].id),
     )
 
-    verify(auditService).logEvent(any<BulkAppointmentCreatedEvent>())
+    verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
   }
 
   private fun verifyBulkAppointment(response: BulkAppointment) {

@@ -20,7 +20,7 @@ data class AppointmentRepeat(
     """,
     example = "WEEKLY",
   )
-  val period: AppointmentRepeatPeriod?,
+  val period: AppointmentFrequency?,
   @field:NotNull(message = "Repeat count must be supplied")
   @field:Min(value = 1, message = "Repeat count must be {value} or greater")
   @Schema(
