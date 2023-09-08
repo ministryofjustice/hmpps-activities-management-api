@@ -124,8 +124,6 @@ class DailyActivityMetricsService(
           incrementMetric(metricsMap, ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY)
         }
       }
-
-      // TODO attendanceUniqueActivitySessionCount
     }
   }
 
