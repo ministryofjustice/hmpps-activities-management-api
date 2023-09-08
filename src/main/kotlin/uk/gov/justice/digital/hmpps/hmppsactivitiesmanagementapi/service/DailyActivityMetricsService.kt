@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ATTENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_RECORDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_UNACCEPTABLE_ABSENCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_UNIQUE_ACTIVITY_SESSION_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -65,6 +66,10 @@ class DailyActivityMetricsService(
 
       val waitingLists = it.schedules().flatMap { schedule -> waitingListRepository.findByActivitySchedule(schedule) }
       generateWaitingListMetrics(metricsMap, waitingLists)
+
+      if (attendances.mapNotNull { attendance -> attendance.recordedBy }.isNotEmpty()) {
+        incrementMetric(metricsMap, ATTENDANCE_UNIQUE_ACTIVITY_SESSION_COUNT_METRIC_KEY)
+      }
     }
   }
 

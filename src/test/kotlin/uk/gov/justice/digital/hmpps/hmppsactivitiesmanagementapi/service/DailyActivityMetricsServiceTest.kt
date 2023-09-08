@@ -91,6 +91,7 @@ class DailyActivityMetricsServiceTest {
     assertThat(metricsMap[ACTIVITIES_ENDED_COUNT_METRIC_KEY]).isEqualTo(3.0)
     assertThat(metricsMap[ACTIVITIES_PENDING_COUNT_METRIC_KEY]).isEqualTo(2.0)
     assertThat(metricsMap[MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY]).isEqualTo(2.0)
+    assertThat(metricsMap[ATTENDANCE_UNIQUE_ACTIVITY_SESSION_COUNT_METRIC_KEY]).isEqualTo(6.0)
   }
 
   @Test

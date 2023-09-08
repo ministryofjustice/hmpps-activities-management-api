@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import kotlin.system.measureTimeMillis
 
 @Component
 class ActivityMetricsJob(
@@ -56,17 +57,23 @@ class ActivityMetricsJob(
   @Async("asyncExecutor")
   @Transactional
   fun execute() {
-    val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
-    val allActivityTiers = activityTierRepository.findAll()
-    val allActivityCategories = activityCategoryRepository.findAll()
+    log.info("Generating daily activities metrics")
 
-    allPrisonCodes.forEach { prisonCode ->
-      allActivityTiers.forEach { activityTier ->
-        allActivityCategories.forEach { activityCategory ->
-          sendActivitiesDailyStatsEvent(prisonCode, activityTier, activityCategory)
+    val elapsed = measureTimeMillis {
+      val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
+      val allActivityTiers = activityTierRepository.findAll()
+      val allActivityCategories = activityCategoryRepository.findAll()
+
+      allPrisonCodes.forEach { prisonCode ->
+        allActivityTiers.forEach { activityTier ->
+          allActivityCategories.forEach { activityCategory ->
+            sendActivitiesDailyStatsEvent(prisonCode, activityTier, activityCategory)
+          }
         }
       }
     }
+
+    log.info("Generating daily activities metrics took ${elapsed}ms")
   }
 
   private fun sendActivitiesDailyStatsEvent(
