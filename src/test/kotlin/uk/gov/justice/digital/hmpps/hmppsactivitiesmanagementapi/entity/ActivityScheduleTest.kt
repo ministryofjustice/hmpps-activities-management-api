@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
@@ -354,7 +356,12 @@ class ActivityScheduleTest {
   fun `can add two day slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY))
+    schedule.addSlot(
+      1,
+      LocalTime.MIDNIGHT,
+      LocalTime.MIDNIGHT.plusHours(1),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+    )
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -372,7 +379,7 @@ class ActivityScheduleTest {
   fun `can add entire week slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.values().toSet())
+    schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.entries.toSet())
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -972,7 +979,8 @@ class ActivityScheduleTest {
 
   @Test
   fun `slot removed on update`() {
-    val schedule = activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
+    val schedule =
+      activitySchedule(activity = activityEntity(startDate = yesterday, endDate = tomorrow), noSlots = true)
 
     assertThat(schedule.slots()).isEmpty()
 
