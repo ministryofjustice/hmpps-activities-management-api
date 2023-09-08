@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
@@ -186,7 +186,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = AppointmentOccurrenceSearchResult::class)),
+            array = ArraySchema(schema = Schema(implementation = AppointmentSearchResult::class)),
           ),
         ],
       ),
@@ -224,5 +224,5 @@ class AppointmentOccurrenceController(
     )
     request: AppointmentSearchRequest,
     principal: Principal,
-  ): List<AppointmentOccurrenceSearchResult> = appointmentSearchService.searchAppointments(prisonCode, request, principal)
+  ): List<AppointmentSearchResult> = appointmentSearchService.searchAppointments(prisonCode, request, principal)
 }

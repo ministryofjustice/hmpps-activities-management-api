@@ -12,26 +12,25 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Summary search result details of a specific appointment occurrence found via search. Will contain copies of the parent
-  appointment's properties unless they have been changed on this appointment occurrence. Contains properties needed to
+  Summary search result details of a specific appointment found via search. Contains properties needed to
   make additional API calls and to populate a table of search results.
   """,
 )
-data class AppointmentOccurrenceSearchResult(
+data class AppointmentSearchResult(
   @Schema(
-    description = "The internally generated identifier for the parent appointment",
+    description = "The internally generated identifier for the appointment series",
     example = "12345",
+  )
+  val appointmentSeriesId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for this appointment",
+    example = "123456",
   )
   val appointmentId: Long,
 
   @Schema(
-    description = "The internally generated identifier for this appointment occurrence",
-    example = "123456",
-  )
-  val appointmentOccurrenceId: Long,
-
-  @Schema(
-    description = "The parent appointment's type (INDIVIDUAL or GROUP)",
+    description = "The type of the appointment series (INDIVIDUAL or GROUP)",
     example = "INDIVIDUAL",
   )
   val appointmentType: AppointmentType,
@@ -40,7 +39,6 @@ data class AppointmentOccurrenceSearchResult(
     description =
     """
     The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
     """,
     example = "SKI",
   )
@@ -49,7 +47,8 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
-    The appointment name
+    The appointment name combining the optional custom name with the category description. If custom name has been
+    specified, the name format will be "Custom name (Category description)" 
     """,
   )
   val appointmentName: String,
@@ -57,17 +56,17 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
-    The prisoner or prisoners attending this appointment occurrence. Appointments of type INDIVIDUAL will have one
-    prisoner allocated to each appointment occurrence. Appointments of type GROUP can have more than one prisoner
-    allocated to each appointment occurrence
+    The prisoner or prisoners attending this appointment. Appointments of type INDIVIDUAL will have one
+    prisoner attending to each appointment. Appointments of type GROUP can have more than one prisoner
+    attending each appointment
     """,
   )
-  val allocations: List<AppointmentOccurrenceAllocation> = emptyList(),
+  val attendees: List<AppointmentOccurrenceAllocation> = emptyList(),
 
   @Schema(
     description =
     """
-    The summary of the parent appointment's category
+    The summary of the category of this appointment
     """,
   )
   val category: AppointmentCategorySummary,
@@ -75,17 +74,17 @@ data class AppointmentOccurrenceSearchResult(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text name further describing the appointment. Will be used to create the appointment name using the
+    format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
     """
-    The summary of the internal location this appointment occurrence will take place. Can be different to the parent
-    appointment if this occurrence has been edited.
+    The summary of the internal location this appointment will take place.
     Will be null if in cell = true
     """,
   )
@@ -102,20 +101,20 @@ data class AppointmentOccurrenceSearchResult(
   val inCell: Boolean,
 
   @Schema(
-    description = "The date this appointment occurrence is taking place on",
+    description = "The date this appointment is taking place on",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
-    description = "The starting time of this appointment occurrence",
+    description = "The starting time of this appointment",
     example = "13:00",
   )
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
-    description = "The end time of this appointment occurrence",
+    description = "The end time of this appointment",
     example = "13:30",
   )
   @JsonFormat(pattern = "HH:mm")
@@ -123,37 +122,37 @@ data class AppointmentOccurrenceSearchResult(
 
   @Schema(
     description =
-    "Indicates whether the parent appointment was specified to repeat",
+    "Indicates whether the appointment series was specified to repeat via its schedule",
     example = "false",
   )
   val isRepeat: Boolean,
 
   @Schema(
-    description = "The sequence number of this appointment occurrence within the recurring appointment series",
+    description = "The sequence number of this appointment within the appointment series",
     example = "3",
   )
   val sequenceNumber: Int,
 
   @Schema(
-    description = "The sequence number of the final appointment occurrence within the recurring appointment series",
+    description = "The sequence number of the final appointment within the appointment series",
     example = "6",
   )
   val maxSequenceNumber: Int,
 
   @Schema(
-    description = "Indicates whether this appointment occurrence has been changed from its original state",
+    description = "Indicates whether this appointment has been changed from its original state",
     example = "false",
   )
   val isEdited: Boolean,
 
   @Schema(
-    description = "Indicates whether this appointment occurrence has been cancelled",
+    description = "Indicates whether this appointment has been cancelled",
     example = "false",
   )
   val isCancelled: Boolean,
 
   @Schema(
-    description = "Indicates whether this appointment occurrence has expired",
+    description = "Indicates whether this appointment has expired",
     example = "false",
   )
   val isExpired: Boolean,

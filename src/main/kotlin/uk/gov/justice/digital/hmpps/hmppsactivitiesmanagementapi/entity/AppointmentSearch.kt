@@ -9,7 +9,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -73,13 +73,13 @@ data class AppointmentSearch(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ) = AppointmentOccurrenceSearchResult(
+  ) = AppointmentSearchResult(
     appointmentSeriesId,
     appointmentId,
     appointmentType,
     prisonCode,
     referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    allocations = attendees.toModel(),
+    attendees = attendees.toModel(),
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
     customName,
     if (inCell) {

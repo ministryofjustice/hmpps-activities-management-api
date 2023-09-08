@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -280,7 +280,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
-    val appointments = appointmentSeriesRepository.findAllById(results.map { it.appointmentId })
+    val appointments = appointmentSeriesRepository.findAllById(results.map { it.appointmentSeriesId })
 
     assertThat(appointments.map { it.createdBy }.distinct().single()).isEqualTo(request.createdBy)
   }
@@ -308,7 +308,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
 
     results.forEach {
-      assertThat(it.allocations.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
+      assertThat(it.attendees.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
     }
   }
 
@@ -372,6 +372,6 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isAccepted
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentOccurrenceSearchResult::class.java)
+      .expectBodyList(AppointmentSearchResult::class.java)
       .returnResult().responseBody
 }
