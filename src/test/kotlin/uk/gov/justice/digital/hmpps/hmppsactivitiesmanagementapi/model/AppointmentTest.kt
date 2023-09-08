@@ -23,26 +23,26 @@ class AppointmentTest : ModelTest() {
     val expectedCreatedTime = "2023-01-31T09:01:02"
     val expectedUpdatedTime = "2023-02-01T10:02:03"
 
-    val appointment = Appointment(
+    val appointmentSeries = AppointmentSeries(
       id = 1,
       appointmentType = AppointmentType.INDIVIDUAL,
       prisonCode = "PVI",
       categoryCode = "C11",
-      appointmentDescription = "Appointment description",
+      customName = "Appointment description",
       internalLocationId = null,
       inCell = true,
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
-      repeat = null,
-      comment = "Blah",
-      created = originalCreatedTime,
+      schedule = null,
+      extraInformation = "Blah",
+      createdTime = originalCreatedTime,
       createdBy = "A. Jones",
-      updated = originalUpdatedTime,
+      updatedTime = originalUpdatedTime,
       updatedBy = "A.Jones",
     )
 
-    val json = objectMapper.writeValueAsString(appointment)
+    val json = objectMapper.writeValueAsString(appointmentSeries)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
     assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)

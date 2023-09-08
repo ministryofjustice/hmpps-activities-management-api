@@ -10,9 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as BulkAppointmentModel
 
 class AppointmentSetTest {
   @Test
@@ -36,7 +36,7 @@ class AppointmentSetTest {
   @Test
   fun `entity to summary mapping`() {
     val entity = appointmentSetEntity()
-    assertThat(entity.toSummary()).isEqualTo(BulkAppointmentSummary(1, 3))
+    assertThat(entity.toSummary()).isEqualTo(AppointmentSetSummary(1, 3))
   }
 
   @Test

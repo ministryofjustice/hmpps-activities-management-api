@@ -13,19 +13,15 @@ import java.time.LocalDateTime
   The properties at this level cannot be changed via the API.
   """,
 )
-data class BulkAppointmentDetails(
+data class AppointmentSetDetails(
   @Schema(
-    description = "The internally generated identifier for this set of appointments",
+    description = "The internally generated identifier for this appointment set",
     example = "12345",
   )
   val id: Long,
 
   @Schema(
-    description =
-    """
-    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
-    """,
+    description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
     example = "SKI",
   )
   val prisonCode: String,
@@ -33,7 +29,8 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
-    The appointment name
+    The appointment set's name combining the optional custom name with the category description. If custom name has been
+    specified, the name format will be "Custom name (Category description)" 
     """,
   )
   val appointmentName: String,
@@ -41,7 +38,7 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the category used to create the set of appointments in bulk
+    The summary of the category used to create the set of appointment series
     """,
   )
   val category: AppointmentCategorySummary,
@@ -49,16 +46,17 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
-    Free text description used to create the set of appointments in bulk. This is used to add more context to the appointment category.
+    Free text name further describing the appointment set. Used as part of the appointment name with the
+    format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
     """
-    The summary of the internal location used to create the set of appointments in bulk. Will be null if in cell = true
+    The summary of the internal location of the appointment series in the set. Will be null if in cell = true
     """,
   )
   val internalLocation: AppointmentLocationSummary?,
@@ -66,26 +64,26 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
-    Flag to indicate if the location used to create the set of appointments in bulk was in cell rather than an internal prison location.
-    Internal location will be null if in cell = true
+    Flag to indicate if the location of the appointment series in the set is in cell rather than an internal prison location.
+    Internal location id should be null if in cell = true
     """,
     example = "false",
   )
   val inCell: Boolean,
 
   @Schema(
-    description = "The date used to create the set of appointments in bulk",
+    description = "The date of the first appointment in each appointment series in the set",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
-    description = "The details of the set of appointment occurrences created in bulk",
+    description = "The details of all the appointments within the appointment series that make up the set",
   )
-  val occurrences: List<AppointmentOccurrenceDetails>,
+  val occurrences: List<AppointmentDetails>,
 
   @Schema(
-    description = "The date and time this set of appointments was created in bulk. Will not change",
+    description = "The date and time this appointment set was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val created: LocalDateTime,
@@ -93,7 +91,7 @@ data class BulkAppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the user that created this set of appointments in bulk
+    The summary of the user that created this appointment set
     """,
   )
   val createdBy: UserSummary,

@@ -10,9 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -77,7 +77,7 @@ class AppointmentSeriesService(
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
   @Transactional(readOnly = true)
-  fun getAppointmentSeriesById(appointmentSeriesId: Long): Appointment {
+  fun getAppointmentSeriesById(appointmentSeriesId: Long): AppointmentSeries {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId).toModel()
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
@@ -85,7 +85,7 @@ class AppointmentSeriesService(
   }
 
   // TODO: Create AppointmentSetService and move this function
-  fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): BulkAppointment {
+  fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSet {
     val startTime = System.currentTimeMillis()
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
@@ -129,7 +129,7 @@ class AppointmentSeriesService(
     }
   }
 
-  fun createAppointmentSeries(request: AppointmentSeriesCreateRequest, principal: Principal): Appointment {
+  fun createAppointmentSeries(request: AppointmentSeriesCreateRequest, principal: Principal): AppointmentSeries {
     val startTime = System.currentTimeMillis()
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
@@ -170,7 +170,7 @@ class AppointmentSeriesService(
     }
   }
 
-  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): Appointment {
+  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): AppointmentSeries {
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
     val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())
     return buildValidAppointmentSeriesEntity(
@@ -329,13 +329,13 @@ class AppointmentSeriesService(
       .filter { prisoner -> prisoner.prisonId == prisonCode }
       .associate { it.prisonerNumber to it.bookingId }
 
-  private fun logAppointmentSeriesCreatedMetric(principal: Principal, request: AppointmentSeriesCreateRequest, appointmentSeries: Appointment, startTimeInMs: Long) {
+  private fun logAppointmentSeriesCreatedMetric(principal: Principal, request: AppointmentSeriesCreateRequest, appointmentSeries: AppointmentSeries, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to appointmentSeries.prisonCode,
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeries.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointmentSeries.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSeries.appointmentDescription?.isNotEmpty()).toString(),
+      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSeries.customName?.isNotEmpty()).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSeries.internalLocationId.toString(),
       START_DATE_PROPERTY_KEY to appointmentSeries.startDate.toString(),
       START_TIME_PROPERTY_KEY to appointmentSeries.startTime.toString(),
@@ -343,71 +343,71 @@ class AppointmentSeriesService(
       IS_REPEAT_PROPERTY_KEY to (request.schedule != null).toString(),
       REPEAT_PERIOD_PROPERTY_KEY to (request.schedule?.frequency?.toString() ?: ""),
       REPEAT_COUNT_PROPERTY_KEY to (request.schedule?.count?.toString() ?: ""),
-      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointmentSeries.comment?.isNotEmpty() == true).toString(),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointmentSeries.extraInformation?.isNotEmpty() == true).toString(),
     )
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.count ?: 1)).toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSeries.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.comment?.length ?: 0).toDouble(),
+      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSeries.customName?.length ?: 0).toDouble(),
+      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.extraInformation?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value, propertiesMap, metricsMap)
   }
 
-  private fun logAppointmentSetCreatedMetric(principal: Principal, appointmentSet: BulkAppointment, startTimeInMs: Long) {
+  private fun logAppointmentSetCreatedMetric(principal: Principal, appointmentSet: AppointmentSet, startTimeInMs: Long) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to appointmentSet.prisonCode,
       APPOINTMENT_SET_ID_PROPERTY_KEY to appointmentSet.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointmentSet.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSet.appointmentDescription != null).toString(),
+      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSet.customName != null).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSet.internalLocationId.toString(),
       START_DATE_PROPERTY_KEY to appointmentSet.startDate.toString(),
-      EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointments.minOf { it.startTime }.toString(),
-      LATEST_END_TIME_PROPERTY_KEY to appointmentSet.appointments.mapNotNull { it.endTime }.maxOf { it }.toString(),
+      EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointmentSeries.minOf { it.startTime }.toString(),
+      LATEST_END_TIME_PROPERTY_KEY to appointmentSet.appointmentSeries.mapNotNull { it.endTime }.maxOf { it }.toString(),
     )
 
     val metricsMap = mapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointments.flatMap { it.occurrences.flatMap { appointment -> appointment.allocations } }.size.toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSet.appointmentDescription?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointments.filterNot { it.comment.isNullOrEmpty() }.size.toDouble(),
+      APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.size.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.flatMap { it.appointments.flatMap { appointment -> appointment.allocations } }.size.toDouble(),
+      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
+      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
   }
 
-  private fun writeAppointmentCreatedAuditRecord(request: AppointmentSeriesCreateRequest, appointment: Appointment) {
+  private fun writeAppointmentCreatedAuditRecord(request: AppointmentSeriesCreateRequest, appointmentSeries: AppointmentSeries) {
     auditService.logEvent(
       AppointmentSeriesCreatedEvent(
-        appointmentSeriesId = appointment.id,
-        prisonCode = appointment.prisonCode,
-        categoryCode = appointment.categoryCode,
-        hasCustomName = appointment.appointmentDescription != null,
-        internalLocationId = appointment.internalLocationId,
-        startDate = appointment.startDate,
-        startTime = appointment.startTime,
-        endTime = appointment.endTime,
+        appointmentSeriesId = appointmentSeries.id,
+        prisonCode = appointmentSeries.prisonCode,
+        categoryCode = appointmentSeries.categoryCode,
+        hasCustomName = appointmentSeries.customName != null,
+        internalLocationId = appointmentSeries.internalLocationId,
+        startDate = appointmentSeries.startDate,
+        startTime = appointmentSeries.startTime,
+        endTime = appointmentSeries.endTime,
         isRepeat = request.schedule != null,
         frequency = request.schedule?.frequency,
         numberOfAppointments = request.schedule?.count,
-        hasExtraInformation = appointment.comment?.isNotEmpty() == true,
+        hasExtraInformation = appointmentSeries.extraInformation?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
         createdTime = LocalDateTime.now(),
       ),
     )
   }
-  private fun writeAppointmentSetCreatedAuditRecord(request: AppointmentSetCreateRequest, appointment: BulkAppointment) {
+  private fun writeAppointmentSetCreatedAuditRecord(request: AppointmentSetCreateRequest, appointment: AppointmentSet) {
     auditService.logEvent(
       AppointmentSetCreatedEvent(
         appointmentSetId = appointment.id,
         prisonCode = appointment.prisonCode,
         categoryCode = appointment.categoryCode,
-        hasCustomName = appointment.appointmentDescription != null,
+        hasCustomName = appointment.customName != null,
         internalLocationId = appointment.internalLocationId,
         startDate = appointment.startDate,
         prisonerNumbers = request.appointments.map { it.prisonerNumber },

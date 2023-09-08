@@ -90,8 +90,8 @@ class AppointmentCancelDomainServiceTest {
         startTimeInMs,
       )
 
-      response.occurrences.filter { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo true
-      response.occurrences.filterNot { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo false
+      response.appointments.filter { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo true
+      response.appointments.filterNot { ids.contains(it.id) }.map { it.isCancelled() }.distinct().single() isEqualTo false
 
       verify(service).cancelAppointments(
         appointmentSeries,
@@ -156,8 +156,8 @@ class AppointmentCancelDomainServiceTest {
         startTimeInMs,
       )
 
-      response.occurrences.filter { ids.contains(it.id) } hasSize 0
-      response.occurrences.filterNot { ids.contains(it.id) } hasSize 1
+      response.appointments.filter { ids.contains(it.id) } hasSize 0
+      response.appointments.filterNot { ids.contains(it.id) } hasSize 1
 
       verify(service).cancelAppointments(
         appointmentSeries,

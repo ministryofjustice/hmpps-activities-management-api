@@ -18,9 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
@@ -160,7 +160,7 @@ class AppointmentTest {
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     assertThat(entity.toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
-      AppointmentOccurrenceSummary(
+      AppointmentSummary(
         entity.appointmentId,
         1,
         "Appointment description (Test Category)",
@@ -174,7 +174,7 @@ class AppointmentTest {
         "Appointment level comment",
         isEdited = true,
         isCancelled = false,
-        updated = entity.updatedTime,
+        updatedTime = entity.updatedTime,
         updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
@@ -188,7 +188,7 @@ class AppointmentTest {
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     assertThat(listOf(entity).toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
-        AppointmentOccurrenceSummary(
+        AppointmentSummary(
           entity.appointmentId,
           1,
           "Appointment description (Test Category)",
@@ -319,7 +319,7 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(1, 3))
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointmentSet).isEqualTo(AppointmentSetSummary(1, 3))
   }
 
   @Test
@@ -556,7 +556,7 @@ class AppointmentTest {
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isTrue
-      assertThat(cancelled).isEqualTo(entity.cancelledTime)
+      assertThat(cancelledTime).isEqualTo(entity.cancelledTime)
       assertThat(cancelledBy).isNotNull
       assertThat(cancelledBy!!.id).isEqualTo(3)
       assertThat(cancelledBy!!.username).isEqualTo("CANCEL.USER")
@@ -589,7 +589,7 @@ class AppointmentTest {
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isFalse
-      assertThat(cancelled).isNull()
+      assertThat(cancelledTime).isNull()
       assertThat(cancelledBy).isNull()
     }
   }
@@ -615,7 +615,7 @@ class AppointmentTest {
       ),
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      assertThat(repeat).isEqualTo(AppointmentSchedule(AppointmentFrequency.WEEKLY, 4))
+      assertThat(schedule).isEqualTo(AppointmentSchedule(AppointmentFrequency.WEEKLY, 4))
     }
   }
 

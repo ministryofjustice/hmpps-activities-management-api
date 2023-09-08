@@ -113,8 +113,8 @@ data class AppointmentSeriesCreateRequest(
   @Schema(
     description =
     """
-    Describes the schedule of the appointment i.e. how the appointments in the series will repeat. The frequency of
-    those appointments and how many appointments there will be in total in the series.
+    Describes the schedule of the appointment series i.e. how the appointments in the series will repeat. The frequency
+    of those appointments and how many appointments there will be in total in the series.
     Will create a single appointment if not supplied.
     """,
   )

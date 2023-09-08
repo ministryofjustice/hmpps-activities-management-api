@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesDetailsService
 
 @RestController
@@ -35,7 +35,7 @@ class AppointmentDetailsController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentDetails::class),
+            schema = Schema(implementation = AppointmentSeriesDetails::class),
           ),
         ],
       ),
@@ -63,6 +63,6 @@ class AppointmentDetailsController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetails =
+  fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentSeriesDetails =
     appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(appointmentId)
 }

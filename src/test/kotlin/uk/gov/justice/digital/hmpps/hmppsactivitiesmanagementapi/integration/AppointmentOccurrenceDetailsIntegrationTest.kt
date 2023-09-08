@@ -8,9 +8,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -74,7 +74,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(2)!!
 
     assertThat(appointmentOccurrenceDetails).isEqualTo(
-      AppointmentOccurrenceDetails(
+      AppointmentDetails(
         2,
         1,
         null,
@@ -97,7 +97,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         false,
         false,
         false,
-        appointmentOccurrenceDetails.created,
+        appointmentOccurrenceDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
         null,
@@ -106,7 +106,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentOccurrenceDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Sql(
@@ -125,10 +125,10 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(6)!!
 
     assertThat(appointmentOccurrenceDetails).isEqualTo(
-      AppointmentOccurrenceDetails(
+      AppointmentDetails(
         6,
         6,
-        BulkAppointmentSummary(6, 3),
+        AppointmentSetSummary(6, 3),
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
@@ -148,7 +148,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         false,
         false,
         false,
-        appointmentOccurrenceDetails.created,
+        appointmentOccurrenceDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
         null,
@@ -157,7 +157,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointmentOccurrenceDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentOccurrenceDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   private fun WebTestClient.getAppointmentOccurrenceDetailsById(id: Long) =
@@ -167,6 +167,6 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentOccurrenceDetails::class.java)
+      .expectBody(AppointmentDetails::class.java)
       .returnResult().responseBody
 }

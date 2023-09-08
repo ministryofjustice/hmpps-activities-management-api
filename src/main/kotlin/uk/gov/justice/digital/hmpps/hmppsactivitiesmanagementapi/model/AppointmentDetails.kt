@@ -10,24 +10,29 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Described on the UI as an "Appointment series" and only shown for repeat appointments.
-  The top level of the standard appointment hierarchy containing full details of the initial property values common to
-  all appointment occurrences in the series for display purposes.
-  Contains the summary collection of all the child appointment occurrences in the series plus the repeat definition if
-  the appointment repeats.
-  The properties at this level cannot be changed via the API however the child occurrence property values can be changed
-  independently to support rescheduling, cancelling and altered attendee lists per occurrence.
-  N.B. there is no collection of allocated prisoners at this top level as all allocations are per occurrence. This is to
-  support attendee modification for each scheduled occurrence and to prevent altering the past by editing allocations
-  in an appointment series where some occurrences have past.
+  Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
+  Contains the full details of all the appointment properties, any properties specified by the parent
+  appointment series and the summary collection of prisoners attending this appointment.
+  All updates and cancellations happen at this appointment level with the parent appointment series being immutable.
   """,
 )
 data class AppointmentDetails(
   @Schema(
     description = "The internally generated identifier for this appointment",
-    example = "12345",
+    example = "123456",
   )
   val id: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the parent appointment series",
+    example = "12345",
+  )
+  val appointmentId: Long,
+
+  @Schema(
+    description = "Summary of the appointment set the parent appointment series is part of",
+  )
+  val appointmentSet: AppointmentSetSummary?,
 
   @Schema(
     description = "The appointment type (INDIVIDUAL or GROUP)",
@@ -36,11 +41,13 @@ data class AppointmentDetails(
   val appointmentType: AppointmentType,
 
   @Schema(
-    description =
-    """
-    The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.
-    Note, this property does not exist on the appointment occurrences and is therefore consistent across all occurrences
-    """,
+    description = "The sequence number of this appointment within the appointment series",
+    example = "3",
+  )
+  val sequenceNumber: Int,
+
+  @Schema(
+    description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
     example = "SKI",
   )
   val prisonCode: String,
@@ -48,7 +55,8 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The appointment name
+    The appointment's name combining the optional custom name with the category description. If custom name has been
+    specified, the name format will be "Custom name (Category description)" 
     """,
   )
   val appointmentName: String,
@@ -56,10 +64,8 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Summary of the prisoner or prisoners allocated to the first future occurrence (or most recent past occurrence if all
-    occurrences are in the past) of this appointment. Prisoners are allocated at the occurrence level to allow for per
-    occurrence allocation changes. The occurrence summary does not contain any information on the allocated prisoners
-    as the expected usage is to show a summary of the occurrences then a link to display the full occurrence details.
+    Summary of the prisoner or prisoners attending this appointment. Attendees are at the appointment level to allow
+    for per appointment attendee changes.
     """,
   )
   val prisoners: List<PrisonerSummary> = emptyList(),
@@ -67,7 +73,8 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the appointment's category
+    The summary of the appointment's category. Can be different to the parent appointment series if this appointment
+    has been edited.
     """,
   )
   val category: AppointmentCategorySummary,
@@ -75,16 +82,19 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Free text description for an appointment. This is used to add more context to the appointment category.
+    Free text name further describing the appointment. Used as part of the appointment name with the
+    format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
     """
-    The summary of the internal location this appointment will take place. Will be null if in cell = true
+    The summary of the internal location this appointment will take place. Can be different to the parent
+    appointment series if this appointment has been edited.
+    Will be null if in cell = true
     """,
   )
   val internalLocation: AppointmentLocationSummary?,
@@ -100,21 +110,21 @@ data class AppointmentDetails(
   val inCell: Boolean,
 
   @Schema(
-    description = "The date of the appointment or first appointment occurrence in the series",
+    description = "The date this appointment is taking place on",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
-    description = "The starting time of the appointment or first appointment occurrence in the series",
-    example = "09:00",
+    description = "The starting time of this appointment",
+    example = "13:00",
   )
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(
-    description = "The end time of the appointment or first appointment occurrence in the series",
-    example = "10:30",
+    description = "The end time of this appointment",
+    example = "13:30",
   )
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
@@ -122,27 +132,58 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Describes how an appointment was specified to repeat if at all. The period or frequency of the occurrences and how
-    many occurrences there are in total in the series. Note that the presence of this property does not mean there is
-    always more than one occurrence as a repeat count of one is valid.
+    Extra information for the prisoner or prisoners attending this appointment.
+    Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
+    extra information via the unlock list.
     """,
+    example = "This appointment will help adjusting to life outside of prison",
   )
-  val repeat: AppointmentSchedule?,
+  val extraInformation: String?,
 
   @Schema(
     description =
     """
-    Notes relating to the appointment
+    Describes the schedule of the parent appointment series i.e. how the appointments in the series repeat. The frequency of
+    those appointments and how many appointments there are in total in the series.
+    If null, the appointment series has only one appointment. Note that the presence of this property does not mean
+    there is more than one appointment as a number of appointments value of one is valid.
     """,
-    example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String?,
+  val schedule: AppointmentSchedule?,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been independently changed from the original state it was in when
+    it was created as part of an appointment series
+    """,
+    example = "false",
+  )
+  val isEdited: Boolean,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been cancelled
+    """,
+    example = "false",
+  )
+  val isCancelled: Boolean,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has expired i.e. it's start date and time is in the past
+    """,
+    example = "false",
+  )
+  val isExpired: Boolean,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val created: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   @Schema(
     description =
@@ -155,16 +196,18 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The date and time one or more occurrences of this appointment was last changed.
+    The date and time this appointment was last changed.
+    Will be null if this appointment has not been altered since it was created
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val updated: LocalDateTime?,
+  val updatedTime: LocalDateTime?,
 
   @Schema(
     description =
     """
-    The summary of the user that last edited one or more occurrences of this appointment.
+    The summary of the user that last edited this appointment.
+    Will be null if this appointment has not been altered since it was created
     """,
   )
   val updatedBy: UserSummary?,
@@ -172,15 +215,19 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Summary of the individual occurrence or occurrences of this appointment. Non recurring appointments will have a single
-    appointment occurrence containing the same property values as the parent appointment. The same start date, time
-    and end time. Recurring appointments will have a series of occurrences. The first in the series will also
-    contain the same property values as the parent appointment and subsequent occurrences will have start dates
-    following on from the original start date incremented as specified by the appointment's schedule. Each occurrence
-    can be edited independently of the parent. All properties of an occurrence override those of the parent appointment
-    with a null coalesce back to the parent for nullable properties. The full series of occurrences specified by the
-    schedule will be created in advance.
+    The date and time this appointment was cancelled.
+    Will be null if this appointment has not been cancelled
     """,
   )
-  val occurrences: List<AppointmentOccurrenceSummary> = emptyList(),
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val cancelledTime: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The summary of the user who cancelled this appointment.
+    Will be null if this appointment has not been cancelled
+    """,
+  )
+  val cancelledBy: UserSummary?,
 )

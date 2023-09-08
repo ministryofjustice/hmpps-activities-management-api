@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
@@ -43,7 +43,7 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
+            schema = Schema(implementation = AppointmentSeries::class),
           ),
         ],
       ),
@@ -71,7 +71,7 @@ class AppointmentController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
+  fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): AppointmentSeries =
     appointmentSeriesService.getAppointmentSeriesById(appointmentId)
 
   @ResponseStatus(HttpStatus.CREATED)
@@ -91,7 +91,7 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
+            schema = Schema(implementation = AppointmentSeries::class),
           ),
         ],
       ),
@@ -128,5 +128,5 @@ class AppointmentController(
       required = true,
     )
     request: AppointmentSeriesCreateRequest,
-  ): Appointment = appointmentSeriesService.createAppointmentSeries(request, principal)
+  ): AppointmentSeries = appointmentSeriesService.createAppointmentSeries(request, principal)
 }

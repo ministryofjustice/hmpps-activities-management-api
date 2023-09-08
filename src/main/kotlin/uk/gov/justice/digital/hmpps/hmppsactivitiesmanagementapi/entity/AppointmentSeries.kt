@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentModel
 
 @Entity
 @Table(name = "appointment_series")
@@ -160,19 +160,19 @@ data class AppointmentSeries(
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = customName,
+    customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    repeat = schedule?.toRepeat(),
-    comment = extraInformation,
-    created = createdTime,
+    schedule = schedule?.toRepeat(),
+    extraInformation = extraInformation,
+    createdTime = createdTime,
     createdBy = createdBy,
-    updated = updatedTime,
+    updatedTime = updatedTime,
     updatedBy = updatedBy,
-    occurrences = appointments().toModel(),
+    appointments = appointments().toModel(),
   )
 
   fun toDetails(
@@ -181,7 +181,7 @@ data class AppointmentSeries(
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
-    AppointmentDetails(
+    AppointmentSeriesDetails(
       appointmentSeriesId,
       appointmentType,
       prisonCode,

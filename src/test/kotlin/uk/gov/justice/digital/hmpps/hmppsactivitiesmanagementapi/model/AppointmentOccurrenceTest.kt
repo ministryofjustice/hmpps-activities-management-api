@@ -19,22 +19,22 @@ class AppointmentOccurrenceTest : ModelTest() {
     val expectedEndTime = "11:22"
     val expectedUpdatedTime = "2023-02-01T10:02:03"
 
-    val appointmentOccurrence = AppointmentOccurrence(
+    val appointment = Appointment(
       id = 1,
       sequenceNumber = 1,
       categoryCode = "AC1",
-      appointmentDescription = null,
+      customName = null,
       internalLocationId = null,
-      comment = "Blah",
+      extraInformation = "Blah",
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
       inCell = true,
       updatedBy = "A.Jones",
-      updated = originalUpdatedTime,
+      updatedTime = originalUpdatedTime,
     )
 
-    val json = objectMapper.writeValueAsString(appointmentOccurrence)
+    val json = objectMapper.writeValueAsString(appointment)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
     assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)

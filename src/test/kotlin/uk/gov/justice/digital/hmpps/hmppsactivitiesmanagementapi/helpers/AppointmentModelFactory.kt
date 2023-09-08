@@ -2,17 +2,17 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -28,7 +28,7 @@ fun appointmentCategorySummary() =
   AppointmentCategorySummary("TEST", "Test Category")
 
 fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
-  Appointment(
+  AppointmentSeries(
     1,
     AppointmentType.INDIVIDUAL,
     "TPR",
@@ -45,14 +45,14 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     "CREATE.USER",
     updated,
     "UPDATE.USER",
-    occurrences = listOf(appointmentOccurrenceModel(occurrenceUpdated)),
+    appointments = listOf(appointmentOccurrenceModel(occurrenceUpdated)),
   )
 
 fun appointmentOccurrenceAllocationModel() =
-  AppointmentOccurrenceAllocation(1, "A1234BC", 456)
+  AppointmentAttendee(1, "A1234BC", 456)
 
 fun appointmentOccurrenceModel(updated: LocalDateTime?) =
-  AppointmentOccurrence(
+  Appointment(
     1,
     1,
     "TEST",
@@ -194,7 +194,7 @@ fun appointmentDetails(
   created: LocalDateTime = LocalDateTime.now(),
   updated: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-) = AppointmentDetails(
+) = AppointmentSeriesDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
@@ -215,8 +215,8 @@ fun appointmentDetails(
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   updated,
   updatedBy,
-  occurrences = listOf(
-    AppointmentOccurrenceSummary(
+  appointments = listOf(
+    AppointmentSummary(
       1,
       1,
       if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
@@ -239,7 +239,7 @@ fun appointmentDetails(
 fun appointmentOccurrenceDetails(
   appointmentOccurrenceId: Long = 1,
   appointmentId: Long = 2,
-  bulkAppointmentSummary: BulkAppointmentSummary? = null,
+  appointmentSetSummary: AppointmentSetSummary? = null,
   sequenceNumber: Int = 3,
   prisoners: List<PrisonerSummary> = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
@@ -253,10 +253,10 @@ fun appointmentOccurrenceDetails(
   createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   updated: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-) = AppointmentOccurrenceDetails(
+) = AppointmentDetails(
   appointmentOccurrenceId,
   appointmentId,
-  bulkAppointmentSummary,
+  appointmentSetSummary,
   AppointmentType.INDIVIDUAL,
   sequenceNumber,
   "TPR",
@@ -309,7 +309,7 @@ fun bulkAppointmentDetails(
   category: AppointmentCategorySummary = appointmentCategorySummary(),
   appointmentDescription: String? = null,
   created: LocalDateTime = LocalDateTime.now(),
-) = BulkAppointmentDetails(
+) = AppointmentSetDetails(
   bulkAppointmentId,
   "TPR",
   appointmentName = if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
@@ -320,7 +320,7 @@ fun bulkAppointmentDetails(
   LocalDate.now().plusDays(1),
   occurrences = listOf(
     appointmentOccurrenceDetails(
-      1, 1, BulkAppointmentSummary(1, 3), 1,
+      1, 1, AppointmentSetSummary(1, 3), 1,
       listOf(
         PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
       ),
@@ -329,7 +329,7 @@ fun bulkAppointmentDetails(
       LocalTime.of(10, 30), created = created, updated = null, updatedBy = null,
     ),
     appointmentOccurrenceDetails(
-      2, 2, BulkAppointmentSummary(1, 3), 1,
+      2, 2, AppointmentSetSummary(1, 3), 1,
       listOf(
         PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
       ),
@@ -338,7 +338,7 @@ fun bulkAppointmentDetails(
       LocalTime.of(11, 0), created = created, updated = null, updatedBy = null,
     ),
     appointmentOccurrenceDetails(
-      3, 3, BulkAppointmentSummary(1, 3), 1,
+      3, 3, AppointmentSetSummary(1, 3), 1,
       listOf(
         PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
       ),

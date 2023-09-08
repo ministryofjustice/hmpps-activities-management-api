@@ -16,10 +16,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -64,7 +64,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointment = webTestClient.getAppointmentById(1)!!
 
     assertThat(appointment).isEqualTo(
-      Appointment(
+      AppointmentSeries(
         1,
         AppointmentType.INDIVIDUAL,
         "TPR",
@@ -77,12 +77,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         LocalTime.of(10, 30),
         null,
         "Appointment series level comment",
-        appointment.created,
+        appointment.createdTime,
         "TEST.USER",
         null,
         null,
-        occurrences = listOf(
-          AppointmentOccurrence(
+        appointments = listOf(
+          Appointment(
             2,
             1,
             "AC1",
@@ -99,7 +99,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             allocations = listOf(
-              AppointmentOccurrenceAllocation(
+              AppointmentAttendee(
                 3,
                 "A1234BC",
                 456,
@@ -110,7 +110,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Test
@@ -150,7 +150,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
 
     assertSingleAppointmentSinglePrisoner(appointment, request)
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
@@ -195,7 +195,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
 
     assertSingleAppointmentTwoPrisoner(appointment, request)
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
@@ -233,9 +233,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
 
-    assertThat(appointment.occurrences).hasSize(3)
+    assertThat(appointment.appointments).hasSize(3)
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
@@ -278,9 +278,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
 
-    appointment.occurrences hasSize 2
+    appointment.appointments hasSize 2
     allocationIds hasSize 10
 
     verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
@@ -325,15 +325,15 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     // Synchronous creation. First occurrence and allocations only
     val appointment = webTestClient.createAppointment(request)!!
-    var allocationIds = appointment.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
-    appointment.occurrences hasSize 1
+    var allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    appointment.appointments hasSize 1
     allocationIds hasSize 3
 
     // Wait for remaining occurrences to be created
     Thread.sleep(1000)
     val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    allocationIds = appointmentDetails.occurrences.flatMap { it.allocations.map { allocation -> allocation.id } }
-    appointmentDetails.occurrences hasSize 4
+    allocationIds = appointmentDetails.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    appointmentDetails.appointments hasSize 4
     allocationIds hasSize 12
 
     verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
@@ -348,10 +348,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
   }
 
-  private fun assertSingleAppointmentSinglePrisoner(appointment: Appointment, request: AppointmentSeriesCreateRequest) {
-    assertThat(appointment).isEqualTo(
-      Appointment(
-        appointment.id,
+  private fun assertSingleAppointmentSinglePrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {
+    assertThat(appointmentSeries).isEqualTo(
+      AppointmentSeries(
+        appointmentSeries.id,
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
@@ -363,13 +363,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         request.endTime,
         null,
         request.extraInformation,
-        appointment.created,
+        appointmentSeries.createdTime,
         "test-client",
         null,
         null,
-        occurrences = listOf(
-          AppointmentOccurrence(
-            appointment.occurrences.first().id,
+        appointments = listOf(
+          Appointment(
+            appointmentSeries.appointments.first().id,
             1,
             request.categoryCode!!,
             request.customName,
@@ -385,8 +385,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             allocations = listOf(
-              AppointmentOccurrenceAllocation(
-                appointment.occurrences.first().allocations.first().id,
+              AppointmentAttendee(
+                appointmentSeries.appointments.first().allocations.first().id,
                 request.prisonerNumbers.first(),
                 1,
               ),
@@ -396,16 +396,16 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointment.id).isGreaterThan(0)
-    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(appointment.occurrences.first().id).isGreaterThan(0)
-    assertThat(appointment.occurrences.first().allocations.first().id).isGreaterThan(0)
+    assertThat(appointmentSeries.id).isGreaterThan(0)
+    assertThat(appointmentSeries.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentSeries.appointments.first().id).isGreaterThan(0)
+    assertThat(appointmentSeries.appointments.first().allocations.first().id).isGreaterThan(0)
   }
 
-  private fun assertSingleAppointmentTwoPrisoner(appointment: Appointment, request: AppointmentSeriesCreateRequest) {
-    assertThat(appointment).isEqualTo(
-      Appointment(
-        appointment.id,
+  private fun assertSingleAppointmentTwoPrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {
+    assertThat(appointmentSeries).isEqualTo(
+      AppointmentSeries(
+        appointmentSeries.id,
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
@@ -417,13 +417,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         request.endTime,
         null,
         request.extraInformation,
-        appointment.created,
+        appointmentSeries.createdTime,
         "test-client",
         null,
         null,
-        occurrences = listOf(
-          AppointmentOccurrence(
-            appointment.occurrences.first().id,
+        appointments = listOf(
+          Appointment(
+            appointmentSeries.appointments.first().id,
             1,
             request.categoryCode!!,
             request.customName,
@@ -439,17 +439,17 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             allocations = listOf(
-              AppointmentOccurrenceAllocation(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
-              AppointmentOccurrenceAllocation(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
+              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
+              AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
             ),
           ),
         ),
       ),
     )
 
-    assertThat(appointment.id).isGreaterThan(0)
-    assertThat(appointment.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-    assertThat(appointment.occurrences.first().id).isGreaterThan(0)
+    assertThat(appointmentSeries.id).isGreaterThan(0)
+    assertThat(appointmentSeries.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentSeries.appointments.first().id).isGreaterThan(0)
   }
 
   private fun WebTestClient.getAppointmentById(id: Long) =
@@ -459,7 +459,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
+      .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
   private fun WebTestClient.createAppointment(
@@ -473,6 +473,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
+      .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 }

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -52,7 +52,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
+            schema = Schema(implementation = AppointmentSeries::class),
           ),
         ],
       ),
@@ -100,7 +100,7 @@ class AppointmentOccurrenceController(
     )
     request: AppointmentUpdateRequest,
     principal: Principal,
-  ): Appointment = appointmentService.updateAppointment(appointmentOccurrenceId, request, principal)
+  ): AppointmentSeries = appointmentService.updateAppointment(appointmentOccurrenceId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentOccurrenceId}/cancel"])
@@ -119,7 +119,7 @@ class AppointmentOccurrenceController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
+            schema = Schema(implementation = AppointmentSeries::class),
           ),
         ],
       ),

@@ -10,10 +10,12 @@ import java.time.LocalTime
   description =
   """
   Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
+  Contains the summary information of a limited set the appointment properties. N.B. does not contain 
+  information on the prisoners attending this appointment to improve API performance.
   All updates and cancellations happen at this appointment level with the parent appointment series being immutable.
   """,
 )
-data class Appointment(
+data class AppointmentSummary(
   @Schema(
     description = "The internally generated identifier for this appointment",
     example = "123456",
@@ -27,16 +29,22 @@ data class Appointment(
   val sequenceNumber: Int,
 
   @Schema(
-    description = "The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS",
-    example = "SKI",
+    description =
+    """
+    The appointment's name combining the optional custom name with the category description. If custom name has been
+    specified, the name format will be "Custom name (Category description)" 
+    """,
   )
-  val prisonCode: String,
+  val appointmentName: String,
 
   @Schema(
-    description = "The NOMIS REFERENCE_CODES.CODE (DOMAIN = 'INT_SCH_RSN') value for mapping to NOMIS",
-    example = "CHAP",
+    description =
+    """
+    The summary of the appointment's category. Can be different to the parent appointment series if this appointment
+    has been edited.
+    """,
   )
-  val categoryCode: String,
+  val category: AppointmentCategorySummary,
 
   @Schema(
     description =
@@ -51,18 +59,18 @@ data class Appointment(
   @Schema(
     description =
     """
-    The NOMIS AGENCY_INTERNAL_LOCATIONS.INTERNAL_LOCATION_ID value for mapping to NOMIS.
+    The summary of the internal location this appointment will take place. Can be different to the parent
+    appointment series if this appointment has been edited.
     Will be null if in cell = true
     """,
-    example = "123",
   )
-  val internalLocationId: Long?,
+  val internalLocation: AppointmentLocationSummary?,
 
   @Schema(
     description =
     """
     Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
-    Internal location id should be null if in cell = true
+    Internal location will be null if in cell = true
     """,
     example = "false",
   )
@@ -100,20 +108,23 @@ data class Appointment(
   val extraInformation: String?,
 
   @Schema(
-    description = "The date and time this appointment was created. Will not change",
+    description =
+    """
+    Indicates that this appointment has been independently changed from the original state it was in when
+    it was created as part of an appointment series
+    """,
+    example = "false",
   )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val createdTime: LocalDateTime,
+  val isEdited: Boolean,
 
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that created the appointment.
-    Usually a NOMIS username
+    Indicates that this appointment has been cancelled
     """,
-    example = "AAA01U",
+    example = "false",
   )
-  val createdBy: String,
+  val isCancelled: Boolean,
 
   @Schema(
     description =
@@ -128,52 +139,9 @@ data class Appointment(
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that edited this appointment.
+    The summary of the user that last edited this appointment.
     Will be null if this appointment has not been altered since it was created
     """,
-    example = "AAA01U",
   )
-  val updatedBy: String?,
-
-  @Schema(
-    description =
-    """
-    The date and time this appointment was cancelled.
-    Will be null if this appointment has not been cancelled
-    """,
-  )
-  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  var cancelledTime: LocalDateTime? = null,
-
-  @Schema(
-    description =
-    """
-    The id of the reason why this appointment was cancelled.
-    Will be null if this appointment has not been cancelled
-    """,
-    example = "12345",
-  )
-  val cancellationReasonId: Long? = null,
-
-  @Schema(
-    description =
-    """
-    The username of the user authenticated via HMPPS auth that cancelled this appointment.
-    Will be null if this appointment has not been cancelled
-    """,
-    example = "AAA01U",
-  )
-  val cancelledBy: String? = null,
-
-  @Schema(
-    description =
-    """
-    The prisoner or prisoners attending this appointment. Single appointments such as medical will have one
-    attendee. A group appointment e.g. gym or chaplaincy sessions will have more than one attendee.
-    Attendees are at the appointment level supporting alteration of attendees in any future appointment.
-    """,
-  )
-  val allocations: List<AppointmentAttendee> = emptyList(),
-) {
-  fun isCancelled() = cancelledTime != null
-}
+  val updatedBy: UserSummary?,
+)

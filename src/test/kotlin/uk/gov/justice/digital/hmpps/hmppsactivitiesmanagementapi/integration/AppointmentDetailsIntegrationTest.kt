@@ -8,9 +8,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -54,7 +54,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     val appointmentDetails = webTestClient.getAppointmentDetailsById(1)!!
 
     assertThat(appointmentDetails).isEqualTo(
-      AppointmentDetails(
+      AppointmentSeriesDetails(
         1,
         AppointmentType.INDIVIDUAL,
         "TPR",
@@ -71,12 +71,12 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         LocalTime.of(10, 30),
         null,
         "Appointment series level comment",
-        appointmentDetails.created,
+        appointmentDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         null,
         null,
-        occurrences = listOf(
-          AppointmentOccurrenceSummary(
+        appointments = listOf(
+          AppointmentSummary(
             2,
             1,
             "Appointment description (Appointment Category 1)",
@@ -97,7 +97,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointmentDetails.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   private fun WebTestClient.getAppointmentDetailsById(id: Long) =
@@ -107,6 +107,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentDetails::class.java)
+      .expectBody(AppointmentSeriesDetails::class.java)
       .returnResult().responseBody
 }

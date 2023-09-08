@@ -17,8 +17,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrence as AppointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentOccurrenceModel
 
 @Entity
 @Table(name = "appointment")
@@ -125,17 +125,17 @@ data class Appointment(
     id = appointmentId,
     sequenceNumber = sequenceNumber,
     categoryCode = categoryCode,
-    appointmentDescription = customName,
+    customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    comment = extraInformation,
-    cancelled = cancelledTime,
+    extraInformation = extraInformation,
+    cancelledTime = cancelledTime,
     cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
-    updated = updatedTime,
+    updatedTime = updatedTime,
     updatedBy = updatedBy,
     allocations = attendees().toModel(),
   )
@@ -145,7 +145,7 @@ data class Appointment(
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
-    AppointmentOccurrenceSummary(
+    AppointmentSummary(
       appointmentId,
       sequenceNumber,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
@@ -166,7 +166,7 @@ data class Appointment(
       extraInformation,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
-      updated = updatedTime,
+      updatedTime = updatedTime,
       updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
     )
 
@@ -176,7 +176,7 @@ data class Appointment(
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
-    AppointmentOccurrenceDetails(
+    AppointmentDetails(
       appointmentId,
       appointmentSeries.appointmentSeriesId,
       appointmentSeries.appointmentSet?.toSummary(),

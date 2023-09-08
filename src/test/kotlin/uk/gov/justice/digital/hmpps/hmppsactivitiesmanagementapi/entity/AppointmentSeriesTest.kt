@@ -531,7 +531,7 @@ class AppointmentSeriesTest {
       ),
     )
     with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
-      assertThat(repeat).isEqualTo(AppointmentSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
+      assertThat(schedule).isEqualTo(AppointmentSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
     }
   }
 

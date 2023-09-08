@@ -5,16 +5,16 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(
   description =
   """
-  Described on the UI as an "Attendee". The allocation of a prisoner to an appointment occurrence.
+  Described on the UI as an "Attendee". A prisoner attending a specific appointment in an appointment series.
   """,
 )
-data class AppointmentOccurrenceAllocation(
+data class AppointmentAttendee(
   @Schema(
     description =
     """
-    The internally generated identifier for this appointment occurrence allocation.
-    N.B. this is used as the appointment instance id due to there being a one to one relationship between appointment
-    occurrence allocations and appointment instances.
+    The internally generated identifier for this prisoner attending a specific appointment in an appointment series.
+    N.B. this is used as the appointment instance id due to there being a one to one relationship between an appointment
+    attendee and appointment instances.
     """,
     example = "123456",
   )

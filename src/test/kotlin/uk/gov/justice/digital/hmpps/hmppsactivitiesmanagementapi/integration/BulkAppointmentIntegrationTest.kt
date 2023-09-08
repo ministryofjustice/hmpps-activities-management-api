@@ -12,7 +12,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -73,23 +73,23 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.appointments[0].occurrences[0].allocations[0].id),
-      AppointmentInstanceInformation(response.appointments[1].occurrences[0].allocations[0].id),
+      AppointmentInstanceInformation(response.appointmentSeries[0].appointments[0].allocations[0].id),
+      AppointmentInstanceInformation(response.appointmentSeries[1].appointments[0].allocations[0].id),
     )
 
     verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
   }
 
-  private fun verifyBulkAppointment(response: BulkAppointment) {
+  private fun verifyBulkAppointment(response: AppointmentSet) {
     assertThat(response.id).isNotNull
-    assertThat(response.appointments).hasSize(2)
+    assertThat(response.appointmentSeries).hasSize(2)
     assertThat(response.createdBy).isEqualTo("test-client")
-    assertThat(response.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(response.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
 
-    assertThat(response.appointments[0].occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
-    assertThat(response.appointments[1].occurrences[0].allocations[0].prisonerNumber).isEqualTo("A1234BD")
+    assertThat(response.appointmentSeries[0].appointments[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
+    assertThat(response.appointmentSeries[1].appointments[0].allocations[0].prisonerNumber).isEqualTo("A1234BD")
 
-    response.appointments.forEach {
+    response.appointmentSeries.forEach {
       assertThat(it.categoryCode).isEqualTo("AC1")
       assertThat(it.prisonCode).isEqualTo("TPR")
       assertThat(it.internalLocationId).isEqualTo(123)
@@ -97,7 +97,7 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
       assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
-      assertThat(it.appointmentDescription).isEqualTo("Appointment description")
+      assertThat(it.customName).isEqualTo("Appointment description")
     }
   }
 
@@ -111,6 +111,6 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(BulkAppointment::class.java)
+      .expectBody(AppointmentSet::class.java)
       .returnResult().responseBody
 }

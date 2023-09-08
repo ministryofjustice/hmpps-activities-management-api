@@ -39,7 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkApp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
@@ -514,8 +514,8 @@ class AppointmentSeriesServiceTest {
         assertThat(size).isEqualTo(1)
         assertThat(appointments().first().attendees().toModel()).containsAll(
           listOf(
-            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
-            AppointmentOccurrenceAllocation(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
+            AppointmentAttendee(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
+            AppointmentAttendee(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
           ),
         )
       }

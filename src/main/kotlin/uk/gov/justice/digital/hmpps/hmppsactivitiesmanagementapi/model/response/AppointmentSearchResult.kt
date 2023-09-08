@@ -3,9 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -47,7 +47,7 @@ data class AppointmentSearchResult(
   @Schema(
     description =
     """
-    The appointment name combining the optional custom name with the category description. If custom name has been
+    The appointment's name combining the optional custom name with the category description. If custom name has been
     specified, the name format will be "Custom name (Category description)" 
     """,
   )
@@ -61,7 +61,7 @@ data class AppointmentSearchResult(
     attending each appointment
     """,
   )
-  val attendees: List<AppointmentOccurrenceAllocation> = emptyList(),
+  val attendees: List<AppointmentAttendee> = emptyList(),
 
   @Schema(
     description =
@@ -74,7 +74,7 @@ data class AppointmentSearchResult(
   @Schema(
     description =
     """
-    Free text name further describing the appointment. Will be used to create the appointment name using the
+    Free text name further describing the appointment. Used as part of the appointment name with the
     format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",

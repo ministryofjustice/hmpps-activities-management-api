@@ -16,9 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -78,7 +78,7 @@ class AppointmentSeriesDetailsServiceTest {
       ),
     )
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
-      AppointmentDetails(
+      AppointmentSeriesDetails(
         entity.appointmentSeriesId,
         AppointmentType.INDIVIDUAL,
         entity.prisonCode,
@@ -99,8 +99,8 @@ class AppointmentSeriesDetailsServiceTest {
         UserSummary(1, "CREATE.USER", "CREATE", "USER"),
         entity.updatedTime,
         UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
-        occurrences = listOf(
-          AppointmentOccurrenceSummary(
+        appointments = listOf(
+          AppointmentSummary(
             appointmentEntity.appointmentId,
             1,
             "Appointment description (Test Category)",

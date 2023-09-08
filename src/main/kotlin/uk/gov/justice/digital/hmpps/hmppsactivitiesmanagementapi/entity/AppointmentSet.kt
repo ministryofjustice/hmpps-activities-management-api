@@ -15,15 +15,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as AppointmentSetModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Entity
 @Table(name = "appointment_set")
@@ -88,18 +88,19 @@ data class AppointmentSet(
     id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = customName,
+    customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    appointments = this.appointmentSeries().toModel(),
-    created = createdTime,
+    appointmentSeries = this.appointmentSeries().toModel(),
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 
-  fun toSummary() = BulkAppointmentSummary(
+  fun toSummary() = AppointmentSetSummary(
     id = this.appointmentSetId,
-    appointmentCount = this.appointmentSeries().size,
+    appointmentSeriesCount = this.appointmentSeries().size,
+    appointmentCount = this.appointmentSeries().flatMap { it.appointments() }.size,
   )
 
   fun toDetails(
@@ -107,8 +108,8 @@ data class AppointmentSet(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ): BulkAppointmentDetails {
-    return BulkAppointmentDetails(
+  ): AppointmentSetDetails {
+    return AppointmentSetDetails(
       appointmentSetId,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),

@@ -7,7 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 
-class BulkAppointmentCreateRequestTest {
+class AppointmentSetCreateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test

@@ -9,13 +9,13 @@ import java.time.LocalDateTime
   description =
   """
   Described on the UI as an "Appointment set" or "set of back-to-back appointments".
-  Contains the initial property values common to all appointments in the set.
+  Contains the initial property values common to all appointment series and appointments in the set.
   The properties at this level cannot be changed via the API.
   """,
 )
-data class BulkAppointment(
+data class AppointmentSet(
   @Schema(
-    description = "The internally generated identifier for this set of appointments",
+    description = "The internally generated identifier for this appointment set",
     example = "12345",
   )
   val id: Long,
@@ -35,11 +35,12 @@ data class BulkAppointment(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text name further describing the appointment set. Used as part of the appointment name with the
+    format "Custom name (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
@@ -54,7 +55,7 @@ data class BulkAppointment(
   @Schema(
     description =
     """
-    Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
+    Flag to indicate if the location of the appointment set is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
     example = "false",
@@ -62,26 +63,26 @@ data class BulkAppointment(
   val inCell: Boolean,
 
   @Schema(
-    description = "The date of the appointment or first appointment occurrence in the series",
+    description = "The date of the first appointment in each appointment series in the set",
   )
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
   @Schema(
-    description = "The set of appointments created in bulk",
+    description = "The appointment series in the set",
   )
-  val appointments: List<Appointment>,
+  val appointmentSeries: List<AppointmentSeries>,
 
   @Schema(
-    description = "The date and time this set of appointment was created in bulk. Will not change",
+    description = "The date and time this appointment set was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val created: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that created this set of appointments in bulk.
+    The username of the user authenticated via HMPPS auth that created this appointment set.
     Usually a NOMIS username
     """,
     example = "AAA01U",
