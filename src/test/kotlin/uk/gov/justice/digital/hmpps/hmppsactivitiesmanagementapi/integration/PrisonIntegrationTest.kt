@@ -75,7 +75,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         activityName = "Maths Level 1",
         category = educationCategory,
         capacity = 10,
-        allocated = 2,
+        allocated = 4,
         waitlisted = 1,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
