@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -9,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinTable
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -25,17 +27,27 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
 
 @Entity
-@Table(name = "bulk_appointment")
+@Table(name = "appointment_set")
 data class BulkAppointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_set_id")
   val bulkAppointmentId: Long = 0,
 
   val prisonCode: String,
 
   var categoryCode: String,
 
+  @Column(name = "custom_name")
   var appointmentDescription: String?,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_tier_id")
+  var appointmentTier: AppointmentTier,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_host_id")
+  var appointmentHost: AppointmentHost? = null,
 
   var internalLocationId: Long?,
 
@@ -43,15 +55,16 @@ data class BulkAppointment(
 
   var startDate: LocalDate,
 
+  @Column(name = "created_time")
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 ) {
   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinTable(
-    name = "bulk_appointment_appointment",
-    joinColumns = [JoinColumn(name = "bulkAppointmentId")],
-    inverseJoinColumns = [JoinColumn(name = "appointmentId")],
+    name = "appointment_set_appointment_series",
+    joinColumns = [JoinColumn(name = "appointment_set_id")],
+    inverseJoinColumns = [JoinColumn(name = "appointment_series_id")],
   )
   private val appointments: MutableList<Appointment> = mutableListOf()
 

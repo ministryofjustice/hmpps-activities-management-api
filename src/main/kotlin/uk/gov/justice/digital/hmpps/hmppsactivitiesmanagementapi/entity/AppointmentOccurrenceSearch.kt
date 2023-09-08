@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,11 +19,13 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity
-@Table(name = "v_appointment_occurrence_search")
+@Table(name = "v_appointment_search")
 data class AppointmentOccurrenceSearch(
+  @Column(name = "appointment_series_id")
   val appointmentId: Long,
 
   @Id
+  @Column(name = "appointment_id")
   val appointmentOccurrenceId: Long,
 
   @Enumerated(EnumType.STRING)
@@ -32,6 +35,7 @@ data class AppointmentOccurrenceSearch(
 
   val categoryCode: String,
 
+  @Column(name = "custom_name")
   val appointmentDescription: String?,
 
   var internalLocationId: Long?,
@@ -50,6 +54,7 @@ data class AppointmentOccurrenceSearch(
 
   val maxSequenceNumber: Int,
 
+  @Column(name = "extra_information")
   val comment: String?,
 
   val createdBy: String,

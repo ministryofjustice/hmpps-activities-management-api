@@ -155,7 +155,7 @@ class AppointmentOccurrenceTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(entity.toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
       AppointmentOccurrenceSummary(
         entity.appointmentOccurrenceId,
         1,
@@ -182,7 +182,7 @@ class AppointmentOccurrenceTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(listOf(entity).toSummary("TPR", referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(listOf(entity).toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
         AppointmentOccurrenceSummary(
           entity.appointmentOccurrenceId,
@@ -212,7 +212,7 @@ class AppointmentOccurrenceTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)) {
+    with(entity.toSummary(referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -224,7 +224,7 @@ class AppointmentOccurrenceTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary("TPR", referenceCodeMap, locationMap, userMap)) {
+    with(entity.toSummary(referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
     }
@@ -250,7 +250,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentOccurrenceDetails(
         entity.appointmentOccurrenceId,
         appointment.appointmentId,
@@ -282,7 +282,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(listOf(entity).toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(listOf(entity).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
         appointmentOccurrenceDetails(
           entity.appointmentOccurrenceId,
@@ -315,7 +315,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(1, 3))
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(1, 3))
   }
 
   @Test
@@ -329,7 +329,7 @@ class AppointmentOccurrenceTest {
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = emptyMap<String, Prisoner>()
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap).prisoners) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).prisoners) {
       assertThat(size).isEqualTo(1)
       with(first()) {
         assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -370,7 +370,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "4-5-6",
       ),
     )
-    with(entity.toDetails("TPR", prisonersMap, referenceCodeMap, locationMap, userMap).prisoners) {
+    with(entity.toDetails(prisonersMap, referenceCodeMap, locationMap, userMap).prisoners) {
       assertThat(size).isEqualTo(1)
       with(first()) {
         assertThat(prisonerNumber).isEqualTo("A1234BC")
@@ -403,7 +403,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(category.code).isEqualTo(appointment.categoryCode)
       assertThat(category.description).isEqualTo(appointment.categoryCode)
     }
@@ -429,7 +429,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNotNull
       assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
       assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
@@ -455,7 +455,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(createdBy.id).isEqualTo(-1)
       assertThat(createdBy.username).isEqualTo("CREATE.USER")
       assertThat(createdBy.firstName).isEqualTo("UNKNOWN")
@@ -494,7 +494,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -520,7 +520,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
       assertThat(isEdited).isFalse
     }
@@ -550,7 +550,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isTrue
       assertThat(cancelled).isEqualTo(entity.cancelled)
       assertThat(cancelledBy).isNotNull
@@ -583,7 +583,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isFalse
       assertThat(cancelled).isNull()
       assertThat(cancelledBy).isNull()
@@ -610,7 +610,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentRepeatPeriod.WEEKLY, 4))
     }
   }
@@ -639,7 +639,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(appointmentName).isEqualTo("appointment name (test category)")
     }
   }
@@ -668,7 +668,7 @@ class AppointmentOccurrenceTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails("TPR", prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(appointmentName).isEqualTo("test category")
     }
   }
