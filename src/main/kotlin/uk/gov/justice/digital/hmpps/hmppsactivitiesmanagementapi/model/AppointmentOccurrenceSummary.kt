@@ -9,8 +9,10 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  Summarises a specific appointment occurrence. Will contain copies of the parent appointment's properties unless they
-  have been changed on this appointment occurrence.
+  Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
+  Contains the summary information of a limited set of the appointment occurrence properties. N.B. does not contain 
+  information on the prisoners allocated to this occurrence to improve API performance.
+  All updates and cancellations happen at this occurrence level with the parent appointment being immutable.
   """,
 )
 data class AppointmentOccurrenceSummary(
@@ -25,6 +27,32 @@ data class AppointmentOccurrenceSummary(
     example = "3",
   )
   val sequenceNumber: Int,
+
+  @Schema(
+    description =
+    """
+    The appointment occurrence's name
+    """,
+  )
+  val appointmentName: String,
+
+  @Schema(
+    description =
+    """
+    The summary of the appointment occurrence's category. Can be different to the parent appointment if this occurrence
+    has been edited.
+    """,
+  )
+  val category: AppointmentCategorySummary,
+
+  @Schema(
+    description =
+    """
+    Free text description for an appointment occurrence. This is used to add more context to the category.
+    """,
+    example = "Meeting with the governor",
+  )
+  val appointmentDescription: String?,
 
   @Schema(
     description =
@@ -74,7 +102,7 @@ data class AppointmentOccurrenceSummary(
     """,
     example = "This appointment occurrence has been rescheduled due to staff availability",
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description =
@@ -99,8 +127,6 @@ data class AppointmentOccurrenceSummary(
     description =
     """
     The date and time this appointment occurrence was last edited.
-    Will be null if the appointment occurrence has not been independently changed from the original state it was in when
-    it was created as part of a recurring series
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -109,8 +135,7 @@ data class AppointmentOccurrenceSummary(
   @Schema(
     description =
     """
-    The summary of the last user to edit this appointment occurrence. Will be null if the appointment occurrence has not
-    been independently changed from the original state it was in when it was created as part of a recurring series
+    The summary of the last user to edit this appointment occurrence.
     """,
   )
   val updatedBy: UserSummary?,

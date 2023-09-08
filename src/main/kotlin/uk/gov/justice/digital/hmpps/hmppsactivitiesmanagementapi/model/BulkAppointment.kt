@@ -6,10 +6,14 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Schema(
-  description = "Describes a set of appointments created as part of a single bulk operation",
+  description =
+  """
+  Described on the UI as an "Appointment set" or "set of back-to-back appointments".
+  Contains the initial property values common to all appointments in the set.
+  The properties at this level cannot be changed via the API.
+  """,
 )
 data class BulkAppointment(
-
   @Schema(
     description = "The internally generated identifier for this set of appointments",
     example = "12345",

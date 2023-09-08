@@ -468,8 +468,7 @@ class AppointmentTest {
 
   @Test
   fun `entity to details mapping in cell nullifies internal location`() {
-    val entity = appointmentEntity(inCell = true)
-    entity.internalLocationId = 123
+    val entity = appointmentEntity(internalLocationId = 123, inCell = true)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(

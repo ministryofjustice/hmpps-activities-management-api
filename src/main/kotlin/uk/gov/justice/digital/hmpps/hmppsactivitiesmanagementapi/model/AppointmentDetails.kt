@@ -10,8 +10,16 @@ import java.time.LocalTime
 @Schema(
   description =
   """
-  The top level appointment details for display purposes. Contains only properties needed to make additional API calls
-  and to display.
+  Described on the UI as an "Appointment series" and only shown for repeat appointments.
+  The top level of the standard appointment hierarchy containing full details of the initial property values common to
+  all appointment occurrences in the series for display purposes.
+  Contains the summary collection of all the child appointment occurrences in the series plus the repeat definition if
+  the appointment repeats.
+  The properties at this level cannot be changed via the API however the child occurrence property values can be changed
+  independently to support rescheduling, cancelling and altered attendee lists per occurrence.
+  N.B. there is no collection of allocated prisoners at this top level as all allocations are per occurrence. This is to
+  support attendee modification for each scheduled occurrence and to prevent altering the past by editing allocations
+  in an appointment series where some occurrences have past.
   """,
 )
 data class AppointmentDetails(
@@ -67,7 +75,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Free text description for an appointment.  This is used to add more context to the appointment category.
+    Free text description for an appointment. This is used to add more context to the appointment category.
     """,
     example = "Meeting with the governor",
   )
@@ -128,7 +136,7 @@ data class AppointmentDetails(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String,
+  val comment: String?,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",
@@ -147,8 +155,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The date and time this appointment was last changed.
-    Will be null if the appointment has not been edited since it was created
+    The date and time one or more occurrences of this appointment was last changed.
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -157,8 +164,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the last user to edit this appointment. Will be null if the appointment has not been altered since
-    it was created
+    The summary of the user that last edited one or more occurrences of this appointment.
     """,
   )
   val updatedBy: UserSummary?,

@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
@@ -43,8 +44,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.BulkAppointmentCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.BulkAppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
@@ -85,6 +89,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentTierRepository: AppointmentTierRepository = mock()
+  private val appointmentHostRepository: AppointmentHostRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val bulkAppointmentRepository: BulkAppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -110,6 +116,8 @@ class AppointmentServiceTest {
 
   private val service = AppointmentService(
     appointmentRepository,
+    appointmentTierRepository,
+    appointmentHostRepository,
     appointmentCancellationReasonRepository,
     bulkAppointmentRepository,
     referenceCodeService,
@@ -126,6 +134,7 @@ class AppointmentServiceTest {
     MockitoAnnotations.openMocks(this)
     principal = SecurityContextHolder.getContext().authentication
     addCaseloadIdToRequestHeader("TPR")
+    whenever(appointmentTierRepository.findById(NOT_SPECIFIED_APPOINTMENT_TIER_ID)).thenReturn(Optional.of(appointmentTierNotSpecified()))
   }
 
   @AfterEach
@@ -159,8 +168,9 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
+        appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
@@ -188,8 +198,9 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
+        appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
@@ -220,8 +231,9 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
+        appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
@@ -254,8 +266,9 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
         prisonerBookings = emptyMap(),
-        categoryCode = request.categoryCode,
+        categoryCode = request.categoryCode!!,
         appointmentDescription = request.appointmentDescription,
+        appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
@@ -280,7 +293,8 @@ class AppointmentServiceTest {
       prisonCode = request.prisonCode!!,
       prisonerNumbers = listOf(request.prisonerNumber!!),
       prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString()),
-      categoryCode = request.categoryCode,
+      categoryCode = request.categoryCode!!,
+      appointmentTier = appointmentTierNotSpecified(),
       internalLocationId = request.internalLocationId,
       startDate = request.startDate,
       startTime = request.startTime,
@@ -290,7 +304,6 @@ class AppointmentServiceTest {
       isMigrated = true,
     )
 
-    verify(times(0)) { prisonApiUserClient.getUserCaseLoads() }
     verify(times(0)) { referenceCodeService.getScheduleReasonsMap(any()) }
     verify(times(0)) { locationService.getLocationsForAppointmentsMap(any()) }
   }
@@ -306,8 +319,9 @@ class AppointmentServiceTest {
       prisonCode = request.prisonCode!!,
       prisonerNumbers = request.prisonerNumbers,
       prisonerBookings = emptyMap(),
-      categoryCode = request.categoryCode,
+      categoryCode = request.categoryCode!!,
       appointmentDescription = request.appointmentDescription,
+      appointmentTier = appointmentTierNotSpecified(),
       internalLocationId = request.internalLocationId,
       inCell = request.inCell,
       startDate = request.startDate,
@@ -420,7 +434,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
           assertThat(updated).isNull()
@@ -463,7 +477,7 @@ class AppointmentServiceTest {
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
         assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
 
       verify(auditService).logEvent(any<AppointmentCreatedEvent>())
@@ -703,6 +717,7 @@ class AppointmentServiceTest {
         prisonCode = request.prisonCode,
         categoryCode = request.categoryCode,
         appointmentDescription = request.appointmentDescription,
+        appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
         startDate = request.startDate,
@@ -737,7 +752,7 @@ class AppointmentServiceTest {
         assertThat(it.categoryCode).isEqualTo("TEST")
         assertThat(it.prisonCode).isEqualTo("TPR")
         assertThat(it.internalLocationId).isEqualTo(123)
-        assertThat(it.inCell).isFalse()
+        assertThat(it.inCell).isFalse
         assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
         assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
@@ -763,7 +778,7 @@ class AppointmentServiceTest {
       assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
       assertThat(value[EXTRA_INFORMATION_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
 
     verify(auditService).logEvent(any<BulkAppointmentCreatedEvent>())
@@ -835,7 +850,7 @@ class AppointmentServiceTest {
       assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
-      assertThat(isMigrated).isTrue()
+      assertThat(isMigrated).isTrue
       with(occurrences()) {
         assertThat(size).isEqualTo(1)
         with(occurrences().first()) {
@@ -845,7 +860,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
@@ -883,7 +898,7 @@ class AppointmentServiceTest {
       assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updated).isNull()
       assertThat(updatedBy).isNull()
-      assertThat(isMigrated).isTrue()
+      assertThat(isMigrated).isTrue
       with(occurrences()) {
         assertThat(size).isEqualTo(1)
         with(occurrences().first()) {
@@ -893,7 +908,7 @@ class AppointmentServiceTest {
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(comment).isNull()
+          assertThat(comment).isEqualTo(request.comment)
           assertThat(created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updated).isNull()
