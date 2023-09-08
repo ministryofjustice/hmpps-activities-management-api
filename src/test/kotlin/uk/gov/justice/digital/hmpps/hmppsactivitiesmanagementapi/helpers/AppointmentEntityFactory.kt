@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceAllocation
@@ -9,8 +10,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentOccurrenceSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentRepeatPeriod
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.BulkAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISON_STAFF_APPOINTMENT_HOST_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TIER_1_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TIER_2_APPOINTMENT_TIER_ID
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -38,6 +45,7 @@ internal fun appointmentEntity(
   prisonCode = "TPR",
   categoryCode = "TEST",
   appointmentDescription = appointmentDescription,
+  appointmentTier = appointmentTierNotSpecified(),
   internalLocationId = internalLocationId,
   inCell = inCell,
   startDate = startDate,
@@ -69,14 +77,18 @@ fun appointmentOccurrenceEntity(appointment: Appointment, appointmentOccurrenceI
     appointmentOccurrenceId = appointmentOccurrenceId,
     appointment = appointment,
     sequenceNumber = sequenceNumber,
+    prisonCode = appointment.prisonCode,
     categoryCode = appointment.categoryCode,
     appointmentDescription = appointment.appointmentDescription,
+    appointmentTier = appointment.appointmentTier,
     internalLocationId = appointment.internalLocationId,
     inCell = appointment.inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = appointment.endTime,
     comment = "Appointment occurrence level comment",
+    created = appointment.created,
+    createdBy = appointment.createdBy,
     updated = updated,
     updatedBy = updatedBy,
   ).apply {
@@ -180,6 +192,7 @@ internal fun bulkAppointmentEntity(
     prisonCode = "TPR",
     categoryCode = "TEST",
     appointmentDescription = appointmentDescription,
+    appointmentTier = appointmentTierNotSpecified(),
     internalLocationId = if (inCell) null else 123,
     inCell = inCell,
     startDate = startDate,
@@ -201,6 +214,36 @@ internal fun bulkAppointmentEntity(
       count++
     }
   }
+
+internal fun appointmentTier1() =
+  AppointmentTier(
+    TIER_1_APPOINTMENT_TIER_ID,
+    "Tier 1",
+  )
+
+internal fun appointmentTier2() =
+  AppointmentTier(
+    TIER_2_APPOINTMENT_TIER_ID,
+    "Tier 2",
+  )
+
+internal fun appointmentNoTier() =
+  AppointmentTier(
+    NO_TIER_APPOINTMENT_TIER_ID,
+    "No tier, this activity is not considered 'purposeful' for reporting",
+  )
+
+internal fun appointmentTierNotSpecified() =
+  AppointmentTier(
+    NOT_SPECIFIED_APPOINTMENT_TIER_ID,
+    "Not specified",
+  )
+
+internal fun appointmentHostPrisonStaff() =
+  AppointmentHost(
+    PRISON_STAFF_APPOINTMENT_HOST_ID,
+    "Prison staff",
+  )
 
 internal fun appointmentCancelledReason() =
   AppointmentCancellationReason(

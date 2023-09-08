@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -18,10 +19,13 @@ data class AppointmentInstance(
   @Id
   val appointmentInstanceId: Long,
 
+  @Column(name = "appointment_series_id")
   val appointmentId: Long,
 
+  @Column(name = "appointment_id")
   val appointmentOccurrenceId: Long,
 
+  @Column(name = "appointment_attendee_id")
   val appointmentOccurrenceAllocationId: Long,
 
   @Enumerated(EnumType.STRING)
@@ -35,6 +39,7 @@ data class AppointmentInstance(
 
   val categoryCode: String,
 
+  @Column(name = "custom_name")
   val appointmentDescription: String?,
 
   val internalLocationId: Long?,
@@ -47,17 +52,20 @@ data class AppointmentInstance(
 
   val endTime: LocalTime?,
 
+  @Column(name = "extra_information")
   val comment: String?,
 
+  @Column(name = "created_time")
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 
-  val isCancelled: Boolean,
-
+  @Column(name = "updated_time")
   val updated: LocalDateTime?,
 
   val updatedBy: String?,
+
+  val isCancelled: Boolean,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,

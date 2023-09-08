@@ -18,7 +18,6 @@ data class AppointmentCancellationReason(
 
   val isDelete: Boolean,
 ) {
-
   fun toModel() = ModelAppointmentCancellationReason(
     appointmentCancellationReasonId = appointmentCancellationReasonId,
     description = description,

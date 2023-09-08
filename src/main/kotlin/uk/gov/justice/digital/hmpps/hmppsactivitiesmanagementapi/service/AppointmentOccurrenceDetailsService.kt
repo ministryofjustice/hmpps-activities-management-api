@@ -22,16 +22,14 @@ class AppointmentOccurrenceDetailsService(
     val appointmentOccurrence = appointmentOccurrenceRepository.findOrThrowNotFound(appointmentOccurrenceId)
     checkCaseloadAccess(appointmentOccurrence.appointment.prisonCode)
 
-    val appointment = appointmentOccurrence.appointment
-
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentOccurrence.prisonerNumbers())
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointmentOccurrence.prisonCode)
 
-    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
+    val userMap = prisonApiClient.getUserDetailsList(appointmentOccurrence.usernames()).associateBy { it.username }
 
-    return appointmentOccurrence.toDetails(appointment.prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
+    return appointmentOccurrence.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
   }
 }

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -31,17 +32,18 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Entity
-@Table(name = "appointment")
+@Table(name = "appointment_series")
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "appointment_series_id")
   val appointmentId: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinTable(
-    name = "bulk_appointment_appointment",
-    joinColumns = [JoinColumn(name = "appointmentId")],
-    inverseJoinColumns = [JoinColumn(name = "bulkAppointmentId")],
+    name = "appointment_set_appointment_series",
+    joinColumns = [JoinColumn(name = "appointment_series_id")],
+    inverseJoinColumns = [JoinColumn(name = "appointment_set_id")],
   )
   val bulkAppointment: BulkAppointment? = null,
 
@@ -52,7 +54,16 @@ data class Appointment(
 
   val categoryCode: String,
 
+  @Column(name = "custom_name")
   val appointmentDescription: String?,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_tier_id")
+  var appointmentTier: AppointmentTier,
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "appointment_host_id")
+  var appointmentHost: AppointmentHost? = null,
 
   val internalLocationId: Long?,
 
@@ -65,15 +76,18 @@ data class Appointment(
   val endTime: LocalTime?,
 
   @OneToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumn(name = "appointment_schedule_id")
+  @JoinColumn(name = "appointment_series_schedule_id")
   var schedule: AppointmentSchedule? = null,
 
+  @Column(name = "extra_information")
   val comment: String?,
 
+  @Column(name = "created_time")
   val created: LocalDateTime = LocalDateTime.now(),
 
   val createdBy: String,
 
+  @Column(name = "updated_time")
   var updated: LocalDateTime? = null,
 
   var updatedBy: String? = null,
@@ -121,7 +135,7 @@ data class Appointment(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ) = occurrences().toDetails(prisonCode, prisonerMap, referenceCodeMap, locationMap, userMap)
+  ) = occurrences().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
   fun addOccurrence(occurrence: AppointmentOccurrence) = occurrences.add(occurrence)
 
@@ -137,7 +151,7 @@ data class Appointment(
   }
 
   fun usernames() =
-    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> listOf(occurrence.updatedBy, occurrence.cancelledBy) }).filterNotNull()
+    listOf(createdBy, updatedBy).union(occurrences().flatMap { occurrence -> occurrence.usernames() }).filterNotNull()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
@@ -192,7 +206,7 @@ data class Appointment(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      occurrences().toSummary(prisonCode, referenceCodeMap, locationMap, userMap),
+      occurrences().toSummary(referenceCodeMap, locationMap, userMap),
     )
 }
 
