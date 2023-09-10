@@ -15,7 +15,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -128,7 +128,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   @Test
   fun `202 accepted response when search appointment occurrences with valid json`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.now())
-    val expectedResponse = listOf(appointmentOccurrenceSearchResultModel())
+    val expectedResponse = listOf(appointmentSearchResultModel())
 
     val mockPrincipal: Principal = mock()
 

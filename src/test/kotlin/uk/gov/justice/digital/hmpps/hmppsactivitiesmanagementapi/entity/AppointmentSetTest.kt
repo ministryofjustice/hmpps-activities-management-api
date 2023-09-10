@@ -7,8 +7,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -36,7 +36,7 @@ class AppointmentSetTest {
   @Test
   fun `entity to summary mapping`() {
     val entity = appointmentSetEntity()
-    assertThat(entity.toSummary()).isEqualTo(AppointmentSetSummary(1, 3))
+    assertThat(entity.toSummary()).isEqualTo(AppointmentSetSummary(1, 3, 3))
   }
 
   @Test
@@ -85,13 +85,13 @@ class AppointmentSetTest {
     val prisonerMap = getPrisonerMap()
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      bulkAppointmentDetails(created = entity.createdTime),
+      appointmentSetDetails(createdTime = entity.createdTime),
     )
   }
 
   @Test
   fun `entity to details mapping includes appointment description in name`() {
-    val entity = appointmentSetEntity(appointmentDescription = "appointment name")
+    val entity = appointmentSetEntity(customName = "appointment name")
     val referenceCodeMap = mapOf(
       entity.categoryCode to appointmentCategoryReferenceCode(
         entity.categoryCode,

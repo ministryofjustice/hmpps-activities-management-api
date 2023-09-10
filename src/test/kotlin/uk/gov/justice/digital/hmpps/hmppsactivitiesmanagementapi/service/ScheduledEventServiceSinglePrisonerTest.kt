@@ -789,7 +789,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentDescription).isEqualTo(appointmentEntity.customName)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
@@ -893,7 +892,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
           assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentDescription).isNull()
           assertThat(it.summary).isEqualTo("Test Category")
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")

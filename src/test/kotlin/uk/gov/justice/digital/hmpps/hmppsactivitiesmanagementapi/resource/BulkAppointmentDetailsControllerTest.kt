@@ -11,7 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 
 @WebMvcTest(controllers = [BulkAppointmentDetailsController::class])
@@ -24,7 +24,7 @@ class BulkAppointmentDetailsControllerTest : ControllerTestBase<BulkAppointmentD
 
   @Test
   fun `200 response when get bulk appointment details by valid id`() {
-    val details = bulkAppointmentDetails()
+    val details = appointmentSetDetails()
 
     whenever(appointmentSetService.getAppointmentSetDetailsById(1)).thenReturn(details)
 

@@ -11,7 +11,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
@@ -43,7 +43,7 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create bulk appointments success`() {
-    val request = bulkAppointmentRequest(categoryCode = "AC1")
+    val request = appointmentSetCreateRequest(categoryCode = "AC1")
     val prisonerNumbers = request.appointments.map { it.prisonerNumber }.toList()
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()

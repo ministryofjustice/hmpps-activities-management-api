@@ -6,7 +6,7 @@ import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import java.time.LocalDate
@@ -17,109 +17,109 @@ class AppointmentSeriesCreateRequestTest {
 
   @Test
   fun `valid request`() {
-    val request = appointmentCreateRequest()
+    val request = appointmentSeriesCreateRequest()
     assertThat(validator.validate(request)).isEmpty()
   }
 
   @Test
   fun `category code must be supplied`() {
-    val request = appointmentCreateRequest(categoryCode = null)
+    val request = appointmentSeriesCreateRequest(categoryCode = null)
     assertSingleValidationError(validator.validate(request), "categoryCode", "Category code must be supplied")
   }
 
   @Test
   fun `prison code must be supplied`() {
-    val request = appointmentCreateRequest(prisonCode = null)
+    val request = appointmentSeriesCreateRequest(prisonCode = null)
     assertSingleValidationError(validator.validate(request), "prisonCode", "Prison code must be supplied")
   }
 
   @Test
   fun `prison code should not exceed 3 characters`() {
-    val request = appointmentCreateRequest(prisonCode = "TEST")
+    val request = appointmentSeriesCreateRequest(prisonCode = "TEST")
     assertSingleValidationError(validator.validate(request), "prisonCode", "Prison code should not exceed 3 characters")
   }
 
   @Test
   fun `internal location id must be supplied if in cell = false`() {
-    val request = appointmentCreateRequest(internalLocationId = null, inCell = false)
+    val request = appointmentSeriesCreateRequest(internalLocationId = null, inCell = false)
     assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id must be supplied if in cell = false")
   }
 
   @Test
   fun `start date must be supplied`() {
-    val request = appointmentCreateRequest(startDate = null)
+    val request = appointmentSeriesCreateRequest(startDate = null)
     assertSingleValidationError(validator.validate(request), "startDate", "Start date must be supplied")
   }
 
   @Test
   fun `start date must not be in the past`() {
-    val request = appointmentCreateRequest(startDate = LocalDate.now().minusDays(1))
+    val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().minusDays(1))
     assertSingleValidationError(validator.validate(request), "startDate", "Start date must not be in the past")
   }
 
   @Test
   fun `start time must be supplied`() {
-    val request = appointmentCreateRequest(startTime = null)
+    val request = appointmentSeriesCreateRequest(startTime = null)
     assertSingleValidationError(validator.validate(request), "startTime", "Start time must be supplied")
   }
 
   @Test
   fun `start time must be in the future`() {
-    val request = appointmentCreateRequest(startDate = LocalDate.now(), startTime = LocalTime.now().minusMinutes(1), endTime = LocalTime.now().plusHours(1))
+    val request = appointmentSeriesCreateRequest(startDate = LocalDate.now(), startTime = LocalTime.now().minusMinutes(1), endTime = LocalTime.now().plusHours(1))
     assertSingleValidationError(validator.validate(request), "startTime", "Start time must be in the future")
   }
 
   @Test
   fun `end time must be supplied`() {
-    val request = appointmentCreateRequest(endTime = null)
+    val request = appointmentSeriesCreateRequest(endTime = null)
     assertSingleValidationError(validator.validate(request), "endTime", "End time must be supplied")
   }
 
   @Test
   fun `end time must be after the start time`() {
-    val request = appointmentCreateRequest(startTime = LocalTime.of(13, 0), endTime = LocalTime.of(13, 0))
+    val request = appointmentSeriesCreateRequest(startTime = LocalTime.of(13, 0), endTime = LocalTime.of(13, 0))
     assertSingleValidationError(validator.validate(request), "endTime", "End time must be after the start time")
   }
 
   @Test
   fun `at least one prisoner number must be supplied`() {
-    val request = appointmentCreateRequest(prisonerNumbers = listOf())
+    val request = appointmentSeriesCreateRequest(prisonerNumbers = listOf())
     assertSingleValidationError(validator.validate(request), "prisonerNumbers", "At least one prisoner number must be supplied")
   }
 
   @Test
   fun `cannot allocate more than one prisoner to an individual appointment`() {
-    val request = appointmentCreateRequest(appointmentType = AppointmentType.INDIVIDUAL, prisonerNumbers = listOf("A1234BC", "BC2345D"))
+    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.INDIVIDUAL, prisonerNumbers = listOf("A1234BC", "BC2345D"))
     assertSingleValidationError(validator.validate(request), "prisonerNumbers", "Cannot allocate more than one prisoner to an individual appointment")
   }
 
   @Test
   fun `repeat period must be supplied`() {
-    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = null, count = 6))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = null, count = 6))
     assertSingleValidationError(validator.validate(request), "repeat.period", "Repeat period must be supplied")
   }
 
   @Test
   fun `repeat count must be supplied`() {
-    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, count = null))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, count = null))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
   }
 
   @Test
   fun `repeat count must be greater than 0`() {
-    val request = appointmentCreateRequest(repeat = AppointmentSchedule(frequency = AppointmentFrequency.MONTHLY, count = 0))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = AppointmentFrequency.MONTHLY, count = 0))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 
   @Test
   fun `appointment description must not be more than 40 characters`() {
-    val request = appointmentCreateRequest(appointmentDescription = "123456789012345678900123456789012345678901")
+    val request = appointmentSeriesCreateRequest(customName = "123456789012345678900123456789012345678901")
     assertSingleValidationError(validator.validate(request), "appointmentDescription", "Appointment description should not exceed 40 characters")
   }
 
   @Test
   fun `appointment comment must not be more than 4,000 characters`() {
-    val request = appointmentCreateRequest(comment = "a".repeat(4001))
+    val request = appointmentSeriesCreateRequest(extraInformation = "a".repeat(4001))
     assertSingleValidationError(validator.validate(request), "comment", "Appointment comment must not exceed 4000 characters")
   }
 

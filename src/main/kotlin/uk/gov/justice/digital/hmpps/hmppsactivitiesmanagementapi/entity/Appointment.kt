@@ -124,6 +124,7 @@ data class Appointment(
   fun toModel() = AppointmentOccurrenceModel(
     id = appointmentId,
     sequenceNumber = sequenceNumber,
+    prisonCode = prisonCode,
     categoryCode = categoryCode,
     customName = customName,
     internalLocationId = internalLocationId,
@@ -132,11 +133,13 @@ data class Appointment(
     startTime = startTime,
     endTime = endTime,
     extraInformation = extraInformation,
+    createdTime = createdTime,
+    createdBy = createdBy,
+    updatedTime = updatedTime,
+    updatedBy = updatedBy,
     cancelledTime = cancelledTime,
     cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
-    updatedTime = updatedTime,
-    updatedBy = updatedBy,
     allocations = attendees().toModel(),
   )
 

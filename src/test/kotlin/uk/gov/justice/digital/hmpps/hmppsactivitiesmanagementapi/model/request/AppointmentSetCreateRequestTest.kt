@@ -5,14 +5,14 @@ import jakarta.validation.Validation
 import jakarta.validation.Validator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 
 class AppointmentSetCreateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
   fun `valid bulk appointment request`() {
-    val request = bulkAppointmentRequest()
+    val request = appointmentSetCreateRequest()
     val bulkAppointmentValidationResult = validator.validate(request)
     assertThat(bulkAppointmentValidationResult).isEmpty()
 
@@ -22,7 +22,7 @@ class AppointmentSetCreateRequestTest {
 
   @Test
   fun `appointment comment must not be more than 4,000 characters`() {
-    val request = bulkAppointmentRequest(comment = "a".repeat(4001)).appointments.first()
+    val request = appointmentSetCreateRequest(extraInformation = "a".repeat(4001)).appointments.first()
     assertSingleValidationError(
       validator.validate(request),
       "comment",
@@ -32,7 +32,7 @@ class AppointmentSetCreateRequestTest {
 
   @Test
   fun `request must have at least one appointment`() {
-    val requestWithNoAppointments = bulkAppointmentRequest().copy(appointments = emptyList())
+    val requestWithNoAppointments = appointmentSetCreateRequest().copy(appointments = emptyList())
 
     assertSingleValidationError(
       validator.validate(requestWithNoAppointments),

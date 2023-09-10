@@ -227,7 +227,6 @@ class TransformFunctionsTest {
           appointmentId = entity.appointmentSeriesId,
           appointmentOccurrenceId = entity.appointmentId,
           appointmentInstanceId = entity.appointmentInstanceId,
-          appointmentDescription = entity.customName,
           oicHearingId = null,
           cancelled = entity.isCancelled,
           suspended = false,
@@ -248,7 +247,7 @@ class TransformFunctionsTest {
 
     @Test
     fun `appointment instance without appointmentDescription to scheduled event`() {
-      val entity = appointmentInstanceEntity(appointmentDescription = null)
+      val entity = appointmentInstanceEntity(customName = null)
       val scheduledEvents = transform(entity)
 
       with(scheduledEvents.first()) {
@@ -258,7 +257,7 @@ class TransformFunctionsTest {
 
     @Test
     fun `appointment instance with empty appointmentDescription to scheduled event`() {
-      val entity = appointmentInstanceEntity(appointmentDescription = "")
+      val entity = appointmentInstanceEntity(customName = "")
       val scheduledEvents = transform(entity)
 
       with(scheduledEvents.first()) {
@@ -278,7 +277,7 @@ class TransformFunctionsTest {
 
     @Test
     fun `appointment instance with appointmentDescription to scheduled event`() {
-      val entity = appointmentInstanceEntity(appointmentDescription = "Description of appointment")
+      val entity = appointmentInstanceEntity(customName = "Description of appointment")
       val scheduledEvents = transform(entity)
 
       with(scheduledEvents.first()) {
@@ -289,7 +288,7 @@ class TransformFunctionsTest {
     @Test
     fun `appointment instance with appointmentDescription and unknown category code to scheduled event`() {
       val entity = appointmentInstanceEntity(
-        appointmentDescription = "Description of appointment",
+        customName = "Description of appointment",
         categoryCode = "UNKNOWN",
       )
       val scheduledEvents = transform(entity)

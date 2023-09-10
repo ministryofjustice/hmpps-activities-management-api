@@ -7,11 +7,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
@@ -26,14 +26,14 @@ class AppointmentSeriesTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime)
+    val expectedModel = appointmentSeriesModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entity = appointmentSeriesEntity()
-    val expectedModel = listOf(appointmentModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime))
+    val expectedModel = listOf(appointmentSeriesModel(entity.createdTime, entity.updatedTime, entity.appointments().first().updatedTime))
     assertThat(listOf(entity).toModel()).isEqualTo(expectedModel)
   }
 
@@ -374,10 +374,10 @@ class AppointmentSeriesTest {
       ),
     )
     assertThat(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      appointmentDetails(
-        appointmentDescription = "Appointment description",
-        created = entity.createdTime,
-        updated = entity.updatedTime,
+      appointmentSeriesDetails(
+        customName = "Appointment description",
+        createdTime = entity.createdTime,
+        updatedTime = entity.updatedTime,
         updatedBy = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )

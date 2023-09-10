@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
@@ -92,8 +92,8 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
         false,
         LocalDate.now().plusDays(1),
         occurrences = listOf(
-          appointmentOccurrenceDetails(
-            6, 6, AppointmentSetSummary(6, 3), 1,
+          appointmentDetails(
+            6, 6, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
               PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
             ),
@@ -103,8 +103,8 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
             "Medical appointment for A1234BC",
             details.created, createdBy, null, null,
           ),
-          appointmentOccurrenceDetails(
-            7, 7, AppointmentSetSummary(6, 3), 1,
+          appointmentDetails(
+            7, 7, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
               PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
             ),
@@ -114,8 +114,8 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
             "Medical appointment for B2345CD",
             details.created, createdBy, null, null,
           ),
-          appointmentOccurrenceDetails(
-            8, 8, AppointmentSetSummary(6, 3), 1,
+          appointmentDetails(
+            8, 8, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
               PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
             ),

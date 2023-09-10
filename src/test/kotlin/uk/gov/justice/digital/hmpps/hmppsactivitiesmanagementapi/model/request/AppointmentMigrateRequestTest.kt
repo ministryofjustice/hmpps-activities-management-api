@@ -66,7 +66,7 @@ class AppointmentMigrateRequestTest {
 
   @Test
   fun `created must be supplied`() {
-    val request = appointmentMigrateRequest(created = null)
+    val request = appointmentMigrateRequest(createdTime = null)
     assertSingleValidationError(validator.validate(request), "created", "Created must be supplied")
   }
 

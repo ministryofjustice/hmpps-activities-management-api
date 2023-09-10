@@ -4,14 +4,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 
 class AppointmentSearchTest {
   @Test
   fun `entity to result mapping`() {
     val entity = appointmentSearchEntity()
-    val expectedModel = appointmentOccurrenceSearchResultModel()
+    val expectedModel = appointmentSearchResultModel()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     assertThat(entity.toResult(entity.attendees, referenceCodeMap, locationMap)).isEqualTo(expectedModel)
@@ -20,7 +20,7 @@ class AppointmentSearchTest {
   @Test
   fun `entity list to results list mapping`() {
     val entityList = listOf(appointmentSearchEntity())
-    val expectedModel = listOf(appointmentOccurrenceSearchResultModel())
+    val expectedModel = listOf(appointmentSearchResultModel())
     val referenceCodeMap = mapOf(entityList.first().categoryCode to appointmentCategoryReferenceCode(entityList.first().categoryCode))
     val locationMap = mapOf(entityList.first().internalLocationId!! to appointmentLocation(entityList.first().internalLocationId!!, "TPR"))
     assertThat(entityList.toResults(mapOf(entityList.first().appointmentId to entityList.first().attendees), referenceCodeMap, locationMap)).isEqualTo(expectedModel)

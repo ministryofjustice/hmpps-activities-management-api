@@ -10,8 +10,8 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -69,13 +69,13 @@ class AppointmentDetailsServiceTest {
       ),
     )
     assertThat(service.getAppointmentDetailsById(1)).isEqualTo(
-      appointmentOccurrenceDetails(
+      appointmentDetails(
         entity.appointmentId,
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = entity.sequenceNumber,
-        appointmentDescription = "Appointment description",
-        created = appointmentSeries.createdTime,
-        updated = entity.updatedTime,
+        customName = "Appointment description",
+        createdTime = appointmentSeries.createdTime,
+        updatedTime = entity.updatedTime,
       ),
     )
   }

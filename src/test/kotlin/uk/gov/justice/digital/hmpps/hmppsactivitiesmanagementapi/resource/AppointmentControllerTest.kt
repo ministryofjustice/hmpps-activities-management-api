@@ -15,7 +15,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
@@ -86,7 +86,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   @Test
   fun `create appointment with valid json returns 201 created and appointment model`() {
-    val request = appointmentCreateRequest()
+    val request = appointmentSeriesCreateRequest()
     val expectedResponse = appointmentSeriesEntity().toModel()
 
     val mockPrincipal: Principal = mock()

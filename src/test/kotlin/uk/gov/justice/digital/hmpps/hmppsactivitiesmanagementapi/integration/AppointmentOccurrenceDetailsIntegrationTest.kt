@@ -128,7 +128,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       AppointmentDetails(
         6,
         6,
-        AppointmentSetSummary(6, 3),
+        AppointmentSetSummary(6, 3, 3),
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",

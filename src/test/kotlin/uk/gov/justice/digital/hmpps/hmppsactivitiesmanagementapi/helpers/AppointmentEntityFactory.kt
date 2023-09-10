@@ -32,7 +32,7 @@ internal fun appointmentSeriesEntity(
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
-  created: LocalDateTime = LocalDateTime.now().minusDays(1),
+  createdTime: LocalDateTime = LocalDateTime.now().minusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
@@ -52,7 +52,7 @@ internal fun appointmentSeriesEntity(
   startTime = startTime,
   endTime = endTime,
   extraInformation = "Appointment series level comment",
-  createdTime = created,
+  createdTime = createdTime,
   createdBy = createdBy,
   updatedTime = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
@@ -72,7 +72,7 @@ internal fun appointmentSeriesEntity(
   }
 }
 
-fun appointmentEntity(appointmentSeries: AppointmentSeries, appointmentId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointmentSeries.startTime, updated: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
+fun appointmentEntity(appointmentSeries: AppointmentSeries, appointmentId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointmentSeries.startTime, updatedTime: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
   Appointment(
     appointmentId = appointmentId,
     appointmentSeries = appointmentSeries,
@@ -89,7 +89,7 @@ fun appointmentEntity(appointmentSeries: AppointmentSeries, appointmentId: Long 
     extraInformation = "Appointment level comment",
     createdTime = appointmentSeries.createdTime,
     createdBy = appointmentSeries.createdBy,
-    updatedTime = updated,
+    updatedTime = updatedTime,
     updatedBy = updatedBy,
   ).apply {
     prisonerNumberToBookingIdMap.map {
@@ -114,7 +114,7 @@ internal fun appointmentInstanceEntity(
   appointmentDate: LocalDate = LocalDate.now().plusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
-  appointmentDescription: String? = null,
+  customName: String? = null,
   categoryCode: String = "TEST",
 ) =
   AppointmentInstance(
@@ -127,7 +127,7 @@ internal fun appointmentInstanceEntity(
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     categoryCode = categoryCode,
-    customName = appointmentDescription,
+    customName = customName,
     internalLocationId = if (inCell) null else internalLocationId,
     customLocation = null,
     inCell = inCell,
@@ -187,19 +187,19 @@ internal fun appointmentSearchEntity(
   }
 
 internal fun appointmentSetEntity(
-  bulkAppointmentId: Long = 1,
+  appointmentSetId: Long = 1,
   inCell: Boolean = false,
-  appointmentDescription: String? = null,
+  customName: String? = null,
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
 ) =
   AppointmentSet(
-    appointmentSetId = bulkAppointmentId,
+    appointmentSetId = appointmentSetId,
     prisonCode = "TPR",
     categoryCode = "TEST",
-    customName = appointmentDescription,
+    customName = customName,
     appointmentTier = appointmentTierNotSpecified(),
     internalLocationId = if (inCell) null else 123,
     inCell = inCell,
@@ -212,12 +212,12 @@ internal fun appointmentSetEntity(
       appointmentSeriesEntity(
         count + 1,
         this,
-        customName = appointmentDescription,
+        customName = customName,
         startTime = startTime.plusMinutes(30 * count),
         endTime = endTime.plusMinutes(30 * count),
         prisonerNumberToBookingIdMap = mapOf(it.toPair()),
         updatedBy = null,
-        created = createdTime,
+        createdTime = createdTime,
       )
       count++
     }

@@ -27,7 +27,7 @@ data class AppointmentDetails(
     description = "The internally generated identifier for the parent appointment series",
     example = "12345",
   )
-  val appointmentId: Long,
+  val appointmentSeriesId: Long,
 
   @Schema(
     description = "Summary of the appointment set the parent appointment series is part of",

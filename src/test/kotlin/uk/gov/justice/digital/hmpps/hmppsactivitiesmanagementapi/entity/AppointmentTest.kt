@@ -9,9 +9,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -123,14 +123,14 @@ class AppointmentTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSeriesEntity().appointments().first()
-    val expectedModel = appointmentOccurrenceModel(entity.updatedTime)
+    val expectedModel = appointmentModel(entity.updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val entityList = appointmentSeriesEntity().appointments()
-    val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updatedTime))
+    val expectedModel = listOf(appointmentModel(entityList.first().updatedTime))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 
@@ -255,13 +255,13 @@ class AppointmentTest {
       ),
     )
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      appointmentOccurrenceDetails(
+      appointmentDetails(
         entity.appointmentId,
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = 1,
-        appointmentDescription = appointmentSeries.customName,
-        created = appointmentSeries.createdTime,
-        updated = entity.updatedTime,
+        customName = appointmentSeries.customName,
+        createdTime = appointmentSeries.createdTime,
+        updatedTime = entity.updatedTime,
       ),
     )
   }
@@ -288,13 +288,13 @@ class AppointmentTest {
     )
     assertThat(listOf(entity).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
-        appointmentOccurrenceDetails(
+        appointmentDetails(
           entity.appointmentId,
           appointmentSeries.appointmentSeriesId,
           sequenceNumber = 1,
-          appointmentDescription = appointmentSeries.customName,
-          created = appointmentSeries.createdTime,
-          updated = entity.updatedTime,
+          customName = appointmentSeries.customName,
+          createdTime = appointmentSeries.createdTime,
+          updatedTime = entity.updatedTime,
         ),
       ),
     )
@@ -319,7 +319,7 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointmentSet).isEqualTo(AppointmentSetSummary(1, 3))
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointmentSet).isEqualTo(AppointmentSetSummary(1, 3, 3))
   }
 
   @Test

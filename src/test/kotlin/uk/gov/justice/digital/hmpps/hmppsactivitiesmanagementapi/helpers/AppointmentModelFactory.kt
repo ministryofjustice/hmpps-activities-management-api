@@ -27,7 +27,7 @@ import java.time.LocalTime
 fun appointmentCategorySummary() =
   AppointmentCategorySummary("TEST", "Test Category")
 
-fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrenceUpdated: LocalDateTime?) =
+fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTime?, appointmentUpdatedTime: LocalDateTime?) =
   AppointmentSeries(
     1,
     AppointmentType.INDIVIDUAL,
@@ -41,20 +41,21 @@ fun appointmentModel(created: LocalDateTime, updated: LocalDateTime?, occurrence
     LocalTime.of(10, 30),
     null,
     "Appointment series level comment",
-    created,
+    createdTime,
     "CREATE.USER",
-    updated,
+    updatedTime,
     "UPDATE.USER",
-    appointments = listOf(appointmentOccurrenceModel(occurrenceUpdated)),
+    appointments = listOf(appointmentModel(appointmentUpdatedTime)),
   )
 
-fun appointmentOccurrenceAllocationModel() =
+fun appointmentAttendeeModel() =
   AppointmentAttendee(1, "A1234BC", 456)
 
-fun appointmentOccurrenceModel(updated: LocalDateTime?) =
+fun appointmentModel(updatedTime: LocalDateTime?) =
   Appointment(
     1,
     1,
+    "TPR",
     "TEST",
     "Appointment description",
     123,
@@ -63,17 +64,19 @@ fun appointmentOccurrenceModel(updated: LocalDateTime?) =
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
     "Appointment level comment",
-    null,
-    null,
-    null,
-    updated,
+    LocalDateTime.now(),
+    "CREATE.USER",
+    updatedTime,
     "UPDATE.USER",
-    allocations = listOf(appointmentOccurrenceAllocationModel()),
+    null,
+    null,
+    null,
+    allocations = listOf(appointmentAttendeeModel()),
   )
 
 fun appointmentInstanceModel(
-  created: LocalDateTime = LocalDateTime.now().minusDays(1),
-  updated: LocalDateTime? = LocalDateTime.now(),
+  createdTime: LocalDateTime = LocalDateTime.now().minusDays(1),
+  updatedTime: LocalDateTime? = LocalDateTime.now(),
 ) = AppointmentInstance(
   3,
   1,
@@ -91,42 +94,42 @@ fun appointmentInstanceModel(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment level comment",
-  created = created,
+  created = createdTime,
   "CREATE.USER",
-  updated = updated,
+  updated = updatedTime,
   "UPDATE.USER",
 )
 
-fun appointmentCreateRequest(
+fun appointmentSeriesCreateRequest(
   appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   prisonCode: String? = "TPR",
   prisonerNumbers: List<String> = listOf("A1234BC"),
   categoryCode: String? = "TEST",
-  appointmentDescription: String? = "Appointment description",
+  customName: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
-  comment: String = "Appointment level comment",
-  repeat: AppointmentSchedule? = null,
+  extraInformation: String = "Appointment level comment",
+  schedule: AppointmentSchedule? = null,
 ) =
   AppointmentSeriesCreateRequest(
     appointmentType,
     prisonCode,
     prisonerNumbers,
     categoryCode,
-    appointmentDescription,
+    customName,
     internalLocationId,
     inCell,
     startDate,
     startTime,
     endTime,
-    repeat,
-    comment,
+    schedule,
+    extraInformation,
   )
 
-fun bulkAppointmentRequest(
+fun appointmentSetCreateRequest(
   categoryCode: String = "TEST",
   prisonCode: String = "TPR",
   internalLocationId: Long = 123,
@@ -134,8 +137,8 @@ fun bulkAppointmentRequest(
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(13, 0),
   endTime: LocalTime = LocalTime.of(14, 30),
-  comment: String = "Test comment",
-  appointmentDescription: String = "Appointment description",
+  extraInformation: String = "Test comment",
+  customName: String = "Appointment description",
   prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
 ) =
   AppointmentSetCreateRequest(
@@ -144,13 +147,13 @@ fun bulkAppointmentRequest(
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    customName = appointmentDescription,
+    customName = customName,
     appointments = prisonerNumbers.map {
       IndividualAppointment(
         prisonerNumber = it,
         startTime = startTime,
         endTime = endTime,
-        extraInformation = comment,
+        extraInformation = extraInformation,
       )
     }.toList(),
   )
@@ -164,10 +167,10 @@ fun appointmentMigrateRequest(
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
-  comment: String = "Appointment level comment",
-  created: LocalDateTime? = LocalDateTime.now(),
+  extraInformation: String = "Appointment level comment",
+  createdTime: LocalDateTime? = LocalDateTime.now(),
   createdBy: String? = "CREATE.USER",
-  updated: LocalDateTime? = null,
+  updatedTime: LocalDateTime? = null,
   updatedBy: String? = null,
   isCancelled: Boolean? = false,
 ) =
@@ -180,30 +183,30 @@ fun appointmentMigrateRequest(
     startDate,
     startTime,
     endTime,
-    comment,
+    extraInformation,
     isCancelled,
-    created,
+    createdTime,
     createdBy,
-    updated,
+    updatedTime,
     updatedBy,
   )
 
-fun appointmentDetails(
-  appointmentDescription: String? = null,
+fun appointmentSeriesDetails(
+  customName: String? = null,
   category: AppointmentCategorySummary = appointmentCategorySummary(),
-  created: LocalDateTime = LocalDateTime.now(),
-  updated: LocalDateTime? = LocalDateTime.now(),
+  createdTime: LocalDateTime = LocalDateTime.now(),
+  updatedTime: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
 ) = AppointmentSeriesDetails(
   1,
   AppointmentType.INDIVIDUAL,
   "TPR",
-  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+  if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   prisoners = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
   category = category,
-  appointmentDescription,
+  customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
@@ -211,84 +214,84 @@ fun appointmentDetails(
   LocalTime.of(10, 30),
   null,
   "Appointment series level comment",
-  created,
+  createdTime,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  updated,
+  updatedTime,
   updatedBy,
   appointments = listOf(
     AppointmentSummary(
       1,
       1,
-      if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+      if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
       category = category,
-      appointmentDescription,
+      customName,
       AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
       false,
       LocalDate.now().plusDays(1),
       LocalTime.of(9, 0),
       LocalTime.of(10, 30),
       "Appointment level comment",
-      isEdited = updated != null,
+      isEdited = updatedTime != null,
       isCancelled = false,
-      updated,
+      updatedTime,
       updatedBy,
     ),
   ),
 )
 
-fun appointmentOccurrenceDetails(
-  appointmentOccurrenceId: Long = 1,
-  appointmentId: Long = 2,
+fun appointmentDetails(
+  appointmentId: Long = 1,
+  appointmentSeriesId: Long = 2,
   appointmentSetSummary: AppointmentSetSummary? = null,
   sequenceNumber: Int = 3,
   prisoners: List<PrisonerSummary> = listOf(
     PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
   ),
   category: AppointmentCategorySummary = appointmentCategorySummary(),
-  appointmentDescription: String? = null,
+  customName: String? = null,
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
-  comment: String = "Appointment level comment",
-  created: LocalDateTime = LocalDateTime.now(),
+  extraInformation: String = "Appointment level comment",
+  createdTime: LocalDateTime = LocalDateTime.now(),
   createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
-  updated: LocalDateTime? = LocalDateTime.now(),
+  updatedTime: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
 ) = AppointmentDetails(
-  appointmentOccurrenceId,
   appointmentId,
+  appointmentSeriesId,
   appointmentSetSummary,
   AppointmentType.INDIVIDUAL,
   sequenceNumber,
   "TPR",
-  if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+  if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   prisoners,
   category,
-  appointmentDescription,
+  customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
   startTime,
   endTime,
-  comment,
+  extraInformation,
   null,
-  updated != null,
+  updatedTime != null,
   false,
   false,
-  created,
+  createdTime,
   createdBy,
-  updated,
+  updatedTime,
   updatedBy,
   null,
   null,
 )
 
-fun appointmentOccurrenceSearchResultModel() = AppointmentSearchResult(
+fun appointmentSearchResultModel() = AppointmentSearchResult(
   1,
   2,
   AppointmentType.INDIVIDUAL,
   "TPR",
   appointmentCategorySummary().description,
-  listOf(appointmentOccurrenceAllocationModel()),
+  listOf(appointmentAttendeeModel()),
   appointmentCategorySummary(),
   null,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -304,49 +307,49 @@ fun appointmentOccurrenceSearchResultModel() = AppointmentSearchResult(
   false,
 )
 
-fun bulkAppointmentDetails(
-  bulkAppointmentId: Long = 1,
+fun appointmentSetDetails(
+  appointmentSetId: Long = 1,
   category: AppointmentCategorySummary = appointmentCategorySummary(),
-  appointmentDescription: String? = null,
-  created: LocalDateTime = LocalDateTime.now(),
+  customName: String? = null,
+  createdTime: LocalDateTime = LocalDateTime.now(),
 ) = AppointmentSetDetails(
-  bulkAppointmentId,
+  appointmentSetId,
   "TPR",
-  appointmentName = if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+  appointmentName = if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   category,
-  appointmentDescription,
+  customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
   occurrences = listOf(
-    appointmentOccurrenceDetails(
-      1, 1, AppointmentSetSummary(1, 3), 1,
+    appointmentDetails(
+      1, 1, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
       ),
-      category, appointmentDescription,
+      category, customName,
       LocalTime.of(9, 0),
-      LocalTime.of(10, 30), created = created, updated = null, updatedBy = null,
+      LocalTime.of(10, 30), createdTime = createdTime, updatedTime = null, updatedBy = null,
     ),
-    appointmentOccurrenceDetails(
-      2, 2, AppointmentSetSummary(1, 3), 1,
+    appointmentDetails(
+      2, 2, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
       ),
-      category, appointmentDescription,
+      category, customName,
       LocalTime.of(9, 30),
-      LocalTime.of(11, 0), created = created, updated = null, updatedBy = null,
+      LocalTime.of(11, 0), createdTime = createdTime, updatedTime = null, updatedBy = null,
     ),
-    appointmentOccurrenceDetails(
-      3, 3, AppointmentSetSummary(1, 3), 1,
+    appointmentDetails(
+      3, 3, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
       ),
-      category, appointmentDescription,
+      category, customName,
       LocalTime.of(10, 0),
-      LocalTime.of(11, 30), created = created, updated = null, updatedBy = null,
+      LocalTime.of(11, 30), createdTime = createdTime, updatedTime = null, updatedBy = null,
     ),
   ),
-  created,
+  createdTime,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
 )

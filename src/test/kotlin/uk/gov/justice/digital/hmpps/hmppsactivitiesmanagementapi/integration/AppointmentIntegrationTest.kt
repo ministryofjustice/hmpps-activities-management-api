@@ -13,7 +13,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
@@ -85,6 +85,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           Appointment(
             2,
             1,
+            "TPR",
             "AC1",
             "Appointment description",
             123,
@@ -93,6 +94,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             LocalTime.of(9, 0),
             LocalTime.of(10, 30),
             "Appointment level comment",
+            appointment.createdTime,
+            "TEST.USER",
             null,
             null,
             null,
@@ -126,14 +129,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `create appointment authorisation required`() {
     webTestClient.post()
       .uri("/appointments")
-      .bodyValue(appointmentCreateRequest())
+      .bodyValue(appointmentSeriesCreateRequest())
       .exchange()
       .expectStatus().isUnauthorized
   }
 
   @Test
   fun `create appointment single appointment single prisoner success`() {
-    val request = appointmentCreateRequest(categoryCode = "AC1")
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -169,7 +172,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment group appointment two prisoner success`() {
-    val request = appointmentCreateRequest(
+    val request = appointmentSeriesCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
@@ -216,7 +219,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create individual repeat appointment success`() {
     val request =
-      appointmentCreateRequest(categoryCode = "AC1", repeat = AppointmentSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
+      appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -256,11 +259,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // 5 prisoners with 2 occurrences results in 10 appointment instances. Lower than the configured max-sync-appointment-instance-actions value
     // The resulting create appointment request will be synchronous, creating all occurrences and allocations
     val prisonerNumberToBookingIdMap = (1L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentCreateRequest(
+    val request = appointmentSeriesCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentSchedule(AppointmentFrequency.DAILY, 2),
+      schedule = AppointmentSchedule(AppointmentFrequency.DAILY, 2),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -302,11 +305,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // occurrences and allocations will be created as an asynchronous job
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
 
-    val request = appointmentCreateRequest(
+    val request = appointmentSeriesCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      repeat = AppointmentSchedule(AppointmentFrequency.DAILY, 4),
+      schedule = AppointmentSchedule(AppointmentFrequency.DAILY, 4),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -371,6 +374,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           Appointment(
             appointmentSeries.appointments.first().id,
             1,
+            request.prisonCode!!,
             request.categoryCode!!,
             request.customName,
             request.internalLocationId,
@@ -379,6 +383,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             request.startTime!!,
             request.endTime,
             request.extraInformation,
+            appointmentSeries.createdTime,
+            "test-client",
             null,
             null,
             null,
@@ -425,6 +431,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
           Appointment(
             appointmentSeries.appointments.first().id,
             1,
+            request.prisonCode!!,
             request.categoryCode!!,
             request.customName,
             request.internalLocationId,
@@ -433,6 +440,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             request.startTime!!,
             request.endTime,
             request.extraInformation,
+            appointmentSeries.createdTime,
+            "test-client",
             null,
             null,
             null,

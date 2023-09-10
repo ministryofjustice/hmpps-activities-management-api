@@ -2,13 +2,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AppointmentTest : ModelTest() {
-
   @Test
   fun `dates and times are serialized correctly`() {
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
@@ -23,32 +21,31 @@ class AppointmentTest : ModelTest() {
     val expectedCreatedTime = "2023-01-31T09:01:02"
     val expectedUpdatedTime = "2023-02-01T10:02:03"
 
-    val appointmentSeries = AppointmentSeries(
+    val appointment = Appointment(
       id = 1,
-      appointmentType = AppointmentType.INDIVIDUAL,
+      sequenceNumber = 1,
       prisonCode = "PVI",
-      categoryCode = "C11",
-      customName = "Appointment description",
+      categoryCode = "AC1",
+      customName = null,
       internalLocationId = null,
-      inCell = true,
+      extraInformation = "Blah",
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
-      schedule = null,
-      extraInformation = "Blah",
+      inCell = true,
       createdTime = originalCreatedTime,
       createdBy = "A. Jones",
       updatedTime = originalUpdatedTime,
       updatedBy = "A.Jones",
     )
 
-    val json = objectMapper.writeValueAsString(appointmentSeries)
+    val json = objectMapper.writeValueAsString(appointment)
     val jsonMap = objectMapper.readValue(json, Map::class.java)
 
     assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
     assertThat(jsonMap["startTime"]).isEqualTo(expectedStartTime)
     assertThat(jsonMap["endTime"]).isEqualTo(expectedEndTime)
-    assertThat(jsonMap["created"]).isEqualTo(expectedCreatedTime)
-    assertThat(jsonMap["updated"]).isEqualTo(expectedUpdatedTime)
+    assertThat(jsonMap["createdTime"]).isEqualTo(expectedCreatedTime)
+    assertThat(jsonMap["updatedTime"]).isEqualTo(expectedUpdatedTime)
   }
 }

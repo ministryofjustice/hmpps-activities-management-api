@@ -11,7 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentDetailsService
 
 @WebMvcTest(controllers = [AppointmentOccurrenceDetailsController::class])
@@ -24,7 +24,7 @@ class AppointmentOccurrenceDetailsControllerTest : ControllerTestBase<Appointmen
 
   @Test
   fun `200 response when get appointment occurrence details by valid id`() {
-    val appointmentOccurrenceDetails = appointmentOccurrenceDetails()
+    val appointmentOccurrenceDetails = appointmentDetails()
 
     whenever(appointmentDetailsService.getAppointmentDetailsById(1)).thenReturn(appointmentOccurrenceDetails)
 
