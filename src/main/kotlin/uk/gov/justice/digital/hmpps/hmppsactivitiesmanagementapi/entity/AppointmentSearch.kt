@@ -105,7 +105,7 @@ data class AppointmentSearch(
 }
 
 fun List<AppointmentSearch>.toResults(
-  allocationsMap: Map<Long, List<AppointmentAttendeeSearch>>,
+  attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-) = map { it.toResult(allocationsMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
+) = map { it.toResult(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }

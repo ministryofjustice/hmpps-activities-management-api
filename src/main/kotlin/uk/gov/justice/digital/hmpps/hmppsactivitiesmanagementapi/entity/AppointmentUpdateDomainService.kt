@@ -104,14 +104,14 @@ class AppointmentUpdateDomainService(
     // to the appointment, therefore
     if (request.removePrisonerNumbers?.isNotEmpty() == true && instanceCount == 0) {
       // only count attendees that will be removed i.e. where there's an attendee for the requested prison number
-      instanceCount += appointmentsToUpdate.flatMap { it.attendees().filter { allocation -> request.removePrisonerNumbers.contains(allocation.prisonerNumber) } }.size
+      instanceCount += appointmentsToUpdate.flatMap { it.attendees().filter { attendee -> request.removePrisonerNumbers.contains(attendee.prisonerNumber) } }.size
     }
 
     if (request.addPrisonerNumbers?.isNotEmpty() == true) {
       // only count attendees that will be added i.e. where there isn't already an attendee for the requested prison number
       instanceCount += appointmentsToUpdate.sumOf { appointment ->
         request.addPrisonerNumbers.filter {
-          !appointment.attendees().map { allocation -> allocation.prisonerNumber }.contains(it)
+          !appointment.attendees().map { attendee -> attendee.prisonerNumber }.contains(it)
         }.size
       }
     }
@@ -209,7 +209,7 @@ class AppointmentUpdateDomainService(
   ) {
     appointmentsToUpdate.forEach { appointmentToUpdate ->
       request.addPrisonerNumbers?.apply {
-        val existingPrisonNumbers = appointmentToUpdate.attendees().map { allocation -> allocation.prisonerNumber }
+        val existingPrisonNumbers = appointmentToUpdate.attendees().map { attendee -> attendee.prisonerNumber }
         val newPrisonNumbers = this.filterNot { existingPrisonNumbers.contains(it) }
         newPrisonNumbers.forEach {
           appointmentToUpdate.addAttendee(

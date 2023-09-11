@@ -25,8 +25,8 @@ class AppointmentSetCreateRequestTest {
     val request = appointmentSetCreateRequest(extraInformation = "a".repeat(4001)).appointments.first()
     assertSingleValidationError(
       validator.validate(request),
-      "comment",
-      "Appointment comment must not exceed 4000 characters",
+      "extraInformation",
+      "Extra information must not exceed 4000 characters",
     )
   }
 

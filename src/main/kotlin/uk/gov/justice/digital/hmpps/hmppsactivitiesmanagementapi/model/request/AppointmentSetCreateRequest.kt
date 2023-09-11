@@ -105,6 +105,7 @@ data class IndividualAppointment(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
+  @field:Size(max = 4000, message = "Extra information must not exceed {max} characters")
   @Schema(
     description =
     """
