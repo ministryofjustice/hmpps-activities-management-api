@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
@@ -49,6 +50,7 @@ class ActivityMetricsJob(
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val dailyActivityMetricsService: DailyActivityMetricsService,
   private val telemetryClient: TelemetryClient,
+  private val jobRunner: SafeJobRunner,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -57,23 +59,27 @@ class ActivityMetricsJob(
   @Async("asyncExecutor")
   @Transactional
   fun execute() {
-    log.info("Generating daily activities metrics")
+    jobRunner.runJob(
+      JobDefinition(JobType.ACTIVITIES_METRICS) {
+        log.info("Generating daily activities metrics")
 
-    val elapsed = measureTimeMillis {
-      val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
-      val allActivityTiers = activityTierRepository.findAll()
-      val allActivityCategories = activityCategoryRepository.findAll()
+        val elapsed = measureTimeMillis {
+          val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
+          val allActivityTiers = activityTierRepository.findAll()
+          val allActivityCategories = activityCategoryRepository.findAll()
 
-      allPrisonCodes.forEach { prisonCode ->
-        allActivityTiers.forEach { activityTier ->
-          allActivityCategories.forEach { activityCategory ->
-            sendActivitiesDailyStatsEvent(prisonCode, activityTier, activityCategory)
+          allPrisonCodes.forEach { prisonCode ->
+            allActivityTiers.forEach { activityTier ->
+              allActivityCategories.forEach { activityCategory ->
+                sendActivitiesDailyStatsEvent(prisonCode, activityTier, activityCategory)
+              }
+            }
           }
         }
-      }
-    }
 
-    log.info("Generating daily activities metrics took ${elapsed}ms")
+        log.info("Generating daily activities metrics took ${elapsed}ms")
+      },
+    )
   }
 
   private fun sendActivitiesDailyStatsEvent(
