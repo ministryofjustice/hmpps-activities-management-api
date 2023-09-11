@@ -47,6 +47,27 @@ class AppointmentSetServiceTest {
   }
 
   @Test
+  fun `getAppointmentSetById returns mapped appointment details for known appointment set id`() {
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThat(service.getAppointmentSetById(1)).isEqualTo(entity.toModel())
+  }
+
+  @Test
+  fun `getAppointmentSetById throws entity not found exception for unknown appointment set id`() {
+    assertThatThrownBy { service.getAppointmentSetById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Appointment Set -1 not found")
+  }
+
+  @Test
+  fun `getAppointmentSetById throws caseload access exception when caseload id header is different`() {
+    addCaseloadIdToRequestHeader("WRONG")
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getAppointmentSetById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
   fun `getAppointmentSetDetailsById returns mapped appointment details for known appointment set id`() {
     val entity = appointmentSetEntity()
     whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))

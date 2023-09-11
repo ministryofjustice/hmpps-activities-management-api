@@ -136,16 +136,16 @@ fun appointmentSeriesCreateRequest(
   )
 
 fun appointmentSetCreateRequest(
-  categoryCode: String = "TEST",
-  prisonCode: String = "TPR",
-  internalLocationId: Long = 123,
+  prisonCode: String? = "TPR",
+  categoryCode: String? = "TEST",
+  customName: String? = "Appointment description",
+  internalLocationId: Long? = 123,
   inCell: Boolean = false,
-  startDate: LocalDate = LocalDate.now().plusDays(1),
-  startTime: LocalTime = LocalTime.of(13, 0),
-  endTime: LocalTime = LocalTime.of(14, 30),
-  extraInformation: String = "Test comment",
-  customName: String = "Appointment description",
-  prisonerNumbers: List<String> = listOf("A1234BC", "A1234BD"),
+  startDate: LocalDate? = LocalDate.now().plusDays(1),
+  startTime: LocalTime? = LocalTime.of(13, 0),
+  endTime: LocalTime? = LocalTime.of(14, 30),
+  extraInformation: String? = "Test comment",
+  prisonerNumbers: List<String?> = listOf("A1234BC", "A1234BD"),
 ) =
   AppointmentSetCreateRequest(
     categoryCode = categoryCode,

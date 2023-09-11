@@ -700,24 +700,24 @@ class AppointmentSeriesServiceTest {
   fun `create appointment set success`() {
     val request = appointmentSetCreateRequest()
 
-    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode to appointmentCategoryReferenceCode(request.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(
         mapOf(
-          request.internalLocationId to appointmentLocation(
-            request.internalLocationId,
-            request.prisonCode,
+          request.internalLocationId!! to appointmentLocation(
+            request.internalLocationId!!,
+            request.prisonCode!!,
           ),
         ),
       )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber }))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
       .thenReturn(
         Mono.just(
           listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber, bookingId = 1, prisonId = request.prisonCode),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber, bookingId = 2, prisonId = request.prisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = request.prisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
           ),
         ),
       )
@@ -725,13 +725,13 @@ class AppointmentSeriesServiceTest {
     whenever(appointmentSetRepository.saveAndFlush(appointmentSetEntityCaptor.capture())).thenReturn(
       AppointmentSet(
         appointmentSetId = 1,
-        prisonCode = request.prisonCode,
-        categoryCode = request.categoryCode,
+        prisonCode = request.prisonCode!!,
+        categoryCode = request.categoryCode!!,
         customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
         internalLocationId = request.internalLocationId,
         inCell = request.inCell,
-        startDate = request.startDate,
+        startDate = request.startDate!!,
         createdBy = "TEST.USER",
       ).apply {
         this.addAppointmentSeries(appointmentSeriesEntity(appointmentSeriesId = 1, appointmentSet = this))
@@ -799,24 +799,24 @@ class AppointmentSeriesServiceTest {
   fun `create appointment set throws illegal argument exception when prisoner is not a resident of requested prison code`() {
     val request = appointmentSetCreateRequest()
 
-    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode)))
+    whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode to appointmentCategoryReferenceCode(request.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(
         mapOf(
-          request.internalLocationId to appointmentLocation(
-            request.internalLocationId,
-            request.prisonCode,
+          request.internalLocationId!! to appointmentLocation(
+            request.internalLocationId!!,
+            request.prisonCode!!,
           ),
         ),
       )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber }))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
       .thenReturn(
         Mono.just(
           listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber, bookingId = 1, prisonId = "DIFFERENT"),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber, bookingId = 2, prisonId = request.prisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = "DIFFERENT"),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
           ),
         ),
       )

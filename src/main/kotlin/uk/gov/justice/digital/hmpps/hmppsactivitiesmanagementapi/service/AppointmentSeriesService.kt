@@ -78,10 +78,10 @@ class AppointmentSeriesService(
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentSeriesById(appointmentSeriesId: Long): AppointmentSeries {
-    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId).toModel()
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
-    return appointmentSeries
+    return appointmentSeries.toModel()
   }
 
   // TODO: Create AppointmentSetService and move this function
@@ -91,22 +91,22 @@ class AppointmentSeriesService(
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
 
     return require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
-      createPrisonerMap(request.appointments.map { it.prisonerNumber }, request.prisonCode).let { prisonerBookings ->
+      createPrisonerMap(request.appointments.map { it.prisonerNumber!! }, request.prisonCode).let { prisonerBookings ->
         AppointmentSetEntity(
-          prisonCode = request.prisonCode,
-          categoryCode = request.categoryCode,
+          prisonCode = request.prisonCode!!,
+          categoryCode = request.categoryCode!!,
           customName = request.customName,
           appointmentTier = appointmentTier,
           internalLocationId = request.internalLocationId,
           inCell = request.inCell,
-          startDate = request.startDate,
+          startDate = request.startDate!!,
           createdBy = principal.name,
         ).apply {
           request.appointments.map {
             buildValidAppointmentSeriesEntity(
               appointmentType = AppointmentType.INDIVIDUAL,
               prisonCode = request.prisonCode,
-              prisonerNumbers = listOf(it.prisonerNumber),
+              prisonerNumbers = listOf(it.prisonerNumber!!),
               prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
               categoryCode = request.categoryCode,
               customName = request.customName,
@@ -410,7 +410,7 @@ class AppointmentSeriesService(
         hasCustomName = appointment.customName != null,
         internalLocationId = appointment.internalLocationId,
         startDate = appointment.startDate,
-        prisonerNumbers = request.appointments.map { it.prisonerNumber },
+        prisonerNumbers = request.appointments.map { it.prisonerNumber!! },
         createdAt = LocalDateTime.now(),
       ),
     )

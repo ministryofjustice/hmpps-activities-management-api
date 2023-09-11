@@ -19,34 +19,34 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesDetailsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 import java.security.Principal
 
 @RestController
-@RequestMapping("/appointment-series", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentSeriesController(
+@RequestMapping("/appointment-set", produces = [MediaType.APPLICATION_JSON_VALUE])
+class AppointmentSetController(
+  private val appointmentSetService: AppointmentSetService,
   private val appointmentSeriesService: AppointmentSeriesService,
-  private val appointmentSeriesDetailsService: AppointmentSeriesDetailsService,
 ) {
-  @GetMapping(value = ["/{appointmentSeriesId}"])
+  @GetMapping(value = ["/{appointmentSetId}"])
   @ResponseBody
   @Operation(
-    summary = "Get an appointment series by its id",
-    description = "Returns an appointment series with its properties and references to NOMIS by its unique identifier.",
+    summary = "Get an appointment set by its id",
+    description = "Returns an appointment set with its properties and references to NOMIS by its unique identifier.",
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Appointment series found",
+        description = "Appointment set found",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentSeries::class),
+            schema = Schema(implementation = AppointmentSet::class),
           ),
         ],
       ),
@@ -62,7 +62,7 @@ class AppointmentSeriesController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The appointment series for this id was not found.",
+        description = "The appointment set for this id was not found.",
         content = [
           Content(
             mediaType = "application/json",
@@ -74,24 +74,24 @@ class AppointmentSeriesController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentSeriesById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeries =
-    appointmentSeriesService.getAppointmentSeriesById(appointmentSeriesId)
+  fun getAppointmentSetById(@PathVariable("appointmentSetId") appointmentSetId: Long): AppointmentSet =
+    appointmentSetService.getAppointmentSetById(appointmentSetId)
 
-  @GetMapping(value = ["/{appointmentSeriesId}/details"])
+  @GetMapping(value = ["/{appointmentSetId}/details"])
   @ResponseBody
   @Operation(
-    summary = "Get the details of an appointment series for display purposes by its id",
-    description = "Returns the displayable details of an appointment series by its unique identifier.",
+    summary = "Get the details of an appointment set for display purposes by its id",
+    description = "Returns the displayable details of an appointment set by its unique identifier.",
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Appointment series found",
+        description = "Appointment set found",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentSeriesDetails::class),
+            schema = Schema(implementation = AppointmentSetDetails::class),
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class AppointmentSeriesController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The appointment series for this id was not found.",
+        description = "The appointment set for this id was not found.",
         content = [
           Content(
             mediaType = "application/json",
@@ -119,27 +119,27 @@ class AppointmentSeriesController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentDetailsById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeriesDetails =
-    appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(appointmentSeriesId)
+  fun getAppointmentSetDetailsById(@PathVariable("appointmentSetId") appointmentSetId: Long): AppointmentSetDetails =
+    appointmentSetService.getAppointmentSetDetailsById(appointmentSetId)
 
   @ResponseStatus(HttpStatus.CREATED)
-  @PostMapping
+  @PostMapping()
   @Operation(
-    summary = "Create an appointment series with one or more appointments",
+    summary = "Create a set of appointments",
     description =
     """
-    Create an appointment series with one or more appointments and add the supplied prisoner or prisoners as appointment attendees.
+    Create a set of appointments that start on the same day and add the associated prisoner as the appointment attendee.
     """,
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "201",
-        description = "The appointment series was created.",
+        description = "The appointment set was created.",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentSeries::class),
+            schema = Schema(implementation = AppointmentSet::class),
           ),
         ],
       ),
@@ -167,14 +167,14 @@ class AppointmentSeriesController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun createAppointmentSeries(
+  fun createAppointmentSet(
     principal: Principal,
     @Valid
     @RequestBody
     @Parameter(
-      description = "The create request with the new appointment series details",
+      description = "The create request with the new appointment set details",
       required = true,
     )
-    request: AppointmentSeriesCreateRequest,
-  ): AppointmentSeries = appointmentSeriesService.createAppointmentSeries(request, principal)
+    request: AppointmentSetCreateRequest,
+  ): AppointmentSet = appointmentSeriesService.createAppointmentSet(request, principal)
 }

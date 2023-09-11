@@ -35,16 +35,16 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
 
   @Test
   fun `200 response when get appointment series by valid id`() {
-    val appointmentSeries = appointmentSeriesEntity().toModel()
+    val model = appointmentSeriesEntity().toModel()
 
-    whenever(appointmentSeriesService.getAppointmentSeriesById(1)).thenReturn(appointmentSeries)
+    whenever(appointmentSeriesService.getAppointmentSeriesById(1)).thenReturn(model)
 
     val response = mockMvc.getAppointmentSeriesById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentSeries))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(model))
 
     verify(appointmentSeriesService).getAppointmentSeriesById(1)
   }

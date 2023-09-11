@@ -12,13 +12,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as BulkAppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 class AppointmentSetTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSetEntity()
-    val expectedModel = BulkAppointmentModel(
+    val expectedModel = AppointmentSetModel(
       entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -18,6 +19,13 @@ class AppointmentSetService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
 ) {
+  fun getAppointmentSetById(appointmentSetId: Long): AppointmentSet {
+    val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
+    checkCaseloadAccess(appointmentSet.prisonCode)
+
+    return appointmentSet.toModel()
+  }
+
   fun getAppointmentSetDetailsById(appointmentSetId: Long): AppointmentSetDetails {
     val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
     checkCaseloadAccess(appointmentSet.prisonCode)
