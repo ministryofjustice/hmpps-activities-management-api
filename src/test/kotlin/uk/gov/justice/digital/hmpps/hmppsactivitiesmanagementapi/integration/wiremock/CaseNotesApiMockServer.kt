@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
-import wiremock.com.fasterxml.jackson.databind.ObjectMapper
 
 class CaseNotesApiMockServer : WireMockServer(8444) {
 
