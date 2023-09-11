@@ -7,12 +7,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
+class AppointmentEditedEventTest : AuditableEventTestBase() {
 
   @Test
   fun `returns correct type`() {
     val event = createEvent()
-    assertThat(event.auditEventType).isEqualTo(AuditEventType.APPOINTMENT_OCCURRENCE_EDITED)
+    assertThat(event.auditEventType).isEqualTo(AuditEventType.APPOINTMENT_EDITED)
   }
 
   @Test

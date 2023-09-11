@@ -17,14 +17,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import java.time.LocalDate
 import java.time.LocalTime
 
-class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
+class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
 
   @Test
-  fun `search appointment occurrences authorisation required`() {
+  fun `search appointments authorisation required`() {
     webTestClient.post()
-      .uri("/appointment-occurrences/MDI/search")
+      .uri("/appointments/MDI/search")
       .bodyValue(AppointmentSearchRequest())
       .exchange()
       .expectStatus().isUnauthorized
@@ -34,7 +34,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences in prison with no appointments`() {
+  fun `search for appointments in prison with no appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -49,7 +49,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("NAP", request)!!
+    val results = webTestClient.searchAppointments("NAP", request)!!
 
     assertThat(results).hasSize(0)
   }
@@ -58,7 +58,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences in other prison`() {
+  fun `search for appointments in other prison`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -72,7 +72,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("OTH", request)!!
+    val results = webTestClient.searchAppointments("OTH", request)!!
 
     assertThat(results.map { it.prisonCode }.distinct().single()).isEqualTo("OTH")
   }
@@ -81,7 +81,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences that are part of a group appointment`() {
+  fun `search for appointments that are part of a group appointment`() {
     val request = AppointmentSearchRequest(
       appointmentType = AppointmentType.GROUP,
       startDate = LocalDate.now(),
@@ -97,7 +97,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.appointmentType }.distinct().single()).isEqualTo(request.appointmentType)
   }
@@ -106,7 +106,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences starting today`() {
+  fun `search for appointments starting today`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
     )
@@ -120,7 +120,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.startDate }.distinct().single()).isEqualTo(request.startDate)
   }
@@ -129,7 +129,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences starting within a week`() {
+  fun `search for appointments starting within a week`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusWeeks(1),
@@ -144,7 +144,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     results.map { it.startDate }.distinct().forEach {
       assertThat(it).isBetween(request.startDate, request.endDate)
@@ -158,7 +158,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences starting in the AM timeslot`() {
+  fun `search for appointments starting in the AM timeslot`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -174,7 +174,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     results.map { it.startTime }.distinct().forEach {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(13, 0))
@@ -187,7 +187,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences that are part of an appointment with category AC1`() {
+  fun `search for appointments that are part of an appointment with category AC1`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -203,7 +203,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.category.code }.distinct().single()).isEqualTo(request.categoryCode)
   }
@@ -212,7 +212,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences with internal location id 123`() {
+  fun `search for appointments with internal location id 123`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -228,7 +228,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.internalLocation!!.id }.distinct().single()).isEqualTo(request.internalLocationId)
   }
@@ -237,7 +237,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for in cell appointment occurrences`() {
+  fun `search for in cell appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -253,7 +253,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.inCell }.distinct().single()).isTrue
   }
@@ -262,7 +262,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences created by DIFFERENT USER`() {
+  fun `search for appointments created by DIFFERENT USER`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -278,7 +278,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     val appointments = appointmentSeriesRepository.findAllById(results.map { it.appointmentSeriesId })
 
@@ -289,7 +289,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointment occurrences for prisoner number B2345CD`() {
+  fun `search for appointments for prisoner number B2345CD`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -305,10 +305,10 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     results.forEach {
-      assertThat(it.attendees.map { allocation -> allocation.prisonerNumber }).contains("B2345CD")
+      assertThat(it.attendees.map { attendee -> attendee.prisonerNumber }).contains("B2345CD")
     }
   }
 
@@ -316,7 +316,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search returns edited appointment occurrences`() {
+  fun `search returns edited appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -331,7 +331,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isEdited }).isNotEmpty
   }
@@ -340,7 +340,7 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search returns cancelled appointment occurrences`() {
+  fun `search returns cancelled appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
@@ -355,17 +355,17 @@ class AppointmentOccurrenceSearchIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val results = webTestClient.searchAppointmentOccurrences("MDI", request)!!
+    val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isCancelled }).isNotEmpty
   }
 
-  private fun WebTestClient.searchAppointmentOccurrences(
+  private fun WebTestClient.searchAppointments(
     prisonCode: String,
     request: AppointmentSearchRequest,
   ) =
     post()
-      .uri("/appointment-occurrences/$prisonCode/search")
+      .uri("/appointments/$prisonCode/search")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, prisonCode)

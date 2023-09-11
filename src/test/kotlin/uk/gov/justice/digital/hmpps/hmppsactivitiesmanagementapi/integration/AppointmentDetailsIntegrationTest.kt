@@ -22,19 +22,19 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
+class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   @Test
-  fun `get appointment occurrence details authorisation required`() {
+  fun `get appointment details authorisation required`() {
     webTestClient.get()
-      .uri("/appointment-occurrence-details/1")
+      .uri("/appointments/1/details")
       .exchange()
       .expectStatus().isUnauthorized
   }
 
   @Test
-  fun `get appointment occurrence details by unknown id returns 404 not found`() {
+  fun `get appointment details by unknown id returns 404 not found`() {
     webTestClient.get()
-      .uri("/appointment-occurrence-details/-1")
+      .uri("/appointments/-1/details")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
@@ -54,7 +54,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     )
 
     webTestClient.get()
-      .uri("/appointment-occurrence-details/3")
+      .uri("/appointments/3/details")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
@@ -73,9 +73,9 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
     )
 
-    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(2)!!
+    val appointmentDetails = webTestClient.getAppointmentDetailsById(2)!!
 
-    assertThat(appointmentOccurrenceDetails).isEqualTo(
+    assertThat(appointmentDetails).isEqualTo(
       AppointmentDetails(
         2,
         AppointmentSeriesSummary(1, null, 1, 1),
@@ -86,7 +86,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         "Appointment description (Appointment Category 1)",
         attendees = listOf(
           AppointmentAttendeeSummary(
-            1,
+            3,
             PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
             null,
           ),
@@ -100,7 +100,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         LocalTime.of(10, 30),
         false,
         "Appointment level comment",
-        appointmentOccurrenceDetails.createdTime,
+        appointmentDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         false,
         null,
@@ -111,14 +111,14 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointmentOccurrenceDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Sql(
     "classpath:test_data/seed-appointment-set-id-6.sql",
   )
   @Test
-  fun `get occurrence details from a set of appointments created in bulk`() {
+  fun `get appointment details from an appointment set`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
@@ -127,9 +127,9 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
     )
 
-    val appointmentOccurrenceDetails = webTestClient.getAppointmentOccurrenceDetailsById(6)!!
+    val appointmentDetails = webTestClient.getAppointmentDetailsById(6)!!
 
-    assertThat(appointmentOccurrenceDetails).isEqualTo(
+    assertThat(appointmentDetails).isEqualTo(
       AppointmentDetails(
         6,
         null,
@@ -140,7 +140,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         "Appointment description (Appointment Category 1)",
         attendees = listOf(
           AppointmentAttendeeSummary(
-            1,
+            6,
             PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
             null,
           ),
@@ -154,7 +154,7 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         LocalTime.of(9, 15),
         false,
         "Medical appointment for A1234BC",
-        appointmentOccurrenceDetails.createdTime,
+        appointmentDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
         false,
         null,
@@ -165,12 +165,12 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointmentOccurrenceDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
-  private fun WebTestClient.getAppointmentOccurrenceDetailsById(id: Long) =
+  private fun WebTestClient.getAppointmentDetailsById(id: Long) =
     get()
-      .uri("/appointment-occurrence-details/$id")
+      .uri("/appointments/$id/details")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk

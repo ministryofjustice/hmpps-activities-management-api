@@ -224,9 +224,9 @@ class ScheduledEventServiceSinglePrisonerTest {
 
   private fun appointmentFromDbInstance(
     appointmentInstanceId: Long = 1L,
+    appointmentSeriesId: Long = 1L,
     appointmentId: Long = 1L,
-    appointmentOccurrenceId: Long = 1L,
-    appointmentOccurrenceAllocationId: Long = 1L,
+    appointmentAttendeeId: Long = 1L,
     appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
     prisonerNumber: String,
@@ -245,9 +245,9 @@ class ScheduledEventServiceSinglePrisonerTest {
     updatedBy: String? = null,
   ) = AppointmentInstance(
     appointmentInstanceId,
+    appointmentSeriesId,
     appointmentId,
-    appointmentOccurrenceId,
-    appointmentOccurrenceAllocationId,
+    appointmentAttendeeId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     bookingId = bookingId,

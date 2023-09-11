@@ -29,17 +29,17 @@ class MigrateAppointmentController(
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping()
   @Operation(
-    summary = "Create an appointment or series of appointment occurrences",
+    summary = "Migrate an appointment from NOMIS",
     description =
     """
-    Create an appointment or series of appointment occurrences and allocate the supplied prisoner or prisoners to them.
+    Migrate an appointment creating an appointment series with one appointment that has the supplied prisoner allocated.
     """,
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "201",
-        description = "The appointment or series of appointment occurrences was created.",
+        description = "The appointment was migrated.",
         content = [
           Content(
             mediaType = "application/json",

@@ -287,7 +287,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `appointments deleted when appointments changed event received with action set to YES`() {
-    val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
+    val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
       fullInfo = true,
@@ -300,7 +300,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
@@ -314,7 +314,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(appointmentsChangedEvent(prisonerNumber = "A1234BC"))
 
     allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).isNull()
@@ -344,7 +344,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `appointments deleted when offender released event received`() {
-    val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
+    val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
       fullInfo = true,
@@ -357,7 +357,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
@@ -371,7 +371,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(offenderReleasedEvent(prisonerNumber = "A1234BC", prisonCode = "MDI"))
 
     allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).isNull()
@@ -401,7 +401,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `no appointments are cancelled when appointments changed event received with action set to NO`() {
-    val appointmentOccurrenceIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
+    val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
       fullInfo = true,
@@ -414,7 +414,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     var allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)
@@ -428,7 +428,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     service.process(appointmentsChangedEvent(prisonerNumber = "A1234BC", action = "NO"))
 
     allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
-      appointmentOccurrenceIds,
+      appointmentIds,
     ).groupBy { it.appointmentSearch.appointmentId }
 
     assertThat(allocationsMap[200]).hasSize(1)

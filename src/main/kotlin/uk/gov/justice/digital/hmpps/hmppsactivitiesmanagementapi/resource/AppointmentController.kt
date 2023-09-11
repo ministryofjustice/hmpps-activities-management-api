@@ -172,7 +172,7 @@ class AppointmentController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The appointment occurrence for this ID was not found.",
+        description = "The appointment for this id was not found.",
         content = [
           Content(
             mediaType = "application/json",
@@ -184,32 +184,32 @@ class AppointmentController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun updateAppointmentOccurrence(
-    @PathVariable("appointmentId") appointmentOccurrenceId: Long,
+  fun updateAppointment(
+    @PathVariable("appointmentId") appointmentId: Long,
     @Valid
     @RequestBody
     @Parameter(
-      description = "The update request with the new appointment occurrence details and how to apply the update",
+      description = "The update request with the new appointment details and how to apply the update",
       required = true,
     )
     request: AppointmentUpdateRequest,
     principal: Principal,
-  ): AppointmentSeries = appointmentService.updateAppointment(appointmentOccurrenceId, request, principal)
+  ): AppointmentSeries = appointmentService.updateAppointment(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
-  @PutMapping(value = ["/{appointmentOccurrenceId}/cancel"])
+  @PutMapping(value = ["/{appointmentId}/cancel"])
   @Operation(
-    summary = "Cancel an appointment occurrence or series of appointment occurrences",
+    summary = "Cancel an appointment or series of appointments",
     description =
     """
-    Cancel an appointment occurrence or series of appointment occurrences based on the applyTo property.
+    Cancel an appointment or series of appointments based on the applyTo property.
     """,
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "202",
-        description = "The appointment occurrence or series of appointment occurrences was cancelled.",
+        description = "The appointment or series of appointments was cancelled.",
         content = [
           Content(
             mediaType = "application/json",
@@ -239,7 +239,7 @@ class AppointmentController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "The appointment occurrence for this ID was not found.",
+        description = "The appointment for this id was not found.",
         content = [
           Content(
             mediaType = "application/json",
@@ -251,25 +251,25 @@ class AppointmentController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun cancelAppointmentOccurrence(
-    @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
+  fun cancelAppointment(
+    @PathVariable("appointmentId") appointmentId: Long,
     @Valid
     @RequestBody
     @Parameter(
-      description = "The cancel request with the appointment occurrence details and how to apply the cancellation",
+      description = "The cancel request with the cancellation details and how to apply the cancellation",
       required = true,
     )
     request: AppointmentCancelRequest,
     principal: Principal,
-  ) = appointmentService.cancelAppointment(appointmentOccurrenceId, request, principal)
+  ) = appointmentService.cancelAppointment(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PostMapping(value = ["/{prisonCode}/search"])
   @Operation(
-    summary = "Search for appointment occurrences within the specified prison",
+    summary = "Search for appointments within the specified prison",
     description =
     """
-    Uses the supplied prison code and search parameters to filter and return appointment occurrence search results.
+    Uses the supplied prison code and search parameters to filter and return appointment search results.
     """,
   )
   @ApiResponses(
@@ -308,12 +308,12 @@ class AppointmentController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun searchAppointmentOccurrences(
+  fun searchAppointments(
     @PathVariable("prisonCode") prisonCode: String,
     @Valid
     @RequestBody
     @Parameter(
-      description = "The search parameters to use to filter appointment occurrences",
+      description = "The search parameters to use to filter appointments",
       required = true,
     )
     request: AppointmentSearchRequest,

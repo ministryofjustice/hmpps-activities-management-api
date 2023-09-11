@@ -25,7 +25,7 @@ class AppointmentEditedEvent(
 
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
-  auditEventType = AuditEventType.APPOINTMENT_OCCURRENCE_EDITED,
+  auditEventType = AuditEventType.APPOINTMENT_EDITED,
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' with category $categoryCode " +
     "and starting on $startDate at prison $prisonCode was edited",
   createdAt = createdAt,

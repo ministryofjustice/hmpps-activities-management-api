@@ -40,7 +40,7 @@ class AppointmentSetTest {
   }
 
   @Test
-  fun `prisoner numbers concatenates all appointment occurrence allocations`() {
+  fun `prisoner numbers concatenates all appointment attendees`() {
     val entity = appointmentSetEntity()
     assertThat(entity.prisonerNumbers()).containsExactly("A1234BC", "B2345CD", "C3456DE")
   }

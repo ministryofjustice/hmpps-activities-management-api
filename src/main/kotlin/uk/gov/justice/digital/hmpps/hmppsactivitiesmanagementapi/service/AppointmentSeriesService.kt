@@ -87,6 +87,7 @@ class AppointmentSeriesService(
     return appointmentSeries.toModel()
   }
 
+  @Transactional(readOnly = true)
   fun getAppointmentSeriesDetailsById(appointmentSeriesId: Long): AppointmentSeriesDetails {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     checkCaseloadAccess(appointmentSeries.prisonCode)

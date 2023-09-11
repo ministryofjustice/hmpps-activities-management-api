@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import java.time.LocalDate
 import java.time.LocalTime
 
-class AppointmentOccurrenceTelemetryTransformFunctionsTest {
+class AppointmentTelemetryTransformFunctionsTest {
   @Test
   fun `update appointment to telemetry properties no property changed`() {
     AppointmentUpdateRequest().toTelemetryPropertiesMap(
@@ -146,7 +146,7 @@ class AppointmentOccurrenceTelemetryTransformFunctionsTest {
   }
 
   @Test
-  fun `update appointment to telemetry properties apply to this and all future occurrences`() {
+  fun `update appointment to telemetry properties apply to this and all future appointments`() {
     with(
       AppointmentUpdateRequest(applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS).toTelemetryPropertiesMap(
         "TEST.USER",
@@ -160,7 +160,7 @@ class AppointmentOccurrenceTelemetryTransformFunctionsTest {
   }
 
   @Test
-  fun `update appointment to telemetry properties apply to all future occurrences`() {
+  fun `update appointment to telemetry properties apply to all future appointments`() {
     with(
       AppointmentUpdateRequest(applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS).toTelemetryPropertiesMap(
         "TEST.USER",

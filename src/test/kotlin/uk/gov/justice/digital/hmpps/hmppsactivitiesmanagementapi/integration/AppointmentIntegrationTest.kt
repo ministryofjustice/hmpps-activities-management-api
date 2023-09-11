@@ -17,6 +17,8 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
@@ -60,7 +62,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.cancelled=true",
   ],
 )
-class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
+class AppointmentIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
 
@@ -75,18 +77,141 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
   @Test
-  fun `update appointment occurrence authorisation required`() {
+  fun `get appointment authorisation required`() {
+    webTestClient.get()
+      .uri("/appointments/1")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Test
+  fun `get appointment by unknown id returns 404 not found`() {
+    webTestClient.get()
+      .uri("/appointments/-1")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNotFound
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-deleted-id-2.sql",
+  )
+  @Test
+  fun `get deleted appointment returns 404 not found`() {
+    webTestClient.get()
+      .uri("/appointments/3")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNotFound
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
+  @Test
+  fun `get single appointment details`() {
+    val appointment = webTestClient.getAppointmentById(2)!!
+
+    assertThat(appointment).isEqualTo(
+      Appointment(
+        2,
+        1,
+        "TPR",
+        "AC1",
+        "Appointment description",
+        123,
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        "Appointment level comment",
+        appointment.createdTime,
+        "TEST.USER",
+        null,
+        null,
+        null,
+        null,
+        null,
+        attendees = listOf(
+          AppointmentAttendee(
+            3,
+            "A1234BC",
+            456,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-set-id-6.sql",
+  )
+  @Test
+  fun `get appointment details from an appointment set`() {
+    val appointment = webTestClient.getAppointmentById(6)!!
+
+    assertThat(appointment).isEqualTo(
+      Appointment(
+        6,
+        1,
+        "TPR",
+        "AC1",
+        "Appointment description",
+        123,
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(9, 15),
+        "Medical appointment for A1234BC",
+        appointment.createdTime,
+        "TEST.USER",
+        null,
+        null,
+        null,
+        null,
+        null,
+        attendees = listOf(
+          AppointmentAttendee(
+            6,
+            "A1234BC",
+            456,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+  }
+
+  @Test
+  fun `update appointment authorisation required`() {
     webTestClient.patch()
-      .uri("/appointment-occurrences/1")
+      .uri("/appointments/1")
       .bodyValue(AppointmentUpdateRequest())
       .exchange()
       .expectStatus().isUnauthorized
   }
 
   @Test
-  fun `update appointment occurrence by unknown id returns 404 not found`() {
+  fun `update appointment by unknown id returns 404 not found`() {
     webTestClient.patch()
-      .uri("/appointment-occurrences/-1")
+      .uri("/appointments/-1")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .bodyValue(AppointmentUpdateRequest())
       .exchange()
@@ -97,7 +222,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
-  fun `update single appointment occurrence`() {
+  fun `update single appointment`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       internalLocationId = 456,
@@ -111,10 +236,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
 
-    val appointment = webTestClient.updateAppointmentOccurrence(2, request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.updateAppointment(2, request)!!
+    val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    with(appointment) {
+    with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
@@ -146,7 +271,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
     }
@@ -158,16 +283,16 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
-  fun `cancel single appointment occurrence with a reason that does NOT trigger a soft delete`() {
+  fun `cancel single appointment with a reason that does NOT trigger a soft delete`() {
     val request = AppointmentCancelRequest(
       applyTo = ApplyTo.THIS_APPOINTMENT,
       cancellationReasonId = 2,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.cancelAppointment(2, request)!!
+    val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    with(appointment) {
+    with(appointmentSeries) {
       with(appointments.single()) {
         assertThat(cancellationReasonId).isEqualTo(2)
         assertThat(cancelledBy).isEqualTo("test-client")
@@ -179,7 +304,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.cancelled")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been cancelled in the activities management service")
     }
@@ -191,25 +316,25 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
-  fun `cancel single appointment occurrence with a reason that triggers a soft delete`() {
+  fun `cancel single appointment with a reason that triggers a soft delete`() {
     val request = AppointmentCancelRequest(
       applyTo = ApplyTo.THIS_APPOINTMENT,
       cancellationReasonId = 1,
     )
 
-    val originalAppointment = webTestClient.getAppointmentById(1)!!
-    val allocationIds = originalAppointment.appointments
-      .flatMap { it.attendees.map { allocation -> allocation.id } }
+    val originalAppointmentSeries = webTestClient.getAppointmentSeriesById(1)!!
+    val appointmentIds = originalAppointmentSeries.appointments
+      .flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    val updatedAppointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
+    val appointmentSeries = webTestClient.cancelAppointment(2, request)!!
 
-    assertThat(updatedAppointment.appointments).isEmpty()
+    assertThat(appointmentSeries.appointments).isEmpty()
 
     verify(eventsPublisher, times(1)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.deleted")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds.first()))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been deleted in the activities management service")
     }
@@ -221,15 +346,15 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
   )
   @Test
-  fun `cancel group repeat appointment this and all future occurrences with a reason that triggers a soft delete`() {
+  fun `cancel group repeat appointment this and all future appointments with a reason that triggers a soft delete`() {
     val request = AppointmentCancelRequest(
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
       cancellationReasonId = 1,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(12, request)!!
+    val appointmentSeries = webTestClient.cancelAppointment(12, request)!!
 
-    with(appointment) {
+    with(appointmentSeries) {
       with(appointments.subList(0, 2)) {
         assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
         assertThat(map { it.cancelledBy }.distinct().single()).isNull()
@@ -242,9 +367,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
-        appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
-            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
+        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
         },
       )
       forEach {
@@ -263,15 +388,15 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
   )
   @Test
-  fun `cancel group repeat appointment this and all future occurrences with a reason that does NOT trigger a soft delete`() {
+  fun `cancel group repeat appointment this and all future appointments with a reason that does NOT trigger a soft delete`() {
     val request = AppointmentCancelRequest(
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
       cancellationReasonId = 2,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(12, request)!!
+    val appointmentSeries = webTestClient.cancelAppointment(12, request)!!
 
-    with(appointment) {
+    with(appointmentSeries) {
       with(appointments.subList(0, 2)) {
         assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
         assertThat(map { it.cancelledBy }.distinct().single()).isNull()
@@ -291,9 +416,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
-        appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
-            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
+        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
         },
       )
       forEach {
@@ -313,38 +438,38 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `cancel large group repeat appointment location asynchronously success`() {
-    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Cancelling all of them
+    // Seed appointment series has 4 appointments each with 3 attendees equalling 12 appointment instances. Cancelling all of them
     // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
-    // cancel only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // cancel only the first affected appointment and its attendees synchronously. The remaining appointments and attendees
     // will be cancelled as an asynchronous job
-    val appointmentOccurrenceId = 22L
+    val appointmentId = 22L
     val request = AppointmentCancelRequest(
       cancellationReasonId = 2,
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
+    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
 
-    // Synchronous cancel. Cancel specified occurrence only
-    with(appointment.appointments) {
-      single { it.id == appointmentOccurrenceId }.isCancelled() isEqualTo true
-      filter { it.id != appointmentOccurrenceId }.map { it.isCancelled() }.distinct().single() isEqualTo false
+    // Synchronous cancel. Cancel specified appointment only
+    with(appointmentSeries.appointments) {
+      single { it.id == appointmentId }.isCancelled() isEqualTo true
+      filter { it.id != appointmentId }.map { it.isCancelled() }.distinct().single() isEqualTo false
     }
 
-    // Wait for remaining occurrences to be cancelled
+    // Wait for remaining appointments to be cancelled
     Thread.sleep(1000)
-    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    appointmentDetails.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
+    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+    appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The cancel events for the specified occurrence's instances are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.map { AppointmentInstanceInformation(it.id) }
+        // The cancel events for the specified appointment's instances are sent first
+        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.map { AppointmentInstanceInformation(it.id) }
           // Followed by the cancel events for the remaining instances
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
+          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 
@@ -363,7 +488,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
       assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
       assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
     }
 
@@ -383,35 +508,35 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `delete large group repeat appointment location asynchronously success`() {
-    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Deleting all of them
+    // Seed appointment series has 4 appointments each with 3 attendees equalling 12 appointment instances. Deleting all of them
     // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
-    // delete only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // delete only the first affected appointment and its attendees synchronously. The remaining appointments and attendees
     // will be deleted as an asynchronous job
-    val appointmentOccurrenceId = 22L
+    val appointmentId = 22L
     val request = AppointmentCancelRequest(
       cancellationReasonId = 1,
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    val appointment = webTestClient.cancelAppointmentOccurrence(appointmentOccurrenceId, request)!!
+    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
 
-    // Synchronous delete. Delete specified occurrence only
-    with(appointment.appointments) {
-      singleOrNull { it.id == appointmentOccurrenceId } isEqualTo null
-      filter { it.id != appointmentOccurrenceId } hasSize 3
+    // Synchronous delete. Delete specified appointment only
+    with(appointmentSeries.appointments) {
+      singleOrNull { it.id == appointmentId } isEqualTo null
+      filter { it.id != appointmentId } hasSize 3
     }
 
-    // Wait for remaining occurrences to be deleted
+    // Wait for remaining appointments to be deleted
     Thread.sleep(1000)
-    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    appointmentDetails.appointments hasSize 0
+    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+    appointmentSeries.appointments hasSize 0
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The delete events for the specified occurrence's instances are sent first
+        // The delete events for the specified appointment's instances are sent first
         listOf(36L, 37L, 38L)
           // Followed by the delete events for the remaining instances
           .union(listOf(30L, 31L, 32L, 33L, 34L, 35L, 39L, 40L, 41L))
@@ -434,7 +559,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
       assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
       assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
     }
 
@@ -452,7 +577,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
   )
   @Test
-  fun `update group repeat appointment this and all future occurrences`() {
+  fun `update group repeat appointment this and all future appointments`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       internalLocationId = 456,
@@ -475,9 +600,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val appointment = webTestClient.updateAppointmentOccurrence(12, request)!!
+    val appointmentSeries = webTestClient.updateAppointment(12, request)!!
 
-    with(appointment) {
+    with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
@@ -529,9 +654,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
       assertThat(size).isEqualTo(2)
       assertThat(map { it.additionalInformation }).containsAll(
-        appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
-            .map { allocation -> AppointmentInstanceInformation(allocation.id) }
+        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
         },
       )
       forEach {
@@ -578,11 +703,11 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `update large group repeat appointment location asynchronously success`() {
-    // Seed appointment has 4 occurrences each with 3 allocations equalling 12 appointment instances. Editing all of them
+    // Seed appointment series has 4 appointments each with 3 attendees equalling 12 appointment instances. Editing all of them
     // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
-    // update only the first affected occurrence and its allocations synchronously. The remaining occurrences and allocations
+    // update only the first affected appointment and its attendees synchronously. The remaining appointments and attendees
     // will be updated as an asynchronous job
-    val appointmentOccurrenceId = 22L
+    val appointmentId = 22L
     val request = AppointmentUpdateRequest(
       internalLocationId = 456,
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
@@ -590,28 +715,28 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
 
-    val appointment = webTestClient.updateAppointmentOccurrence(appointmentOccurrenceId, request)!!
+    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
 
-    // Synchronous update. Update specified occurrence only
-    with(appointment.appointments) {
-      single { it.id == appointmentOccurrenceId }.internalLocationId isEqualTo request.internalLocationId
-      filter { it.id != appointmentOccurrenceId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+    // Synchronous update. Update specified appointment only
+    with(appointmentSeries.appointments) {
+      single { it.id == appointmentId }.internalLocationId isEqualTo request.internalLocationId
+      filter { it.id != appointmentId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
     }
 
-    // Wait for remaining occurrences to be updated
+    // Wait for remaining appointments to be updated
     Thread.sleep(1000)
-    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    appointmentDetails.appointments.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
+    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+    appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The update events for the specified occurrence's instances are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.map { AppointmentInstanceInformation(it.id) }
+        // The update events for the specified appointment's instances are sent first
+        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.map { AppointmentInstanceInformation(it.id) }
           // Followed by the update events for the remaining instances
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
+          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 
@@ -630,7 +755,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
       assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
       assertThat(this[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
       assertThat(this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
       assertThat(this[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -656,12 +781,12 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
   )
   @Test
-  fun `update large group repeat appointment allocation asynchronously success`() {
-    // Seed appointment has 4 occurrences. Removing one prisoner and adding two new prisoners to all of them removes and adds
-    // more allocations than the configured max-sync-appointment-instance-actions value. The service will therefore remove and
-    // add allocations on only the first affected occurrence and its allocations synchronously. The remaining occurrences
-    // will have allocations removed and added as an asynchronous job
-    val appointmentOccurrenceId = 22L
+  fun `update large group repeat appointment attendees asynchronously success`() {
+    // Seed appointment series has 4 appointments. Removing one prisoner and adding two new prisoners to all of them removes and adds
+    // more attendees than the configured max-sync-appointment-instance-actions value. The service will therefore remove and
+    // add attendees on only the first affected appointment and its attendees synchronously. The remaining appointments
+    // will have attendees removed and added as an asynchronous job
+    val appointmentId = 22L
     val request = AppointmentUpdateRequest(
       removePrisonerNumbers = listOf("A1234BC"),
       addPrisonerNumbers = listOf("D4567EF", "E5679FG"),
@@ -676,27 +801,27 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val appointment = webTestClient.updateAppointmentOccurrence(appointmentOccurrenceId, request)!!
+    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
 
-    // Synchronous update. Update specified occurrence only
-    with(appointment.appointments) {
-      assertThat(single { it.id == appointmentOccurrenceId }.attendees.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
-      assertThat(filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
+    // Synchronous update. Update specified appointment only
+    with(appointmentSeries.appointments) {
+      assertThat(single { it.id == appointmentId }.attendees.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+      assertThat(filter { it.id != appointmentId }.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
     }
 
-    // Wait for remaining occurrences to be updated
+    // Wait for remaining appointments to be updated
     Thread.sleep(1000)
-    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    assertThat(appointmentDetails.appointments.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+    assertThat(appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
       assertThat(size).isEqualTo(4)
       assertThat(map { it.additionalInformation }).containsExactly(
-        // The deleted event for the specified occurrence's allocation is sent first
+        // The deleted event for the specified appointment's attendee is sent first
         AppointmentInstanceInformation(36),
-        // Followed by the deleted events for the remaining allocations
+        // Followed by the deleted events for the remaining attendees
         AppointmentInstanceInformation(30),
         AppointmentInstanceInformation(33),
         AppointmentInstanceInformation(39),
@@ -706,10 +831,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
       assertThat(size).isEqualTo(8)
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The create events for the specified occurrence's new allocations are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
-          // Followed by the create events for the remaining allocations
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
+        // The create events for the specified appointment's new attendees are sent first
+        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.filter { attendee -> listOf("D4567EF", "E5679FG").contains(attendee.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
+          // Followed by the create events for the remaining attendees
+          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.filter { attendee -> listOf("D4567EF", "E5679FG").contains(attendee.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 
@@ -728,7 +853,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
       assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentOccurrenceId.toString())
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
       assertThat(this[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
       assertThat(this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
       assertThat(this[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
@@ -757,15 +882,25 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Appointment::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getAppointmentSeriesById(id: Long) =
+    get()
+      .uri("/appointment-series/$id")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.updateAppointmentOccurrence(
+  private fun WebTestClient.updateAppointment(
     id: Long,
     request: AppointmentUpdateRequest,
   ) =
     patch()
-      .uri("/appointment-occurrences/$id")
+      .uri("/appointments/$id")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
@@ -774,12 +909,12 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.cancelAppointmentOccurrence(
+  private fun WebTestClient.cancelAppointment(
     id: Long,
     request: AppointmentCancelRequest,
   ) =
     put()
-      .uri("/appointment-occurrences/$id/cancel")
+      .uri("/appointments/$id/cancel")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
