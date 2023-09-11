@@ -3,13 +3,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
@@ -19,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.IndividualAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -49,7 +52,10 @@ fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTim
   )
 
 fun appointmentAttendeeModel() =
-  AppointmentAttendee(1, "A1234BC", 456)
+  AppointmentAttendee(1, "A1234BC", 456, null, null, null, null, null, null, null)
+
+fun appointmentAttendeeSearchResultModel() =
+  AppointmentAttendeeSearchResult(1, "A1234BC", 456)
 
 fun appointmentModel(updatedTime: LocalDateTime?) =
   Appointment(
@@ -71,7 +77,7 @@ fun appointmentModel(updatedTime: LocalDateTime?) =
     null,
     null,
     null,
-    allocations = listOf(appointmentAttendeeModel()),
+    attendees = listOf(appointmentAttendeeModel()),
   )
 
 fun appointmentInstanceModel(
@@ -112,7 +118,7 @@ fun appointmentSeriesCreateRequest(
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
   extraInformation: String = "Appointment level comment",
-  schedule: AppointmentSchedule? = null,
+  schedule: AppointmentSeriesSchedule? = null,
 ) =
   AppointmentSeriesCreateRequest(
     appointmentType,
@@ -202,9 +208,6 @@ fun appointmentSeriesDetails(
   AppointmentType.INDIVIDUAL,
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
-  prisoners = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-  ),
   category = category,
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -222,26 +225,18 @@ fun appointmentSeriesDetails(
     AppointmentSummary(
       1,
       1,
-      if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
-      category = category,
-      customName,
-      AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
-      false,
       LocalDate.now().plusDays(1),
       LocalTime.of(9, 0),
       LocalTime.of(10, 30),
-      "Appointment level comment",
       isEdited = updatedTime != null,
       isCancelled = false,
-      updatedTime,
-      updatedBy,
     ),
   ),
 )
 
 fun appointmentDetails(
   appointmentId: Long = 1,
-  appointmentSeriesId: Long = 2,
+  appointmentSeriesId: Long? = 2,
   appointmentSetSummary: AppointmentSetSummary? = null,
   sequenceNumber: Int = 3,
   prisoners: List<PrisonerSummary> = listOf(
@@ -258,13 +253,13 @@ fun appointmentDetails(
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
 ) = AppointmentDetails(
   appointmentId,
-  appointmentSeriesId,
+  if (appointmentSeriesId != null) AppointmentSeriesSummary(appointmentSeriesId, null, sequenceNumber, sequenceNumber) else null,
   appointmentSetSummary,
   AppointmentType.INDIVIDUAL,
   sequenceNumber,
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
-  prisoners,
+  prisoners.map { AppointmentAttendeeSummary(1, it, null) },
   category,
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -272,15 +267,14 @@ fun appointmentDetails(
   LocalDate.now().plusDays(1),
   startTime,
   endTime,
+  false,
   extraInformation,
-  null,
-  updatedTime != null,
-  false,
-  false,
   createdTime,
   createdBy,
+  updatedTime != null,
   updatedTime,
   updatedBy,
+  false,
   null,
   null,
 )
@@ -291,7 +285,7 @@ fun appointmentSearchResultModel() = AppointmentSearchResult(
   AppointmentType.INDIVIDUAL,
   "TPR",
   appointmentCategorySummary().description,
-  listOf(appointmentAttendeeModel()),
+  listOf(appointmentAttendeeSearchResultModel()),
   appointmentCategorySummary(),
   null,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -321,9 +315,9 @@ fun appointmentSetDetails(
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
   LocalDate.now().plusDays(1),
-  occurrences = listOf(
+  appointments = listOf(
     appointmentDetails(
-      1, 1, AppointmentSetSummary(1, 3, 3), 1,
+      1, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
       ),
@@ -332,7 +326,7 @@ fun appointmentSetDetails(
       LocalTime.of(10, 30), createdTime = createdTime, updatedTime = null, updatedBy = null,
     ),
     appointmentDetails(
-      2, 2, AppointmentSetSummary(1, 3, 3), 1,
+      2, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
       ),
@@ -341,7 +335,7 @@ fun appointmentSetDetails(
       LocalTime.of(11, 0), createdTime = createdTime, updatedTime = null, updatedBy = null,
     ),
     appointmentDetails(
-      3, 3, AppointmentSetSummary(1, 3, 3), 1,
+      3, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
         PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
       ),
@@ -352,4 +346,6 @@ fun appointmentSetDetails(
   ),
   createdTime,
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  null,
+  null,
 )

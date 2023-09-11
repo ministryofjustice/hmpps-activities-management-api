@@ -79,7 +79,7 @@ data class AppointmentSearch(
     appointmentType,
     prisonCode,
     referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    attendees = attendees.toModel(),
+    attendees = attendees.toResult(),
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
     customName,
     if (inCell) {
@@ -99,7 +99,9 @@ data class AppointmentSearch(
     isExpired(),
   )
 
-  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
+  private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
+
+  private fun isExpired() = startDateTime() < LocalDateTime.now()
 }
 
 fun List<AppointmentSearch>.toResults(

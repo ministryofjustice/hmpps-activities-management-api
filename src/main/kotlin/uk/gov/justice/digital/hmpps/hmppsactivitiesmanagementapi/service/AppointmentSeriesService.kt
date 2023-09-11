@@ -6,12 +6,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
@@ -58,6 +57,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment as AppointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee as AppointmentAttendeeEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule as AppointmentSeriesScheduleEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet as AppointmentSetEntity
 
 @Service
@@ -136,7 +136,7 @@ class AppointmentSeriesService(
 
     val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
-    val createFirstAppointmentOnly = request.schedule?.count?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
+    val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
       buildValidAppointmentSeriesEntity(
@@ -215,8 +215,8 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: AppointmentSchedule?) {
-    val repeatCount = repeat?.count ?: 1
+  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule?) {
+    val repeatCount = repeat?.numberOfAppointments ?: 1
     require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
       "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
     }
@@ -235,7 +235,7 @@ class AppointmentSeriesService(
     startDate: LocalDate?,
     startTime: LocalTime?,
     endTime: LocalTime?,
-    repeat: AppointmentSchedule? = null,
+    repeat: AppointmentSeriesSchedule? = null,
     extraInformation: String? = null,
     createdTime: LocalDateTime = LocalDateTime.now(),
     createdBy: String,
@@ -273,10 +273,10 @@ class AppointmentSeriesService(
       isMigrated = isMigrated,
     ).apply {
       this.schedule = repeat?.let {
-        AppointmentSeriesSchedule(
+        AppointmentSeriesScheduleEntity(
           appointmentSeries = this,
           frequency = AppointmentFrequency.valueOf(repeat.frequency!!.name),
-          numberOfAppointments = repeat.count!!,
+          numberOfAppointments = repeat.numberOfAppointments!!,
         )
       }
 
@@ -342,13 +342,13 @@ class AppointmentSeriesService(
       END_TIME_PROPERTY_KEY to appointmentSeries.endTime.toString(),
       IS_REPEAT_PROPERTY_KEY to (request.schedule != null).toString(),
       REPEAT_PERIOD_PROPERTY_KEY to (request.schedule?.frequency?.toString() ?: ""),
-      REPEAT_COUNT_PROPERTY_KEY to (request.schedule?.count?.toString() ?: ""),
+      REPEAT_COUNT_PROPERTY_KEY to (request.schedule?.numberOfAppointments?.toString() ?: ""),
       HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointmentSeries.extraInformation?.isNotEmpty() == true).toString(),
     )
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.count ?: 1)).toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.numberOfAppointments ?: 1)).toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSeries.customName?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.extraInformation?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
@@ -366,15 +366,15 @@ class AppointmentSeriesService(
       HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSet.customName != null).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSet.internalLocationId.toString(),
       START_DATE_PROPERTY_KEY to appointmentSet.startDate.toString(),
-      EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointmentSeries.minOf { it.startTime }.toString(),
-      LATEST_END_TIME_PROPERTY_KEY to appointmentSet.appointmentSeries.mapNotNull { it.endTime }.maxOf { it }.toString(),
+      EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointments.minOf { it.startTime }.toString(),
+      LATEST_END_TIME_PROPERTY_KEY to appointmentSet.appointments.mapNotNull { it.endTime }.maxOf { it }.toString(),
     )
 
     val metricsMap = mapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.flatMap { it.appointments.flatMap { appointment -> appointment.allocations } }.size.toDouble(),
+      APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointments.flatMap { it.attendees }.size.toDouble(),
       DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointmentSeries.filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
+      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointments.filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
 
@@ -394,7 +394,7 @@ class AppointmentSeriesService(
         endTime = appointmentSeries.endTime,
         isRepeat = request.schedule != null,
         frequency = request.schedule?.frequency,
-        numberOfAppointments = request.schedule?.count,
+        numberOfAppointments = request.schedule?.numberOfAppointments,
         hasExtraInformation = appointmentSeries.extraInformation?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
         createdTime = LocalDateTime.now(),

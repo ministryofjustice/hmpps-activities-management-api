@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -118,7 +118,7 @@ data class AppointmentSeriesCreateRequest(
     Will create a single appointment if not supplied.
     """,
   )
-  val schedule: AppointmentSchedule? = null,
+  val schedule: AppointmentSeriesSchedule? = null,
 
   @field:Size(max = 4000, message = "Extra information must not exceed {max} characters")
   @Schema(

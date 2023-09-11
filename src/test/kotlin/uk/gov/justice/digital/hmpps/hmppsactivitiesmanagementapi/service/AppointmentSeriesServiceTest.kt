@@ -23,12 +23,12 @@ import org.springframework.security.core.context.SecurityContextHolder
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiUserClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
@@ -39,8 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
@@ -361,7 +360,7 @@ class AppointmentSeriesServiceTest {
     val prisonerList = MutableList(60) { prisoner -> "A11${prisoner}BC" }
     val request = appointmentSeriesCreateRequest(
       prisonerNumbers = prisonerList,
-      schedule = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 350),
+      schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 350),
     )
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
@@ -512,19 +511,31 @@ class AppointmentSeriesServiceTest {
     with(appointmentSeriesEntityCaptor.value) {
       with(appointments()) {
         assertThat(size).isEqualTo(1)
-        assertThat(appointments().first().attendees().toModel()).containsAll(
-          listOf(
-            AppointmentAttendee(id = 0, prisonerNumber = "A12345BC", bookingId = 1),
-            AppointmentAttendee(id = 0, prisonerNumber = "B23456CE", bookingId = 2),
-          ),
-        )
+        with(appointments().first()) {
+          assertThat(attendees()).containsAll(
+            listOf(
+              AppointmentAttendee(
+                appointmentAttendeeId = 0,
+                appointment = this,
+                prisonerNumber = "A12345BC",
+                bookingId = 1,
+              ),
+              AppointmentAttendee(
+                appointmentAttendeeId = 0,
+                appointment = this,
+                prisonerNumber = "B23456CE",
+                bookingId = 2,
+              ),
+            ),
+          )
+        }
       }
     }
   }
 
   @Test
   fun `createAppointmentSeries individual repeat appointment success`() {
-    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(AppointmentFrequencyModel.WEEKLY, 3))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.WEEKLY, 3))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -586,7 +597,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for fifteen prisoners synchronously when it repeats once creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 1))
+    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 1))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -620,7 +631,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for seven prisoners synchronously when it repeats twice creating fourteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 2))
+    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 2))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -654,7 +665,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `createAppointmentSeries for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSchedule(AppointmentFrequencyModel.DAILY, 5))
+    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 5))
 
     whenever(prisonApiUserClient.getUserCaseLoads()).thenReturn(Mono.just(userCaseLoads(request.prisonCode!!)))
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
@@ -934,7 +945,7 @@ class AppointmentSeriesServiceTest {
   @Test
   fun `migrateAppointment with isCancelled = true success`() {
     val request = appointmentMigrateRequest(isCancelled = true)
-    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
@@ -956,7 +967,7 @@ class AppointmentSeriesServiceTest {
       updatedTime = LocalDateTime.of(2022, 10, 23, 10, 30),
       updatedBy = "DPS.USER",
     )
-    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
@@ -980,7 +991,7 @@ class AppointmentSeriesServiceTest {
       updatedTime = null,
       updatedBy = null,
     )
-    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 

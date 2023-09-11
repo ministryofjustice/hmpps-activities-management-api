@@ -105,7 +105,7 @@ data class AppointmentSeries(
     there is more than one appointment as a number of appointments value of one is valid.
     """,
   )
-  val schedule: AppointmentSchedule?,
+  val schedule: AppointmentSeriesSchedule?,
 
   @Schema(
     description =

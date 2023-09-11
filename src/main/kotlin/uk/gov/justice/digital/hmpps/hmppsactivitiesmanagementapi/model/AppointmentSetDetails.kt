@@ -78,15 +78,15 @@ data class AppointmentSetDetails(
   val startDate: LocalDate,
 
   @Schema(
-    description = "The details of all the appointments within the appointment series that make up the set",
+    description = "The details of all the appointments in the the set",
   )
-  val occurrences: List<AppointmentDetails>,
+  val appointments: List<AppointmentDetails>,
 
   @Schema(
     description = "The date and time this appointment set was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val created: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   @Schema(
     description =
@@ -95,4 +95,23 @@ data class AppointmentSetDetails(
     """,
   )
   val createdBy: UserSummary,
+
+  @Schema(
+    description =
+    """
+    The date and time one or more appointments in this set was last changed.
+    Will be null if no appointments in the set have been altered since they were created
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedTime: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The summary of the user that last edited one or more appointments in this set.
+    Will be null if no appointments in the set have been altered since they were created
+    """,
+  )
+  val updatedBy: UserSummary?,
 )

@@ -9,12 +9,12 @@ class AppointmentAttendeeSearchTest {
   @Test
   fun `entity to model mapping`() {
     val expectedModel = appointmentAttendeeModel()
-    assertThat(appointmentSearchEntity().attendees.first().toModel()).isEqualTo(expectedModel)
+    assertThat(appointmentSearchEntity().attendees.first().toResult()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
     val expectedModel = listOf(appointmentAttendeeModel())
-    assertThat(appointmentSearchEntity().attendees.toModel()).isEqualTo(expectedModel)
+    assertThat(appointmentSearchEntity().attendees.toResult()).isEqualTo(expectedModel)
   }
 }

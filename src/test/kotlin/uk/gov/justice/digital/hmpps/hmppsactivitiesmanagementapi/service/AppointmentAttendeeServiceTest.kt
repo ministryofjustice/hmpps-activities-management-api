@@ -40,9 +40,9 @@ class AppointmentAttendeeServiceTest {
     val prisonerNumber = "ABC123"
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
-    val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAppointmentAttendee = mock<AppointmentAttendee>()
-    val parentAppointment = mock<Appointment>()
+    val appointmentSeries = mock<AppointmentSeries>()
+    val appointment = mock<Appointment>()
+    val appointmentAttendee = mock<AppointmentAttendee>()
 
     whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
@@ -59,15 +59,15 @@ class AppointmentAttendeeServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(parentAppointmentAttendee))
-    whenever(parentAppointmentAttendee.appointment).thenReturn(parentAppointment)
-    whenever(parentAppointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
-    whenever(parentAppointment.appointmentSeries).thenReturn(parentAppointmentSeries)
-    whenever(parentAppointmentAttendee.isIndividualAppointment()).thenReturn(false)
+    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
+    whenever(appointmentAttendee.appointment).thenReturn(appointment)
+    whenever(appointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
+    whenever(appointment.appointmentSeries).thenReturn(appointmentSeries)
+    whenever(appointmentSeries.isIndividualAppointment()).thenReturn(false)
 
     appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAppointmentAttendee).removeFromAppointment()
+    verify(appointment).removeAttendee(appointmentAttendee)
   }
 
   @Test
@@ -77,9 +77,9 @@ class AppointmentAttendeeServiceTest {
     val prisonerNumber = "ABC123"
     val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
-    val parentAppointmentSeries = mock<AppointmentSeries>()
-    val parentAppointmentAttendee = mock<AppointmentAttendee>()
-    val parentAppointment = mock<Appointment>()
+    val appointmentSeries = mock<AppointmentSeries>()
+    val appointment = mock<Appointment>()
+    val appointmentAttendee = mock<AppointmentAttendee>()
 
     whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
@@ -96,15 +96,15 @@ class AppointmentAttendeeServiceTest {
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
-    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(parentAppointmentAttendee))
-    whenever(parentAppointmentAttendee.appointment).thenReturn(parentAppointment)
-    whenever(parentAppointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
-    whenever(parentAppointment.appointmentSeries).thenReturn(parentAppointmentSeries)
-    whenever(parentAppointmentAttendee.isIndividualAppointment()).thenReturn(true)
+    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
+    whenever(appointmentAttendee.appointment).thenReturn(appointment)
+    whenever(appointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
+    whenever(appointment.appointmentSeries).thenReturn(appointmentSeries)
+    whenever(appointmentSeries.isIndividualAppointment()).thenReturn(true)
 
     appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
 
-    verify(parentAppointmentAttendee).removeAppointment(parentAppointment)
+    verify(appointmentSeries).removeAppointment(appointment)
   }
 
   @Test

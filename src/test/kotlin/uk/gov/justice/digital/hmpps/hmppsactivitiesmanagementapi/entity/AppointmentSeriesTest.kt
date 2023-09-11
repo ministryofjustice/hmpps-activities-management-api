@@ -7,19 +7,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentRepeatPeriodModel
 
 class AppointmentSeriesTest {
@@ -279,61 +276,6 @@ class AppointmentSeriesTest {
   }
 
   @Test
-  fun `internal location ids includes appointment ids`() {
-    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = 124 }
-    assertThat(entity.internalLocationIds()).containsExactly(123, 124)
-  }
-
-  @Test
-  fun `internal location ids removes duplicates`() {
-    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = 123 }
-    assertThat(entity.internalLocationIds()).containsExactly(123)
-  }
-
-  @Test
-  fun `internal location ids removes null`() {
-    val entity = appointmentSeriesEntity(123).apply { appointments().first().internalLocationId = null }
-    assertThat(entity.internalLocationIds()).containsExactly(123)
-  }
-
-  @Test
-  fun `prisoner numbers concatenates all appointment attendees`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789))
-    assertThat(entity.prisonerNumbers()).containsExactly("A1234BC", "B2345CD")
-  }
-
-  @Test
-  fun `prisoner numbers uses prisoners allocated to the first future appointment`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.appointments().first().let {
-      it.startDate = LocalDate.now()
-      it.startTime = LocalTime.now().minusMinutes(1)
-    }
-    entity.addAppointment(appointmentEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().plusMinutes(1), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
-    entity.addAppointment(appointmentEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().plusMinutes(2), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
-    assertThat(entity.prisonerNumbers()).containsExactly("B2345CD")
-  }
-
-  @Test
-  fun `prisoner numbers uses prisoners allocated to the last appointment if all appointments have past`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.appointments().first().let {
-      it.startDate = LocalDate.now()
-      it.startTime = LocalTime.now().minusMinutes(3)
-    }
-    entity.addAppointment(appointmentEntity(entity, 2, 2, LocalDate.now(), LocalTime.now().minusMinutes(2), prisonerNumberToBookingIdMap = mapOf("B2345CD" to 457)))
-    entity.addAppointment(appointmentEntity(entity, 3, 3, LocalDate.now(), LocalTime.now().minusMinutes(1), prisonerNumberToBookingIdMap = mapOf("C3456DE" to 458)))
-    assertThat(entity.prisonerNumbers()).containsExactly("C3456DE")
-  }
-
-  @Test
-  fun `prisoner numbers uses empty list if there are no appointments`() {
-    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456))
-    entity.removeAppointment(entity.appointments().first())
-    assertThat(entity.prisonerNumbers()).isEmpty()
-  }
-
-  @Test
   fun `usernames includes created by, updated by and appointment updated by and cancelled by`() {
     val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = "UPDATE.USER").apply {
       appointments().first().updatedBy = "APPOINTMENT.UPDATE.USER"
@@ -363,17 +305,7 @@ class AppointmentSeriesTest {
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    assertThat(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(entity.toDetails(referenceCodeMap, locationMap, userMap)).isEqualTo(
       appointmentSeriesDetails(
         customName = "Appointment description",
         createdTime = entity.createdTime,
@@ -392,17 +324,7 @@ class AppointmentSeriesTest {
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(category.code).isEqualTo(entity.categoryCode)
       assertThat(category.description).isEqualTo(entity.categoryCode)
     }
@@ -417,17 +339,7 @@ class AppointmentSeriesTest {
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNotNull
       assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
       assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
@@ -441,17 +353,7 @@ class AppointmentSeriesTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = emptyMap<String, UserDetail>()
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(createdBy.id).isEqualTo(-1)
       assertThat(createdBy.username).isEqualTo("CREATE.USER")
       assertThat(createdBy.firstName).isEqualTo("UNKNOWN")
@@ -473,17 +375,7 @@ class AppointmentSeriesTest {
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -497,17 +389,7 @@ class AppointmentSeriesTest {
     val userMap = mapOf(
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(updatedBy).isNull()
     }
   }
@@ -520,18 +402,8 @@ class AppointmentSeriesTest {
     val userMap = mapOf(
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
-      assertThat(schedule).isEqualTo(AppointmentSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
+      assertThat(schedule).isEqualTo(AppointmentSeriesSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
     }
   }
 
@@ -548,17 +420,7 @@ class AppointmentSeriesTest {
     val userMap = mapOf(
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(appointmentName).isEqualTo("appointment name (test category)")
     }
   }
@@ -576,17 +438,7 @@ class AppointmentSeriesTest {
     val userMap = mapOf(
       entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
     )
-    val prisoners = listOf(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-        bookingId = 456,
-        firstName = "TEST",
-        lastName = "PRISONER",
-        prisonId = "TPR",
-        cellLocation = "1-2-3",
-      ),
-    )
-    with(entity.toDetails(prisoners, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(referenceCodeMap, locationMap, userMap)) {
       assertThat(appointmentName).isEqualTo("test category")
     }
   }

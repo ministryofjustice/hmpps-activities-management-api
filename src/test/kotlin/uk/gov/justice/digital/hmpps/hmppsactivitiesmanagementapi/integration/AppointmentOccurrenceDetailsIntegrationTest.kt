@@ -7,9 +7,11 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
@@ -76,14 +78,18 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentOccurrenceDetails).isEqualTo(
       AppointmentDetails(
         2,
-        1,
+        AppointmentSeriesSummary(1, null, 1, 1),
         null,
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
         "Appointment description (Appointment Category 1)",
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+        attendees = listOf(
+          AppointmentAttendeeSummary(
+            1,
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            null,
+          ),
         ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
         "Appointment description",
@@ -92,15 +98,14 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
+        false,
         "Appointment level comment",
-        null,
-        false,
-        false,
-        false,
         appointmentOccurrenceDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        false,
         null,
         null,
+        false,
         null,
         null,
       ),
@@ -127,14 +132,18 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentOccurrenceDetails).isEqualTo(
       AppointmentDetails(
         6,
-        6,
+        null,
         AppointmentSetSummary(6, 3, 3),
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
         "Appointment description (Appointment Category 1)",
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+        attendees = listOf(
+          AppointmentAttendeeSummary(
+            1,
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            null,
+          ),
         ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
         "Appointment description",
@@ -143,15 +152,14 @@ class AppointmentOccurrenceDetailsIntegrationTest : IntegrationTestBase() {
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
         LocalTime.of(9, 15),
+        false,
         "Medical appointment for A1234BC",
-        null,
-        false,
-        false,
-        false,
         appointmentOccurrenceDetails.createdTime,
         UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        false,
         null,
         null,
+        false,
         null,
         null,
       ),

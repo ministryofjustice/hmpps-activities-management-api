@@ -11,8 +11,9 @@ import java.time.LocalTime
   description =
   """
   Described on the UI as an "Appointment" and represents the scheduled event on a specific date and time.
-  Contains the full details of all the appointment properties, any properties specified by the parent
-  appointment series and the summary collection of prisoners attending this appointment.
+  Contains the full details of all the appointment properties and the summary collection of prisoners attending this appointment.
+  An appointment is part of either a series of an appointments on a schedule or a set of appointments on the same day.
+  The summary information of which appointment collection they are part of is included in these details.
   All updates and cancellations happen at this appointment level with the parent appointment series being immutable.
   """,
 )
@@ -24,13 +25,20 @@ data class AppointmentDetails(
   val id: Long,
 
   @Schema(
-    description = "The internally generated identifier for the parent appointment series",
-    example = "12345",
+    description =
+    """
+    Summary of the appointment series this appointment is part of.
+    Will be null if this appointment is part of a set of appointments on the same day.
+    """,
   )
-  val appointmentSeriesId: Long,
+  val appointmentSeries: AppointmentSeriesSummary?,
 
   @Schema(
-    description = "Summary of the appointment set the parent appointment series is part of",
+    description =
+    """
+    Summary of the appointment set this appointment is part of
+    Will be null if this appointment is part of a series of an appointments on a schedule.
+    """,
   )
   val appointmentSet: AppointmentSetSummary?,
 
@@ -64,11 +72,11 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    Summary of the prisoner or prisoners attending this appointment. Attendees are at the appointment level to allow
-    for per appointment attendee changes.
+    Summary of the prisoner or prisoners attending this appointment and their attendance record if any.
+    Attendees are at the appointment level to allow for per appointment attendee changes.
     """,
   )
-  val prisoners: List<PrisonerSummary> = emptyList(),
+  val attendees: List<AppointmentAttendeeSummary> = emptyList(),
 
   @Schema(
     description =
@@ -132,6 +140,15 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
+    Indicates that this appointment has expired i.e. it's start date and time is in the past
+    """,
+    example = "false",
+  )
+  val isExpired: Boolean,
+
+  @Schema(
+    description =
+    """
     Extra information for the prisoner or prisoners attending this appointment.
     Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
     extra information via the unlock list.
@@ -139,45 +156,6 @@ data class AppointmentDetails(
     example = "This appointment will help adjusting to life outside of prison",
   )
   val extraInformation: String?,
-
-  @Schema(
-    description =
-    """
-    Describes the schedule of the parent appointment series i.e. how the appointments in the series repeat. The frequency of
-    those appointments and how many appointments there are in total in the series.
-    If null, the appointment series has only one appointment. Note that the presence of this property does not mean
-    there is more than one appointment as a number of appointments value of one is valid.
-    """,
-  )
-  val schedule: AppointmentSchedule?,
-
-  @Schema(
-    description =
-    """
-    Indicates that this appointment has been independently changed from the original state it was in when
-    it was created as part of an appointment series
-    """,
-    example = "false",
-  )
-  val isEdited: Boolean,
-
-  @Schema(
-    description =
-    """
-    Indicates that this appointment has been cancelled
-    """,
-    example = "false",
-  )
-  val isCancelled: Boolean,
-
-  @Schema(
-    description =
-    """
-    Indicates that this appointment has expired i.e. it's start date and time is in the past
-    """,
-    example = "false",
-  )
-  val isExpired: Boolean,
 
   @Schema(
     description = "The date and time this appointment was created. Will not change",
@@ -192,6 +170,16 @@ data class AppointmentDetails(
     """,
   )
   val createdBy: UserSummary,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been independently changed from the original state it was in when
+    it was created as part of an appointment series
+    """,
+    example = "false",
+  )
+  val isEdited: Boolean,
 
   @Schema(
     description =
@@ -211,6 +199,15 @@ data class AppointmentDetails(
     """,
   )
   val updatedBy: UserSummary?,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been cancelled
+    """,
+    example = "false",
+  )
+  val isCancelled: Boolean,
 
   @Schema(
     description =

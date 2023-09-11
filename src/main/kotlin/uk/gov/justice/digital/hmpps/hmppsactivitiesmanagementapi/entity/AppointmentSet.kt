@@ -76,13 +76,13 @@ data class AppointmentSet(
 
   fun appointmentSeries() = appointmentSeries.toList()
 
+  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
+
   fun addAppointmentSeries(appointmentSeries: AppointmentSeries) = this.appointmentSeries.add(appointmentSeries)
 
-  fun prisonerNumbers() = appointmentSeries().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
+  fun prisonerNumbers() = appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments().flatMap { it.prisonerNumbers() } }.distinct()
 
   fun usernames() = listOf(createdBy).union(appointmentSeries().map { appointment -> appointment.usernames() }.flatten()).distinct()
-
-  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
 
   fun toModel() = AppointmentSetModel(
     id = this.appointmentSetId,
@@ -92,15 +92,15 @@ data class AppointmentSet(
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    appointmentSeries = this.appointmentSeries().toModel(),
+    appointments = this.appointmentSeries().flatMap { it.appointments() }.toModel(),
     createdTime = createdTime,
     createdBy = createdBy,
   )
 
   fun toSummary() = AppointmentSetSummary(
     id = this.appointmentSetId,
-    appointmentSeriesCount = this.appointmentSeries().size,
     appointmentCount = this.appointmentSeries().flatMap { it.appointments() }.size,
+    scheduledAppointmentCount = this.appointmentSeries().flatMap { it.scheduledAppointments() }.size,
   )
 
   fun toDetails(
@@ -125,6 +125,12 @@ data class AppointmentSet(
       appointmentSeries().map { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
       createdTime,
       userMap[createdBy].toSummary(createdBy),
+      updatedTime,
+      if (updatedBy == null) {
+        null
+      } else {
+        userMap[updatedBy].toSummary(updatedBy!!)
+      },
     )
   }
 }

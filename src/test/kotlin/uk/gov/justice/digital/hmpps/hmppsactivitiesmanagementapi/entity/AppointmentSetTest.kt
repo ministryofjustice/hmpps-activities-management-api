@@ -26,7 +26,7 @@ class AppointmentSetTest {
       entity.internalLocationId,
       entity.inCell,
       entity.startDate,
-      entity.appointmentSeries().toModel(),
+      entity.appointments().toModel(),
       entity.createdTime,
       entity.createdBy,
     )

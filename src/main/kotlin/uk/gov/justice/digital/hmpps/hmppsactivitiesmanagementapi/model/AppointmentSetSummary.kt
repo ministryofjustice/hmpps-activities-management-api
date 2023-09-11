@@ -6,8 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
   description =
   """
   Described on the UI as an "Appointment set" or "set of back-to-back appointments".
-  Contains the limited summary information needed to display the fact that an appointment or appointment series was
-  created as part of a set.
+  Contains the limited summary information needed to display the fact that an appointment was created as part of a set.
   """,
 )
 data class AppointmentSetSummary(
@@ -20,18 +19,18 @@ data class AppointmentSetSummary(
   @Schema(
     description =
     """
-    The number of appointment series in the set
+    The number of appointments in the set that have not been deleted. Counts both appointments in the past and
+    those scheduled.
     """,
     example = "3",
   )
-  val appointmentSeriesCount: Int,
+  val appointmentCount: Int,
 
   @Schema(
     description =
     """
-    The number of appointments within the appointment series that make up the set
+    The count of the remaining scheduled appointments in the set that have not been cancelled or deleted.
     """,
-    example = "6",
   )
-  val appointmentCount: Int,
+  val scheduledAppointmentCount: Int,
 )

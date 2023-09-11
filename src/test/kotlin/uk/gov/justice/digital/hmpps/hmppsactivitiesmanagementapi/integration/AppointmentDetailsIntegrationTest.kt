@@ -11,10 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -46,10 +44,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A1234BC"),
-      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
-    )
 
     val appointmentDetails = webTestClient.getAppointmentDetailsById(1)!!
 
@@ -59,9 +53,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         "TPR",
         "Appointment description (Appointment Category 1)",
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
-        ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
         "Appointment description",
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -79,19 +70,11 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
           AppointmentSummary(
             2,
             1,
-            "Appointment description (Appointment Category 1)",
-            AppointmentCategorySummary("AC1", "Appointment Category 1"),
-            "Appointment description",
-            AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
-            false,
             LocalDate.now().plusDays(1),
             LocalTime.of(9, 0),
             LocalTime.of(10, 30),
-            "Appointment level comment",
             isEdited = false,
             isCancelled = false,
-            null,
-            null,
           ),
         ),
       ),

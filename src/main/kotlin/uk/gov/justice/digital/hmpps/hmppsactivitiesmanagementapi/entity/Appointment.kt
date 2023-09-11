@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Entity
 @Table(name = "appointment")
@@ -121,7 +121,7 @@ data class Appointment(
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy)
 
-  fun toModel() = AppointmentOccurrenceModel(
+  fun toModel() = AppointmentModel(
     id = appointmentId,
     sequenceNumber = sequenceNumber,
     prisonCode = prisonCode,
@@ -140,37 +140,18 @@ data class Appointment(
     cancelledTime = cancelledTime,
     cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
-    allocations = attendees().toModel(),
+    attendees = attendees().toModel(),
   )
 
-  fun toSummary(
-    referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
-  ) =
+  fun toSummary() =
     AppointmentSummary(
       appointmentId,
       sequenceNumber,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      customName,
-      if (inCell) {
-        null
-      } else {
-        locationMap[internalLocationId].toAppointmentLocationSummary(
-          internalLocationId!!,
-          prisonCode,
-        )
-      },
-      inCell,
       startDate,
       startTime,
       endTime,
-      extraInformation,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
-      updatedTime = updatedTime,
-      updatedBy?.let { userMap[updatedBy].toSummary(updatedBy!!) },
     )
 
   fun toDetails(
@@ -181,13 +162,13 @@ data class Appointment(
   ) =
     AppointmentDetails(
       appointmentId,
-      appointmentSeries.appointmentSeriesId,
+      if (appointmentSeries.appointmentSet != null) appointmentSeries.toSummary() else null,
       appointmentSeries.appointmentSet?.toSummary(),
       appointmentSeries.appointmentType,
       sequenceNumber,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      attendees().map { prisonerMap[it.prisonerNumber].toSummary(prisonCode, it.prisonerNumber, it.bookingId) },
+      attendees().map { it.toSummary(prisonerMap) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       customName,
       if (inCell) {
@@ -199,19 +180,18 @@ data class Appointment(
       startDate,
       startTime,
       endTime,
-      extraInformation,
-      appointmentSeries.schedule?.toRepeat(),
-      isEdited(),
-      isCancelled(),
       isExpired(),
+      extraInformation,
       appointmentSeries.createdTime,
       userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
+      isEdited(),
       updatedTime,
       if (updatedBy == null) {
         null
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
+      isCancelled(),
       cancelledTime,
       if (cancelledBy == null) {
         null
@@ -229,11 +209,7 @@ data class Appointment(
 
 fun List<Appointment>.toModel() = map { it.toModel() }
 
-fun List<Appointment>.toSummary(
-  referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
-  userMap: Map<String, UserDetail>,
-) = map { it.toSummary(referenceCodeMap, locationMap, userMap) }
+fun List<Appointment>.toSummary() = map { it.toSummary() }
 
 fun List<Appointment>.toDetails(
   prisonerMap: Map<String, Prisoner>,

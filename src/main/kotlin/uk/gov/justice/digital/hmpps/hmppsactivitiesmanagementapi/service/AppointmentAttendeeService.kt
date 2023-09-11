@@ -31,8 +31,8 @@ class AppointmentAttendeeService(
         .forEach {
           appointmentAttendeeRepository.findById(it.appointmentAttendeeId)
             .ifPresent { attendee ->
-              if (attendee.isIndividualAppointment()) {
-                attendee.removeAppointment(attendee.appointment)
+              if (attendee.appointment.appointmentSeries.isIndividualAppointment()) {
+                attendee.appointment.appointmentSeries.removeAppointment(attendee.appointment)
 
                 log.info(
                   "Removed appointment '${attendee.appointment.appointmentId}' " +
@@ -40,7 +40,7 @@ class AppointmentAttendeeService(
                     "for prisoner '$prisonerNumber'.",
                 )
               } else {
-                attendee.removeFromAppointment()
+                attendee.appointment.removeAttendee(attendee)
                 log.info("Removed the appointment attendee '${it.appointmentAttendeeId}' for prisoner $prisonerNumber at prison $prisonCode on ${it.appointmentDate}.")
               }
 

@@ -143,7 +143,7 @@ data class Appointment(
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  var cancelledTime: LocalDateTime? = null,
+  var cancelledTime: LocalDateTime?,
 
   @Schema(
     description =
@@ -153,7 +153,7 @@ data class Appointment(
     """,
     example = "12345",
   )
-  val cancellationReasonId: Long? = null,
+  val cancellationReasonId: Long?,
 
   @Schema(
     description =
@@ -163,7 +163,7 @@ data class Appointment(
     """,
     example = "AAA01U",
   )
-  val cancelledBy: String? = null,
+  val cancelledBy: String?,
 
   @Schema(
     description =
@@ -173,7 +173,7 @@ data class Appointment(
     Attendees are at the appointment level supporting alteration of attendees in any future appointment.
     """,
   )
-  val allocations: List<AppointmentAttendee> = emptyList(),
+  val attendees: List<AppointmentAttendee> = emptyList(),
 ) {
   fun isCancelled() = cancelledTime != null
 }

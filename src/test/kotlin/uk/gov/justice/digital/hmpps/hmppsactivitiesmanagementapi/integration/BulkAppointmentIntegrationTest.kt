@@ -73,8 +73,8 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(response.appointmentSeries[0].appointments[0].allocations[0].id),
-      AppointmentInstanceInformation(response.appointmentSeries[1].appointments[0].allocations[0].id),
+      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
+      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
     )
 
     verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
@@ -82,14 +82,14 @@ class BulkAppointmentIntegrationTest : IntegrationTestBase() {
 
   private fun verifyBulkAppointment(response: AppointmentSet) {
     assertThat(response.id).isNotNull
-    assertThat(response.appointmentSeries).hasSize(2)
+    assertThat(response.appointments).hasSize(2)
     assertThat(response.createdBy).isEqualTo("test-client")
     assertThat(response.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
 
-    assertThat(response.appointmentSeries[0].appointments[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
-    assertThat(response.appointmentSeries[1].appointments[0].allocations[0].prisonerNumber).isEqualTo("A1234BD")
+    assertThat(response.appointments[0].attendees[0].prisonerNumber).isEqualTo("A1234BC")
+    assertThat(response.appointments[1].attendees[0].prisonerNumber).isEqualTo("A1234BD")
 
-    response.appointmentSeries.forEach {
+    response.appointments.forEach {
       assertThat(it.categoryCode).isEqualTo("AC1")
       assertThat(it.prisonCode).isEqualTo("TPR")
       assertThat(it.internalLocationId).isEqualTo(123)

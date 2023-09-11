@@ -112,7 +112,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
 
     val appointment = webTestClient.updateAppointmentOccurrence(2, request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     with(appointment) {
       assertThat(categoryCode).isEqualTo("AC1")
@@ -135,7 +135,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(extraInformation).isEqualTo(request.extraInformation)
         assertThat(updatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(updatedBy).isEqualTo("test-client")
-        with(allocations.single()) {
+        with(attendees.single()) {
           assertThat(prisonerNumber).isEqualTo("A1234BC")
           assertThat(bookingId).isEqualTo(456)
         }
@@ -165,7 +165,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     with(appointment) {
       with(appointments.single()) {
@@ -199,7 +199,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     val originalAppointment = webTestClient.getAppointmentById(1)!!
     val allocationIds = originalAppointment.appointments
-      .flatMap { it.allocations.map { allocation -> allocation.id } }
+      .flatMap { it.attendees.map { allocation -> allocation.id } }
 
     val updatedAppointment = webTestClient.cancelAppointmentOccurrence(2, request)!!
 
@@ -243,7 +243,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
         appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
             .map { allocation -> AppointmentInstanceInformation(allocation.id) }
         },
       )
@@ -292,7 +292,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
         appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
             .map { allocation -> AppointmentInstanceInformation(allocation.id) }
         },
       )
@@ -342,9 +342,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
         // The cancel events for the specified occurrence's instances are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.allocations.map { AppointmentInstanceInformation(it.id) }
+        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.map { AppointmentInstanceInformation(it.id) }
           // Followed by the cancel events for the remaining instances
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { AppointmentInstanceInformation(it.id) }),
+          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 
@@ -500,10 +500,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
         assertThat(map { it.extraInformation }.distinct().single()).isEqualTo("Appointment level comment")
         assertThat(map { it.updatedTime }.distinct().single()).isNull()
         assertThat(map { it.updatedBy }.distinct().single()).isNull()
-        assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
-        assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(456)
-        assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
-        assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(457)
+        assertThat(map { it.attendees[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
+        assertThat(map { it.attendees[0].bookingId }.distinct().single()).isEqualTo(456)
+        assertThat(map { it.attendees[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+        assertThat(map { it.attendees[1].bookingId }.distinct().single()).isEqualTo(457)
       }
       with(appointments.subList(2, appointments.size)) {
         assertThat(map { it.categoryCode }.distinct().single()).isEqualTo(request.categoryCode)
@@ -517,10 +517,10 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
           within(60, ChronoUnit.SECONDS),
         )
         assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
-        assertThat(map { it.allocations[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
-        assertThat(map { it.allocations[0].bookingId }.distinct().single()).isEqualTo(457)
-        assertThat(map { it.allocations[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
-        assertThat(map { it.allocations[1].bookingId }.distinct().single()).isEqualTo(458)
+        assertThat(map { it.attendees[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
+        assertThat(map { it.attendees[0].bookingId }.distinct().single()).isEqualTo(457)
+        assertThat(map { it.attendees[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
+        assertThat(map { it.attendees[1].bookingId }.distinct().single()).isEqualTo(458)
       }
     }
 
@@ -530,7 +530,7 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(size).isEqualTo(2)
       assertThat(map { it.additionalInformation }).containsAll(
         appointment.appointments.subList(2, appointment.appointments.size).flatMap {
-          it.allocations.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
+          it.attendees.filter { allocation -> allocation.prisonerNumber == "C3456DE" }
             .map { allocation -> AppointmentInstanceInformation(allocation.id) }
         },
       )
@@ -609,9 +609,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       size isEqualTo 12
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
         // The update events for the specified occurrence's instances are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.allocations.map { AppointmentInstanceInformation(it.id) }
+        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.map { AppointmentInstanceInformation(it.id) }
           // Followed by the update events for the remaining instances
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { AppointmentInstanceInformation(it.id) }),
+          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 
@@ -680,14 +680,14 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
 
     // Synchronous update. Update specified occurrence only
     with(appointment.appointments) {
-      assertThat(single { it.id == appointmentOccurrenceId }.allocations.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
-      assertThat(filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
+      assertThat(single { it.id == appointmentOccurrenceId }.attendees.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+      assertThat(filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
     }
 
     // Wait for remaining occurrences to be updated
     Thread.sleep(1000)
     val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    assertThat(appointmentDetails.appointments.flatMap { it.allocations }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+    assertThat(appointmentDetails.appointments.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -707,9 +707,9 @@ class AppointmentOccurrenceIntegrationTest : IntegrationTestBase() {
       assertThat(size).isEqualTo(8)
       assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
         // The create events for the specified occurrence's new allocations are sent first
-        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.allocations.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
+        appointmentDetails.appointments.single { it.id == appointmentOccurrenceId }.attendees.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
           // Followed by the create events for the remaining allocations
-          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.allocations }.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
+          .union(appointmentDetails.appointments.filter { it.id != appointmentOccurrenceId }.flatMap { it.attendees }.filter { allocation -> listOf("D4567EF", "E5679FG").contains(allocation.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
       )
     }
 

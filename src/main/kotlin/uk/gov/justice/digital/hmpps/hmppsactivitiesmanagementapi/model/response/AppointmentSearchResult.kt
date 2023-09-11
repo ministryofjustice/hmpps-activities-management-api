@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import java.time.LocalDate
@@ -61,7 +60,7 @@ data class AppointmentSearchResult(
     attending each appointment
     """,
   )
-  val attendees: List<AppointmentAttendee> = emptyList(),
+  val attendees: List<AppointmentAttendeeSearchResult> = emptyList(),
 
   @Schema(
     description =

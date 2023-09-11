@@ -53,18 +53,6 @@ data class AppointmentSeriesDetails(
   @Schema(
     description =
     """
-    Summary of the prisoner or prisoners attending the first future appointment (or most recent past appointment if all
-    appointments are in the past) of this appointment series. Prisoners are added to the attendee list at the appointment
-    level to allow for per appointment attendee changes. The appointment summary does not contain any information on the
-    prisoners attending as the expected usage is to show a summary of the appointments then a link to display the full
-    appointment details.
-    """,
-  )
-  val prisoners: List<PrisonerSummary> = emptyList(),
-
-  @Schema(
-    description =
-    """
     The summary of the appointment series' category
     """,
   )
@@ -127,7 +115,7 @@ data class AppointmentSeriesDetails(
     there is more than one appointment as a number of appointments value of one is valid.
     """,
   )
-  val schedule: AppointmentSchedule?,
+  val schedule: AppointmentSeriesSchedule?,
 
   @Schema(
     description =
@@ -176,13 +164,14 @@ data class AppointmentSeriesDetails(
   @Schema(
     description =
     """
-    Summary of the individual appointment or appointments in this series. Non recurring appointment series will have a single
-    appointment containing the same property values as the parent appointment series. The same start date, time
-    and end time. Recurring appointment series will have one or more appointments. The first in the series will also
-    contain the same property values as the parent appointment series and subsequent appointments will have start dates
-    following on from the original start date incremented as specified by the series' schedule. Each appointment
-    can be edited independently of the parent. All properties of an appointment are separate to those of the parent
-    appointment series. The full series of appointments specified by the schedule will have been created in advance.
+    Summary of the individual appointment or appointments in this series both expired and scheduled.
+    Non recurring appointment series will have a single appointment containing the same property values as the parent
+    appointment series. The same start date, time and end time. Recurring appointment series will have one or more
+    appointments. The first in the series will also contain the same property values as the parent appointment series
+    and subsequent appointments will have start dates following on from the original start date incremented as specified
+    by the series' schedule. Each appointment can be edited independently of the parent. All properties of an
+    appointment are separate to those of the parent appointment series.
+    The full series of appointments specified by the schedule will have been created in advance.
     """,
   )
   val appointments: List<AppointmentSummary> = emptyList(),

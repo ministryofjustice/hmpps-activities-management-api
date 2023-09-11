@@ -18,8 +18,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -101,11 +101,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
-            allocations = listOf(
+            attendees = listOf(
               AppointmentAttendee(
                 3,
                 "A1234BC",
                 456,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
               ),
             ),
           ),
@@ -153,7 +160,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     assertSingleAppointmentSinglePrisoner(appointment, request)
     assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
@@ -198,7 +205,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     assertSingleAppointmentTwoPrisoner(appointment, request)
     assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
@@ -219,7 +226,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create individual repeat appointment success`() {
     val request =
-      appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
+      appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
@@ -236,7 +243,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     assertThat(appointment.appointments).hasSize(3)
 
@@ -263,7 +270,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      schedule = AppointmentSchedule(AppointmentFrequency.DAILY, 2),
+      schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 2),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -281,7 +288,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
 
     appointment.appointments hasSize 2
     allocationIds hasSize 10
@@ -309,7 +316,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
-      schedule = AppointmentSchedule(AppointmentFrequency.DAILY, 4),
+      schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 4),
     )
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -328,14 +335,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     // Synchronous creation. First occurrence and allocations only
     val appointment = webTestClient.createAppointment(request)!!
-    var allocationIds = appointment.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    var allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
     appointment.appointments hasSize 1
     allocationIds hasSize 3
 
     // Wait for remaining occurrences to be created
     Thread.sleep(1000)
     val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    allocationIds = appointmentDetails.appointments.flatMap { it.allocations.map { allocation -> allocation.id } }
+    allocationIds = appointmentDetails.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
     appointmentDetails.appointments hasSize 4
     allocationIds hasSize 12
 
@@ -390,11 +397,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
-            allocations = listOf(
+            attendees = listOf(
               AppointmentAttendee(
-                appointmentSeries.appointments.first().allocations.first().id,
+                appointmentSeries.appointments.first().attendees.first().id,
                 request.prisonerNumbers.first(),
                 1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
               ),
             ),
           ),
@@ -405,7 +419,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentSeries.id).isGreaterThan(0)
     assertThat(appointmentSeries.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(appointmentSeries.appointments.first().id).isGreaterThan(0)
-    assertThat(appointmentSeries.appointments.first().allocations.first().id).isGreaterThan(0)
+    assertThat(appointmentSeries.appointments.first().attendees.first().id).isGreaterThan(0)
   }
 
   private fun assertSingleAppointmentTwoPrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {
@@ -447,9 +461,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
-            allocations = listOf(
-              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1),
-              AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2),
+            attendees = listOf(
+              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null),
+              AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2, null, null, null, null, null, null, null),
             ),
           ),
         ),

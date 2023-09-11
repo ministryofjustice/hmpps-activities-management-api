@@ -69,9 +69,9 @@ data class AppointmentSet(
   val startDate: LocalDate,
 
   @Schema(
-    description = "The appointment series in the set",
+    description = "The appointments in the set",
   )
-  val appointmentSeries: List<AppointmentSeries>,
+  val appointments: List<Appointment>,
 
   @Schema(
     description = "The date and time this appointment set was created. Will not change",

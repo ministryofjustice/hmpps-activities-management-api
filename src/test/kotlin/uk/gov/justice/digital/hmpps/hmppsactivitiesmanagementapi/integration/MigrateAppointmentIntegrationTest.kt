@@ -80,7 +80,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(id).isNotNull
       assertThat(createdBy).isEqualTo("CREATE.USER")
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(appointments[0].allocations[0].prisonerNumber).isEqualTo("A1234BC")
+      assertThat(appointments[0].attendees[0].prisonerNumber).isEqualTo("A1234BC")
       assertThat(categoryCode).isEqualTo("AC1")
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(internalLocationId).isEqualTo(123)

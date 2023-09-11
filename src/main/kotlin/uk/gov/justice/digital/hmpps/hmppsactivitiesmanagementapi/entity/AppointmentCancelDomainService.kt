@@ -16,7 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
 @Transactional
@@ -36,7 +36,7 @@ class AppointmentCancelDomainService(
     cancelAppointmentsCount: Int,
     cancelInstancesCount: Int,
     startTimeInMs: Long,
-  ): AppointmentModel {
+  ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToCancel.contains(it.appointmentId) }
     return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelled, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
@@ -54,7 +54,7 @@ class AppointmentCancelDomainService(
     startTimeInMs: Long,
     trackEvent: Boolean,
     auditEvent: Boolean,
-  ): AppointmentModel {
+  ): AppointmentSeriesModel {
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
     appointmentsToCancel.forEach {

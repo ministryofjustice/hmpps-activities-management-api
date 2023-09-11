@@ -9,7 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee as AppointmentOccurrenceAllocationModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 
 @Entity
 @Table(name = "appointment_attendee")
@@ -27,11 +27,11 @@ data class AppointmentAttendeeSearch(
 
   val bookingId: Long,
 ) {
-  fun toModel() = AppointmentOccurrenceAllocationModel(
-    id = appointmentAttendeeId,
+  fun toResult() = AppointmentAttendeeSearchResult(
+    appointmentAttendeeId = appointmentAttendeeId,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
   )
 }
 
-fun List<AppointmentAttendeeSearch>.toModel() = map { it.toModel() }
+fun List<AppointmentAttendeeSearch>.toResult() = map { it.toResult() }

@@ -7,9 +7,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -19,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
@@ -31,14 +28,12 @@ class AppointmentSeriesDetailsServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
-  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
 
   private val service = AppointmentSeriesDetailsService(
     appointmentSeriesRepository,
     referenceCodeService,
     locationService,
-    prisonerSearchApiClient,
     prisonApiClient,
   )
 
@@ -63,29 +58,12 @@ class AppointmentSeriesDetailsServiceTest {
         userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(entity.prisonerNumbers())).thenReturn(
-      Mono.just(
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(
-            prisonerNumber = "A1234BC",
-            bookingId = 456,
-            firstName = "TEST",
-            lastName = "PRISONER",
-            prisonId = "TPR",
-            cellLocation = "1-2-3",
-          ),
-        ),
-      ),
-    )
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
       AppointmentSeriesDetails(
         entity.appointmentSeriesId,
         AppointmentType.INDIVIDUAL,
         entity.prisonCode,
         "Appointment description (Test Category)",
-        prisoners = listOf(
-          PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
-        ),
         AppointmentCategorySummary(entity.categoryCode, "Test Category"),
         "Appointment description",
         AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
@@ -103,19 +81,11 @@ class AppointmentSeriesDetailsServiceTest {
           AppointmentSummary(
             appointmentEntity.appointmentId,
             1,
-            "Appointment description (Test Category)",
-            AppointmentCategorySummary(entity.categoryCode, "Test Category"),
-            "Appointment description",
-            AppointmentLocationSummary(appointmentEntity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-            appointmentEntity.inCell,
             appointmentEntity.startDate,
             appointmentEntity.startTime,
             appointmentEntity.endTime,
-            "Appointment level comment",
             isEdited = true,
             isCancelled = false,
-            appointmentEntity.updatedTime,
-            UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
           ),
         ),
       ),

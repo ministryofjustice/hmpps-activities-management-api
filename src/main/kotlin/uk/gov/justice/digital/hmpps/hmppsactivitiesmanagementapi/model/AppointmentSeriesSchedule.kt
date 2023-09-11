@@ -11,7 +11,7 @@ import jakarta.validation.constraints.NotNull
   those appointments and how many appointments there will be in total in the series.
   """,
 )
-data class AppointmentSchedule(
+data class AppointmentSeriesSchedule(
   @field:NotNull(message = "Frequency must be supplied")
   @Schema(
     description =
@@ -26,9 +26,10 @@ data class AppointmentSchedule(
   @Schema(
     description =
     """
-    The total number of appointments in the appointment series
+    The original total number of appointments in the appointment series i.e. the number that were created initially
+    without excluding any that were subsequently cancelled or deleted
     """,
     example = "6",
   )
-  val count: Int?,
+  val numberOfAppointments: Int?,
 )

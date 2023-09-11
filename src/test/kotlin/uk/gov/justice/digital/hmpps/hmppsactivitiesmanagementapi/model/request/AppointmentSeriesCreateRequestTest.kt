@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -95,19 +95,19 @@ class AppointmentSeriesCreateRequestTest {
 
   @Test
   fun `repeat period must be supplied`() {
-    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = null, count = 6))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = null, numberOfAppointments = 6))
     assertSingleValidationError(validator.validate(request), "repeat.period", "Repeat period must be supplied")
   }
 
   @Test
   fun `repeat count must be supplied`() {
-    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, count = null))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, numberOfAppointments = null))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
   }
 
   @Test
   fun `repeat count must be greater than 0`() {
-    val request = appointmentSeriesCreateRequest(schedule = AppointmentSchedule(frequency = AppointmentFrequency.MONTHLY, count = 0))
+    val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = AppointmentFrequency.MONTHLY, numberOfAppointments = 0))
     assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
   }
 

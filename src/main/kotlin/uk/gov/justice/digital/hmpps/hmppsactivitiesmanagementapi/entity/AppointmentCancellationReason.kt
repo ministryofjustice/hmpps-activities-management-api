@@ -5,7 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCancellationReason as ModelAppointmentCancellationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCancellationReason as AppointmentCancellationReasonModel
 
 @Entity
 @Table(name = "appointment_cancellation_reason")
@@ -18,7 +18,7 @@ data class AppointmentCancellationReason(
 
   val isDelete: Boolean,
 ) {
-  fun toModel() = ModelAppointmentCancellationReason(
+  fun toModel() = AppointmentCancellationReasonModel(
     appointmentCancellationReasonId = appointmentCancellationReasonId,
     description = description,
     isDelete = isDelete,

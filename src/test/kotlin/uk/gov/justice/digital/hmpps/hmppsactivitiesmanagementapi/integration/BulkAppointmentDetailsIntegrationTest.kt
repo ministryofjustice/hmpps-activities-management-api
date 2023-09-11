@@ -85,13 +85,13 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
       AppointmentSetDetails(
         6,
         "TPR",
-        if (!appointmentDescription.isNullOrEmpty()) "$appointmentDescription (${category.description})" else category.description,
+        "$appointmentDescription (${category.description})",
         category,
         appointmentDescription,
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now().plusDays(1),
-        occurrences = listOf(
+        appointments = listOf(
           appointmentDetails(
             6, 6, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
@@ -101,7 +101,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
             LocalTime.of(9, 0),
             LocalTime.of(9, 15),
             "Medical appointment for A1234BC",
-            details.created, createdBy, null, null,
+            details.createdTime, createdBy, null, null,
           ),
           appointmentDetails(
             7, 7, AppointmentSetSummary(6, 3, 3), 1,
@@ -112,7 +112,7 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
             LocalTime.of(9, 15),
             LocalTime.of(9, 30),
             "Medical appointment for B2345CD",
-            details.created, createdBy, null, null,
+            details.createdTime, createdBy, null, null,
           ),
           appointmentDetails(
             8, 8, AppointmentSetSummary(6, 3, 3), 1,
@@ -123,15 +123,17 @@ class BulkAppointmentDetailsIntegrationTest : IntegrationTestBase() {
             LocalTime.of(9, 30),
             LocalTime.of(9, 45),
             "Medical appointment for C3456DE",
-            details.created, createdBy, null, null,
+            details.createdTime, createdBy, null, null,
           ),
         ),
-        details.created,
+        details.createdTime,
         createdBy,
+        null,
+        null,
       ),
     )
 
-    assertThat(details.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(details.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   private fun WebTestClient.getBulkAppointmentDetailsById(id: Long) =

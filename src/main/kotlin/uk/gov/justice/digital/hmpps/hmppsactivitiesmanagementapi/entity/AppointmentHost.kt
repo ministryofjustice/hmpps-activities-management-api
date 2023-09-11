@@ -5,7 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentHost as ModelAppointmentHost
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentHost as AppointmentHostModel
 
 @Entity
 @Table(name = "appointment_host")
@@ -17,7 +17,7 @@ data class AppointmentHost(
   val description: String,
 
 ) {
-  fun toModel() = ModelAppointmentHost(
+  fun toModel() = AppointmentHostModel(
     id = appointmentHostId,
     description = description,
   )
