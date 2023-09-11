@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
@@ -52,6 +53,9 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       assertThat(scheduledInstance.id).isEqualTo(1L)
       assertThat(scheduledInstance.startTime.toString()).isEqualTo("10:00")
       assertThat(scheduledInstance.endTime.toString()).isEqualTo("11:00")
+      with(scheduledInstance.attendances.first()) {
+        editable isEqualTo false
+      }
     }
 
     @Test
@@ -170,6 +174,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(status).isEqualTo("WAITING")
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
+          assertThat(editable).isTrue
         }
       }
 
@@ -255,6 +260,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(comment).isEqualTo("Location unavailable")
           assertThat(recordedBy).isEqualTo("USER1")
           assertThat(recordedTime).isNotNull
+          assertThat(editable).isTrue
         }
       }
 

@@ -104,6 +104,7 @@ class TransformFunctionsTest {
                   incentiveLevelWarningIssued = null,
                   recordedTime = LocalDate.now().atStartOfDay(),
                   recordedBy = "Joe Bloggs",
+                  editable = true,
                   attendanceHistory = listOf(
                     ModelAttendanceHistory(
                       id = 1,

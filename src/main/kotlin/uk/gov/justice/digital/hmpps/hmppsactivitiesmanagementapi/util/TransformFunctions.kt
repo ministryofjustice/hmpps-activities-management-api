@@ -338,6 +338,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
           caseNotesApiClient,
         )
       },
+    editable = attendance.editable(),
   )
 
 fun transform(
