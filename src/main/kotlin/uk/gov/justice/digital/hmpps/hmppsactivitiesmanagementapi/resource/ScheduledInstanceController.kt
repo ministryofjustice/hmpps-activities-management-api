@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
@@ -307,11 +306,12 @@ class ScheduledInstanceController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun attendanceSummary(
+    @RequestParam("prisonCode", required = true)
+    @Parameter(description = "The prison code of the prison to return an attendance summary for", example = "MDI")
+    prisonCode: String,
     @RequestParam(value = "date", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "The date of the attendance summary. Format YYYY-MM-DD.")
+    @Parameter(description = "The date of the attendance summary. Format, YYYY-MM-DD.", example = "2023-09-20")
     date: LocalDate,
-    @RequestHeader(CASELOAD_ID, required = true)
-    prisonCode: String,
   ): List<ScheduledInstanceAttendanceSummary> = scheduledInstanceService.attendanceSummary(prisonCode, date)
 }

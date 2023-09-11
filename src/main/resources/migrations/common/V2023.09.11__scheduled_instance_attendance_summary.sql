@@ -21,10 +21,7 @@ SELECT
 		FROM allocation al
 		WHERE al.activity_schedule_id = si.activity_schedule_id
 		AND al.start_date <= si.session_date
-		AND (
-		    (al.end_date IS NULL AND al.prisoner_status != 'ENDED')
-		    OR al.end_date >= si.session_date
-        )
+		AND (al.end_date IS NULL OR al.end_date >= si.session_date)
 		GROUP BY al.activity_schedule_id
     ), 0) AS allocations,
     att.attendees,

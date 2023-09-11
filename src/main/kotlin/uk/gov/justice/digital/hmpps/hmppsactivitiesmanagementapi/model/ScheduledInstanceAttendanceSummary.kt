@@ -49,7 +49,7 @@ data class ScheduledInstanceAttendanceSummary(
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
-  @Schema(description = "The start time of the scheduled instance", example = "09:00")
+  @Schema(description = "The end time of the scheduled instance", example = "12:00")
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
@@ -65,9 +65,30 @@ data class ScheduledInstanceAttendanceSummary(
   @Schema(description = "The NOMIS internal location for this schedule")
   var internalLocation: InternalLocation? = null,
 
-  @Schema(description = "Flag to indicate if the scheduled instance has been cancelled")
+  @Schema(description = "Flag to indicate if the scheduled instance has been cancelled", example = "false")
   var cancelled: Boolean,
 
   @Schema(description = "Attendance summary details for a scheduled instance")
   val attendanceSummary: AttendanceSummaryDetails,
-)
+) {
+  @Schema(description = "Attendance summary details")
+  data class AttendanceSummaryDetails(
+    @Schema(description = "The number of prisoners allocated to this scheduled instance", example = "5")
+    val allocations: Long,
+
+    @Schema(description = "The number of attendees for this scheduled instance", example = "5")
+    val attendees: Long? = null,
+
+    @Schema(description = "The number of attendance records not recorded", example = "2")
+    val notRecorded: Long? = null,
+
+    @Schema(description = "The number of attendance recorded marked as attended", example = "2")
+    val attended: Long? = null,
+
+    @Schema(description = "The number of attendance recorded marked as absence", example = "1")
+    val absences: Long? = null,
+
+    @Schema(description = "The number of attendance recorded marked as paid", example = "2")
+    val paid: Long? = null,
+  )
+}

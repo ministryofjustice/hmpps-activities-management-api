@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
@@ -478,7 +477,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
       )
     },
     cancelled = this.cancelled,
-    attendanceSummary = AttendanceSummaryDetails(
+    attendanceSummary = ModelScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
       allocations = this.allocations,
       attendees = this.attendees,
       notRecorded = this.notRecorded,

@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
@@ -308,7 +307,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-16.sql")
   fun `return attendance summary`() {
-    val response = webTestClient.getAttendanceSummary(LocalDate.now())
+    val response = webTestClient.getAttendanceSummary("PVI", LocalDate.now())
     assertThat(response).isEqualTo(
       listOf(
         ScheduledInstanceAttendanceSummary(
@@ -329,7 +328,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
             description = "Location 1",
           ),
           cancelled = false,
-          attendanceSummary = AttendanceSummaryDetails(
+          attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
             allocations = 2,
             attendees = 2,
             notRecorded = 2,
@@ -356,7 +355,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
             description = "Location 2",
           ),
           cancelled = true,
-          attendanceSummary = AttendanceSummaryDetails(
+          attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
             allocations = 2,
           ),
         ),
@@ -417,9 +416,10 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ActivityScheduleInstance::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.getAttendanceSummary(date: LocalDate) = get()
+  private fun WebTestClient.getAttendanceSummary(prisonCode: String, date: LocalDate) = get()
     .uri { builder ->
       builder.path("/scheduled-instances/attendance-summary")
+        .queryParam("prisonCode", prisonCode)
         .queryParam("date", date)
         .build()
     }
