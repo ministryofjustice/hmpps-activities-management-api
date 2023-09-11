@@ -82,7 +82,7 @@ data class AppointmentSet(
 
   fun prisonerNumbers() = appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments().flatMap { it.prisonerNumbers() } }.distinct()
 
-  fun usernames() = listOf(createdBy).union(appointmentSeries().map { appointment -> appointment.usernames() }.flatten()).distinct()
+  fun usernames() = listOfNotNull(createdBy, updatedBy).union(appointments().flatMap { appointment -> appointment.usernames() }).distinct()
 
   fun toModel() = AppointmentSetModel(
     id = this.appointmentSetId,

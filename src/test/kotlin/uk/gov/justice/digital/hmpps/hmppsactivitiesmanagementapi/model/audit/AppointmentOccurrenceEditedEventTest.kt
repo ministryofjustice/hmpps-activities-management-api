@@ -26,7 +26,7 @@ class AppointmentOccurrenceEditedEventTest : AuditableEventTestBase() {
   fun `returns the correct json representation`() {
     val event = createEvent()
     val expectedJson =
-      """{"appointmentSeriesId":1,"appointmentId":2,"prisonCode":"PBI","originalCategoryCode":"A","categoryCode":"C","originalInternalLocationId":3,"internalLocationId":2,"originalStartDate":"2023-03-22","startDate":"2023-03-23","originalStartTime":"08:00:00","startTime":"09:00:00","originalEndTime":"10:15:00","endTime":"10:30:00","applyTo":"ALL_FUTURE_OCCURRENCES","createdTime":"2023-03-22T09:00:03","createdBy":"Bob"}"""
+      """{"appointmentSeriesId":1,"appointmentId":2,"prisonCode":"PBI","originalCategoryCode":"A","categoryCode":"C","originalInternalLocationId":3,"internalLocationId":2,"originalStartDate":"2023-03-22","startDate":"2023-03-23","originalStartTime":"08:00:00","startTime":"09:00:00","originalEndTime":"10:15:00","endTime":"10:30:00","applyTo":"ALL_FUTURE_APPOINTMENTS","createdTime":"2023-03-22T09:00:03","createdBy":"Bob"}"""
     assertThat(event.toJson()).isEqualTo(expectedJson)
   }
 

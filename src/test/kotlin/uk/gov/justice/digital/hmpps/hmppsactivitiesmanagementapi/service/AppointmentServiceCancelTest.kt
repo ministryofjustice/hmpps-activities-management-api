@@ -224,7 +224,7 @@ class AppointmentServiceCancelTest {
         assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_APPOINTMENT")
       }
 
       with(telemetryMetricsMap) {
@@ -258,7 +258,7 @@ class AppointmentServiceCancelTest {
         assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_OCCURRENCE")
+        assertThat(value[APPLY_TO_PROPERTY_KEY]).isEqualTo("THIS_APPOINTMENT")
       }
 
       with(telemetryMetricsMap) {

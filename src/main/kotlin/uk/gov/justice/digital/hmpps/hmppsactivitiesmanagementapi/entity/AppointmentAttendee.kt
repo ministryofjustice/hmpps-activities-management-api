@@ -45,7 +45,7 @@ data class AppointmentAttendee(
 
   var removedBy: String? = null,
 ) {
-  fun usernames() = listOfNotNull(addedBy, attendanceRecordedBy, removedBy)
+  fun usernames() = listOfNotNull(addedBy, attendanceRecordedBy, removedBy).distinct()
 
   fun toModel() = AppointmentAttendeeModel(
     id = appointmentAttendeeId,

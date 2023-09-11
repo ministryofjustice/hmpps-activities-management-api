@@ -276,18 +276,18 @@ class AppointmentSeriesTest {
   }
 
   @Test
-  fun `usernames includes created by, updated by and appointment updated by and cancelled by`() {
+  fun `usernames includes created by and updated by`() {
     val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = "UPDATE.USER").apply {
       appointments().first().updatedBy = "APPOINTMENT.UPDATE.USER"
       appointments().first().cancelledBy = "APPOINTMENT.CANCEL.USER"
     }
-    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "APPOINTMENT.UPDATE.USER", "APPOINTMENT.CANCEL.USER")
+    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER")
   }
 
   @Test
   fun `usernames removes null`() {
     val entity = appointmentSeriesEntity(createdBy = "CREATE.USER", updatedBy = null).apply { appointments().first().updatedBy = "APPOINTMENT.UPDATE.USER" }
-    assertThat(entity.usernames()).containsExactly("CREATE.USER", "APPOINTMENT.UPDATE.USER")
+    assertThat(entity.usernames()).containsExactly("CREATE.USER")
   }
 
   @Test

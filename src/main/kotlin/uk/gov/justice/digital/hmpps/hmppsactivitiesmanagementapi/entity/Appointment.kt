@@ -119,7 +119,7 @@ data class Appointment(
 
   fun isExpired() = startDateTime() < LocalDateTime.now()
 
-  fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy)
+  fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
@@ -162,7 +162,7 @@ data class Appointment(
   ) =
     AppointmentDetails(
       appointmentId,
-      if (appointmentSeries.appointmentSet != null) appointmentSeries.toSummary() else null,
+      if (appointmentSeries.appointmentSet == null) appointmentSeries.toSummary() else null,
       appointmentSeries.appointmentSet?.toSummary(),
       appointmentSeries.appointmentType,
       sequenceNumber,

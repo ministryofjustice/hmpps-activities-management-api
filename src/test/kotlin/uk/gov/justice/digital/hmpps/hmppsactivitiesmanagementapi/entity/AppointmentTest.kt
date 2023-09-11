@@ -119,15 +119,17 @@ class AppointmentTest {
 
   @Test
   fun `entity to model mapping`() {
-    val entity = appointmentSeriesEntity().appointments().first()
-    val expectedModel = appointmentModel(entity.updatedTime)
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.appointments().first()
+    val expectedModel = appointmentModel(appointmentSeries.createdTime, entity.updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
-    val entityList = appointmentSeriesEntity().appointments()
-    val expectedModel = listOf(appointmentModel(entityList.first().updatedTime))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entityList = appointmentSeries.appointments()
+    val expectedModel = listOf(appointmentModel(appointmentSeries.createdTime, entityList.first().updatedTime))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 
@@ -296,7 +298,7 @@ class AppointmentTest {
         assertThat(bookingId).isEqualTo(456)
         assertThat(firstName).isEqualTo("UNKNOWN")
         assertThat(lastName).isEqualTo("UNKNOWN")
-        assertThat(prisonCode).isEqualTo("TPR")
+        assertThat(prisonCode).isEqualTo("UNKNOWN")
         assertThat(cellLocation).isEqualTo("UNKNOWN")
       }
     }

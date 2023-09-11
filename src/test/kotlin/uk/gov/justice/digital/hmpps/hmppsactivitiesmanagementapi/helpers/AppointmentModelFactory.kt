@@ -48,7 +48,7 @@ fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTim
     "CREATE.USER",
     updatedTime,
     "UPDATE.USER",
-    appointments = listOf(appointmentModel(appointmentUpdatedTime)),
+    appointments = listOf(appointmentModel(createdTime, appointmentUpdatedTime)),
   )
 
 fun appointmentAttendeeModel() =
@@ -57,7 +57,7 @@ fun appointmentAttendeeModel() =
 fun appointmentAttendeeSearchResultModel() =
   AppointmentAttendeeSearchResult(1, "A1234BC", 456)
 
-fun appointmentModel(updatedTime: LocalDateTime?) =
+fun appointmentModel(createdTime: LocalDateTime, updatedTime: LocalDateTime?) =
   Appointment(
     1,
     1,
@@ -70,7 +70,7 @@ fun appointmentModel(updatedTime: LocalDateTime?) =
     LocalTime.of(9, 0),
     LocalTime.of(10, 30),
     "Appointment level comment",
-    LocalDateTime.now(),
+    createdTime,
     "CREATE.USER",
     updatedTime,
     "UPDATE.USER",
@@ -251,6 +251,7 @@ fun appointmentDetails(
   createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   updatedTime: LocalDateTime? = LocalDateTime.now(),
   updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  appointmentAttendeeId: Long = 1,
 ) = AppointmentDetails(
   appointmentId,
   if (appointmentSeriesId != null) AppointmentSeriesSummary(appointmentSeriesId, null, sequenceNumber, sequenceNumber) else null,
@@ -259,7 +260,7 @@ fun appointmentDetails(
   sequenceNumber,
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
-  prisoners.map { AppointmentAttendeeSummary(1, it, null) },
+  prisoners.map { AppointmentAttendeeSummary(appointmentAttendeeId, it, null) },
   category,
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
@@ -324,6 +325,7 @@ fun appointmentSetDetails(
       category, customName,
       LocalTime.of(9, 0),
       LocalTime.of(10, 30), createdTime = createdTime, updatedTime = null, updatedBy = null,
+      appointmentAttendeeId = 1,
     ),
     appointmentDetails(
       2, null, AppointmentSetSummary(1, 3, 3), 1,
@@ -333,6 +335,7 @@ fun appointmentSetDetails(
       category, customName,
       LocalTime.of(9, 30),
       LocalTime.of(11, 0), createdTime = createdTime, updatedTime = null, updatedBy = null,
+      appointmentAttendeeId = 2,
     ),
     appointmentDetails(
       3, null, AppointmentSetSummary(1, 3, 3), 1,
@@ -342,6 +345,7 @@ fun appointmentSetDetails(
       category, customName,
       LocalTime.of(10, 0),
       LocalTime.of(11, 30), createdTime = createdTime, updatedTime = null, updatedBy = null,
+      appointmentAttendeeId = 3,
     ),
   ),
   createdTime,

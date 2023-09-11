@@ -45,7 +45,7 @@ class AppointmentUpdateRequestTest {
   @Test
   fun `cannot update start date for all future occurrences`() {
     val request = AppointmentUpdateRequest(startDate = LocalDate.now().plusDays(1), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
-    assertSingleValidationError(validator.validate(request), "applyTo", "Cannot update start date for all future occurrences")
+    assertSingleValidationError(validator.validate(request), "applyTo", "Cannot update start date for all future appointments")
   }
 
   @Test

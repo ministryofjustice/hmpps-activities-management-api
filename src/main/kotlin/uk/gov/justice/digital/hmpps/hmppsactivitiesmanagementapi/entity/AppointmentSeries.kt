@@ -146,7 +146,7 @@ data class AppointmentSeries(
 
   fun removeAppointment(appointment: Appointment) = appointments.remove(appointment)
 
-  fun usernames() = listOfNotNull(createdBy, updatedBy)
+  fun usernames() = listOfNotNull(createdBy, updatedBy).distinct()
 
   fun toModel() = AppointmentSeriesModel(
     id = appointmentSeriesId,

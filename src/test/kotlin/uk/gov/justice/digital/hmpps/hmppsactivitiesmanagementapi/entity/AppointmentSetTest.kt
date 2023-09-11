@@ -52,19 +52,21 @@ class AppointmentSetTest {
   }
 
   @Test
-  fun `usernames includes created by, appointment updated by and occurrence updated by`() {
+  fun `usernames includes created by, updated by and appointment updated by`() {
     val entity = appointmentSetEntity().apply {
+      updatedBy = "UPDATE.USER"
       appointmentSeries().first().apply {
-        updatedBy = "APPOINTMENT.UPDATE.USER"
-        appointments().first().updatedBy = "OCCURRENCE.UPDATE.USER"
+        updatedBy = "APPOINTMENT_SERIES.UPDATE.USER"
+        appointments().first().updatedBy = "APPOINTMENT.UPDATE.USER"
       }
     }
-    assertThat(entity.usernames()).containsExactly("CREATE.USER", "APPOINTMENT.UPDATE.USER", "OCCURRENCE.UPDATE.USER")
+    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "APPOINTMENT.UPDATE.USER")
   }
 
   @Test
   fun `usernames removes duplicates`() {
     val entity = appointmentSetEntity().apply {
+      updatedBy = "CREATE.USER"
       appointmentSeries().first().apply {
         updatedBy = "CREATE.USER"
         appointments().first().updatedBy = "CREATE.USER"

@@ -96,31 +96,31 @@ class AppointmentSeriesCreateRequestTest {
   @Test
   fun `repeat period must be supplied`() {
     val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = null, numberOfAppointments = 6))
-    assertSingleValidationError(validator.validate(request), "repeat.period", "Repeat period must be supplied")
+    assertSingleValidationError(validator.validate(request), "schedule.frequency", "Frequency must be supplied")
   }
 
   @Test
   fun `repeat count must be supplied`() {
     val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = AppointmentFrequency.FORTNIGHTLY, numberOfAppointments = null))
-    assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be supplied")
+    assertSingleValidationError(validator.validate(request), "schedule.numberOfAppointments", "Number of appointments must be supplied")
   }
 
   @Test
   fun `repeat count must be greater than 0`() {
     val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(frequency = AppointmentFrequency.MONTHLY, numberOfAppointments = 0))
-    assertSingleValidationError(validator.validate(request), "repeat.count", "Repeat count must be 1 or greater")
+    assertSingleValidationError(validator.validate(request), "schedule.numberOfAppointments", "Number of appointments must be 1 or greater")
   }
 
   @Test
   fun `appointment description must not be more than 40 characters`() {
     val request = appointmentSeriesCreateRequest(customName = "123456789012345678900123456789012345678901")
-    assertSingleValidationError(validator.validate(request), "appointmentDescription", "Appointment description should not exceed 40 characters")
+    assertSingleValidationError(validator.validate(request), "customName", "Custom name should not exceed 40 characters")
   }
 
   @Test
   fun `appointment comment must not be more than 4,000 characters`() {
     val request = appointmentSeriesCreateRequest(extraInformation = "a".repeat(4001))
-    assertSingleValidationError(validator.validate(request), "comment", "Appointment comment must not exceed 4000 characters")
+    assertSingleValidationError(validator.validate(request), "extraInformation", "Extra information must not exceed 4000 characters")
   }
 
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentSeriesCreateRequest>>, propertyName: String, message: String) {
