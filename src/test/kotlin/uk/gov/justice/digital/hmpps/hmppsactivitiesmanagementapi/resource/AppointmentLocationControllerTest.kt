@@ -11,7 +11,6 @@ import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
 
 @WebMvcTest(controllers = [AppointmentLocationController::class])
@@ -21,10 +20,7 @@ class AppointmentLocationControllerTest : ControllerTestBase<AppointmentLocation
   @MockBean
   private lateinit var locationService: LocationService
 
-  @MockBean
-  private lateinit var referenceCodeService: ReferenceCodeService
-
-  override fun controller() = AppointmentLocationController(locationService, referenceCodeService)
+  override fun controller() = AppointmentLocationController(locationService)
 
   @Test
   fun `200 response when get all appointment locations`() {

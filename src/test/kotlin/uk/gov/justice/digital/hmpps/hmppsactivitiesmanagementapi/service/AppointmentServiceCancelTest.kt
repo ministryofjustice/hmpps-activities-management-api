@@ -20,6 +20,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
@@ -60,6 +61,7 @@ class AppointmentServiceCancelTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
   private val auditService: AuditService = mock()
@@ -76,6 +78,7 @@ class AppointmentServiceCancelTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
+    prisonApiClient,
     AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService),
     AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentsJob,

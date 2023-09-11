@@ -57,7 +57,7 @@ fun appointmentAttendeeModel() =
 fun appointmentAttendeeSearchResultModel() =
   AppointmentAttendeeSearchResult(1, "A1234BC", 456)
 
-fun appointmentModel(createdTime: LocalDateTime, updatedTime: LocalDateTime?) =
+fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTime: LocalDateTime? = null) =
   Appointment(
     1,
     1,

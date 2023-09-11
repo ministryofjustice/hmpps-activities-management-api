@@ -4,12 +4,14 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
@@ -70,6 +72,7 @@ class AppointmentSeriesService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val prisonApiClient: PrisonApiClient,
   private val createAppointmentsJob: CreateAppointmentsJob,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
@@ -82,6 +85,19 @@ class AppointmentSeriesService(
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     return appointmentSeries.toModel()
+  }
+
+  fun getAppointmentSeriesDetailsById(appointmentSeriesId: Long): AppointmentSeriesDetails {
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+    checkCaseloadAccess(appointmentSeries.prisonCode)
+
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
+
+    val userMap = prisonApiClient.getUserDetailsList(appointmentSeries.usernames()).associateBy { it.username }
+
+    return appointmentSeries.toDetails(referenceCodeMap, locationMap, userMap)
   }
 
   // TODO: Create AppointmentSetService and move this function

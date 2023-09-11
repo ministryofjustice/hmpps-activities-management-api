@@ -3,12 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -16,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
@@ -25,12 +28,37 @@ class AppointmentService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val prisonApiClient: PrisonApiClient,
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val updateAppointmentsJob: UpdateAppointmentsJob,
   private val cancelAppointmentsJob: CancelAppointmentsJob,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
+  @Transactional(readOnly = true)
+  fun getAppointmentById(appointmentId: Long): AppointmentModel {
+    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
+    checkCaseloadAccess(appointmentSeries.prisonCode)
+
+    return appointmentSeries.toModel()
+  }
+
+  @Transactional(readOnly = true)
+  fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    checkCaseloadAccess(appointment.appointmentSeries.prisonCode)
+
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointment.prisonerNumbers())
+
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+
+    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
+
+    return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  }
+
   fun updateAppointment(appointmentId: Long, request: AppointmentUpdateRequest, principal: Principal): AppointmentSeriesModel {
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()

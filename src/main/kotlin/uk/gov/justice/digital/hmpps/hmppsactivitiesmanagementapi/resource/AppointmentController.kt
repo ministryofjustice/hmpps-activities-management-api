@@ -11,15 +11,19 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
@@ -30,25 +34,115 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Appoint
 import java.security.Principal
 
 @RestController
-@RequestMapping("/appointment-occurrences", produces = [MediaType.APPLICATION_JSON_VALUE])
-class AppointmentOccurrenceController(
+@RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
+class AppointmentController(
   private val appointmentService: AppointmentService,
   private val appointmentSearchService: AppointmentSearchService,
 ) {
-  @ResponseStatus(HttpStatus.ACCEPTED)
-  @PatchMapping(value = ["/{appointmentOccurrenceId}"])
+  @GetMapping(value = ["/{appointmentId}"])
+  @ResponseBody
   @Operation(
-    summary = "Update an appointment occurrence or series of appointment occurrences",
+    summary = "Get an appointment by its id",
+    description = "Returns an appointment with its properties and references to NOMIS by its unique identifier.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Appointment::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The appointment for this id was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
+    appointmentService.getAppointmentById(appointmentId)
+
+  @GetMapping(value = ["/{appointmentId}/details"])
+  @ResponseBody
+  @Operation(
+    summary = "Get the details of an appointment for display purposes by its id",
+    description = "Returns the displayable details of an appointment by its unique identifier.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentDetails::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The appointment for this id was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetails =
+    appointmentService.getAppointmentDetailsById(appointmentId)
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PatchMapping(value = ["/{appointmentId}"])
+  @Operation(
+    summary = "Update an appointment or series of appointments",
     description =
     """
-    Update an appointment occurrence or series of appointment occurrences based on the applyTo property.
+    Update an appointment or series of appointments based on the applyTo property.
     """,
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "202",
-        description = "The appointment occurrence or series of appointment occurrences was updated.",
+        description = "The appointment or series of appointments was updated.",
         content = [
           Content(
             mediaType = "application/json",
@@ -91,7 +185,7 @@ class AppointmentOccurrenceController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun updateAppointmentOccurrence(
-    @PathVariable("appointmentOccurrenceId") appointmentOccurrenceId: Long,
+    @PathVariable("appointmentId") appointmentOccurrenceId: Long,
     @Valid
     @RequestBody
     @Parameter(

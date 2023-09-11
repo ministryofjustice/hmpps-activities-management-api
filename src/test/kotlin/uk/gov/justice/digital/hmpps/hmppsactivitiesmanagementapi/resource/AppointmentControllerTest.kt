@@ -13,8 +13,11 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
@@ -25,40 +28,100 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
 
-@WebMvcTest(controllers = [AppointmentOccurrenceController::class])
-@ContextConfiguration(classes = [AppointmentOccurrenceController::class])
-class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurrenceController>() {
+@WebMvcTest(controllers = [AppointmentController::class])
+@ContextConfiguration(classes = [AppointmentController::class])
+class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   @MockBean
   private lateinit var appointmentService: AppointmentService
 
   @MockBean
   private lateinit var appointmentSearchService: AppointmentSearchService
 
-  override fun controller() = AppointmentOccurrenceController(
+  override fun controller() = AppointmentController(
     appointmentService,
     appointmentSearchService,
   )
 
   @Test
-  fun `404 not found response when update appointment occurrence by invalid id`() {
+  fun `200 response when get appointment by valid id`() {
+    val model = appointmentModel()
+
+    whenever(appointmentService.getAppointmentById(1)).thenReturn(model)
+
+    val response = mockMvc.getAppointmentById(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(model))
+
+    verify(appointmentService).getAppointmentById(1)
+  }
+
+  @Test
+  fun `404 response when get appointment by invalid id`() {
+    whenever(appointmentService.getAppointmentById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+
+    val response = mockMvc.getAppointmentById(-1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
+
+    verify(appointmentService).getAppointmentById(-1)
+  }
+
+  @Test
+  fun `200 response when get appointment details by valid id`() {
+    val appointmentDetails = appointmentDetails()
+
+    whenever(appointmentService.getAppointmentDetailsById(1)).thenReturn(appointmentDetails)
+
+    val response = mockMvc.getAppointmentDetailsById(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentDetails))
+
+    verify(appointmentService).getAppointmentDetailsById(1)
+  }
+
+  @Test
+  fun `404 response when get appointment details by invalid id`() {
+    whenever(appointmentService.getAppointmentDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+
+    val response = mockMvc.getAppointmentDetailsById(-1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
+
+    verify(appointmentService).getAppointmentDetailsById(-1)
+  }
+
+  @Test
+  fun `404 not found response when update appointment by invalid id`() {
     val request = AppointmentUpdateRequest()
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentService.updateAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment Occurrence -1 not found"))
+    whenever(appointmentService.updateAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
 
-    val response = mockMvc.updateAppointmentOccurrence(-1, request, mockPrincipal)
+    val response = mockMvc.updateAppointment(-1, request, mockPrincipal)
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment Occurrence -1 not found")
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
 
     verify(appointmentService).updateAppointment(-1, request, mockPrincipal)
   }
 
   @Test
-  fun `400 bad request response when update appointment occurrence with invalid json`() {
+  fun `400 bad request response when update appointment with invalid json`() {
     val request = AppointmentUpdateRequest(
       inCell = false,
       startDate = LocalDate.now().minusDays(1),
@@ -68,7 +131,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     )
     val mockPrincipal: Principal = mock()
 
-    mockMvc.updateAppointmentOccurrence(1, request, mockPrincipal)
+    mockMvc.updateAppointment(1, request, mockPrincipal)
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
@@ -87,7 +150,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   }
 
   @Test
-  fun `202 accepted response when update appointment occurrence with valid json`() {
+  fun `202 accepted response when update appointment with valid json`() {
     val request = AppointmentUpdateRequest()
     val expectedResponse = appointmentSeriesEntity().toModel()
 
@@ -95,7 +158,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
     whenever(appointmentService.updateAppointment(1, request, mockPrincipal)).thenReturn(expectedResponse)
 
-    val response = mockMvc.updateAppointmentOccurrence(1, request, mockPrincipal)
+    val response = mockMvc.updateAppointment(1, request, mockPrincipal)
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isAccepted() } }
@@ -105,11 +168,11 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   }
 
   @Test
-  fun `400 bad request response when search appointment occurrences with invalid json`() {
+  fun `400 bad request response when search appointments with invalid json`() {
     val request = AppointmentSearchRequest()
     val mockPrincipal: Principal = mock()
 
-    mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
+    mockMvc.searchAppointments("TPR", request, mockPrincipal)
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect {
@@ -126,7 +189,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
   }
 
   @Test
-  fun `202 accepted response when search appointment occurrences with valid json`() {
+  fun `202 accepted response when search appointments with valid json`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.now())
     val expectedResponse = listOf(appointmentSearchResultModel())
 
@@ -134,7 +197,7 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
 
     whenever(appointmentSearchService.searchAppointments("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
 
-    val response = mockMvc.searchAppointmentOccurrences("TPR", request, mockPrincipal)
+    val response = mockMvc.searchAppointments("TPR", request, mockPrincipal)
       .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isAccepted() } }
@@ -143,8 +206,12 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
 
-  private fun MockMvc.updateAppointmentOccurrence(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
-    patch("/appointment-occurrences/{appointmentOccurrenceId}", id) {
+  private fun MockMvc.getAppointmentById(id: Long) = get("/appointments/{appointmentId}", id)
+
+  private fun MockMvc.getAppointmentDetailsById(id: Long) = get("/appointments/{appointmentId}/details", id)
+
+  private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
+    patch("/appointments/{appointmentId}", id) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
@@ -152,8 +219,8 @@ class AppointmentOccurrenceControllerTest : ControllerTestBase<AppointmentOccurr
       )
     }
 
-  private fun MockMvc.searchAppointmentOccurrences(prisonCode: String, request: AppointmentSearchRequest, principal: Principal) =
-    post("/appointment-occurrences/{prisonCode}/search", prisonCode) {
+  private fun MockMvc.searchAppointments(prisonCode: String, request: AppointmentSearchRequest, principal: Principal) =
+    post("/appointments/{prisonCode}/search", prisonCode) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(

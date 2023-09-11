@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesDetailsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
@@ -30,7 +29,6 @@ import java.security.Principal
 @RequestMapping("/appointment-series", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentSeriesController(
   private val appointmentSeriesService: AppointmentSeriesService,
-  private val appointmentSeriesDetailsService: AppointmentSeriesDetailsService,
 ) {
   @GetMapping(value = ["/{appointmentSeriesId}"])
   @ResponseBody
@@ -120,7 +118,7 @@ class AppointmentSeriesController(
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentDetailsById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeriesDetails =
-    appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(appointmentSeriesId)
+    appointmentSeriesService.getAppointmentSeriesDetailsById(appointmentSeriesId)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

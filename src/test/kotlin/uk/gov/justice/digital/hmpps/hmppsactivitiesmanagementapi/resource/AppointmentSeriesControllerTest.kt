@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesDetailsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
@@ -28,10 +27,7 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
   @MockBean
   private lateinit var appointmentSeriesService: AppointmentSeriesService
 
-  @MockBean
-  private lateinit var appointmentSeriesDetailsService: AppointmentSeriesDetailsService
-
-  override fun controller() = AppointmentSeriesController(appointmentSeriesService, appointmentSeriesDetailsService)
+  override fun controller() = AppointmentSeriesController(appointmentSeriesService)
 
   @Test
   fun `200 response when get appointment series by valid id`() {
@@ -65,23 +61,23 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
 
   @Test
   fun `200 response when get appointment series details by valid id`() {
-    val appointmentDetails = appointmentSeriesDetails()
+    val appointmentSeriesDetails = appointmentSeriesDetails()
 
-    whenever(appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(1)).thenReturn(appointmentDetails)
+    whenever(appointmentSeriesService.getAppointmentSeriesDetailsById(1)).thenReturn(appointmentSeriesDetails)
 
     val response = mockMvc.getAppointmentSeriesDetailsById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentDetails))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentSeriesDetails))
 
-    verify(appointmentSeriesDetailsService).getAppointmentSeriesDetailsById(1)
+    verify(appointmentSeriesService).getAppointmentSeriesDetailsById(1)
   }
 
   @Test
   fun `404 response when get appointment series details by invalid id`() {
-    whenever(appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment Series -1 not found"))
+    whenever(appointmentSeriesService.getAppointmentSeriesDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment Series -1 not found"))
 
     val response = mockMvc.getAppointmentSeriesDetailsById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -90,7 +86,7 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
 
     assertThat(response.contentAsString).contains("Appointment Series -1 not found")
 
-    verify(appointmentSeriesDetailsService).getAppointmentSeriesDetailsById(-1)
+    verify(appointmentSeriesService).getAppointmentSeriesDetailsById(-1)
   }
 
   @Test
