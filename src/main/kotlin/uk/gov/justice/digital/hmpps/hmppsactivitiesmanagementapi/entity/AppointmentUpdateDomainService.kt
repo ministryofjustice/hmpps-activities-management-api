@@ -58,7 +58,7 @@ class AppointmentUpdateDomainService(
     applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
     applyInternalLocationUpdate(request, appointmentsToUpdate)
     applyStartEndTimeUpdate(request, appointmentsToUpdate)
-    applyCommentUpdate(request, appointmentsToUpdate)
+    applyExtraInformationUpdate(request, appointmentsToUpdate)
     applyRemovePrisonersUpdate(request, appointmentsToUpdate)
 
     if (request.isPropertyUpdate()) {
@@ -176,7 +176,7 @@ class AppointmentUpdateDomainService(
     }
   }
 
-  private fun applyCommentUpdate(
+  private fun applyExtraInformationUpdate(
     request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {

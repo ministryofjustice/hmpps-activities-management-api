@@ -232,7 +232,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     prisonerNumber: String,
     bookingId: Long,
     categoryCode: String = "TEST",
-    appointmentDescription: String? = null,
+    customName: String? = null,
     internalLocationId: Long? = 101,
     inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
@@ -253,7 +253,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     bookingId = bookingId,
     appointmentDate = appointmentDate,
     categoryCode = categoryCode,
-    customName = appointmentDescription,
+    customName = customName,
     internalLocationId = internalLocationId,
     customLocation = null,
     inCell = inCell,
@@ -750,7 +750,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       val appointmentEntity = appointmentFromDbInstance(
         prisonerNumber = prisonerNumber,
         bookingId = bookingId,
-        appointmentDescription = "Meeting with the governor",
+        customName = "Meeting with the governor",
       )
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))

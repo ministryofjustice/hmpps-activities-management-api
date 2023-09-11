@@ -254,15 +254,15 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
     val details = webTestClient.getAppointmentSetDetailsById(6)!!
 
     val category = AppointmentCategorySummary("AC1", "Appointment Category 1")
-    val appointmentDescription = "Appointment description"
+    val customName = "Appointment description"
     val createdBy = UserSummary(1, "TEST.USER", "TEST1", "USER1")
     assertThat(details).isEqualTo(
       AppointmentSetDetails(
         6,
         "TPR",
-        "$appointmentDescription (${category.description})",
+        "$customName (${category.description})",
         category,
-        appointmentDescription,
+        customName,
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,
         LocalDate.now().plusDays(1),
@@ -272,7 +272,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             listOf(
               PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
             ),
-            category, appointmentDescription,
+            category, customName,
             LocalTime.of(9, 0),
             LocalTime.of(9, 15),
             "Medical appointment for A1234BC",
@@ -284,7 +284,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             listOf(
               PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
             ),
-            category, appointmentDescription,
+            category, customName,
             LocalTime.of(9, 15),
             LocalTime.of(9, 30),
             "Medical appointment for B2345CD",
@@ -296,7 +296,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             listOf(
               PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
             ),
-            category, appointmentDescription,
+            category, customName,
             LocalTime.of(9, 30),
             LocalTime.of(9, 45),
             "Medical appointment for C3456DE",

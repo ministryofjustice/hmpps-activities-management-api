@@ -81,7 +81,7 @@ data class AppointmentSetCreateRequest(
     The list of appointments to create
     """,
   )
-  val appointments: List<IndividualAppointment> = emptyList(),
+  val appointments: List<AppointmentSetAppointment> = emptyList(),
 ) {
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell || internalLocationId != null
@@ -90,7 +90,7 @@ data class AppointmentSetCreateRequest(
   private fun isStartTime() = startDate == null || startDate < LocalDate.now() || appointments.all { it.startTime == null || LocalDateTime.of(startDate, it.startTime) > LocalDateTime.now() }
 }
 
-data class IndividualAppointment(
+data class AppointmentSetAppointment(
   @field:NotNull(message = "Prisoner number must be supplied")
   @Schema(
     description = "The prisoner attending the appointment",

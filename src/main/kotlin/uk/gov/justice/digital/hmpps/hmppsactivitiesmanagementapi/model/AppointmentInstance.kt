@@ -31,21 +31,18 @@ data class AppointmentInstance(
   )
   val id: Long,
 
-  // TODO: Rename to appointmentSeriesId after discussion with Syscon
   @Schema(
     description = "The internally generated identifier for the appointment series",
     example = "1234",
   )
-  val appointmentId: Long,
+  val appointmentSeriesId: Long,
 
-  // TODO: Rename to appointmentId after discussion with Syscon
   @Schema(
     description = "The internally generated identifier for the appointment",
     example = "12345",
   )
-  val appointmentOccurrenceId: Long,
+  val appointmentId: Long,
 
-  // TODO: Rename to appointmentAttendeeId after discussion with Syscon
   @Schema(
     description =
     """
@@ -54,7 +51,7 @@ data class AppointmentInstance(
     """,
     example = "123456",
   )
-  val appointmentOccurrenceAllocationId: Long,
+  val appointmentAttendeeId: Long,
 
   @Schema(
     description = "The appointment type (INDIVIDUAL or GROUP)",
@@ -86,7 +83,6 @@ data class AppointmentInstance(
   )
   val categoryCode: String,
 
-  // TODO: Rename to customName after discussion with Syscon
   @Schema(
     description =
     """
@@ -95,7 +91,7 @@ data class AppointmentInstance(
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
@@ -147,7 +143,7 @@ data class AppointmentInstance(
     """,
     example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String?,
+  val extraInformation: String?,
 
   // TODO: Rename to createdTime after discussion with Syscon
   @Schema(

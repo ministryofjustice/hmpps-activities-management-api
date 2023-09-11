@@ -246,7 +246,7 @@ class TransformFunctionsTest {
     }
 
     @Test
-    fun `appointment instance without appointmentDescription to scheduled event`() {
+    fun `appointment instance without custom name to scheduled event`() {
       val entity = appointmentInstanceEntity(customName = null)
       val scheduledEvents = transform(entity)
 
@@ -256,7 +256,7 @@ class TransformFunctionsTest {
     }
 
     @Test
-    fun `appointment instance with empty appointmentDescription to scheduled event`() {
+    fun `appointment instance with empty custom name to scheduled event`() {
       val entity = appointmentInstanceEntity(customName = "")
       val scheduledEvents = transform(entity)
 
@@ -276,7 +276,7 @@ class TransformFunctionsTest {
     }
 
     @Test
-    fun `appointment instance with appointmentDescription to scheduled event`() {
+    fun `appointment instance with custom name to scheduled event`() {
       val entity = appointmentInstanceEntity(customName = "Description of appointment")
       val scheduledEvents = transform(entity)
 
@@ -286,7 +286,7 @@ class TransformFunctionsTest {
     }
 
     @Test
-    fun `appointment instance with appointmentDescription and unknown category code to scheduled event`() {
+    fun `appointment instance with custom name and unknown category code to scheduled event`() {
       val entity = appointmentInstanceEntity(
         customName = "Description of appointment",
         categoryCode = "UNKNOWN",
