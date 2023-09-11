@@ -6,13 +6,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyActivityMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
@@ -29,8 +29,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOC
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATIONS_TOTAL_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_APPROVED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_DECLINED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_PENDING_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_REJECTED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_TOTAL_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ATTENDED_COUNT_METRIC_KEY
@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
 @Component
@@ -49,15 +50,17 @@ class ActivityMetricsJob(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val dailyActivityMetricsService: DailyActivityMetricsService,
+  private val allAttendanceRepository: AllAttendanceRepository,
   private val telemetryClient: TelemetryClient,
   private val jobRunner: SafeJobRunner,
+
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @Async("asyncExecutor")
-  @Transactional
+  @Transactional(readOnly = true)
   fun execute() {
     jobRunner.runJob(
       JobDefinition(JobType.ACTIVITIES_METRICS) {
@@ -87,6 +90,8 @@ class ActivityMetricsJob(
     activityTier: ActivityTier,
     activityCategory: ActivityCategory,
   ) {
+    val yesterday = LocalDate.now().minusDays(1)
+
     val propertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to prisonCode,
       ACTIVITY_TIER_PROPERTY_KEY to activityTier.code,
@@ -107,7 +112,7 @@ class ActivityMetricsJob(
       ALLOCATIONS_TOTAL_COUNT_METRIC_KEY to 0.0,
       APPLICATIONS_APPROVED_COUNT_METRIC_KEY to 0.0,
       APPLICATIONS_PENDING_COUNT_METRIC_KEY to 0.0,
-      APPLICATIONS_REJECTED_COUNT_METRIC_KEY to 0.0,
+      APPLICATIONS_DECLINED_COUNT_METRIC_KEY to 0.0,
       APPLICATIONS_TOTAL_COUNT_METRIC_KEY to 0.0,
       ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY to 0.0,
       ATTENDANCE_ATTENDED_COUNT_METRIC_KEY to 0.0,
@@ -117,8 +122,9 @@ class ActivityMetricsJob(
       MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY to 0.0,
     )
 
+    val allAttendances = allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, yesterday)
     val activities = activityRepository.findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode, activityTier, activityCategory)
-    dailyActivityMetricsService.generateActivityMetrics(metricsMap, activities)
+    dailyActivityMetricsService.generateActivityMetrics(yesterday, metricsMap, activities, allAttendances)
 
     telemetryClient.trackEvent(TelemetryEvent.ACTIVITIES_DAILY_STATS.value, propertiesMap, metricsMap)
   }

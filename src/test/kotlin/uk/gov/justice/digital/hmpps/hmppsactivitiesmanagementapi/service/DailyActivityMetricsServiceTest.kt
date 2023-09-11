@@ -3,9 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -15,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ENDED_COUNT_METRIC_KEY
@@ -28,8 +31,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOC
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATIONS_TOTAL_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_APPROVED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_DECLINED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_PENDING_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_REJECTED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLICATIONS_TOTAL_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_ATTENDED_COUNT_METRIC_KEY
@@ -39,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.Optional
 
 class DailyActivityMetricsServiceTest {
 
@@ -55,14 +59,17 @@ class DailyActivityMetricsServiceTest {
 
   private val activityActive: Activity = activityEntity()
   private val activityPending: Activity = activityEntity(startDate = LocalDate.now().plusDays(2), endDate = null)
-  private val activityEnded: Activity = activityEntity(startDate = LocalDate.now().minusDays(4), endDate = LocalDate.now().minusDays(2))
+  private val activityEnded: Activity =
+    activityEntity(startDate = LocalDate.now().minusDays(4), endDate = LocalDate.now().minusDays(2))
   private val multiWeekSchedule: ActivitySchedule = mock()
-  private val multiWeekActivity: Activity = activityEntity(startDate = LocalDate.now().minusDays(4), noSchedules = true)
+  private val multiWeekActivity: Activity =
+    activityEntity(startDate = LocalDate.now().minusDays(4), noSchedules = true)
 
   private val scheduledInstance: ScheduledInstance = mock()
   private val waitingListRepository: WaitingListRepository = mock()
+  private val attendanceRepository: AttendanceRepository = mock()
 
-  private val dailyActivityMetricsService = DailyActivityMetricsService(waitingListRepository)
+  private val dailyActivityMetricsService = DailyActivityMetricsService(waitingListRepository, attendanceRepository)
 
   @Test
   fun `should generate activity metrics`() {
@@ -84,14 +91,38 @@ class DailyActivityMetricsServiceTest {
       multiWeekActivity,
     )
 
-    dailyActivityMetricsService.generateActivityMetrics(metricsMap, activities)
+    val attendances = activities
+      .flatMap { activity ->
+        activity.schedules()
+          .flatMap { schedule -> schedule.instances() }
+          .flatMap { instance -> instance.attendances }
+      }
+
+    val attendanceLookup = attendances.associateBy { it.attendanceId }
+
+    whenever(attendanceRepository.findById(any())).thenAnswer { Optional.ofNullable(attendanceLookup[it.arguments[0]]) }
+
+    val allAttendances = activities
+      .flatMap { activity ->
+        activity.schedules()
+          .flatMap { schedule -> schedule.instances() }
+          .flatMap { instance -> instance.attendances }
+          .map { attendance ->
+            val allAttendance = mock<AllAttendance>()
+            whenever(allAttendance.attendanceId).thenReturn(attendance.attendanceId)
+            whenever(allAttendance.activityId).thenReturn(activity.activityId)
+            allAttendance
+          }
+      }
+
+    dailyActivityMetricsService.generateActivityMetrics(LocalDate.now(), metricsMap, activities, allAttendances)
 
     assertThat(metricsMap[ACTIVITIES_TOTAL_COUNT_METRIC_KEY]).isEqualTo(8.0)
     assertThat(metricsMap[ACTIVITIES_ACTIVE_COUNT_METRIC_KEY]).isEqualTo(3.0)
     assertThat(metricsMap[ACTIVITIES_ENDED_COUNT_METRIC_KEY]).isEqualTo(3.0)
     assertThat(metricsMap[ACTIVITIES_PENDING_COUNT_METRIC_KEY]).isEqualTo(2.0)
     assertThat(metricsMap[MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY]).isEqualTo(2.0)
-    assertThat(metricsMap[ATTENDANCE_UNIQUE_ACTIVITY_SESSION_COUNT_METRIC_KEY]).isEqualTo(6.0)
+    assertThat(metricsMap[ATTENDANCE_UNIQUE_ACTIVITY_SESSION_COUNT_METRIC_KEY]).isEqualTo(8.0)
   }
 
   @Test
@@ -117,7 +148,7 @@ class DailyActivityMetricsServiceTest {
       allocationAutoSuspended,
     )
 
-    dailyActivityMetricsService.generateAllocationMetrics(metricsMap, allocations)
+    dailyActivityMetricsService.generateAllocationMetrics(LocalDate.now(), metricsMap, allocations)
 
     assertThat(metricsMap[ALLOCATIONS_ENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
     assertThat(metricsMap[ALLOCATIONS_ACTIVE_COUNT_METRIC_KEY]).isEqualTo(2.0)
@@ -136,18 +167,66 @@ class DailyActivityMetricsServiceTest {
 
     val metricsMap = createMetricsMap()
 
-    val recorded1 = Attendance(prisonerNumber = "111", scheduledInstance = scheduledInstance, recordedTime = LocalDateTime.now())
-    val recorded2 = Attendance(prisonerNumber = "112", scheduledInstance = scheduledInstance, recordedTime = LocalDateTime.now())
-    val attended1 = Attendance(prisonerNumber = "113", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonAttended)
-    val attended2 = Attendance(prisonerNumber = "114", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonAttended)
-    val attended3 = Attendance(prisonerNumber = "115", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonAttended)
-    val refused1 = Attendance(prisonerNumber = "116", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonRefused)
-    val other1 = Attendance(prisonerNumber = "117", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonOther)
-    val other2 = Attendance(prisonerNumber = "118", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonOther)
-    val clash1 = Attendance(prisonerNumber = "119", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonClash)
-    val clash2 = Attendance(prisonerNumber = "120", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonClash)
-    val clash3 = Attendance(prisonerNumber = "121", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonClash)
-    val clash4 = Attendance(prisonerNumber = "122", scheduledInstance = scheduledInstance, attendanceReason = attendanceReasonClash)
+    val recorded1 = Attendance(
+      prisonerNumber = "111",
+      scheduledInstance = scheduledInstance,
+      recordedTime = LocalDateTime.now(),
+    )
+    val recorded2 = Attendance(
+      prisonerNumber = "112",
+      scheduledInstance = scheduledInstance,
+      recordedTime = LocalDateTime.now(),
+    )
+    val attended1 = Attendance(
+      prisonerNumber = "113",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonAttended,
+    )
+    val attended2 = Attendance(
+      prisonerNumber = "114",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonAttended,
+    )
+    val attended3 = Attendance(
+      prisonerNumber = "115",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonAttended,
+    )
+    val refused1 = Attendance(
+      prisonerNumber = "116",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonRefused,
+    )
+    val other1 = Attendance(
+      prisonerNumber = "117",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonOther,
+    )
+    val other2 = Attendance(
+      prisonerNumber = "118",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonOther,
+    )
+    val clash1 = Attendance(
+      prisonerNumber = "119",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonClash,
+    )
+    val clash2 = Attendance(
+      prisonerNumber = "120",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonClash,
+    )
+    val clash3 = Attendance(
+      prisonerNumber = "121",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonClash,
+    )
+    val clash4 = Attendance(
+      prisonerNumber = "122",
+      scheduledInstance = scheduledInstance,
+      attendanceReason = attendanceReasonClash,
+    )
 
     val attendances = listOf(
       recorded1,
@@ -190,7 +269,7 @@ class DailyActivityMetricsServiceTest {
     assertThat(metricsMap[APPLICATIONS_TOTAL_COUNT_METRIC_KEY]).isEqualTo(6.0)
     assertThat(metricsMap[APPLICATIONS_APPROVED_COUNT_METRIC_KEY]).isEqualTo(1.0)
     assertThat(metricsMap[APPLICATIONS_PENDING_COUNT_METRIC_KEY]).isEqualTo(2.0)
-    assertThat(metricsMap[APPLICATIONS_REJECTED_COUNT_METRIC_KEY]).isEqualTo(3.0)
+    assertThat(metricsMap[APPLICATIONS_DECLINED_COUNT_METRIC_KEY]).isEqualTo(3.0)
   }
 
   private fun createMetricsMap() = mutableMapOf(
@@ -207,7 +286,7 @@ class DailyActivityMetricsServiceTest {
     ALLOCATIONS_TOTAL_COUNT_METRIC_KEY to 0.0,
     APPLICATIONS_APPROVED_COUNT_METRIC_KEY to 0.0,
     APPLICATIONS_PENDING_COUNT_METRIC_KEY to 0.0,
-    APPLICATIONS_REJECTED_COUNT_METRIC_KEY to 0.0,
+    APPLICATIONS_DECLINED_COUNT_METRIC_KEY to 0.0,
     APPLICATIONS_TOTAL_COUNT_METRIC_KEY to 0.0,
     ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY to 0.0,
     ATTENDANCE_ATTENDED_COUNT_METRIC_KEY to 0.0,
