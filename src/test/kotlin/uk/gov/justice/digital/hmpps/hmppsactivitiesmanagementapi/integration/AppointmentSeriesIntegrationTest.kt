@@ -15,11 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -39,7 +35,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.created=true",
   ],
 )
-class AppointmentIntegrationTest : IntegrationTestBase() {
+class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
 
@@ -49,21 +45,30 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Test
-  fun `get appointment authorisation required`() {
+  fun `get appointment series authorisation required`() {
     webTestClient.get()
-      .uri("/appointments/1")
+      .uri("/appointment-series/1")
       .exchange()
       .expectStatus().isUnauthorized
+  }
+
+  @Test
+  fun `get appointment series by unknown id returns 404 not found`() {
+    webTestClient.get()
+      .uri("/appointment-series/-1")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNotFound
   }
 
   @Sql(
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
-  fun `get single appointment`() {
-    val appointment = webTestClient.getAppointmentById(1)!!
+  fun `get single appointment series`() {
+    val appointmentSeries = webTestClient.getAppointmentSeriesById(1)!!
 
-    assertThat(appointment).isEqualTo(
+    assertThat(appointmentSeries).isEqualTo(
       AppointmentSeries(
         1,
         AppointmentType.INDIVIDUAL,
@@ -77,7 +82,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         LocalTime.of(10, 30),
         null,
         "Appointment series level comment",
-        appointment.createdTime,
+        appointmentSeries.createdTime,
         "TEST.USER",
         null,
         null,
@@ -94,7 +99,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
             LocalTime.of(9, 0),
             LocalTime.of(10, 30),
             "Appointment level comment",
-            appointment.createdTime,
+            appointmentSeries.createdTime,
             "TEST.USER",
             null,
             null,
@@ -120,29 +125,84 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentSeries.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Test
-  fun `get appointment by unknown id returns 404 not found`() {
+  fun `get appointment series details authorisation required`() {
     webTestClient.get()
-      .uri("/appointments/-1")
+      .uri("/appointment-series/1/details")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Test
+  fun `get appointment series details by unknown id returns 404 not found`() {
+    webTestClient.get()
+      .uri("/appointment-series/-1/details")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isNotFound
   }
 
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
   @Test
-  fun `create appointment authorisation required`() {
+  fun `get single appointment series details`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
+
+    val appointmentDetails = webTestClient.getAppointmentSeriesDetailsById(1)!!
+
+    assertThat(appointmentDetails).isEqualTo(
+      AppointmentSeriesDetails(
+        1,
+        AppointmentType.INDIVIDUAL,
+        "TPR",
+        "Appointment description (Appointment Category 1)",
+        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        "Appointment description",
+        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        false,
+        LocalDate.now().plusDays(1),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        null,
+        "Appointment series level comment",
+        appointmentDetails.createdTime,
+        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        null,
+        null,
+        appointments = listOf(
+          AppointmentSummary(
+            2,
+            1,
+            LocalDate.now().plusDays(1),
+            LocalTime.of(9, 0),
+            LocalTime.of(10, 30),
+            isEdited = false,
+            isCancelled = false,
+          ),
+        ),
+      ),
+    )
+
+    assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+  }
+
+  @Test
+  fun `create appointment series authorisation required`() {
     webTestClient.post()
-      .uri("/appointments")
+      .uri("/appointment-series")
       .bodyValue(appointmentSeriesCreateRequest())
       .exchange()
       .expectStatus().isUnauthorized
   }
 
   @Test
-  fun `create appointment single appointment single prisoner success`() {
+  fun `create appointment series single appointment single prisoner success`() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -159,17 +219,17 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    assertSingleAppointmentSinglePrisoner(appointment, request)
-    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+    assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
+    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(allocationIds[0]))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
     }
@@ -178,7 +238,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `create appointment group appointment two prisoner success`() {
+  fun `create appointment series group appointment two prisoner success`() {
     val request = appointmentSeriesCreateRequest(
       categoryCode = "AC1",
       appointmentType = AppointmentType.GROUP,
@@ -204,11 +264,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    assertSingleAppointmentTwoPrisoner(appointment, request)
-    assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentById(appointment.id)!!, request)
+    assertSingleAppointmentTwoPrisoner(appointmentSeries, request)
+    assertSingleAppointmentTwoPrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -216,15 +276,15 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(allocationIds[0]),
-      AppointmentInstanceInformation(allocationIds[1]),
+      AppointmentInstanceInformation(attendeeIds[0]),
+      AppointmentInstanceInformation(attendeeIds[1]),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
   }
 
   @Test
-  fun `create individual repeat appointment success`() {
+  fun `create individual repeat appointment series success`() {
     val request =
       appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
@@ -242,10 +302,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    assertThat(appointment.appointments).hasSize(3)
+    assertThat(appointmentSeries.appointments).hasSize(3)
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
@@ -253,18 +313,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
-      AppointmentInstanceInformation(allocationIds[0]),
-      AppointmentInstanceInformation(allocationIds[1]),
-      AppointmentInstanceInformation(allocationIds[2]),
+      AppointmentInstanceInformation(attendeeIds[0]),
+      AppointmentInstanceInformation(attendeeIds[1]),
+      AppointmentInstanceInformation(attendeeIds[2]),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
   }
 
   @Test
-  fun `create appointment synchronously success`() {
-    // 5 prisoners with 2 occurrences results in 10 appointment instances. Lower than the configured max-sync-appointment-instance-actions value
-    // The resulting create appointment request will be synchronous, creating all occurrences and allocations
+  fun `create appointment series synchronously success`() {
+    // 5 prisoners with 2 appointments results in 10 appointment instances. Lower than the configured max-sync-appointment-instance-actions value
+    // The resulting create appointment request will be synchronous, creating all appointments and attendees
     val prisonerNumberToBookingIdMap = (1L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentSeriesCreateRequest(
       categoryCode = "AC1",
@@ -287,29 +347,29 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       },
     )
 
-    val appointment = webTestClient.createAppointment(request)!!
-    val allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    appointment.appointments hasSize 2
-    allocationIds hasSize 10
+    appointmentSeries.appointments hasSize 2
+    attendeeIds hasSize 10
 
-    verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(attendeeIds.size)).send(eventCaptor.capture())
 
     assertThat(
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
-      allocationIds.map { AppointmentInstanceInformation(it) },
+      attendeeIds.map { AppointmentInstanceInformation(it) },
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
   }
 
   @Test
-  fun `create appointment asynchronously success`() {
-    // 3 prisoners with 4 occurrences results in 12 appointment instances. Higher than the configured max-sync-appointment-instance-actions value
-    // The resulting create appointment request will only create the first occurrence and its allocations synchronously. The remaining
-    // occurrences and allocations will be created as an asynchronous job
+  fun `create appointment series asynchronously success`() {
+    // 3 prisoners with 4 appointments results in 12 appointment instances. Higher than the configured max-sync-appointment-instance-actions value
+    // The resulting create appointment request will only create the first appointment and its attendees synchronously. The remaining
+    // appointments and attendees will be created as an asynchronous job
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
 
     val request = appointmentSeriesCreateRequest(
@@ -333,26 +393,26 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       },
     )
 
-    // Synchronous creation. First occurrence and allocations only
-    val appointment = webTestClient.createAppointment(request)!!
-    var allocationIds = appointment.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
-    appointment.appointments hasSize 1
-    allocationIds hasSize 3
+    // Synchronous creation. First appointment and attendees only
+    var appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    var attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+    appointmentSeries.appointments hasSize 1
+    attendeeIds hasSize 3
 
-    // Wait for remaining occurrences to be created
+    // Wait for remaining appointments to be created
     Thread.sleep(1000)
-    val appointmentDetails = webTestClient.getAppointmentById(appointment.id)!!
-    allocationIds = appointmentDetails.appointments.flatMap { it.attendees.map { allocation -> allocation.id } }
-    appointmentDetails.appointments hasSize 4
-    allocationIds hasSize 12
+    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
+    attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+    appointmentSeries.appointments hasSize 4
+    attendeeIds hasSize 12
 
-    verify(eventsPublisher, times(allocationIds.size)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(attendeeIds.size)).send(eventCaptor.capture())
 
     assertThat(
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
-      allocationIds.map { AppointmentInstanceInformation(it) },
+      attendeeIds.map { AppointmentInstanceInformation(it) },
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -475,9 +535,9 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentSeries.appointments.first().id).isGreaterThan(0)
   }
 
-  private fun WebTestClient.getAppointmentById(id: Long) =
+  private fun WebTestClient.getAppointmentSeriesById(id: Long) =
     get()
-      .uri("/appointments/$id")
+      .uri("/appointment-series/$id")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
@@ -485,11 +545,21 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.createAppointment(
+  private fun WebTestClient.getAppointmentSeriesDetailsById(id: Long) =
+    get()
+      .uri("/appointment-series/$id/details")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(AppointmentSeriesDetails::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.createAppointmentSeries(
     request: AppointmentSeriesCreateRequest,
   ) =
     post()
-      .uri("/appointments")
+      .uri("/appointment-series")
       .bodyValue(request)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, request.prisonCode)

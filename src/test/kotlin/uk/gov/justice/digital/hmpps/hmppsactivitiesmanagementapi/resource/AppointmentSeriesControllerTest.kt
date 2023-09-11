@@ -16,25 +16,30 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesDetailsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
 
-@WebMvcTest(controllers = [AppointmentController::class])
-@ContextConfiguration(classes = [AppointmentController::class])
-class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
+@WebMvcTest(controllers = [AppointmentSeriesController::class])
+@ContextConfiguration(classes = [AppointmentSeriesController::class])
+class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesController>() {
   @MockBean
   private lateinit var appointmentSeriesService: AppointmentSeriesService
 
-  override fun controller() = AppointmentController(appointmentSeriesService)
+  @MockBean
+  private lateinit var appointmentSeriesDetailsService: AppointmentSeriesDetailsService
+
+  override fun controller() = AppointmentSeriesController(appointmentSeriesService, appointmentSeriesDetailsService)
 
   @Test
-  fun `200 response when get appointment by valid id`() {
+  fun `200 response when get appointment series by valid id`() {
     val appointmentSeries = appointmentSeriesEntity().toModel()
 
     whenever(appointmentSeriesService.getAppointmentSeriesById(1)).thenReturn(appointmentSeries)
 
-    val response = mockMvc.getAppointmentById(1)
+    val response = mockMvc.getAppointmentSeriesById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -45,22 +50,52 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
-  fun `404 response when get appointment by invalid id`() {
-    whenever(appointmentSeriesService.getAppointmentSeriesById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+  fun `404 response when get appointment series by invalid id`() {
+    whenever(appointmentSeriesService.getAppointmentSeriesById(-1)).thenThrow(EntityNotFoundException("Appointment Series -1 not found"))
 
-    val response = mockMvc.getAppointmentById(-1)
+    val response = mockMvc.getAppointmentSeriesById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
+    assertThat(response.contentAsString).contains("Appointment Series -1 not found")
 
     verify(appointmentSeriesService).getAppointmentSeriesById(-1)
   }
 
   @Test
-  fun `create appointment with empty json returns 400 bad request`() {
-    mockMvc.post("/appointments") {
+  fun `200 response when get appointment series details by valid id`() {
+    val appointmentDetails = appointmentSeriesDetails()
+
+    whenever(appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(1)).thenReturn(appointmentDetails)
+
+    val response = mockMvc.getAppointmentSeriesDetailsById(1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointmentDetails))
+
+    verify(appointmentSeriesDetailsService).getAppointmentSeriesDetailsById(1)
+  }
+
+  @Test
+  fun `404 response when get appointment series details by invalid id`() {
+    whenever(appointmentSeriesDetailsService.getAppointmentSeriesDetailsById(-1)).thenThrow(EntityNotFoundException("Appointment Series -1 not found"))
+
+    val response = mockMvc.getAppointmentSeriesDetailsById(-1)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment Series -1 not found")
+
+    verify(appointmentSeriesDetailsService).getAppointmentSeriesDetailsById(-1)
+  }
+
+  @Test
+  fun `create appointment series with empty json returns 400 bad request`() {
+    mockMvc.post("/appointment-series") {
       contentType = MediaType.APPLICATION_JSON
       content = "{}"
     }
@@ -85,7 +120,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
-  fun `create appointment with valid json returns 201 created and appointment model`() {
+  fun `create appointment series with valid json returns 201 created and appointment series model`() {
     val request = appointmentSeriesCreateRequest()
     val expectedResponse = appointmentSeriesEntity().toModel()
 
@@ -94,7 +129,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     whenever(appointmentSeriesService.createAppointmentSeries(request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response =
-      mockMvc.post("/appointments") {
+      mockMvc.post("/appointment-series") {
         principal = mockPrincipal
         contentType = MediaType.APPLICATION_JSON
         content = mapper.writeValueAsBytes(
@@ -109,5 +144,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
 
-  private fun MockMvc.getAppointmentById(id: Long) = get("/appointments/{appointmentId}", id)
+  private fun MockMvc.getAppointmentSeriesById(id: Long) = get("/appointment-series/{appointmentSeriesId}", id)
+
+  private fun MockMvc.getAppointmentSeriesDetailsById(id: Long) = get("/appointment-series/{appointmentSeriesId}/details", id)
 }
