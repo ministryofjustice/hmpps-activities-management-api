@@ -11,6 +11,7 @@ import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -68,28 +69,28 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(moorlandBasic)
     whenever(activityRepository.getBasicForPrisonBetweenDates("LEI", today, weekFromToday)).thenReturn(leedsBasic)
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today, null))
       .thenReturn(moorlandActivities.first().schedules().first())
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(2L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(2L, today, null))
       .thenReturn(moorlandActivities[1].schedules().first())
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today, null))
       .thenReturn(moorlandActivities.last().schedules().first())
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(4L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(4L, today, null))
       .thenReturn(leedsActivities.first().schedules().first())
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(5L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(5L, today, null))
       .thenReturn(leedsActivities[1].schedules().first())
 
-    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(6L, today))
+    whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(6L, today, null))
       .thenReturn(leedsActivities.last().schedules().first())
 
     job.create()
 
     // Creates 6 scheduled instances for 3 activities in Moorland and 3 activities in Leeds
-    verify(activityScheduleRepository, times(6)).getActivityScheduleByIdWithFilters(anyLong(), any())
+    verify(activityScheduleRepository, times(6)).getActivityScheduleByIdWithFilters(anyLong(), any(), eq(null))
     verify(activityScheduleRepository, times(6)).saveAndFlush(scheduleSaveCaptor.capture())
 
     scheduleSaveCaptor.savedSchedules(6).forEach { schedule ->

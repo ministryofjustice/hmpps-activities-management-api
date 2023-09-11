@@ -8,7 +8,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummaryDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
@@ -49,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime as ModelPrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary as ModelScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspension as ModelSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication as ModelWaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
@@ -451,6 +455,38 @@ fun transform(activityBasic: EntityActivityBasic) =
     categoryId = activityBasic.categoryId,
     categoryCode = activityBasic.categoryCode,
     categoryName = activityBasic.categoryName,
+  )
+
+fun ScheduledInstanceAttendanceSummary.toModel() = (
+  ModelScheduledInstanceAttendanceSummary(
+    scheduledInstanceId = this.scheduledInstanceId,
+    activityId = this.activityId,
+    activityScheduleId = this.activityScheduleId,
+    summary = this.summary,
+    categoryId = this.activityCategoryId,
+    sessionDate = this.sessionDate,
+    startTime = this.startTime,
+    endTime = this.endTime,
+    inCell = this.inCell,
+    onWing = this.onWing,
+    offWing = this.offWing,
+    internalLocation = this.internalLocationId?.let {
+      InternalLocation(
+        this.internalLocationId.toInt(),
+        this.internalLocationCode!!,
+        this.internalLocationDescription!!,
+      )
+    },
+    cancelled = this.cancelled,
+    attendanceSummary = AttendanceSummaryDetails(
+      allocations = this.allocations,
+      attendees = this.attendees,
+      notRecorded = this.notRecorded,
+      attended = this.attended,
+      absences = this.absences,
+      paid = this.paid,
+    ),
+  )
   )
 
 fun List<EntityActivityBasic>.toActivityBasicList() = map {

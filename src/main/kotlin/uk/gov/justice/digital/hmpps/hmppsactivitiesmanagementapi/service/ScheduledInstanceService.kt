@@ -10,18 +10,23 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
+import java.time.LocalDate
 
 @Service
 @Transactional(readOnly = true)
 class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
   private var outboundEventsService: OutboundEventsService,
 ) {
   companion object {
@@ -86,6 +91,11 @@ class ScheduledInstanceService(
     if (cancelledInstance.cancelled) {
       send(cancelledInstance.scheduledInstanceId)
     }
+  }
+
+  fun attendanceSummary(prisonCode: String, sessionDate: LocalDate): List<ScheduledInstanceAttendanceSummary> {
+    checkCaseloadAccess(prisonCode)
+    return attendanceSummaryRepository.findByPrisonAndDate(prisonCode, sessionDate).map { it.toModel() }
   }
 
   private fun send(instanceId: Long) {

@@ -17,7 +17,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSummaryDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -28,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
@@ -300,6 +305,65 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-16.sql")
+  fun `return attendance summary`() {
+    val response = webTestClient.getAttendanceSummary(LocalDate.now())
+    assertThat(response).isEqualTo(
+      listOf(
+        ScheduledInstanceAttendanceSummary(
+          scheduledInstanceId = 1,
+          activityId = 1,
+          activityScheduleId = 1,
+          summary = "Maths",
+          categoryId = 1,
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          inCell = false,
+          onWing = false,
+          offWing = false,
+          internalLocation = InternalLocation(
+            id = 1,
+            code = "L1",
+            description = "Location 1",
+          ),
+          cancelled = false,
+          attendanceSummary = AttendanceSummaryDetails(
+            allocations = 2,
+            attendees = 2,
+            notRecorded = 2,
+            attended = 0,
+            absences = 0,
+            paid = 0,
+          ),
+        ),
+        ScheduledInstanceAttendanceSummary(
+          scheduledInstanceId = 3,
+          activityId = 1,
+          activityScheduleId = 2,
+          summary = "Maths",
+          categoryId = 1,
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(14, 0),
+          endTime = LocalTime.of(15, 0),
+          inCell = false,
+          onWing = false,
+          offWing = false,
+          internalLocation = InternalLocation(
+            id = 2,
+            code = "L2",
+            description = "Location 2",
+          ),
+          cancelled = true,
+          attendanceSummary = AttendanceSummaryDetails(
+            allocations = 2,
+          ),
+        ),
+      ),
+    )
+  }
+
   private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
     .uri("/scheduled-instances/$id")
     .accept(MediaType.APPLICATION_JSON)
@@ -352,4 +416,19 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ActivityScheduleInstance::class.java)
       .returnResult().responseBody
+
+  private fun WebTestClient.getAttendanceSummary(date: LocalDate) = get()
+    .uri { builder ->
+      builder.path("/scheduled-instances/attendance-summary")
+        .queryParam("date", date)
+        .build()
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, pentonvillePrisonCode)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ScheduledInstanceAttendanceSummary::class.java)
+    .returnResult().responseBody
 }

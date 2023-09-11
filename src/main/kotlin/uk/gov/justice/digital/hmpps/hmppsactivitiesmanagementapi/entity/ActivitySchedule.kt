@@ -28,6 +28,7 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
+const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
 
 @Entity
 @Table(name = "activity_schedule")
@@ -36,6 +37,12 @@ const val SESSION_DATE_FILTER = "SessionDateFilter"
   name = SESSION_DATE_FILTER,
   parameters = [
     ParamDef(name = "earliestSessionDate", type = LocalDate::class),
+  ],
+)
+@FilterDef(
+  name = ALLOCATION_DATE_FILTER,
+  parameters = [
+    ParamDef(name = "allocationsActiveOnDate", type = LocalDate::class),
   ],
 )
 data class ActivitySchedule(
@@ -85,6 +92,12 @@ data class ActivitySchedule(
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
+  @Filters(
+    Filter(
+      name = ALLOCATION_DATE_FILTER,
+      condition = "start_date <= :allocationsActiveOnDate AND (end_date IS NULL OR end_date >= :allocationsActiveOnDate)",
+    ),
+  )
   private val allocations: MutableList<Allocation> = mutableListOf()
 
   @OneToMany(mappedBy = "activitySchedule", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)

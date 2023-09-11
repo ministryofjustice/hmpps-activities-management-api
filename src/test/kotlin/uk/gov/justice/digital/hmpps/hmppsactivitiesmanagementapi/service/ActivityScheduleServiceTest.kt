@@ -83,7 +83,7 @@ class ActivityScheduleServiceTest {
       allocations().first().startDate = LocalDate.now()
     }
 
-    whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
+    whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
 
     val allocations = service.getAllocationsBy(1)
 
@@ -97,9 +97,21 @@ class ActivityScheduleServiceTest {
       allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
     }
 
-    whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
+    whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
 
     assertThat(service.getAllocationsBy(1)).isEmpty()
+  }
+
+  @Test
+  fun `can get allocations for given date`() {
+    val schedule = schedule(pentonvillePrisonCode)
+
+    whenever(repository.getActivityScheduleByIdWithFilters(1, allocationsActiveOnDate = LocalDate.now()))
+      .thenReturn(schedule)
+
+    assertThat(service.getAllocationsBy(1, activeOn = LocalDate.now())).isEqualTo(
+      schedule.allocations().toModelAllocations(),
+    )
   }
 
   @Test
@@ -116,7 +128,7 @@ class ActivityScheduleServiceTest {
     whenever(schedule.activity).thenReturn(activity)
     whenever(activity.prisonCode).thenReturn(caseLoad)
     whenever(schedule.allocations()).thenReturn(listOf(active, suspended, ended, future))
-    whenever(repository.findById(1)).thenReturn(Optional.of(schedule))
+    whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
 
     val allocations = service.getAllocationsBy(1, false)
     assertThat(allocations).hasSize(4)
