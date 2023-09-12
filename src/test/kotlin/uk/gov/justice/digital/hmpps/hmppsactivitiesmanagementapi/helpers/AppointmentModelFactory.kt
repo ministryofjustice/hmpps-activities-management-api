@@ -100,9 +100,9 @@ fun appointmentInstanceModel(
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
   "Appointment level comment",
-  created = createdTime,
+  createdTime = createdTime,
   "CREATE.USER",
-  updated = updatedTime,
+  updatedTime = updatedTime,
   "UPDATE.USER",
 )
 

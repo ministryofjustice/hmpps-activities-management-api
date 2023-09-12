@@ -84,9 +84,9 @@ data class AppointmentInstance(
     startTime = startTime,
     endTime = endTime,
     extraInformation = extraInformation,
-    created = createdTime,
+    createdTime = createdTime,
     createdBy = createdBy,
-    updated = updatedTime,
+    updatedTime = updatedTime,
     updatedBy = updatedBy,
   )
 }

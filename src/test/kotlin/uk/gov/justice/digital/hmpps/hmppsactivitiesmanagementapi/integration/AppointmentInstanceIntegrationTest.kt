@@ -48,14 +48,14 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
         "Appointment level comment",
-        appointmentInstance.created,
+        appointmentInstance.createdTime,
         "TEST.USER",
         null,
         null,
       ),
     )
 
-    assertThat(appointmentInstance.created).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(appointmentInstance.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
 
   @Test

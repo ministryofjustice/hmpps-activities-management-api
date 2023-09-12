@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
@@ -49,6 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
@@ -95,6 +97,7 @@ class AppointmentSeriesServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
+  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -122,6 +125,7 @@ class AppointmentSeriesServiceTest {
     appointmentSeriesRepository,
     appointmentTierRepository,
     appointmentHostRepository,
+    appointmentInstanceRepository,
     appointmentCancellationReasonRepository,
     appointmentSetRepository,
     referenceCodeService,
@@ -911,6 +915,7 @@ class AppointmentSeriesServiceTest {
   fun `migrateAppointment success`() {
     val request = appointmentMigrateRequest()
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -962,6 +967,7 @@ class AppointmentSeriesServiceTest {
       createdBy = "DPS.USER",
     )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -978,6 +984,7 @@ class AppointmentSeriesServiceTest {
       updatedBy = "DPS.USER",
     )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -996,6 +1003,7 @@ class AppointmentSeriesServiceTest {
     val request = appointmentMigrateRequest(isCancelled = null)
 
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -1014,6 +1022,7 @@ class AppointmentSeriesServiceTest {
     val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -1036,6 +1045,7 @@ class AppointmentSeriesServiceTest {
     val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 
@@ -1060,6 +1070,7 @@ class AppointmentSeriesServiceTest {
     val cancellationReason = appointmentCancelledReason()
     whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
 
     service.migrateAppointment(request, principal)
 

@@ -133,7 +133,6 @@ data class AppointmentInstance(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime?,
 
-  // TODO: Rename to extra information after discussion with Syscon
   @Schema(
     description =
     """
@@ -145,12 +144,11 @@ data class AppointmentInstance(
   )
   val extraInformation: String?,
 
-  // TODO: Rename to createdTime after discussion with Syscon
   @Schema(
     description = "The date and time this appointment instance was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val created: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   @Schema(
     description =
@@ -170,7 +168,7 @@ data class AppointmentInstance(
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val updated: LocalDateTime?,
+  val updatedTime: LocalDateTime?,
 
   @Schema(
     description =

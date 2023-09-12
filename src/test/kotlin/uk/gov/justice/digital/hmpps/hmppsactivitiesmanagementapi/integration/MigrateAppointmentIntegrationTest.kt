@@ -10,8 +10,10 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -70,25 +72,35 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val response = webTestClient.migrateAppointment(request)!!
-    verifyAppointment(response)
+    verifyAppointmentInstance(response)
 
     verifyNoInteractions(eventsPublisher)
   }
 
-  private fun verifyAppointment(response: AppointmentSeries) {
+  private fun verifyAppointmentInstance(response: AppointmentInstance) {
     with(response) {
       assertThat(id).isNotNull
+      assertThat(appointmentSeriesId).isNotNull
+      assertThat(appointmentId).isNotNull
+      assertThat(appointmentAttendeeId).isNotNull
+      assertThat(id).isEqualTo(appointmentAttendeeId)
       assertThat(createdBy).isEqualTo("CREATE.USER")
-      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(appointments[0].attendees[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(appointmentType).isEqualTo(AppointmentType.INDIVIDUAL)
       assertThat(prisonCode).isEqualTo("TPR")
+      assertThat(prisonerNumber).isEqualTo("A1234BC")
+      assertThat(bookingId).isEqualTo(123)
+      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(customName).isNull()
       assertThat(internalLocationId).isEqualTo(123)
-      assertThat(inCell).isFalse()
-      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(inCell).isFalse
+      assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
       assertThat(extraInformation).isEqualTo("Appointment level comment")
+      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo("CREATE.USER")
+      assertThat(updatedTime).isNull()
+      assertThat(updatedBy).isNull()
     }
   }
 
@@ -102,6 +114,6 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
+      .expectBody(AppointmentInstance::class.java)
       .returnResult().responseBody
 }

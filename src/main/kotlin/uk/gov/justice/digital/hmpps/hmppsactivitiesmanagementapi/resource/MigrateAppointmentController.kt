@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
@@ -43,7 +43,7 @@ class MigrateAppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentSeries::class),
+            schema = Schema(implementation = AppointmentInstance::class),
           ),
         ],
       ),
@@ -79,5 +79,5 @@ class MigrateAppointmentController(
       required = true,
     )
     request: AppointmentMigrateRequest,
-  ): AppointmentSeries = appointmentSeriesService.migrateAppointment(request, principal)
+  ): AppointmentInstance = appointmentSeriesService.migrateAppointment(request, principal)
 }

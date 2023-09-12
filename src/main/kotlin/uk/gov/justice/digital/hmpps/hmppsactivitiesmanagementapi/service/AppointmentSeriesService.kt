@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
@@ -67,6 +69,7 @@ class AppointmentSeriesService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentTierRepository: AppointmentTierRepository,
   private val appointmentHostRepository: AppointmentHostRepository,
+  private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val appointmentSetRepository: AppointmentSetRepository,
   private val referenceCodeService: ReferenceCodeService,
@@ -187,29 +190,33 @@ class AppointmentSeriesService(
     }
   }
 
-  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): AppointmentSeries {
+  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): AppointmentInstance {
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
     val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())
-    return buildValidAppointmentSeriesEntity(
-      appointmentType = AppointmentType.INDIVIDUAL,
-      prisonCode = request.prisonCode!!,
-      prisonerNumbers = listOf(request.prisonerNumber),
-      prisonerBookings = prisonerBookings,
-      categoryCode = request.categoryCode!!,
-      appointmentTier = appointmentTier,
-      internalLocationId = request.internalLocationId,
-      inCell = false,
-      startDate = request.startDate,
-      startTime = request.startTime,
-      endTime = request.endTime,
-      extraInformation = request.comment,
-      createdTime = request.created!!,
-      createdBy = request.createdBy!!,
-      updatedTime = request.updated,
-      updatedBy = request.updatedBy,
-      isCancelled = request.isCancelled ?: false,
-      isMigrated = true,
-    ).let { (appointmentSeriesRepository.saveAndFlush(it)).toModel() }
+    val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
+      buildValidAppointmentSeriesEntity(
+        appointmentType = AppointmentType.INDIVIDUAL,
+        prisonCode = request.prisonCode!!,
+        prisonerNumbers = listOf(request.prisonerNumber),
+        prisonerBookings = prisonerBookings,
+        categoryCode = request.categoryCode!!,
+        appointmentTier = appointmentTier,
+        internalLocationId = request.internalLocationId,
+        inCell = false,
+        startDate = request.startDate,
+        startTime = request.startTime,
+        endTime = request.endTime,
+        extraInformation = request.comment,
+        createdTime = request.created!!,
+        createdBy = request.createdBy!!,
+        updatedTime = request.updated,
+        updatedBy = request.updatedBy,
+        isCancelled = request.isCancelled ?: false,
+        isMigrated = true,
+      ),
+    )
+    val appointmentInstance = appointmentInstanceRepository.findOrThrowNotFound(appointmentSeries.appointments().first().attendees().first().appointmentAttendeeId)
+    return appointmentInstance.toModel()
   }
 
   private fun failIfCategoryNotFound(categoryCode: String) {
