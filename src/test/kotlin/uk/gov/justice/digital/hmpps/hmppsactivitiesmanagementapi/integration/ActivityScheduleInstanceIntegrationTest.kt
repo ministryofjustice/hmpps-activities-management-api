@@ -15,8 +15,12 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -27,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
@@ -52,6 +57,9 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       assertThat(scheduledInstance.id).isEqualTo(1L)
       assertThat(scheduledInstance.startTime.toString()).isEqualTo("10:00")
       assertThat(scheduledInstance.endTime.toString()).isEqualTo("11:00")
+      with(scheduledInstance.attendances.first()) {
+        editable isEqualTo false
+      }
     }
 
     @Test
@@ -170,6 +178,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(status).isEqualTo("WAITING")
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
+          assertThat(editable).isTrue
         }
       }
 
@@ -255,6 +264,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           assertThat(comment).isEqualTo("Location unavailable")
           assertThat(recordedBy).isEqualTo("USER1")
           assertThat(recordedTime).isNotNull
+          assertThat(editable).isTrue
         }
       }
 
@@ -292,6 +302,65 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has already been cancelled")
     }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-16.sql")
+  fun `return attendance summary`() {
+    val response = webTestClient.getAttendanceSummary("PVI", LocalDate.now())
+    assertThat(response).isEqualTo(
+      listOf(
+        ScheduledInstanceAttendanceSummary(
+          scheduledInstanceId = 1,
+          activityId = 1,
+          activityScheduleId = 1,
+          summary = "Maths",
+          categoryId = 1,
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          inCell = false,
+          onWing = false,
+          offWing = false,
+          internalLocation = InternalLocation(
+            id = 1,
+            code = "L1",
+            description = "Location 1",
+          ),
+          cancelled = false,
+          attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
+            allocations = 2,
+            attendees = 2,
+            notRecorded = 2,
+            attended = 0,
+            absences = 0,
+            paid = 0,
+          ),
+        ),
+        ScheduledInstanceAttendanceSummary(
+          scheduledInstanceId = 3,
+          activityId = 1,
+          activityScheduleId = 2,
+          summary = "Maths",
+          categoryId = 1,
+          sessionDate = LocalDate.now(),
+          startTime = LocalTime.of(14, 0),
+          endTime = LocalTime.of(15, 0),
+          inCell = false,
+          onWing = false,
+          offWing = false,
+          internalLocation = InternalLocation(
+            id = 2,
+            code = "L2",
+            description = "Location 2",
+          ),
+          cancelled = true,
+          attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
+            allocations = 2,
+          ),
+        ),
+      ),
+    )
   }
 
   private fun WebTestClient.getScheduledInstanceById(id: Long) = get()
@@ -346,4 +415,20 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ActivityScheduleInstance::class.java)
       .returnResult().responseBody
+
+  private fun WebTestClient.getAttendanceSummary(prisonCode: String, date: LocalDate) = get()
+    .uri { builder ->
+      builder.path("/scheduled-instances/attendance-summary")
+        .queryParam("prisonCode", prisonCode)
+        .queryParam("date", date)
+        .build()
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, pentonvillePrisonCode)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ScheduledInstanceAttendanceSummary::class.java)
+    .returnResult().responseBody
 }

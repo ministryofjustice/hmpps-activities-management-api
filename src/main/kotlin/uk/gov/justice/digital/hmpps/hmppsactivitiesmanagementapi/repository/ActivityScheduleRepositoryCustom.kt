@@ -5,12 +5,17 @@ import jakarta.persistence.PersistenceContext
 import jakarta.persistence.TypedQuery
 import org.hibernate.Session
 import org.slf4j.LoggerFactory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ALLOCATION_DATE_FILTER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SESSION_DATE_FILTER
 import java.time.LocalDate
 
 interface ActivityScheduleRepositoryCustom {
-  fun getActivityScheduleByIdWithFilters(activityScheduleId: Long, earliestSessionDate: LocalDate): ActivitySchedule?
+  fun getActivityScheduleByIdWithFilters(
+    activityScheduleId: Long,
+    earliestSessionDate: LocalDate? = null,
+    allocationsActiveOnDate: LocalDate? = null,
+  ): ActivitySchedule?
 }
 
 class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
@@ -25,17 +30,26 @@ class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
   @Override
   override fun getActivityScheduleByIdWithFilters(
     activityScheduleId: Long,
-    earliestSessionDate: LocalDate,
+    earliestSessionDate: LocalDate?,
+    allocationsActiveOnDate: LocalDate?,
   ): ActivitySchedule? {
     val session = entityManager.unwrap(Session::class.java)
-
-    log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
-    val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
-    sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
     val hql = "SELECT s from ActivitySchedule s where s.activityScheduleId = :activityScheduleId"
     val query: TypedQuery<ActivitySchedule> = entityManager.createQuery(hql, ActivitySchedule::class.java)
     query.setParameter("activityScheduleId", activityScheduleId)
+
+    if (earliestSessionDate != null) {
+      log.info("Enabling filter $SESSION_DATE_FILTER with earliestSessionDate: $earliestSessionDate")
+      val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
+      sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
+    }
+
+    if (allocationsActiveOnDate != null) {
+      log.info("Enabling filter $ALLOCATION_DATE_FILTER with allocationsActiveOnDate: $allocationsActiveOnDate")
+      val allocationsDateFilter = session.enableFilter(ALLOCATION_DATE_FILTER)
+      allocationsDateFilter.setParameter("allocationsActiveOnDate", allocationsActiveOnDate)
+    }
 
     return runCatching {
       query.singleResult

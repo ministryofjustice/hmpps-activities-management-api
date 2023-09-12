@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -95,6 +96,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
+  fun `get all allocations for activity schedule on date`() {
+    webTestClient.getAllocationsBy(1, date = LocalDate.parse("2023-10-10"))!!
+      .also { assertThat(it).hasSize(2) }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
   fun `403 when fetching allocations for the wrong case load`() {
     webTestClient.get()
       .uri("/schedules/1/allocations")
@@ -121,6 +131,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAllocationsBy(
     scheduleId: Long,
     activeOnly: Boolean? = null,
+    date: LocalDate? = null,
     caseLoadId: String = "PVI",
   ) =
     get()
@@ -128,6 +139,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         builder
           .path("/schedules/$scheduleId/allocations")
           .maybeQueryParam("activeOnly", activeOnly)
+          .maybeQueryParam("date", date)
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
