@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
 enum class TelemetryEvent(val value: String) {
 
+  ACTIVITIES_DAILY_STATS("SAA-Activities-Daily-Stats"),
   ACTIVITY_CREATED("SAA-Activity-Created"),
   APPOINTMENT_CANCELLED("SAA-Appointment-Cancelled"),
   APPOINTMENT_SERIES_CREATED("SAA-Appointment-Series-Created"),

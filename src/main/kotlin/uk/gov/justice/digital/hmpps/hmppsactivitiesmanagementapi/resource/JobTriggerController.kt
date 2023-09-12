@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
@@ -24,6 +25,7 @@ class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
   private val manageAttendanceRecordsJob: ManageAttendanceRecordsJob,
   private val manageAllocationsJob: ManageAllocationsJob,
+  private val activityMetricsJob: ActivityMetricsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -76,5 +78,18 @@ class JobTriggerController(
     manageAllocationsJob.execute(withActivate = withActivate, withDeallocate = withDeallocate)
 
     return "Manage allocations triggered operations"
+  }
+
+  @PostMapping(value = ["/activities-metrics"])
+  @Operation(
+    summary = "Trigger the job to generate activity metrics",
+    description = """Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.""",
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.CREATED)
+  fun triggerActivityMetricsJob(): String {
+    activityMetricsJob.execute()
+
+    return "Activity metrics job triggered"
   }
 }
