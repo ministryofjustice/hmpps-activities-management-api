@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -40,7 +39,7 @@ class DailyActivityMetricsService(
   private val attendanceRepository: AttendanceRepository,
 ) {
 
-  fun generateActivityMetrics(dateToGenerateFor: LocalDate, metricsMap: MutableMap<String, Double>, activities: List<Activity>, allAttendances: List<AllAttendance>) {
+  fun generateActivityMetrics(dateToGenerateFor: LocalDate, metricsMap: MutableMap<String, Double>, activities: List<Activity>) {
     activities.forEach {
       incrementMetric(metricsMap, ACTIVITIES_TOTAL_COUNT_METRIC_KEY)
 
@@ -60,9 +59,7 @@ class DailyActivityMetricsService(
         incrementMetric(metricsMap, MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY)
       }
 
-      val attendances = allAttendances
-        .filter { attendance -> attendance.activityId == it.activityId }
-        .mapNotNull { attendance -> attendanceRepository.findById(attendance.attendanceId).orElse(null) }
+      val attendances = attendanceRepository.findAttendancesForActivityOnDate(it.activityId, dateToGenerateFor)
       generateAttendanceMetrics(metricsMap, attendances)
 
       val allocations = it.schedules().flatMap { schedule -> schedule.allocations() }

@@ -31,4 +31,13 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     """,
   )
   fun findAttendancesOnOrAfterDateForPrisoner(prisonCode: String, sessionDate: LocalDate, attendanceStatus: AttendanceStatus? = null, prisonerNumber: String): List<Attendance>
+
+  @Query(
+    """
+      SELECT a from Attendance a
+      WHERE a.scheduledInstance.activitySchedule.activity.activityId = :activityId 
+      AND a.scheduledInstance.sessionDate = :sessionDate
+    """,
+  )
+  fun findAttendancesForActivityOnDate(activityId: Long, sessionDate: LocalDate): List<Attendance>
 }

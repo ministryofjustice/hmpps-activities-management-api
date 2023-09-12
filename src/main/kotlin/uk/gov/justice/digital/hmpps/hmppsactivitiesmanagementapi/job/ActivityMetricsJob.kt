@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyActivityMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
@@ -50,7 +49,6 @@ class ActivityMetricsJob(
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val dailyActivityMetricsService: DailyActivityMetricsService,
-  private val allAttendanceRepository: AllAttendanceRepository,
   private val telemetryClient: TelemetryClient,
   private val jobRunner: SafeJobRunner,
 
@@ -122,9 +120,8 @@ class ActivityMetricsJob(
       MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY to 0.0,
     )
 
-    val allAttendances = allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, yesterday)
     val activities = activityRepository.findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode, activityTier, activityCategory)
-    dailyActivityMetricsService.generateActivityMetrics(yesterday, metricsMap, activities, allAttendances)
+    dailyActivityMetricsService.generateActivityMetrics(yesterday, metricsMap, activities)
 
     telemetryClient.trackEvent(TelemetryEvent.ACTIVITIES_DAILY_STATS.value, propertiesMap, metricsMap)
   }

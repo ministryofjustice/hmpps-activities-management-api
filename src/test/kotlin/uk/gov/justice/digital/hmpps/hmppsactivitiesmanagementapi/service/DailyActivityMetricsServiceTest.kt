@@ -7,7 +7,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -42,7 +41,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTEN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.MULTI_WEEK_ACTIVITIES_COUNT_METRIC_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Optional
 
 class DailyActivityMetricsServiceTest {
 
@@ -98,24 +96,9 @@ class DailyActivityMetricsServiceTest {
           .flatMap { instance -> instance.attendances }
       }
 
-    val attendanceLookup = attendances.associateBy { it.attendanceId }
+    whenever(attendanceRepository.findAttendancesForActivityOnDate(any(), any())).thenReturn(attendances)
 
-    whenever(attendanceRepository.findById(any())).thenAnswer { Optional.ofNullable(attendanceLookup[it.arguments[0]]) }
-
-    val allAttendances = activities
-      .flatMap { activity ->
-        activity.schedules()
-          .flatMap { schedule -> schedule.instances() }
-          .flatMap { instance -> instance.attendances }
-          .map { attendance ->
-            val allAttendance = mock<AllAttendance>()
-            whenever(allAttendance.attendanceId).thenReturn(attendance.attendanceId)
-            whenever(allAttendance.activityId).thenReturn(activity.activityId)
-            allAttendance
-          }
-      }
-
-    dailyActivityMetricsService.generateActivityMetrics(LocalDate.now(), metricsMap, activities, allAttendances)
+    dailyActivityMetricsService.generateActivityMetrics(LocalDate.now(), metricsMap, activities)
 
     assertThat(metricsMap[ACTIVITIES_TOTAL_COUNT_METRIC_KEY]).isEqualTo(8.0)
     assertThat(metricsMap[ACTIVITIES_ACTIVE_COUNT_METRIC_KEY]).isEqualTo(3.0)
