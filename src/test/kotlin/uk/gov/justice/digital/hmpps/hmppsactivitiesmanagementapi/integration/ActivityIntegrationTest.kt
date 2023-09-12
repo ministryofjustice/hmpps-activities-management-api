@@ -611,7 +611,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(mathsAfternoon.allocatedPrisoner("A11111A")) {
       assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 12))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MR BLOGS")
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))
@@ -619,7 +619,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(mathsAfternoon.allocatedPrisoner("A22222A")) {
       assertThat(prisonPayBand).isEqualTo(testPentonvillePayBandThree)
-      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
+      assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 12))
       assertThat(endDate).isNull()
       assertThat(allocatedBy).isEqualTo("MRS BLOGS")
       assertThat(allocatedTime).isEqualTo(LocalDateTime.of(2022, 10, 10, 10, 0))

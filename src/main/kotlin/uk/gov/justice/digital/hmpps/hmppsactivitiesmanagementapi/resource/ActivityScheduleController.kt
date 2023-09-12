@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import java.security.Principal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/schedules", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -108,7 +110,14 @@ class ActivityScheduleController(
     )
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
-  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true)
+    @RequestParam(
+      value = "date",
+      required = false,
+    )
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "If provided will filter allocations by the given date. Format YYYY-MM-DD.")
+    date: LocalDate?,
+  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, date)
 
   @GetMapping(value = ["/{scheduleId}"])
   @ResponseBody
