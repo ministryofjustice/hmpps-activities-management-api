@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -89,13 +90,18 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true): List<Allocation> =
-    repository
-      .findOrThrowNotFound(scheduleId)
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, activeOn: LocalDate? = null): List<Allocation> {
+    val activitySchedule = repository.getActivityScheduleByIdWithFilters(
+      scheduleId,
+      allocationsActiveOnDate = activeOn,
+    ) ?: throw EntityNotFoundException("Activity Schedule $scheduleId not found")
+
+    return activitySchedule
       .checkCaseloadAccess()
       .allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
+  }
 
   fun getScheduleById(scheduleId: Long) =
     repository.findOrThrowNotFound(scheduleId).checkCaseloadAccess().toModelSchedule()

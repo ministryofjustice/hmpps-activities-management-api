@@ -19,26 +19,36 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Optional
+import java.time.LocalTime
+import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
+  private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val service = ScheduledInstanceService(repository, attendanceReasonRepository, outboundEventsService)
+  private val service = ScheduledInstanceService(
+    repository,
+    attendanceReasonRepository,
+    attendanceSummaryRepository,
+    outboundEventsService,
+  )
 
   @Nested
   @DisplayName("getActivityScheduleInstanceById")
@@ -214,6 +224,38 @@ class ScheduledInstanceServiceTest {
 
       verify(outboundEventsService, times(0))
         .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+    }
+
+    @Test
+    fun `can get scheduled instance attendance summary`() {
+      val attendanceSummary = ScheduledInstanceAttendanceSummary(
+        scheduledInstanceId = 1,
+        activityId = 1,
+        activityScheduleId = 2,
+        prisonCode = "MDI",
+        summary = "English 1",
+        activityCategoryId = 4,
+        sessionDate = LocalDate.now(),
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        inCell = true,
+        onWing = false,
+        offWing = false,
+        cancelled = false,
+        allocations = 3,
+        attendees = 3,
+        notRecorded = 1,
+        attended = 1,
+        absences = 1,
+        paid = 1,
+      )
+
+      whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
+        .thenReturn(listOf(attendanceSummary))
+
+      val result = service.attendanceSummary("MDI", LocalDate.now())
+
+      assertThat(result).isEqualTo(listOf(attendanceSummary.toModel()))
     }
   }
 }

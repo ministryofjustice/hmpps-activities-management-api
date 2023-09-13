@@ -54,6 +54,7 @@ data class Job(
 }
 
 enum class JobType {
+  ACTIVITIES_METRICS,
   ALLOCATE,
   ATTENDANCE_CREATE,
   ATTENDANCE_EXPIRE,

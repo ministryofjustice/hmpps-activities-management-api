@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -41,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priorit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociation as PrisonApiOffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -581,6 +583,54 @@ class TransformFunctionsTest {
       updatedBy isEqualTo "Test"
       updatedTime!! isCloseTo TimeSource.now()
       declinedReason isEqualTo "Needs to attend level one activity first"
+    }
+  }
+
+  @Test
+  fun `attendance summary entity to attendance summary model`() {
+    val attendanceSummary = ScheduledInstanceAttendanceSummary(
+      scheduledInstanceId = 1,
+      activityId = 1,
+      activityScheduleId = 2,
+      prisonCode = "MDI",
+      summary = "English 1",
+      activityCategoryId = 4,
+      sessionDate = LocalDate.now(),
+      startTime = LocalTime.of(9, 0),
+      endTime = LocalTime.of(12, 0),
+      inCell = true,
+      onWing = false,
+      offWing = false,
+      cancelled = false,
+      allocations = 3,
+      attendees = 3,
+      notRecorded = 1,
+      attended = 1,
+      absences = 1,
+      paid = 1,
+    )
+
+    with(attendanceSummary.toModel()) {
+      scheduledInstanceId isEqualTo 1
+      activityId isEqualTo 1
+      activityScheduleId isEqualTo 2
+      summary isEqualTo "English 1"
+      categoryId isEqualTo 4
+      sessionDate isEqualTo LocalDate.now()
+      startTime isEqualTo LocalTime.of(9, 0)
+      endTime isEqualTo LocalTime.of(12, 0)
+      inCell isEqualTo true
+      onWing isEqualTo false
+      offWing isEqualTo false
+      cancelled isEqualTo false
+      with(attendanceSummary) {
+        allocations isEqualTo 3
+        attendees isEqualTo 3
+        notRecorded isEqualTo 1
+        attended isEqualTo 1
+        absences isEqualTo 1
+        paid isEqualTo 1
+      }
     }
   }
 }
