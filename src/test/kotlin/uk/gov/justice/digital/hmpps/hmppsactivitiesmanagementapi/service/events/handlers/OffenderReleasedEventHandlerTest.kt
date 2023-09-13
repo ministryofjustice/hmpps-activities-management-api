@@ -105,14 +105,8 @@ class OffenderReleasedEventHandlerTest {
       .doReturn(Mono.just(prisoner))
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
-  }
 
-  @Test
-  fun `only un-ended allocations are ended on release of prisoner`() {
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = true, extraInfo = true))
-      .doReturn(Mono.just(prisoner))
-
-    val outcome = handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456"))
+    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 
   @Test

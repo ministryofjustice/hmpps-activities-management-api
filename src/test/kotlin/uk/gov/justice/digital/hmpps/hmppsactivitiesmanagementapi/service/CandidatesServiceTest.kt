@@ -1,10 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -19,11 +20,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
@@ -64,7 +72,7 @@ class CandidatesServiceTest {
       educationLevel = "Reading Measure 1.0",
     )
 
-    fun candidateSuitabilitySetup(activity: Activity, candidate: Prisoner) {
+    private fun candidateSuitabilitySetup(activity: Activity, candidate: Prisoner) {
       val schedule = activity.schedules().first()
 
       whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
@@ -88,16 +96,14 @@ class CandidatesServiceTest {
 
     @Test
     fun `fails if schedule not found`() {
-      Assertions.assertThatThrownBy {
+      assertThatThrownBy {
         service.candidateSuitability(1, "A1234AA")
       }.isInstanceOf(EntityNotFoundException::class.java)
     }
 
     @Test
     fun `wraSuitability - suitable`() {
-      val activity = activityEntity(
-        riskLevel = "high",
-      )
+      val activity = activityEntity(riskLevel = "high")
       val candidate = PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         alerts = listOf(
@@ -126,9 +132,7 @@ class CandidatesServiceTest {
 
     @Test
     fun `wraSuitability - not suitable`() {
-      val activity = activityEntity(
-        riskLevel = "medium",
-      )
+      val activity = activityEntity(riskLevel = "medium")
       val candidate = PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
         alerts = listOf(
@@ -157,12 +161,8 @@ class CandidatesServiceTest {
 
     @Test
     fun `wraSuitability - not suitable (no WRA & medium activity risk level)`() {
-      val activity = activityEntity(
-        riskLevel = "medium",
-      )
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val activity = activityEntity(riskLevel = "medium")
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -180,12 +180,8 @@ class CandidatesServiceTest {
 
     @Test
     fun `wraSuitability - not suitable (no WRA & high activity risk level)`() {
-      val activity = activityEntity(
-        riskLevel = "high",
-      )
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val activity = activityEntity(riskLevel = "high")
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -204,9 +200,7 @@ class CandidatesServiceTest {
     @Test
     fun `incentiveLevelSuitability - suitable`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -251,9 +245,7 @@ class CandidatesServiceTest {
     @Test
     fun `educationSuitability - suitable`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -272,9 +264,7 @@ class CandidatesServiceTest {
     @Test
     fun `educationSuitability - not suitable`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
 
@@ -344,9 +334,7 @@ class CandidatesServiceTest {
     @Test
     fun `releaseDate - not suitable (no release date)`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -365,9 +353,7 @@ class CandidatesServiceTest {
     @Test
     fun `nonAssociation - suitable (no non-associations)`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
       val suitability = service.candidateSuitability(
@@ -386,9 +372,7 @@ class CandidatesServiceTest {
     @Test
     fun `nonAssociation - suitable (no conflicting non-associations)`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
 
@@ -430,9 +414,7 @@ class CandidatesServiceTest {
     @Test
     fun `nonAssociation - not suitable`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
 
@@ -474,9 +456,7 @@ class CandidatesServiceTest {
     @Test
     fun `prisoner allocations`() {
       val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A1234BC",
-      )
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
 
       candidateSuitabilitySetup(activity, candidate)
 
@@ -498,7 +478,7 @@ class CandidatesServiceTest {
 
   @Nested
   inner class GetActivityCandidates {
-    fun candidatesSetup(activity: Activity, candidates: PagedPrisoner, waitingList: List<WaitingList>) {
+    private fun candidatesSetup(activity: Activity, candidates: PagedPrisoner, waitingList: List<WaitingList> = emptyList()) {
       addCaseloadIdToRequestHeader("MDI")
 
       val schedule = activity.schedules().first()
@@ -518,9 +498,7 @@ class CandidatesServiceTest {
     @Test
     fun `fetch list of suitable candidates`() {
       val activity = activityEntity()
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
-        prisonerNumber = "A1234BC",
-      )
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC")
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
@@ -549,9 +527,7 @@ class CandidatesServiceTest {
     @Test
     fun `Candidates with PENDING waiting list are filtered out`() {
       val activity = activityEntity()
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
-        prisonerNumber = "A1234BC",
-      )
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC")
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.PENDING))
 
       candidatesSetup(activity, allPrisoners, waitingList)
@@ -564,15 +540,13 @@ class CandidatesServiceTest {
         null,
       )
 
-      assertThat(candidates).isEqualTo(emptyList<ActivityCandidate>())
+      assertThat(candidates).isEmpty()
     }
 
     @Test
     fun `Candidates with APPROVED waiting list are filtered out`() {
       val activity = activityEntity()
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
-        prisonerNumber = "A1234BC",
-      )
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC")
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.APPROVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
@@ -585,7 +559,115 @@ class CandidatesServiceTest {
         null,
       )
 
-      assertThat(candidates).isEqualTo(emptyList<ActivityCandidate>())
+      assertThat(candidates).isEmpty()
+    }
+
+    @Test
+    fun `Candidates ENDED other allocations are filtered out`() {
+      val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
+        allocatePrisoner(
+          prisonerNumber = "A1234BC".toPrisonerNumber(),
+          payBand = lowPayBand,
+          bookingId = 1L,
+          startDate = TimeSource.tomorrow(),
+          allocatedBy = "Test",
+        ).deallocateNow()
+      }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.ENDED }
+
+      candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC"))
+
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+
+      val candidates = service.getActivityCandidates(
+        schedule.activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      candidates.single().otherAllocations.isEmpty() isBool true
+    }
+
+    @Test
+    fun `Candidates PENDING other allocations are not filtered out`() {
+      val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
+        allocatePrisoner(
+          prisonerNumber = "A1234BC".toPrisonerNumber(),
+          payBand = lowPayBand,
+          bookingId = 1L,
+          startDate = TimeSource.tomorrow(),
+          allocatedBy = "Test",
+        )
+      }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.PENDING }
+
+      candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC"))
+
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+
+      val candidates = service.getActivityCandidates(
+        schedule.activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+    }
+
+    @Test
+    fun `Candidates SUSPENDED other allocations are not filtered out`() {
+      val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
+        allocatePrisoner(
+          prisonerNumber = "A1234BC".toPrisonerNumber(),
+          payBand = lowPayBand,
+          bookingId = 1L,
+          startDate = TimeSource.today(),
+          allocatedBy = "Test",
+        ).autoSuspend(TimeSource.now(), "For test")
+      }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED }
+
+      candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC"))
+
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+
+      val candidates = service.getActivityCandidates(
+        schedule.activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+    }
+
+    @Test
+    fun `Candidates ACTIVE other allocations are not filtered out`() {
+      val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
+        allocatePrisoner(
+          prisonerNumber = "A1234BC".toPrisonerNumber(),
+          payBand = lowPayBand,
+          bookingId = 1L,
+          startDate = TimeSource.today(),
+          allocatedBy = "Test",
+        )
+      }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.ACTIVE }
+
+      candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumber = "A1234BC"))
+
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+
+      val candidates = service.getActivityCandidates(
+        schedule.activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+      )
+
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
   }
 }
