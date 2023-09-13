@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentModel
 
 @Service
 @Transactional
@@ -27,7 +27,7 @@ class AppointmentUpdateDomainService(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToUpdate: Set<Long>,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
@@ -44,7 +44,7 @@ class AppointmentUpdateDomainService(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
     appointmentsToUpdate: Set<Appointment>,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
@@ -58,7 +58,7 @@ class AppointmentUpdateDomainService(
     applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
     applyInternalLocationUpdate(request, appointmentsToUpdate)
     applyStartEndTimeUpdate(request, appointmentsToUpdate)
-    applyCommentUpdate(request, appointmentsToUpdate)
+    applyExtraInformationUpdate(request, appointmentsToUpdate)
     applyRemovePrisonersUpdate(request, appointmentsToUpdate)
 
     if (request.isPropertyUpdate()) {
@@ -94,7 +94,7 @@ class AppointmentUpdateDomainService(
   }
 
   fun getUpdateInstancesCount(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentSeries: AppointmentSeries,
     appointmentsToUpdate: Collection<Appointment>,
   ): Int {
@@ -104,14 +104,14 @@ class AppointmentUpdateDomainService(
     // to the appointment, therefore
     if (request.removePrisonerNumbers?.isNotEmpty() == true && instanceCount == 0) {
       // only count attendees that will be removed i.e. where there's an attendee for the requested prison number
-      instanceCount += appointmentsToUpdate.flatMap { it.attendees().filter { allocation -> request.removePrisonerNumbers.contains(allocation.prisonerNumber) } }.size
+      instanceCount += appointmentsToUpdate.flatMap { it.attendees().filter { attendee -> request.removePrisonerNumbers.contains(attendee.prisonerNumber) } }.size
     }
 
     if (request.addPrisonerNumbers?.isNotEmpty() == true) {
       // only count attendees that will be added i.e. where there isn't already an attendee for the requested prison number
       instanceCount += appointmentsToUpdate.sumOf { appointment ->
         request.addPrisonerNumbers.filter {
-          !appointment.attendees().map { allocation -> allocation.prisonerNumber }.contains(it)
+          !appointment.attendees().map { attendee -> attendee.prisonerNumber }.contains(it)
         }.size
       }
     }
@@ -120,7 +120,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyCategoryCodeUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -131,7 +131,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyInternalLocationUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -148,7 +148,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyStartDateUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentSeries: AppointmentSeries,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
@@ -162,7 +162,7 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyStartEndTimeUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
@@ -176,19 +176,19 @@ class AppointmentUpdateDomainService(
     }
   }
 
-  private fun applyCommentUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+  private fun applyExtraInformationUpdate(
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach {
-      request.comment?.apply {
+      request.extraInformation?.apply {
         it.extraInformation = this
       }
     }
   }
 
   private fun applyRemovePrisonersUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     appointmentsToUpdate.forEach { appointmentToUpdate ->
@@ -203,13 +203,13 @@ class AppointmentUpdateDomainService(
   }
 
   private fun applyAddPrisonersUpdate(
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
     prisonerMap: Map<String, Prisoner>,
   ) {
     appointmentsToUpdate.forEach { appointmentToUpdate ->
       request.addPrisonerNumbers?.apply {
-        val existingPrisonNumbers = appointmentToUpdate.attendees().map { allocation -> allocation.prisonerNumber }
+        val existingPrisonNumbers = appointmentToUpdate.attendees().map { attendee -> attendee.prisonerNumber }
         val newPrisonNumbers = this.filterNot { existingPrisonNumbers.contains(it) }
         newPrisonNumbers.forEach {
           appointmentToUpdate.addAttendee(
@@ -226,7 +226,7 @@ class AppointmentUpdateDomainService(
 
   private fun writeAppointmentUpdatedAuditRecord(
     appointmentId: Long,
-    request: AppointmentOccurrenceUpdateRequest,
+    request: AppointmentUpdateRequest,
     originalAppointmentSeries: AppointmentSeries,
     updatedAppointmentSeries: AppointmentSeries,
   ) {

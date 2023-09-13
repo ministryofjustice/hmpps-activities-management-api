@@ -16,6 +16,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
@@ -31,8 +32,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -57,6 +58,7 @@ class AppointmentServiceAsyncTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
 
@@ -69,6 +71,7 @@ class AppointmentServiceAsyncTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
+    prisonApiClient,
     appointmentUpdateDomainService,
     appointmentCancelDomainService,
     updateAppointmentsJob,
@@ -109,7 +112,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_OCCURRENCE)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_APPOINTMENT)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -151,7 +154,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -193,7 +196,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -251,7 +254,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -293,7 +296,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -352,7 +355,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     val prisoners = addedPrisonerNumberToBookingIdMap.map {
       PrisonerSearchPrisonerFixture.instance(
@@ -404,7 +407,7 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES)
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     val prisoners = addedPrisonerNumberToBookingIdMap.map {
       PrisonerSearchPrisonerFixture.instance(
@@ -471,9 +474,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.THIS_OCCURRENCE,
+      applyTo = ApplyTo.THIS_APPOINTMENT,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
@@ -517,9 +520,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
@@ -563,9 +566,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
@@ -624,9 +627,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.THIS_OCCURRENCE,
+      applyTo = ApplyTo.THIS_APPOINTMENT,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
@@ -670,9 +673,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
@@ -716,9 +719,9 @@ class AppointmentServiceAsyncTest {
       Optional.of(appointment),
     )
 
-    val request = AppointmentOccurrenceCancelRequest(
+    val request = AppointmentCancelRequest(
       cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId,
-      applyTo = ApplyTo.ALL_FUTURE_OCCURRENCES,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)

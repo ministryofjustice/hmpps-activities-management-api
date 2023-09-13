@@ -9,7 +9,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentOccurrenceSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -73,13 +73,13 @@ data class AppointmentSearch(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ) = AppointmentOccurrenceSearchResult(
+  ) = AppointmentSearchResult(
     appointmentSeriesId,
     appointmentId,
     appointmentType,
     prisonCode,
     referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    allocations = attendees.toModel(),
+    attendees = attendees.toResult(),
     referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
     customName,
     if (inCell) {
@@ -99,11 +99,13 @@ data class AppointmentSearch(
     isExpired(),
   )
 
-  fun isExpired() = LocalDateTime.of(startDate, startTime) < LocalDateTime.now()
+  private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
+
+  private fun isExpired() = startDateTime() < LocalDateTime.now()
 }
 
 fun List<AppointmentSearch>.toResults(
-  allocationsMap: Map<Long, List<AppointmentAttendeeSearch>>,
+  attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-) = map { it.toResult(allocationsMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
+) = map { it.toResult(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }

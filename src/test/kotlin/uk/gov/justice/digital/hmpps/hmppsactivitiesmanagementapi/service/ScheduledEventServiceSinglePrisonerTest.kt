@@ -224,15 +224,15 @@ class ScheduledEventServiceSinglePrisonerTest {
 
   private fun appointmentFromDbInstance(
     appointmentInstanceId: Long = 1L,
+    appointmentSeriesId: Long = 1L,
     appointmentId: Long = 1L,
-    appointmentOccurrenceId: Long = 1L,
-    appointmentOccurrenceAllocationId: Long = 1L,
+    appointmentAttendeeId: Long = 1L,
     appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
     prisonerNumber: String,
     bookingId: Long,
     categoryCode: String = "TEST",
-    appointmentDescription: String? = null,
+    customName: String? = null,
     internalLocationId: Long? = 101,
     inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
@@ -245,15 +245,15 @@ class ScheduledEventServiceSinglePrisonerTest {
     updatedBy: String? = null,
   ) = AppointmentInstance(
     appointmentInstanceId,
+    appointmentSeriesId,
     appointmentId,
-    appointmentOccurrenceId,
-    appointmentOccurrenceAllocationId,
+    appointmentAttendeeId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     bookingId = bookingId,
     appointmentDate = appointmentDate,
     categoryCode = categoryCode,
-    customName = appointmentDescription,
+    customName = customName,
     internalLocationId = internalLocationId,
     customLocation = null,
     inCell = inCell,
@@ -330,9 +330,9 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
           assertThat(it.bookingId).isEqualTo(bookingId)
           assertThat(it.eventId).isEqualTo(1)
+          assertThat(it.appointmentSeriesId).isNull()
           assertThat(it.appointmentId).isNull()
-          assertThat(it.appointmentInstanceId).isNull()
-          assertThat(it.appointmentOccurrenceId).isNull()
+          assertThat(it.appointmentAttendeeId).isNull()
           assertThat(it.cancelled).isFalse
           assertThat(it.categoryCode).isEqualTo("GOVE")
           assertThat(it.categoryDescription).isEqualTo("Governor")
@@ -750,7 +750,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       val appointmentEntity = appointmentFromDbInstance(
         prisonerNumber = prisonerNumber,
         bookingId = bookingId,
-        appointmentDescription = "Meeting with the governor",
+        customName = "Meeting with the governor",
       )
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
@@ -786,10 +786,9 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.bookingId).isEqualTo(bookingId)
           assertThat(it.eventId).isNull()
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
-          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
-          assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentDescription).isEqualTo(appointmentEntity.customName)
+          assertThat(it.appointmentSeriesId).isEqualTo(appointmentEntity.appointmentSeriesId)
+          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
+          assertThat(it.appointmentAttendeeId).isEqualTo(appointmentEntity.appointmentAttendeeId)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
@@ -890,10 +889,9 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.bookingId).isEqualTo(bookingId)
           assertThat(it.eventId).isNull()
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
-          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
-          assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentDescription).isNull()
+          assertThat(it.appointmentSeriesId).isEqualTo(appointmentEntity.appointmentSeriesId)
+          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
+          assertThat(it.appointmentAttendeeId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.summary).isEqualTo("Test Category")
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")

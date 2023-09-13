@@ -9,8 +9,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceAllocation as AppointmentOccurrenceAllocationModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee as AppointmentAttendeeModel
 
 @Entity
 @Table(name = "appointment_attendee")
@@ -42,19 +45,28 @@ data class AppointmentAttendee(
 
   var removedBy: String? = null,
 ) {
-  fun toModel() = AppointmentOccurrenceAllocationModel(
+  fun usernames() = listOfNotNull(addedBy, attendanceRecordedBy, removedBy).distinct()
+
+  fun toModel() = AppointmentAttendeeModel(
     id = appointmentAttendeeId,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
+    addedTime = addedTime,
+    addedBy = addedBy,
+    attended = attended,
+    attendanceRecordedTime = attendanceRecordedTime,
+    attendanceRecordedBy = attendanceRecordedBy,
+    removedTime = removedTime,
+    removedBy = removedBy,
   )
 
-  fun isIndividualAppointment() = appointment.appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL
-
-  fun isGroupAppointment() = appointment.appointmentSeries.appointmentType == AppointmentType.GROUP
-
-  fun removeAppointment(appointment: Appointment) = this.appointment.appointmentSeries.removeAppointment(appointment)
-
-  fun removeFromAppointment() = appointment.removeAttendee(this)
+  fun toSummary(prisonerMap: Map<String, Prisoner>) = AppointmentAttendeeSummary(
+    id = appointmentAttendeeId,
+    prisoner = prisonerMap[prisonerNumber].toSummary(prisonerNumber, bookingId),
+    attended = attended,
+  )
 }
 
 fun List<AppointmentAttendee>.toModel() = map { it.toModel() }
+
+fun List<AppointmentAttendee>.toSummary(prisonerMap: Map<String, Prisoner>) = map { it.toSummary(prisonerMap) }

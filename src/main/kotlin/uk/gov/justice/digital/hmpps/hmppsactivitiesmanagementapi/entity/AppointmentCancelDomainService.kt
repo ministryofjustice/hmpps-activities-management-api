@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentOccurrenceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -16,7 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
 @Transactional
@@ -30,13 +30,13 @@ class AppointmentCancelDomainService(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToCancel: Set<Long>,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
     cancelAppointmentsCount: Int,
     cancelInstancesCount: Int,
     startTimeInMs: Long,
-  ): AppointmentModel {
+  ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToCancel.contains(it.appointmentId) }
     return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelled, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
@@ -46,7 +46,7 @@ class AppointmentCancelDomainService(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
     appointmentsToCancel: Set<Appointment>,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     cancelled: LocalDateTime,
     cancelledBy: String,
     cancelAppointmentsCount: Int,
@@ -54,7 +54,7 @@ class AppointmentCancelDomainService(
     startTimeInMs: Long,
     trackEvent: Boolean,
     auditEvent: Boolean,
-  ): AppointmentModel {
+  ): AppointmentSeriesModel {
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
     appointmentsToCancel.forEach {
@@ -90,7 +90,7 @@ class AppointmentCancelDomainService(
 
   private fun writeAuditEvent(
     appointmentId: Long,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
     isDelete: Boolean,
   ) {
@@ -102,7 +102,7 @@ class AppointmentCancelDomainService(
   }
   private fun writeAppointmentCancelledAuditEvent(
     appointmentId: Long,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
   ) {
     auditService.logEvent(
@@ -118,7 +118,7 @@ class AppointmentCancelDomainService(
 
   private fun writeAppointmentDeletedAuditEvent(
     appointmentId: Long,
-    request: AppointmentOccurrenceCancelRequest,
+    request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
   ) {
     auditService.logEvent(

@@ -17,13 +17,13 @@ fun PrisonerSearchApiPrisoner.toSummary() =
     cellLocation ?: "UNKNOWN",
   )
 
-fun PrisonerSearchApiPrisoner?.toSummary(prisonCode: String, prisonNumber: String, bookingId: Long) =
+fun PrisonerSearchApiPrisoner?.toSummary(prisonNumber: String, bookingId: Long) =
   this?.toSummary() ?: ModelPrisonerSummary(
     prisonNumber,
     bookingId,
     "UNKNOWN",
     "UNKNOWN",
-    prisonCode,
+    "UNKNOWN",
     "UNKNOWN",
   )
 

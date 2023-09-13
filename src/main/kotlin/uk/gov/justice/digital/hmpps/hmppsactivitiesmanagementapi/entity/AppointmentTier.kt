@@ -5,7 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentTier as ModelAppointmentTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentTier as AppointmentTierModel
 
 @Entity
 @Table(name = "appointment_tier")
@@ -16,7 +16,7 @@ data class AppointmentTier(
 
   val description: String,
 ) {
-  fun toModel() = ModelAppointmentTier(
+  fun toModel() = AppointmentTierModel(
     id = appointmentTierId,
     description = description,
   )

@@ -7,18 +7,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as BulkAppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 class AppointmentSetTest {
   @Test
   fun `entity to model mapping`() {
     val entity = appointmentSetEntity()
-    val expectedModel = BulkAppointmentModel(
+    val expectedModel = AppointmentSetModel(
       entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,
@@ -26,7 +26,7 @@ class AppointmentSetTest {
       entity.internalLocationId,
       entity.inCell,
       entity.startDate,
-      entity.appointmentSeries().toModel(),
+      entity.appointments().toModel(),
       entity.createdTime,
       entity.createdBy,
     )
@@ -36,11 +36,11 @@ class AppointmentSetTest {
   @Test
   fun `entity to summary mapping`() {
     val entity = appointmentSetEntity()
-    assertThat(entity.toSummary()).isEqualTo(BulkAppointmentSummary(1, 3))
+    assertThat(entity.toSummary()).isEqualTo(AppointmentSetSummary(1, 3, 3))
   }
 
   @Test
-  fun `prisoner numbers concatenates all appointment occurrence allocations`() {
+  fun `prisoner numbers concatenates all appointment attendees`() {
     val entity = appointmentSetEntity()
     assertThat(entity.prisonerNumbers()).containsExactly("A1234BC", "B2345CD", "C3456DE")
   }
@@ -52,19 +52,21 @@ class AppointmentSetTest {
   }
 
   @Test
-  fun `usernames includes created by, appointment updated by and occurrence updated by`() {
+  fun `usernames includes created by, updated by and appointment updated by`() {
     val entity = appointmentSetEntity().apply {
+      updatedBy = "UPDATE.USER"
       appointmentSeries().first().apply {
-        updatedBy = "APPOINTMENT.UPDATE.USER"
-        appointments().first().updatedBy = "OCCURRENCE.UPDATE.USER"
+        updatedBy = "APPOINTMENT_SERIES.UPDATE.USER"
+        appointments().first().updatedBy = "APPOINTMENT.UPDATE.USER"
       }
     }
-    assertThat(entity.usernames()).containsExactly("CREATE.USER", "APPOINTMENT.UPDATE.USER", "OCCURRENCE.UPDATE.USER")
+    assertThat(entity.usernames()).containsExactly("CREATE.USER", "UPDATE.USER", "APPOINTMENT.UPDATE.USER")
   }
 
   @Test
   fun `usernames removes duplicates`() {
     val entity = appointmentSetEntity().apply {
+      updatedBy = "CREATE.USER"
       appointmentSeries().first().apply {
         updatedBy = "CREATE.USER"
         appointments().first().updatedBy = "CREATE.USER"
@@ -85,13 +87,13 @@ class AppointmentSetTest {
     val prisonerMap = getPrisonerMap()
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      bulkAppointmentDetails(created = entity.createdTime),
+      appointmentSetDetails(createdTime = entity.createdTime),
     )
   }
 
   @Test
   fun `entity to details mapping includes appointment description in name`() {
-    val entity = appointmentSetEntity(appointmentDescription = "appointment name")
+    val entity = appointmentSetEntity(customName = "appointment name")
     val referenceCodeMap = mapOf(
       entity.categoryCode to appointmentCategoryReferenceCode(
         entity.categoryCode,

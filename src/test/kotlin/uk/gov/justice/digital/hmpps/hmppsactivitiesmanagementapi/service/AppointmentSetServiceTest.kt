@@ -12,8 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.bulkAppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
@@ -44,6 +44,27 @@ class AppointmentSetServiceTest {
   @AfterEach
   fun tearDown() {
     clearCaseloadIdFromRequestHeader()
+  }
+
+  @Test
+  fun `getAppointmentSetById returns mapped appointment details for known appointment set id`() {
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThat(service.getAppointmentSetById(1)).isEqualTo(entity.toModel())
+  }
+
+  @Test
+  fun `getAppointmentSetById throws entity not found exception for unknown appointment set id`() {
+    assertThatThrownBy { service.getAppointmentSetById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Appointment Set -1 not found")
+  }
+
+  @Test
+  fun `getAppointmentSetById throws caseload access exception when caseload id header is different`() {
+    addCaseloadIdToRequestHeader("WRONG")
+    val entity = appointmentSetEntity()
+    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+    assertThatThrownBy { service.getAppointmentSetById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test
@@ -89,8 +110,8 @@ class AppointmentSetServiceTest {
       ),
     )
     assertThat(service.getAppointmentSetDetailsById(1)).isEqualTo(
-      bulkAppointmentDetails(
-        created = entity.createdTime,
+      appointmentSetDetails(
+        createdTime = entity.createdTime,
       ),
     )
   }

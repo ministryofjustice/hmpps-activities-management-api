@@ -15,15 +15,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointment as AppointmentSetModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Entity
 @Table(name = "appointment_set")
@@ -76,30 +76,31 @@ data class AppointmentSet(
 
   fun appointmentSeries() = appointmentSeries.toList()
 
+  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
+
   fun addAppointmentSeries(appointmentSeries: AppointmentSeries) = this.appointmentSeries.add(appointmentSeries)
 
-  fun prisonerNumbers() = appointmentSeries().map { appointment -> appointment.prisonerNumbers() }.flatten().distinct()
+  fun prisonerNumbers() = appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments().flatMap { it.prisonerNumbers() } }.distinct()
 
-  fun usernames() = listOf(createdBy).union(appointmentSeries().map { appointment -> appointment.usernames() }.flatten()).distinct()
-
-  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
+  fun usernames() = listOfNotNull(createdBy, updatedBy).union(appointments().flatMap { appointment -> appointment.usernames() }).distinct()
 
   fun toModel() = AppointmentSetModel(
     id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = customName,
+    customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
-    appointments = this.appointmentSeries().toModel(),
-    created = createdTime,
+    appointments = this.appointmentSeries().flatMap { it.appointments() }.toModel(),
+    createdTime = createdTime,
     createdBy = createdBy,
   )
 
-  fun toSummary() = BulkAppointmentSummary(
+  fun toSummary() = AppointmentSetSummary(
     id = this.appointmentSetId,
-    appointmentCount = this.appointmentSeries().size,
+    appointmentCount = this.appointmentSeries().flatMap { it.appointments() }.size,
+    scheduledAppointmentCount = this.appointmentSeries().flatMap { it.scheduledAppointments() }.size,
   )
 
   fun toDetails(
@@ -107,8 +108,8 @@ data class AppointmentSet(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ): BulkAppointmentDetails {
-    return BulkAppointmentDetails(
+  ): AppointmentSetDetails {
+    return AppointmentSetDetails(
       appointmentSetId,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
@@ -124,6 +125,12 @@ data class AppointmentSet(
       appointmentSeries().map { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
       createdTime,
       userMap[createdBy].toSummary(createdBy),
+      updatedTime,
+      if (updatedBy == null) {
+        null
+      } else {
+        userMap[updatedBy].toSummary(updatedBy!!)
+      },
     )
   }
 }

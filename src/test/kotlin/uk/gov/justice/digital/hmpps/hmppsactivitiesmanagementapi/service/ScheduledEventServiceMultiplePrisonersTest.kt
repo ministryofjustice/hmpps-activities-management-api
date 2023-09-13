@@ -214,15 +214,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   private fun appointmentFromDbInstance(
     appointmentInstanceId: Long = 1L,
+    appointmentSeriesId: Long = 1L,
     appointmentId: Long = 1L,
-    appointmentOccurrenceId: Long = 1L,
-    appointmentOccurrenceAllocationId: Long = 1L,
+    appointmentAttendeeId: Long = 1L,
     appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
     prisonCode: String = "MDI",
     prisonerNumber: String,
     bookingId: Long,
     categoryCode: String = "TEST",
-    appointmentDescription: String? = null,
+    customName: String? = null,
     internalLocationId: Long? = 101,
     inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
@@ -235,15 +235,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
     updatedBy: String? = null,
   ) = AppointmentInstance(
     appointmentInstanceId,
+    appointmentSeriesId,
     appointmentId,
-    appointmentOccurrenceId,
-    appointmentOccurrenceAllocationId,
+    appointmentAttendeeId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     categoryCode = categoryCode,
-    customName = appointmentDescription,
+    customName = customName,
     internalLocationId = internalLocationId,
     customLocation = null,
     inCell = inCell,
@@ -581,9 +581,9 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
           assertThat(it.eventId).isNull()
-          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentSeriesId)
-          assertThat(it.appointmentInstanceId).isEqualTo(appointmentEntity.appointmentInstanceId)
-          assertThat(it.appointmentOccurrenceId).isEqualTo(appointmentEntity.appointmentId)
+          assertThat(it.appointmentSeriesId).isEqualTo(appointmentEntity.appointmentSeriesId)
+          assertThat(it.appointmentId).isEqualTo(appointmentEntity.appointmentId)
+          assertThat(it.appointmentAttendeeId).isEqualTo(appointmentEntity.appointmentInstanceId)
           assertThat(it.categoryCode).isEqualTo(appointmentEntity.categoryCode)
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.internalLocationId).isEqualTo(101L)

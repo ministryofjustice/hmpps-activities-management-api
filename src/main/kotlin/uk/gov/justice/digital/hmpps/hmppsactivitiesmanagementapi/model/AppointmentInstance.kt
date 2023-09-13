@@ -11,12 +11,12 @@ import java.time.LocalTime
   description =
   """
   Represents an appointment instance for a specific prisoner to attend at the specified location, date and time.
-  The fully denormalised representation of the appointments, appointment occurrences and allocations equivalent to a
-  row in the NOMIS OFFENDER_IND_SCHEDULES table.
-  Appointment instances do not exist as database records and are the product of the join between appointment occurrence
-  allocations, appointment occurrences and appointments. 
-  The appointment occurrence allocation id is used for the appointment instance id as there is a one to one relationship
-  between appointment occurrence allocations and appointment instances.
+  The fully denormalised representation of the appointment series, appointments and attendees equivalent to a row in
+  the NOMIS OFFENDER_IND_SCHEDULES table.
+  Appointment instances do not exist as database records and are the product of the join between appointment attendees,
+  appointments and appointment series. 
+  The appointment attendee id is used for the appointment instance id as there is a one to one relationship between an
+  appointment attendee and appointment instances.
   Appointment instances are used primarily for the one way sync to NOMIS.
   """,
 )
@@ -24,36 +24,34 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    The internally generated identifier for this appointment instance. N.B. this is the appointment occurrence
-    allocation id due to there being a one to one relationship between appointment occurrence allocations and
-    appointment instances.
+    The internally generated identifier for this appointment instance. N.B. this is the appointment attendee id due to
+    there being a one to one relationship between an appointment attendee and appointment instances.
     """,
     example = "123456",
   )
   val id: Long,
 
   @Schema(
-    description = "The internally generated identifier for the appointment",
+    description = "The internally generated identifier for the appointment series",
     example = "1234",
+  )
+  val appointmentSeriesId: Long,
+
+  @Schema(
+    description = "The internally generated identifier for the appointment",
+    example = "12345",
   )
   val appointmentId: Long,
 
   @Schema(
-    description = "The internally generated identifier for the appointment occurrence",
-    example = "12345",
-  )
-  val appointmentOccurrenceId: Long,
-
-  @Schema(
     description =
     """
-    The internally generated identifier for the appointment occurrence allocation. N.B. this is used as the appointment
-    instance id due to there being a one to one relationship between appointment occurrence allocations and appointment
-    instances.
+    The internally generated identifier for the appointment attendee. N.B. this is used as the appointment instance id
+    due to there being a one to one relationship between an appointment attendee and appointment instances.
     """,
     example = "123456",
   )
-  val appointmentOccurrenceAllocationId: Long,
+  val appointmentAttendeeId: Long,
 
   @Schema(
     description = "The appointment type (INDIVIDUAL or GROUP)",
@@ -88,11 +86,12 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    Free text description for an appointment. This is used to add more context to the appointment category.
+    Free text name further describing the appointment instance. Used as part of the appointment name with the
+    format "Appointment description (Category description) if specified.
     """,
     example = "Meeting with the governor",
   )
-  val appointmentDescription: String?,
+  val customName: String?,
 
   @Schema(
     description =
@@ -107,7 +106,7 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    Flag to indicate if the location of the appointment is in cell rather than an internal prison location.
+    Flag to indicate if the location of the appointment instance is in cell rather than an internal prison location.
     Internal location id should be null if in cell = true
     """,
     example = "false",
@@ -137,19 +136,19 @@ data class AppointmentInstance(
   @Schema(
     description =
     """
-    Notes relating to the appointment instance.
-    Could support adding a note specific to an individual prisoner's attendance of a specific group appointment
-    occurrence. Something that is supported within existing systems
+    Extra information for the prisoner attending this appointment instance.
+    Shown only on the appointments details page and on printed movement slips. Wing staff will be notified there is
+    extra information via the unlock list.
     """,
-    example = "This appointment will help prisoner A1234BC adjust to life outside of prison",
+    example = "This appointment will help adjusting to life outside of prison",
   )
-  val comment: String?,
+  val extraInformation: String?,
 
   @Schema(
     description = "The date and time this appointment instance was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val created: LocalDateTime,
+  val createdTime: LocalDateTime,
 
   @Schema(
     description =
@@ -165,17 +164,17 @@ data class AppointmentInstance(
     description =
     """
     The date and time this appointment instance was last changed.
-    Will be null if the appointment instance has not been altered since it was created
+    Will be null if this appointment instance has not been altered since it was created
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-  val updated: LocalDateTime?,
+  val updatedTime: LocalDateTime?,
 
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that edited the appointment instance.
-    Will be null if the appointment instance has not been altered since it was created
+    The username of the user authenticated via HMPPS auth that edited this appointment instance.
+    Will be null if this appointment instance has not been altered since it was created
     """,
     example = "AAA01U",
   )

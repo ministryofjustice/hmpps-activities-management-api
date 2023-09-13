@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import java.security.Principal
@@ -29,21 +29,21 @@ class MigrateAppointmentController(
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping()
   @Operation(
-    summary = "Create an appointment or series of appointment occurrences",
+    summary = "Migrate an appointment from NOMIS",
     description =
     """
-    Create an appointment or series of appointment occurrences and allocate the supplied prisoner or prisoners to them.
+    Migrate an appointment creating an appointment series with one appointment that has the supplied prisoner allocated.
     """,
   )
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "201",
-        description = "The appointment or series of appointment occurrences was created.",
+        description = "The appointment was migrated.",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
+            schema = Schema(implementation = AppointmentInstance::class),
           ),
         ],
       ),
@@ -79,5 +79,5 @@ class MigrateAppointmentController(
       required = true,
     )
     request: AppointmentMigrateRequest,
-  ): Appointment = appointmentSeriesService.migrateAppointment(request, principal)
+  ): AppointmentInstance = appointmentSeriesService.migrateAppointment(request, principal)
 }

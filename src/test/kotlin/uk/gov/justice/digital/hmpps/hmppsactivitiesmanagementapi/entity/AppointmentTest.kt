@@ -8,20 +8,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentOccurrenceModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentOccurrenceSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentRepeat
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BulkAppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -122,15 +119,17 @@ class AppointmentTest {
 
   @Test
   fun `entity to model mapping`() {
-    val entity = appointmentSeriesEntity().appointments().first()
-    val expectedModel = appointmentOccurrenceModel(entity.updatedTime)
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.appointments().first()
+    val expectedModel = appointmentModel(appointmentSeries.createdTime, entity.updatedTime)
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
 
   @Test
   fun `entity list to model list mapping`() {
-    val entityList = appointmentSeriesEntity().appointments()
-    val expectedModel = listOf(appointmentOccurrenceModel(entityList.first().updatedTime))
+    val appointmentSeries = appointmentSeriesEntity()
+    val entityList = appointmentSeries.appointments()
+    val expectedModel = listOf(appointmentModel(appointmentSeries.createdTime, entityList.first().updatedTime))
     assertThat(entityList.toModel()).isEqualTo(expectedModel)
   }
 
@@ -150,7 +149,7 @@ class AppointmentTest {
     val appointment = entity.appointments().first()
     entity.appointments().map { it.attendees() }.flatten().forEach { appointment.addAttendee(it) }
     assertThat(appointment.attendees().map { it.prisonerNumber }).isEqualTo(listOf("A1234BC", "A1234BC"))
-    assertThat(entity.prisonerNumbers()).containsExactly("A1234BC")
+    assertThat(appointment.prisonerNumbers()).containsExactly("A1234BC")
   }
 
   @Test
@@ -159,23 +158,15 @@ class AppointmentTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(entity.toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
-      AppointmentOccurrenceSummary(
+    assertThat(entity.toSummary()).isEqualTo(
+      AppointmentSummary(
         entity.appointmentId,
         1,
-        "Appointment description (Test Category)",
-        appointmentCategorySummary(),
-        "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-        false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
         LocalTime.of(10, 30),
-        "Appointment level comment",
         isEdited = true,
         isCancelled = false,
-        updated = entity.updatedTime,
-        updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
       ),
     )
   }
@@ -186,52 +177,19 @@ class AppointmentTest {
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    assertThat(listOf(entity).toSummary(referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(listOf(entity).toSummary()).isEqualTo(
       listOf(
-        AppointmentOccurrenceSummary(
+        AppointmentSummary(
           entity.appointmentId,
           1,
-          "Appointment description (Test Category)",
-          appointmentCategorySummary(),
-          "Appointment description",
-          AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
-          entity.inCell,
           entity.startDate,
           entity.startTime,
           entity.endTime,
-          "Appointment level comment",
           isEdited = true,
           isCancelled = false,
-          entity.updatedTime,
-          updatedBy = UserSummary(1, "UPDATE.USER", "UPDATE", "USER"),
         ),
       ),
     )
-  }
-
-  @Test
-  fun `entity to summary mapping in cell nullifies internal location`() {
-    val entity = appointmentSeriesEntity(inCell = true).appointments().first()
-    entity.internalLocationId = 123
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary(referenceCodeMap, locationMap, userMap)) {
-      assertThat(internalLocation).isNull()
-      assertThat(inCell).isTrue
-    }
-  }
-
-  @Test
-  fun `entity to summary mapping updated by null`() {
-    val entity = appointmentSeriesEntity(updatedBy = null).appointments().first()
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf("UPDATE.USER" to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
-    with(entity.toSummary(referenceCodeMap, locationMap, userMap)) {
-      assertThat(updatedBy).isNull()
-      assertThat(isEdited).isFalse
-    }
   }
 
   @Test
@@ -255,13 +213,13 @@ class AppointmentTest {
       ),
     )
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
-      appointmentOccurrenceDetails(
+      appointmentDetails(
         entity.appointmentId,
         appointmentSeries.appointmentSeriesId,
         sequenceNumber = 1,
-        appointmentDescription = appointmentSeries.customName,
-        created = appointmentSeries.createdTime,
-        updated = entity.updatedTime,
+        customName = appointmentSeries.customName,
+        createdTime = appointmentSeries.createdTime,
+        updatedTime = entity.updatedTime,
       ),
     )
   }
@@ -288,13 +246,13 @@ class AppointmentTest {
     )
     assertThat(listOf(entity).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
       listOf(
-        appointmentOccurrenceDetails(
+        appointmentDetails(
           entity.appointmentId,
           appointmentSeries.appointmentSeriesId,
           sequenceNumber = 1,
-          appointmentDescription = appointmentSeries.customName,
-          created = appointmentSeries.createdTime,
-          updated = entity.updatedTime,
+          customName = appointmentSeries.customName,
+          createdTime = appointmentSeries.createdTime,
+          updatedTime = entity.updatedTime,
         ),
       ),
     )
@@ -319,7 +277,7 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).bulkAppointment).isEqualTo(BulkAppointmentSummary(1, 3))
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointmentSet).isEqualTo(AppointmentSetSummary(1, 3, 3))
   }
 
   @Test
@@ -333,14 +291,14 @@ class AppointmentTest {
       entity.updatedBy!! to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
     )
     val prisonerMap = emptyMap<String, Prisoner>()
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).prisoners) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).attendees) {
       assertThat(size).isEqualTo(1)
-      with(first()) {
+      with(first().prisoner) {
         assertThat(prisonerNumber).isEqualTo("A1234BC")
         assertThat(bookingId).isEqualTo(456)
         assertThat(firstName).isEqualTo("UNKNOWN")
         assertThat(lastName).isEqualTo("UNKNOWN")
-        assertThat(prisonCode).isEqualTo("TPR")
+        assertThat(prisonCode).isEqualTo("UNKNOWN")
         assertThat(cellLocation).isEqualTo("UNKNOWN")
       }
     }
@@ -374,9 +332,9 @@ class AppointmentTest {
         cellLocation = "4-5-6",
       ),
     )
-    with(entity.toDetails(prisonersMap, referenceCodeMap, locationMap, userMap).prisoners) {
+    with(entity.toDetails(prisonersMap, referenceCodeMap, locationMap, userMap).attendees) {
       assertThat(size).isEqualTo(1)
-      with(first()) {
+      with(first().prisoner) {
         assertThat(prisonerNumber).isEqualTo("A1234BC")
         assertThat(bookingId).isEqualTo(456)
         assertThat(firstName).isEqualTo("TEST01")
@@ -556,7 +514,7 @@ class AppointmentTest {
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isTrue
-      assertThat(cancelled).isEqualTo(entity.cancelledTime)
+      assertThat(cancelledTime).isEqualTo(entity.cancelledTime)
       assertThat(cancelledBy).isNotNull
       assertThat(cancelledBy!!.id).isEqualTo(3)
       assertThat(cancelledBy!!.username).isEqualTo("CANCEL.USER")
@@ -589,7 +547,7 @@ class AppointmentTest {
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(isCancelled).isFalse
-      assertThat(cancelled).isNull()
+      assertThat(cancelledTime).isNull()
       assertThat(cancelledBy).isNull()
     }
   }
@@ -615,7 +573,7 @@ class AppointmentTest {
       ),
     )
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      assertThat(repeat).isEqualTo(AppointmentRepeat(AppointmentFrequency.WEEKLY, 4))
+      assertThat(this.appointmentSeries!!.schedule).isEqualTo(AppointmentSeriesSchedule(AppointmentFrequency.WEEKLY, 4))
     }
   }
 

@@ -2,13 +2,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AppointmentTest : ModelTest() {
-
   @Test
   fun `dates and times are serialized correctly`() {
     val originalStartDate = LocalDate.parse("01 Feb 2023", dateFormatter)
@@ -25,21 +23,23 @@ class AppointmentTest : ModelTest() {
 
     val appointment = Appointment(
       id = 1,
-      appointmentType = AppointmentType.INDIVIDUAL,
+      sequenceNumber = 1,
       prisonCode = "PVI",
-      categoryCode = "C11",
-      appointmentDescription = "Appointment description",
+      categoryCode = "AC1",
+      customName = null,
       internalLocationId = null,
-      inCell = true,
+      extraInformation = "Blah",
       startDate = originalStartDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
-      repeat = null,
-      comment = "Blah",
-      created = originalCreatedTime,
+      inCell = true,
+      createdTime = originalCreatedTime,
       createdBy = "A. Jones",
-      updated = originalUpdatedTime,
+      updatedTime = originalUpdatedTime,
       updatedBy = "A.Jones",
+      cancelledTime = null,
+      cancellationReasonId = null,
+      cancelledBy = null,
     )
 
     val json = objectMapper.writeValueAsString(appointment)
@@ -48,7 +48,7 @@ class AppointmentTest : ModelTest() {
     assertThat(jsonMap["startDate"]).isEqualTo(expectedStartDate)
     assertThat(jsonMap["startTime"]).isEqualTo(expectedStartTime)
     assertThat(jsonMap["endTime"]).isEqualTo(expectedEndTime)
-    assertThat(jsonMap["created"]).isEqualTo(expectedCreatedTime)
-    assertThat(jsonMap["updated"]).isEqualTo(expectedUpdatedTime)
+    assertThat(jsonMap["createdTime"]).isEqualTo(expectedCreatedTime)
+    assertThat(jsonMap["updatedTime"]).isEqualTo(expectedUpdatedTime)
   }
 }

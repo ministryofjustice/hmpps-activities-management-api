@@ -19,7 +19,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
@@ -28,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Entity
 @Table(name = "appointment_series")
@@ -96,6 +97,8 @@ data class AppointmentSeries(
 
   val isMigrated: Boolean = false,
 ) {
+  fun isIndividualAppointment() = appointmentType == AppointmentType.INDIVIDUAL
+
   fun scheduleIterator() =
     schedule?.let { AppointmentSeriesScheduleIterator(startDate, schedule!!.frequency, schedule!!.numberOfAppointments) }
       ?: AppointmentSeriesScheduleIterator(startDate, AppointmentFrequency.DAILY, 1)
@@ -124,10 +127,10 @@ data class AppointmentSeries(
     }
 
     return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_OCCURRENCES -> listOf(appointment).union(
+      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> listOf(appointment).union(
         scheduledAppointmentsAfter(appointment.startDateTime()),
       ).toList()
-      ApplyTo.ALL_FUTURE_OCCURRENCES -> scheduledAppointments()
+      ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
       else -> listOf(appointment)
     }
   }
@@ -143,50 +146,45 @@ data class AppointmentSeries(
 
   fun removeAppointment(appointment: Appointment) = appointments.remove(appointment)
 
-  fun internalLocationIds() =
-    listOf(internalLocationId).union(appointments().map { appointment -> appointment.internalLocationId }).filterNotNull()
+  fun usernames() = listOfNotNull(createdBy, updatedBy).distinct()
 
-  fun prisonerNumbers(): List<String> {
-    val orderedAppointments = appointments().sortedBy { it.startDateTime() }
-    if (orderedAppointments.isEmpty()) return emptyList()
-    return (orderedAppointments.firstOrNull { !it.isExpired() } ?: orderedAppointments.last()).prisonerNumbers()
-  }
-
-  fun usernames() =
-    listOf(createdBy, updatedBy).union(appointments().flatMap { appointment -> appointment.usernames() }).filterNotNull()
-
-  fun toModel() = AppointmentModel(
+  fun toModel() = AppointmentSeriesModel(
     id = appointmentSeriesId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
-    appointmentDescription = customName,
+    customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
-    repeat = schedule?.toRepeat(),
-    comment = extraInformation,
-    created = createdTime,
+    schedule = schedule?.toModel(),
+    extraInformation = extraInformation,
+    createdTime = createdTime,
     createdBy = createdBy,
-    updated = updatedTime,
+    updatedTime = updatedTime,
     updatedBy = updatedBy,
-    occurrences = appointments().toModel(),
+    appointments = appointments().toModel(),
+  )
+
+  fun toSummary() = AppointmentSeriesSummary(
+    id = appointmentSeriesId,
+    schedule = schedule?.toModel(),
+    appointmentCount = appointments().size,
+    scheduledAppointmentCount = scheduledAppointments().size,
   )
 
   fun toDetails(
-    prisoners: List<Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
   ) =
-    AppointmentDetails(
+    AppointmentSeriesDetails(
       appointmentSeriesId,
       appointmentType,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      prisoners.toSummary(),
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       customName,
       if (inCell) {
@@ -198,7 +196,7 @@ data class AppointmentSeries(
       startDate,
       startTime,
       endTime,
-      schedule?.toRepeat(),
+      schedule?.toModel(),
       extraInformation,
       createdTime,
       userMap[createdBy].toSummary(createdBy),
@@ -208,7 +206,7 @@ data class AppointmentSeries(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      appointments().toSummary(referenceCodeMap, locationMap, userMap),
+      appointments().toSummary(),
     )
 }
 
