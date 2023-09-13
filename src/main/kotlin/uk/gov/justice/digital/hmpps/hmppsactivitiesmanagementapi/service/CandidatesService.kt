@@ -6,11 +6,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
@@ -56,7 +59,7 @@ class CandidatesService(
     ).map { allocation ->
       AllocationPayRate(
         allocation = allocation.toModel(),
-        payRate = candidateDetails.currentIncentive?.level?.code ?.let {
+        payRate = candidateDetails.currentIncentive?.level?.code?.let {
           allocation.allocationPay(it)
         }?.toModelLite(),
       )
@@ -90,7 +93,7 @@ class CandidatesService(
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
-        .filter { (it.status == "ACTIVE IN" || it.status == "ACTIVE OUT") && it.legalStatus !== Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
+        .filter { (it.isActiveIn() || it.isActiveOut()) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
@@ -100,7 +103,9 @@ class CandidatesService(
     val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
       prisonCode,
       prisoners.map { it.prisonerNumber },
-    ).toModelPrisonerAllocations()
+    )
+      .filterNot { it.status(PrisonerStatus.ENDED) }
+      .toModelPrisonerAllocations()
 
     prisoners =
       prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
@@ -232,7 +237,7 @@ class CandidatesService(
   ): NonAssociationSuitability {
     val allocationNonAssociations = nonAssociations
       ?.filter {
-        it.effectiveDate.isNullOrEmpty() || LocalDateTime.parse(it.effectiveDate).isBefore(LocalDateTime.now())
+        it.effectiveDate.isEmpty() || LocalDateTime.parse(it.effectiveDate).isBefore(LocalDateTime.now())
       }
       ?.filter {
         it.expiryDate.isNullOrEmpty() || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
@@ -241,7 +246,7 @@ class CandidatesService(
       ?: emptyList()
 
     return NonAssociationSuitability(
-      allocationNonAssociations.isNullOrEmpty(),
+      allocationNonAssociations.isEmpty(),
       allocationNonAssociations.map {
         transformOffenderNonAssociationDetail(it)
       },

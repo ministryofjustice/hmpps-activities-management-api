@@ -15,7 +15,7 @@ data class ActivityCandidate(
   @Schema(description = "The candidate's cell location", example = "MDI-1-1-101")
   val cellLocation: String?,
 
-  @Schema(description = "Any activities the candidate is currently allocated to")
+  @Schema(description = "Any activities the candidate is currently allocated to (excluding ended)")
   val otherAllocations: List<Allocation>,
 
   @Schema(description = "The candidate's earliest release date", example = "2027-01-24")
