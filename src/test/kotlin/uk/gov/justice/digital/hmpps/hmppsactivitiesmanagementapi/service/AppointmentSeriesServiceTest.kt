@@ -551,6 +551,7 @@ class AppointmentSeriesServiceTest {
 
       with(telemetryMetricsMap) {
         assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
         assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(32.0)
@@ -856,6 +857,7 @@ class AppointmentSeriesServiceTest {
     }
 
     with(telemetryMetricsMap) {
+      assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)

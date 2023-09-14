@@ -34,6 +34,7 @@ const val START_TIME_CHANGED_PROPERTY_KEY = "startTimeChanged"
 const val START_TIME_PROPERTY_KEY = "startTime"
 const val TIME_SLOT_PROPERTY_KEY = "timeSlot"
 const val USER_PROPERTY_KEY = "user"
+const val CREATED_BY_PROPERTY_KEY = "createdBy"
 
 /* Metric Keys */
 const val ACTIVITIES_ACTIVE_COUNT_METRIC_KEY = "activitiesActiveCount"
