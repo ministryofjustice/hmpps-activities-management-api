@@ -58,6 +58,13 @@ data class WaitingListApplication(
   val status: WaitingListStatus,
 
   @Schema(
+    description = "The date and time the waiting list status was last updated",
+    example = "2023-06-04T16:30:00",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val statusUpdatedTime: LocalDateTime? = null,
+
+  @Schema(
     description = "The past or present date on which the waiting list was requested",
     example = "2023-06-23",
   )
