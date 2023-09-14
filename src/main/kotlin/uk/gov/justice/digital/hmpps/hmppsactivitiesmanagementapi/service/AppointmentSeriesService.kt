@@ -34,21 +34,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DESCRIPTION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -359,21 +359,21 @@ class AppointmentSeriesService(
       PRISON_CODE_PROPERTY_KEY to appointmentSeries.prisonCode,
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeries.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointmentSeries.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSeries.customName?.isNotEmpty()).toString(),
+      HAS_CUSTOM_NAME_PROPERTY_KEY to (appointmentSeries.customName?.isNotEmpty()).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSeries.internalLocationId.toString(),
       START_DATE_PROPERTY_KEY to appointmentSeries.startDate.toString(),
       START_TIME_PROPERTY_KEY to appointmentSeries.startTime.toString(),
       END_TIME_PROPERTY_KEY to appointmentSeries.endTime.toString(),
       IS_REPEAT_PROPERTY_KEY to (request.schedule != null).toString(),
-      REPEAT_PERIOD_PROPERTY_KEY to (request.schedule?.frequency?.toString() ?: ""),
-      REPEAT_COUNT_PROPERTY_KEY to (request.schedule?.numberOfAppointments?.toString() ?: ""),
+      FREQUENCY_PROPERTY_KEY to (request.schedule?.frequency?.toString() ?: ""),
+      NUMBER_OF_APPOINTMENTS_PROPERTY_KEY to (request.schedule?.numberOfAppointments?.toString() ?: ""),
       HAS_EXTRA_INFORMATION_PROPERTY_KEY to (appointmentSeries.extraInformation?.isNotEmpty() == true).toString(),
     )
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.numberOfAppointments ?: 1)).toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSeries.customName?.length ?: 0).toDouble(),
+      CUSTOM_NAME_LENGTH_METRIC_KEY to (appointmentSeries.customName?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.extraInformation?.length ?: 0).toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
@@ -387,7 +387,7 @@ class AppointmentSeriesService(
       PRISON_CODE_PROPERTY_KEY to appointmentSet.prisonCode,
       APPOINTMENT_SET_ID_PROPERTY_KEY to appointmentSet.id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to appointmentSet.categoryCode,
-      HAS_DESCRIPTION_PROPERTY_KEY to (appointmentSet.customName != null).toString(),
+      HAS_CUSTOM_NAME_PROPERTY_KEY to (appointmentSet.customName != null).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSet.internalLocationId.toString(),
       START_DATE_PROPERTY_KEY to appointmentSet.startDate.toString(),
       EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointments.minOf { it.startTime }.toString(),
@@ -397,7 +397,7 @@ class AppointmentSeriesService(
     val metricsMap = mapOf(
       APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointments.flatMap { it.attendees }.size.toDouble(),
-      DESCRIPTION_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
+      CUSTOM_NAME_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointments.filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )

@@ -8,7 +8,7 @@ enum class TelemetryEvent(val value: String) {
   APPOINTMENT_SERIES_CREATED("SAA-Appointment-Series-Created"),
   APPOINTMENT_DELETED("SAA-Appointment-Deleted"),
   APPOINTMENT_EDITED("SAA-Appointment-Edited"),
-  APPOINTMENT_SEARCH("SAA-Appointments-Search"),
+  APPOINTMENT_SEARCH("SAA-Appointment-Search"),
   APPOINTMENT_SET_CREATED("SAA-Appointment-Set-Created"),
   COC("SAA-Activity-Circumstances-Changed"),
   EDIT_ACTIVITY("SAA-Activity-Edited"),

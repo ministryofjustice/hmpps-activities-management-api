@@ -60,21 +60,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DESCRIPTION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_COUNT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.REPEAT_PERIOD_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -538,21 +538,21 @@ class AppointmentSeriesServiceTest {
         assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
         assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
-        assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(value[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
         assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
         assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
         assertThat(value[START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
         assertThat(value[END_TIME_PROPERTY_KEY]).isEqualTo("10:30")
         assertThat(value[IS_REPEAT_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[REPEAT_PERIOD_PROPERTY_KEY]).isEqualTo("")
-        assertThat(value[REPEAT_COUNT_PROPERTY_KEY]).isEqualTo("")
+        assertThat(value[FREQUENCY_PROPERTY_KEY]).isEqualTo("")
+        assertThat(value[NUMBER_OF_APPOINTMENTS_PROPERTY_KEY]).isEqualTo("")
         assertThat(value[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
       }
 
       with(telemetryMetricsMap) {
         assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
         assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+        assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
         assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(32.0)
         assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
@@ -848,7 +848,7 @@ class AppointmentSeriesServiceTest {
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[APPOINTMENT_SET_ID_PROPERTY_KEY]).isEqualTo("1")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
-      assertThat(value[HAS_DESCRIPTION_PROPERTY_KEY]).isEqualTo("true")
+      assertThat(value[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       assertThat(value[EARLIEST_START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
@@ -858,7 +858,7 @@ class AppointmentSeriesServiceTest {
     with(telemetryMetricsMap) {
       assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[DESCRIPTION_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+      assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
       assertThat(value[EXTRA_INFORMATION_COUNT_METRIC_KEY]).isEqualTo(4.0)
       assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
     }
