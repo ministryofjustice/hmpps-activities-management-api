@@ -372,6 +372,7 @@ class AppointmentSeriesService(
 
     val metricsMap = mapOf(
       PRISONER_COUNT_METRIC_KEY to request.prisonerNumbers.size.toDouble(),
+      APPOINTMENT_COUNT_METRIC_KEY to (request.schedule?.numberOfAppointments ?: 1).toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (request.prisonerNumbers.size * (request.schedule?.numberOfAppointments ?: 1)).toDouble(),
       CUSTOM_NAME_LENGTH_METRIC_KEY to (appointmentSeries.customName?.length ?: 0).toDouble(),
       EXTRA_INFORMATION_LENGTH_METRIC_KEY to (appointmentSeries.extraInformation?.length ?: 0).toDouble(),
@@ -395,6 +396,7 @@ class AppointmentSeriesService(
     )
 
     val metricsMap = mapOf(
+      PRISONER_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
       APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
       APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointments.flatMap { it.attendees }.size.toDouble(),
       CUSTOM_NAME_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
