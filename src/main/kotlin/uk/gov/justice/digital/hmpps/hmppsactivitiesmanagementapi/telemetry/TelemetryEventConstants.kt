@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 /* Property Keys */
 const val ACKNOWLEDGED_BY_PROPERTY_KEY = "acknowledgedBy"
 const val ACKNOWLEDGED_TIME_PROPERTY_KEY = "acknowledgedTime"
-const val ACTIVITY_CATEGORY_PROPERTY_KEY = "activityName"
+const val ACTIVITY_CATEGORY_PROPERTY_KEY = "activityCategory"
 const val ACTIVITY_NAME_PROPERTY_KEY = "activityName"
 const val ACTIVITY_TIER_PROPERTY_KEY = "activityTier"
 const val APPLY_TO_PROPERTY_KEY = "applyTo"
