@@ -575,6 +575,7 @@ class TransformFunctionsTest {
       prisonerNumber isEqualTo "123456"
       bookingId isEqualTo 100L
       status isEqualTo WaitingListStatus.DECLINED
+      statusUpdatedTime isEqualTo null
       requestedDate isEqualTo TimeSource.today()
       requestedBy isEqualTo "Fred"
       comments isEqualTo "Some random test comments"

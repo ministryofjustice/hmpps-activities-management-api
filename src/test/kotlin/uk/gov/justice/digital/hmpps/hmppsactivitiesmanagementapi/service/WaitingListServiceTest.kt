@@ -677,6 +677,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
 
     service.updateWaitingList(
       waitingList.waitingListId,
@@ -693,6 +694,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.APPROVED
     waitingList.updatedTime!! isCloseTo TimeSource.now()
     waitingList.updatedBy isEqualTo "Frank"
+    waitingList.statusUpdatedTime isCloseTo TimeSource.now()
   }
 
   @Test
@@ -704,6 +706,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
 
     service.updateWaitingList(
       waitingList.waitingListId,
@@ -720,6 +723,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.DECLINED
     waitingList.updatedTime!! isCloseTo TimeSource.now()
     waitingList.updatedBy isEqualTo "Frank"
+    waitingList.statusUpdatedTime isCloseTo TimeSource.now()
   }
 
   @Test
@@ -731,6 +735,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
 
     service.updateWaitingList(
       waitingList.waitingListId,
@@ -741,6 +746,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
   }
 
   @Test
@@ -763,6 +769,7 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.ALLOCATED
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
   }
 
   @Test
@@ -784,6 +791,37 @@ class WaitingListServiceTest {
     waitingList.status isEqualTo WaitingListStatus.REMOVED
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
+    waitingList.statusUpdatedTime isEqualTo null
+  }
+
+  @Test
+  fun`only status changes update "statusUpdatedTime"`() {
+    val waitingList = waitingList(
+      prisonCode = pentonvillePrisonCode,
+      initialStatus = WaitingListStatus.PENDING,
+    ).also {
+      whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(
+        applicationDate = LocalDate.now().minusDays(1),
+        comments = "test",
+        requestedBy = "test",
+      ),
+      "Frank",
+    )
+
+    waitingList.statusUpdatedTime isEqualTo null
+
+    service.updateWaitingList(
+      waitingList.waitingListId,
+      WaitingListApplicationUpdateRequest(status = WaitingListStatus.APPROVED),
+      "Frank",
+    )
+
+    waitingList.statusUpdatedTime isCloseTo TimeSource.now()
   }
 
   @Test

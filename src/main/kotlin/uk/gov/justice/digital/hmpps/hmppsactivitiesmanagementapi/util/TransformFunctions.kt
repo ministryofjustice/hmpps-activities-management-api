@@ -507,4 +507,5 @@ fun EntityWaitingList.toModel() = ModelWaitingListApplication(
   creationTime = creationTime,
   updatedTime = updatedTime,
   updatedBy = updatedBy,
+  statusUpdatedTime = statusUpdatedTime,
 )
