@@ -56,6 +56,8 @@ data class WaitingList(
         declinedReason = null
       }
 
+      if (field != value) statusUpdatedTime = LocalDateTime.now()
+
       field = value
     }
 
@@ -75,6 +77,8 @@ data class WaitingList(
   var updatedTime: LocalDateTime? = null
 
   var updatedBy: String? = null
+
+  var statusUpdatedTime: LocalDateTime? = null
 
   @OneToOne
   @JoinColumn(name = "allocation_id", nullable = true)
