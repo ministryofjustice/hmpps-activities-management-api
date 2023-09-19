@@ -277,8 +277,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
-          .path("/api/locations/{locationId}?includeInactive={includeInactive}")
-          .build(locationId, includeInactive)
+          .path("/api/locations/{locationId}")
+          .queryParam("includeInactive", includeInactive)
+          .build(locationId)
       }
       .retrieve()
       .awaitBody()

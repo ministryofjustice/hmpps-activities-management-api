@@ -15,16 +15,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerActivitiesToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerAppointmentsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerCourtEventsToScheduledEvents
@@ -51,6 +54,8 @@ class ScheduledEventService(
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
+  private val internalLocationService: InternalLocationService,
+  private val referenceCodeService: ReferenceCodeService,
 ) {
   /**
    *  Get scheduled events for a single prisoner, between two dates and with an optional time slot.
@@ -456,4 +461,64 @@ class ScheduledEventService(
       latestStartTime,
     )
   }
+
+  fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) =
+    runBlocking {
+      checkCaseloadAccess(prisonCode)
+
+      val referenceCodesForAppointmentsMap =
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+      val internalLocationsMap = internalLocationService.getInternalLocationsMapByIds(prisonCode, internalLocationIds)
+      val eventPriorities = withContext(Dispatchers.IO) {
+        prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+      }
+
+      val timeRange =
+        timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) } ?: LocalTimeRange(
+          LocalTime.of(0, 0),
+          LocalTime.of(23, 59),
+        )
+
+      val activities = withContext(Dispatchers.IO) {
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+          prisonCode,
+          internalLocationIds.map { it.toInt() }.toSet(),
+          date,
+          timeRange.start,
+          timeRange.end,
+        )
+      }
+
+      val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonCode,
+        internalLocationIds,
+        date,
+        timeRange.start,
+        timeRange.end,
+      )
+
+      val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(
+        prisonCode,
+        eventPriorities,
+        activities,
+      ).union(
+        transformAppointmentInstanceToScheduledEvents(
+          prisonCode,
+          eventPriorities,
+          referenceCodesForAppointmentsMap,
+          internalLocationsMap,
+          appointments,
+        ),
+      ).filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
+
+      internalLocationsMap.map {
+        InternalLocationEvents(
+          it.key,
+          it.value.agencyId,
+          it.value.description,
+          it.value.userDescription ?: it.value.description,
+          scheduledEventsMap[it.key]?.toSet() ?: emptySet(),
+        )
+      }.toSet()
+    }
 }

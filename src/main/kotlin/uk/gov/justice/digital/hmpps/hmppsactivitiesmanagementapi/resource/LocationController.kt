@@ -226,7 +226,7 @@ class LocationController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  suspend fun getInternalLocationEventsSummary(
+  fun getInternalLocationEventsSummary(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
