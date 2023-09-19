@@ -12,29 +12,38 @@ data class AttendanceUpdateRequest(
   @Schema(description = "The internally-generated ID for this attendance", example = "123456")
   val id: Long?,
 
-  @field:NotEmpty(message = "Prison Code")
+  @field:NotEmpty(message = "Prison Code must be supplied")
   @Schema(description = "The prison code", example = "MDI")
   val prisonCode: String,
 
-  @field:NotEmpty(message = "Attendance status")
+  @field:NotNull(message = "Attendance status must be supplied")
   @Schema(description = "The status - WAITING, COMPLETED", example = "WAITING")
   val status: AttendanceStatus,
 
-  @Schema(description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED", example = "ATTENDED")
-  val attendanceReason: String?,
+  @Schema(
+    description = "The reason codes- SICK, REFUSED, NOT_REQUIRED, REST, CLASH, OTHER, SUSPENDED, CANCELLED, ATTENDED",
+    example = "ATTENDED",
+  )
+  val attendanceReason: String? = null,
 
   @Schema(description = "Comments such as more detail for SICK", example = "Prisoner has COVID-19")
-  val comment: String?,
+  val comment: String? = null,
 
   @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
-  val issuePayment: Boolean?,
+  val issuePayment: Boolean? = null,
 
-  @Schema(description = "Case note provided for REFUSED", example = "Prisoner refused to attend the scheduled activity without reasonable excuse")
-  val caseNote: String?,
+  @Schema(
+    description = "Case note provided for REFUSED",
+    example = "Prisoner refused to attend the scheduled activity without reasonable excuse",
+  )
+  val caseNote: String? = null,
 
   @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
-  val incentiveLevelWarningIssued: Boolean?,
+  val incentiveLevelWarningIssued: Boolean? = null,
 
-  @Schema(description = "The absence reason for OTHER", example = "Prisoner has another reason for missing the activity")
-  val otherAbsenceReason: String?,
+  @Schema(
+    description = "The absence reason for OTHER",
+    example = "Prisoner has another reason for missing the activity",
+  )
+  val otherAbsenceReason: String? = null,
 )

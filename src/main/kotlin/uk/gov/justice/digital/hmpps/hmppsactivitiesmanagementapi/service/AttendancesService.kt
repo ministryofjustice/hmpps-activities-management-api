@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
@@ -87,9 +88,6 @@ class AttendancesService(
       caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, incentiveLevelWarningIssued)
     }
 
-  private fun AttendanceUpdateRequest.maybeAttendanceReason() =
-    attendanceReason?.let { AttendanceReasonEnum.valueOf(it.trim().uppercase()) }
-
   fun getAttendanceById(id: Long) =
     transform(attendanceRepository.findOrThrowNotFound(id), caseNotesApiClient)
 
@@ -97,8 +95,115 @@ class AttendancesService(
     allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
 }
 
+private fun AttendanceUpdateRequest.maybeAttendanceReason() =
+  attendanceReason?.let { AttendanceReasonEnum.valueOf(it.trim().uppercase()) }
+
 internal object AttendanceUpdateRequestValidator {
   fun validate(request: AttendanceUpdateRequest) {
-    // TODO introduce validation of attendance update
+    when (request.status) {
+      AttendanceStatus.COMPLETED -> validateCompleted(request)
+      AttendanceStatus.WAITING -> validateWaiting(request)
+    }
+  }
+
+  private fun validateWaiting(request: AttendanceUpdateRequest) {
+    validate(
+      request.attendanceReason == null &&
+        request.comment == null &&
+        request.issuePayment == null &&
+        request.caseNote == null &&
+        request.incentiveLevelWarningIssued == null &&
+        request.otherAbsenceReason == null,
+    ) {
+      "Reason, comment, issue payment, case note, incentive level warning issued and other absence reason must be null if status is waiting for attendance ID ${request.id}"
+    }
+  }
+
+  private fun validateCompleted(request: AttendanceUpdateRequest) {
+    validate(request.attendanceReason != null) {
+      "Attendance reason must be supplied when status is completed for attendance ID ${request.id}"
+    }
+
+    when (request.maybeAttendanceReason()) {
+      AttendanceReasonEnum.ATTENDED -> validateAttended(request)
+      AttendanceReasonEnum.NOT_REQUIRED -> validateNotRequired(request)
+      AttendanceReasonEnum.REFUSED -> validateRefused(request)
+      AttendanceReasonEnum.SICK -> validateSick(request)
+      else -> throw ValidationException("Unknown attendance reason")
+    }
+  }
+
+  private fun validateAttended(request: AttendanceUpdateRequest) {
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.ATTENDED &&
+        request.issuePayment != null,
+    ) {
+      "Issue payment is required when reason is attended for attendance ID ${request.id}"
+    }
+
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.ATTENDED &&
+        (request.issuePayment == false && request.caseNote != null) || request.issuePayment == true,
+    ) {
+      "Case note is required when issue payment is not required when reason is attended for attendance ID ${request.id}"
+    }
+  }
+
+  private fun validateNotRequired(request: AttendanceUpdateRequest) {
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.NOT_REQUIRED &&
+        request.issuePayment == true,
+    ) {
+      "Issue payment is required when reason is not required for attendance ID ${request.id}"
+    }
+
+    validate(
+      request.caseNote == null &&
+        request.comment == null &&
+        request.incentiveLevelWarningIssued == null &&
+        request.otherAbsenceReason == null,
+    ) {
+      "Case note, comments and other absence reason is not required when reason is attended for attendance ID 2"
+    }
+  }
+
+  private fun validateRefused(request: AttendanceUpdateRequest) {
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.REFUSED &&
+        request.comment == null &&
+        request.issuePayment == null &&
+        request.otherAbsenceReason == null,
+    ) {
+      "Comment, other absence reason and issue payment must be null if reason is refused for attendance ID ${request.id}"
+    }
+
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.REFUSED &&
+        request.caseNote != null &&
+        request.incentiveLevelWarningIssued != null,
+    ) {
+      "Case note and incentive level warning must be supplied if reason is refused for attendance ID ${request.id}"
+    }
+  }
+
+  private fun validateSick(request: AttendanceUpdateRequest) {
+    validate(
+      request.maybeAttendanceReason() == AttendanceReasonEnum.SICK &&
+        request.caseNote == null &&
+        request.otherAbsenceReason == null &&
+        request.incentiveLevelWarningIssued == null,
+    ) {
+      "Case note, incentive level warning issued and other absence reason must be null if reason is sick for attendance ID ${request.id}"
+    }
+
+    validate(request.maybeAttendanceReason() == AttendanceReasonEnum.SICK && request.issuePayment != null) {
+      "Issue payment must be supplied if reason is sick for attendance ID ${request.id}"
+    }
+  }
+
+  private fun validate(predicate: Boolean, lazyMessage: () -> Any) {
+    if (!predicate) {
+      throw ValidationException(lazyMessage().toString())
+    }
   }
 }
