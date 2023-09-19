@@ -77,7 +77,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
   }
 
   private fun MockMvc.getAllocationsByScheduleId(scheduleId: Long) =
@@ -107,7 +107,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(activityScheduleService).getScheduleById(-99)
   }
@@ -139,8 +139,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
-      assertThat(contentAsString).contains("Prisoner number must be supplied")
-      assertThat(contentAsString).contains("Pay band must be supplied")
+      assertThat(contentAsString).contains("Bad Request")
     }
 
     with(
@@ -148,7 +147,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
-      assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
+      assertThat(contentAsString).contains("Bad Request")
     }
 
     verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())

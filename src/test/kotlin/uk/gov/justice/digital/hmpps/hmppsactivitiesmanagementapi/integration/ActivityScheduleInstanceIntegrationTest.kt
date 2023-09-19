@@ -291,7 +291,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has ended")
+        .expectBody().jsonPath("userMessage").isEqualTo("Exception: The schedule instance has ended")
     }
 
     @Test
@@ -300,7 +300,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has already been cancelled")
+        .expectBody().jsonPath("userMessage").isEqualTo("Exception: The schedule instance has already been cancelled")
     }
   }
 

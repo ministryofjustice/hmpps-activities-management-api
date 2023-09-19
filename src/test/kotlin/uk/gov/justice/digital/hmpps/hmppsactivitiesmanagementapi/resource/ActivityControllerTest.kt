@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -87,8 +86,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value("Required request body is missing: public uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ActivityController.create(java.security.Principal,uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest)")
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -109,13 +108,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(containsString("Prison code must be supplied"))
-            value(containsString("Category ID must be supplied"))
-            value(containsString("Activity summary must be supplied"))
-            value(containsString("Minimum incentive level NOMIS code must be supplied"))
-            value(containsString("Minimum incentive level must be supplied"))
-            value(containsString("Risk level must be supplied"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -141,12 +135,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(containsString("Prison code must be supplied"))
-            value(containsString("Category ID must be supplied"))
-            value(containsString("Activity summary must be supplied"))
-            value(containsString("Minimum incentive level NOMIS code must be supplied"))
-            value(containsString("Minimum incentive level must be supplied"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -172,10 +162,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(containsString("The piece rate must be a positive integer"))
-            value(containsString("The piece rate items must be a positive integer"))
-            value(containsString("The earning rate must be a positive integer"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -201,17 +189,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(containsString("Incentive level should not exceed 50 characters"))
-            value(containsString("Summary should not exceed 50 characters"))
-            value(containsString("Pay band must be supplied"))
-            value(containsString("Prison code should not exceed 3 characters"))
-            value(containsString("Minimum incentive level NOMIS code should not exceed 3 characters"))
-            value(containsString("Minimum incentive level should not exceed 10 characters"))
-            value(containsString("Risk level should not exceed 10 characters"))
-            value(containsString("Description should not exceed 300 characters"))
-            value(containsString("Education level code should not exceed 10 characters"))
-            value(containsString("Education level description should not exceed 60 characters"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -244,7 +223,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(activityService).getActivityById(2)
   }
@@ -325,7 +304,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(activityService).getSchedulesForActivity(2)
   }
@@ -372,8 +351,8 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { is4xxClientError() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value("Required request body is missing: public uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ActivityController.update(java.lang.String,long,java.security.Principal,uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest)")
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }

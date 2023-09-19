@@ -73,8 +73,8 @@ class LocationIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isNotFound
       .expectBody()
-      .jsonPath("$.developerMessage")
-      .isEqualTo("(developer message)Locations not found for agency not_an_agency with location type CELL")
+      .jsonPath("$.userMessage")
+      .isEqualTo("Not Found")
   }
 
   @Test
@@ -95,8 +95,8 @@ class LocationIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().is5xxServerError
       .expectBody()
-      .jsonPath("$.developerMessage")
-      .isEqualTo("Error")
+      .jsonPath("$.userMessage")
+      .isEqualTo("Internal Server Error")
   }
 
   @Test
@@ -161,10 +161,9 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
     with(errorResponse!!) {
       assertThat(errorCode).isNull()
-      assertThat(developerMessage).isEqualTo("(developer message)Location groups not found for prison $prisonCode")
       assertThat(moreInfo).isNull()
       assertThat(status).isEqualTo(404)
-      assertThat(userMessage).isEqualTo("(user message)Location groups not found for prison $prisonCode")
+      assertThat(userMessage).isEqualTo("Not Found")
     }
   }
 

@@ -28,6 +28,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAc
 @RestControllerAdvice
 class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExceptionHandler() {
 
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<ErrorResponse> {
     log.info("Access denied exception: {}", e.message)
@@ -36,8 +40,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = FORBIDDEN,
-          userMessage = "Access denied: ${e.message}",
-          developerMessage = e.message,
+          userMessage = FORBIDDEN.reasonPhrase,
         ),
       )
   }
@@ -51,7 +54,6 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Validation failure: ${e.message}",
-          developerMessage = e.message,
         ),
       )
   }
@@ -64,8 +66,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = INTERNAL_SERVER_ERROR,
-          userMessage = "Unexpected error: ${e.message}",
-          developerMessage = e.message,
+          userMessage = INTERNAL_SERVER_ERROR.reasonPhrase,
         ),
       )
   }
@@ -78,8 +79,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = NOT_FOUND.value(),
-          userMessage = "Not found: ${e.message}",
-          developerMessage = e.message,
+          userMessage = NOT_FOUND.reasonPhrase,
         ),
       )
   }
@@ -92,22 +92,20 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = FORBIDDEN.value(),
-          userMessage = "Not found: ${e.message}",
-          developerMessage = e.message,
+          userMessage = FORBIDDEN.reasonPhrase,
         ),
       )
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException::class)
   fun handleMethodArgumentTypeMismatchException(e: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
-    log.info("Method argument type mismatch exception: {}", e.message)
+    log.info("Error converting '${e.name}' (${e.value}). Method argument type mismatch exception: {}", e.message)
     return ResponseEntity
       .status(BAD_REQUEST)
       .body(
         ErrorResponse(
           status = BAD_REQUEST.value(),
-          userMessage = "Error converting '${e.name}' (${e.value}): ${e.message.orEmpty().substringBefore("; Failed to convert from type")}",
-          developerMessage = e.message,
+          userMessage = BAD_REQUEST.reasonPhrase,
         ),
       )
   }
@@ -118,6 +116,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     var errorResponse: ErrorResponse? = null
     try {
       errorResponse = mapper.readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+      log.error("Web client response was : {}", errorResponse)
     } catch (jpe: JsonProcessingException) {
       log.error("Failed to parse web client response as ErrorResponse: {}", ex.message)
     } catch (jme: JsonProcessingException) {
@@ -126,10 +125,9 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
     return ResponseEntity
       .status(ex.statusCode)
       .body(
-        errorResponse ?: ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = ex.message,
-          developerMessage = ex.message,
+        ErrorResponse(
+          status = ex.statusCode.value(),
+          userMessage = ex.statusText,
         ),
       )
   }
@@ -143,7 +141,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Exception: ${e.message}",
-          developerMessage = e.message,
+
         ),
       )
   }
@@ -160,8 +158,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = BAD_REQUEST,
-          userMessage = ex.localizedMessage,
-          developerMessage = ex.message,
+          userMessage = BAD_REQUEST.reasonPhrase,
         ),
       )
   }
@@ -181,8 +178,7 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = BAD_REQUEST,
-          userMessage = "One or more constraint violations occurred",
-          developerMessage = errors.joinToString(", "),
+          userMessage = BAD_REQUEST.reasonPhrase,
         ),
       )
   }
@@ -200,13 +196,9 @@ class ControllerAdvice(private val mapper: ObjectMapper) : ResponseEntityExcepti
       .body(
         ErrorResponse(
           status = BAD_REQUEST,
-          userMessage = ex.message,
-          developerMessage = ex.message,
+          userMessage = BAD_REQUEST.reasonPhrase,
         ),
       )
-  }
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
   }
 }
 
@@ -214,15 +206,13 @@ data class ErrorResponse(
   val status: Int,
   val errorCode: Int? = null,
   val userMessage: String? = null,
-  val developerMessage: String? = null,
   val moreInfo: String? = null,
 ) {
   constructor(
     status: HttpStatus,
     errorCode: Int? = null,
     userMessage: String? = null,
-    developerMessage: String? = null,
     moreInfo: String? = null,
   ) :
-    this(status.value(), errorCode, userMessage, developerMessage, moreInfo)
+    this(status.value(), errorCode, userMessage, moreInfo)
 }

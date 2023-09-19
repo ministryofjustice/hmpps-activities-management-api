@@ -88,7 +88,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(attendancesService).getAttendanceById(2)
   }

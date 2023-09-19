@@ -58,7 +58,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'groupName' for method parameter type String is not present")
+            value("Bad Request")
           }
         }
       }
@@ -159,7 +159,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'groupName' for method parameter type String is not present")
+            value("Bad Request")
           }
         }
       }

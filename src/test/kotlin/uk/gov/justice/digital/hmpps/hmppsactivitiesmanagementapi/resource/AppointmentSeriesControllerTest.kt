@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -54,7 +53,7 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment Series -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentSeriesService).getAppointmentSeriesById(-1)
   }
@@ -84,7 +83,7 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment Series -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentSeriesService).getAppointmentSeriesDetailsById(-1)
   }
@@ -100,14 +99,8 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
         status { isBadRequest() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Category code must be supplied"))
-            value(Matchers.containsString("Prison code must be supplied"))
-            value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
-            value(Matchers.containsString("Start date must be supplied"))
-            value(Matchers.containsString("Start time must be supplied"))
-            value(Matchers.containsString("End time must be supplied"))
-            value(Matchers.containsString("At least one prisoner number must be supplied"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }

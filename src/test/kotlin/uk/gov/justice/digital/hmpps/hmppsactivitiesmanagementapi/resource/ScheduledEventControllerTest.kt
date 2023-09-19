@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.core.StringStartsWith
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
@@ -144,7 +143,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+            value("Bad Request")
           }
         }
       }
@@ -164,7 +163,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value(StringStartsWith("Required request body is missing:"))
+            value("Bad Request")
           }
         }
       }
@@ -188,7 +187,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (20/12/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Bad Request")
           }
         }
       }
@@ -212,7 +211,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (AF): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+            value("Bad Request")
           }
         }
       }
@@ -343,7 +342,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+            value("Bad Request")
           }
         }
       }
@@ -363,7 +362,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+            value("Bad Request")
           }
         }
       }
@@ -383,7 +382,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Bad Request")
           }
         }
       }
@@ -404,7 +403,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Bad Request")
           }
         }
       }

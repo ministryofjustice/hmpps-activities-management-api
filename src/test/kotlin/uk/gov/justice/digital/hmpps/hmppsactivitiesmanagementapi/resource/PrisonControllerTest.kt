@@ -101,7 +101,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(activityService, times(1)).getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)
   }
@@ -255,7 +255,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(prisonRegimeService).getPrisonRegimeByPrisonCode("PVX")
   }

@@ -67,7 +67,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+            value("Bad Request")
           }
         }
       }
@@ -86,7 +86,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+            value("Bad Request")
           }
         }
       }
@@ -106,7 +106,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Bad Request")
           }
         }
       }
@@ -126,7 +126,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Bad Request")
           }
         }
       }

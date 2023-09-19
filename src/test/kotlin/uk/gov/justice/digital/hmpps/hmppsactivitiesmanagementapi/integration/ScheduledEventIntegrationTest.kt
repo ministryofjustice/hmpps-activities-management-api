@@ -212,10 +212,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("Prisoner '$prisonerNumber' not found")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("Not found: Prisoner '$prisonerNumber' not found")
+        assertThat(userMessage).isEqualTo("Not Found")
       }
     }
 
@@ -257,10 +256,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+        assertThat(userMessage).isEqualTo("Not Found")
       }
     }
 
@@ -302,10 +300,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+        assertThat(userMessage).isEqualTo("Not Found")
       }
     }
 
@@ -347,10 +344,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+        assertThat(userMessage).isEqualTo("Not Found")
       }
     }
 
@@ -392,10 +388,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       with(errorResponse!!) {
         assertThat(errorCode).isNull()
-        assertThat(developerMessage).isEqualTo("(developer message)Offender booking with id 12009930 not found.")
         assertThat(moreInfo).isNull()
         assertThat(status).isEqualTo(404)
-        assertThat(userMessage).isEqualTo("(user message)Offender booking with id 12009930 not found.")
+        assertThat(userMessage).isEqualTo("Not Found")
       }
     }
   }

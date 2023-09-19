@@ -50,8 +50,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     with(error!!) {
       assertThat(status).isEqualTo(403)
       assertThat(errorCode).isNull()
-      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
-      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(userMessage).isEqualTo("Forbidden")
       assertThat(moreInfo).isNull()
     }
   }

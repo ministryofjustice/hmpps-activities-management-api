@@ -150,8 +150,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     with(error!!) {
       assertThat(status).isEqualTo(403)
-      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
-      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(userMessage).isEqualTo("Forbidden")
     }
 
     verifyNoInteractions(eventsPublisher)
@@ -245,8 +244,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     with(error!!) {
       assertThat(status).isEqualTo(403)
-      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
-      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(userMessage).isEqualTo("Forbidden")
     }
 
     verifyNoInteractions(eventsPublisher)

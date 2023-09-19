@@ -47,7 +47,7 @@ class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstance
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment Instance -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentInstanceService).getAppointmentInstanceById(-1)
   }

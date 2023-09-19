@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -67,7 +66,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentService).getAppointmentById(-1)
   }
@@ -97,7 +96,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentService).getAppointmentDetailsById(-1)
   }
@@ -115,7 +114,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(appointmentService).updateAppointment(-1, request, mockPrincipal)
   }
@@ -138,10 +137,8 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         status { isBadRequest() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
-            value(Matchers.containsString("Start date must not be in the past"))
-            value(Matchers.containsString("End time must be after the start time"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }
@@ -179,8 +176,8 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         status { isBadRequest() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Start date must be supplied"))
+          jsonPath("$.userMessage") {
+            value("Bad Request")
           }
         }
       }

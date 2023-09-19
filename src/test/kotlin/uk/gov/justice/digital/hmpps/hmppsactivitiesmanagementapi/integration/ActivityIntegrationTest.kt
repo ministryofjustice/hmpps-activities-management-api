@@ -233,7 +233,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(status).isEqualTo(400)
       assertThat(errorCode).isNull()
       assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
-      assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(moreInfo).isNull()
     }
   }
@@ -259,8 +258,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(error!!) {
       assertThat(status).isEqualTo(403)
       assertThat(errorCode).isNull()
-      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
-      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(userMessage).isEqualTo("Forbidden")
       assertThat(moreInfo).isNull()
     }
   }

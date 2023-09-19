@@ -58,7 +58,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(scheduledInstanceService).getActivityScheduleInstanceById(2)
   }
@@ -88,7 +88,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
       .andExpect { status { isNotFound() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).contains("Not found")
+    assertThat(response.contentAsString).contains("Not Found")
 
     verify(attendancesService).findAttendancesByScheduledInstance(2)
   }

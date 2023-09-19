@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -80,8 +79,8 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
         status { isBadRequest() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Generic validation exception"))
+          jsonPath("$.userMessage") {
+            value("Validation failure: Generic validation exception")
           }
         }
       }
@@ -127,8 +126,8 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
         status { isBadRequest() }
         content {
           contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Generic validation exception"))
+          jsonPath("$.userMessage") {
+            value("Validation failure: Generic validation exception")
           }
         }
       }
