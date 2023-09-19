@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -18,7 +17,6 @@ import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 
 @Service
-@Transactional(readOnly = true)
 class AttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val allAttendanceRepository: AllAttendanceRepository,
@@ -34,8 +32,9 @@ class AttendancesService(
   fun findAttendancesByScheduledInstance(instanceId: Long) =
     scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, null) }
 
-  @Transactional
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
+    log.info("Attendance marking in progress")
+
     val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
@@ -54,7 +53,9 @@ class AttendancesService(
       )
     }
 
-    attendanceRepository.saveAll(updatedAttendances)
+    attendanceRepository.saveAllAndFlush(updatedAttendances)
+
+    log.info("Attendance marking done")
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
