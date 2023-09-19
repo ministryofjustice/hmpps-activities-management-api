@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationGroupServiceSelector
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 
@@ -25,10 +26,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
   @MockBean
   private lateinit var locationGroupServiceSelector: LocationGroupServiceSelector
 
+  @MockBean
+  private lateinit var internalLocationService: InternalLocationService
+
   private val groupName = "Houseblock 1"
   private val prisonCode = "MDI"
 
-  override fun controller() = LocationController(locationService, locationGroupServiceSelector)
+  override fun controller() = LocationController(locationService, locationGroupServiceSelector, internalLocationService)
 
   @Test
   fun `Cell locations for group - 200 response when locations found`() {

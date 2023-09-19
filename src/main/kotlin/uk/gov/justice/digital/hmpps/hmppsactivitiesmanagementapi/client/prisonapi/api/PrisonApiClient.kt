@@ -273,6 +273,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .bodyToMono(typeReference<Location>())
 
+  suspend fun getLocationAsync(locationId: Long, includeInactive: Boolean = false): Location =
+    prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/locations/{locationId}?includeInactive={includeInactive}")
+          .build(locationId, includeInactive)
+      }
+      .retrieve()
+      .awaitBody()
+
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
 
@@ -363,5 +373,16 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     return nonAssociationDetails?.nonAssociations?.filter {
       !excludeExpired || it.expiryDate == null || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
     }
+  }
+
+  suspend fun getEventLocationsAsync(prisonCode: String): List<Location> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/agencies/{prisonCode}/eventLocations")
+          .build(prisonCode)
+      }
+      .retrieve()
+      .awaitBody()
   }
 }
