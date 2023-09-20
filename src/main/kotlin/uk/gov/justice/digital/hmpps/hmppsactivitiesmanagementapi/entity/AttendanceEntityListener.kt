@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.PostPersist
-import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,15 +24,6 @@ class AttendanceEntityListener {
       OutboundEvent.PRISONER_ATTENDANCE_CREATED,
       attendance.attendanceId,
       "Failed to send prisoner attendance created event for attendance ID ${attendance.attendanceId}",
-    )
-  }
-
-  @PostUpdate
-  fun onUpdate(attendance: Attendance) {
-    send(
-      OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
-      attendance.attendanceId,
-      "Failed to send prisoner attendance amended event for attendance ID ${attendance.attendanceId}",
     )
   }
 

@@ -25,11 +25,4 @@ class AttendanceEntityListenerTest(@Autowired private val listener: AttendanceEn
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, attendance.attendanceId)
     verifyNoMoreInteractions(outboundEventsService)
   }
-
-  @Test
-  fun `prisoner attendance amended event raised on update`() {
-    listener.onUpdate(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verifyNoMoreInteractions(outboundEventsService)
-  }
 }

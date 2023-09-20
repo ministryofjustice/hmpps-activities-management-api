@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
@@ -28,6 +29,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -40,6 +43,8 @@ class AttendancesServiceTest {
   private val allAttendanceRepository: AllAttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
+
   private val service =
     AttendancesService(
       scheduledInstanceRepository,
@@ -47,6 +52,8 @@ class AttendancesServiceTest {
       attendanceRepository,
       attendanceReasonRepository,
       caseNotesApiClient,
+      TransactionHandler(),
+      outboundEventsService,
     )
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
@@ -65,6 +72,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
   }
@@ -82,6 +90,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -101,6 +110,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -119,6 +129,7 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -152,6 +163,7 @@ class AttendancesServiceTest {
     )
 
     verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.OTHER)
@@ -191,7 +203,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(attendances.map { it.attendanceId }.toSet())).thenReturn(attendances)
 
-    Assertions.assertThatThrownBy {
+    assertThatThrownBy {
       service.mark(
         "Joe Bloggs",
         attendances.map {
@@ -212,6 +224,7 @@ class AttendancesServiceTest {
       .hasMessage("Attendance record for prisoner 'D4444DD' can no longer be modified")
 
     verify(attendanceRepository, never()).saveAllAndFlush(any<List<Attendance>>())
+    verify(outboundEventsService, never()).send(any(), any())
   }
 
   @Test

@@ -26,7 +26,8 @@ class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
-  private var outboundEventsService: OutboundEventsService,
+  private val outboundEventsService: OutboundEventsService,
+  private val transactionHandler: TransactionHandler,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -62,16 +63,24 @@ class ScheduledInstanceService(
   fun uncancelScheduledInstance(id: Long) {
     log.info("Uncancelling scheduled instance $id")
 
-    val scheduledInstance = repository.findById(id)
-      .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
+    val uncancelledInstance = transactionHandler.new {
+      val scheduledInstance = repository.findById(id)
+        .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
-    scheduledInstance.uncancelSessionAndAttendances()
+      scheduledInstance.uncancelSessionAndAttendances()
 
-    val uncancelledInstance = repository.saveAndFlush(scheduledInstance)
+      repository.saveAndFlush(scheduledInstance)
+    }.getOrThrow()
 
-    // Emit a sync event - manually
+    // Emit sync events - manually
     if (!uncancelledInstance.cancelled) {
-      send(uncancelledInstance.scheduledInstanceId)
+      log.info("Sending instance amended and attendance amended events.")
+
+      send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, uncancelledInstance.scheduledInstanceId)
+
+      uncancelledInstance.attendances.forEach { attendance ->
+        send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+      }
     }
 
     log.info("Uncancelled scheduled instance $id")
@@ -80,21 +89,29 @@ class ScheduledInstanceService(
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
     log.info("Cancelling scheduled instance $instanceId")
 
-    val scheduledInstance = repository.findById(instanceId)
-      .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
+    val cancelledInstance = transactionHandler.new {
+      val scheduledInstance = repository.findById(instanceId)
+        .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
-    scheduledInstance.cancelSessionAndAttendances(
-      reason = scheduleInstanceCancelRequest.reason,
-      by = scheduleInstanceCancelRequest.username,
-      cancelComment = scheduleInstanceCancelRequest.comment,
-      cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
-    )
+      scheduledInstance.cancelSessionAndAttendances(
+        reason = scheduleInstanceCancelRequest.reason,
+        by = scheduleInstanceCancelRequest.username,
+        cancelComment = scheduleInstanceCancelRequest.comment,
+        cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+      )
 
-    val cancelledInstance = repository.saveAndFlush(scheduledInstance)
+      repository.saveAndFlush(scheduledInstance)
+    }.getOrThrow()
 
-    // Emit a sync event - manually
+    // Emit sync events - manually
     if (cancelledInstance.cancelled) {
-      send(cancelledInstance.scheduledInstanceId)
+      log.info("Sending instance amended and attendance amended events.")
+
+      send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, cancelledInstance.scheduledInstanceId)
+
+      cancelledInstance.attendances.forEach { attendance ->
+        send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+      }
     }
 
     log.info("Cancelled scheduled instance $instanceId")
@@ -105,9 +122,9 @@ class ScheduledInstanceService(
     return attendanceSummaryRepository.findByPrisonAndDate(prisonCode, sessionDate).map { it.toModel() }
   }
 
-  private fun send(instanceId: Long) {
+  private fun send(event: OutboundEvent, instanceId: Long) {
     runCatching {
-      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instanceId)
+      outboundEventsService.send(event, instanceId)
     }.onFailure {
       log.error("Failed to send scheduled instance amended event for ID $instanceId", it)
     }
