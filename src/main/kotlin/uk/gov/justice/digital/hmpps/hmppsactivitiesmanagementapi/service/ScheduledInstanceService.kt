@@ -63,13 +63,13 @@ class ScheduledInstanceService(
   fun uncancelScheduledInstance(id: Long) {
     log.info("Uncancelling scheduled instance $id")
 
-    val uncancelledInstance = transactionHandler.new {
+    val (uncancelledInstance, uncancelledAttendances) = transactionHandler.new {
       val scheduledInstance = repository.findById(id)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
-      scheduledInstance.uncancelSessionAndAttendances()
+      val uncancelledAttendances = scheduledInstance.uncancelSessionAndAttendances()
 
-      repository.saveAndFlush(scheduledInstance)
+      repository.saveAndFlush(scheduledInstance) to uncancelledAttendances
     }.getOrThrow()
 
     // Emit sync events - manually
@@ -78,7 +78,7 @@ class ScheduledInstanceService(
 
       send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, uncancelledInstance.scheduledInstanceId)
 
-      uncancelledInstance.attendances.forEach { attendance ->
+      uncancelledAttendances.forEach { attendance ->
         send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
       }
     }
@@ -89,18 +89,18 @@ class ScheduledInstanceService(
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
     log.info("Cancelling scheduled instance $instanceId")
 
-    val cancelledInstance = transactionHandler.new {
+    val (cancelledInstance, cancelledAttendances) = transactionHandler.new {
       val scheduledInstance = repository.findById(instanceId)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
-      scheduledInstance.cancelSessionAndAttendances(
+      val cancelledAttendances = scheduledInstance.cancelSessionAndAttendances(
         reason = scheduleInstanceCancelRequest.reason,
         by = scheduleInstanceCancelRequest.username,
         cancelComment = scheduleInstanceCancelRequest.comment,
         cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
       )
 
-      repository.saveAndFlush(scheduledInstance)
+      repository.saveAndFlush(scheduledInstance)to cancelledAttendances
     }.getOrThrow()
 
     // Emit sync events - manually
@@ -109,7 +109,7 @@ class ScheduledInstanceService(
 
       send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, cancelledInstance.scheduledInstanceId)
 
-      cancelledInstance.attendances.forEach { attendance ->
+      cancelledAttendances.forEach { attendance ->
         send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
       }
     }
