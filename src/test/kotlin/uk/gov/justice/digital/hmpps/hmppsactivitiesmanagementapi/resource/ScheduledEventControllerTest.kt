@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
@@ -37,7 +38,10 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   @MockBean
   private lateinit var locationService: LocationService
 
-  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, locationService)
+  @MockBean
+  private lateinit var internalLocationService: InternalLocationService
+
+  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, locationService, internalLocationService)
 
   @BeforeEach
   fun setupMocks() {

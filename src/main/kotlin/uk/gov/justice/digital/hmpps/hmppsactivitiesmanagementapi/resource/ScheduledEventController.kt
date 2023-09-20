@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
@@ -36,6 +37,7 @@ class ScheduledEventController(
   private val scheduledEventService: ScheduledEventService,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
+  private val internalLocationService: InternalLocationService,
 ) {
 
   @GetMapping(
@@ -270,7 +272,7 @@ class ScheduledEventController(
     @RequestBody(required = true)
     @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
     internalLocationIds: Set<Long>,
-  ) = scheduledEventService.getInternalLocationEvents(
+  ) = internalLocationService.getInternalLocationEvents(
     prisonCode,
     internalLocationIds,
     date,
