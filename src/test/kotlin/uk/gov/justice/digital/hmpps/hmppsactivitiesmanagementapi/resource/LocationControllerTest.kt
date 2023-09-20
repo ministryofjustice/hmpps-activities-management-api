@@ -3,18 +3,23 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationGroupServiceSelector
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [LocationController::class])
 @ContextConfiguration(classes = [LocationController::class])
@@ -169,6 +174,111 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       }
   }
 
+  @Test
+  fun `Internal location events summaries - 200 response when internal locations with events found`() {
+    val date = LocalDate.now()
+    val timeSlot = TimeSlot.AM
+    val locations = setOf(internalLocationEventsSummary())
+
+    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, timeSlot)).thenReturn(locations)
+
+    val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, timeSlot)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `Internal location events summaries - 200 response when no time slot supplied`() {
+    val date = LocalDate.now()
+    val locations = setOf(internalLocationEventsSummary())
+
+    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)).thenReturn(locations)
+
+    val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `Internal location events summaries - 400 response when no date supplied`() {
+    mockMvc.get("/locations/prison/$prisonCode/events-summaries")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `Internal location events summaries - 400 response when invalid date supplied`() {
+    mockMvc.get("/locations/prison/$prisonCode/events-summaries?date=invalid")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `Internal location events summaries - 400 response when invalid time slot supplied`() {
+    val date = LocalDate.now()
+    mockMvc.get("/locations/prison/$prisonCode/events-summaries?date=$date&timeSlot=no")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'timeSlot' (no): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `Internal location events summaries - 400 response when date is 61 days in the future`() {
+    val date = LocalDate.now().plusDays(61)
+    mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Exception: Supply a date up to 60 days in the future")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `Internal location events summaries - 500 response when service throws exception`() {
+    val date = LocalDate.now()
+
+    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
+      .andExpect { status { isInternalServerError() } }
+      .andReturn().response
+
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+  }
+
   private fun aLocation(locationPrefix: String, description: String = ""): Location {
     return Location(
       locationPrefix = locationPrefix,
@@ -184,4 +294,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       locationType = "",
     )
   }
+
+  private fun MockMvc.getInternalLocationEventsSummaries(
+    prisonCode: String,
+    date: LocalDate?,
+    timeSlot: TimeSlot? = null,
+  ) = get("/locations/prison/$prisonCode/events-summaries?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }

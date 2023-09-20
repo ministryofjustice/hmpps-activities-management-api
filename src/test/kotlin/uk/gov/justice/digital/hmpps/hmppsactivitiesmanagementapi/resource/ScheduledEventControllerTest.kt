@@ -5,6 +5,7 @@ import org.hamcrest.core.StringStartsWith
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
@@ -435,6 +437,136 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       }
   }
 
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 200 response when internal locations with events found`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val timeSlot = TimeSlot.AM
+    val locations = setOf(internalLocationEvents())
+    val internalLocationIds = locations.map { it.id }.toSet()
+
+    whenever(internalLocationService.getInternalLocationEvents(prisonCode, internalLocationIds, date, timeSlot)).thenReturn(locations)
+
+    val response = mockMvc.getInternalLocationEvents(prisonCode, internalLocationIds, date, timeSlot)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 200 response when no time slot supplied`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val locations = setOf(internalLocationEvents())
+    val internalLocationIds = locations.map { it.id }.toSet()
+
+    whenever(internalLocationService.getInternalLocationEvents(prisonCode, internalLocationIds, date, null)).thenReturn(locations)
+
+    val response = mockMvc.getInternalLocationEvents(prisonCode, internalLocationIds, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 400 response when no date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/locations") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 400 response when invalid date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/locations?date=invalid") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 400 response when invalid time slot supplied`() {
+    val date = LocalDate.now()
+    mockMvc.post("/scheduled-events/prison/MDI/locations?date=$date&timeSlot=no") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'timeSlot' (no): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 400 response when date is 61 days in the future`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now().plusDays(61)
+    mockMvc.getInternalLocationEvents(prisonCode, setOf(1L), date, null)
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Exception: Supply a date up to 60 days in the future")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocations - 500 response when service throws exception`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val internalLocationIds = setOf(1L)
+
+    whenever(internalLocationService.getInternalLocationEvents(prisonCode, internalLocationIds, date, null)).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getInternalLocationEvents(prisonCode, internalLocationIds, date, null)
+      .andExpect { status { isInternalServerError() } }
+      .andReturn().response
+
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+  }
+
   private fun MockMvc.getScheduledEventsForSinglePrisoner(
     prisonCode: String,
     prisonerNumber: String,
@@ -454,4 +586,17 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
     )
   }
+
+  private fun MockMvc.getInternalLocationEvents(
+    prisonCode: String,
+    internalLocationIds: Set<Long>,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = post("/scheduled-events/prison/$prisonCode/locations?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      internalLocationIds,
+    )
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }

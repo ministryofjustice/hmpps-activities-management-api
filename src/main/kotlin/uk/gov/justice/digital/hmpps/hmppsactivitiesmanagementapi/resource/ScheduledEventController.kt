@@ -272,10 +272,15 @@ class ScheduledEventController(
     @RequestBody(required = true)
     @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
     internalLocationIds: Set<Long>,
-  ) = internalLocationService.getInternalLocationEvents(
-    prisonCode,
-    internalLocationIds,
-    date,
-    timeSlot,
-  )
+  ): Set<InternalLocationEvents> {
+    require(date.isBefore(LocalDate.now().plusDays(61))) {
+      "Supply a date up to 60 days in the future"
+    }
+    return internalLocationService.getInternalLocationEvents(
+      prisonCode,
+      internalLocationIds,
+      date,
+      timeSlot,
+    )
+  }
 }
