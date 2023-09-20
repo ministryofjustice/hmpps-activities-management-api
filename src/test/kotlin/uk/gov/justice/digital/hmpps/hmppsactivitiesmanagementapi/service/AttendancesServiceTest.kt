@@ -64,7 +64,7 @@ class AttendancesServiceTest {
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
   }
@@ -81,7 +81,7 @@ class AttendancesServiceTest {
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -100,7 +100,7 @@ class AttendancesServiceTest {
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -118,7 +118,7 @@ class AttendancesServiceTest {
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -151,7 +151,7 @@ class AttendancesServiceTest {
       ),
     )
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.OTHER)
@@ -211,7 +211,7 @@ class AttendancesServiceTest {
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record for prisoner 'D4444DD' can no longer be modified")
 
-    verify(attendanceRepository, never()).saveAll(any<List<Attendance>>())
+    verify(attendanceRepository, never()).saveAllAndFlush(any<List<Attendance>>())
   }
 
   @Test
@@ -240,7 +240,7 @@ class AttendancesServiceTest {
       ),
     )
 
-    verify(attendanceRepository).saveAll(listOf(attendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(attendance))
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.REFUSED)
@@ -273,7 +273,7 @@ class AttendancesServiceTest {
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, moorlandPrisonCode, AttendanceStatus.WAITING, null, null, null, null, null, null)))
 
-    verify(attendanceRepository).saveAll(listOf(completedAttendance))
+    verify(attendanceRepository).saveAllAndFlush(listOf(completedAttendance))
 
     with(completedAttendance) {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)

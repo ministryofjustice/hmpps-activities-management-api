@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 
 @Service
-@Transactional(readOnly = true)
 class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
@@ -33,6 +32,7 @@ class ScheduledInstanceService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  @Transactional(readOnly = true)
   fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance {
     val activityScheduleInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
@@ -40,6 +40,7 @@ class ScheduledInstanceService(
     return activityScheduleInstance.toModel()
   }
 
+  @Transactional(readOnly = true)
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
     dateRange: LocalDateRange,
@@ -58,8 +59,9 @@ class ScheduledInstanceService(
     }
   }
 
-  @Transactional
   fun uncancelScheduledInstance(id: Long) {
+    log.info("Uncancelling scheduled instance $id")
+
     val scheduledInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
@@ -71,10 +73,13 @@ class ScheduledInstanceService(
     if (!uncancelledInstance.cancelled) {
       send(uncancelledInstance.scheduledInstanceId)
     }
+
+    log.info("Uncancelled scheduled instance $id")
   }
 
-  @Transactional
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
+    log.info("Cancelling scheduled instance $instanceId")
+
     val scheduledInstance = repository.findById(instanceId)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
@@ -91,6 +96,8 @@ class ScheduledInstanceService(
     if (cancelledInstance.cancelled) {
       send(cancelledInstance.scheduledInstanceId)
     }
+
+    log.info("Cancelled scheduled instance $instanceId")
   }
 
   fun attendanceSummary(prisonCode: String, sessionDate: LocalDate): List<ScheduledInstanceAttendanceSummary> {
