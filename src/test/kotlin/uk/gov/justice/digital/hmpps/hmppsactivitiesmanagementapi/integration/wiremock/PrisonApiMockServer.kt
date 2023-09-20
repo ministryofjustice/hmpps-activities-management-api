@@ -464,7 +464,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetEventLocations(prisonCode: String, locations: Set<Location>) {
+  fun stubGetEventLocations(prisonCode: String, locations: List<Location>) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/eventLocations"))
         .willReturn(

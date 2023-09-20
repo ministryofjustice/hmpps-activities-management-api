@@ -41,7 +41,7 @@ fun internalLocation(
   description: String = "EDUC-ED1-ED1",
   prisonCode: String = "MDI",
   locationUsage: String = "PROG",
-  userDescription: String = "Education 1",
+  userDescription: String? = "Education 1",
 ) =
   Location(
     locationId = locationId,

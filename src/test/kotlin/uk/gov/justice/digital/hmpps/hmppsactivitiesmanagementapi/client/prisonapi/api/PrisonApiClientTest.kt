@@ -555,7 +555,7 @@ class PrisonApiClientTest {
   @Test
   fun `getEventLocationsAsync - success`() {
     val prisonCode = "MDI"
-    val eventLocations = setOf(internalLocation(), appointmentLocation(2, prisonCode))
+    val eventLocations = listOf(internalLocation(), appointmentLocation(2, prisonCode))
     prisonApiMockServer.stubGetEventLocations(prisonCode, eventLocations)
     runBlocking {
       prisonApiClient.getEventLocationsAsync(prisonCode) isEqualTo eventLocations
