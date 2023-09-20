@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -138,7 +139,9 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
+            value(Matchers.containsString("Start date must not be in the past"))
+            value(Matchers.containsString("End time must be after the start time"))
           }
         }
       }
@@ -177,7 +180,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(Matchers.containsString("Start date must be supplied"))
           }
         }
       }

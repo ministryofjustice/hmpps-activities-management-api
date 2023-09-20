@@ -139,7 +139,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
-      assertThat(contentAsString).contains("Bad Request")
+      assertThat(contentAsString).contains("Prisoner number must be supplied")
+      assertThat(contentAsString).contains("Pay band must be supplied")
     }
 
     with(
@@ -147,7 +148,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
-      assertThat(contentAsString).contains("Bad Request")
+      assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
     }
 
     verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())

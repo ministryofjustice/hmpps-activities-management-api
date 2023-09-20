@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -109,7 +110,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(containsString("Prison code must be supplied"))
+            value(containsString("Category ID must be supplied"))
+            value(containsString("Activity summary must be supplied"))
+            value(containsString("Minimum incentive level NOMIS code must be supplied"))
+            value(containsString("Minimum incentive level must be supplied"))
+            value(containsString("Risk level must be supplied"))
           }
         }
       }
@@ -136,7 +142,11 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(containsString("Prison code must be supplied"))
+            value(containsString("Category ID must be supplied"))
+            value(containsString("Activity summary must be supplied"))
+            value(containsString("Minimum incentive level NOMIS code must be supplied"))
+            value(containsString("Minimum incentive level must be supplied"))
           }
         }
       }
@@ -163,7 +173,9 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(containsString("The piece rate must be a positive integer"))
+            value(containsString("The piece rate items must be a positive integer"))
+            value(containsString("The earning rate must be a positive integer"))
           }
         }
       }
@@ -190,7 +202,16 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Bad Request")
+            value(containsString("Incentive level should not exceed 50 characters"))
+            value(containsString("Summary should not exceed 50 characters"))
+            value(containsString("Pay band must be supplied"))
+            value(containsString("Prison code should not exceed 3 characters"))
+            value(containsString("Minimum incentive level NOMIS code should not exceed 3 characters"))
+            value(containsString("Minimum incentive level should not exceed 10 characters"))
+            value(containsString("Risk level should not exceed 10 characters"))
+            value(containsString("Description should not exceed 300 characters"))
+            value(containsString("Education level code should not exceed 10 characters"))
+            value(containsString("Education level description should not exceed 60 characters"))
           }
         }
       }
