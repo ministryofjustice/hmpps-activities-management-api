@@ -59,7 +59,7 @@ class AttendancesService(
 
         attendanceRepository.saveAndFlush(attendance)
       }.map { it.attendanceId }
-    }.getOrThrow()
+    }
 
     markedAttendanceIds.forEach { id ->
       outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, id)

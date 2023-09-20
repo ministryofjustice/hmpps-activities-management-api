@@ -11,5 +11,5 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class TransactionHandler {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun <T> new(block: () -> T): Result<T> = runCatching { block() }
+  fun <T> new(block: () -> T): T = block()
 }

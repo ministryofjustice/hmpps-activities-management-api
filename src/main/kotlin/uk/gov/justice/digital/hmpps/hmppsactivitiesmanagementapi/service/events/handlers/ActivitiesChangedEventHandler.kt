@@ -66,11 +66,11 @@ class ActivitiesChangedEventHandler(
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
-        }.onSuccess { updatedAttendances ->
+        }.let { updatedAttendances ->
           updatedAttendances.forEach {
             outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
           }.also { log.info("Sending attendance amended events.") }
-        }.onFailure { throw it }
+        }
       }
 
       Outcome.success()

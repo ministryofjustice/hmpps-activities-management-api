@@ -49,7 +49,7 @@ class OffenderReceivedEventHandler(
                 allocations
                   .resetSuspendedAllocations(event)
                   .resetFutureSuspendedAttendances(event)
-              }.onSuccess { updatedAttendances ->
+              }.let { updatedAttendances ->
                 updatedAttendances.forEach {
                   outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
                 }.also { log.info("Sending attendance amended events.") }

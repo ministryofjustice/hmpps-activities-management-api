@@ -70,7 +70,7 @@ class ScheduledInstanceService(
       val uncancelledAttendances = scheduledInstance.uncancelSessionAndAttendances()
 
       repository.saveAndFlush(scheduledInstance) to uncancelledAttendances
-    }.getOrThrow()
+    }
 
     // Emit sync events - manually
     if (!uncancelledInstance.cancelled) {
@@ -100,8 +100,8 @@ class ScheduledInstanceService(
         cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
       )
 
-      repository.saveAndFlush(scheduledInstance)to cancelledAttendances
-    }.getOrThrow()
+      repository.saveAndFlush(scheduledInstance) to cancelledAttendances
+    }
 
     // Emit sync events - manually
     if (cancelledInstance.cancelled) {
