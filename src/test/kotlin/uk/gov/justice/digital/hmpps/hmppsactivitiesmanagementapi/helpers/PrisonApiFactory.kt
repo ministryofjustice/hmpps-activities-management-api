@@ -35,6 +35,24 @@ fun userCaseLoads(prisonCode: String) =
     ),
   )
 
+fun internalLocation(
+  locationId: Long = 1L,
+  locationType: String = "AREA",
+  description: String = "EDUC-ED1-ED1",
+  prisonCode: String = "MDI",
+  locationUsage: String = "PROG",
+  userDescription: String = "Education 1",
+) =
+  Location(
+    locationId = locationId,
+    locationType = locationType,
+    description = description,
+    agencyId = prisonCode,
+    locationUsage = locationUsage,
+    locationPrefix = "$prisonCode-$description",
+    userDescription = userDescription,
+  )
+
 fun appointmentLocation(locationId: Long, prisonCode: String, description: String = "Test Appointment Location", userDescription: String = "Test Appointment Location User Description") =
   Location(
     locationId = locationId,
