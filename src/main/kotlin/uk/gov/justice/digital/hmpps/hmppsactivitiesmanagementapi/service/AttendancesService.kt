@@ -38,7 +38,7 @@ class AttendancesService(
     val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
     val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
-    val updatedAttendances = attendanceRepository.findAllById(attendanceUpdatesById.keys).mapNotNull { attendance ->
+    attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
       val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!
 
       attendance.mark(
@@ -51,11 +51,9 @@ class AttendancesService(
         newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
         newOtherAbsenceReason = updateRequest.otherAbsenceReason,
       )
-    }
 
-    attendanceRepository.saveAllAndFlush(updatedAttendances)
-
-    log.info("Attendance marking done")
+      attendanceRepository.saveAndFlush(attendance)
+    }.also { log.info("Attendance marking done for ${it.size} attendance record(s)") }
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
