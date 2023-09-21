@@ -19,6 +19,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
@@ -370,6 +373,24 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getLocationAsync do not include inactive - success`() {
+    val internalLocation = internalLocation()
+    prisonApiMockServer.stubGetLocation(internalLocation.locationId, internalLocation, false)
+    runBlocking {
+      prisonApiClient.getLocationAsync(internalLocation.locationId) isEqualTo internalLocation
+    }
+  }
+
+  @Test
+  fun `getLocationAsync include inactive - success`() {
+    val internalLocation = internalLocation()
+    prisonApiMockServer.stubGetLocation(internalLocation.locationId, internalLocation, true)
+    runBlocking {
+      prisonApiClient.getLocationAsync(internalLocation.locationId, true) isEqualTo internalLocation
+    }
+  }
+
+  @Test
   fun `getStudyArea - success`() {
     prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json")
 
@@ -529,5 +550,15 @@ class PrisonApiClientTest {
     val function = PrisonApiClient::class.declaredFunctions.first { it.name == "getOffenderNonAssociations" }
 
     assertThat(function.returnType).isEqualTo(typeOf<List<OffenderNonAssociationDetail>?>())
+  }
+
+  @Test
+  fun `getEventLocationsAsync - success`() {
+    val prisonCode = "MDI"
+    val eventLocations = listOf(internalLocation(), appointmentLocation(2, prisonCode))
+    prisonApiMockServer.stubGetEventLocations(prisonCode, eventLocations)
+    runBlocking {
+      prisonApiClient.getEventLocationsAsync(prisonCode) isEqualTo eventLocations
+    }
   }
 }

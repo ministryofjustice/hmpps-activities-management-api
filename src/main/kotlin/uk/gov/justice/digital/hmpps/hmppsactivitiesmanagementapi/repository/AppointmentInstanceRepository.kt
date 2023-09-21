@@ -44,4 +44,20 @@ interface AppointmentInstanceRepository : ReadOnlyRepository<AppointmentInstance
     prisonCode: String,
     prisonerNumber: String,
   ): List<AppointmentInstance>
+
+  @Query(
+    value =
+    "FROM AppointmentInstance ai " +
+      "WHERE ai.prisonCode = :prisonCode" +
+      "  AND ai.internalLocationId IN :internalLocationIds" +
+      "  AND ai.appointmentDate = :date" +
+      "  AND ai.startTime BETWEEN :earliestStartTime AND :latestStartTime",
+  )
+  fun findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+    prisonCode: String,
+    internalLocationIds: Set<Long>,
+    date: LocalDate,
+    earliestStartTime: LocalTime,
+    latestStartTime: LocalTime,
+  ): List<AppointmentInstance>
 }

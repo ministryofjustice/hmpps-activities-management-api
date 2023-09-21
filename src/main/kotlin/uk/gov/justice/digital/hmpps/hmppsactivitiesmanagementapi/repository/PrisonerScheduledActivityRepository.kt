@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.UniquePropertyId
 import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * This repository is READ-ONLY and uses the view V_PRISONER_SCHEDULED_ACTIVITIES.
@@ -43,5 +44,39 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
+  ): List<PrisonerScheduledActivity>
+
+  @Query(
+    """
+    SELECT sa FROM PrisonerScheduledActivity sa 
+    WHERE sa.prisonCode = :prisonCode
+    AND sa.sessionDate = :date
+    AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
+    AND sa.cancelled = false
+    """,
+  )
+  fun findByPrisonCodeAndDateAndTime(
+    prisonCode: String,
+    date: LocalDate,
+    earliestStartTime: LocalTime,
+    latestStartTime: LocalTime,
+  ): List<PrisonerScheduledActivity>
+
+  @Query(
+    """
+    SELECT sa FROM PrisonerScheduledActivity sa 
+    WHERE sa.prisonCode = :prisonCode
+    AND sa.sessionDate = :date
+    AND sa.internalLocationId in :internalLocationIds
+    AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
+    AND sa.cancelled = false
+    """,
+  )
+  fun findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+    prisonCode: String,
+    internalLocationIds: Set<Int>,
+    date: LocalDate,
+    earliestStartTime: LocalTime,
+    latestStartTime: LocalTime,
   ): List<PrisonerScheduledActivity>
 }

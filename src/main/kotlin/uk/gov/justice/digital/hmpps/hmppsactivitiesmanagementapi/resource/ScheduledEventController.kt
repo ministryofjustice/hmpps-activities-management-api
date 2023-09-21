@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
@@ -34,6 +37,7 @@ class ScheduledEventController(
   private val scheduledEventService: ScheduledEventService,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
+  private val internalLocationService: InternalLocationService,
 ) {
 
   @GetMapping(
@@ -199,6 +203,84 @@ class ScheduledEventController(
       timeSlot,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
       locationService.getLocationsForAppointmentsMap(prisonCode),
+    )
+  }
+
+  @PostMapping(
+    value = ["/prison/{prisonCode}/locations"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of scheduled events for a prison and list of internal location ids numbers for a date and optional time slot",
+    description = """
+      Returns scheduled events for the prison, internal location ids, single date and an optional time slot.
+      This endpoint only returns activities and appointments and these come from the local database.
+      This endpoint supports the creation of movement lists.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled events found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = InternalLocationEvents::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getScheduledEventsForMultipleLocations(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    date: LocalDate,
+
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
+
+    @RequestBody(required = true)
+    @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
+    internalLocationIds: Set<Long>,
+  ): Set<InternalLocationEvents> {
+    require(date.isBefore(LocalDate.now().plusDays(61))) {
+      "Supply a date up to 60 days in the future"
+    }
+    return internalLocationService.getInternalLocationEvents(
+      prisonCode,
+      internalLocationIds,
+      date,
+      timeSlot,
     )
   }
 }

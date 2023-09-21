@@ -155,9 +155,6 @@ class AppointmentTest {
   @Test
   fun `entity to summary mapping`() {
     val entity = appointmentSeriesEntity().appointments().first()
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     assertThat(entity.toSummary()).isEqualTo(
       AppointmentSummary(
         entity.appointmentId,
@@ -174,9 +171,6 @@ class AppointmentTest {
   @Test
   fun `entity list to summary list mapping`() {
     val entity = appointmentSeriesEntity().appointments().first()
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(entity.updatedBy!! to userDetail(1, "UPDATE.USER", "UPDATE", "USER"))
     assertThat(listOf(entity).toSummary()).isEqualTo(
       listOf(
         AppointmentSummary(

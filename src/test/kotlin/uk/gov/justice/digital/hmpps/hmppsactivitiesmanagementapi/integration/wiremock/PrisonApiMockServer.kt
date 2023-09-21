@@ -273,13 +273,25 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetLocation(locationId: Long, jsonResponseFile: String) {
+  fun stubGetLocation(locationId: Long, jsonResponseFile: String, includeInactive: Boolean? = null) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId"))
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetLocation(locationId: Long, location: Location, includeInactive: Boolean? = null) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(location))
             .withStatus(200),
         ),
     )
@@ -292,18 +304,6 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile(jsonResponseFile)
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetLocation(locationId: Long, location: Location) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(location))
             .withStatus(200),
         ),
     )
@@ -459,6 +459,18 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody("[]")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetEventLocations(prisonCode: String, locations: List<Location>) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/eventLocations"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(locations))
             .withStatus(200),
         ),
     )
