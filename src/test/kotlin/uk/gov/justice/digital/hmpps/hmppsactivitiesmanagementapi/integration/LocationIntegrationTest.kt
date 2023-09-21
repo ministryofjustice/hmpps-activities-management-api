@@ -3,13 +3,25 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
+import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import java.time.LocalDate
 
 class LocationIntegrationTest : IntegrationTestBase() {
+  private val prisonCode = "MDI"
+
+  private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MCI-ACT-LOC1", userDescription = "Activity Location 1")
+  private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MCI-ACT-LOC2", userDescription = "Activity Location 2")
+  private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MCI-APP-LOC1", userDescription = "Appointment Location 1")
 
   @Test
   fun `locations by group name - defined in properties - selects relevant locations only`() {
@@ -180,6 +192,64 @@ class LocationIntegrationTest : IntegrationTestBase() {
       .isEqualTo(LocationPrefixDto("LDI-A-B-"))
   }
 
+  @Test
+  fun `get location events summaries authorisation required`() {
+    val date = LocalDate.now()
+    webTestClient.get()
+      .uri("/locations/prison/$prisonCode/events-summaries?date=$date")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-3.sql")
+  @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+  fun `get location events summaries for date with activities and appointments - 200 success`() {
+    val date = LocalDate.of(2022, 10, 1)
+
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+
+    webTestClient.getInternalLocationEventsSummaries(prisonCode, date) isEqualTo listOf(
+      InternalLocationEventsSummary(
+        activityLocation1.locationId,
+        prisonCode,
+        activityLocation1.description,
+        activityLocation1.userDescription!!,
+      ),
+      InternalLocationEventsSummary(
+        activityLocation2.locationId,
+        prisonCode,
+        activityLocation2.description,
+        activityLocation2.userDescription!!,
+      ),
+      InternalLocationEventsSummary(
+        appointmentLocation1.locationId,
+        prisonCode,
+        appointmentLocation1.description,
+        appointmentLocation1.userDescription!!,
+      ),
+    )
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-3.sql")
+  @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+  fun `get location events summary for date and time slot with one activity only - 200 success`() {
+    val date = LocalDate.of(2022, 10, 1)
+    val timeSlot = TimeSlot.PM
+
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+
+    webTestClient.getInternalLocationEventsSummaries(prisonCode, date, timeSlot) isEqualTo listOf(
+      InternalLocationEventsSummary(
+        activityLocation2.locationId,
+        prisonCode,
+        activityLocation2.description,
+        activityLocation2.userDescription!!,
+      ),
+    )
+  }
+
   private fun WebTestClient.getLocationPrefix(prisonCode: String, groupName: String) =
     get()
       .uri { uriBuilder: UriBuilder ->
@@ -193,4 +263,18 @@ class LocationIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectBody(LocationPrefixDto::class.java)
       .returnResult().responseBody
+
+  private fun WebTestClient.getInternalLocationEventsSummaries(
+    prisonCode: String,
+    date: LocalDate?,
+    timeSlot: TimeSlot? = null,
+  ) = get()
+    .uri("/locations/prison/$prisonCode/events-summaries?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(InternalLocationEventsSummary::class.java)
+    .returnResult().responseBody
 }

@@ -107,6 +107,7 @@ private fun appointmentAttendeeEntity(appointment: Appointment, appointmentAtten
   )
 
 internal fun appointmentInstanceEntity(
+  appointmentInstanceId: Long = 3,
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 456,
   internalLocationId: Long = 123,
@@ -118,10 +119,10 @@ internal fun appointmentInstanceEntity(
   categoryCode: String = "TEST",
 ) =
   AppointmentInstance(
-    appointmentInstanceId = 3,
+    appointmentInstanceId = appointmentInstanceId,
     appointmentSeriesId = 1,
     appointmentId = 2,
-    appointmentAttendeeId = 3,
+    appointmentAttendeeId = appointmentInstanceId,
     appointmentType = AppointmentType.INDIVIDUAL,
     prisonCode = "TPR",
     prisonerNumber = prisonerNumber,
@@ -146,18 +147,21 @@ internal fun appointmentInstanceEntity(
   )
 
 internal fun appointmentSearchEntity(
+  prisonCode: String = "TPR",
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 456,
   internalLocationId: Long = 123,
   inCell: Boolean = false,
   startDate: LocalDate = LocalDate.now(),
+  startTime: LocalTime = LocalTime.of(9, 0),
+  endTime: LocalTime = LocalTime.of(10, 30),
   createdBy: String = "CREATE.USER",
 ) =
   AppointmentSearch(
     appointmentSeriesId = 1,
     appointmentId = 2,
     appointmentType = AppointmentType.INDIVIDUAL,
-    prisonCode = "TPR",
+    prisonCode = prisonCode,
     categoryCode = "TEST",
     customName = null,
     internalLocationId = if (inCell) null else internalLocationId,
@@ -166,8 +170,8 @@ internal fun appointmentSearchEntity(
     onWing = false,
     offWing = true,
     startDate = startDate.plusDays(1),
-    startTime = LocalTime.of(9, 0),
-    endTime = LocalTime.of(10, 30),
+    startTime = startTime,
+    endTime = endTime,
     isRepeat = false,
     sequenceNumber = 1,
     maxSequenceNumber = 1,

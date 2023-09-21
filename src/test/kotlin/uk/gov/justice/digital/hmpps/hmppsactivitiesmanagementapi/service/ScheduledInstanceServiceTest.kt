@@ -256,6 +256,8 @@ class ScheduledInstanceServiceTest {
       whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
         .thenReturn(listOf(attendanceSummary))
 
+      addCaseloadIdToRequestHeader("MDI")
+
       val result = service.attendanceSummary("MDI", LocalDate.now())
 
       assertThat(result).isEqualTo(listOf(attendanceSummary.toModel()))

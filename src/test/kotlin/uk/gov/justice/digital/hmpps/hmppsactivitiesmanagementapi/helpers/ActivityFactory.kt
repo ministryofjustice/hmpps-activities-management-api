@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -409,3 +410,47 @@ fun waitingList(
     this.allocation = allocation
   }
 }
+
+internal fun activityFromDbInstance(
+  scheduledInstanceId: Long = 1,
+  allocationId: Long = 1,
+  prisonCode: String = "MDI",
+  sessionDate: LocalDate = LocalDate.of(2022, 12, 14),
+  startTime: LocalTime? = LocalTime.of(10, 0),
+  endTime: LocalTime? = LocalTime.of(11, 30),
+  prisonerNumber: String = "G4793VF",
+  bookingId: Int = 900001,
+  inCell: Boolean = false,
+  onWing: Boolean = false,
+  offWing: Boolean = false,
+  internalLocationId: Int? = 1,
+  internalLocationCode: String? = "MDI-EDU_ROOM1",
+  internalLocationDescription: String? = "Education room 1",
+  scheduleDescription: String? = "HB1 AM",
+  activityId: Int = 1,
+  activityCategory: String = "Education",
+  activitySummary: String? = "English level 1",
+  cancelled: Boolean = false,
+  suspended: Boolean = false,
+) = PrisonerScheduledActivity(
+  scheduledInstanceId = scheduledInstanceId,
+  allocationId = allocationId,
+  prisonCode = prisonCode,
+  sessionDate = sessionDate,
+  startTime = startTime,
+  endTime = endTime,
+  prisonerNumber = prisonerNumber,
+  bookingId = bookingId,
+  inCell = inCell,
+  onWing = onWing,
+  offWing = offWing,
+  internalLocationId = internalLocationId,
+  internalLocationCode = internalLocationCode,
+  internalLocationDescription = internalLocationDescription,
+  scheduleDescription = scheduleDescription,
+  activityId = activityId,
+  activityCategory = activityCategory,
+  activitySummary = activitySummary,
+  cancelled = cancelled,
+  suspended = suspended,
+)
