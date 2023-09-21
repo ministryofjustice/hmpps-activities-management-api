@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -92,12 +90,12 @@ class InternalLocationService(
       .and(appointmentSearchSpecification.startDateEquals(date))
       .and(appointmentSearchSpecification.startTimeBetween(timeRange.start, timeRange.end))
 
-    val appointments = appointmentSearchRepository.findAll(appointmentsSpec)
+    val appointments = appointmentSearchRepository.findAll(appointmentsSpec).filterNot { it.internalLocationId == null }
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(appointments.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
     appointments.forEach { it.attendees = attendeeMap[it.appointmentId] ?: emptyList() }
 
-    return appointments.filterNot { it.internalLocationId == null }.associateBy { it.internalLocationId!! }
+    return appointments.associateBy { it.internalLocationId!! }
   }
 
   fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) =
@@ -107,9 +105,7 @@ class InternalLocationService(
       val referenceCodesForAppointmentsMap =
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
-      val eventPriorities = withContext(Dispatchers.IO) {
-        prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-      }
+      val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
       val timeRange =
         timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) } ?: LocalTimeRange(
@@ -117,15 +113,13 @@ class InternalLocationService(
           LocalTime.of(23, 59),
         )
 
-      val activities = withContext(Dispatchers.IO) {
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
-          prisonCode,
-          internalLocationIds.map { it.toInt() }.toSet(),
-          date,
-          timeRange.start,
-          timeRange.end,
-        )
-      }
+      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonCode,
+        internalLocationIds.map { it.toInt() }.toSet(),
+        date,
+        timeRange.start,
+        timeRange.end,
+      )
 
       val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
         prisonCode,

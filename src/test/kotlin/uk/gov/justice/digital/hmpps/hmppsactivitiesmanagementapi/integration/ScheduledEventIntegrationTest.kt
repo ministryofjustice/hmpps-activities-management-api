@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
@@ -587,7 +588,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           with(events) {
             size isEqualTo 1
             with(this.single { it.scheduledInstanceId == 1L }) {
-              assertThat(this).isNotNull()
               eventType isEqualTo "ACTIVITY"
             }
           }
@@ -599,7 +599,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           with(events) {
             size isEqualTo 1
             with(this.single { it.scheduledInstanceId == 6L }) {
-              assertThat(this).isNotNull()
               eventType isEqualTo "ACTIVITY"
             }
           }
@@ -611,7 +610,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           with(events) {
             size isEqualTo 1
             with(this.single { it.appointmentAttendeeId == 5L }) {
-              assertThat(this).isNotNull()
               appointmentAttendeeId isEqualTo 5L
               eventType isEqualTo "APPOINTMENT"
             }
@@ -639,9 +637,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           prisonCode isEqualTo prisonCode
           code isEqualTo activityLocation1.description
           description isEqualTo activityLocation1.userDescription
-          with(events) {
-            size isEqualTo 0
-          }
+          events hasSize 0
         }
         with(this.single { it.id == activityLocation2.locationId }) {
           prisonCode isEqualTo prisonCode
@@ -650,7 +646,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           with(events) {
             size isEqualTo 1
             with(this.single { it.scheduledInstanceId == 6L }) {
-              assertThat(this).isNotNull()
               eventType isEqualTo "ACTIVITY"
             }
           }
@@ -659,9 +654,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           prisonCode isEqualTo prisonCode
           code isEqualTo appointmentLocation1.description
           description isEqualTo appointmentLocation1.userDescription
-          with(events) {
-            size isEqualTo 0
-          }
+          events hasSize 0
         }
       }
     }
