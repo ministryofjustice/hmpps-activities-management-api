@@ -45,7 +45,7 @@ class OffenderReceivedEventHandler(
         if (prisoner.isActiveInPrison(event.prisonCode())) {
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber()).let { allocations ->
             if (allocations.isNotEmpty()) {
-              transactionHandler.new {
+              transactionHandler.newSpringTransaction {
                 allocations
                   .resetSuspendedAllocations(event)
                   .resetFutureSuspendedAttendances(event)
