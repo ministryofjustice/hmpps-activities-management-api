@@ -15,6 +15,7 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -53,13 +54,14 @@ class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
   private val auditService: AuditService = mock()
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val telemetryClient: TelemetryClient = mock()
   private val service =
-    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService, telemetryClient)
+    ActivityScheduleService(repository, prisonApiClient, prisonerSearchApiClient, prisonPayBandRepository, waitingListRepository, auditService, telemetryClient)
 
   private val caseLoad = pentonvillePrisonCode
 

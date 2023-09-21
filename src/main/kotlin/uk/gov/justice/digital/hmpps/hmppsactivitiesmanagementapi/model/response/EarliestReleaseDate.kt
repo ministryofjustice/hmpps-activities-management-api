@@ -11,17 +11,17 @@ data class EarliestReleaseDate(
   val releaseDate: LocalDate?,
 
   @Schema(description = "The prisoner's earliest release date is the tariff date")
-  val isTariffDate: Boolean,
+  val isTariffDate: Boolean = false,
 
   @Schema(description = "The prisoner's sentence is indeterminate")
-  val isIndeterminateSentence: Boolean,
+  val isIndeterminateSentence: Boolean = false,
 
   @Schema(description = "The prisoner is an immigration detainee")
-  val isImmigrationDetainee: Boolean,
+  val isImmigrationDetainee: Boolean = false,
 
   @Schema(description = "The prisoner is convicted and unsentenced")
-  val isConvictedUnsentenced: Boolean,
+  val isConvictedUnsentenced: Boolean = false,
 
   @Schema(description = "The prisoner is on remand")
-  val isRemand: Boolean,
+  val isRemand: Boolean = false,
 )

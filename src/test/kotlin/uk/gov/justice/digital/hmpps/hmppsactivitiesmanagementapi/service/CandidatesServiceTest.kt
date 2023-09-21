@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
@@ -304,7 +305,9 @@ class CandidatesServiceTest {
       assertThat(suitability.releaseDate).isEqualTo(
         ReleaseDateSuitability(
           suitable = true,
-          earliestReleaseDate = LocalDate.now().plusYears(1),
+          earliestReleaseDate = EarliestReleaseDate(
+            releaseDate = LocalDate.now().plusYears(1)
+          ),
         ),
       )
     }
@@ -326,7 +329,9 @@ class CandidatesServiceTest {
       assertThat(suitability.releaseDate).isEqualTo(
         ReleaseDateSuitability(
           suitable = false,
-          earliestReleaseDate = LocalDate.now().minusDays(1),
+          earliestReleaseDate = EarliestReleaseDate(
+            LocalDate.now().minusDays(1),
+          )
         ),
       )
     }
@@ -344,10 +349,11 @@ class CandidatesServiceTest {
 
       assertThat(suitability.releaseDate).isEqualTo(
         ReleaseDateSuitability(
-          suitable = false,
-          earliestReleaseDate = null,
+          suitable = true,
+          earliestReleaseDate = EarliestReleaseDate(null),
         ),
       )
+      
     }
 
     @Test
@@ -518,7 +524,7 @@ class CandidatesServiceTest {
             prisonerNumber = "A1234BC",
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
-            releaseDate = null,
+            earliestReleaseDate = EarliestReleaseDate(null),
           ),
         ),
       )
