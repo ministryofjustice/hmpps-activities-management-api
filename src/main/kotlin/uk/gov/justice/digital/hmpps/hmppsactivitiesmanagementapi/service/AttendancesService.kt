@@ -12,6 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
@@ -23,6 +25,8 @@ class AttendancesService(
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val caseNotesApiClient: CaseNotesApiClient,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
 
   companion object {
@@ -35,25 +39,33 @@ class AttendancesService(
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     log.info("Attendance marking in progress")
 
-    val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
-    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
+    val markedAttendanceIds = transactionHandler.new {
+      val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
+      val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
-    attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
-      val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!
+      attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
+        val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!
 
-      attendance.mark(
-        principalName = principalName,
-        reason = attendanceReasonsByCode[updateRequest.maybeAttendanceReason()],
-        newStatus = updateRequest.status,
-        newComment = updateRequest.comment,
-        newIssuePayment = updateRequest.issuePayment,
-        newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
-        newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
-        newOtherAbsenceReason = updateRequest.otherAbsenceReason,
-      )
+        attendance.mark(
+          principalName = principalName,
+          reason = attendanceReasonsByCode[updateRequest.maybeAttendanceReason()],
+          newStatus = updateRequest.status,
+          newComment = updateRequest.comment,
+          newIssuePayment = updateRequest.issuePayment,
+          newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
+          newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
+          newOtherAbsenceReason = updateRequest.otherAbsenceReason,
+        )
 
-      attendanceRepository.saveAndFlush(attendance)
-    }.also { log.info("Attendance marking done for ${it.size} attendance record(s)") }
+        attendanceRepository.saveAndFlush(attendance)
+      }.map { it.attendanceId }
+    }
+
+    markedAttendanceIds.forEach { id ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, id)
+    }.also { log.info("Sending attendance amended events.") }
+
+    log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =

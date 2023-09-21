@@ -6,9 +6,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -31,7 +33,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,6 +57,7 @@ class ActivitiesChangedEventHandlerTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
     rolloutPrisonRepository,
@@ -60,6 +66,8 @@ class ActivitiesChangedEventHandlerTest {
     attendanceReasonRepository,
     prisonerSearchApiClient,
     prisonerAllocationHandler,
+    TransactionHandler(),
+    outboundEventsService,
   )
 
   @Test
@@ -161,6 +169,7 @@ class ActivitiesChangedEventHandlerTest {
     verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
     verify(todaysFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
     verify(tomorrowsFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
+    verify(outboundEventsService, times(2)).send(eq(OutboundEvent.PRISONER_ATTENDANCE_AMENDED), any())
   }
 
   @Test

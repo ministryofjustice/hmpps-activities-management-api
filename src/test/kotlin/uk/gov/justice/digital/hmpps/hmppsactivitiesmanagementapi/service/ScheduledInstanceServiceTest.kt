@@ -48,6 +48,7 @@ class ScheduledInstanceServiceTest {
     attendanceReasonRepository,
     attendanceSummaryRepository,
     outboundEventsService,
+    TransactionHandler(),
   )
 
   @Nested
@@ -131,6 +132,7 @@ class ScheduledInstanceServiceTest {
       assertThat(instance.cancelled).isFalse
       verify(repository).saveAndFlush(instance)
       verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
     }
 
     @Test
@@ -203,6 +205,7 @@ class ScheduledInstanceServiceTest {
 
       verify(outboundEventsService)
         .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
     }
 
     @Test

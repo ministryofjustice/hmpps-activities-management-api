@@ -84,14 +84,14 @@ data class ScheduledInstance(
 
   /**
    * This will not cancel suspended attendances. If you wish to cancel a suspended attendance then you must cancel the
-   * attendance directly.
+   * attendance directly. Returns the attendances that have been cancelled.
    */
   fun cancelSessionAndAttendances(
     reason: String,
     by: String,
     cancelComment: String?,
     cancellationReason: AttendanceReason,
-  ) {
+  ): List<Attendance> {
     require(!cancelled) { "The schedule instance has already been cancelled" }
 
     val today = LocalDateTime.now().withNano(0)
@@ -103,16 +103,17 @@ data class ScheduledInstance(
     cancelledTime = today
     cancelledBy = by
     comment = cancelComment
-    attendances
+
+    return attendances
       .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
-      .forEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
+      .onEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
   }
 
   /**
    * This will not uncancel suspended attendances. If you wish to uncancel a suspended attendance then you must uncancel the
-   * attendance directly.
+   * attendance directly. Returns the attendances that have been uncancelled.
    */
-  fun uncancelSessionAndAttendances() {
+  fun uncancelSessionAndAttendances(): List<Attendance> {
     require(sessionDate >= LocalDate.now()) {
       "Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past"
     }
@@ -123,9 +124,10 @@ data class ScheduledInstance(
     cancelledBy = null
     cancelledReason = null
     cancelledTime = null
-    attendances
+
+    return attendances
       .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
-      .forEach(Attendance::uncancel)
+      .onEach(Attendance::uncancel)
   }
 
   fun remove(attendance: Attendance) {

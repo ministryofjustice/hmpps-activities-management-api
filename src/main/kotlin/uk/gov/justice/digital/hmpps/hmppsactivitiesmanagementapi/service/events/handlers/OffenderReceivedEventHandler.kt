@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -13,7 +14,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -25,6 +29,8 @@ class OffenderReceivedEventHandler(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<OffenderReceivedEvent> {
 
   companion object {
@@ -39,9 +45,15 @@ class OffenderReceivedEventHandler(
         if (prisoner.isActiveInPrison(event.prisonCode())) {
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber()).let { allocations ->
             if (allocations.isNotEmpty()) {
-              allocations
-                .resetSuspendedAllocations(event)
-                .resetFutureSuspendedAttendances(event)
+              transactionHandler.new {
+                allocations
+                  .resetSuspendedAllocations(event)
+                  .resetFutureSuspendedAttendances(event)
+              }.let { updatedAttendances ->
+                updatedAttendances.forEach {
+                  outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
+                }.also { log.info("Sending attendance amended events.") }
+              }
             } else {
               log.info("No allocations for prisoner ${event.prisonerNumber()} in prison ${event.prisonCode()}")
             }
@@ -69,11 +81,11 @@ class OffenderReceivedEventHandler(
         log.info("Reset ${this.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
       }
 
-  private fun List<Allocation>.resetFutureSuspendedAttendances(event: OffenderReceivedEvent) {
+  private fun List<Allocation>.resetFutureSuspendedAttendances(event: OffenderReceivedEvent): List<Attendance> {
     val now = LocalDateTime.now()
     val cancelledReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
 
-    forEach { allocation ->
+    return flatMap { allocation ->
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         prisonCode = event.prisonCode(),
         sessionDate = LocalDate.now(),
@@ -92,8 +104,7 @@ class OffenderReceivedEventHandler(
           } else {
             attendance.unsuspend().also { log.info("Unsuspended attendance ${attendance.attendanceId}") }
           }
-        }
-        .also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
+        }.also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }
 }

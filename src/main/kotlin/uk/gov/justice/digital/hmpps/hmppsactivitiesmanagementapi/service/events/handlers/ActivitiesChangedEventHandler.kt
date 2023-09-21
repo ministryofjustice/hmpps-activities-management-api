@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isTemporarilyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -15,8 +16,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDateTime
 
 @Component
@@ -28,6 +32,8 @@ class ActivitiesChangedEventHandler(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -56,9 +62,15 @@ class ActivitiesChangedEventHandler(
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
     runCatching {
       LocalDateTime.now().let { now ->
-        allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
-          .suspendPrisonersAllocations(now, event)
-          .suspendPrisonersFutureAttendances(now, event)
+        transactionHandler.new {
+          allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+            .suspendPrisonersAllocations(now, event)
+            .suspendPrisonersFutureAttendances(now, event)
+        }.let { updatedAttendances ->
+          updatedAttendances.forEach {
+            outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
+          }.also { log.info("Sending attendance amended events.") }
+        }
       }
 
       Outcome.success()
@@ -76,10 +88,10 @@ class ActivitiesChangedEventHandler(
   private fun List<Allocation>.suspendPrisonersFutureAttendances(
     dateTime: LocalDateTime,
     event: ActivitiesChangedEvent,
-  ) {
+  ): List<Attendance> {
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
-    forEach { allocation ->
+    return flatMap { allocation ->
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         event.prisonCode(),
         dateTime.toLocalDate(),
