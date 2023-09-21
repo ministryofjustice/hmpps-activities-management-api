@@ -306,7 +306,7 @@ class CandidatesServiceTest {
         ReleaseDateSuitability(
           suitable = true,
           earliestReleaseDate = EarliestReleaseDate(
-            releaseDate = LocalDate.now().plusYears(1)
+            releaseDate = LocalDate.now().plusYears(1),
           ),
         ),
       )
@@ -331,7 +331,7 @@ class CandidatesServiceTest {
           suitable = false,
           earliestReleaseDate = EarliestReleaseDate(
             LocalDate.now().minusDays(1),
-          )
+          ),
         ),
       )
     }
@@ -353,7 +353,6 @@ class CandidatesServiceTest {
           earliestReleaseDate = EarliestReleaseDate(null),
         ),
       )
-      
     }
 
     @Test
