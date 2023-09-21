@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -390,12 +389,10 @@ class InternalLocationServiceTest {
           description isEqualTo education1Location.userDescription
           with(events) {
             size isEqualTo 2
-            with(this.first { it.scheduledInstanceId == education1Activity.scheduledInstanceId }) {
-              assertThat(this).isNotNull()
+            with(this.single { it.scheduledInstanceId == education1Activity.scheduledInstanceId }) {
               eventType isEqualTo "ACTIVITY"
             }
-            with(this.first { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }) {
-              assertThat(this).isNotNull()
+            with(this.single { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }) {
               appointmentAttendeeId isEqualTo education1AppointmentInstance.appointmentInstanceId
               eventType isEqualTo "APPOINTMENT"
             }
@@ -443,12 +440,10 @@ class InternalLocationServiceTest {
           description isEqualTo education2Location.userDescription
           with(events) {
             size isEqualTo 2
-            with(this.first { it.scheduledInstanceId == education2Activity.scheduledInstanceId }) {
-              assertThat(this).isNotNull()
+            with(this.single { it.scheduledInstanceId == education2Activity.scheduledInstanceId }) {
               eventType isEqualTo "ACTIVITY"
             }
-            with(this.first { it.appointmentAttendeeId == education2AppointmentInstance.appointmentAttendeeId }) {
-              assertThat(this).isNotNull()
+            with(this.single { it.appointmentAttendeeId == education2AppointmentInstance.appointmentAttendeeId }) {
               appointmentAttendeeId isEqualTo education2AppointmentInstance.appointmentInstanceId
               eventType isEqualTo "APPOINTMENT"
             }

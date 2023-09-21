@@ -2,15 +2,21 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
@@ -535,5 +541,146 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(adjudications).hasSize(2)
       }
     }
+  }
+
+  @Nested
+  @DisplayName("getInternalLocationEvents")
+  inner class GetInternalLocationEvents {
+    private val prisonCode = "MDI"
+
+    private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MCI-ACT-LOC1", userDescription = "Activity Location 1")
+    private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MCI-ACT-LOC2", userDescription = "Activity Location 2")
+    private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MCI-APP-LOC1", userDescription = "Appointment Location 1")
+
+    @BeforeEach
+    fun setUp() {
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+    }
+
+    @Test
+    fun `get location events authorisation required`() {
+      val date = LocalDate.now()
+      webTestClient.post()
+        .uri("/scheduled-events/prison/$prisonCode/locations?date=$date")
+        .bodyValue(setOf(1L))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events for date with activities and appointments - 200 success`() {
+      val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId)
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+
+      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
+
+      with(result) {
+        size isEqualTo 3
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation1.description
+          description isEqualTo activityLocation1.userDescription
+          with(events) {
+            size isEqualTo 1
+            with(this.single { it.scheduledInstanceId == 1L }) {
+              assertThat(this).isNotNull()
+              eventType isEqualTo "ACTIVITY"
+            }
+          }
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation2.description
+          description isEqualTo activityLocation2.userDescription
+          with(events) {
+            size isEqualTo 1
+            with(this.single { it.scheduledInstanceId == 6L }) {
+              assertThat(this).isNotNull()
+              eventType isEqualTo "ACTIVITY"
+            }
+          }
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentLocation1.description
+          description isEqualTo appointmentLocation1.userDescription
+          with(events) {
+            size isEqualTo 1
+            with(this.single { it.appointmentAttendeeId == 5L }) {
+              assertThat(this).isNotNull()
+              appointmentAttendeeId isEqualTo 5L
+              eventType isEqualTo "APPOINTMENT"
+            }
+          }
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events for date and time slot with one activity only - 200 success`() {
+      val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId)
+      val date = LocalDate.of(2022, 10, 1)
+      val timeSlot = TimeSlot.PM
+
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+
+      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date, timeSlot)!!
+      println(result)
+
+      with(result) {
+        size isEqualTo 3
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation1.description
+          description isEqualTo activityLocation1.userDescription
+          with(events) {
+            size isEqualTo 0
+          }
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation2.description
+          description isEqualTo activityLocation2.userDescription
+          with(events) {
+            size isEqualTo 1
+            with(this.single { it.scheduledInstanceId == 6L }) {
+              assertThat(this).isNotNull()
+              eventType isEqualTo "ACTIVITY"
+            }
+          }
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentLocation1.description
+          description isEqualTo appointmentLocation1.userDescription
+          with(events) {
+            size isEqualTo 0
+          }
+        }
+      }
+    }
+
+    private fun WebTestClient.getInternalLocationEvents(
+      prisonCode: String,
+      internalLocationIds: Set<Long>,
+      date: LocalDate,
+      timeSlot: TimeSlot? = null,
+    ) =
+      post()
+        .uri("/scheduled-events/prison/$prisonCode/locations?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
+        .bodyValue(internalLocationIds)
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBodyList(InternalLocationEvents::class.java)
+        .returnResult().responseBody
   }
 }
