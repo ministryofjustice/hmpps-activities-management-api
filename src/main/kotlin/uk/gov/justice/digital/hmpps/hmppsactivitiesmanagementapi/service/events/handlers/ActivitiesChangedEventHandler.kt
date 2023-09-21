@@ -62,7 +62,7 @@ class ActivitiesChangedEventHandler(
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
     runCatching {
       LocalDateTime.now().let { now ->
-        transactionHandler.new {
+        transactionHandler.newSpringTransaction {
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
