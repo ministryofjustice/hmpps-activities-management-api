@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
-import java.time.LocalDate
 
 @Schema(description = "Describes a candidate for allocation to an activity")
 data class ActivityCandidate(
@@ -18,6 +17,6 @@ data class ActivityCandidate(
   @Schema(description = "Any activities the candidate is currently allocated to (excluding ended)")
   val otherAllocations: List<Allocation>,
 
-  @Schema(description = "The candidate's earliest release date", example = "2027-01-24")
-  val releaseDate: LocalDate?,
+  @Schema(description = "The candidate's earliest release date")
+  val earliestReleaseDate: EarliestReleaseDate,
 )

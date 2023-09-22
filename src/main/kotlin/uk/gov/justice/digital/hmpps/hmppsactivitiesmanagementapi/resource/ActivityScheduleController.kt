@@ -104,12 +104,12 @@ class ActivityScheduleController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAllocationsBy(
     @PathVariable("scheduleId") scheduleId: Long,
-    @RequestParam(
-      value = "activeOnly",
-      required = false,
-    )
+    @RequestParam(value = "activeOnly", required = false)
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
+    @RequestParam(value = "includePrisonerSummary", required = false)
+    @Parameter(description = "If true will fetch and add prisoner details from prisoner search. Defaults to false.")
+    includePrisonerSummary: Boolean?,
     @RequestParam(
       value = "date",
       required = false,
@@ -117,7 +117,7 @@ class ActivityScheduleController(
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "If provided will filter allocations by the given date. Format YYYY-MM-DD.")
     date: LocalDate?,
-  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, date)
+  ) = scheduleService.getAllocationsBy(scheduleId, activeOnly ?: true, includePrisonerSummary ?: false, date)
 
   @GetMapping(value = ["/{scheduleId}"])
   @ResponseBody

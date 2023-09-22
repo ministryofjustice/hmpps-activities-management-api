@@ -15,6 +15,8 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -34,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -53,13 +56,22 @@ class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
   private val auditService: AuditService = mock()
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val telemetryClient: TelemetryClient = mock()
   private val service =
-    ActivityScheduleService(repository, prisonApiClient, prisonPayBandRepository, waitingListRepository, auditService, telemetryClient)
+    ActivityScheduleService(
+      repository,
+      prisonApiClient,
+      prisonerSearchApiClient,
+      prisonPayBandRepository,
+      waitingListRepository,
+      auditService,
+      telemetryClient,
+    )
 
   private val caseLoad = pentonvillePrisonCode
 
@@ -88,7 +100,9 @@ class ActivityScheduleServiceTest {
     val allocations = service.getAllocationsBy(1)
 
     assertThat(allocations).hasSize(1)
-    assertThat(allocations).containsExactlyInAnyOrder(*schedule.allocations().toModelAllocations().toTypedArray())
+    assertThat(allocations).containsExactlyInAnyOrder(
+      *schedule.allocations().toModelAllocations().toTypedArray(),
+    )
   }
 
   @Test
@@ -103,10 +117,41 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
+  fun `getAllocationsBy - prisoner information is returned`() {
+    val schedule = schedule(pentonvillePrisonCode)
+    val prisoner: Prisoner = mock {
+      on { firstName } doReturn "JOE"
+      on { lastName } doReturn "BLOGGS"
+      on { cellLocation } doReturn "MDI-1-1-001"
+      on { releaseDate } doReturn LocalDate.now()
+      on { prisonerNumber } doReturn "A1234AA"
+    }
+
+    whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(Mono.just(listOf(prisoner)))
+
+    val expectedResponse = schedule.allocations().toModelAllocations().apply {
+      map {
+        it.prisonerName = "JOE BLOGGS"
+        it.cellLocation = "MDI-1-1-001"
+        it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
+      }
+    }
+
+    assertThat(service.getAllocationsBy(1, activeOnly = false, includePrisonerSummary = true))
+      .isEqualTo(expectedResponse)
+  }
+
+  @Test
   fun `can get allocations for given date`() {
     val schedule = schedule(pentonvillePrisonCode)
 
-    whenever(repository.getActivityScheduleByIdWithFilters(1, allocationsActiveOnDate = LocalDate.now()))
+    whenever(
+      repository.getActivityScheduleByIdWithFilters(
+        1,
+        allocationsActiveOnDate = LocalDate.now(),
+      ),
+    )
       .thenReturn(schedule)
 
     assertThat(service.getAllocationsBy(1, activeOn = LocalDate.now())).isEqualTo(
@@ -117,7 +162,8 @@ class ActivityScheduleServiceTest {
   @Test
   fun `all current, future and ended allocations for a given schedule are returned`() {
     val active = activeAllocation.copy(allocationId = 1)
-    val suspended = activeAllocation.copy(allocationId = 1).apply { prisonerStatus = PrisonerStatus.SUSPENDED }
+    val suspended =
+      activeAllocation.copy(allocationId = 1).apply { prisonerStatus = PrisonerStatus.SUSPENDED }
     val ended =
       active.copy(allocationId = 2, startDate = active.startDate.minusDays(2))
         .apply { endDate = LocalDate.now().minusDays(1) }
@@ -151,11 +197,20 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1"), DeallocationReason.OTHER.name, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(
+        listOf("1"),
+        DeallocationReason.OTHER.name,
+        TimeSource.tomorrow(),
+      ),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
+    verify(schedule).deallocatePrisonerOn(
+      "1",
+      TimeSource.tomorrow(),
+      DeallocationReason.OTHER,
+      "by test",
+    )
     verify(repository).saveAndFlush(schedule)
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
@@ -172,12 +227,26 @@ class ActivityScheduleServiceTest {
 
     service.deallocatePrisoners(
       schedule.activityScheduleId,
-      PrisonerDeallocationRequest(listOf("1", "2"), DeallocationReason.OTHER.name, TimeSource.tomorrow()),
+      PrisonerDeallocationRequest(
+        listOf("1", "2"),
+        DeallocationReason.OTHER.name,
+        TimeSource.tomorrow(),
+      ),
       "by test",
     )
 
-    verify(schedule).deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
-    verify(schedule).deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test")
+    verify(schedule).deallocatePrisonerOn(
+      "1",
+      TimeSource.tomorrow(),
+      DeallocationReason.OTHER,
+      "by test",
+    )
+    verify(schedule).deallocatePrisonerOn(
+      "2",
+      TimeSource.tomorrow(),
+      DeallocationReason.OTHER,
+      "by test",
+    )
     verify(repository).saveAndFlush(schedule)
   }
 
@@ -230,8 +299,14 @@ class ActivityScheduleServiceTest {
     schedule.activity.startDate = LocalDate.now().plusDays(2)
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -253,8 +328,14 @@ class ActivityScheduleServiceTest {
     schedule.activity.endDate = TimeSource.tomorrow()
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -276,8 +357,14 @@ class ActivityScheduleServiceTest {
     val schedule = activitySchedule(activityEntity(prisonCode = pentonvillePrisonCode))
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -299,8 +386,14 @@ class ActivityScheduleServiceTest {
     val schedule = activitySchedule(activityEntity())
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -326,9 +419,19 @@ class ActivityScheduleServiceTest {
     schedule.allocations() hasSize 0
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("654321", fullInfo = false)).doReturn(Mono.just(prisoner))
-    whenever(prisonApiClient.getPrisonerDetails("654321", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("654321", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("654321", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.saveAndFlush(any())).doReturn(schedule)
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
@@ -388,9 +491,19 @@ class ActivityScheduleServiceTest {
     )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.saveAndFlush(any())).doReturn(schedule)
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
@@ -451,9 +564,19 @@ class ActivityScheduleServiceTest {
     )
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(prisonPayBandsLowMediumHigh(caseLoad))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
-    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(Mono.just(prisoner))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
+    whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
+      Mono.just(
+        prisoner,
+      ),
+    )
     whenever(repository.saveAndFlush(any())).doReturn(schedule)
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(

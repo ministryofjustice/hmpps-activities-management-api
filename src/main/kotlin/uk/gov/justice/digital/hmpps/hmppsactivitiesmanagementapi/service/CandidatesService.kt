@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
@@ -120,7 +121,7 @@ class CandidatesService(
         prisonerNumber = it.prisonerNumber,
         cellLocation = it.cellLocation,
         otherAllocations = thisPersonsAllocations,
-        releaseDate = it.releaseDate,
+        earliestReleaseDate = determineEarliestReleaseDate(it),
       )
     }
   }
@@ -256,11 +257,13 @@ class CandidatesService(
   private fun releaseDateSuitability(
     activityStartDate: LocalDate,
     prisonerDetail: Prisoner,
-  ) = ReleaseDateSuitability(
-    // TODO: More logic needed to determine actual earliest release date
-    suitable = prisonerDetail.releaseDate?.isAfter(activityStartDate) ?: false,
-    earliestReleaseDate = prisonerDetail.releaseDate,
-  )
+  ): ReleaseDateSuitability {
+    val earliestReleaseDate = determineEarliestReleaseDate(prisonerDetail)
+    return ReleaseDateSuitability(
+      suitable = earliestReleaseDate.releaseDate?.isAfter(activityStartDate) ?: true,
+      earliestReleaseDate = earliestReleaseDate,
+    )
+  }
 
   companion object {
     const val WORKPLACE_RISK_LEVEL_LOW = "RLO"

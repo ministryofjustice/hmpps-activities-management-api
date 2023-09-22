@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -77,6 +78,15 @@ data class Allocation(
 
   @Schema(description = "Where an allocation end date has been set, this includes the details of the planned de-allocation")
   val plannedDeallocation: PlannedDeallocation?,
+
+  @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
+  var prisonerName: String? = null,
+
+  @Schema(description = "The cell location of the prisoner. Included only if includePrisonerSummary = true")
+  var cellLocation: String? = null,
+
+  @Schema(description = "The earliest release date of the prisoner. Included only if includePrisonerSummary = true")
+  var earliestReleaseDate: EarliestReleaseDate? = null,
 )
 
 @Schema(
