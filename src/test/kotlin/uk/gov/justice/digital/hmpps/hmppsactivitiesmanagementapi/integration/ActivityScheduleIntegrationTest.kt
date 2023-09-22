@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
@@ -79,8 +81,40 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get only active allocations for Maths`() {
-    webTestClient.getAllocationsBy(1)!!
+    val response = webTestClient.getAllocationsBy(1)!!.also { assertThat(it).hasSize(2) }
+    response.forEach {
+      assertThat(it.prisonerName).isNull()
+      assertThat(it.cellLocation).isNull()
+      assertThat(it.earliestReleaseDate).isNull()
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `get only active allocations for Maths with prisoner information`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A", firstName = "Joe", releaseDate = LocalDate.now()),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A", firstName = "Tim", releaseDate = LocalDate.now().plusDays(1)),
+      ),
+    )
+
+    val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
       .also { assertThat(it).hasSize(2) }
+
+    response[0].let {
+      assertThat(it.prisonerName).isEqualTo("Joe Harrison")
+      assertThat(it.cellLocation).isEqualTo("1-2-3")
+      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now()))
+    }
+    response[1].let {
+      assertThat(it.prisonerName).isEqualTo("Tim Harrison")
+      assertThat(it.cellLocation).isEqualTo("1-2-3")
+      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now().plusDays(1)))
+    }
   }
 
   @Sql(
@@ -131,6 +165,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAllocationsBy(
     scheduleId: Long,
     activeOnly: Boolean? = null,
+    includePrisonerSummary: Boolean? = null,
     date: LocalDate? = null,
     caseLoadId: String = "PVI",
   ) =
@@ -139,6 +174,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         builder
           .path("/schedules/$scheduleId/allocations")
           .maybeQueryParam("activeOnly", activeOnly)
+          .maybeQueryParam("includePrisonerSummary", includePrisonerSummary)
           .maybeQueryParam("date", date)
           .build(scheduleId)
       }

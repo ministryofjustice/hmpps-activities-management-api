@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -29,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformFilteredInstances
@@ -41,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
@@ -90,7 +93,7 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, activeOn: LocalDate? = null): List<Allocation> {
+  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, includePrisonerSummary: Boolean = false, activeOn: LocalDate? = null): List<Allocation> {
     val activitySchedule = repository.getActivityScheduleByIdWithFilters(
       scheduleId,
       allocationsActiveOnDate = activeOn,
@@ -101,6 +104,19 @@ class ActivityScheduleService(
       .allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
+      .apply {
+        if (includePrisonerSummary) {
+          val prisoners =
+            prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber }).block()!!
+
+          map {
+            val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }!!
+            it.prisonerName = "${prisoner.firstName} ${prisoner.lastName}"
+            it.cellLocation = prisoner.cellLocation
+            it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
+          }
+        }
+      }
   }
 
   fun getScheduleById(scheduleId: Long) =

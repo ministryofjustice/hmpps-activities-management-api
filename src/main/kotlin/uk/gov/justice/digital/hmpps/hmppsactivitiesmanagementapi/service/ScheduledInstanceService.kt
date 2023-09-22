@@ -63,7 +63,7 @@ class ScheduledInstanceService(
   fun uncancelScheduledInstance(id: Long) {
     log.info("Uncancelling scheduled instance $id")
 
-    val (uncancelledInstance, uncancelledAttendances) = transactionHandler.new {
+    val (uncancelledInstance, uncancelledAttendances) = transactionHandler.newSpringTransaction {
       val scheduledInstance = repository.findById(id)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
@@ -89,7 +89,7 @@ class ScheduledInstanceService(
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
     log.info("Cancelling scheduled instance $instanceId")
 
-    val (cancelledInstance, cancelledAttendances) = transactionHandler.new {
+    val (cancelledInstance, cancelledAttendances) = transactionHandler.newSpringTransaction {
       val scheduledInstance = repository.findById(instanceId)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 

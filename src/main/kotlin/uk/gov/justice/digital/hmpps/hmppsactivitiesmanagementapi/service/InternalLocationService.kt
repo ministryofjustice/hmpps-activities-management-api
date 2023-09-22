@@ -62,12 +62,7 @@ class InternalLocationService(
     runBlocking {
       checkCaseloadAccess(prisonCode)
 
-      val timeRange =
-        timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) } ?: LocalTimeRange(
-          LocalTime.of(0, 0),
-          LocalTime.of(23, 59),
-        )
-
+      val timeRange = getTimeRange(prisonCode, timeSlot)
       val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeRange)
       val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
 
@@ -107,11 +102,7 @@ class InternalLocationService(
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
-      val timeRange =
-        timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) } ?: LocalTimeRange(
-          LocalTime.of(0, 0),
-          LocalTime.of(23, 59),
-        )
+      val timeRange = getTimeRange(prisonCode, timeSlot)
 
       val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
         prisonCode,
@@ -153,4 +144,13 @@ class InternalLocationService(
         )
       }.toSet()
     }
+
+  private fun getTimeRange(prisonCode: String, timeSlot: TimeSlot?) =
+    timeSlot?.let {
+      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it)
+        .let { tr -> LocalTimeRange(tr.start, tr.end.minusMinutes(1)) }
+    } ?: LocalTimeRange(
+      LocalTime.of(0, 0),
+      LocalTime.of(23, 59),
+    )
 }
