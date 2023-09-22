@@ -447,7 +447,7 @@ class ScheduledEventService(
   ): List<AppointmentInstance> {
     val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
     val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
-    val latestStartTime = timeRange?.end ?: LocalTime.of(23, 59)
+    val latestStartTime = timeRange?.end?.minusMinutes(1) ?: LocalTime.of(23, 59)
     return appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(
       prisonCode,
       prisonerNumbers,

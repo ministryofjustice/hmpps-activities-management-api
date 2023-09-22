@@ -290,7 +290,7 @@ class InternalLocationServiceTest {
           prisonCode,
           date,
           timeSlotPm.first,
-          timeSlotPm.second,
+          timeSlotPm.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(inactiveEducation1Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noUserDescriptionLocationAppointment))
@@ -316,7 +316,7 @@ class InternalLocationServiceTest {
 
       verify(appointmentSearchSpecification).prisonCodeEquals(prisonCode)
       verify(appointmentSearchSpecification).startDateEquals(date)
-      verify(appointmentSearchSpecification).startTimeBetween(timeSlotPm.first, timeSlotPm.second)
+      verify(appointmentSearchSpecification).startTimeBetween(timeSlotPm.first, timeSlotPm.second.minusMinutes(1))
       verifyNoMoreInteractions(appointmentSearchSpecification)
     }
 
@@ -412,7 +412,7 @@ class InternalLocationServiceTest {
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
           timeSlotPm.first,
-          timeSlotPm.second,
+          timeSlotPm.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(education2Activity))
       whenever(
@@ -421,7 +421,7 @@ class InternalLocationServiceTest {
           internalLocationIds,
           date,
           timeSlotPm.first,
-          timeSlotPm.second,
+          timeSlotPm.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(education2AppointmentInstance))
 
@@ -463,7 +463,7 @@ class InternalLocationServiceTest {
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
           timeSlotEd.first,
-          timeSlotEd.second,
+          timeSlotEd.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(noLocationActivity))
       whenever(
@@ -472,7 +472,7 @@ class InternalLocationServiceTest {
           internalLocationIds,
           date,
           timeSlotEd.first,
-          timeSlotEd.second,
+          timeSlotEd.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(noLocationAppointmentInstance))
 
