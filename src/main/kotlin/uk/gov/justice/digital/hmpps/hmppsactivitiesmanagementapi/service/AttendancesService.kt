@@ -39,7 +39,7 @@ class AttendancesService(
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     log.info("Attendance marking in progress")
 
-    val markedAttendanceIds = transactionHandler.new {
+    val markedAttendanceIds = transactionHandler.newSpringTransaction {
       val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
       val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
