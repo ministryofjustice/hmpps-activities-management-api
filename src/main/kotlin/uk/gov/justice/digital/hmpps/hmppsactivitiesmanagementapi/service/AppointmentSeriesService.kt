@@ -239,7 +239,7 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule?) {
+  private fun failIfMaximumAppointmentInstancesExceeded(prisonerNumbers: List<String>, repeat: AppointmentSeriesSchedule?) {
     val repeatCount = repeat?.numberOfAppointments ?: 1
     require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
       "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
