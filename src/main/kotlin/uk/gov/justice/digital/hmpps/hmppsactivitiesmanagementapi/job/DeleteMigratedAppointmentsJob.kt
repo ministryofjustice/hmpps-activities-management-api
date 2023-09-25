@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import java.time.LocalDate
 
@@ -41,7 +41,7 @@ class DeleteMigratedAppointmentsJob(
 
     transactionHandler.newSpringTransaction {
       val appointmentSeriesToDelete = appointmentSeriesRepository.findAll(spec)
-      val deletedAppointmentInstanceIds = appointmentSeriesToDelete.flatMap {it.appointments().flatMap { appointment -> appointment.attendees().map { attendee -> attendee.appointmentAttendeeId } } }
+      val deletedAppointmentInstanceIds = appointmentSeriesToDelete.flatMap { it.appointments().flatMap { appointment -> appointment.attendees().map { attendee -> attendee.appointmentAttendeeId } } }
 
       appointmentSeriesToDelete.forEach {
         appointmentSeriesRepository.delete(it)

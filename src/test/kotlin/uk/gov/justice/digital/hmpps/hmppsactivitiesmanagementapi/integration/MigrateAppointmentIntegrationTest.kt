@@ -136,7 +136,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `delete migrated appointments - success`() {
-    webTestClient.deleteMigratedAppointments("RSI", LocalDate.of(2023, 9, 25))
+    webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
 
     // Appointments starting earlier than supplied date should not have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {
@@ -168,7 +168,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `delete migrated chaplaincy appointments - success`() {
-    webTestClient.deleteMigratedAppointments("RSI", LocalDate.of(2023, 9, 25), "CHAP")
+    webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1), "CHAP")
 
     // Appointments starting earlier than supplied date should not have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {

@@ -98,9 +98,9 @@ class MigrateAppointmentController(
       supplied start date and are assigned the optional category code.
       """,
     description = """
-      Migrated appointments matching the supplied
-      criteria will be soft deleted in the database. An appointment instance deleted domain event used for syncing will
-      be published for each deleted appointment. This will cause the mapped appointment in NOMIS to also be deleted.
+      Migrated appointments matching the supplied criteria will be soft deleted in the database. An appointment instance
+      deleted domain event used for syncing will be published for each deleted appointment. This will cause the mapped
+      appointment in NOMIS to also be deleted.
     """,
   )
   @ApiResponses(
@@ -145,11 +145,16 @@ class MigrateAppointmentController(
 
     @RequestParam(value = "startDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Inclusive start date of migrated appointments to be deleted.")
+    @Parameter(description = "Inclusive start date of migrated appointments to be deleted. Must be today or in the future")
     startDate: LocalDate,
 
     @RequestParam(value = "categoryCode", required = false)
     @Parameter(description = "The category code assigned to migrated appointments to be deleted.")
     categoryCode: String? = null,
-  ) = deleteMigratedAppointmentsJob.execute(prisonCode, startDate, categoryCode)
+  ) {
+    require(startDate.isAfter(LocalDate.now().minusDays(1))) {
+      "Start date must not be in the past"
+    }
+    deleteMigratedAppointmentsJob.execute(prisonCode, startDate, categoryCode)
+  }
 }
