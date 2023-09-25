@@ -190,6 +190,7 @@ class AppointmentSeriesService(
     }
   }
 
+  // TODO: Create migrate appointment service and move this function
   fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): AppointmentInstance {
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
     val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())

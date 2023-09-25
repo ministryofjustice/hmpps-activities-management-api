@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -13,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 @Entity
 @Table(name = "appointment_attendee")
-@EntityListeners(AppointmentAttendeeEntityListener::class)
 data class AppointmentAttendeeSearch(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
