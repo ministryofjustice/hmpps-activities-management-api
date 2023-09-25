@@ -33,6 +33,7 @@ class AppointmentService(
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val updateAppointmentsJob: UpdateAppointmentsJob,
   private val cancelAppointmentsJob: CancelAppointmentsJob,
+  @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
   @Transactional(readOnly = true)
@@ -109,6 +110,10 @@ class AppointmentService(
 
     val updateAppointmentsCount = appointmentsToUpdate.size
     val updateInstancesCount = appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentsToUpdate)
+    require(updateInstancesCount <= maxAppointmentInstances) {
+      "You cannot modify more than ${maxAppointmentInstances / updateAppointmentsCount} appointment instances for this number of attendees"
+    }
+
     // Determine if this is an update request that will affect more than one appointment and a very large number of appointment instances. If it is, only update the first appointment
     val updateFirstAppointmentOnly = updateAppointmentsCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 

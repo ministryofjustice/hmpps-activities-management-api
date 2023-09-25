@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -132,6 +133,46 @@ class AppointmentServiceUpdateTest {
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot add prisoners to an individual appointment")
+  }
+
+  @Test
+  fun `updating prisoner list throws exception if adding more than 20,000 new appointment instances`() {
+    val appointment = expectRepeatAppointment()
+    val appointmentSeries = appointment.appointmentSeries
+    val prisonerList = MutableList(250) { prisoner -> "A11${prisoner}BC" }
+    val request = AppointmentUpdateRequest(addPrisonerNumbers = prisonerList, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
+      .thenReturn(
+        Mono.just(
+          request.addPrisonerNumbers!!.map {
+            PrisonerSearchPrisonerFixture.instance(
+              prisonerNumber = it,
+              bookingId = 1,
+              prisonId = appointment.prisonCode,
+            )
+          },
+        ),
+      )
+
+    whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()))
+      .thenReturn(prisonerList.size * appointmentSeries.schedule!!.numberOfAppointments)
+
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("You cannot modify more than 200 appointment instances for this number of attendees")
+  }
+
+  private fun expectRepeatAppointment(): Appointment {
+    val appointmentSeries = appointmentSeriesEntity(
+      appointmentType = AppointmentType.GROUP,
+      frequency = AppointmentFrequency.DAILY,
+      numberOfAppointments = 100,
+    )
+    val appointment = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
+      Optional.of(appointment),
+    )
+    return appointment
   }
 
   private fun expectGroupAppointment(): Appointment {
