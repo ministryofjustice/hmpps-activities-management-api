@@ -12,13 +12,8 @@ fun determineEarliestReleaseDate(prisoner: Prisoner): EarliestReleaseDate {
   }
 
   return EarliestReleaseDate(
-    releaseDate = when {
-      prisoner.releaseDate != null -> prisoner.releaseDate
-      hasActualParoleDate(prisoner) -> prisoner.actualParoleDate
-      hasTariffDate(prisoner) -> prisoner.tariffDate
-      else -> null
-    },
-    isTariffDate = prisoner.tariffDate?.isEqual(releaseDate) ?: false,
+    releaseDate = releaseDate,
+    isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
     isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
     isImmigrationDetainee = prisoner.legalStatus == Prisoner.LegalStatus.IMMIGRATION_DETAINEE,
     isRemand = prisoner.legalStatus == Prisoner.LegalStatus.REMAND,
