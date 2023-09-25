@@ -12,14 +12,14 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.test.web.servlet.get
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -35,7 +35,6 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.deleted=true",
   ],
 )
-@Transactional(readOnly = true)
 class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
   @MockBean
@@ -137,7 +136,21 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `delete migrated appointments - success`() {
-    webTestClient.deleteMigratedAppointments("MDI", LocalDate.of(2023, 9, 25))
+    webTestClient.deleteMigratedAppointments("RSI", LocalDate.of(2023, 9, 25))
+
+    // Appointments starting earlier than supplied date should not have been deleted
+    setOf(10L, 11L, 12L, 13L).forEach {
+      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+    }
+
+    // Not migrated
+    assertThat(webTestClient.getAppointmentById(14)).isNotNull
+    // On start date
+    webTestClient.expectGetAppointmentByIdNotFound(15)
+    // Different prison
+    assertThat(webTestClient.getAppointmentById(16)).isNotNull
+    // On start date
+    webTestClient.expectGetAppointmentByIdNotFound(17)
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -155,7 +168,21 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `delete migrated chaplaincy appointments - success`() {
-    webTestClient.deleteMigratedAppointments("MDI", LocalDate.of(2023, 9, 25), "CHAP")
+    webTestClient.deleteMigratedAppointments("RSI", LocalDate.of(2023, 9, 25), "CHAP")
+
+    // Appointments starting earlier than supplied date should not have been deleted
+    setOf(10L, 11L, 12L, 13L).forEach {
+      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+    }
+
+    // Not migrated
+    assertThat(webTestClient.getAppointmentById(14)).isNotNull
+    // On start date with matching category code
+    webTestClient.expectGetAppointmentByIdNotFound(15)
+    // Different prison
+    assertThat(webTestClient.getAppointmentById(16)).isNotNull
+    // On start date with different category code
+    assertThat(webTestClient.getAppointmentById(17)).isNotNull
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -193,4 +220,31 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(1000)
   }
+
+  private fun WebTestClient.getAppointmentSeriesById(id: Long) =
+    get()
+      .uri("/appointment-series/$id")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(AppointmentSeries::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.expectGetAppointmentByIdNotFound(id: Long) =
+    get()
+      .uri("/appointments/$id")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNotFound
+
+  private fun WebTestClient.getAppointmentById(id: Long) =
+    get()
+      .uri("/appointments/$id")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Appointment::class.java)
+      .returnResult().responseBody
 }

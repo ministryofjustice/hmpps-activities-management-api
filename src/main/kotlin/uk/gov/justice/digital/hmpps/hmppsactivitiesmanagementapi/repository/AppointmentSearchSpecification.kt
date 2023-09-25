@@ -28,7 +28,7 @@ class AppointmentSearchSpecification {
     Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Long>("internalLocationId"), internalLocationId) }
 
   fun inCellEquals(inCell: Boolean) =
-    Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Long>("inCell"), inCell) }
+    Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Boolean>("inCell"), inCell) }
 
   fun prisonerNumbersIn(prisonerNumbers: List<String>) =
     Specification<AppointmentSearch> { root, _, _ -> root.join<AppointmentSearch, AppointmentAttendeeSearch>("attendees").get<String>("prisonerNumber").`in`(prisonerNumbers) }
