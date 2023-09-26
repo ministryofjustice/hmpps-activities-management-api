@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
@@ -375,25 +376,27 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetAppointmentCategoryReferenceCodes() {
+  fun stubGetAppointmentCategoryReferenceCodes(appointmentCategories: List<ReferenceCode>) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/INT_SCH_RSN/codes"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(
-              mapper.writeValueAsString(
-                listOf(
-                  appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-                  appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-                  appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-                ),
-              ),
+              mapper.writeValueAsString(appointmentCategories),
             )
             .withStatus(200),
         ),
     )
   }
+
+  fun stubGetAppointmentCategoryReferenceCodes() = stubGetAppointmentCategoryReferenceCodes(
+    listOf(
+      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
+      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
+      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
+    ),
+  )
 
   fun stubGetAppointmentScheduleReasons() {
     stubFor(

@@ -38,10 +38,10 @@ class AppointmentService(
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentById(appointmentId: Long): AppointmentModel {
-    val appointmentSeries = appointmentRepository.findOrThrowNotFound(appointmentId)
-    checkCaseloadAccess(appointmentSeries.prisonCode)
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    checkCaseloadAccess(appointment.prisonCode)
 
-    return appointmentSeries.toModel()
+    return appointment.toModel()
   }
 
   @Transactional(readOnly = true)

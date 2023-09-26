@@ -26,6 +26,8 @@ internal fun appointmentSeriesEntity(
   appointmentSeriesId: Long = 1,
   appointmentSet: AppointmentSet? = null,
   appointmentType: AppointmentType? = null,
+  prisonCode: String = "TPR",
+  categoryCode: String = "TEST",
   customName: String? = "Appointment description",
   internalLocationId: Long = 123,
   inCell: Boolean = false,
@@ -38,12 +40,13 @@ internal fun appointmentSeriesEntity(
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
   frequency: AppointmentFrequency? = null,
   numberOfAppointments: Int = 1,
+  isMigrated: Boolean = false,
 ) = AppointmentSeries(
   appointmentSeriesId = appointmentSeriesId,
   appointmentSet = appointmentSet,
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
-  prisonCode = "TPR",
-  categoryCode = "TEST",
+  prisonCode = prisonCode,
+  categoryCode = categoryCode,
   customName = customName,
   appointmentTier = appointmentTierNotSpecified(),
   internalLocationId = internalLocationId,
@@ -56,6 +59,7 @@ internal fun appointmentSeriesEntity(
   createdBy = createdBy,
   updatedTime = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
+  isMigrated = isMigrated,
 ).apply {
   appointmentSet?.addAppointmentSeries(this)
 
