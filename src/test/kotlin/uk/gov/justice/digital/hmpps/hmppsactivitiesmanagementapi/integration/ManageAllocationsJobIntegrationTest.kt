@@ -134,7 +134,14 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
-  fun `pending allocations on or before today are activated`() {
+  fun `pending allocations on or before today are activated when prisoners are in prison`() {
+    listOf("PAST", "TODAY", "FUTURE").forEach { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        inOutStatus = Prisoner.InOutStatus.IN,
+      ).also { prisonerSearchApiMockServer.stubSearchByPrisonerNumber(it) }
+    }
+
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       prisoner("PAST") isStatus PENDING
@@ -151,6 +158,32 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     with(allocationRepository.findAll()) {
       prisoner("PAST") isStatus ACTIVE
       prisoner("TODAY") isStatus ACTIVE
+      prisoner("FUTURE") isStatus PENDING
+    }
+  }
+
+  @Sql("classpath:test_data/seed-allocations-pending.sql")
+  @Test
+  fun `pending allocations on or before today are suspended when prisoners are out of prison`() {
+    listOf("PAST", "TODAY", "FUTURE").forEach { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        inOutStatus = Prisoner.InOutStatus.OUT,
+      ).also { prisonerSearchApiMockServer.stubSearchByPrisonerNumber(it) }
+    }
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("PAST") isStatus PENDING
+      prisoner("TODAY") isStatus PENDING
+      prisoner("FUTURE") isStatus PENDING
+    }
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus AUTO_SUSPENDED
+      prisoner("TODAY") isStatus AUTO_SUSPENDED
       prisoner("FUTURE") isStatus PENDING
     }
   }

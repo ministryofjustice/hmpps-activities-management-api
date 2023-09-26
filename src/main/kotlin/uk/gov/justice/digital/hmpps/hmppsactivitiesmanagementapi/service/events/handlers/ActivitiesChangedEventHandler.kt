@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
@@ -79,7 +80,13 @@ class ActivitiesChangedEventHandler(
     runCatching {
       LocalDateTime.now().let { now ->
         transactionHandler.newSpringTransaction {
-          allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+          allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+            event.prisonCode(),
+            event.prisonerNumber(),
+            PrisonerStatus.ACTIVE,
+            PrisonerStatus.PENDING,
+          )
+            .excludingFuturePendingAllocations()
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
         }.let { (suspendedAllocations, suspendedAttendances) ->
@@ -99,9 +106,11 @@ class ActivitiesChangedEventHandler(
       Outcome.failed { "An error occurred whilst trying to suspend prisoner ${event.prisonerNumber()}" }
     }
 
+  private fun List<Allocation>.excludingFuturePendingAllocations() =
+    filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
+
   private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
-    filter { it.status(PrisonerStatus.ACTIVE) }
-      .onEach { it.autoSuspend(suspendedAt, "Temporary absence") }
+    onEach { it.autoSuspend(suspendedAt, "Temporary absence") }
       .also { log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
   private fun List<Allocation>.suspendPrisonersFutureAttendances(

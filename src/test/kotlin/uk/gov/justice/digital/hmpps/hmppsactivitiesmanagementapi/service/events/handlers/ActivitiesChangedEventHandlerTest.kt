@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -29,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -42,9 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import java.lang.IllegalStateException
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 
 class ActivitiesChangedEventHandlerTest {
   private val rolloutPrison: RolloutPrison = mock {
@@ -99,37 +97,58 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `allocations are auto-suspended on suspend action`() {
+  fun `active allocations and pending allocations starting on or before today are auto-suspended on suspend action`() {
     val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    ).onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-      assertThat(it.suspendedBy).isNull()
-      assertThat(it.suspendedReason).isNull()
-      assertThat(it.suspendedTime).isNull()
-    }
+      allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(allocationId = 2, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(
+        allocationId = 3,
+        prisonerNumber = "123456",
+        prisonerStatus = PrisonerStatus.PENDING,
+        startDate = TimeSource.today(),
+      ),
+      allocation().copy(
+        allocationId = 4,
+        prisonerNumber = "123456",
+        prisonerStatus = PrisonerStatus.PENDING,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(allocations)
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+        moorlandPrisonCode,
+        "123456",
+        PrisonerStatus.ACTIVE,
+        PrisonerStatus.PENDING,
+      ),
+    ) doReturn allocations
 
     val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
-    assertThat(outcome.isSuccess()).isTrue
+    outcome.isSuccess() isBool true
 
-    allocations.forEach {
-      assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
-      assertThat(it.suspendedReason).isEqualTo("Temporary absence")
-      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+    allocations.subList(0, 2).forEach {
+      it.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      it.suspendedBy isEqualTo "Activities Management Service"
+      it.suspendedReason isEqualTo "Temporary absence"
+      it.suspendedTime isCloseTo TimeSource.now()
     }
+
+    allocations.last().prisonerStatus isEqualTo PrisonerStatus.PENDING
   }
 
   @Test
   fun `only future attendances are suspended on suspend action`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          moorlandPrisonCode,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+        ),
+      ) doReturn it
     }
 
     val suspendedAttendanceReason = mock<AttendanceReason>().also {
@@ -181,30 +200,13 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `only active allocations are auto-suspended on suspend action`() {
-    val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocateNowWithReason(DeallocationReason.ENDED) },
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    )
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
-
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
-
-    assertThat(outcome.isSuccess()).isTrue
-    assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-    assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue
-    assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-  }
-
-  @Test
   fun `allocations are not auto-suspended if a runtime error occurs`() {
     whenever(
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(
+      allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
         moorlandPrisonCode,
         "123456",
+        PrisonerStatus.ACTIVE,
+        PrisonerStatus.PENDING,
       ),
     ) doThrow RuntimeException("Error")
 

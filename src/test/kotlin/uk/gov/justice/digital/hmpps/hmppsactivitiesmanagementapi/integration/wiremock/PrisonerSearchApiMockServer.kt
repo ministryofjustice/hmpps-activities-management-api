@@ -74,4 +74,16 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
         ),
     )
   }
+
+  fun stubSearchByPrisonerNumber(prisoner: Prisoner) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/prisoner/${prisoner.prisonerNumber}"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(prisoner))
+            .withStatus(200),
+        ),
+    )
+  }
 }

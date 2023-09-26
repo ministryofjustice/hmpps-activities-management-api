@@ -4,7 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 
-fun Prisoner.isOut() = inOutStatus == Prisoner.InOutStatus.OUT
+fun Prisoner.isOutOfPrison() = inOutStatus == Prisoner.InOutStatus.OUT
 
 fun Prisoner.lastMovementType(): MovementType? =
   MovementType.entries.firstOrNull { it.nomisShortCode == lastMovementTypeCode }
