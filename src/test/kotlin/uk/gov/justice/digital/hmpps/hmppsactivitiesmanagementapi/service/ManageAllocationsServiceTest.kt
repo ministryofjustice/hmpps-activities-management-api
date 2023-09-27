@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -10,6 +11,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -22,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -43,6 +46,7 @@ class ManageAllocationsServiceTest {
   private val searchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val prisonApi: PrisonApiApplicationClient = mock()
 
   private val service =
     ManageAllocationsService(
@@ -55,9 +59,15 @@ class ManageAllocationsServiceTest {
       waitingListService,
       TransactionHandler(),
       outboundEventsService,
+      prisonApi,
     )
   private val yesterday = LocalDate.now().minusDays(1)
   private val today = yesterday.plusDays(1)
+
+  @BeforeEach
+  fun setup() {
+    whenever(searchApiClient.findByPrisonerNumbers(any())) doReturn Mono.just(emptyList())
+  }
 
   @Test
   fun `deallocate offenders from activity ending today without pending deallocation`() {
@@ -266,6 +276,42 @@ class ManageAllocationsServiceTest {
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
+
+    allocation.verifyIsExpired()
+
+    verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `released offenders are deallocated from allocations pending due to expire`() {
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = TimeSource.tomorrow())
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+    val prisoner: Prisoner = mock {
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
+      on { prisonerNumber } doReturn allocation.prisonerNumber
+      on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
+      on { releaseDate } doReturn LocalDate.now().minusDays(5)
+    }
+
+    whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
+    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
+      allocation,
+    )
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
+
+    service.allocations(AllocationOperation.EXPIRING_TODAY)
+
+    verify(waitingListService).declinePendingOrApprovedApplications(
+      prison.code,
+      allocation.prisonerNumber,
+      "Released",
+      "Activities Management Service",
+    )
 
     allocation.verifyIsExpired()
 

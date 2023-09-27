@@ -138,7 +138,7 @@ fun movement(
   prisonerNumber: String = "A1179MT",
   movementDate: LocalDate = LocalDate.now(),
   movementTime: LocalTime = LocalTime.now(),
-  movementType: Movement.MovementType = Movement.MovementType.TRN
+  movementType: Movement.MovementType = Movement.MovementType.TRN,
 ) =
   Movement(
     offenderNo = prisonerNumber,

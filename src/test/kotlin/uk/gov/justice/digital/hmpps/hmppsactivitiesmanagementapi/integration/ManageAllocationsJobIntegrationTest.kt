@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,9 +26,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -117,18 +120,27 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
+    prisonApiMockServer.stubLatestPrisonerMovements(
+      listOf("A11111A"),
+      listOf(movement("A11111A", movementDate = TimeSource.daysInPast(10))),
+    )
 
     with(allocationRepository.findAll()) {
-      size isEqualTo 1
-      prisoner("A11111A") isStatus AUTO_SUSPENDED
+      this hasSize 2
+      prisonerAllocation(AUTO_SUSPENDED).prisonerNumber isEqualTo "A11111A"
+      prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
     }
 
     webTestClient.manageAllocations(withDeallocate = true)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
-    allocationRepository.findAll().prisoner("A11111A") isDeallocatedWithReason EXPIRED
+    val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
+
+    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason EXPIRED }
+
     waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
   }
 
@@ -204,6 +216,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   }
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
+
+  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) = single { it.prisonerStatus == prisonerStatus }
 
   private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 

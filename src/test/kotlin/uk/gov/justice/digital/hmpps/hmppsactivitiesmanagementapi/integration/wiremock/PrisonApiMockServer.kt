@@ -285,12 +285,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocation(locationId: Long, jsonResponseFile: String, includeInactive: Boolean? = null) {
     stubFor(
-      WireMock.get(
-        WireMock.urlEqualTo(
-          "/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" }
-            ?: ""),
-        ),
-      )
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -302,12 +297,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
 
   fun stubGetLocation(locationId: Long, location: Location, includeInactive: Boolean? = null) {
     stubFor(
-      WireMock.get(
-        WireMock.urlEqualTo(
-          "/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" }
-            ?: ""),
-        ),
-      )
+      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
