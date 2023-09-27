@@ -2,13 +2,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTime
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 fun userDetail(
   id: Long = 1,
@@ -53,7 +56,12 @@ fun internalLocation(
     userDescription = userDescription,
   )
 
-fun appointmentLocation(locationId: Long, prisonCode: String, description: String = "Test Appointment Location", userDescription: String = "Test Appointment Location User Description") =
+fun appointmentLocation(
+  locationId: Long,
+  prisonCode: String,
+  description: String = "Test Appointment Location",
+  userDescription: String = "Test Appointment Location User Description",
+) =
   Location(
     locationId = locationId,
     locationType = "APP",
@@ -124,4 +132,27 @@ fun adjudicationHearing(
     internalLocationId = internalLocationId,
     internalLocationDescription = internalLocationDescription,
     eventStatus = eventStatus,
+  )
+
+fun movement(
+  prisonerNumber: String = "A1179MT",
+  movementDate: LocalDate = LocalDate.now(),
+  movementTime: LocalTime = LocalTime.now(),
+  movementType: Movement.MovementType = Movement.MovementType.TRN
+) =
+  Movement(
+    offenderNo = prisonerNumber,
+    createDateTime = TimeSource.now().toIsoDateTime(),
+    fromAgency = "MDI",
+    fromAgencyDescription = "Moorland",
+    toAgency = "OUT",
+    toAgencyDescription = "Outside",
+    fromCity = "",
+    toCity = "",
+    movementType = movementType,
+    movementTypeDescription = movementType.value,
+    directionCode = "OUT",
+    movementDate = movementDate,
+    movementTime = movementTime.toIsoTime(),
+    movementReason = "Abscond",
   )

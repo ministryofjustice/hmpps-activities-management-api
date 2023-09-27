@@ -20,8 +20,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import java.time.LocalDate
@@ -496,7 +498,12 @@ class PrisonApiClientTest {
     val fromDate = LocalDate.now()
     val toDate = fromDate.plusDays(1)
 
-    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate.rangeTo(toDate), prisonerNumbers.toList(), TimeSlot.AM)
+    prisonApiMockServer.stubAdjudicationHearing(
+      prisonCode,
+      fromDate.rangeTo(toDate),
+      prisonerNumbers.toList(),
+      TimeSlot.AM,
+    )
 
     val adjudications = prisonApiClient.getOffenderAdjudications(
       prisonCode,
@@ -532,7 +539,12 @@ class PrisonApiClientTest {
         ),
       )
 
-    prisonApiMockServer.stubAdjudicationHearing(prisonCode, fromDate.rangeTo(toDate), prisonerNumbers.toList(), timeslot)
+    prisonApiMockServer.stubAdjudicationHearing(
+      prisonCode,
+      fromDate.rangeTo(toDate),
+      prisonerNumbers.toList(),
+      timeslot,
+    )
 
     val adjudications = prisonApiClient.getOffenderAdjudications(
       prisonCode,
@@ -560,5 +572,23 @@ class PrisonApiClientTest {
     runBlocking {
       prisonApiClient.getEventLocationsAsync(prisonCode) isEqualTo eventLocations
     }
+  }
+
+  @Test
+  fun `getLatestMovementForPrisoners - success when movement found`() {
+    val movement = movement(prisonerNumber = "AB1235C")
+    prisonApiMockServer.stubLatestPrisonerMovements(listOf("AB1235C"), listOf(movement))
+    prisonApiClient.getLatestMovementForPrisoners(setOf("AB1235C")) containsExactly listOf(movement)
+  }
+
+  @Test
+  fun `getLatestMovementForPrisoners - empty when no movement found`() {
+    prisonApiMockServer.stubLatestPrisonerMovements(listOf("AB1235C"), emptyList())
+    prisonApiClient.getLatestMovementForPrisoners(setOf("AB1235C")) containsExactly emptyList()
+  }
+
+  @Test
+  fun `getLatestMovementForPrisoners - empty when no prisoners supplied`() {
+    prisonApiClient.getLatestMovementForPrisoners(emptySet()) containsExactly emptyList()
   }
 }
