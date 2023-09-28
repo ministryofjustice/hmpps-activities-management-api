@@ -922,14 +922,14 @@ class AppointmentSeriesServiceTest {
     service.migrateAppointment(request, principal)
 
     with(appointmentSeriesEntityCaptor.value) {
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(customName).isEqualTo(request.comment)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
       assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(extraInformation).isEqualTo(request.comment)
-      assertThat(customName).isNull()
+      assertThat(extraInformation).isNull()
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo(request.createdBy)
       assertThat(updatedTime).isNull()
@@ -938,13 +938,14 @@ class AppointmentSeriesServiceTest {
       with(appointments()) {
         assertThat(size).isEqualTo(1)
         with(appointments().first()) {
-          assertThat(categoryCode).isEqualTo(request.categoryCode)
           assertThat(prisonCode).isEqualTo(request.prisonCode)
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
+          assertThat(customName).isEqualTo(request.comment)
           assertThat(internalLocationId).isEqualTo(request.internalLocationId)
           assertThat(startDate).isEqualTo(request.startDate)
           assertThat(startTime).isEqualTo(request.startTime)
           assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(extraInformation).isEqualTo(request.comment)
+          assertThat(extraInformation).isNull()
           assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
           assertThat(createdBy).isEqualTo(request.createdBy)
           assertThat(updatedTime).isNull()
@@ -959,6 +960,104 @@ class AppointmentSeriesServiceTest {
           }
         }
       }
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with null comment success`() {
+    val request = appointmentMigrateRequest(comment = null)
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isNull()
+      assertThat(extraInformation).isNull()
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with empty comment success`() {
+    val request = appointmentMigrateRequest(comment = "")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isNull()
+      assertThat(extraInformation).isNull()
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with whitespace only comment success`() {
+    val request = appointmentMigrateRequest(comment = "    ")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isNull()
+      assertThat(extraInformation).isNull()
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with comment whitespace start and end success`() {
+    val request = appointmentMigrateRequest(comment = "   First 40 characters will become the appointments custom name but the full comment will go to extra information.  ")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isEqualTo("First 40 characters will become the appo")
+      assertThat(extraInformation).isEqualTo(request.comment!!.trim())
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with comment under 40 characters success`() {
+    val request = appointmentMigrateRequest(comment = "Appointments custom name")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isEqualTo(request.comment)
+      assertThat(extraInformation).isNull()
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with 40 character comment success`() {
+    val request = appointmentMigrateRequest(comment = "Appointment custom name as it's 40 chars")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isEqualTo(request.comment)
+      assertThat(extraInformation).isNull()
+    }
+  }
+
+  @Test
+  fun `migrateAppointment with comment over 40 characters success`() {
+    val request = appointmentMigrateRequest(comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.")
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
+    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
+
+    service.migrateAppointment(request, principal)
+
+    with(appointmentSeriesEntityCaptor.value) {
+      assertThat(customName).isEqualTo("First 40 characters will become the appo")
+      assertThat(extraInformation).isEqualTo(request.comment)
     }
   }
 

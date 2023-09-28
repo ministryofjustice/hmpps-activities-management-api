@@ -86,6 +86,33 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
+  @Test
+  fun `migrate appointment with comment over 40 characters success`() {
+    val request = appointmentMigrateRequest(
+      categoryCode = "AC1",
+      comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.",
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+    with(response) {
+      assertThat(customName).isEqualTo("First 40 characters will become the appo")
+      assertThat(extraInformation).isEqualTo(request.comment)
+    }
+
+    verifyNoInteractions(eventsPublisher)
+  }
+
   private fun verifyAppointmentInstance(response: AppointmentInstance) {
     with(response) {
       assertThat(id).isNotNull
@@ -99,13 +126,13 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(prisonerNumber).isEqualTo("A1234BC")
       assertThat(bookingId).isEqualTo(123)
       assertThat(categoryCode).isEqualTo("AC1")
-      assertThat(customName).isNull()
+      assertThat(customName).isEqualTo("Appointment level comment")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
       assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
-      assertThat(extraInformation).isEqualTo("Appointment level comment")
+      assertThat(extraInformation).isNull()
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("CREATE.USER")
       assertThat(updatedTime).isNull()
