@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.EXPIRED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -139,7 +139,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
 
-    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason EXPIRED }
+    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
 
     waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
   }
@@ -217,7 +217,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
 
-  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) = single { it.prisonerStatus == prisonerStatus }
+  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) =
+    single { it.prisonerStatus == prisonerStatus }
 
   private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 

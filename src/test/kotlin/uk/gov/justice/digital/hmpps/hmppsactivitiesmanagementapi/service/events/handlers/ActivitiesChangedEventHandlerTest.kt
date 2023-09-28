@@ -131,7 +131,7 @@ class ActivitiesChangedEventHandlerTest {
     allocations.subList(0, 2).forEach {
       it.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
       it.suspendedBy isEqualTo "Activities Management Service"
-      it.suspendedReason isEqualTo "Temporary absence"
+      it.suspendedReason isEqualTo "Temporarily released or transferred"
       it.suspendedTime isCloseTo TimeSource.now()
     }
 

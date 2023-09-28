@@ -13,7 +13,6 @@ import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -204,86 +203,7 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `temporarily absent offenders are deallocated from allocations due to expire`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = yesterday, endDate = today)
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
-    val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
-    }
-
-    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)).doReturn(prisonRegime())
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
-      listOf(allocation),
-    )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
-
-    service.allocations(AllocationOperation.EXPIRING_TODAY)
-
-    allocation.verifyIsExpired()
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `transferred offenders are deallocated from allocations due to expire`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(prisonCode = prison.code, startDate = yesterday, endDate = today)
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
-    val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.TRANSFER.nomisShortCode
-    }
-
-    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)).doReturn(prisonRegime())
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
-      listOf(allocation),
-    )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
-
-    service.allocations(AllocationOperation.EXPIRING_TODAY)
-
-    allocation.verifyIsExpired()
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `released offenders are deallocated from allocations due to expire`() {
-    val prison = rolloutPrison()
-    val activity = activityEntity(startDate = yesterday, endDate = today)
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
-    val prisoner: Prisoner = mock {
-      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
-      on { releaseDate } doReturn LocalDate.now().minusDays(5)
-    }
-
-    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)).doReturn(prisonRegime())
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
-      listOf(allocation),
-    )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
-
-    service.allocations(AllocationOperation.EXPIRING_TODAY)
-
-    allocation.verifyIsExpired()
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `released offenders are deallocated from allocations pending due to expire`() {
+  fun `prisoners are deallocated from allocations pending due to expire`() {
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = TimeSource.tomorrow())
     val schedule = activity.schedules().first()
@@ -291,8 +211,6 @@ class ManageAllocationsServiceTest {
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
-      on { releaseDate } doReturn LocalDate.now().minusDays(5)
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
@@ -319,7 +237,7 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `released offenders due to expire waiting lists are declined`() {
+  fun `prisoners due to expire waiting lists are declined`() {
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = yesterday, endDate = today)
     val schedule = activity.schedules().first()
@@ -327,16 +245,19 @@ class ManageAllocationsServiceTest {
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.RELEASE.nomisShortCode
-      on { releaseDate } doReturn LocalDate.now().minusDays(5)
     }
 
-    whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prison))
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)).doReturn(prisonRegime())
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)).doReturn(
-      listOf(allocation),
-    )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
+    whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
+    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerStatus(
+        prison.code,
+        PrisonerStatus.AUTO_SUSPENDED,
+      ),
+    ) doReturn listOf(allocation)
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -359,7 +280,6 @@ class ManageAllocationsServiceTest {
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { lastMovementTypeCode } doReturn MovementType.TEMPORARY_ABSENCE.nomisShortCode
     }
 
     whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prisonWithRegime, prisonWithoutRegime))
@@ -374,6 +294,8 @@ class ManageAllocationsServiceTest {
       listOf(allocation),
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
+    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -525,7 +447,7 @@ class ManageAllocationsServiceTest {
   private fun Allocation.verifyIsExpired() {
     prisonerStatus isEqualTo PrisonerStatus.ENDED
     deallocatedTime!! isCloseTo TimeSource.now()
-    deallocatedReason isEqualTo DeallocationReason.EXPIRED
+    deallocatedReason isEqualTo DeallocationReason.TEMPORARILY_RELEASED
     deallocatedBy isEqualTo "Activities Management Service"
   }
 }

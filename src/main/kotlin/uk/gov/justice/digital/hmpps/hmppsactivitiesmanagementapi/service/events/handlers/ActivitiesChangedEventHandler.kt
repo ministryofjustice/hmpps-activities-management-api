@@ -110,7 +110,7 @@ class ActivitiesChangedEventHandler(
     filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
 
   private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
-    onEach { it.autoSuspend(suspendedAt, "Temporary absence") }
+    onEach { it.autoSuspend(suspendedAt, "Temporarily released or transferred") }
       .also { log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
   private fun List<Allocation>.suspendPrisonersFutureAttendances(
