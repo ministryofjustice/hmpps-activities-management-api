@@ -10,6 +10,7 @@ enum class TelemetryEvent(val value: String) {
   APPOINTMENT_EDITED("SAA-Appointment-Edited"),
   APPOINTMENT_SEARCH("SAA-Appointment-Search"),
   APPOINTMENT_SET_CREATED("SAA-Appointment-Set-Created"),
+  APPOINTMENTS_AGGREGATE_METRICS("SAA-Appointments-Aggregate-Metrics"),
   COC("SAA-Activity-Circumstances-Changed"),
   EDIT_ACTIVITY("SAA-Activity-Edited"),
   PRISONER_ADDED_TO_WAITLIST("SAA-Prisoner-Added-To-Waitlist"),
