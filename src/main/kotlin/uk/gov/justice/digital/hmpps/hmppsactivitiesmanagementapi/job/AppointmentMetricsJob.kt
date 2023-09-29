@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import java.time.LocalDate
@@ -76,7 +76,7 @@ class AppointmentMetricsJob(
       APPOINTMENT_SERIES_COUNT_METRIC_KEY to 0.0,
       APPOINTMENT_SET_COUNT_METRIC_KEY to 0.0,
       CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-      DELETED_APPOINTMENT_COUNT to 0.0,
+      DELETED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
     )
 
     val appointments = appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(prisonCode, appointmentCategory, yesterday)

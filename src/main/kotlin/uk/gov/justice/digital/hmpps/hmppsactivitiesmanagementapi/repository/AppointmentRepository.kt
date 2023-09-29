@@ -13,10 +13,11 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
 
   @Query(
     value =
-    "FROM Appointment a " +
-      "WHERE a.prisonCode = :prisonCode" +
-      " AND a.categoryCode = :categoryCode" +
-      "  AND a.startDate = :startDate",
+    "SELECT * FROM appointment a " +
+      "WHERE a.prison_code = :prisonCode" +
+      " AND a.category_code = :categoryCode" +
+      "  AND a.start_date = :startDate",
+    nativeQuery = true,
   )
   fun findByPrisonCodeAndCategoryCodeAndDate(prisonCode: String, categoryCode: String, startDate: LocalDate): List<Appointment>
 }

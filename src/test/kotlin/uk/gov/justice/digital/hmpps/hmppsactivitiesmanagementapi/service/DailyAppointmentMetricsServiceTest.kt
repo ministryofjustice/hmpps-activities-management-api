@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
 
 class DailyAppointmentMetricsServiceTest {
 
@@ -66,6 +66,7 @@ class DailyAppointmentMetricsServiceTest {
     Assertions.assertThat(metricsMap[APPOINTMENT_SERIES_COUNT_METRIC_KEY]).isEqualTo(1.0)
     Assertions.assertThat(metricsMap[APPOINTMENT_SET_COUNT_METRIC_KEY]).isEqualTo(1.0)
     Assertions.assertThat(metricsMap[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+    Assertions.assertThat(metricsMap[DELETED_APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
   }
 
   private fun createMetricsMap() = mutableMapOf(
@@ -74,6 +75,6 @@ class DailyAppointmentMetricsServiceTest {
     APPOINTMENT_SERIES_COUNT_METRIC_KEY to 0.0,
     APPOINTMENT_SET_COUNT_METRIC_KEY to 0.0,
     CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-    DELETED_APPOINTMENT_COUNT to 0.0,
+    DELETED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
   )
 }

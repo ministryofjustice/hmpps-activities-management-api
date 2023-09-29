@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
 
 @Service
 class DailyAppointmentMetricsService {
@@ -29,6 +30,10 @@ class DailyAppointmentMetricsService {
 
       if (it.isCancelled() && !it.isDeleted) {
         incrementMetric(metricsMap, CANCELLED_APPOINTMENT_COUNT_METRIC_KEY)
+      }
+
+      if (it.isDeleted) {
+        incrementMetric(metricsMap, DELETED_APPOINTMENT_COUNT_METRIC_KEY)
       }
     }
   }
