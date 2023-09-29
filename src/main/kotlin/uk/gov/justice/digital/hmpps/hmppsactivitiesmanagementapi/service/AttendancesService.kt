@@ -1,10 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
@@ -14,6 +17,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
@@ -27,6 +32,7 @@ class AttendancesService(
   private val caseNotesApiClient: CaseNotesApiClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   companion object {
@@ -46,6 +52,8 @@ class AttendancesService(
       attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
         val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!
 
+        val currentAttendanceStatus = attendance.status()
+
         attendance.mark(
           principalName = principalName,
           reason = attendanceReasonsByCode[updateRequest.maybeAttendanceReason()],
@@ -58,6 +66,12 @@ class AttendancesService(
         )
 
         attendanceRepository.saveAndFlush(attendance)
+
+        // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event
+        if (currentAttendanceStatus == AttendanceStatus.WAITING && attendance.status() == AttendanceStatus.COMPLETED) {
+          val propertiesMap = attendance.toTelemetryPropertiesMap()
+          telemetryClient.trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, propertiesMap)
+        }
       }.map { it.attendanceId }
     }
 

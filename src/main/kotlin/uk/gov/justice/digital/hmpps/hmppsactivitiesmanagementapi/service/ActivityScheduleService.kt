@@ -12,13 +12,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -28,7 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.createAllocationTelemetryMetricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.createAllocationTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -37,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformF
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
 @Transactional(readOnly = true)
@@ -93,7 +97,12 @@ class ActivityScheduleService(
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
     filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
 
-  fun getAllocationsBy(scheduleId: Long, activeOnly: Boolean = true, includePrisonerSummary: Boolean = false, activeOn: LocalDate? = null): List<Allocation> {
+  fun getAllocationsBy(
+    scheduleId: Long,
+    activeOnly: Boolean = true,
+    includePrisonerSummary: Boolean = false,
+    activeOn: LocalDate? = null,
+  ): List<ModelAllocation> {
     val activitySchedule = repository.getActivityScheduleByIdWithFilters(
       scheduleId,
       allocationsActiveOnDate = activeOn,
@@ -169,7 +178,7 @@ class ActivityScheduleService(
 
       repository.saveAndFlush(schedule)
       auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
-      logAllocationEvent(request.prisonerNumber)
+      logAllocationEvent(allocation, maybeWaitingList)
     }
 
     log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
@@ -204,19 +213,14 @@ class ActivityScheduleService(
 
   private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
 
-  private fun logAllocationEvent(prisonerNumber: String) {
-    logMetric(TelemetryEvent.PRISONER_ALLOCATED, prisonerNumber)
+  private fun logAllocationEvent(allocation: Allocation, maybeWaitingList: WaitingList?) {
+    val propertiesMap = allocation.createAllocationTelemetryPropertiesMap(maybeWaitingList)
+    val metricsMap = allocation.createAllocationTelemetryMetricsMap(maybeWaitingList)
+    telemetryClient.trackEvent(TelemetryEvent.CREATE_ALLOCATION.value, propertiesMap, metricsMap)
   }
 
   private fun logDeallocationEvent(prisonerNumber: String) {
-    logMetric(TelemetryEvent.PRISONER_DEALLOCATED, prisonerNumber)
-  }
-
-  private fun logMetric(event: TelemetryEvent, prisonerNumber: String) {
-    val propertiesMap = mapOf(
-      PRISONER_NUMBER_PROPERTY_KEY to prisonerNumber,
-    )
-
-    telemetryClient.trackEvent(event.value, propertiesMap, activityMetricsMap())
+    val propertiesMap = mapOf(PRISONER_NUMBER_PROPERTY_KEY to prisonerNumber)
+    telemetryClient.trackEvent(TelemetryEvent.PRISONER_DEALLOCATED.value, propertiesMap)
   }
 }
