@@ -97,6 +97,7 @@ class AppointmentSearchService(
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
     logAppointmentSearchMetric(principal, prisonCode, request, results.size, startTime)
+
     return results.toResults(attendeeMap, referenceCodeMap, locationMap)
   }
 
