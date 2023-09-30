@@ -39,7 +39,7 @@ class ManageAppointmentService(
 
       appointments.flatMap { it.attendees() }.filter { prisonersReleasedBeforeStartDate.containsKey(it.prisonerNumber) }.forEach {
         it.remove(now, releasedAppointmentAttendeeRemovalReason, user)
-        log.info("Removed appointment attendee '${it.appointmentAttendeeId}' from appointment '${it.appointment.appointmentId} as associated ")
+        log.info("Removed appointment attendee '${it.appointmentAttendeeId}' from appointment '${it.appointment.appointmentId} as associated prisoner was released on or before '$startDate'")
       }
     }
   }
