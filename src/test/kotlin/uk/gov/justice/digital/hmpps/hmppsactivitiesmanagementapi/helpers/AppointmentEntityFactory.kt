@@ -158,7 +158,7 @@ internal fun appointmentSearchEntity(
   appointmentId: Long = 2,
   appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   prisonCode: String = "TPR",
-  appointmentAttendeeId: Long = 3,
+  appointmentAttendeeId: Long = 1,
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 456,
   internalLocationId: Long = 123,
