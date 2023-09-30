@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -42,11 +43,26 @@ data class AppointmentAttendee(
   var attendanceRecordedTime: LocalDateTime? = null,
 
   var attendanceRecordedBy: String? = null,
-
-  var removedTime: LocalDateTime? = null,
-
-  var removedBy: String? = null,
 ) {
+  var removedTime: LocalDateTime? = null
+
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "removal_reason_id")
+  var removalReason: AppointmentAttendeeRemovalReason? = null
+
+  var removedBy: String? = null
+
+  fun isRemoved() = removedTime != null && !isDeleted
+
+  var isDeleted: Boolean = false
+
+  fun remove(removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
+    this.removedTime = removedTime
+    this.removalReason = removalReason
+    this.removedBy = removedBy
+    isDeleted = removalReason.isDelete
+  }
+
   fun usernames() = listOfNotNull(addedBy, attendanceRecordedBy, removedBy).distinct()
 
   fun toModel() = AppointmentAttendeeModel(
