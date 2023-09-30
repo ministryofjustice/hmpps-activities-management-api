@@ -5,11 +5,8 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
@@ -193,6 +190,28 @@ class AppointmentSetTest {
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
+    }
+  }
+
+  @Test
+  fun `entity to details mapping removes appointments with no attendees`() {
+    val entity = appointmentSetEntity()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = getPrisonerMap()
+
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      appointments hasSize 3
+    }
+
+    entity.appointments().first().apply { this.removeAttendee(this.attendees().first()) }
+
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+      appointments hasSize 2
     }
   }
 

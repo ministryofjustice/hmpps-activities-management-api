@@ -154,7 +154,11 @@ internal fun appointmentInstanceEntity(
   )
 
 internal fun appointmentSearchEntity(
+  appointmentSeriesId: Long = 1,
+  appointmentId: Long = 2,
+  appointmentType: AppointmentType = AppointmentType.INDIVIDUAL,
   prisonCode: String = "TPR",
+  appointmentAttendeeId: Long = 3,
   prisonerNumber: String = "A1234BC",
   bookingId: Long = 456,
   internalLocationId: Long = 123,
@@ -165,9 +169,9 @@ internal fun appointmentSearchEntity(
   createdBy: String = "CREATE.USER",
 ) =
   AppointmentSearch(
-    appointmentSeriesId = 1,
-    appointmentId = 2,
-    appointmentType = AppointmentType.INDIVIDUAL,
+    appointmentSeriesId = appointmentSeriesId,
+    appointmentId = appointmentId,
+    appointmentType = appointmentType,
     prisonCode = prisonCode,
     categoryCode = "TEST",
     customName = null,
@@ -190,7 +194,8 @@ internal fun appointmentSearchEntity(
   ).apply {
     attendees = listOf(
       appointmentAttendeeSearchEntity(
-        this,
+        appointmentSearch = this,
+        appointmentAttendeeId = appointmentAttendeeId,
         prisonerNumber = prisonerNumber,
         bookingId = bookingId,
       ),
