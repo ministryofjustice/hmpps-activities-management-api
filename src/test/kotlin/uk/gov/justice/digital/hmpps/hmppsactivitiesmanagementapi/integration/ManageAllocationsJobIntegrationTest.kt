@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -120,9 +121,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
-    prisonApiMockServer.stubLatestPrisonerMovements(
+    prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", movementDate = TimeSource.daysInPast(10))),
+      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = TimeSource.daysInPast(10))),
     )
 
     with(allocationRepository.findAll()) {

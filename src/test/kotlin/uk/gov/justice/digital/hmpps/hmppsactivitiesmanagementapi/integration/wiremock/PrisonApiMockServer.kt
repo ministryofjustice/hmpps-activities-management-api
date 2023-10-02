@@ -499,9 +499,9 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubLatestPrisonerMovements(prisonerNumbers: List<String>, movements: List<Movement>) {
+  fun stubPrisonerMovements(prisonerNumbers: List<String>, movements: List<Movement>) {
     stubFor(
-      WireMock.post(WireMock.urlEqualTo("/api/movements/offenders?latestOnly=true"))
+      WireMock.post(WireMock.urlEqualTo("/api/movements/offenders"))
         .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
         .willReturn(
           WireMock.aResponse()

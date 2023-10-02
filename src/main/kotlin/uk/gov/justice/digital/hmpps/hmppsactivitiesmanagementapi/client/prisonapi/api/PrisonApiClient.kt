@@ -31,7 +31,11 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
-  fun getPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null): Mono<InmateDetail> {
+  fun getPrisonerDetails(
+    prisonerNumber: String,
+    fullInfo: Boolean = true,
+    extraInfo: Boolean? = null,
+  ): Mono<InmateDetail> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -389,14 +393,14 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .awaitBody()
   }
 
-  fun getLatestMovementForPrisoners(prisonerNumbers: Set<String>) =
+  fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) =
     prisonerNumbers.ifNotEmpty {
       prisonApiWebClient
         .post()
-        .uri("/api/movements/offenders?latestOnly=true")
+        .uri("/api/movements/offenders")
         .bodyValue(prisonerNumbers)
         .retrieve()
         .bodyToMono(typeReference<List<Movement>>())
         .block()
-    } ?: emptyList()
+    }?.filter { it.fromAgency == prisonCode } ?: emptyList()
 }

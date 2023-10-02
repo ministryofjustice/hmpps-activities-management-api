@@ -219,8 +219,9 @@ class ManageAllocationsServiceTest {
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
-    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
+
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -234,6 +235,40 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `prisoners are are not deallocated from allocations pending as not due to expire`() {
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = TimeSource.tomorrow())
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+    val prisoner: Prisoner = mock {
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
+      on { prisonerNumber } doReturn allocation.prisonerNumber
+    }
+
+    whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
+    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
+      allocation,
+    )
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+
+    // Multiple moves to demonstrate takes the latest move for an offender
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
+      listOf(
+        movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
+        movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.today()),
+      )
+
+    service.allocations(AllocationOperation.EXPIRING_TODAY)
+
+    verify(waitingListService, never()).declinePendingOrApprovedApplications(any(), any(), any(), any())
+
+    allocation.prisonerStatus isEqualTo PrisonerStatus.PENDING
+
+    verify(activityScheduleRepo, never()).saveAndFlush(schedule)
   }
 
   @Test
@@ -256,8 +291,8 @@ class ManageAllocationsServiceTest {
       ),
     ) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
-    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -294,8 +329,13 @@ class ManageAllocationsServiceTest {
       listOf(allocation),
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
-    whenever(prisonApi.getLatestMovementForPrisoners(setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, TimeSource.yesterday()))
+    whenever(
+      prisonApi.getMovementsForPrisonersFromPrison(
+        prisonWithRegime.code,
+        setOf(allocation.prisonerNumber),
+      ),
+    ) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 

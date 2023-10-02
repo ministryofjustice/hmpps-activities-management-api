@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -577,18 +578,18 @@ class PrisonApiClientTest {
   @Test
   fun `getLatestMovementForPrisoners - success when movement found`() {
     val movement = movement(prisonerNumber = "AB1235C")
-    prisonApiMockServer.stubLatestPrisonerMovements(listOf("AB1235C"), listOf(movement))
-    prisonApiClient.getLatestMovementForPrisoners(setOf("AB1235C")) containsExactly listOf(movement)
+    prisonApiMockServer.stubPrisonerMovements(listOf("AB1235C"), listOf(movement))
+    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf("AB1235C")) containsExactly listOf(movement)
   }
 
   @Test
   fun `getLatestMovementForPrisoners - empty when no movement found`() {
-    prisonApiMockServer.stubLatestPrisonerMovements(listOf("AB1235C"), emptyList())
-    prisonApiClient.getLatestMovementForPrisoners(setOf("AB1235C")) containsExactly emptyList()
+    prisonApiMockServer.stubPrisonerMovements(listOf("AB1235C"), emptyList())
+    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf("AB1235C")) containsExactly emptyList()
   }
 
   @Test
   fun `getLatestMovementForPrisoners - empty when no prisoners supplied`() {
-    prisonApiClient.getLatestMovementForPrisoners(emptySet()) containsExactly emptyList()
+    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, emptySet()) containsExactly emptyList()
   }
 }

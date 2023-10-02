@@ -136,6 +136,7 @@ fun adjudicationHearing(
 
 fun movement(
   prisonerNumber: String = "A1179MT",
+  fromPrisonCode: String = moorlandPrisonCode,
   movementDate: LocalDate = LocalDate.now(),
   movementTime: LocalTime = LocalTime.now(),
   movementType: Movement.MovementType = Movement.MovementType.TRN,
@@ -143,7 +144,7 @@ fun movement(
   Movement(
     offenderNo = prisonerNumber,
     createDateTime = TimeSource.now().toIsoDateTime(),
-    fromAgency = "MDI",
+    fromAgency = fromPrisonCode,
     fromAgencyDescription = "Moorland",
     toAgency = "OUT",
     toAgencyDescription = "Outside",

@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.movementDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
@@ -128,15 +129,12 @@ class ManageAllocationsService(
         val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
 
         if (regime != null) {
-          expire(
-            allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING),
-            regime,
-          )
-          expire(
-            allocationRepository.findByPrisonCodePrisonerStatus(regime.prisonCode, PrisonerStatus.AUTO_SUSPENDED)
-              .filter(regime::hasExpired),
-            regime,
-          )
+          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
+            deallocateIfExpired(it, regime)
+          }
+          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+            deallocateIfExpired(it, regime)
+          }
         } else {
           log.warn("Rolled out prison ${prison.code} is missing a prison regime.")
         }
@@ -145,15 +143,15 @@ class ManageAllocationsService(
 
   /*
    * The prison regime tells us how many days an allocation can stay before it expires. Given the max days from
-   * the regime and the date of the last movement out or prison for the prisoner any allocations should be
-   * expired (deallocated).
+   * the regime and the date of the last known movement out or prison for the prisoner any allocations should be
+   * expired/deallocated.
    */
-  private fun expire(allocations: List<Allocation>, regime: PrisonRegime) {
+  private fun deallocateIfExpired(allocations: Collection<Allocation>, regime: PrisonRegime) {
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
     val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers).block() ?: emptyList()
     val prisonersOutOfPrison = prisoners.filter { it.isOutOfPrison() }
     val latestPrisonersOutOfPrisonMovements =
-      prisonApi.getLatestMovementForPrisoners(prisonersOutOfPrison.map { it.prisonerNumber }.toSet())
+      prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonersOutOfPrison.map { it.prisonerNumber }.toSet())
 
     latestPrisonersOutOfPrisonMovements
       .withExpiredMovesFor(regime)
@@ -164,10 +162,12 @@ class ManageAllocationsService(
   }
 
   private fun List<Movement>.withExpiredMovesFor(regime: PrisonRegime) =
-    filter { movement -> regime.hasExpired { movement.movementDate } }
+    groupBy { it.offenderNo }
+      .mapValues { it -> it.value.maxBy { it.movementDateTime() } }
+      .filter { regime.hasExpired { it.value.movementDate } }
 
-  private fun List<Movement>.andExpiredMove(allocations: List<Allocation>) =
-    flatMap { expiredMovement -> allocations.filter { it.prisonerNumber == expiredMovement.offenderNo } }
+  private fun Map<String, Movement>.andExpiredMove(allocations: Collection<Allocation>) =
+    flatMap { entry -> allocations.filter { entry.key == it.prisonerNumber } }
 
   private fun List<Allocation>.declineExpiredAllocationsFromWaitingListFor(prisonCode: String) =
     onEach {
@@ -177,7 +177,7 @@ class ManageAllocationsService(
         "Released",
         ServiceName.SERVICE_NAME.value,
       )
-    }
+    }.also { log.info("here 4") }
 
   private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason? = null) {
     this.keys.forEach { schedule ->
