@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -40,9 +41,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATION_START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
@@ -215,7 +219,6 @@ class ActivityScheduleServiceTest {
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
       mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
-      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
     )
   }
 
@@ -469,9 +472,15 @@ class ActivityScheduleServiceTest {
     }
 
     verify(telemetryClient).trackEvent(
-      TelemetryEvent.PRISONER_ALLOCATED.value,
-      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "654321"),
-      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+      TelemetryEvent.CREATE_ALLOCATION.value,
+      mapOf(
+        USER_PROPERTY_KEY to "by test",
+        PRISON_CODE_PROPERTY_KEY to "PVI",
+        PRISONER_NUMBER_PROPERTY_KEY to "654321",
+        ACTIVITY_ID_PROPERTY_KEY to "200",
+        ALLOCATION_START_DATE_PROPERTY_KEY to TimeSource.tomorrow().toString(),
+      ),
+      emptyMap(),
     )
   }
 

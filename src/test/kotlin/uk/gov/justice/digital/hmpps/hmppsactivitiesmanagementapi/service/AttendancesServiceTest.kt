@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -13,6 +14,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -31,6 +33,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -44,6 +48,7 @@ class AttendancesServiceTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val telemetryClient: TelemetryClient = mock()
 
   private val service =
     AttendancesService(
@@ -54,6 +59,7 @@ class AttendancesServiceTest {
       caseNotesApiClient,
       TransactionHandler(),
       outboundEventsService,
+      telemetryClient,
     )
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
@@ -73,6 +79,10 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.RECORD_ATTENDANCE.value,
+      attendance.toTelemetryPropertiesMap(),
+    )
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
   }

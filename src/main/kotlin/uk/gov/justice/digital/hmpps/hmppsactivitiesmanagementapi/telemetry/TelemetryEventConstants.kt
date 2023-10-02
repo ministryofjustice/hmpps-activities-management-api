@@ -3,9 +3,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 /* Property Keys */
 const val ACKNOWLEDGED_BY_PROPERTY_KEY = "acknowledgedBy"
 const val ACKNOWLEDGED_TIME_PROPERTY_KEY = "acknowledgedTime"
+const val ACTIVITY_ID_PROPERTY_KEY = "activityId"
 const val ACTIVITY_CATEGORY_PROPERTY_KEY = "activityCategory"
 const val ACTIVITY_NAME_PROPERTY_KEY = "activityName"
 const val ACTIVITY_TIER_PROPERTY_KEY = "activityTier"
+const val ACTIVITY_SUMMARY_PROPERTY_KEY = "activitySummary"
+const val SCHEDULED_INSTANCE_ID_PROPERTY_KEY = "scheduledInstanceId"
+const val ALLOCATION_START_DATE_PROPERTY_KEY = "allocationStartDate"
+const val ALLOCATION_REQUEST_DATE_PROPERTY_KEY = "requestDate"
+const val ATTENDANCE_REASON_PROPERTY_KEY = "attendanceReason"
+const val ATTENDED_BEFORE_SESSION_ENDED_PROPERTY_KEY = "attendedBeforeSessionEnded"
 const val APPLY_TO_PROPERTY_KEY = "applyTo"
 const val APPOINTMENT_ID_PROPERTY_KEY = "appointmentId"
 const val APPOINTMENT_SERIES_ID_PROPERTY_KEY = "appointmentSeriesId"
@@ -73,6 +80,7 @@ const val PRISONER_COUNT_METRIC_KEY = "prisonerCount"
 const val PRISONERS_ADDED_COUNT_METRIC_KEY = "prisonersAddedCount"
 const val PRISONERS_REMOVED_COUNT_METRIC_KEY = "prisonersRemovedCount"
 const val RESULTS_COUNT_METRIC_KEY = "resultsCount"
+const val WAIT_BEFORE_ALLOCATION_METRIC_KEY = "applicationWaitBeforeAllocationTimeDays"
 
 fun activityMetricsMap() = mapOf(
   NUMBER_OF_RESULTS_METRIC_KEY to 1.0,
