@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -194,6 +195,22 @@ class AppointmentSetTest {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
+  }
+
+  @Test
+  fun `entity to details mapping removes appointments with no attendees`() {
+    val entity = appointmentSetEntity()
+    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val userMap = mapOf(
+      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
+      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
+    )
+    val prisonerMap = getPrisonerMap()
+
+    entity.appointments().first().apply { this.removeAttendee(this.attendees().first()) }
+
+    entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointments hasSize 2
   }
 
   private fun getPrisonerMap() = mapOf(

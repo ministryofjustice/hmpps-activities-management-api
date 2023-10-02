@@ -98,7 +98,9 @@ data class Appointment(
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
 
-  fun attendees() = attendees.toList()
+  fun attendees() = attendees.filterNot { it.isDeleted }.toList()
+
+  fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
   fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()

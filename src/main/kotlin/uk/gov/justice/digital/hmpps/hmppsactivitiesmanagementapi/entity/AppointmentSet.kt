@@ -122,7 +122,7 @@ data class AppointmentSet(
       },
       inCell,
       startDate,
-      appointmentSeries().map { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.flatten(),
+      appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.filterNot { it.attendees.isEmpty() },
       createdTime,
       userMap[createdBy].toSummary(createdBy),
       updatedTime,
