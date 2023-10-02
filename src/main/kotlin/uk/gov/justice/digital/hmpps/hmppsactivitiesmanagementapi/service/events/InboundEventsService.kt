@@ -24,6 +24,8 @@ class InboundEventsService(
   }
 
   fun process(event: InboundEvent) {
+    log.debug("Processing inbound event {}", event.eventType())
+
     when (event) {
       is ActivitiesChangedEvent -> activitiesChangedEventHandler.handle(event)
         .onFailure { interestingEventHandler.handle(event) }

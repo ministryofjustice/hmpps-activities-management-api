@@ -31,7 +31,7 @@ class InboundEventsListener(
   @SqsListener("activities", factory = "hmppsQueueContainerFactoryProxy")
   @WithSpan(value = "Digital-Prison-Services-hmpps_activities_management_queue", kind = SpanKind.SERVER)
   internal fun onMessage(rawMessage: String) {
-    log.info("Inbound event raw message $rawMessage")
+    log.debug("Inbound event raw message $rawMessage")
 
     val sqsMessage: SQSMessage = mapper.readValue(rawMessage)
 
@@ -40,7 +40,6 @@ class InboundEventsListener(
         mapper.readValue<HMPPSDomainEvent>(sqsMessage.Message).let { domainEvent ->
           domainEvent.toInboundEventType()?.let { inboundEventType ->
             if (feature.isEnabled(inboundEventType)) {
-              log.info("Processing inbound event $inboundEventType")
               inboundEventsService.process(inboundEventType.toInboundEvent(mapper, sqsMessage.Message))
             } else {
               log.warn("Inbound event type $inboundEventType feature is currently disabled.")
@@ -48,7 +47,7 @@ class InboundEventsListener(
           } ?: log.info("Ignoring domain event ${domainEvent.eventType}")
         }
       }
-      else -> log.info("Unrecognised message type: ${sqsMessage.Type}")
+      else -> log.warn("Unrecognised message type: ${sqsMessage.Type}")
     }
   }
 }
