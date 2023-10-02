@@ -28,6 +28,6 @@ class DailyActivityMetricsJobIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(5000)
 
-    verify(telemetryClient, times(54)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
+    verify(telemetryClient, times(81)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
   }
 }

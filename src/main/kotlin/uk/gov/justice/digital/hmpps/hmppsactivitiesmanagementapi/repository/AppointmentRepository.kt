@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
-  fun findAllByStartDate(startDate: LocalDate): List<Appointment>
+  fun findAllByPrisonCodeAndStartDate(prisonCode: String, startDate: LocalDate): List<Appointment>
   fun findByAppointmentSeriesAndSequenceNumber(appointmentSeries: AppointmentSeries, sequenceNumber: Int): Appointment?
 
   @Query(

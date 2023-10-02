@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
@@ -68,7 +69,7 @@ class ManageAppointmentServiceTest {
     @Test
     fun `date range cannot be more than 60 days`() {
       assertThatThrownBy {
-        service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(61)))
+        service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(61)))
       }
         .isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Supplied date range must be at least one day and less than 61 days")
@@ -77,7 +78,7 @@ class ManageAppointmentServiceTest {
     @Test
     fun `date range cannot be negative`() {
       assertThatThrownBy {
-        service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now().minusDays(1)))
+        service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now().minusDays(1)))
       }
         .isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Supplied date range must be at least one day and less than 61 days")
@@ -88,10 +89,10 @@ class ManageAppointmentServiceTest {
       val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
       val appointment = appointmentSeries.appointments().first()
 
-      whenever(appointmentRepository.findAllByStartDate(LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
       whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInPrisoner)))
 
-      service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now()))
+      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now()))
 
       with(appointment.attendees()) {
         this hasSize 1
@@ -105,10 +106,10 @@ class ManageAppointmentServiceTest {
       val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().minusDays(1))
       val appointment = appointmentSeries.appointments().first()
 
-      whenever(appointmentRepository.findAllByStartDate(LocalDate.now().minusDays(1))).thenReturn(appointmentSeries.appointments())
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now().minusDays(1))).thenReturn(appointmentSeries.appointments())
       whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
 
-      service.manageAppointmentAttendees(LocalDateRange(LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
+      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
 
       with(appointment.attendees()) {
         this hasSize 1
@@ -122,10 +123,10 @@ class ManageAppointmentServiceTest {
       val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
       val appointment = appointmentSeries.appointments().first()
 
-      whenever(appointmentRepository.findAllByStartDate(LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
       whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
 
-      service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now()))
+      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now()))
 
       assertThat(appointment.attendees()).isEmpty()
     }

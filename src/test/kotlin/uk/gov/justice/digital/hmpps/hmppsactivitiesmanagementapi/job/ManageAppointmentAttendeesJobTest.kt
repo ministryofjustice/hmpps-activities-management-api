@@ -8,18 +8,22 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentService
 import java.time.LocalDate
 
 class ManageAppointmentAttendeesJobTest {
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository))
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val service: ManageAppointmentService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = ManageAppointmentAttendeesJob(safeJobRunner, service)
+  private val job = ManageAppointmentAttendeesJob(safeJobRunner, rolloutPrisonRepository, service)
 
   @BeforeEach
   fun setUp() {
@@ -37,8 +41,11 @@ class ManageAppointmentAttendeesJobTest {
 
   @Test
   fun `job calls service to manage appointment attendees`() {
+    val rolloutPrison = rolloutPrison()
+    whenever(rolloutPrisonRepository.findAll()).thenReturn(listOf(rolloutPrison))
+
     job.execute(1, 2)
 
-    verify(service).manageAppointmentAttendees(LocalDateRange(LocalDate.now().minusDays(1), LocalDate.now().plusDays(2)))
+    verify(service).manageAppointmentAttendees(rolloutPrison.code, LocalDateRange(LocalDate.now().minusDays(1), LocalDate.now().plusDays(2)))
   }
 }

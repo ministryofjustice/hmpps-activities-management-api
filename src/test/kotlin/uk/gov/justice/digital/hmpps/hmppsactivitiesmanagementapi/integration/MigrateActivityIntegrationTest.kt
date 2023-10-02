@@ -88,7 +88,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/seed-risley-rollout.sql")
   fun `migrate activity - Risley split regime - success`() {
     val nomisPayRates = listOf(
       NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),

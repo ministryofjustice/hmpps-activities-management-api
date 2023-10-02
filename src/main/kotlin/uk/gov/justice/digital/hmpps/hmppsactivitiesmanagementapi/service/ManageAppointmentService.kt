@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -27,7 +28,8 @@ class ManageAppointmentService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun manageAppointmentAttendees(localDateRange: LocalDateRange) {
+  @Transactional
+  fun manageAppointmentAttendees(prisonCode: String, localDateRange: LocalDateRange) {
     require(ChronoUnit.DAYS.between(localDateRange.start, localDateRange.endInclusive) in 0..60) {
       "Supplied date range must be at least one day and less than 61 days"
     }
@@ -36,18 +38,25 @@ class ManageAppointmentService(
     val releasedAppointmentAttendeeRemovalReason = appointmentAttendeeRemovalReasonRepository.findOrThrowNotFound(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID)
     val user = "MANAGE_APPOINTMENT_SERVICE"
 
-    localDateRange.forEach { startDate ->
-      val appointments = appointmentRepository.findAllByStartDate(startDate)
+    localDateRange.forEach { date ->
+      log.info("Removing attendees from appointments in prison code '$prisonCode' scheduled for '$date' where the attendee has been released on or before that date")
+
+      val appointments = appointmentRepository.findAllByPrisonCodeAndStartDate(prisonCode, date)
+      log.info("Found ${appointments.size} appointments in prison code '$prisonCode' scheduled for '$date'")
 
       val prisoners = prisonerSearch.findByPrisonerNumbers(appointments.flatMap { it.prisonerNumbers() }.distinct()).block()!!
+      log.info("Found ${prisoners.size} prisoners for appointments in prison code '$prisonCode' scheduled for '$date'")
 
-      val prisonersReleasedBeforeStartDate = prisoners.permanentlyReleaseOnOrBefore(startDate).map { it.prisonerNumber }
+      val prisonersReleasedBeforeStartDate = prisoners.permanentlyReleaseOnOrBefore(date).map { it.prisonerNumber }
+      log.info("Found ${prisonersReleasedBeforeStartDate.size} prisoners permanently released from prison code '$prisonCode' on or before for '$date'")
 
-      appointments.forEach {
-        transactionHandler.newSpringTransaction {
-          it.findAttendees(prisonersReleasedBeforeStartDate).forEach {
-            it.remove(now, releasedAppointmentAttendeeRemovalReason, user)
-            log.info("Removed appointment attendee '${it.appointmentAttendeeId}' from appointment '${it.appointment.appointmentId} as associated prisoner was released on or before '$startDate'")
+      if (prisonersReleasedBeforeStartDate.isNotEmpty()) {
+        appointments.forEach {
+          transactionHandler.newSpringTransaction {
+            it.findAttendees(prisonersReleasedBeforeStartDate).forEach {
+              it.remove(now, releasedAppointmentAttendeeRemovalReason, user)
+              log.info("Removed appointment attendee '${it.appointmentAttendeeId}' from appointment '${it.appointment.appointmentId}' as associated prisoner was released on or before '$date'")
+            }
           }
         }
       }
