@@ -35,7 +35,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(5000)
 
-    verify(telemetryClient, times(6)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), any(), any())
+    verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), any(), any())
   }
 
   @Sql(
@@ -53,7 +53,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(5000)
 
-    verify(telemetryClient, times(6)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), any(), propertyMetricsCaptor.capture())
+    verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), any(), propertyMetricsCaptor.capture())
 
     with(propertyMetricsCaptor.firstValue) {
       Assertions.assertThat(get(DELETED_APPOINTMENT_COUNT_METRIC_KEY)).isEqualTo(1.0)
