@@ -208,15 +208,9 @@ class AppointmentSetTest {
     )
     val prisonerMap = getPrisonerMap()
 
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      appointments hasSize 3
-    }
-
     entity.appointments().first().apply { this.removeAttendee(this.attendees().first()) }
 
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      appointments hasSize 2
-    }
+    entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointments hasSize 2
   }
 
   private fun getPrisonerMap() = mapOf(

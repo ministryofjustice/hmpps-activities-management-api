@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -31,6 +32,7 @@ class ManageAppointmentServiceTest {
     appointmentRepository,
     appointmentAttendeeRemovalReasonRepository,
     prisonerSearch,
+    TransactionHandler(),
   )
 
   @Nested
@@ -61,6 +63,24 @@ class ManageAppointmentServiceTest {
       ).thenReturn(
         Optional.of(appointmentAttendeeDeletedReason()),
       )
+    }
+
+    @Test
+    fun `date range cannot be more than 60 days`() {
+      assertThatThrownBy {
+        service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(61)))
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Supplied date range must be at least one day and less than 61 days")
+    }
+
+    @Test
+    fun `date range cannot be negative`() {
+      assertThatThrownBy {
+        service.manageAppointmentAttendees(LocalDateRange(LocalDate.now(), LocalDate.now().minusDays(1)))
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Supplied date range must be at least one day and less than 61 days")
     }
 
     @Test

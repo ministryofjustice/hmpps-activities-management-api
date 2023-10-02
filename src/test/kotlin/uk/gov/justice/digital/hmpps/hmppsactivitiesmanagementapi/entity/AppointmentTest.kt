@@ -128,6 +128,15 @@ class AppointmentTest {
   }
 
   @Test
+  fun `findAttendees returns attendees matching prison numbers`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+    with(entity.findAttendees(listOf("B2345CD", "C3456DE"))) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.prisonerNumber }).isEqualTo(listOf("B2345CD", "C3456DE"))
+    }
+  }
+
+  @Test
   fun `entity to model mapping`() {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()

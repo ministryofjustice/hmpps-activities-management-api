@@ -100,6 +100,8 @@ data class Appointment(
 
   fun attendees() = attendees.filterNot { it.isDeleted }.toList()
 
+  fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
+
   fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)

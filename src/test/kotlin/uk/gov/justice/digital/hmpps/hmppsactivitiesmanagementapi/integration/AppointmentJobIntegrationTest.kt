@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -15,6 +15,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -74,23 +75,23 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
   fun `remove attendees for released prisoners`() {
     with(appointmentAttendeeRepository.findAll()) {
       size isEqualTo 18
-      onEach { it.isRemoved() isEqualTo false }
-      onEach { it.isDeleted isEqualTo false }
+      onEach { it.isRemoved() isBool false }
+      onEach { it.isDeleted isBool false }
     }
 
     webTestClient.manageAppointmentAttendees(1, 1)
 
     with(appointmentAttendeeRepository.findAll()) {
       size isEqualTo 11
-      onEach { it.isRemoved() isEqualTo false }
-      onEach { it.isDeleted isEqualTo false }
+      onEach { it.isRemoved() isBool false }
+      onEach { it.isDeleted isBool false }
     }
 
     verify(eventsPublisher, times(7)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
       size isEqualTo 7
-      Assertions.assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
         listOf(6L, 8L, 9L, 17L, 18L, 11L, 12L).map { AppointmentInstanceInformation(it) },
       )
     }

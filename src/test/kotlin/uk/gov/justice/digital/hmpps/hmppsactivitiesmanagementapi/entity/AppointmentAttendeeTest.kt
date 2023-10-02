@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeModel
@@ -28,7 +28,7 @@ class AppointmentAttendeeTest {
     val entity = appointmentSeriesEntity().appointments().first().attendees().first().apply {
       remove(removalReason = appointmentAttendeeDeletedReason(), removedBy = "TEST.USER")
     }
-    assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), Assertions.within(1, ChronoUnit.SECONDS))
+    assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
     assertThat(entity.removalReason).isEqualTo(appointmentAttendeeDeletedReason())
     assertThat(entity.removedBy).isEqualTo("TEST.USER")
     assertThat(entity.isRemoved()).isFalse()
@@ -40,7 +40,7 @@ class AppointmentAttendeeTest {
     val entity = appointmentSeriesEntity().appointments().first().attendees().first().apply {
       remove(removalReason = appointmentAttendeeRemovedReason(), removedBy = "TEST.USER")
     }
-    assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), Assertions.within(1, ChronoUnit.SECONDS))
+    assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
     assertThat(entity.removalReason).isEqualTo(appointmentAttendeeRemovedReason())
     assertThat(entity.removedBy).isEqualTo("TEST.USER")
     assertThat(entity.isRemoved()).isTrue()
