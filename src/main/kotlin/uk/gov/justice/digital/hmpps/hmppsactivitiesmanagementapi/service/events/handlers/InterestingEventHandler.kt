@@ -33,7 +33,7 @@ class InterestingEventHandler(
   }
 
   override fun handle(event: InboundEvent): Outcome {
-    log.info("Checking for interesting event: $event")
+    log.debug("Checking for interesting event: {}", event)
 
     prisonApiClient.getPrisonerDetails(event.prisonerNumber(), fullInfo = false).block()
       ?.let { prisoner ->
@@ -55,13 +55,13 @@ class InterestingEventHandler(
                 bookingId = prisoner.bookingId?.toInt(),
               ),
             )
-            log.info("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
+            log.debug("Saved interesting event ID ${saved.eventReviewId} - ${event.eventType()} - for ${prisoner.offenderNo}")
             return Outcome.success()
           } else {
             log.info("${prisoner.offenderNo} has no active or pending allocations at ${prisoner.agencyId}")
           }
         } else {
-          log.info("${prisoner.agencyId} is not a rolled out prison")
+          log.debug("${prisoner.agencyId} is not a rolled out prison")
         }
       }
     return Outcome.failed()

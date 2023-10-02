@@ -41,7 +41,7 @@ class ActivitiesChangedEventHandler(
   }
 
   override fun handle(event: ActivitiesChangedEvent): Outcome {
-    log.info("Handling activities changed event $event")
+    log.debug("Handling activities changed event {}", event)
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {

@@ -27,7 +27,7 @@ class OffenderReleasedEventHandler(
   }
 
   override fun handle(event: OffenderReleasedEvent): Outcome {
-    log.info("Handling offender released event $event")
+    log.debug("Handling offender released event {}", event)
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when {
@@ -53,7 +53,7 @@ class OffenderReleasedEventHandler(
         }
       }
     } else {
-      log.info("Ignoring released event for ${event.prisonCode()} - not rolled out.")
+      log.debug("Ignoring released event for ${event.prisonCode()} - not rolled out.")
     }
 
     return Outcome.success()
