@@ -10,6 +10,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
@@ -30,8 +31,11 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @MockBean
   private lateinit var activityMetricsJob: ActivityMetricsJob
 
+  @MockBean
+  private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
+
   override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob)
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
@@ -101,6 +105,16 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     assertThat(response.contentAsString).isEqualTo("Activity metrics job triggered")
 
     verify(activityMetricsJob).execute()
+  }
+
+  @Test
+  fun `201 response when appointments metrics job triggered`() {
+    val response = mockMvc.triggerJob(jobName = "appointments-metrics")
+      .andExpect { status { isCreated() } }.andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("Appointments metrics job triggered")
+
+    verify(appointmentsMetricsJob).execute()
   }
 
   private fun MockMvc.triggerJob(jobName: String) =
