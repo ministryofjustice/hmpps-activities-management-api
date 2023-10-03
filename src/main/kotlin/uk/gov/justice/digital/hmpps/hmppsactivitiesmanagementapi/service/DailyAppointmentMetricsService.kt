@@ -28,49 +28,30 @@ class DailyAppointmentMetricsService(
       CATEGORY_CODE_PROPERTY_KEY to categoryCode,
     )
 
-    val metricsMap = mutableMapOf(
-      APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
-      APPOINTMENT_SERIES_COUNT_METRIC_KEY to 0.0,
-      APPOINTMENT_SET_COUNT_METRIC_KEY to 0.0,
-      CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-      DELETED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-    )
-
-    appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(prisonCode, categoryCode, date).apply {
-      this.generateAppointmentMetrics(metricsMap)
+    val metricsMap = appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(prisonCode, categoryCode, date).let { appointments ->
+      val activeAppointments = appointments.filterNot { it.isCancelled() || it.isDeleted }
+      mutableMapOf(
+        APPOINTMENT_COUNT_METRIC_KEY to activeAppointments.size.toDouble(),
+        APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to activeAppointments.countAttendees(),
+        APPOINTMENT_SERIES_COUNT_METRIC_KEY to activeAppointments.countUniqueRepeatingAppointmentSeries(),
+        APPOINTMENT_SET_COUNT_METRIC_KEY to activeAppointments.countUniqueAppointmentSets(),
+        CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to appointments.countCancelledAppointments(),
+        DELETED_APPOINTMENT_COUNT_METRIC_KEY to appointments.countDeletedAppointments(),
+      )
     }
 
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value, propertiesMap, metricsMap)
   }
 
-  private fun List<Appointment>.generateAppointmentMetrics(metricsMap: MutableMap<String, Double>) {
-    this.forEach {
-      if (!it.isCancelled() && !it.isDeleted) {
-        incrementMetric(metricsMap, APPOINTMENT_COUNT_METRIC_KEY)
+  private fun List<Appointment>.countAttendees() = this.flatMap { it.attendees() }.size.toDouble()
 
-        it.attendees().forEach { _ -> incrementMetric(metricsMap, APPOINTMENT_INSTANCE_COUNT_METRIC_KEY) }
+  private fun List<Appointment>.countUniqueRepeatingAppointmentSeries() =
+    this.map { it.appointmentSeries }.filter { (it.schedule?.numberOfAppointments ?: 0) > 1 }.map { it.appointmentSeriesId }.distinct().size.toDouble()
 
-        if ((it.appointmentSeries.schedule?.numberOfAppointments ?: 0) > 1) {
-          incrementMetric(metricsMap, APPOINTMENT_SERIES_COUNT_METRIC_KEY)
-        }
+  private fun List<Appointment>.countUniqueAppointmentSets() =
+    this.mapNotNull { it.appointmentSeries.appointmentSet }.map { it.appointmentSetId }.distinct().size.toDouble()
 
-        if (it.appointmentSeries.appointmentSet != null) {
-          incrementMetric(metricsMap, APPOINTMENT_SET_COUNT_METRIC_KEY)
-        }
-      }
+  private fun List<Appointment>.countCancelledAppointments() = this.filter { it.isCancelled() }.size.toDouble()
 
-      if (it.isCancelled() && !it.isDeleted) {
-        incrementMetric(metricsMap, CANCELLED_APPOINTMENT_COUNT_METRIC_KEY)
-      }
-
-      if (it.isDeleted) {
-        incrementMetric(metricsMap, DELETED_APPOINTMENT_COUNT_METRIC_KEY)
-      }
-    }
-  }
-
-  private fun incrementMetric(metricsMap: MutableMap<String, Double>, metricKey: String, increment: Int = 1) {
-    metricsMap[metricKey] = ((metricsMap[metricKey] ?: 0.0) + increment)
-  }
+  private fun List<Appointment>.countDeletedAppointments() = this.filter { it.isDeleted }.size.toDouble()
 }

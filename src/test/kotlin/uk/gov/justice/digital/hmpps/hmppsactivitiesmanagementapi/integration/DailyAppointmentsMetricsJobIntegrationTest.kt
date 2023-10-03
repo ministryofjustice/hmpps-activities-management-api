@@ -75,12 +75,12 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
     verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
 
     with(telemetryMetricsMap.firstValue) {
-      this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 8
-      this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 10
-      this[APPOINTMENT_SERIES_COUNT_METRIC_KEY] isEqualTo 4
-      this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1
-      this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2
-      this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 3
+      this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0
+      this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 9.0
+      this[APPOINTMENT_SERIES_COUNT_METRIC_KEY] isEqualTo 1.0
+      this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1.0
+      this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
+      this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
     }
 
     verifyNoMoreInteractions(telemetryClient)
