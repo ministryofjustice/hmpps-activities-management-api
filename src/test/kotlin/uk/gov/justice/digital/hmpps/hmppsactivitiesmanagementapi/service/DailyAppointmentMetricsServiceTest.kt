@@ -1,23 +1,36 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions
+import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import java.time.LocalDate
 
 class DailyAppointmentMetricsServiceTest {
+  private val appointmentRepository: AppointmentRepository = mock()
+  private val telemetryClient: TelemetryClient = mock()
 
-  private val dailyAppointmentMetricsService = DailyAppointmentMetricsService()
+  private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
+  private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
+
+  private val dailyAppointmentMetricsService = DailyAppointmentMetricsService(appointmentRepository, telemetryClient)
 
   private val cancelledAppointment: Appointment = mock()
   private val deletedAppointment: Appointment = mock()
@@ -31,8 +44,6 @@ class DailyAppointmentMetricsServiceTest {
 
   @Test
   fun `should generate daily metrics`() {
-    val metricsMap = createMetricsMap()
-
     whenever(cancelledAppointment.isCancelled()).thenReturn(true)
     whenever(deletedAppointment.isDeleted).thenReturn(true)
 
@@ -59,22 +70,21 @@ class DailyAppointmentMetricsServiceTest {
       appointmentWithSeries,
       appointmentWithAttendees,
     )
-    dailyAppointmentMetricsService.generateAppointmentMetrics(metricsMap, appointments)
+    val yesterday = LocalDate.now().minusDays(1)
 
-    Assertions.assertThat(metricsMap[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(3.0)
-    Assertions.assertThat(metricsMap[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(3.0)
-    Assertions.assertThat(metricsMap[APPOINTMENT_SERIES_COUNT_METRIC_KEY]).isEqualTo(1.0)
-    Assertions.assertThat(metricsMap[APPOINTMENT_SET_COUNT_METRIC_KEY]).isEqualTo(1.0)
-    Assertions.assertThat(metricsMap[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-    Assertions.assertThat(metricsMap[DELETED_APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+    whenever(appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(moorlandPrisonCode, "CHAP", yesterday)).thenReturn(appointments)
+
+    dailyAppointmentMetricsService.generateAppointmentMetrics(moorlandPrisonCode, "CHAP", yesterday)
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+
+    with(telemetryMetricsMap.firstValue) {
+      this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 3.0
+      this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 3.0
+      this[APPOINTMENT_SERIES_COUNT_METRIC_KEY] isEqualTo 1.0
+      this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1.0
+      this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 1.0
+      this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 1.0
+    }
   }
-
-  private fun createMetricsMap() = mutableMapOf(
-    APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-    APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 0.0,
-    APPOINTMENT_SERIES_COUNT_METRIC_KEY to 0.0,
-    APPOINTMENT_SET_COUNT_METRIC_KEY to 0.0,
-    CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-    DELETED_APPOINTMENT_COUNT_METRIC_KEY to 0.0,
-  )
 }

@@ -101,7 +101,7 @@ class JobTriggerController(
     description = """Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.""",
   )
   @ResponseBody
-  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseStatus(HttpStatus.ACCEPTED)
   fun triggerAppointmentsMetricsJob(): String {
     appointmentMetricsJob.execute()
 

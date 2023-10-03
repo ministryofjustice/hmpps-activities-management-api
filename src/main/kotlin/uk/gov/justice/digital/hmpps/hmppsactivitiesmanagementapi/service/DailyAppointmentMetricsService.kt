@@ -1,44 +1,57 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import java.time.LocalDate
 
 @Service
-class DailyAppointmentMetricsService {
+@Transactional(readOnly = true)
+class DailyAppointmentMetricsService(
+  private val appointmentRepository: AppointmentRepository,
+  private val telemetryClient: TelemetryClient,
+) {
+  fun generateAppointmentMetrics(prisonCode: String, categoryCode: String, date: LocalDate) {
+    val propertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
+      CATEGORY_CODE_PROPERTY_KEY to categoryCode,
+    )
 
-  fun generateAppointmentMetrics(metricsMap: MutableMap<String, Double>, appointments: List<Appointment>) {
-    appointments.forEach {
-      if (!it.isCancelled() && !it.isDeleted) {
-        incrementMetric(metricsMap, APPOINTMENT_COUNT_METRIC_KEY)
-
-        it.attendees().forEach { _ -> incrementMetric(metricsMap, APPOINTMENT_INSTANCE_COUNT_METRIC_KEY) }
-
-        if ((it.appointmentSeries.schedule?.numberOfAppointments ?: 0) > 1) {
-          incrementMetric(metricsMap, APPOINTMENT_SERIES_COUNT_METRIC_KEY)
-        }
-
-        if (it.appointmentSeries.appointmentSet != null) {
-          incrementMetric(metricsMap, APPOINTMENT_SET_COUNT_METRIC_KEY)
-        }
-      }
-
-      if (it.isCancelled() && !it.isDeleted) {
-        incrementMetric(metricsMap, CANCELLED_APPOINTMENT_COUNT_METRIC_KEY)
-      }
-
-      if (it.isDeleted) {
-        incrementMetric(metricsMap, DELETED_APPOINTMENT_COUNT_METRIC_KEY)
-      }
+    val metricsMap = appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(prisonCode, categoryCode, date).let { appointments ->
+      val activeAppointments = appointments.filterNot { it.isCancelled() || it.isDeleted }
+      mutableMapOf(
+        APPOINTMENT_COUNT_METRIC_KEY to activeAppointments.size.toDouble(),
+        APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to activeAppointments.countAttendees(),
+        APPOINTMENT_SERIES_COUNT_METRIC_KEY to activeAppointments.countUniqueRepeatingAppointmentSeries(),
+        APPOINTMENT_SET_COUNT_METRIC_KEY to activeAppointments.countUniqueAppointmentSets(),
+        CANCELLED_APPOINTMENT_COUNT_METRIC_KEY to appointments.countCancelledAppointments(),
+        DELETED_APPOINTMENT_COUNT_METRIC_KEY to appointments.countDeletedAppointments(),
+      )
     }
+
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value, propertiesMap, metricsMap)
   }
 
-  private fun incrementMetric(metricsMap: MutableMap<String, Double>, metricKey: String, increment: Int = 1) {
-    metricsMap[metricKey] = ((metricsMap[metricKey] ?: 0.0) + increment)
-  }
+  private fun List<Appointment>.countAttendees() = this.flatMap { it.attendees() }.size.toDouble()
+
+  private fun List<Appointment>.countUniqueRepeatingAppointmentSeries() =
+    this.map { it.appointmentSeries }.filter { (it.schedule?.numberOfAppointments ?: 0) > 1 }.map { it.appointmentSeriesId }.distinct().size.toDouble()
+
+  private fun List<Appointment>.countUniqueAppointmentSets() =
+    this.mapNotNull { it.appointmentSeries.appointmentSet }.map { it.appointmentSetId }.distinct().size.toDouble()
+
+  private fun List<Appointment>.countCancelledAppointments() = this.filter { it.isCancelled() }.size.toDouble()
+
+  private fun List<Appointment>.countDeletedAppointments() = this.filter { it.isDeleted }.size.toDouble()
 }
