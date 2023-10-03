@@ -10,7 +10,7 @@ generic-service:
   env:
     HMPPS_AUTH_URL: https://sign-in-preprod.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://api-preprod.prison.service.justice.gov.uk
-    PRISONER_SEARCH_API_URL: https://prisoner-offender-search-preprod.prison.service.justice.gov.uk
+    PRISONER_SEARCH_API_URL: https://prisoner-search-preprod.prison.service.justice.gov.uk
     CASE_NOTES_API_URL: https://preprod.offender-case-notes.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SCHEDULE_AHEAD_DAYS: 14
