@@ -376,20 +376,6 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetAppointmentCategoryReferenceCodes(appointmentCategories: List<ReferenceCode>) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/INT_SCH_RSN/codes"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              mapper.writeValueAsString(appointmentCategories),
-            )
-            .withStatus(200),
-        ),
-    )
-  }
-
   fun stubGetAppointmentCategoryReferenceCodes() = stubGetAppointmentCategoryReferenceCodes(
     listOf(
       appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
@@ -398,21 +384,33 @@ class PrisonApiMockServer : WireMockServer(8999) {
     ),
   )
 
-  fun stubGetAppointmentScheduleReasons() {
+  fun stubGetAppointmentCategoryReferenceCodes(appointmentCategories: List<ReferenceCode>) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/INT_SCH_RSN/codes"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(appointmentCategories))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetAppointmentScheduleReasons() = stubGetAppointmentScheduleReasons(
+    listOf(
+      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
+      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
+      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
+    ),
+  )
+
+  fun stubGetAppointmentScheduleReasons(appointmentCategories: List<ReferenceCode>) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/reference-domains/scheduleReasons?eventType=APP"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBody(
-              mapper.writeValueAsString(
-                listOf(
-                  appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-                  appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-                  appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-                ),
-              ),
-            )
+            .withBody(mapper.writeValueAsString(appointmentCategories))
             .withStatus(200),
         ),
     )
