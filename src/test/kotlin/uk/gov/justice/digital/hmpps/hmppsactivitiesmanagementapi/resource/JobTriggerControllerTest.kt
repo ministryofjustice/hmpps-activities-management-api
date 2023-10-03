@@ -108,9 +108,9 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   }
 
   @Test
-  fun `201 response when appointments metrics job triggered`() {
+  fun `202 response when appointments metrics job triggered`() {
     val response = mockMvc.triggerJob(jobName = "appointments-metrics")
-      .andExpect { status { isCreated() } }.andReturn().response
+      .andExpect { status { isAccepted() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Appointments metrics job triggered")
 
